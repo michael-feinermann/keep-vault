@@ -111,10 +111,31 @@ public sealed class IntegrityService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Every native tool the application refuses to run without.
+    /// </summary>
+    /// <remarks>
+    /// Exposed because callers gate on having seen the complete set, not just
+    /// on the entries they happened to receive. A caller that hard-codes the
+    /// count silently stops requiring whatever was added since.
+    /// </remarks>
+    public static readonly IReadOnlyList<string> RequiredNativeTools =
+    [
+        "zpaq.exe",
+        "kalyna_ref.dll",
+        "threefish_ref.dll",
+        "mars_ref.dll",
+        "shacal2_ref.dll",
+        "aes_ref.dll",
+        "chachapoly_ref.dll",
+        "argon2_ref.dll",
+        "argon2.exe",
+    ];
+
     public async Task<IReadOnlyList<ToolIntegrityStatus>> CheckNativeToolsAsync(CancellationToken cancellationToken)
     {
-        string[] toolNames = ["zpaq.exe", "kalyna_ref.dll", "threefish_ref.dll", "mars_ref.dll", "shacal2_ref.dll", "aes_ref.dll", "chachapoly_ref.dll", "argon2_ref.dll", "argon2.exe"];
-        var statuses = new List<ToolIntegrityStatus>(toolNames.Length);
+        IReadOnlyList<string> toolNames = RequiredNativeTools;
+        var statuses = new List<ToolIntegrityStatus>(toolNames.Count);
         foreach (string toolName in toolNames)
         {
             string? path = NativeToolIntegrity.ResolveKnownTool(toolName);
