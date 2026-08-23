@@ -1127,7 +1127,7 @@ static void RunNativeIntegrityTests()
         bool rejectedUnsignedTool = false;
         try
         {
-            NativeToolIntegrity.RequireTrustedFile(unsignedTool);
+            using TrustedNativeFileLease rejected = NativeToolIntegrity.AcquireTrustedFile(unsignedTool);
         }
         catch (InvalidOperationException)
         {
@@ -1392,6 +1392,14 @@ static async Task RunZpaqInputBindingTestsAsync()
 
             File.Delete(lateFile);
         }
+
+        // The snapshot has been disposed. Its hard links name the same records
+        // as the user's files, so a cleanup that quietly failed would have left
+        // writable second names behind; the leases are then deliberately kept
+        // open rather than released, and this counter is what says so.
+        Assert(
+            ZpaqService.RetainedInputSnapshotLeases == 0,
+            "the private mirror is gone and no lease had to be retained to keep an input protected");
     }
     finally
     {
