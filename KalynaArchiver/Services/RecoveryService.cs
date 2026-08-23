@@ -277,13 +277,11 @@ public sealed partial class RecoveryService
                 .ConfigureAwait(false);
             FileStream archive = archiveSnapshot.Stream;
 #else
-            await using FileStream archive = new FileStream(
+            await using FileStream archive = SecureFile.OpenReadNoReparse(
                 fullArchivePath,
-                FileMode.Open,
-                FileAccess.Read,
                 FileShare.Read,
                 bufferSize: 1024 * 1024,
-                FileOptions.RandomAccess);
+                randomAccess: true);
 #endif
             long archiveLength = archive.Length;
             if (archiveLength > MaxArchiveBytes)
@@ -682,6 +680,12 @@ public sealed partial class RecoveryService
         // link means the bytes survive the destruction under another name.
         using FileStream existing = MacSafeFileSystem.OpenReadNoSymlinks(recoveryPath);
         MacSafeFileSystem.ValidateRegularFile(existing.SafeFileHandle, requireSingleLink: true, recoveryPath);
+#else
+        // Same check through a Windows handle. Without it the multi-link case
+        // was only noticed after the commit, by the secure destruction that
+        // refuses such a file - at which point the old sidecar's bytes are
+        // already reachable under their second name and nothing can undo that.
+        SecureFile.RequireReadableRegularFile(recoveryPath, requireSingleLink: true);
 #endif
     }
 
@@ -793,13 +797,11 @@ public sealed partial class RecoveryService
                 .ConfigureAwait(false);
             FileStream archive = archiveSnapshot.Stream;
 #else
-            await using FileStream archive = new FileStream(
+            await using FileStream archive = SecureFile.OpenReadNoReparse(
                 fullArchivePath,
-                FileMode.Open,
-                FileAccess.Read,
                 FileShare.None,
                 bufferSize: 1024 * 1024,
-                FileOptions.RandomAccess);
+                randomAccess: true);
 #endif
             if (archive.Length != package.Manifest.ArchiveLength)
             {
@@ -2525,13 +2527,11 @@ public sealed partial class RecoveryService
 #if KEEPVAULT_MACOS
         return MacSafeFileSystem.OpenReadNoSymlinks(recoveryPath);
 #else
-        return new FileStream(
+        return SecureFile.OpenReadNoReparse(
             recoveryPath,
-            FileMode.Open,
-            FileAccess.Read,
             FileShare.Read,
             bufferSize: 1024 * 1024,
-            FileOptions.RandomAccess);
+            randomAccess: true);
 #endif
     }
 

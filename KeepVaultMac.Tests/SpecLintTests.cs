@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using KalynaArchiver.Services;
 
@@ -65,6 +66,76 @@ internal static class SpecLintTests
         // second, older constant to choose from.
         Require(SuiteKeySchedule.ContextVersion == 11, "The role-key schedule context version is not 11.");
         Require(ContainerKeyDerivation.ContainerVersion == 11, "The container key derivation is not pinned to v11.");
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Every checked-in lock file must describe exactly the runtime the project
+    /// it belongs to is built for.
+    /// </summary>
+    /// <remarks>
+    /// The repository restores in locked mode. NuGet compares the project's
+    /// runtime identifiers against the ones recorded in the lock file as a set,
+    /// so a target left behind by a restore on a different operating system is
+    /// not inert: it makes the set differ on the machine the project is
+    /// actually built on and fails the restore with NU1004 before a single file
+    /// is compiled. That is what a stale <c>osx-arm64</c> target did to both
+    /// Windows projects - the Windows application could not be restored on
+    /// Windows at all, while every macOS build stayed green and never saw it.
+    /// A lock file is not reachable from any code path, so nothing but a check
+    /// like this one notices.
+    /// </remarks>
+    internal static Task LockFileRuntimesAsync()
+    {
+        string root = RepositoryLayout.FindRepositoryRoot();
+        // The runtimes each project legitimately declares. Anything else in
+        // its lock file came from a restore on the wrong operating system.
+        (string Project, string[] AllowedRuntimes)[] projects =
+        [
+            ("KalynaArchiver", ["win-x64"]),
+            ("KalynaArchiver.Tests", ["win-x64"]),
+            ("KalynaArchiver.Signing", ["win-x64"]),
+            ("KeepVaultMac", ["osx-arm64", "osx-x64"]),
+            ("KeepVaultMac.Tests", ["osx-arm64"]),
+        ];
+
+        var violations = new List<string>();
+        foreach ((string project, string[] allowed) in projects)
+        {
+            string lockFile = Path.Combine(root, project, "packages.lock.json");
+            if (!File.Exists(lockFile))
+            {
+                violations.Add($"{project}/packages.lock.json is missing.");
+                continue;
+            }
+
+            using JsonDocument document = JsonDocument.Parse(RepositoryLayout.ReadText(lockFile));
+            if (!document.RootElement.TryGetProperty("dependencies", out JsonElement dependencies))
+            {
+                violations.Add($"{project}/packages.lock.json has no dependency targets.");
+                continue;
+            }
+
+            foreach (JsonProperty target in dependencies.EnumerateObject())
+            {
+                int separator = target.Name.IndexOf('/', StringComparison.Ordinal);
+                if (separator < 0)
+                {
+                    continue;
+                }
+
+                string runtime = target.Name[(separator + 1)..];
+                if (!allowed.Contains(runtime, StringComparer.Ordinal))
+                {
+                    violations.Add(
+                        $"{project}/packages.lock.json carries the foreign runtime target \"{target.Name}\"; "
+                        + $"the project declares {string.Join(", ", allowed)}, so a locked restore on its own "
+                        + "platform fails with NU1004.");
+                }
+            }
+        }
+
+        Require(violations.Count == 0, "Lock files do not match their build platform:\n  " + string.Join("\n  ", violations));
         return Task.CompletedTask;
     }
 

@@ -102,6 +102,8 @@ await RunZpaqTraversalTestsAsync();
 Console.WriteLine("ZPAQ path-traversal and extraction-directory tests passed.");
 await RunZpaqInputBindingTestsAsync();
 Console.WriteLine("ZPAQ input-binding matrix (reparse points, post-check insertion, leases) passed.");
+RunObjectBoundReadTests();
+Console.WriteLine("Object-bound read tests (reparse points, hard links, directories) passed.");
 await RunMalformedZpaqCorpusTestsAsync();
 Console.WriteLine("Mutated ZPAQ pipe-parser crash/hang corpus passed.");
 await RunCompressionLevelMatrixTestsAsync();
@@ -1394,6 +1396,83 @@ static async Task RunZpaqInputBindingTestsAsync()
     finally
     {
         Directory.Delete(root, recursive: true);
+    }
+}
+
+static void RunObjectBoundReadTests()
+{
+    // The recovery sidecar and the archive are opened through
+    // SecureFile.OpenReadNoReparse so that the bytes that get parsed come from
+    // the object the name resolved to. Before that, both used a plain
+    // FileStream, which follows a junction or a symbolic link planted under the
+    // expected name without a word. macOS had the no-follow open all along;
+    // these cases pin the Windows side of the same guarantee.
+    string root = Path.Combine(Path.GetTempPath(), "keep-vault-object-bound-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        string real = Path.Combine(root, "payload.bin");
+        byte[] payload = RandomNumberGenerator.GetBytes(4096);
+        File.WriteAllBytes(real, payload);
+
+        using (FileStream stream = SecureFile.OpenReadNoReparse(real, FileShare.Read))
+        {
+            byte[] read = new byte[payload.Length];
+            stream.ReadExactly(read);
+            Assert(
+                CryptographicOperations.FixedTimeEquals(payload, read),
+                "a plain single-link file reads back byte-for-byte through the object-bound open");
+        }
+
+        // A second name for the same record must be refused wherever the file
+        // is about to be destroyed - otherwise the bytes outlive the deletion.
+        string hardLink = Path.Combine(root, "second-name.bin");
+        if (TryCreateHardLinkForTests(hardLink, real))
+        {
+            AssertThrows<IOException>(
+                () => SecureFile.RequireReadableRegularFile(real, requireSingleLink: true),
+                "a file with two hard links is refused where a single link is required");
+            using (FileStream tolerated = SecureFile.OpenReadNoReparse(hardLink, FileShare.Read))
+            {
+                Assert(tolerated.Length == payload.Length, "a hard link still opens where multiple links are allowed");
+            }
+
+            File.Delete(hardLink);
+        }
+
+        // Reading "through" a junction resolves to a different final path than
+        // the one that was asked for, which is exactly the substitution the
+        // canonical-path check exists to catch.
+        string realDirectory = Path.Combine(root, "real-dir");
+        Directory.CreateDirectory(realDirectory);
+        string inside = Path.Combine(realDirectory, "inside.bin");
+        File.WriteAllBytes(inside, payload);
+        string junction = Path.Combine(root, "junction");
+        if (TryCreateJunctionForTests(junction, realDirectory))
+        {
+            AssertThrows<InvalidOperationException>(
+                () => SecureFile.RequireReadableRegularFile(
+                    Path.Combine(junction, "inside.bin"),
+                    requireSingleLink: false),
+                "a file reached through a junction is refused by the object-bound open");
+            Directory.Delete(junction);
+        }
+
+        AssertThrows<IOException>(
+            () => SecureFile.RequireReadableRegularFile(realDirectory, requireSingleLink: false),
+            "a directory is refused where a regular file is required");
+
+        CryptographicOperations.ZeroMemory(payload);
+    }
+    finally
+    {
+        try
+        {
+            Directory.Delete(root, recursive: true);
+        }
+        catch (IOException)
+        {
+        }
     }
 }
 
