@@ -2182,7 +2182,15 @@ internal static unsafe class NativeKalyna
             throw new ArgumentException("Kalyna-512/512 requires a 64-byte key, 64-byte nonce, and sufficiently large buffers.");
         }
 
-        EnsureLoaded();
+        if (useReference)
+        {
+            EnsureReferenceLoaded();
+        }
+        else
+        {
+            EnsureLoaded();
+        }
+
         int result;
         fixed (byte* keyPointer = key)
         fixed (byte* noncePointer = nonce)
@@ -2214,6 +2222,29 @@ internal static unsafe class NativeKalyna
         }
     }
 
+    /// <summary>
+    /// Resolves the reference export, which only the differential test calls.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately not resolved in <see cref="EnsureLoaded"/>. A library built
+    /// before this export existed would fail to load there, and the whole
+    /// application would refuse to encrypt because a test-only symbol was
+    /// missing. The cost of being wrong about that is far higher than the cost
+    /// of finding out later, in the one test that needs it.
+    /// </remarks>
+    private static void EnsureReferenceLoaded()
+    {
+        EnsureLoaded();
+        lock (LoadGate)
+        {
+            if (_xcryptCtrReference == null)
+            {
+                _xcryptCtrReference = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "kalyna_512_512_ctr_xcrypt_reference");
+            }
+        }
+    }
+
     private static void EnsureLoaded()
     {
         lock (LoadGate)
@@ -2225,15 +2256,12 @@ internal static unsafe class NativeKalyna
                 {
                     _xcryptCtr = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
                         NativeLibrary.GetExport(handle, "kalyna_512_512_ctr_xcrypt");
-                    _xcryptCtrReference = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
-                        NativeLibrary.GetExport(handle, "kalyna_512_512_ctr_xcrypt_reference");
                     _libraryHandle = handle;
                 }
                 catch
                 {
                     NativeLibrary.Free(handle);
                     _xcryptCtr = null;
-                    _xcryptCtrReference = null;
                     throw;
                 }
             }

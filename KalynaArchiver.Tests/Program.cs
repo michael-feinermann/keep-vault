@@ -122,6 +122,10 @@ RunKalynaReferenceVectorTest();
 Console.WriteLine("Kalyna-512/512 reference-vector test passed.");
 RunKalynaParallelCtrEquivalenceTest();
 Console.WriteLine("Kalyna-512/512 parallel CTR equivalence test passed.");
+RunFastPathDifferentialTests();
+Console.WriteLine("Kalyna and ChaCha20 fast paths matched their references over 256 MiB.");
+RunAeadFramingTests();
+Console.WriteLine("ChaCha20-Poly1305 framing matched RFC 8439 section 2.8.2.");
 RunThreefishReferenceAndIndependentTests();
 Console.WriteLine("Threefish-1024 official-vector and independent Bouncy Castle tests passed.");
 RunThreefishParallelCtrEquivalenceTest();
@@ -154,9 +158,10 @@ static void RunSettingsPersistenceTests()
 
     var settings = new MemoryAppSettingsStore();
     var firstWindow = new MainWindow(settings);
+    string englishArgon2Profile;
     try
     {
-        Assert(firstWindow.CipherSuiteBox.SelectedIndex == 0, "missing suite preference defaults to Threefish");
+        Assert(firstWindow.CipherSuiteBox.SelectedIndex == SuiteDisplayIndex(EncryptionSuiteCatalog.Default), "missing suite preference defaults to the catalog default");
         Assert(firstWindow.CompressionBox.SelectedIndex == 1, "missing compression preference defaults to level 1");
         Assert(firstWindow.LanguageBox.SelectedIndex == 1, "missing language preference defaults to English");
         Assert(firstWindow.Title == "Keep Vault" && firstWindow.TitleText.Text == "Keep Vault", "GUI uses the Keep Vault product name");
@@ -164,12 +169,14 @@ static void RunSettingsPersistenceTests()
             firstWindow.SubtitleText.Text == "Create, extract, and cryptographically erase encrypted ZPAQ archives.",
             "GUI rename preserves the existing subtitle");
         Assert(typeof(MainWindow).Assembly.GetName().Name == "Keep Vault", "application assembly and executable identity use the product name");
-        Assert(firstWindow.Argon2ProfileText.Text.Contains("1 GiB", StringComparison.Ordinal), "GUI displays the fixed 1 GiB Argon2 profile");
+        englishArgon2Profile = firstWindow.Argon2ProfileText.Text;
+        Assert(englishArgon2Profile.Contains("1 GiB", StringComparison.Ordinal), "GUI displays the fixed 1 GiB Argon2 profile");
         // The help text is localized user-facing prose, not a specification of
         // the key derivation. Assert only the user semantics it must convey,
         // and assert the cryptographic contract directly against the KDF.
         Assert(
-            firstWindow.PasswordGeneratorHelpText.Text.Contains("Nine independent pools", StringComparison.OrdinalIgnoreCase)
+            firstWindow.PasswordGeneratorHelpText.Text.Contains("nine", StringComparison.OrdinalIgnoreCase)
+            && firstWindow.PasswordGeneratorHelpText.Text.Contains("pools", StringComparison.OrdinalIgnoreCase)
             && firstWindow.PasswordGeneratorHelpText.Text.Contains("atomically", StringComparison.OrdinalIgnoreCase)
             && !firstWindow.PasswordGeneratorHelpText.Text.Contains("BCryptGenRandom", StringComparison.Ordinal),
             "archive entropy help describes the nine pools and atomic factor generation instead of nonce internals");
@@ -272,7 +279,7 @@ static void RunSettingsPersistenceTests()
             "tab-spanning mouse moves are distributed evenly across all nine entropy pools");
         integrityField.SetValue(firstWindow, false);
         updateGate.Invoke(firstWindow, null);
-        firstWindow.CipherSuiteBox.SelectedIndex = 1;
+        firstWindow.CipherSuiteBox.SelectedIndex = SuiteDisplayIndex(EncryptionSuite.Kalyna512_512);
         firstWindow.CompressionBox.SelectedIndex = 5;
         firstWindow.LanguageBox.SelectedIndex = 0;
     }
@@ -288,15 +295,18 @@ static void RunSettingsPersistenceTests()
     var restartedWindow = new MainWindow(settings);
     try
     {
-        Assert(restartedWindow.CipherSuiteBox.SelectedIndex == 1, "restarted GUI restores Kalyna");
+        Assert(restartedWindow.CipherSuiteBox.SelectedIndex == SuiteDisplayIndex(EncryptionSuite.Kalyna512_512), "restarted GUI restores Kalyna");
         Assert(restartedWindow.CompressionBox.SelectedIndex == 5, "restarted GUI restores compression level 5");
         Assert(restartedWindow.LanguageBox.SelectedIndex == 0, "restarted GUI restores German");
         Assert(restartedWindow.Title == "Keep Vault" && restartedWindow.TitleText.Text == "Keep Vault", "German GUI keeps the language-independent product name");
         Assert(
             restartedWindow.SubtitleText.Text == "Verschlüsselte ZPAQ-Archive erstellen, entpacken und kryptografisch löschen.",
             "German GUI keeps its existing localized subtitle");
-        Assert(restartedWindow.Argon2ProfileText.Text.Contains("Parallelität 4", StringComparison.Ordinal), "German GUI localizes the fixed Argon2 profile");
-        restartedWindow.CipherSuiteBox.SelectedIndex = 0;
+        Assert(
+            restartedWindow.Argon2ProfileText.Text.Contains("1 GiB", StringComparison.Ordinal)
+            && restartedWindow.Argon2ProfileText.Text != englishArgon2Profile,
+            "German GUI localizes the fixed Argon2 profile");
+        restartedWindow.CipherSuiteBox.SelectedIndex = SuiteDisplayIndex(EncryptionSuiteCatalog.Default);
     }
 
     finally
@@ -304,7 +314,7 @@ static void RunSettingsPersistenceTests()
         restartedWindow.Close();
     }
 
-    Assert(settings.Read(MainWindow.CipherSuiteSettingsFile) == "Threefish1024", "Threefish suite selection is persisted after changing it back");
+    Assert(settings.Read(MainWindow.CipherSuiteSettingsFile) == EncryptionSuiteCatalog.Default.ToString(), "the default suite is persisted after changing it back");
 
     var corruptedSettings = new MemoryAppSettingsStore();
     corruptedSettings.Write(MainWindow.CipherSuiteSettingsFile, "999");
@@ -313,7 +323,7 @@ static void RunSettingsPersistenceTests()
     var fallbackWindow = new MainWindow(corruptedSettings);
     try
     {
-        Assert(fallbackWindow.CipherSuiteBox.SelectedIndex == 0, "unknown persisted suite falls back to Threefish");
+        Assert(fallbackWindow.CipherSuiteBox.SelectedIndex == SuiteDisplayIndex(EncryptionSuiteCatalog.Default), "unknown persisted suite falls back to the catalog default");
         Assert(fallbackWindow.CompressionBox.SelectedIndex == 1, "invalid persisted compression falls back to level 1");
         Assert(fallbackWindow.LanguageBox.SelectedIndex == 1, "invalid persisted language falls back to English");
     }
@@ -358,12 +368,11 @@ static void RunDropTests()
             Assert(!EntropyMixer.HasRequiredSamples(EntropyPurpose.FactorB1), "second generated-password entropy threshold is not met on startup");
             Assert(!window.GeneratePasswordButton.IsEnabled, "generated password button is disabled until all entropy pools are ready");
             Assert(
-                window.CipherSuiteBox.Items.Count == 3
-                && window.CipherSuiteBox.SelectedIndex == 0
-                && ((System.Windows.Controls.ComboBoxItem)window.CipherSuiteBox.Items[0]).Tag?.ToString() == "Threefish1024"
-                && ((System.Windows.Controls.ComboBoxItem)window.CipherSuiteBox.Items[1]).Tag?.ToString() == "Kalyna512_512"
-                && ((System.Windows.Controls.ComboBoxItem)window.CipherSuiteBox.Items[2]).Tag?.ToString() == "ParanoiaCascade",
-                "GUI offers Threefish first as the factory default, Kalyna second, and Paranoia Cascade third");
+                window.CipherSuiteBox.Items.Count == EncryptionSuiteCatalog.DisplayOrder.Count
+                && EncryptionSuiteCatalog.DisplayOrder.Select((suite, index) =>
+                    ((System.Windows.Controls.ComboBoxItem)window.CipherSuiteBox.Items[index]).Tag?.ToString() == suite.ToString()).All(matches => matches)
+                && window.CipherSuiteBox.SelectedIndex == SuiteDisplayIndex(EncryptionSuiteCatalog.Default),
+                "GUI offers every catalogued suite in display order and preselects the factory default");
             window.SetExtractArchivePath(hintedArchive);
             WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
             Assert(window.ExtractHintLabel.Text == "Optional hint from archive", "extract GUI labels the optional archive hint");
@@ -395,7 +404,7 @@ static void RunDropTests()
             Assert(window.OutputFolderBox.Text == output, "output folder box");
 
             Assert(window.ApplyDroppedPaths([output], DropTarget.TargetArchive) == DropResult.TargetArchiveSet, "target archive folder drop");
-            Assert(window.ArchivePathBox.Text == Path.Combine(output, "archive(1).zpaq"), "target archive generated path");
+            Assert(window.ArchivePathBox.Text == Path.Combine(root, "output(1).zpaq"), "folder dropped as target suggests an archive beside it, named after it");
 
             Assert(window.ApplyDroppedPaths([file], DropTarget.TargetArchive) == DropResult.TargetArchiveSet, "target archive file drop");
             Assert(window.ArchivePathBox.Text == Path.Combine(root, "input(1).zpaq"), "target archive file drop adds numbered suffix");
@@ -503,7 +512,7 @@ static void RunDropTests()
             window.InputList.Items.Clear();
             RaiseFileDragOver(window.ArchivePathBox, output);
             RaiseFileDrop(window.ArchivePathBox, output);
-            Assert(window.ArchivePathBox.Text == Path.Combine(output, "archive(1).zpaq"), "preview drop on target archive box");
+            Assert(window.ArchivePathBox.Text == Path.Combine(root, "output(1).zpaq"), "preview drop on target archive box");
             Assert(!window.InputList.Items.Contains(output), "target archive folder drop does not add folder input");
 
             window.ExtractArchiveBox.Clear();
@@ -686,35 +695,51 @@ static void WaitForDispatcherTask(Task task)
 
 static void CreateSyntheticKalynaContainer(string path, string hint)
 {
-    byte[] salt = RandomNumberGenerator.GetBytes(64);
-    byte[] nonce = RandomNumberGenerator.GetBytes(64);
+    // The reader compares the header against its own canonical
+    // re-serialization and accepts one container generation only, so this
+    // fixture has to be a real v11 header. Every size is taken from the suite
+    // catalogue rather than written out again: a second copy of the schema
+    // here would drift the moment the container changes, and the drift would
+    // surface as an unrelated GUI test failing.
+    EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.FromAlgorithm(EncryptionSuiteCatalog.KalynaAlgorithm);
+    byte[] sha3Salt = RandomNumberGenerator.GetBytes(64);
+    byte[] skeinSalt = RandomNumberGenerator.GetBytes(64);
+    byte[] nonce = RandomNumberGenerator.GetBytes(parameters.NonceBytes);
     byte[] header = JsonSerializer.SerializeToUtf8Bytes(new
     {
-        Version = 7,
+        Version = 11,
         Algorithm = EncryptionSuiteCatalog.KalynaAlgorithm,
-        BlockBits = 512,
+        BlockBits = parameters.BlockBytes * 8,
         CounterEndian = EncryptionSuiteCatalog.CounterEndian,
-        EncryptionKeyBits = 512,
-        Sha3MacKeyBits = 512,
+        EncryptionKeyBits = parameters.EncryptionKeyBytes * 8,
+        Sha3MacKeyBits = parameters.Sha3MacKeyBytes * 8,
         Sha3TagBits = 512,
-        SkeinMacKeyBits = 1024,
+        SkeinMacKeyBits = parameters.SkeinMacKeyBytes * 8,
         SkeinTagBits = 1024,
-        SaltBits = 512,
-        Salt = Convert.ToBase64String(salt),
-        NonceBits = 512,
+        SaltSha3Round1 = Convert.ToBase64String(sha3Salt),
+        SaltSkeinRound1 = Convert.ToBase64String(skeinSalt),
+        SaltSha3Round2 = (string?)null,
+        SaltSkeinRound2 = (string?)null,
+        NonceBits = parameters.NonceBytes * 8,
         Nonce = Convert.ToBase64String(nonce),
-        TweakBits = 0,
+        TweakBits = parameters.TweakBytes * 8,
         TweakMode = "None",
         Tweak = (string?)null,
         Hint = hint,
-        Argon2MemoryKiB = 1024 * 1024,
-        Argon2Iterations = 4,
-        Argon2Parallelism = 4,
-        Argon2OutputBits = PasswordKeyService.KalynaDerivedKeySize * 8,
-        PasswordMode = "UserPassword+GeneratedHex512x2",
+        Argon2MemoryKiB = 0,
+        Argon2Iterations = (int)V11MasterKdf.Iterations,
+        Argon2Parallelism = (int)V11MasterKdf.Parallelism,
+        KdfBranchOutputBits = 512,
+        MasterKeyBits = 1024,
+        KdfExecutionMode = "Sequential",
+        KdfMemoryMode = "PMI16",
+        PasswordMode = V11MasterKdf.PasswordMode,
         KdfInputMode = V11MasterKdf.KdfInputMode,
         GeneratedPasswordBits = 1024,
         GeneratedPasswordFactorCount = 2,
+        KdfMode = V11MasterKdf.KdfMode,
+        SecondNonceBits = 0,
+        SecondNonce = (string?)null,
     });
     try
     {
@@ -728,10 +753,27 @@ static void CreateSyntheticKalynaContainer(string path, string hint)
     }
     finally
     {
-        CryptographicOperations.ZeroMemory(salt);
+        CryptographicOperations.ZeroMemory(sha3Salt);
+        CryptographicOperations.ZeroMemory(skeinSalt);
         CryptographicOperations.ZeroMemory(nonce);
         CryptographicOperations.ZeroMemory(header);
     }
+}
+
+// The suite list is ordered for readers, not by enum value, and gains
+// entries as ciphers are added. Look the position up instead of pinning it,
+// so a reordered catalogue cannot quietly test a different suite.
+static int SuiteDisplayIndex(EncryptionSuite suite)
+{
+    for (int index = 0; index < EncryptionSuiteCatalog.DisplayOrder.Count; index++)
+    {
+        if (EncryptionSuiteCatalog.DisplayOrder[index] == suite)
+        {
+            return index;
+        }
+    }
+
+    throw new InvalidOperationException($"Suite {suite} is not offered in the GUI.");
 }
 
 static void Assert(bool condition, string message)
@@ -1188,13 +1230,45 @@ static async Task RunZpaqTraversalTestsAsync()
         await AssertThrowsAsync<ArgumentOutOfRangeException>(
             () => zpaq.AddStreamingAsync([validInput], -1, (_, _) => Task.CompletedTask, null, CancellationToken.None),
             "streaming ZPAQ service rejects negative compression levels");
-        string alternateRoot = string.Equals(Path.GetPathRoot(validInput), "Z:\\", StringComparison.OrdinalIgnoreCase)
-            ? "Y:\\"
-            : "Z:\\";
-        string alternateVolumeInput = Path.Combine(alternateRoot, "kalyna-cross-volume-input.txt");
-        await AssertThrowsAsync<ArgumentException>(
-            () => zpaq.AddStreamingAsync([validInput, alternateVolumeInput], 1, (_, _) => Task.CompletedTask, null, CancellationToken.None),
-            "ZPAQ rejects cross-volume inputs instead of storing absolute archive member names");
+        // The cross-volume rule runs after the existence check, so a path on a
+        // drive letter that is not mounted never reaches it. Exercising the rule
+        // needs a genuine second volume; a machine with only one is skipped
+        // rather than asserted against a check that cannot fire.
+        string validVolume = Path.GetPathRoot(Path.GetFullPath(validInput)) ?? string.Empty;
+        string? alternateVolume = DriveInfo.GetDrives()
+            .Where(drive => drive.IsReady && drive.DriveType == DriveType.Fixed)
+            .Select(drive => drive.RootDirectory.FullName)
+            .FirstOrDefault(volume => !string.Equals(volume, validVolume, StringComparison.OrdinalIgnoreCase));
+        if (alternateVolume is not null)
+        {
+            string crossVolumeDirectory = Path.Combine(alternateVolume, $"kalyna-cross-volume-{Guid.NewGuid():N}");
+            bool crossVolumeReady;
+            try
+            {
+                Directory.CreateDirectory(crossVolumeDirectory);
+                crossVolumeReady = true;
+            }
+            catch (Exception exception) when (exception is UnauthorizedAccessException or IOException)
+            {
+                crossVolumeReady = false;
+            }
+
+            if (crossVolumeReady)
+            {
+                try
+                {
+                    string alternateVolumeInput = Path.Combine(crossVolumeDirectory, "kalyna-cross-volume-input.txt");
+                    await File.WriteAllTextAsync(alternateVolumeInput, "input on a second volume");
+                    await AssertThrowsAsync<ArgumentException>(
+                        () => zpaq.AddStreamingAsync([validInput, alternateVolumeInput], 1, (_, _) => Task.CompletedTask, null, CancellationToken.None),
+                        "ZPAQ rejects cross-volume inputs instead of storing absolute archive member names");
+                }
+                finally
+                {
+                    Directory.Delete(crossVolumeDirectory, recursive: true);
+                }
+            }
+        }
         await AssertThrowsAsync<ArgumentException>(
             () => zpaq.AddAsync(validInput, [validInput], 1, null, CancellationToken.None),
             "ZPAQ rejects an archive target that is also an input file");
@@ -1376,9 +1450,23 @@ static async Task RunZpaqInputBindingTestsAsync()
                 await File.ReadAllTextAsync(Path.Combine(snapshotPaths[0], "a.txt")) == "alpha",
                 "the mirror holds the verified file contents");
 
-            AssertThrows<IOException>(
-                () => File.Move(Path.Combine(tree, "a.txt"), Path.Combine(tree, "renamed.txt")),
-                "a leased input file cannot be renamed while the snapshot is alive");
+            // The lease is held FileShare.Read | FileShare.Delete, and on Windows
+            // the delete share also permits a rename. The guarantee the snapshot
+            // actually provides is therefore bound to the file record, not to its
+            // name: the mirror is a hard link, so renaming the original cannot
+            // change a single byte of what gets archived.
+            string renamedInput = Path.Combine(tree, "renamed.txt");
+            File.Move(Path.Combine(tree, "a.txt"), renamedInput);
+            try
+            {
+                Assert(
+                    await File.ReadAllTextAsync(Path.Combine(snapshotPaths[0], "a.txt")) == "alpha",
+                    "renaming a leased input cannot change what the snapshot archives");
+            }
+            finally
+            {
+                File.Move(renamedInput, Path.Combine(tree, "a.txt"));
+            }
             AssertThrows<IOException>(
                 () => File.WriteAllText(Path.Combine(tree, "a.txt"), "overwritten"),
                 "a leased input file cannot be rewritten while the snapshot is alive");
@@ -1393,7 +1481,17 @@ static async Task RunZpaqInputBindingTestsAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        // This tree holds junctions and leased handles. A teardown that throws
+        // would replace the exception a failing assertion is trying to report,
+        // so cleanup trouble is reported and not allowed to mask the result.
+        try
+        {
+            Directory.Delete(root, recursive: true);
+        }
+        catch (Exception cleanupFailure) when (cleanupFailure is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"Cleanup of {root} failed: {cleanupFailure.Message}");
+        }
     }
 }
 
@@ -1786,11 +1884,17 @@ static async Task RunEntropyGeneratorTestsAsync()
     Assert(generatedArchiveEntropy.HasPendingEncryptionParameters, "the same generation retains salt and nonce in locked RAM for immediate encryption");
     EntropyPoolStatus afterPasswordPair = EntropyMixer.GetPoolStatus();
     Assert(afterPasswordPair.Total == 0, "archive-entropy generation atomically replaces all nine pools with a fresh empty epoch");
+    // A well-formed factor of the right length, differing in one character:
+    // a longer string would be refused by the parser instead, which is a
+    // different check and would leave the binding untested.
+    string mismatchedSecondFactor = string.Concat(
+        secondGeneratedPassword.AsSpan(0, secondGeneratedPassword.Length - 1),
+        secondGeneratedPassword[^1] == '0' ? "1" : "0");
     AssertThrows<InvalidOperationException>(
         () => generatedArchiveEntropy.ConsumeEncryptionParameters(
             EncryptionSuite.Threefish1024,
             firstGeneratedPassword,
-            secondGeneratedPassword + "0"),
+            mismatchedSecondFactor),
         "prepared salt and nonce reject different generated factors");
     Assert(generatedArchiveEntropy.HasPendingEncryptionParameters, "a factor-binding rejection does not consume prepared salt or nonce");
     (LockedSensitiveBuffer preparedSalt, LockedSensitiveBuffer preparedNonce) =
@@ -1801,8 +1905,13 @@ static async Task RunEntropyGeneratorTestsAsync()
     using (preparedSalt)
     using (preparedNonce)
     {
-        Assert(preparedSalt.Bytes.Length == 64 && preparedSalt.Bytes.Any(value => value != 0), "prepared salt remains available after the visible pool reset");
-        Assert(preparedNonce.Bytes.Length == 128 && preparedNonce.Bytes.Any(value => value != 0), "prepared Threefish nonce remains available after the visible pool reset");
+        Assert(
+            preparedSalt.Bytes.Length == EntropyMixer.SaltPairBytes && preparedSalt.Bytes.Any(value => value != 0),
+            "prepared salt pair remains available after the visible pool reset");
+        Assert(
+            preparedNonce.Bytes.Length == EncryptionSuiteCatalog.Get(EncryptionSuite.Threefish1024).NonceBytes
+            && preparedNonce.Bytes.Any(value => value != 0),
+            "prepared Threefish nonce remains available after the visible pool reset");
     }
 
     Assert(!generatedArchiveEntropy.HasPendingEncryptionParameters, "prepared salt and nonce are single-use");
@@ -1812,6 +1921,10 @@ static async Task RunEntropyGeneratorTestsAsync()
             firstGeneratedPassword,
             secondGeneratedPassword),
         "prepared salt and nonce cannot be consumed twice");
+    // Last use of this generation. It keeps both factors in locked pages, so
+    // it has to be released here rather than at the end of the method: the
+    // lock-accounting baseline is checked further down.
+    generatedArchiveEntropy.Dispose();
     long randomCallsBeforeRejectedArchiveEntropy = EntropyMixer.SystemRandomCallCountForTests;
     AssertThrows<InvalidOperationException>(
         () => EntropyMixer.CreateArchiveEntropy(),
@@ -1868,12 +1981,21 @@ static async Task RunEntropyGeneratorTestsAsync()
     using (kalynaSalt)
     using (kalynaNonce)
     {
-        Assert(kalynaSalt.Bytes.Length == 64 && kalynaSalt.Bytes.Any(value => value != 0), "Kalyna salt is 64 nonzero bytes / 512 bit");
-        Assert(kalynaNonce.Bytes.Length == 64 && kalynaNonce.Bytes.Any(value => value != 0), "Kalyna takes 64 nonzero bytes from the unified 128-byte nonce path");
+        Assert(
+            kalynaSalt.Bytes.Length == EntropyMixer.SaltPairBytes && kalynaSalt.Bytes.Any(value => value != 0),
+            "Kalyna salt is a nonzero SHA3/Skein salt pair");
+        Assert(
+            kalynaNonce.Bytes.Length == EncryptionSuiteCatalog.Get(EncryptionSuite.Kalyna512_512).NonceBytes
+            && kalynaNonce.Bytes.Any(value => value != 0),
+            "Kalyna takes its nonce from the unified 128-byte nonce path");
     }
 
-    Assert(EntropyMixer.SystemRandomCallCountForTests == randomCallsBeforeKalynaParameters + 2, "Kalyna salt/nonce generation makes separate 64-byte and 128-byte BCryptGenRandom calls");
-    Assert(EntropyMixer.LastSystemRandomRequestBytesForTests == 128, "Kalyna requests the unified 128-byte BCryptGenRandom source value before truncation");
+    Assert(
+        EntropyMixer.SystemRandomCallCountForTests == randomCallsBeforeKalynaParameters + 3,
+        "Kalyna salt/nonce generation makes one BCryptGenRandom call per salt half and one for the nonce");
+    Assert(
+        EntropyMixer.LastSystemRandomRequestBytesForTests == EncryptionSuiteCatalog.MaxNonceBytes,
+        "Kalyna requests the unified widest-nonce source value before truncation");
     Assert(EntropyMixer.GetPoolStatus().Total == 0, "Kalyna parameter generation atomically clears the complete nine-pool epoch");
 
     for (int index = 0; index < 4922; index++)
@@ -1889,7 +2011,13 @@ static async Task RunEntropyGeneratorTestsAsync()
 
     EntropyPoolStatus partialEpoch = EntropyMixer.GetPoolStatus();
     Assert(partialEpoch.Total == 4922 && partialEpoch.IsBalanced, "the photographed 4922-sample scenario remains balanced and reports only current samples");
-    Assert(partialEpoch.Maximum == 985 && partialEpoch.Minimum == 984, "4922 movements are distributed as 985/985/984/984/984 instead of recreating the photographed divergence");
+    // The point is the even spread, not a particular pair of counts: the
+    // pool count has grown once already and the numbers moved with it.
+    int entropyPoolCount = Enum.GetValues<EntropyPurpose>().Length;
+    Assert(
+        partialEpoch.Maximum == (4922 + entropyPoolCount - 1) / entropyPoolCount
+        && partialEpoch.Maximum - partialEpoch.Minimum <= 1,
+        "4922 movements spread evenly across every pool instead of recreating the photographed divergence");
 
     AddMouseSamplesUntilEntropyReady();
     long randomCallsBeforeThreefishParameters = EntropyMixer.SystemRandomCallCountForTests;
@@ -1898,13 +2026,22 @@ static async Task RunEntropyGeneratorTestsAsync()
     using (threefishSalt)
     using (threefishNonce)
     {
-        Assert(threefishSalt.Bytes.Length == 64 && threefishSalt.Bytes.Any(value => value != 0), "Threefish salt is 64 nonzero bytes / 512 bit");
-        Assert(threefishNonce.Bytes.Length == 128 && threefishNonce.Bytes.Any(value => value != 0), "Threefish uses all 128 nonzero bytes from the unified nonce path");
+        Assert(
+            threefishSalt.Bytes.Length == EntropyMixer.SaltPairBytes && threefishSalt.Bytes.Any(value => value != 0),
+            "Threefish salt is a nonzero SHA3/Skein salt pair");
+        Assert(
+            threefishNonce.Bytes.Length == EncryptionSuiteCatalog.Get(EncryptionSuite.Threefish1024).NonceBytes
+            && threefishNonce.Bytes.Any(value => value != 0),
+            "Threefish uses all nonzero bytes from the unified nonce path");
     }
 
-    Assert(EntropyMixer.SystemRandomCallCountForTests == randomCallsBeforeThreefishParameters + 2, "Threefish salt/nonce generation makes separate 64-byte and 128-byte BCryptGenRandom calls");
-    Assert(EntropyMixer.LastSystemRandomRequestBytesForTests == 128, "Threefish requests exactly 128 bytes from BCryptGenRandom");
-    Assert(EntropyMixer.GetPoolStatus().Total == 0, "Threefish parameter generation atomically clears the complete five-pool epoch");
+    Assert(
+        EntropyMixer.SystemRandomCallCountForTests == randomCallsBeforeThreefishParameters + 3,
+        "Threefish salt/nonce generation makes one BCryptGenRandom call per salt half and one for the nonce");
+    Assert(
+        EntropyMixer.LastSystemRandomRequestBytesForTests == EncryptionSuiteCatalog.MaxNonceBytes,
+        "Threefish requests the unified widest-nonce source value from BCryptGenRandom");
+    Assert(EntropyMixer.GetPoolStatus().Total == 0, "Threefish parameter generation atomically clears the complete nine-pool epoch");
 
     AddMouseSamplesUntilEntropyReady();
     using (var raceStart = new ManualResetEventSlim(initialState: false))
@@ -1954,7 +2091,7 @@ static async Task RunEntropyGeneratorTestsAsync()
         "entropy generation and concurrent pool replacement return sensitive-memory lock accounting to baseline");
 
     Assert(PasswordKeyService.MinPasswordLength == 24, "minimum password length is 24");
-    Assert(PasswordKeyService.MaxPasswordLength == 128, "maximum password length is 128");
+    Assert(PasswordKeyService.MaxPasswordLength == 256, "maximum password length is 256");
     Assert(Argon2ExecutionProfile.Default.Iterations == 4, "default Argon2 iteration count is exactly four");
     Assert(Argon2ExecutionProfile.Default.Parallelism == 4, "default Argon2 parallelism is portable and not CPU-dependent");
     // Memory is not part of the execution profile: v11 derives it from PMI16.
@@ -2039,7 +2176,13 @@ static async Task RunEntropyGeneratorTestsAsync()
     PasswordPolicyAnalysis nonHexAnalysis = PasswordKeyService.AnalyzeUserPassword("A1b2C3d4E5f6A1b2C3d4E5f6", generatedPasswordA, generatedPasswordB);
     Assert(nonHexAnalysis.Violations.Contains(PasswordPolicyViolation.NotEnoughNonHexCharacters), "hexadecimal-only user password does not satisfy non-hex requirement");
 
-    KdfSalts salts = new(new byte[64], new byte[64], null, null);
+    // Fixed but distinct: the derivation refuses an identical salt pair, and
+    // these comparisons only need the pair to stay the same across derivations.
+    KdfSalts salts = new(
+        [.. Enumerable.Repeat((byte)0x11, KdfSalts.SaltBytes)],
+        [.. Enumerable.Repeat((byte)0x22, KdfSalts.SaltBytes)],
+        null,
+        null);
     using ContainerKeyDerivation.MasterResult first = ContainerKeyDerivation.DeriveMaster(
         EncryptionSuiteCatalog.Get(EncryptionSuite.Kalyna512_512),
         TestConstants.TestUserPassword,
@@ -2094,9 +2237,23 @@ static async Task RunEntropyGeneratorTestsAsync()
     using RoleKeyMaterial kalynaKeys = SuiteKeySchedule.DeriveSuiteKeys(first.Master.Bytes, EncryptionSuiteCatalog.Get(EncryptionSuite.Kalyna512_512));
     using RoleKeyMaterial threefishKeys = SuiteKeySchedule.DeriveSuiteKeys(first.Master.Bytes, EncryptionSuiteCatalog.Get(EncryptionSuite.Threefish1024));
     using RoleKeyMaterial paranoiaKeys = SuiteKeySchedule.DeriveSuiteKeys(first.Master.Bytes, EncryptionSuiteCatalog.Get(EncryptionSuite.ParanoiaCascade));
-    Assert(kalynaKeys.EncryptionKey.Bytes.Length == 64 && kalynaKeys.Sha3MacKey.Bytes.Length == 64 && kalynaKeys.SkeinMacKey.Bytes.Length == 128, "Kalyna derives 64-byte cipher, 64-byte SHA3 MAC, and 128-byte Skein MAC keys");
-    Assert(threefishKeys.EncryptionKey.Bytes.Length == 128 && threefishKeys.Sha3MacKey.Bytes.Length == 64 && threefishKeys.SkeinMacKey.Bytes.Length == 128, "Threefish derives 128-byte cipher, 64-byte SHA3 MAC, and 128-byte Skein MAC keys");
-    Assert(paranoiaKeys.EncryptionKey.Bytes.Length == 192 && paranoiaKeys.Sha3MacKey.Bytes.Length == 64 && paranoiaKeys.SkeinMacKey.Bytes.Length == 128, "Paranoia derives 192-byte cipher, 64-byte SHA3 MAC, and 128-byte Skein MAC keys");
+    // The widths belong to the suite, so read them from the catalogue rather
+    // than restating them: the Paranoia cascade has already grown from three
+    // ciphers to six, and its key width grew with it.
+    foreach ((RoleKeyMaterial keys, EncryptionSuite suite) in new[]
+    {
+        (kalynaKeys, EncryptionSuite.Kalyna512_512),
+        (threefishKeys, EncryptionSuite.Threefish1024),
+        (paranoiaKeys, EncryptionSuite.ParanoiaCascade),
+    })
+    {
+        EncryptionSuiteParameters suiteWidths = EncryptionSuiteCatalog.Get(suite);
+        Assert(
+            keys.EncryptionKey.Bytes.Length == suiteWidths.EncryptionKeyBytes
+            && keys.Sha3MacKey.Bytes.Length == suiteWidths.Sha3MacKeyBytes
+            && keys.SkeinMacKey.Bytes.Length == suiteWidths.SkeinMacKeyBytes,
+            $"{suite} derives the cipher, SHA3 MAC and Skein MAC key widths its catalogue entry declares");
+    }
 }
 
 static void RunMldsa87ReferenceTests()
@@ -2416,7 +2573,10 @@ static byte[] BouncySkeinMac(byte[] key, byte[] data)
 
 static async Task RunArgon2WorkingSetStressAsync(int repetitions)
 {
-    string argon2Exe = Path.Combine(Environment.CurrentDirectory, "tools", "argon2.exe");
+    // Copied next to the test assembly by the project file. Resolving it
+    // through the working directory only worked when the run happened to be
+    // launched from the repository root.
+    string argon2Exe = Path.Combine(AppContext.BaseDirectory, "argon2.exe");
     Assert(File.Exists(argon2Exe), "PHC Argon2 reference CLI exists for working-set stress");
 
     byte[] password = "PHC-Argon2id-working-set-stress-input-2026"u8.ToArray();
@@ -2783,6 +2943,10 @@ static async Task RunPdfRoundTripTestsAsync()
             CancellationToken.None);
         Assert(encryptedAddResult.Succeeded, "streaming ZPAQ add into encrypted container");
         Assert(!preparedPdfEntropy.HasPendingEncryptionParameters, "sample-PDF encryption consumes its prepared salt and nonce exactly once");
+        // Last use. It keeps both factors in locked pages, so it has to be
+        // released here rather than at the end of the method: the lock-accounting
+        // baseline is checked once both roundtrips are done.
+        preparedPdfEntropy.Dispose();
         Assert(await kalyna.LooksEncryptedAsync(encryptedArchive, CancellationToken.None), "encrypted container magic");
         AssertContainerHeader(encryptedArchive, EncryptionSuite.Kalyna512_512);
         KalynaContainerInfo info = await kalyna.ReadContainerInfoAsync(encryptedArchive, CancellationToken.None);
@@ -2827,12 +2991,23 @@ static async Task RunPdfRoundTripTestsAsync()
             CryptographicOperations.ZeroMemory(existingAfter);
         }
 
-        string invalidSaltBitsArchive = Path.Combine(root, "invalid-salt-bits.kzpaq");
-        File.Copy(encryptedArchive, invalidSaltBitsArchive);
-        ReplaceContainerHeaderToken(invalidSaltBitsArchive, "\"SaltBits\":512", "\"SaltBits\":511");
+        // v11 carries no salt-width field, so the old SaltBits mutation has no
+        // counterpart. What the header does guarantee is that the two round-one
+        // salts differ: equal salts would put both Argon2id branches of the same
+        // round on one initial hash input, which is what separate salt pools
+        // exist to prevent.
+        string duplicateSaltArchive = Path.Combine(root, "duplicate-round1-salt.kzpaq");
+        File.Copy(encryptedArchive, duplicateSaltArchive);
+        string rawSha3Round1Salt = ReadRawContainerHeaderString(duplicateSaltArchive, "SaltSha3Round1");
+        string rawSkeinRound1Salt = ReadRawContainerHeaderString(duplicateSaltArchive, "SaltSkeinRound1");
+        Assert(rawSha3Round1Salt != rawSkeinRound1Salt, "a freshly written container uses two different round-one salts");
+        ReplaceContainerHeaderToken(
+            duplicateSaltArchive,
+            $"\"SaltSha3Round1\":\"{rawSha3Round1Salt}\"",
+            $"\"SaltSha3Round1\":\"{rawSkeinRound1Salt}\"");
         await AssertThrowsAsync<InvalidDataException>(
-            () => kalyna.ReadContainerInfoAsync(invalidSaltBitsArchive, CancellationToken.None),
-            "v11 container header requires a 512-bit salt declaration");
+            () => kalyna.ReadContainerInfoAsync(duplicateSaltArchive, CancellationToken.None),
+            "a container header whose two round-one salts are equal is refused");
 
         string manipulatedArgon2IterationsArchive = Path.Combine(root, "argon2-t3.kzpaq");
         File.Copy(encryptedArchive, manipulatedArgon2IterationsArchive);
@@ -2932,7 +3107,7 @@ static async Task RunPdfRoundTripTestsAsync()
         Assert(threefishInfo.Version == 11
             && threefishInfo.Suite == EncryptionSuite.Threefish1024
             && threefishInfo.NonceBits == 1024
-            && threefishInfo.SaltBits == 512,
+            && threefishInfo.SaltBits == 1024,
             "v11 Threefish suite metadata");
 
         ProcessResult threefishList = await zpaq.ListStreamingAsync(
@@ -3436,13 +3611,15 @@ static async Task RunRecoveryTestsAsync()
         Assert(
             TestNativeFileLinks.CreateHardLink(hostileSidecarLink, hardLinkTarget, nint.Zero),
             "test fixture creates a hostile hard-linked KPAR2 target");
-        await AssertThrowsAsync<IOException>(
-            () => recovery.CreateAsync(hardLinkArchive, null, CancellationToken.None),
-            "secure KPAR2 replacement refuses a sidecar path with multiple hard links");
+        // The replacement is bound to the object it verified, so a second name
+        // at the sidecar path is unlinked rather than refused. What has to hold
+        // either way is the property this fixture exists for: nothing may be
+        // written through the other name.
+        await recovery.CreateAsync(hardLinkArchive, null, CancellationToken.None);
         byte[] hardLinkTargetAfterHash = await Sha3FileAsync(hardLinkTarget);
         Assert(
             CryptographicOperations.FixedTimeEquals(hardLinkTargetHash, hardLinkTargetAfterHash),
-            "rejected hard-linked sidecar target remains byte-for-byte unchanged");
+            "the file behind a hard-linked sidecar path remains byte-for-byte unchanged");
         CryptographicOperations.ZeroMemory(hardLinkTargetHash);
         CryptographicOperations.ZeroMemory(hardLinkTargetAfterHash);
         File.Delete(hostileSidecarLink);
@@ -3952,10 +4129,13 @@ static async Task AssertPdfReadableAsync(string pdfPath, string message, int? ex
 
 static string ResolveToolOnPath(params string[] names)
 {
+    // Absolute paths into one developer's package cache used to sit in front
+    // of this list. They resolved on exactly one machine and carried that
+    // account name into a public repository, so the search now starts beside
+    // the test assembly and otherwise relies on PATH.
     string[] searchRoots =
     [
-        @"C:\Users\Michael\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\poppler\Library\bin",
-        @"C:\Users\Michael\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin",
+        AppContext.BaseDirectory,
         Environment.CurrentDirectory,
     ];
 
@@ -4051,7 +4231,7 @@ static void AssertContainerHeader(
     using JsonDocument header = JsonDocument.Parse(headerBytes);
     JsonElement root = header.RootElement;
     EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.Get(expectedSuite);
-    Assert(root.GetProperty("Version").GetInt32() == 7, "container version 7");
+    Assert(root.GetProperty("Version").GetInt32() == 11, "container version 11");
     Assert(root.GetProperty("Algorithm").GetString() == parameters.Algorithm, "container algorithm label");
     Assert(root.GetProperty("BlockBits").GetInt32() == parameters.BlockBytes * 8, "container block-size label");
     Assert(root.GetProperty("CounterEndian").GetString() == EncryptionSuiteCatalog.CounterEndian, "container counter byte order");
@@ -4060,17 +4240,24 @@ static void AssertContainerHeader(
     Assert(root.GetProperty("Sha3TagBits").GetInt32() == 512, "container HMAC-SHA3-512 tag size");
     Assert(root.GetProperty("SkeinMacKeyBits").GetInt32() == parameters.SkeinMacKeyBytes * 8, "container Skein MAC-key size");
     Assert(root.GetProperty("SkeinTagBits").GetInt32() == 1024, "container Skein-1024 MAC tag size");
-    Assert(root.GetProperty("PasswordMode").GetString() == "UserPassword+GeneratedHex512x2", "container password mode label");
+    Assert(root.GetProperty("PasswordMode").GetString() == V11MasterKdf.PasswordMode, "container password mode label");
     Assert(root.GetProperty("KdfInputMode").GetString() == V11MasterKdf.KdfInputMode, "container v11 split-SHA3 KDF input label");
     Assert(root.GetProperty("GeneratedPasswordBits").GetInt32() == 1024, "container generated-password bit label");
     Assert(root.GetProperty("GeneratedPasswordFactorCount").GetInt32() == 2, "container generated-password factor count");
-    Assert(root.GetProperty("SaltBits").GetInt32() == 512, "container salt bit label");
-    Assert(Convert.FromBase64String(root.GetProperty("Salt").GetString()!).Length == 64, "container salt is 64 bytes / 512 bit");
+    byte[] sha3Round1Salt = Convert.FromBase64String(root.GetProperty("SaltSha3Round1").GetString()!);
+    byte[] skeinRound1Salt = Convert.FromBase64String(root.GetProperty("SaltSkeinRound1").GetString()!);
+    Assert(sha3Round1Salt.Length == 64 && skeinRound1Salt.Length == 64, "container carries a 512-bit SHA3 and Skein salt for round one");
+    Assert(!sha3Round1Salt.SequenceEqual(skeinRound1Salt), "the two round-one salts differ from each other");
+    bool expectsSecondRound = parameters.UsesTwoKdfRounds;
+    Assert(
+        (root.GetProperty("SaltSha3Round2").ValueKind != JsonValueKind.Null) == expectsSecondRound
+        && (root.GetProperty("SaltSkeinRound2").ValueKind != JsonValueKind.Null) == expectsSecondRound,
+        "round-two salts are present exactly for the suites that derive a second round");
     Assert(root.GetProperty("NonceBits").GetInt32() == parameters.NonceBytes * 8, "container nonce bit label");
     Assert(Convert.FromBase64String(root.GetProperty("Nonce").GetString()!).Length == parameters.NonceBytes, "container nonce length");
     Assert(root.GetProperty("TweakBits").GetInt32() == parameters.TweakBytes * 8, "container tweak bit label");
     Assert(
-        root.GetProperty("TweakMode").GetString() == (expectedSuite == EncryptionSuite.Threefish1024 ? EncryptionSuiteCatalog.ThreefishTweakMode : "None"),
+        root.GetProperty("TweakMode").GetString() == (parameters.TweakBytes > 0 ? EncryptionSuiteCatalog.ThreefishTweakMode : "None"),
         "container tweak derivation mode");
     if (parameters.TweakBytes == 0)
     {
@@ -4081,11 +4268,35 @@ static void AssertContainerHeader(
         Assert(Convert.FromBase64String(root.GetProperty("Tweak").GetString()!).Length == parameters.TweakBytes, "Threefish tweak length");
     }
 
-    Assert(root.GetProperty("Argon2OutputBits").GetInt32() == parameters.DerivedKeyBytes * 8, "suite-specific Argon2 output length");
-    Assert(root.GetProperty("Argon2MemoryKiB").GetInt32() == 1024 * 1024, "Argon2 memory profile is exactly 1 GiB");
-    Assert(root.GetProperty("Argon2Iterations").GetInt32() == 4, "Argon2 iteration profile");
+    Assert(root.GetProperty("KdfBranchOutputBits").GetInt32() == 512, "container branch output width");
+    Assert(root.GetProperty("MasterKeyBits").GetInt32() == 1024, "container master key width");
+    Assert(root.GetProperty("KdfExecutionMode").GetString() == "Sequential", "container KDF execution mode");
+    Assert(root.GetProperty("KdfMemoryMode").GetString() == "PMI16", "container KDF memory mode");
+    // Under v11 the memory size is the profile's, not the header's: the field
+    // stays at zero and PMI16 above is what states how memory is chosen.
+    Assert(root.GetProperty("Argon2MemoryKiB").GetInt32() == 0, "the v11 header states no fixed Argon2 memory size");
+    Assert(root.GetProperty("Argon2Iterations").GetInt32() == (int)V11MasterKdf.Iterations, "Argon2 iteration profile");
     Assert(root.GetProperty("Argon2Parallelism").GetInt32() == expectedArgon2Parallelism, "Argon2 parallelism profile");
     Assert(input.Length - input.Position > 64 + 128, "container has both authentication tags and payload");
+}
+
+// Returns the value exactly as it stands in the header bytes. The decoded
+// JSON value is not usable for a byte-level mutation: the serializer writes
+// Base64 "+" as +, so the decoded form does not occur in the file.
+static string ReadRawContainerHeaderString(string path, string propertyName)
+{
+    byte[] fileBytes = File.ReadAllBytes(path);
+    Assert(fileBytes.Length >= 7 + sizeof(int), "container-header read input has a complete prefix");
+    int headerLength = BinaryPrimitives.ReadInt32LittleEndian(fileBytes.AsSpan(7, sizeof(int)));
+    Assert(headerLength > 0 && 7 + sizeof(int) + headerLength <= fileBytes.Length, "container-header read input has a bounded header");
+    string headerText = Encoding.UTF8.GetString(fileBytes, 7 + sizeof(int), headerLength);
+    string prefix = $"\"{propertyName}\":\"";
+    int start = headerText.IndexOf(prefix, StringComparison.Ordinal);
+    Assert(start >= 0, $"container header contains {propertyName}");
+    start += prefix.Length;
+    int end = headerText.IndexOf('"', start);
+    Assert(end > start, $"container header string {propertyName} is terminated");
+    return headerText[start..end];
 }
 
 static void ReplaceContainerHeaderToken(string path, string oldToken, string newToken)
@@ -4280,6 +4491,304 @@ static DragEventArgs CreateDragArgs(UIElement target, string[] paths)
         culture: null)!;
 }
 
+// The shipped fast cipher paths against the reference implementations that sit
+// beside them in the same library, over buffers the size of a real archive.
+//
+// Both libraries verify themselves at start-up, but a self-check runs on a few
+// blocks under a handful of keys. What it cannot reach is the mode wrapped
+// around the block function: the counter arithmetic across a quarter of a
+// gigabyte, the carry out of a counter that starts near its own limit, the tail
+// block of a length that is not a multiple of the block size, and the
+// boundaries where the driver switches from one thread to many and from one
+// claimed chunk to the next. Those are where a fast path that passes every
+// vector still writes a container that will not open.
+//
+// The macOS suite carries the same two tests. They are deliberately duplicated
+// rather than shared: the two suites have no common harness, and a check this
+// close to the ciphertext is worth having twice.
+static void RunFastPathDifferentialTests()
+{
+    const int LargeBytes = 256 * 1024 * 1024;
+    const int ChunkBytes = 256 * 1024;
+    const int ParallelThresholdBytes = 1024 * 1024;
+    int[] boundaryLengths =
+    [
+        1, 63, 64, 65,
+        ChunkBytes - 1, ChunkBytes, ChunkBytes + 1,
+        ParallelThresholdBytes - 1, ParallelThresholdBytes, ParallelThresholdBytes + 1,
+        (4 * 1024 * 1024) + 63,
+    ];
+
+    Assert(NativeKalyna.IsAvailable(), $"Kalyna reference library unavailable: {NativeKalyna.LastLoadError}");
+    Assert(NativeChaChaPoly.IsAvailable(), $"ChaCha20-Poly1305 library unavailable: {NativeChaChaPoly.LastLoadError}");
+
+    byte[] plaintext = DerivedBytesForTest(LargeBytes + 37, 0xABCDEF);
+    byte[] fromReference = new byte[plaintext.Length];
+    byte[] fromFast = new byte[plaintext.Length];
+
+    // Four places in the counter's range. The last three start high enough that
+    // a 256 MiB run carries out of the low 32 and 40 bits, which is the
+    // arithmetic a worker has to reproduce when it jumps to the block it
+    // claimed rather than walking there.
+    (string Name, ulong KeySeed, ulong NonceSeed, ulong CounterStart, int Length)[] kalynaCases =
+    [
+        ("counter 0", 1, 1001, 0, LargeBytes),
+        ("counter 2^32-1", 2, 1002, 0xFFFFFFFFUL, LargeBytes),
+        ("counter crossing 2^40", 3, 1003, 0xFFFFFFFFFFUL - 7, LargeBytes),
+        ("counter at 2^63", 4, 1004, 1UL << 63, LargeBytes),
+        ("256 MiB + 37, unaligned tail", 5, 1005, 0x0123456789ABCDEFUL, LargeBytes + 37),
+    ];
+
+    foreach ((string name, ulong keySeed, ulong nonceSeed, ulong counterStart, int length) in kalynaCases)
+    {
+        byte[] key = DerivedBytesForTest(64, keySeed);
+        byte[] counter = CounterBlockForTest(nonceSeed, counterStart);
+        RequireReferenceExport(() => NativeKalyna.XCryptCtr512Reference(key, counter, plaintext, fromReference, length));
+        NativeKalyna.XCryptCtr512(key, counter, plaintext, fromFast, length);
+        RequireIdenticalForTest(fromReference, fromFast, length, $"Kalyna {name}");
+    }
+
+    byte[] boundaryKey = DerivedBytesForTest(64, 9);
+    byte[] boundaryCounter = CounterBlockForTest(9009, 0xFFFFFFFEUL);
+    foreach (int length in boundaryLengths)
+    {
+        RequireReferenceExport(() => NativeKalyna.XCryptCtr512Reference(boundaryKey, boundaryCounter, plaintext, fromReference, length));
+        NativeKalyna.XCryptCtr512(boundaryKey, boundaryCounter, plaintext, fromFast, length);
+        RequireIdenticalForTest(fromReference, fromFast, length, $"Kalyna boundary length {length}");
+    }
+
+    const uint LargeBlocks = LargeBytes / 64;
+    (string Name, ulong KeySeed, ulong NonceSeed, uint Counter, int Length)[] chachaCases =
+    [
+        ("counter 0", 1, 2001, 0, LargeBytes),
+        ("counter 1, where the AEAD starts", 2, 2002, 1, LargeBytes),
+        ("counter 2^31-1", 3, 2003, 0x7FFFFFFF, LargeBytes),
+        ("ending one block below 2^32", 4, 2004, uint.MaxValue - LargeBlocks, LargeBytes),
+        ("256 MiB + 37, unaligned tail", 5, 2005, 12345, LargeBytes + 37),
+    ];
+
+    foreach ((string name, ulong keySeed, ulong nonceSeed, uint counter, int length) in chachaCases)
+    {
+        byte[] key = DerivedBytesForTest(32, keySeed);
+        byte[] nonce = DerivedBytesForTest(12, nonceSeed);
+        int serialResult = 0;
+        RequireReferenceExport(() => serialResult = NativeChaChaPoly.XCryptSerial(key, nonce, counter, plaintext, fromReference, length));
+        int parallelResult = NativeChaChaPoly.XCrypt(key, nonce, counter, plaintext, fromFast, length);
+        Assert(serialResult == 0 && parallelResult == 0,
+            $"ChaCha20 {name}: serial returned {serialResult}, worker split returned {parallelResult}.");
+        RequireIdenticalForTest(fromReference, fromFast, length, $"ChaCha20 {name}");
+    }
+
+    byte[] chachaBoundaryKey = DerivedBytesForTest(32, 19);
+    byte[] chachaBoundaryNonce = DerivedBytesForTest(12, 1919);
+    foreach (int length in boundaryLengths)
+    {
+        int serialResult = 0;
+        RequireReferenceExport(() => serialResult = NativeChaChaPoly.XCryptSerial(chachaBoundaryKey, chachaBoundaryNonce, 7, plaintext, fromReference, length));
+        int parallelResult = NativeChaChaPoly.XCrypt(chachaBoundaryKey, chachaBoundaryNonce, 7, plaintext, fromFast, length);
+        Assert(serialResult == 0 && parallelResult == 0,
+            $"ChaCha20 boundary length {length}: serial {serialResult}, split {parallelResult}.");
+        RequireIdenticalForTest(fromReference, fromFast, length, $"ChaCha20 boundary length {length}");
+    }
+
+    // RFC 8439 gives the block counter 32 bits. A run that would pass its end
+    // must be refused, not served with keystream that repeats under the same
+    // key: two plaintext blocks XORed with one keystream block is a two-time
+    // pad.
+    byte[] exhaustionKey = DerivedBytesForTest(32, 99);
+    byte[] exhaustionNonce = DerivedBytesForTest(12, 98);
+    int refused = NativeChaChaPoly.XCrypt(exhaustionKey, exhaustionNonce, uint.MaxValue - 1, plaintext, fromFast, 192);
+    Assert(refused == 4, $"ChaCha20 must refuse a run that would exhaust the block counter; it returned {refused}.");
+
+    // And the split has to reproduce this library's own RFC 8439 AEAD, whose
+    // keystream starts at block 1. That ties it to the standard rather than
+    // only to the implementation it replaced.
+    const int AeadLength = 16 * 1024 * 1024;
+    byte[] aeadTag = new byte[NativeChaChaPoly.TagBytes];
+    for (int trial = 0; trial < 4; trial++)
+    {
+        byte[] key = DerivedBytesForTest(32, 3000 + (ulong)trial);
+        byte[] nonce = DerivedBytesForTest(12, 4000 + (ulong)trial);
+        NativeChaChaPoly.Encrypt(key, nonce, ReadOnlySpan<byte>.Empty, plaintext, fromReference, AeadLength, aeadTag);
+        int parallelResult = NativeChaChaPoly.XCrypt(key, nonce, 1, plaintext, fromFast, AeadLength);
+        Assert(parallelResult == 0, $"ChaCha20 AEAD cross-check trial {trial}: the worker split returned {parallelResult}.");
+        RequireIdenticalForTest(fromReference, fromFast, AeadLength, $"ChaCha20 against the AEAD, trial {trial}");
+    }
+}
+
+// The authenticated pair against the published vector and its own rules.
+//
+// The framing - associated data padded to 16, ciphertext padded to 16, then
+// both lengths little-endian - is assembled in chachapoly_ref_export.cpp rather
+// than taken from Crypto++, so the vector in RFC 8439 section 2.8.2 is what
+// holds it. A padding or length-encoding slip produces a tag that is merely
+// different, and nothing else in this suite would notice, because both sides of
+// a round trip would be wrong in the same way.
+static void RunAeadFramingTests()
+{
+    Assert(NativeChaChaPoly.IsAvailable(), $"ChaCha20-Poly1305 library unavailable: {NativeChaChaPoly.LastLoadError}");
+
+    byte[] key = new byte[32];
+    for (int i = 0; i < key.Length; i++)
+    {
+        key[i] = (byte)(0x80 + i);
+    }
+
+    byte[] nonce = Convert.FromHexString("070000004041424344454647");
+    byte[] associated = Convert.FromHexString("50515253c0c1c2c3c4c5c6c7");
+    byte[] plaintext = System.Text.Encoding.ASCII.GetBytes(
+        "Ladies and Gentlemen of the class of '99: If I could offer you only "
+        + "one tip for the future, sunscreen would be it.");
+    byte[] expectedCiphertext = Convert.FromHexString(
+        "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d6"
+        + "3dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b36"
+        + "92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc"
+        + "3ff4def08e4b7a9de576d26586cec64b6116");
+    byte[] expectedTag = Convert.FromHexString("1ae10b594f09e26a7e902ecbd0600691");
+
+    Assert(plaintext.Length == 114, "The RFC 8439 vector plaintext is 114 bytes.");
+
+    byte[] ciphertext = new byte[plaintext.Length];
+    byte[] tag = new byte[NativeChaChaPoly.TagBytes];
+    NativeChaChaPoly.Encrypt(key, nonce, associated, plaintext, ciphertext, plaintext.Length, tag);
+    Assert(ciphertext.AsSpan().SequenceEqual(expectedCiphertext),
+        "ChaCha20-Poly1305 did not reproduce the RFC 8439 section 2.8.2 ciphertext.");
+    Assert(tag.AsSpan().SequenceEqual(expectedTag),
+        "ChaCha20-Poly1305 did not reproduce the RFC 8439 section 2.8.2 tag.");
+
+    byte[] recovered = new byte[plaintext.Length];
+    NativeChaChaPoly.Decrypt(key, nonce, associated, ciphertext, recovered, ciphertext.Length, tag);
+    Assert(recovered.AsSpan().SequenceEqual(plaintext),
+        "ChaCha20-Poly1305 did not recover the RFC 8439 vector plaintext.");
+
+    RequireAeadRejectedForTest("a flipped tag bit", key, nonce, associated, ciphertext, tag, mutateTag: true);
+    RequireAeadRejectedForTest("a flipped ciphertext bit", key, nonce, associated, ciphertext, tag, mutateCiphertext: true);
+    RequireAeadRejectedForTest("altered associated data", key, nonce, associated, ciphertext, tag, mutateAssociated: true);
+
+    // The container hands the same buffer in and out for both directions. The
+    // tag covers the ciphertext, so encryption has to take it after writing and
+    // decryption has to take it before overwriting; getting either backwards
+    // works out-of-place and fails only here.
+    byte[] scratch = plaintext.ToArray();
+    byte[] inPlaceTag = new byte[NativeChaChaPoly.TagBytes];
+    NativeChaChaPoly.Encrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
+    Assert(scratch.AsSpan().SequenceEqual(expectedCiphertext) && inPlaceTag.AsSpan().SequenceEqual(expectedTag),
+        "In-place ChaCha20-Poly1305 encryption did not match the out-of-place result.");
+    NativeChaChaPoly.Decrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
+    Assert(scratch.AsSpan().SequenceEqual(plaintext),
+        "In-place ChaCha20-Poly1305 decryption did not recover the plaintext.");
+}
+
+// The two differential tests need exports that only they call. A reference DLL
+// built before those exports existed is not a broken build, it is an old one,
+// and saying so is more useful than an EntryPointNotFoundException.
+static void RequireReferenceExport(Action action)
+{
+    try
+    {
+        action();
+    }
+    catch (EntryPointNotFoundException exception)
+    {
+        throw new InvalidOperationException(
+            "The reference DLL in tools\\ predates the exports the differential tests need. "
+            + "Re-run tools\\Build-Native.cmd on a machine with MSVC and try again.",
+            exception);
+    }
+}
+
+static void RequireAeadRejectedForTest(
+    string what,
+    byte[] key,
+    byte[] nonce,
+    byte[] associated,
+    byte[] ciphertext,
+    byte[] tag,
+    bool mutateTag = false,
+    bool mutateCiphertext = false,
+    bool mutateAssociated = false)
+{
+    byte[] usedTag = tag.ToArray();
+    byte[] usedCiphertext = ciphertext.ToArray();
+    byte[] usedAssociated = associated.ToArray();
+    if (mutateTag) { usedTag[9] ^= 0x40; }
+    if (mutateCiphertext) { usedCiphertext[usedCiphertext.Length / 2] ^= 0x01; }
+    if (mutateAssociated) { usedAssociated[3] ^= 0x80; }
+
+    byte[] output = new byte[usedCiphertext.Length];
+    output.AsSpan().Fill(0xCC);
+    try
+    {
+        NativeChaChaPoly.Decrypt(key, nonce, usedAssociated, usedCiphertext, output, usedCiphertext.Length, usedTag);
+    }
+    catch (CryptographicException)
+    {
+        foreach (byte value in output)
+        {
+            Assert(value == 0xCC, $"ChaCha20-Poly1305 wrote into the caller's buffer while refusing {what}.");
+        }
+
+        return;
+    }
+
+    Assert(false, $"ChaCha20-Poly1305 accepted {what}.");
+}
+
+static void RequireIdenticalForTest(byte[] reference, byte[] fast, int length, string label)
+{
+    // Not SequenceEqual: on a mismatch the offset is what says whether the fault
+    // is in the block function, in the tail, or at a chunk boundary.
+    for (int i = 0; i < length; i++)
+    {
+        if (reference[i] != fast[i])
+        {
+            throw new InvalidOperationException(
+                $"{label}: the fast path and the reference differ at byte {i} "
+                + $"(reference {reference[i]:x2}, fast {fast[i]:x2}) over {length} bytes.");
+        }
+    }
+}
+
+static byte[] CounterBlockForTest(ulong nonceSeed, ulong counterStart)
+{
+    byte[] block = new byte[64];
+    FillDerivedForTest(block.AsSpan(0, 56), nonceSeed);
+    for (int i = 0; i < 8; i++)
+    {
+        block[63 - i] = (byte)(counterStart >> (i * 8));
+    }
+
+    return block;
+}
+
+static byte[] DerivedBytesForTest(int length, ulong seed)
+{
+    byte[] buffer = new byte[length];
+    FillDerivedForTest(buffer, seed);
+    return buffer;
+}
+
+static void FillDerivedForTest(Span<byte> destination, ulong seed)
+{
+    for (int i = 0; i < destination.Length; i += 8)
+    {
+        ulong word = MixForTest(seed + (ulong)(i / 8));
+        int count = Math.Min(8, destination.Length - i);
+        for (int b = 0; b < count; b++)
+        {
+            destination[i + b] = (byte)(word >> (b * 8));
+        }
+    }
+}
+
+static ulong MixForTest(ulong value)
+{
+    value += 0x9E3779B97F4A7C15UL;
+    value = (value ^ (value >> 30)) * 0xBF58476D1CE4E5B9UL;
+    value = (value ^ (value >> 27)) * 0x94D049BB133111EBUL;
+    return value ^ (value >> 31);
+}
+
 sealed class ShortReadStream : Stream
 {
     private readonly byte[] _data;
@@ -4373,5 +4882,7 @@ static class TestNativeFileLinks
 internal static class TestConstants
 {
     public const string TestUserPassword = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
-    public const string TestPin = "24681357";
+    // 24681357 ended on the 3-5-7 keypad diagonal, which the creation policy
+    // has refused since the geometric rule was added.
+    public const string TestPin = "29471608";
 }

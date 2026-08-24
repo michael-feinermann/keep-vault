@@ -515,7 +515,7 @@ internal static unsafe class NativeChaChaPoly
                 $"ChaCha20 requires a {KeyBytes}-byte key, a {NonceBytes}-byte nonce, and sufficiently large buffers.");
         }
 
-        EnsureLoaded();
+        EnsureRawKeystreamLoaded();
         fixed (byte* keyPointer = key)
         fixed (byte* noncePointer = nonce)
         fixed (byte* inputPointer = input)
@@ -559,6 +559,34 @@ internal static unsafe class NativeChaChaPoly
         });
     }
 
+    /// <summary>
+    /// Resolves the raw keystream exports, which only the tests call.
+    /// </summary>
+    /// <remarks>
+    /// Kept out of <see cref="EnsureLoaded"/> for the same reason as Kalyna's
+    /// reference export: a library built before these existed must still be
+    /// able to encrypt, and a missing test-only symbol must not be able to
+    /// disable the application.
+    /// </remarks>
+    private static void EnsureRawKeystreamLoaded()
+    {
+        EnsureLoaded();
+        lock (LoadGate)
+        {
+            if (_xcrypt == null)
+            {
+                _xcrypt = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "chacha20_xcrypt");
+            }
+
+            if (_xcryptSerial == null)
+            {
+                _xcryptSerial = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "chacha20_xcrypt_serial");
+            }
+        }
+    }
+
     private static void EnsureLoaded()
     {
         lock (LoadGate)
@@ -575,10 +603,6 @@ internal static unsafe class NativeChaChaPoly
                     NativeLibrary.GetExport(handle, "chacha20poly1305_encrypt");
                 _decrypt = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int>)
                     NativeLibrary.GetExport(handle, "chacha20poly1305_decrypt");
-                _xcrypt = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
-                    NativeLibrary.GetExport(handle, "chacha20_xcrypt");
-                _xcryptSerial = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
-                    NativeLibrary.GetExport(handle, "chacha20_xcrypt_serial");
                 _libraryHandle = handle;
             }
             catch
@@ -586,8 +610,6 @@ internal static unsafe class NativeChaChaPoly
                 NativeLibrary.Free(handle);
                 _encrypt = null;
                 _decrypt = null;
-                _xcrypt = null;
-                _xcryptSerial = null;
                 throw;
             }
         }

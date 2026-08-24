@@ -309,9 +309,9 @@
 
                             <Border Margin="0,22,0,0" Padding="14" Background="#0B1120" CornerRadius="8" BorderBrush="#334155" BorderThickness="1">
                                 <StackPanel>
-                                    <TextBlock x:Name="ExtractPasswordTitle" Text="Password for extraction" FontSize="16" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="ExtractPasswordTitle" Text="Four factors for extraction" FontSize="16" FontWeight="SemiBold" />
                                     <TextBlock x:Name="ExtractPasswordHelpText"
-                                               Text="Enter the user password and both generated hexadecimal passwords from the separately stored key sheets."
+                                               Text="Enter the user password, the PIN and both factors from the separately stored key sheets."
                                                Foreground="#94A3B8"
                                                TextWrapping="Wrap"
                                                Margin="0,6,0,10" />

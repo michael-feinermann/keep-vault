@@ -51,7 +51,52 @@ internal static class FastPathDifferentialTests
             ChaChaAgainstSerialAsync, TestResource.CpuHeavy, "Crypto"),
         new("ChaCha20-Poly1305 framing against RFC 8439",
             AeadFramingAsync, TestResource.Light, "Crypto"),
+        new("the key sheet prints every character of the factor",
+            KeySheetFactorIsCompleteAsync, TestResource.Light, "Packaging"),
     ];
+
+    /// <summary>
+    /// The printed factor has to be the whole factor.
+    /// </summary>
+    /// <remarks>
+    /// The sheet used to lay the block out in a rectangle of a hand-picked
+    /// height, one line short of what a 1024-bit factor needs. XTextFormatter
+    /// drops lines that do not fit without saying so, so the sheet printed 224
+    /// of 256 hexadecimal characters and looked entirely normal. The QR codes
+    /// still held the whole factor, which is why nothing else noticed.
+    ///
+    /// Two things are checked. The grouping must lose nothing, and the height
+    /// the layout reserves must cover every line the grouping produced — which
+    /// is the property the old constant violated.
+    /// </remarks>
+    private static Task KeySheetFactorIsCompleteAsync()
+    {
+        string factor = string.Concat(Enumerable.Repeat("0123456789ABCDEF", 16));
+        MacComprehensiveTests.Require(factor.Length == 256, "A 1024-bit factor is 256 hexadecimal characters.");
+
+        string grouped = KeySheetService.GroupGeneratedPasswordForSheet(factor);
+        string[] lines = grouped.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        string rejoined = string.Concat(lines.Select(line => line.Replace(" ", string.Empty).Trim()));
+
+        MacComprehensiveTests.Require(
+            string.Equals(rejoined, factor, StringComparison.Ordinal),
+            $"The sheet grouping changed the factor: {rejoined.Length} characters instead of {factor.Length}.");
+        MacComprehensiveTests.Require(
+            lines.Length == 7,
+            $"A 256-character factor is seven rows of five groups; the grouping produced {lines.Length}.");
+
+        KeySheetService.EnsurePdfFontResolver();
+        var monoFont = new PdfSharp.Drawing.XFont("Courier New", 14, PdfSharp.Drawing.XFontStyleEx.Bold);
+        double reserved = KeySheetService.FactorBlockHeight(monoFont, grouped);
+        double needed = lines.Length * monoFont.GetHeight();
+        MacComprehensiveTests.Require(
+            reserved >= needed,
+            $"The factor block reserves {reserved:F1}pt for {lines.Length} lines that need {needed:F1}pt; "
+            + "the last lines would be dropped without a word.");
+
+        Console.WriteLine($"    all {factor.Length} characters survive the sheet grouping, {lines.Length} lines, {reserved:F1}pt reserved");
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// A counter block for Kalyna, whose whole 64-byte nonce is the counter.
