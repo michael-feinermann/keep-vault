@@ -82,11 +82,11 @@ internal static class FastPathDifferentialTests
             string.Equals(rejoined, factor, StringComparison.Ordinal),
             $"The sheet grouping changed the factor: {rejoined.Length} characters instead of {factor.Length}.");
         MacComprehensiveTests.Require(
-            lines.Length == 8,
-            $"A 256-character factor is eight lines of four groups; the grouping produced {lines.Length}.");
+            lines.Length == 7,
+            $"A 256-character factor is seven rows of five groups; the grouping produced {lines.Length}.");
 
         KeySheetService.EnsurePdfFontResolver();
-        var monoFont = new PdfSharp.Drawing.XFont("Courier New", 12, PdfSharp.Drawing.XFontStyleEx.Bold);
+        var monoFont = new PdfSharp.Drawing.XFont("Courier New", 14, PdfSharp.Drawing.XFontStyleEx.Bold);
         double reserved = KeySheetService.FactorBlockHeight(monoFont, grouped);
         double needed = lines.Length * monoFont.GetHeight();
         MacComprehensiveTests.Require(

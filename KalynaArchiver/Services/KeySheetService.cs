@@ -319,9 +319,14 @@ public sealed class KeySheetService
             .Select(index => normalized.Substring(index * 8, 8))
             .ToList();
         var lines = new List<string>();
-        for (int i = 0; i < groups.Count; i += 4)
+        // Five groups to a row rather than four. A 256-character factor is 32
+        // groups, so five per row is seven rows instead of eight, and the row
+        // that saves is what pays for the larger type: this block is read by
+        // eye and typed by hand, which is the whole reason it is printed.
+        const int groupsPerRow = 5;
+        for (int i = 0; i < groups.Count; i += groupsPerRow)
         {
-            int count = Math.Min(4, groups.Count - i);
+            int count = Math.Min(groupsPerRow, groups.Count - i);
             lines.Add(string.Join(' ', groups.GetRange(i, count)));
         }
 
@@ -365,7 +370,10 @@ public sealed class KeySheetService
         var headingFont = new XFont("Segoe UI", 11, XFontStyleEx.Bold);
         var normalFont = new XFont("Segoe UI", 10);
         var warningFont = new XFont("Segoe UI", 9, XFontStyleEx.Bold);
-        var monoFont = new XFont("Consolas", 8.5);
+        // Only the factor block uses this, and it is the one thing on the sheet
+        // that gets typed in by hand, so it is set larger than the body rather
+        // than smaller.
+        var monoFont = new XFont("Consolas", 14);
         var formatter = new XTextFormatter(gfx);
 
         double margin = 42;

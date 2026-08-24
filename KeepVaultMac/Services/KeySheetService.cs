@@ -340,9 +340,14 @@ public sealed class KeySheetService
             .Select(index => normalized.Substring(index * 8, 8))
             .ToList();
         var lines = new List<string>();
-        for (int i = 0; i < groups.Count; i += 4)
+        // Five groups to a row rather than four. A 256-character factor is 32
+        // groups, so five per row is seven rows instead of eight, and the row
+        // that saves is what pays for the larger type: this block is read by
+        // eye and typed by hand, which is the whole reason it is printed.
+        const int groupsPerRow = 5;
+        for (int i = 0; i < groups.Count; i += groupsPerRow)
         {
-            int count = Math.Min(4, groups.Count - i);
+            int count = Math.Min(groupsPerRow, groups.Count - i);
             lines.Add(string.Join(' ', groups.GetRange(i, count)));
         }
         return string.Join(Environment.NewLine, lines);
@@ -426,7 +431,7 @@ public sealed class KeySheetService
     /// hexadecimal characters have to fit above the QR codes with the writing
     /// lines still present, and at the body size they did not.
     /// </remarks>
-    private const double FactorFontSize = 12;
+    private const double FactorFontSize = 14;
 
     private const string SystemConfigurationLibrary =
         "/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration";
