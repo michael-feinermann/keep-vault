@@ -150,7 +150,9 @@ extern "C" KEEPVAULT_EXPORT int chacha20poly1305_decrypt(
  * the block index the chunk begins at, so the keystream lines up with the
  * position in the stream rather than restarting per call.
  */
-extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
+/* One contiguous range, keyed at the block the range starts on. Internal:
+   the exported name below spreads a request across workers. */
+static int chacha20_range(
     const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
     const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
     std::uint32_t block_counter,
@@ -192,6 +194,162 @@ extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
     } catch (...) {
         return 5;
     }
+}
+
+/*
+ * The same keystream, produced by several workers at once.
+ *
+ * ChaCha20 numbers its 64-byte blocks and derives each one from the counter
+ * alone, so a worker that starts at block n needs nothing from the worker
+ * before it: it keys its own cipher with InitialBlock = counter + n. Ranges
+ * begin on block boundaries, which is what makes the output identical to the
+ * serial path byte for byte. The block ciphers beside it split on exactly the
+ * same reasoning.
+ *
+ * RFC 8439 gives the counter 32 bits. Past 2^32 blocks it would wrap and
+ * repeat keystream, so a request that would reach the wrap is refused rather
+ * than served quietly.
+ */
+extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
+    const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
+    const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
+    std::uint32_t block_counter,
+    const std::uint8_t* input,
+    std::uint8_t* output,
+    std::size_t length)
+{
+    constexpr std::size_t kChaChaBlockBytes = 64;
+
+    if (key == nullptr || nonce == nullptr) {
+        return 1;
+    }
+
+    if (length != 0 && (input == nullptr || output == nullptr)) {
+        return 1;
+    }
+
+    if (length == 0) {
+        return 0;
+    }
+
+    if (length > SIZE_MAX - (kChaChaBlockBytes - 1)) {
+        return 4;
+    }
+
+    const std::size_t total_blocks = (length + kChaChaBlockBytes - 1) / kChaChaBlockBytes;
+    if (total_blocks > static_cast<std::size_t>(UINT32_MAX) - block_counter) {
+        return 4;
+    }
+
+    const std::size_t chunk_blocks = keepvault::kChunkBytes / kChaChaBlockBytes;
+    std::size_t thread_count = 1;
+    if (length >= keepvault::kParallelThresholdBytes) {
+        const unsigned hardware = std::thread::hardware_concurrency();
+        thread_count = hardware == 0 ? 1 : static_cast<std::size_t>(hardware);
+        const std::size_t chunks = (total_blocks + chunk_blocks - 1) / chunk_blocks;
+        if (thread_count > chunks) {
+            thread_count = chunks;
+        }
+        if (thread_count > keepvault::kMaxThreads) {
+            thread_count = keepvault::kMaxThreads;
+        }
+        if (thread_count == 0) {
+            thread_count = 1;
+        }
+    }
+
+    if (thread_count <= 1) {
+        return chacha20_range(key, nonce, block_counter, input, output, length);
+    }
+
+    std::atomic<std::size_t> next_chunk{0};
+    std::atomic<int> failure{0};
+
+    auto worker = [&]() noexcept {
+        try {
+            for (;;) {
+                const std::size_t chunk = next_chunk.fetch_add(1, std::memory_order_relaxed);
+                const std::size_t first_block = chunk * chunk_blocks;
+                if (first_block >= total_blocks) {
+                    return;
+                }
+
+                const std::size_t offset = first_block * kChaChaBlockBytes;
+                const std::size_t span = chunk_blocks * kChaChaBlockBytes;
+                const std::size_t remaining = length - offset;
+                const std::size_t count = remaining < span ? remaining : span;
+                const std::uint32_t counter =
+                    block_counter + static_cast<std::uint32_t>(first_block);
+
+                const int result = chacha20_range(
+                    key, nonce, counter, input + offset, output + offset, count);
+                if (result != 0) {
+                    failure.store(result, std::memory_order_relaxed);
+                    return;
+                }
+            }
+        } catch (...) {
+            failure.store(3, std::memory_order_relaxed);
+        }
+    };
+
+    std::vector<std::thread> threads;
+    threads.reserve(thread_count - 1);
+    try {
+        for (std::size_t i = 1; i < thread_count; ++i) {
+            threads.emplace_back(worker);
+        }
+    } catch (...) {
+        /* Fewer threads than hoped is not an error; this one runs the rest. */
+    }
+
+    worker();
+
+    for (std::thread& thread : threads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+
+    return failure.load(std::memory_order_relaxed);
+}
+
+/*
+ * The same keystream from one thread, whatever the length.
+ *
+ * Exported for the test suite, which holds the worker-split path against it
+ * over buffers far larger than a self-check can afford, across keys, nonces and
+ * starting block counters. It is the identical range function the serial path
+ * uses, so a difference can only come from the split itself.
+ *
+ * Nothing in the application calls this.
+ */
+extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt_serial(
+    const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
+    const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
+    std::uint32_t block_counter,
+    const std::uint8_t* input,
+    std::uint8_t* output,
+    std::size_t length)
+{
+    constexpr std::size_t kChaChaBlockBytes = 64;
+
+    if (length == 0) {
+        return (key == nullptr || nonce == nullptr) ? 1 : 0;
+    }
+
+    if (length > SIZE_MAX - (kChaChaBlockBytes - 1)) {
+        return 4;
+    }
+
+    /* The same refusal as the exported path: a comparison against a keystream
+       the counter could not legitimately produce proves nothing. */
+    const std::size_t total_blocks = (length + kChaChaBlockBytes - 1) / kChaChaBlockBytes;
+    if (total_blocks > static_cast<std::size_t>(UINT32_MAX) - block_counter) {
+        return 4;
+    }
+
+    return chacha20_range(key, nonce, block_counter, input, output, length);
 }
 
 /*

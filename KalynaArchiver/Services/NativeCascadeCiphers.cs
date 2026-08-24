@@ -385,6 +385,8 @@ internal static unsafe class NativeChaChaPoly
     private static nint _libraryHandle;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int> _encrypt;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int> _decrypt;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int> _xcrypt;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int> _xcryptSerial;
 
     public static string? LastLoadError { get; private set; }
 
@@ -474,6 +476,50 @@ internal static unsafe class NativeChaChaPoly
         ThrowOnError(result);
     }
 
+    /// <summary>
+    /// Raw ChaCha20 keyed at an explicit block counter, split across workers.
+    /// </summary>
+    /// <remarks>
+    /// Exercised by the differential test rather than by the container, which
+    /// reaches ChaCha20 only through the authenticated pair above.
+    /// </remarks>
+    internal static int XCrypt(byte[] key, byte[] nonce, uint blockCounter, byte[] input, byte[] output, int length)
+    {
+        return XCrypt(key, nonce, blockCounter, input, output, length, serial: false);
+    }
+
+    /// <summary>The same keystream produced on one thread.</summary>
+    internal static int XCryptSerial(byte[] key, byte[] nonce, uint blockCounter, byte[] input, byte[] output, int length)
+    {
+        return XCrypt(key, nonce, blockCounter, input, output, length, serial: true);
+    }
+
+    /// <remarks>
+    /// Returns the native status instead of throwing: the counter-exhaustion
+    /// refusal is one of the behaviours under test, and a test that has to
+    /// catch an exception to observe it cannot tell it apart from a fault.
+    /// </remarks>
+    private static int XCrypt(byte[] key, byte[] nonce, uint blockCounter, byte[] input, byte[] output, int length, bool serial)
+    {
+        if (key.Length != KeyBytes || nonce.Length != NonceBytes
+            || length < 0 || input.Length < length || output.Length < length)
+        {
+            throw new ArgumentException(
+                $"ChaCha20 requires a {KeyBytes}-byte key, a {NonceBytes}-byte nonce, and sufficiently large buffers.");
+        }
+
+        EnsureLoaded();
+        fixed (byte* keyPointer = key)
+        fixed (byte* noncePointer = nonce)
+        fixed (byte* inputPointer = input)
+        fixed (byte* outputPointer = output)
+        {
+            return serial
+                ? _xcryptSerial(keyPointer, noncePointer, blockCounter, inputPointer, outputPointer, (nuint)length)
+                : _xcrypt(keyPointer, noncePointer, blockCounter, inputPointer, outputPointer, (nuint)length);
+        }
+    }
+
     private static void Validate(byte[] key, byte[] nonce, byte[] tag, byte[] input, byte[] output, int length)
     {
         if (key.Length != KeyBytes || nonce.Length != NonceBytes || tag.Length != TagBytes
@@ -516,6 +562,10 @@ internal static unsafe class NativeChaChaPoly
                     NativeLibrary.GetExport(handle, "chacha20poly1305_encrypt");
                 _decrypt = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int>)
                     NativeLibrary.GetExport(handle, "chacha20poly1305_decrypt");
+                _xcrypt = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
+                    NativeLibrary.GetExport(handle, "chacha20_xcrypt");
+                _xcryptSerial = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
+                    NativeLibrary.GetExport(handle, "chacha20_xcrypt_serial");
                 _libraryHandle = handle;
             }
             catch
@@ -523,6 +573,8 @@ internal static unsafe class NativeChaChaPoly
                 NativeLibrary.Free(handle);
                 _encrypt = null;
                 _decrypt = null;
+                _xcrypt = null;
+                _xcryptSerial = null;
                 throw;
             }
         }

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../external/Kalyna-reference/kalyna.h"
+#include "kalyna_fast.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -112,7 +113,8 @@ static int xcrypt_ctr_range_prepared(
     uint8_t* output,
     size_t length,
     size_t start_block,
-    size_t block_count)
+    size_t block_count,
+    int use_reference)
 {
     uint64_t counter_words[8];
     uint64_t stream_words[8];
@@ -145,7 +147,11 @@ static int xcrypt_ctr_range_prepared(
         size_t remaining = length - offset;
         size_t block = remaining < KALYNA_BLOCK_BYTES ? remaining : KALYNA_BLOCK_BYTES;
         memcpy(counter_words, counter, sizeof(counter_words));
-        KalynaEncipher(counter_words, ctx, stream_words);
+        if (use_reference) {
+            KalynaEncipher(counter_words, ctx, stream_words);
+        } else {
+            kalyna_fast_encipher_512(ctx->round_keys, counter_words, stream_words);
+        }
         memcpy(stream, stream_words, sizeof(stream));
         for (size_t i = 0; i < block; ++i) {
             output[offset + i] = input[offset + i] ^ stream[i];
@@ -199,7 +205,8 @@ static int xcrypt_ctr_range(
     uint8_t* output,
     size_t length,
     size_t start_block,
-    size_t block_count)
+    size_t block_count,
+    int use_reference)
 {
     kalyna_t* ctx = create_kalyna_context(key);
     if (ctx == NULL) {
@@ -207,7 +214,7 @@ static int xcrypt_ctr_range(
     }
 
     int result = xcrypt_ctr_range_prepared(
-        ctx, nonce, input, output, length, start_block, block_count);
+        ctx, nonce, input, output, length, start_block, block_count, use_reference);
     release_kalyna_context(ctx);
     return result;
 }
@@ -220,6 +227,7 @@ typedef struct kalyna_ctr_shared {
     size_t length;
     size_t total_blocks;
     size_t chunk_blocks;
+    int use_reference;
     kalyna_cursor next_chunk;
 } kalyna_ctr_shared;
 
@@ -262,7 +270,8 @@ static void* kalyna_ctr_worker(void* parameter)
             shared->output,
             shared->length,
             start_block,
-            block_count);
+            block_count,
+            shared->use_reference);
         if (result != 0) {
             job->result = result;
             break;
@@ -328,15 +337,25 @@ static size_t choose_thread_count(size_t length, size_t total_blocks)
     return threads;
 }
 
-KALYNA_EXPORT int kalyna_512_512_ctr_xcrypt(
+static int ctr_xcrypt(
     const uint8_t key[64],
     const uint8_t nonce[64],
     const uint8_t* input,
     uint8_t* output,
-    size_t length)
+    size_t length,
+    int use_reference)
 {
     if (key == NULL || nonce == NULL || input == NULL || output == NULL) {
         return 1;
+    }
+
+    /* The table-driven path is only allowed to run once it has reproduced the
+       published vector and the reference implementation linked in beside it.
+       Refusing is the right answer to a mismatch: both come from the same
+       constants, so disagreement means the build or the machine is wrong, and
+       a container written from an unverified keystream is worse than none. */
+    if (!use_reference && !kalyna_fast_ready()) {
+        return 5;
     }
 
     if (length > SIZE_MAX - (KALYNA_BLOCK_BYTES - 1)) {
@@ -372,6 +391,7 @@ KALYNA_EXPORT int kalyna_512_512_ctr_xcrypt(
         shared.length = length;
         shared.total_blocks = total_blocks;
         shared.chunk_blocks = KALYNA_CHUNK_BLOCKS;
+        shared.use_reference = use_reference;
         shared.next_chunk = 0;
 
 
@@ -440,5 +460,37 @@ KALYNA_EXPORT int kalyna_512_512_ctr_xcrypt(
         return result;
     }
 
-    return xcrypt_ctr_range(key, nonce, input, output, length, 0, total_blocks);
+    return xcrypt_ctr_range(key, nonce, input, output, length, 0, total_blocks, use_reference);
+}
+
+KALYNA_EXPORT int kalyna_512_512_ctr_xcrypt(
+    const uint8_t key[64],
+    const uint8_t nonce[64],
+    const uint8_t* input,
+    uint8_t* output,
+    size_t length)
+{
+    return ctr_xcrypt(key, nonce, input, output, length, 0);
+}
+
+/*
+ * The same counter mode, driven by the reference cipher instead of the tables.
+ *
+ * Exported so the test suite can hold the shipped library against its own
+ * reference over buffers far larger than a start-up self-check can afford, for
+ * keys, nonces and counter positions the self-check never reaches. It runs the
+ * identical mode, chunking and threading, so a difference can only come from
+ * the block function itself.
+ *
+ * Nothing in the application calls this: it is thousands of times slower, and
+ * the fast path already refuses to run at all unless it matches.
+ */
+KALYNA_EXPORT int kalyna_512_512_ctr_xcrypt_reference(
+    const uint8_t key[64],
+    const uint8_t nonce[64],
+    const uint8_t* input,
+    uint8_t* output,
+    size_t length)
+{
+    return ctr_xcrypt(key, nonce, input, output, length, 1);
 }

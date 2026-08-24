@@ -164,7 +164,16 @@ inline int xcrypt_ctr(
     }
 
     if (thread_count <= 1) {
-        xcrypt_ctr_range<Encryption>(key, key_length, nonce, input, output, length, 0);
+        // The parallel path below catches inside its workers, so without this
+        // an allocation failure on a small buffer would unwind out through the
+        // extern "C" boundary and terminate the process, while the same failure
+        // on a large one returned an error the caller could report.
+        try {
+            xcrypt_ctr_range<Encryption>(key, key_length, nonce, input, output, length, 0);
+        } catch (...) {
+            return 3;
+        }
+
         return 0;
     }
 
@@ -203,7 +212,9 @@ inline int xcrypt_ctr(
         }
     } catch (...) {
         // Fewer threads than hoped is not an error; this one runs the rest.
-        failure.store(0, std::memory_order_relaxed);
+        // Nothing is stored here on purpose: the threads that did start are
+        // already running, and clearing the flag would discard a failure one of
+        // them had just recorded.
     }
 
     worker();

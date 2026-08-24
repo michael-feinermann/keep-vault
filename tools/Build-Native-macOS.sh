@@ -186,10 +186,13 @@ build_architecture() {
     ${repo_root}/external/zpaq/libzpaq.cpp \
     -Wl,-pie ${link_flags[@]}
 
+  # kalyna_fast.c carries the table-driven encryption; the reference stays
+  # linked in and verifies it at start-up before it may be used.
   ${cc} ${common_flags[@]} -dynamiclib -pthread \
     -install_name @rpath/libkalyna_ref.dylib \
     -o ${output_dir}/libkalyna_ref.dylib \
     ${repo_root}/native/kalyna_ref_export.c \
+    ${repo_root}/native/kalyna_fast.c \
     ${repo_root}/external/Kalyna-reference/kalyna.c \
     ${repo_root}/external/Kalyna-reference/tables.c \
     ${link_flags[@]}

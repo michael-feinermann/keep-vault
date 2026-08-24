@@ -2127,6 +2127,7 @@ internal static unsafe class NativeKalyna
     private static readonly object LoadGate = new();
     private static nint _libraryHandle;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int> _xcryptCtr;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int> _xcryptCtrReference;
 
     /// <summary>
     /// Why the last <see cref="IsAvailable"/> probe failed, or null when the
@@ -2158,6 +2159,24 @@ internal static unsafe class NativeKalyna
 
     public static void XCryptCtr512(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
     {
+        XCryptCtr512(key, nonce, input, output, length, useReference: false);
+    }
+
+    /// <summary>
+    /// The same counter mode driven by the linked-in reference cipher.
+    /// </summary>
+    /// <remarks>
+    /// For the differential test only, and thousands of times slower than the
+    /// production path. Production never selects it: the table-driven path
+    /// already refuses to run unless it reproduces this one at start-up.
+    /// </remarks>
+    internal static void XCryptCtr512Reference(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
+    {
+        XCryptCtr512(key, nonce, input, output, length, useReference: true);
+    }
+
+    private static void XCryptCtr512(byte[] key, byte[] nonce, byte[] input, byte[] output, int length, bool useReference)
+    {
         if (key.Length != 64 || nonce.Length != 64 || length < 0 || input.Length < length || output.Length < length)
         {
             throw new ArgumentException("Kalyna-512/512 requires a 64-byte key, 64-byte nonce, and sufficiently large buffers.");
@@ -2170,7 +2189,9 @@ internal static unsafe class NativeKalyna
         fixed (byte* inputPointer = input)
         fixed (byte* outputPointer = output)
         {
-            result = _xcryptCtr(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length);
+            result = useReference
+                ? _xcryptCtrReference(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length)
+                : _xcryptCtr(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length);
         }
 
         if (result != 0)
@@ -2181,6 +2202,13 @@ internal static unsafe class NativeKalyna
                 2 => "Kalyna reference library could not initialize a cipher context.",
                 3 => "Kalyna reference library could not start CTR worker threads.",
                 4 => "Kalyna CTR counter is exhausted or overflowed.",
+                // The table-driven encryption checks itself against the linked-in
+                // reference before it will run. Reaching this means the two
+                // disagreed, which cannot happen on a sound build and machine
+                // because both are derived from the same constants.
+                5 => "Kalyna reference library failed its start-up self-check: "
+                    + "the table-driven implementation disagreed with the reference. "
+                    + "This build or this machine is not producing the cipher the source describes.",
                 _ => $"Kalyna reference library returned error {result}.",
             });
         }
@@ -2197,12 +2225,15 @@ internal static unsafe class NativeKalyna
                 {
                     _xcryptCtr = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
                         NativeLibrary.GetExport(handle, "kalyna_512_512_ctr_xcrypt");
+                    _xcryptCtrReference = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
+                        NativeLibrary.GetExport(handle, "kalyna_512_512_ctr_xcrypt_reference");
                     _libraryHandle = handle;
                 }
                 catch
                 {
                     NativeLibrary.Free(handle);
                     _xcryptCtr = null;
+                    _xcryptCtrReference = null;
                     throw;
                 }
             }
