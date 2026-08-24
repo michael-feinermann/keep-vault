@@ -92,7 +92,7 @@ public sealed class KeySheetService
                         Label("Storage location"),
                         Value(Path.GetDirectoryName(data.ArchivePath) ?? data.ArchivePath),
                         Label($"Generated 1024-bit hexadecimal factor {factorName}"),
-                        new TextBlock { Text = GroupGeneratedPassword(generatedPassword), FontFamily = new WpfFontFamily("Consolas"), FontSize = 11, TextWrapping = TextWrapping.Wrap, Foreground = WpfBrushes.Black, Margin = new Thickness(0, 4, 0, 18) },
+                        new TextBlock { Text = GroupGeneratedPasswordForSheet(generatedPassword), FontFamily = new WpfFontFamily("Consolas"), FontSize = 11, TextWrapping = TextWrapping.Wrap, Foreground = WpfBrushes.Black, Margin = new Thickness(0, 4, 0, 18) },
                         Label("User password field (write by hand; do not store it digitally)"),
                         FieldLine(),
                         FieldLine(),
@@ -303,6 +303,50 @@ public sealed class KeySheetService
         return png.GetGraphic(6);
     }
 
+    /// <summary>
+    /// The factor in four eight-character groups per line.
+    /// </summary>
+    /// <remarks>
+    /// The same shape the macOS sheet uses. Breaking the lines here rather than
+    /// letting the formatter wrap them is what makes the block's height
+    /// predictable, which is what FactorBlockHeight needs to guarantee that
+    /// none of it is dropped.
+    /// </remarks>
+    public static string GroupGeneratedPasswordForSheet(string generatedPassword)
+    {
+        string normalized = PasswordKeyService.NormalizeGeneratedPassword(generatedPassword);
+        var groups = Enumerable.Range(0, normalized.Length / 8)
+            .Select(index => normalized.Substring(index * 8, 8))
+            .ToList();
+        var lines = new List<string>();
+        for (int i = 0; i < groups.Count; i += 4)
+        {
+            int count = Math.Min(4, groups.Count - i);
+            lines.Add(string.Join(' ', groups.GetRange(i, count)));
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>
+    /// How tall the factor block has to be for every one of its lines to be drawn.
+    /// </summary>
+    /// <remarks>
+    /// XTextFormatter drops whole lines that do not fit the rectangle it is
+    /// given, and it does so silently. The macOS sheet lost the last 32 of its
+    /// 256 hexadecimal characters that way, to a height constant that was one
+    /// line short. This one was a hand-picked 112 with a comment calling it
+    /// generous; generous is not a property a sheet that has to open an archive
+    /// should rely on. Measured from the font instead.
+    /// </remarks>
+    internal static double FactorBlockHeight(XFont monoFont, string groupedFactor)
+    {
+        ArgumentNullException.ThrowIfNull(monoFont);
+        ArgumentNullException.ThrowIfNull(groupedFactor);
+        int lines = groupedFactor.Split('\n').Length;
+        return (lines * monoFont.GetHeight()) + 4;
+    }
+
     public static string GroupGeneratedPassword(string generatedPassword)
     {
         string normalized = PasswordKeyService.NormalizeGeneratedPassword(generatedPassword);
@@ -344,12 +388,14 @@ public sealed class KeySheetService
         y += 48;
         gfx.DrawString($"Generated 1024-bit hexadecimal factor {factorName}", headingFont, XBrushes.Black, new XPoint(margin, y));
         y += 15;
-        // A factor is 256 hexadecimal characters in 32 groups, which needs
-        // roughly twice the height the 512-bit factor did. Sized generously
-        // rather than exactly: a factor clipped at the bottom of the page is a
-        // sheet that cannot open its own archive.
-        formatter.DrawString(GroupGeneratedPassword(generatedPassword), monoFont, XBrushes.Black, new XRect(margin, y, 500, 112));
-        y += 128;
+        // A factor clipped at the bottom of its box is a sheet that cannot open
+        // its own archive, and the formatter drops such lines without a word.
+        // So the box is measured from the font and the line count, not sized by
+        // eye.
+        string groupedFactor = GroupGeneratedPasswordForSheet(generatedPassword);
+        double factorBlockHeight = FactorBlockHeight(monoFont, groupedFactor);
+        formatter.DrawString(groupedFactor, monoFont, XBrushes.Black, new XRect(margin, y, 500, factorBlockHeight));
+        y += factorBlockHeight + 16;
         gfx.DrawString("User password field (write by hand; do not store it digitally)", headingFont, XBrushes.Black, new XPoint(margin, y));
         y += 24;
         for (int i = 0; i < 3; i++)

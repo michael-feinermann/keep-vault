@@ -348,6 +348,29 @@ public sealed class KeySheetService
         return string.Join(Environment.NewLine, lines);
     }
 
+    /// <summary>
+    /// How tall the factor block has to be for every one of its lines to be drawn.
+    /// </summary>
+    /// <remarks>
+    /// XTextFormatter drops whole lines that do not fit the rectangle it is
+    /// given, and it does so silently. This height used to be the constant
+    /// 8 * 18, one line short of the eight a 1024-bit factor needs at this font
+    /// size: the sheet printed 224 of its 256 hexadecimal characters and said
+    /// nothing about the other 32. The QR codes still carried the whole factor,
+    /// so the loss only showed for someone typing it in by hand - which is
+    /// exactly what a printed sheet is for.
+    ///
+    /// Measured from the font instead of guessed, so it stays correct if the
+    /// font size, the grouping or the factor width ever changes.
+    /// </remarks>
+    internal static double FactorBlockHeight(XFont monoFont, string groupedFactor)
+    {
+        ArgumentNullException.ThrowIfNull(monoFont);
+        ArgumentNullException.ThrowIfNull(groupedFactor);
+        int lines = groupedFactor.Split('\n').Length;
+        return (lines * monoFont.GetHeight()) + 4;
+    }
+
     private static ValidatedKeySheetData Validate(KeySheetData data)
     {
         ArgumentNullException.ThrowIfNull(data);
@@ -394,6 +417,16 @@ public sealed class KeySheetService
     /// here, not a matter of taste.
     /// </remarks>
     private const double MinimumFontSize = 16;
+
+    /// <summary>
+    /// Type size for the printed factor.
+    /// </summary>
+    /// <remarks>
+    /// Smaller than the rest of the sheet on purpose: eight lines of 32
+    /// hexadecimal characters have to fit above the QR codes with the writing
+    /// lines still present, and at the body size they did not.
+    /// </remarks>
+    private const double FactorFontSize = 12;
 
     private const string SystemConfigurationLibrary =
         "/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration";
@@ -595,14 +628,6 @@ public sealed class KeySheetService
         double qrTop = urlLabelBaseline - 22 - qrSize;
         double qrHeadingBaseline = qrTop - 10;
 
-        graphics.DrawString(
-            en
-                ? "User password (write by hand, never store digitally)"
-                : "Benutzerpasswort (von Hand eintragen, nicht digital speichern)",
-            headingFont,
-            XBrushes.Black,
-            new XPoint(margin, y));
-
         // The password is written by hand and comes first: it is the part the
         // owner supplies, and reading the sheet top to bottom should follow the
         // order the factors are actually entered in.
@@ -612,18 +637,74 @@ public sealed class KeySheetService
         // line then shortens the lines instead of pushing the factor across the
         // QR codes — and the factor is the one thing on this sheet that must
         // never be the part that gets squeezed.
-        const double factorBlockHeight = 22 + (8 * 18) + 14;
+        // Measured once and used twice: to reserve the space here, and to size
+        // the rectangle the block is actually drawn into further down. When
+        // these two disagree the sheet loses lines without saying so, which is
+        // exactly what the constant this replaced did.
+        string groupedFactor = GroupGeneratedPasswordForSheet(generatedPassword);
+        XFont factorFont = new XFont("Courier New", FactorFontSize, XFontStyleEx.Bold);
+        double factorBlockHeight = FactorBlockHeight(factorFont, groupedFactor);
+        // The trailing term is the QR heading's own height, not a guess. Its
+        // baseline is what qrHeadingBaseline names, and a baseline sits below
+        // the glyphs, so reserving a flat 14 left the last line of the factor
+        // touching the heading above it.
+        double factorBlockReservation = 22 + factorBlockHeight + headingFont.GetHeight() + 8;
+        double writingHeadingBaseline = y;
         double writingTop = y + 4;
-        double writingBottom = qrHeadingBaseline - factorBlockHeight;
-        const int writingLines = 3;
-        double writingSpacing = Math.Min(22, (writingBottom - writingTop) / (writingLines + 1));
-        for (int index = 0; index < writingLines && writingSpacing >= 12; index++)
+        double writingBottom = qrHeadingBaseline - factorBlockReservation;
+
+        // Three lines if they fit, then two, then one. A long suite name or
+        // storage path eats into this space, and a sheet with one line to write
+        // the password on is still usable where a sheet with none is not.
+        const double minimumWritingSpacing = 12;
+        int writingLines = 0;
+        double writingSpacing = 0;
+        for (int candidate = 3; candidate >= 1; candidate--)
         {
-            double lineY = writingTop + (writingSpacing * (index + 1));
-            graphics.DrawLine(XPens.Black, margin, lineY, page.Width.Point - margin, lineY);
+            double spacing = Math.Min(22, (writingBottom - writingTop) / (candidate + 1));
+            if (spacing >= minimumWritingSpacing)
+            {
+                writingLines = candidate;
+                writingSpacing = spacing;
+                break;
+            }
         }
 
-        y = writingBottom;
+        // The heading is drawn only when there is somewhere to write. It used
+        // to be drawn unconditionally, so once the lines no longer fit, the
+        // sheet showed a field label with the factor heading printed across it.
+        if (writingLines > 0)
+        {
+            graphics.DrawString(
+                en
+                    ? "User password (write by hand, never store digitally)"
+                    : "Benutzerpasswort (von Hand eintragen, nicht digital speichern)",
+                headingFont,
+                XBrushes.Black,
+                new XPoint(margin, writingHeadingBaseline));
+
+            for (int index = 0; index < writingLines; index++)
+            {
+                double lineY = writingTop + (writingSpacing * (index + 1));
+                graphics.DrawLine(XPens.Black, margin, lineY, page.Width.Point - margin, lineY);
+            }
+        }
+
+        // Never above where the fields before it ended, so the factor cannot be
+        // printed across them when the page is tight.
+        y = Math.Max(writingBottom, writingHeadingBaseline);
+
+        // A storage path long enough to wrap three times can still push the
+        // block into the QR heading below it. The factor may not be shortened
+        // and the codes may not be covered, so the last thing to give is the
+        // type size. It is a fallback, not the normal path: at FactorFontSize
+        // the block fits with room to spare unless the path is extreme.
+        double factorSpace = (qrHeadingBaseline - headingFont.GetHeight() - 8) - (y + 22);
+        for (double size = FactorFontSize - 1; factorBlockHeight > factorSpace && size >= 9; size -= 1)
+        {
+            factorFont = new XFont("Courier New", size, XFontStyleEx.Bold);
+            factorBlockHeight = FactorBlockHeight(factorFont, groupedFactor);
+        }
 
         graphics.DrawString(
             en
@@ -634,11 +715,11 @@ public sealed class KeySheetService
             new XPoint(margin, y));
         y += 22;
         formatter.DrawString(
-            GroupGeneratedPasswordForSheet(generatedPassword),
-            monoFont,
+            groupedFactor,
+            factorFont,
             XBrushes.Black,
-            new XRect(margin, y, bodyWidth, 8 * 18));
-        y += (8 * 18) + 8;
+            new XRect(margin, y, bodyWidth, factorBlockHeight));
+        y += factorBlockHeight + 8;
 
         graphics.DrawString(
             en
@@ -943,7 +1024,16 @@ public sealed class KeySheetService
         CryptographicOperations.ZeroMemory(length);
     }
 
-    private static void EnsurePdfFontResolver()
+    /// <summary>
+    /// Installs the PDF font resolver once per process.
+    /// </summary>
+    /// <remarks>
+    /// Internal rather than private so the sheet-layout test can measure a font
+    /// the same way the renderer does. Constructing an XFont without this
+    /// throws, and a test that silently skipped the measurement would not be
+    /// checking the thing that broke.
+    /// </remarks>
+    internal static void EnsurePdfFontResolver()
     {
         lock (FontResolverGate)
         {
