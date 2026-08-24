@@ -22,7 +22,15 @@ if not exist tools mkdir tools
 pwsh -NoProfile -ExecutionPolicy Bypass -File tools\Verify-MldsaReference.ps1
 if errorlevel 1 exit /b 1
 
-set "HARDEN_COMPILE=/O2 /MT /GS /sdl /guard:cf"
+REM Object files land in work\, not wherever cl happened to be started. The
+REM Crypto++ branch below already directs its own; the targets above it did
+REM not, so every translation unit left its .obj in the checkout root - some
+REM thirty files beside README.md, ignored by git and puzzling to anyone who
+REM looked.
+set "NATIVEOBJ=work\native-objects"
+if not exist "%NATIVEOBJ%" mkdir "%NATIVEOBJ%"
+
+set "HARDEN_COMPILE=/O2 /MT /GS /sdl /guard:cf /Fo%NATIVEOBJ%\"
 set "HARDEN_LINK=/link /guard:cf /CETCOMPAT"
 
 cl %HARDEN_COMPILE% /DNOJIT /EHsc /Fetools\zpaq.exe external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
