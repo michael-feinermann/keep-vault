@@ -242,7 +242,7 @@ public sealed partial class MainWindow
             "extract" => en ? "Extract" : "Entpacken",
             "listContents" => en ? "Show contents" : "Inhalt anzeigen",
             "emergencyRecovery" => en ? "Emergency recovery" : "Notfallwiederherstellung",
-            "extractPasswordTitle" => en ? "Three factors for extraction" : "Drei Faktoren zum Entpacken",
+            "extractPasswordTitle" => en ? "Four factors for extraction" : "Vier Faktoren zum Entpacken",
             "extractPasswordHelp" => en
                 ? "Enter the user password, the PIN and both factors from the separately stored key sheets."
                 : "Userpasswort, PIN und beide Faktoren von den getrennt gelagerten Schlüsselzetteln eingeben.",

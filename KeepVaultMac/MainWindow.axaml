@@ -338,9 +338,9 @@
 
               <Border Grid.Column="2" Classes="innerCard" Padding="15">
                 <StackPanel Spacing="10">
-                  <TextBlock x:Name="ExtractPasswordTitle" Text="Drei Faktoren zum Entpacken" FontSize="17" FontWeight="SemiBold" />
+                  <TextBlock x:Name="ExtractPasswordTitle" Text="Vier Faktoren zum Entpacken" FontSize="17" FontWeight="SemiBold" />
                   <TextBlock x:Name="ExtractPasswordHelpText"
-                             Text="Userpasswort und beide Faktoren von den getrennten Schlüsselzetteln eingeben."
+                             Text="Userpasswort, PIN und beide Faktoren von den getrennt gelagerten Schlüsselzetteln eingeben."
                              Classes="muted" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock x:Name="ExtractHintLabel" Text="Öffentlicher Hinweis" Classes="label" Margin="0" />
                   <Border Classes="card" Padding="11">
