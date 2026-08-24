@@ -49,6 +49,8 @@ internal static class FastPathDifferentialTests
             KalynaAgainstReferenceAsync, TestResource.CpuHeavy, "Crypto"),
         new("ChaCha20 worker split against the serial keystream over 256 MiB",
             ChaChaAgainstSerialAsync, TestResource.CpuHeavy, "Crypto"),
+        new("ChaCha20-Poly1305 framing against RFC 8439",
+            AeadFramingAsync, TestResource.Light, "Crypto"),
     ];
 
     /// <summary>
@@ -291,6 +293,135 @@ internal static class FastPathDifferentialTests
 
         Console.WriteLine("    ChaCha20 worker split reproduces the RFC 8439 AEAD keystream");
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// The authenticated pair against the published vector and its own rules.
+    /// </summary>
+    /// <remarks>
+    /// This suite used to call Crypto++'s ChaCha20Poly1305, and the framing -
+    /// associated data padded to 16, ciphertext padded to 16, then both lengths
+    /// little-endian - came with it. It is assembled here now, so the vector in
+    /// RFC 8439 section 2.8.2 is what holds it: a padding or length-encoding
+    /// slip produces a tag that is merely different, and nothing else in the
+    /// suite would notice, because both sides of a round trip would be wrong in
+    /// the same way.
+    ///
+    /// The rejection cases matter for the same reason. A tag check is only
+    /// worth having if it fails, and the failure must leave nothing behind:
+    /// unauthenticated plaintext in the caller's buffer is exactly what an
+    /// AEAD exists to prevent.
+    /// </remarks>
+    private static Task AeadFramingAsync()
+    {
+        MacComprehensiveTests.Require(
+            NativeChaChaPoly.IsAvailable(),
+            $"ChaCha20-Poly1305 reference library unavailable: {NativeChaChaPoly.LastLoadError}");
+
+        byte[] key = new byte[32];
+        for (int i = 0; i < key.Length; i++)
+        {
+            key[i] = (byte)(0x80 + i);
+        }
+
+        byte[] nonce = Convert.FromHexString("070000004041424344454647");
+        byte[] associated = Convert.FromHexString("50515253c0c1c2c3c4c5c6c7");
+        byte[] plaintext = System.Text.Encoding.ASCII.GetBytes(
+            "Ladies and Gentlemen of the class of '99: If I could offer you only "
+            + "one tip for the future, sunscreen would be it.");
+        byte[] expectedCiphertext = Convert.FromHexString(
+            "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d6"
+            + "3dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b36"
+            + "92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc"
+            + "3ff4def08e4b7a9de576d26586cec64b6116");
+
+        byte[] expectedTag = Convert.FromHexString("1ae10b594f09e26a7e902ecbd0600691");
+
+        MacComprehensiveTests.Require(plaintext.Length == 114, "The RFC 8439 vector plaintext is 114 bytes.");
+        MacComprehensiveTests.Require(
+            expectedCiphertext.Length == plaintext.Length,
+            "The RFC 8439 vector ciphertext is as long as its plaintext.");
+
+        byte[] ciphertext = new byte[plaintext.Length];
+        byte[] tag = new byte[NativeChaChaPoly.TagBytes];
+        NativeChaChaPoly.Encrypt(key, nonce, associated, plaintext, ciphertext, plaintext.Length, tag);
+
+        MacComprehensiveTests.Require(
+            ciphertext.AsSpan().SequenceEqual(expectedCiphertext),
+            "ChaCha20-Poly1305 did not reproduce the RFC 8439 section 2.8.2 ciphertext.");
+        MacComprehensiveTests.Require(
+            tag.AsSpan().SequenceEqual(expectedTag),
+            "ChaCha20-Poly1305 did not reproduce the RFC 8439 section 2.8.2 tag.");
+        Console.WriteLine("    RFC 8439 section 2.8.2 ciphertext and tag reproduced");
+
+        byte[] recovered = new byte[plaintext.Length];
+        NativeChaChaPoly.Decrypt(key, nonce, associated, ciphertext, recovered, ciphertext.Length, tag);
+        MacComprehensiveTests.Require(
+            recovered.AsSpan().SequenceEqual(plaintext),
+            "ChaCha20-Poly1305 did not recover the RFC 8439 vector plaintext.");
+
+        RequireRejected("a flipped tag bit", key, nonce, associated, ciphertext, tag, mutateTag: true);
+        RequireRejected("a flipped ciphertext bit", key, nonce, associated, ciphertext, tag, mutateCiphertext: true);
+        RequireRejected("altered associated data", key, nonce, associated, ciphertext, tag, mutateAssociated: true);
+        Console.WriteLine("    a changed tag, ciphertext or associated data is refused");
+
+        // The container hands the same buffer in and out for both directions.
+        // The tag covers the ciphertext, so encryption has to take it after
+        // writing and decryption has to take it before overwriting; getting
+        // either backwards works out-of-place and fails only here.
+        byte[] scratch = plaintext.ToArray();
+        byte[] inPlaceTag = new byte[NativeChaChaPoly.TagBytes];
+        NativeChaChaPoly.Encrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
+        MacComprehensiveTests.Require(
+            scratch.AsSpan().SequenceEqual(expectedCiphertext) && inPlaceTag.AsSpan().SequenceEqual(expectedTag),
+            "In-place ChaCha20-Poly1305 encryption did not match the out-of-place result.");
+        NativeChaChaPoly.Decrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
+        MacComprehensiveTests.Require(
+            scratch.AsSpan().SequenceEqual(plaintext),
+            "In-place ChaCha20-Poly1305 decryption did not recover the plaintext.");
+        Console.WriteLine("    in-place encryption and decryption match the out-of-place result");
+
+        return Task.CompletedTask;
+    }
+
+    private static void RequireRejected(
+        string what,
+        byte[] key,
+        byte[] nonce,
+        byte[] associated,
+        byte[] ciphertext,
+        byte[] tag,
+        bool mutateTag = false,
+        bool mutateCiphertext = false,
+        bool mutateAssociated = false)
+    {
+        byte[] usedTag = tag.ToArray();
+        byte[] usedCiphertext = ciphertext.ToArray();
+        byte[] usedAssociated = associated.ToArray();
+        if (mutateTag) { usedTag[9] ^= 0x40; }
+        if (mutateCiphertext) { usedCiphertext[usedCiphertext.Length / 2] ^= 0x01; }
+        if (mutateAssociated) { usedAssociated[3] ^= 0x80; }
+
+        byte[] output = new byte[usedCiphertext.Length];
+        output.AsSpan().Fill(0xCC);
+        try
+        {
+            NativeChaChaPoly.Decrypt(
+                key, nonce, usedAssociated, usedCiphertext, output, usedCiphertext.Length, usedTag);
+        }
+        catch (System.Security.Cryptography.CryptographicException)
+        {
+            foreach (byte value in output)
+            {
+                MacComprehensiveTests.Require(
+                    value == 0xCC,
+                    $"ChaCha20-Poly1305 wrote into the caller's buffer while refusing {what}.");
+            }
+
+            return;
+        }
+
+        MacComprehensiveTests.Require(false, $"ChaCha20-Poly1305 accepted {what}.");
     }
 
     private static string Rate(int length, TimeSpan elapsed)

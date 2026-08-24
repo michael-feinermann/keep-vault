@@ -548,6 +548,12 @@ internal static unsafe class NativeChaChaPoly
         throw new CryptographicException(result switch
         {
             1 => "ChaCha20-Poly1305 reference library received invalid buffers.",
+            // The AEAD now produces its keystream through the same worker-split
+            // path as the block ciphers, so it can report what that path
+            // reports. Before it was one Crypto++ call that could only fail
+            // internally, and these two codes were unreachable.
+            3 => "ChaCha20-Poly1305 reference library could not start its keystream workers.",
+            4 => "ChaCha20 block counter is exhausted; the request is larger than one nonce may cover.",
             5 => "ChaCha20-Poly1305 reference library failed internally.",
             _ => $"ChaCha20-Poly1305 reference library returned error {result}.",
         });

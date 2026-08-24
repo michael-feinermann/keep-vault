@@ -16,109 +16,15 @@
  * than obviously broken. The layer beneath it is already parallel, and this one
  * runs at the speed of one core over data that has been through five ciphers.
  */
-#include "chachapoly.h"
+#include "chacha.h"
+#include "misc.h"
+#include "poly1305.h"
 
 #include "cryptopp_ctr_common.hpp"
 
 #define CHACHAPOLY_KEY_BYTES 32
 #define CHACHAPOLY_NONCE_BYTES 12
 #define CHACHAPOLY_TAG_BYTES 16
-
-/*
- * Encrypts and authenticates in one pass.
- *
- * The tag is written separately rather than appended, so the caller decides
- * where it lives and the ciphertext keeps the length of the plaintext.
- */
-extern "C" KEEPVAULT_EXPORT int chacha20poly1305_encrypt(
-    const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
-    const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
-    const std::uint8_t* associated_data,
-    std::size_t associated_length,
-    const std::uint8_t* plaintext,
-    std::uint8_t* ciphertext,
-    std::size_t length,
-    std::uint8_t tag[CHACHAPOLY_TAG_BYTES])
-{
-    if (key == nullptr || nonce == nullptr || tag == nullptr) {
-        return 1;
-    }
-
-    if (length != 0 && (plaintext == nullptr || ciphertext == nullptr)) {
-        return 1;
-    }
-
-    if (associated_length != 0 && associated_data == nullptr) {
-        return 1;
-    }
-
-    try {
-        CryptoPP::ChaCha20Poly1305::Encryption encryption;
-        encryption.SetKeyWithIV(key, CHACHAPOLY_KEY_BYTES, nonce, CHACHAPOLY_NONCE_BYTES);
-        encryption.EncryptAndAuthenticate(
-            ciphertext,
-            tag,
-            CHACHAPOLY_TAG_BYTES,
-            nonce,
-            CHACHAPOLY_NONCE_BYTES,
-            associated_data,
-            associated_length,
-            plaintext,
-            length);
-        return 0;
-    } catch (...) {
-        return 5;
-    }
-}
-
-/*
- * Verifies and decrypts.
- *
- * Returns 6 when the tag does not match, and writes nothing the caller should
- * use in that case. Crypto++ clears the output buffer itself on failure; the
- * return value is what the caller must act on, because a decryption that
- * ignores the tag is a decryption with no authentication at all.
- */
-extern "C" KEEPVAULT_EXPORT int chacha20poly1305_decrypt(
-    const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
-    const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
-    const std::uint8_t* associated_data,
-    std::size_t associated_length,
-    const std::uint8_t* ciphertext,
-    std::uint8_t* plaintext,
-    std::size_t length,
-    const std::uint8_t tag[CHACHAPOLY_TAG_BYTES])
-{
-    if (key == nullptr || nonce == nullptr || tag == nullptr) {
-        return 1;
-    }
-
-    if (length != 0 && (ciphertext == nullptr || plaintext == nullptr)) {
-        return 1;
-    }
-
-    if (associated_length != 0 && associated_data == nullptr) {
-        return 1;
-    }
-
-    try {
-        CryptoPP::ChaCha20Poly1305::Decryption decryption;
-        decryption.SetKeyWithIV(key, CHACHAPOLY_KEY_BYTES, nonce, CHACHAPOLY_NONCE_BYTES);
-        const bool authentic = decryption.DecryptAndVerify(
-            plaintext,
-            tag,
-            CHACHAPOLY_TAG_BYTES,
-            nonce,
-            CHACHAPOLY_NONCE_BYTES,
-            associated_data,
-            associated_length,
-            ciphertext,
-            length);
-        return authentic ? 0 : 6;
-    } catch (...) {
-        return 5;
-    }
-}
 
 /*
  * Raw ChaCha20, and Poly1305 over a whole stream.
@@ -135,9 +41,6 @@ extern "C" KEEPVAULT_EXPORT int chacha20poly1305_decrypt(
  * chunk loop can position by block, and Poly1305 as something that can be fed
  * incrementally.
  */
-#include "chacha.h"
-#include "poly1305.h"
-
 /*
  * Encrypts or decrypts, starting at an explicit block counter.
  *
@@ -409,4 +312,217 @@ extern "C" KEEPVAULT_EXPORT int poly1305_final(void* handle, std::uint8_t tag[CH
 extern "C" KEEPVAULT_EXPORT void poly1305_destroy(void* handle)
 {
     delete static_cast<CryptoPP::Poly1305TLS*>(handle);
+}
+
+/*
+ * ChaCha20-Poly1305 (RFC 8439), with the cipher half spread across workers.
+ *
+ * Crypto++ has its own ChaCha20Poly1305, and this file used to call it. It runs
+ * the whole request on one thread, which left the outermost layer of every
+ * cascade at the speed of a single core over data five ciphers had already
+ * touched - the slowest stage in the catalogue by a wide margin.
+ *
+ * The two halves of the construction do not have the same constraint. ChaCha20
+ * numbers its blocks and derives each from the counter alone, so it splits
+ * exactly as it does above. Poly1305 is a carry chain over the whole message
+ * and stays on one thread; splitting it would mean recombining polynomial
+ * evaluations, and the wrong recombination gives a tag that is merely different
+ * rather than obviously broken. So the keystream is parallel, the tag is not,
+ * and the AEAD runs at whatever Poly1305 alone can do.
+ *
+ * Assembling the construction here rather than calling the library's means this
+ * file now owns the framing, so the framing is what the tests hold against the
+ * implementation this replaced, across every length where the padding changes
+ * shape and every associated-data length beside it.
+ */
+
+/*
+ * RFC 8439 section 2.6: the one-time Poly1305 key is the first 32 bytes of the
+ * ChaCha20 keystream for this key and nonce at block counter 0. The message
+ * starts at block 1, which is exactly why the AEAD and the raw keystream export
+ * differ by one block.
+ */
+static int derive_poly1305_key(
+    const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
+    const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
+    std::uint8_t one_time_key[CHACHAPOLY_KEY_BYTES])
+{
+    std::uint8_t zeros[CHACHAPOLY_KEY_BYTES];
+    std::memset(zeros, 0, sizeof(zeros));
+    return chacha20_range(key, nonce, 0, zeros, one_time_key, CHACHAPOLY_KEY_BYTES);
+}
+
+/*
+ * RFC 8439 section 2.8: the associated data zero-padded to a multiple of 16,
+ * the ciphertext zero-padded the same way, then both lengths as 64-bit little
+ * endian. The padding and the lengths are what stop a byte moving from one
+ * field into the other without changing the tag.
+ */
+static void poly1305_pad_to_16(CryptoPP::Poly1305TLS& mac, std::size_t length)
+{
+    const std::size_t remainder = length % 16;
+    if (remainder != 0) {
+        std::uint8_t zeros[16];
+        std::memset(zeros, 0, sizeof(zeros));
+        mac.Update(zeros, 16 - remainder);
+    }
+}
+
+static void poly1305_append_length(CryptoPP::Poly1305TLS& mac, std::size_t length)
+{
+    std::uint8_t encoded[8];
+    const std::uint64_t value = static_cast<std::uint64_t>(length);
+    for (int i = 0; i < 8; ++i) {
+        encoded[i] = static_cast<std::uint8_t>(value >> (i * 8));
+    }
+
+    mac.Update(encoded, sizeof(encoded));
+}
+
+static int compute_tag(
+    const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
+    const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
+    const std::uint8_t* associated_data,
+    std::size_t associated_length,
+    const std::uint8_t* ciphertext,
+    std::size_t length,
+    std::uint8_t tag[CHACHAPOLY_TAG_BYTES])
+{
+    std::uint8_t one_time_key[CHACHAPOLY_KEY_BYTES];
+    const int derived = derive_poly1305_key(key, nonce, one_time_key);
+    if (derived != 0) {
+        keepvault::secure_zero(one_time_key, sizeof(one_time_key));
+        return derived;
+    }
+
+    try {
+        CryptoPP::Poly1305TLS mac;
+        mac.SetKey(one_time_key, sizeof(one_time_key));
+        keepvault::secure_zero(one_time_key, sizeof(one_time_key));
+
+        if (associated_length != 0) {
+            mac.Update(associated_data, associated_length);
+        }
+        poly1305_pad_to_16(mac, associated_length);
+
+        if (length != 0) {
+            mac.Update(ciphertext, length);
+        }
+        poly1305_pad_to_16(mac, length);
+
+        poly1305_append_length(mac, associated_length);
+        poly1305_append_length(mac, length);
+
+        mac.Final(tag);
+        return 0;
+    } catch (...) {
+        keepvault::secure_zero(one_time_key, sizeof(one_time_key));
+        return 5;
+    }
+}
+
+static int validate_aead_arguments(
+    const std::uint8_t* key,
+    const std::uint8_t* nonce,
+    const std::uint8_t* tag,
+    const std::uint8_t* input,
+    const std::uint8_t* output,
+    std::size_t length,
+    const std::uint8_t* associated_data,
+    std::size_t associated_length)
+{
+    if (key == nullptr || nonce == nullptr || tag == nullptr) {
+        return 1;
+    }
+
+    if (length != 0 && (input == nullptr || output == nullptr)) {
+        return 1;
+    }
+
+    if (associated_length != 0 && associated_data == nullptr) {
+        return 1;
+    }
+
+    return 0;
+}
+
+/*
+ * Encrypts and authenticates.
+ *
+ * The tag is written separately rather than appended, so the caller decides
+ * where it lives and the ciphertext keeps the length of the plaintext.
+ *
+ * The tag covers the ciphertext, so it is taken after encryption; input and
+ * output may be the same buffer, which is how the container calls it.
+ */
+extern "C" KEEPVAULT_EXPORT int chacha20poly1305_encrypt(
+    const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
+    const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
+    const std::uint8_t* associated_data,
+    std::size_t associated_length,
+    const std::uint8_t* plaintext,
+    std::uint8_t* ciphertext,
+    std::size_t length,
+    std::uint8_t tag[CHACHAPOLY_TAG_BYTES])
+{
+    const int invalid = validate_aead_arguments(
+        key, nonce, tag, plaintext, ciphertext, length, associated_data, associated_length);
+    if (invalid != 0) {
+        return invalid;
+    }
+
+    const int encrypted = chacha20_xcrypt(key, nonce, 1, plaintext, ciphertext, length);
+    if (encrypted != 0) {
+        return encrypted;
+    }
+
+    return compute_tag(key, nonce, associated_data, associated_length, ciphertext, length, tag);
+}
+
+/*
+ * Verifies, then decrypts.
+ *
+ * Returns 6 when the tag does not match, and in that case writes nothing at
+ * all: the tag is checked before a single byte of plaintext is produced, so
+ * there is no window in which unauthenticated plaintext exists in the caller's
+ * buffer. The previous implementation decrypted first and relied on Crypto++
+ * clearing the output afterwards.
+ *
+ * The comparison is constant time. A tag check that returns early on the first
+ * wrong byte tells an attacker how much of a forged tag was right.
+ *
+ * Reading the ciphertext for the tag before overwriting it is also what makes
+ * an in-place call safe, which is how the container decrypts.
+ */
+extern "C" KEEPVAULT_EXPORT int chacha20poly1305_decrypt(
+    const std::uint8_t key[CHACHAPOLY_KEY_BYTES],
+    const std::uint8_t nonce[CHACHAPOLY_NONCE_BYTES],
+    const std::uint8_t* associated_data,
+    std::size_t associated_length,
+    const std::uint8_t* ciphertext,
+    std::uint8_t* plaintext,
+    std::size_t length,
+    const std::uint8_t tag[CHACHAPOLY_TAG_BYTES])
+{
+    const int invalid = validate_aead_arguments(
+        key, nonce, tag, ciphertext, plaintext, length, associated_data, associated_length);
+    if (invalid != 0) {
+        return invalid;
+    }
+
+    std::uint8_t expected[CHACHAPOLY_TAG_BYTES];
+    const int tagged = compute_tag(
+        key, nonce, associated_data, associated_length, ciphertext, length, expected);
+    if (tagged != 0) {
+        keepvault::secure_zero(expected, sizeof(expected));
+        return tagged;
+    }
+
+    const bool authentic = CryptoPP::VerifyBufsEqual(expected, tag, CHACHAPOLY_TAG_BYTES);
+    keepvault::secure_zero(expected, sizeof(expected));
+    if (!authentic) {
+        return 6;
+    }
+
+    return chacha20_xcrypt(key, nonce, 1, ciphertext, plaintext, length);
 }
