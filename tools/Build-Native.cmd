@@ -28,7 +28,9 @@ set "HARDEN_LINK=/link /guard:cf /CETCOMPAT"
 cl %HARDEN_COMPILE% /DNOJIT /EHsc /Fetools\zpaq.exe external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
-cl %HARDEN_COMPILE% /LD /Fetools\kalyna_ref.dll native\kalyna_ref_export.c external\Kalyna-reference\kalyna.c external\Kalyna-reference\tables.c %HARDEN_LINK%
+REM kalyna_fast.c carries the table-driven encryption; the reference stays
+REM linked in and verifies it at start-up before it may be used.
+cl %HARDEN_COMPILE% /LD /Fetools\kalyna_ref.dll native\kalyna_ref_export.c native\kalyna_fast.c external\Kalyna-reference\kalyna.c external\Kalyna-reference\tables.c %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
 cl %HARDEN_COMPILE% /LD /D_CRT_SECURE_NO_WARNINGS ^
@@ -85,6 +87,78 @@ if exist external\phc-winner-argon2 (
     external\phc-winner-argon2\src\ref.c ^
     external\phc-winner-argon2\src\thread.c ^
     external\phc-winner-argon2\src\blake2\blake2b.c ^
+    %HARDEN_LINK%
+  if errorlevel 1 exit /b 1
+)
+
+REM --------------------------------------------------------------------
+REM Crypto++ adapters: AES-256, MARS-448, SHACAL-2-512 and
+REM ChaCha20-Poly1305. The managed side refuses to enable archive
+REM operations without all four, and the cascade suites cannot run
+REM without them at all.
+REM
+REM Crypto++ is archived whole rather than cherry-picked. Its algorithm
+REM sources reach cryptlib, misc, secblock and from there the integer
+REM machinery, so a hand-picked subset does not link and would have to be
+REM re-picked at every update.
+REM
+REM Unlike the macOS build this one keeps the assembly and SIMD paths on:
+REM MSVC selects them through intrinsics without per-file flags, and
+REM x64dll.asm supplies the CPUID and XGETBV helpers cpu.cpp needs on
+REM x64. CRYPTOPP_DISABLE_ASM must therefore stay unset for the archive
+REM AND for every adapter compiled against it - the headers branch on it,
+REM so a mismatch gives the two sides different class layouts.
+set "CRYPTOPP=external\cryptopp"
+set "CPPOBJ=work\cryptopp-objects"
+if not exist "%CPPOBJ%" mkdir "%CPPOBJ%"
+if not exist "%CPPOBJ%\adapters" mkdir "%CPPOBJ%\adapters"
+set "CPPFLAGS=/nologo /c /MT /GS /guard:cf /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /W0"
+
+REM The library, its test drivers and its validation suites live in one
+REM directory; the drivers carry a main() and the suites are not shipped.
+del /q "%CPPOBJ%\cryptopp-sources.rsp" 2>nul
+pushd "%CRYPTOPP%"
+for %%F in (*.cpp) do (
+  set "SKIP="
+  if /i "%%F"=="test.cpp" set "SKIP=1"
+  if /i "%%F"=="bench1.cpp" set "SKIP=1"
+  if /i "%%F"=="bench2.cpp" set "SKIP=1"
+  if /i "%%F"=="bench3.cpp" set "SKIP=1"
+  if /i "%%F"=="datatest.cpp" set "SKIP=1"
+  if /i "%%F"=="dlltest.cpp" set "SKIP=1"
+  if /i "%%F"=="fipsalgt.cpp" set "SKIP=1"
+  if /i "%%F"=="adhoc.cpp" set "SKIP=1"
+  echo %%F | findstr /b /i "regtest validat" >nul && set "SKIP=1"
+  REM gfpcrypt.cpp and hight.cpp make this compiler abort with C1001 at
+  REM /O2; they are rebuilt below without it. Neither is on any path this
+  REM application uses - they are archived only so the library links.
+  if /i "%%F"=="gfpcrypt.cpp" set "SKIP=1"
+  if /i "%%F"=="hight.cpp" set "SKIP=1"
+  if not defined SKIP echo %%F>>"..\..\%CPPOBJ%\cryptopp-sources.rsp"
+)
+popd
+
+pushd "%CRYPTOPP%"
+cl %CPPFLAGS% /O2 /MP /Fo"..\..\%CPPOBJ%\\" @"..\..\%CPPOBJ%\cryptopp-sources.rsp"
+if errorlevel 1 (popd & exit /b 1)
+cl %CPPFLAGS% /Fo"..\..\%CPPOBJ%\\" gfpcrypt.cpp hight.cpp
+if errorlevel 1 (popd & exit /b 1)
+ml64 /nologo /c /Fo"..\..\%CPPOBJ%\x64dll.obj" x64dll.asm
+if errorlevel 1 (popd & exit /b 1)
+ml64 /nologo /c /Fo"..\..\%CPPOBJ%\x64masm.obj" x64masm.asm
+if errorlevel 1 (popd & exit /b 1)
+popd
+
+lib /nologo /OUT:"%CPPOBJ%\cryptopp.lib" "%CPPOBJ%\*.obj"
+if errorlevel 1 exit /b 1
+
+for %%A in (aes mars shacal2 chachapoly) do (
+  cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
+    /I"%CRYPTOPP%" ^
+    /Fo"%CPPOBJ%\adapters\\" ^
+    /Fetools\%%A_ref.dll ^
+    native\%%A_ref_export.cpp ^
+    "%CPPOBJ%\cryptopp.lib" ^
     %HARDEN_LINK%
   if errorlevel 1 exit /b 1
 )

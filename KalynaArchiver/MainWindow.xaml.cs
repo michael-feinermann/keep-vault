@@ -213,7 +213,12 @@ public sealed partial class MainWindow : Window, IDisposable
                 Log($"Native tool {name}: {hashState}; RSA+ML-DSA={toolStatus.HybridSignatureMatches}; Authenticode={toolStatus.SignatureState}; {toolStatus.SignatureMessage}");
             }
 
-            bool nativeToolsTrusted = toolStatuses.Count == 5 && toolStatuses.All(tool => tool.IsTrusted);
+            // Against the required set, not a number written out here. The set has
+            // grown to nine and the literal five had quietly become unreachable,
+            // which left archive operations disabled however well the build was
+            // signed.
+            bool nativeToolsTrusted = toolStatuses.Count == IntegrityService.RequiredNativeTools.Count
+                && toolStatuses.All(tool => tool.IsTrusted);
             _integrityTrusted = status.IsTrusted && nativeToolsTrusted;
             if (!nativeToolsTrusted)
             {
