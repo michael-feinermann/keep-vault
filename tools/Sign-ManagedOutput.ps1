@@ -20,13 +20,12 @@ $signScript = Join-Path $root "tools\Sign-Binaries.ps1"
 $sha3Script = Join-Path $root "tools\Generate-Sha3Manifest.ps1"
 $skeinScript = Join-Path $root "tools\Generate-SkeinManifest.ps1"
 $hybridScript = Join-Path $root "tools\New-HybridSignature.ps1"
-$nativeNames = @(
-    "zpaq.exe",
-    "argon2.exe",
-    "argon2_ref.dll",
-    "kalyna_ref.dll",
-    "threefish_ref.dll"
-)
+. (Join-Path $PSScriptRoot "NativeToolTargets.ps1")
+# Both the set staged from tools\ and the set held back from managed signing.
+# They have to be the same set: a native binary this list forgets is re-signed
+# below as though it were one of the application's own assemblies, which breaks
+# it away from the copy in tools\ that the manifests were written against.
+$nativeNames = @(Get-NativeToolNames)
 $nativeSuffixes = @(
     "",
     ".khsig",

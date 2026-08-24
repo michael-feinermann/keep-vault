@@ -19,20 +19,14 @@ $root = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $manifestScript = Join-Path $root "tools\Generate-Sha3Manifest.ps1"
 $skeinManifestScript = Join-Path $root "tools\Generate-SkeinManifest.ps1"
 $hybridSignatureScript = Join-Path $root "tools\New-HybridSignature.ps1"
+. (Join-Path $PSScriptRoot "NativeToolTargets.ps1")
 
 if (-not $CertificateThumbprint -and -not $PfxPath) {
     [xml] $buildProperties = Get-Content -LiteralPath (Join-Path $root "Directory.Build.props")
     $CertificateThumbprint = $buildProperties.Project.PropertyGroup.SelectSingleNode("KalynaSigningCertificateThumbprint").InnerText
 }
 
-$targets = [System.Collections.Generic.List[string]]@(
-    (Join-Path $root "tools\zpaq.exe"),
-    (Join-Path $root "tools\argon2.exe"),
-    (Join-Path $root "tools\kalyna_ref.dll"),
-    (Join-Path $root "tools\threefish_ref.dll"),
-    (Join-Path $root "tools\argon2_ref.dll"),
-    (Join-Path $root "tools\mldsa87_ref.dll")
-)
+$targets = [System.Collections.Generic.List[string]](Get-NativeToolTargets -Root $root)
 
 $applicationDirectory = Join-Path $root "KalynaArchiver\bin\$Configuration\net9.0-windows"
 if (Test-Path -LiteralPath $applicationDirectory) {

@@ -23,6 +23,7 @@ $ErrorActionPreference = "Stop"
 $root = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $skeinManifestScript = Join-Path $root "tools\Generate-SkeinManifest.ps1"
 $hybridSignatureScript = Join-Path $root "tools\New-HybridSignature.ps1"
+. (Join-Path $PSScriptRoot "NativeToolTargets.ps1")
 
 if ($TrustDevelopmentCertificate) {
     throw "Trusting the development root in CurrentUser\\Root is forbidden. Development signatures are accepted only through the compiled SHA-256/SHA3-512/Skein-1024 SPKI pins."
@@ -175,14 +176,7 @@ function Assert-DevelopmentRootNotTrusted {
 }
 
 function Get-DefaultTargets {
-    $candidates = [System.Collections.Generic.List[string]]@(
-        (Join-Path $root "tools\zpaq.exe"),
-        (Join-Path $root "tools\argon2.exe"),
-        (Join-Path $root "tools\kalyna_ref.dll"),
-        (Join-Path $root "tools\threefish_ref.dll"),
-        (Join-Path $root "tools\argon2_ref.dll"),
-        (Join-Path $root "tools\mldsa87_ref.dll")
-    )
+    $candidates = [System.Collections.Generic.List[string]](Get-NativeToolTargets -Root $root)
 
     $applicationDirectory = Join-Path $root "KalynaArchiver\bin\$Configuration\net9.0-windows"
     if (Test-Path -LiteralPath $applicationDirectory) {

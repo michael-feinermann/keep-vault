@@ -160,6 +160,17 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
             "Contents/MacOS/Native/libargon2_ref.dylib",
             "Contents/MacOS/Native/libkalyna_ref.dylib",
             "Contents/MacOS/Native/libthreefish_ref.dylib",
+            // The four Crypto++ adapters. The application refuses to reach a
+            // trusted state without them and the cascades that name AES,
+            // MARS, SHACAL-2 or ChaCha20-Poly1305 have nothing to run on, but
+            // this list was written before they existed and never grew - so a
+            // bundle missing any of them verified clean and then could not
+            // open an archive. Build-KeepVault-macOS.sh already stages all
+            // nine; this is the check that says so.
+            "Contents/MacOS/Native/libaes_ref.dylib",
+            "Contents/MacOS/Native/libmars_ref.dylib",
+            "Contents/MacOS/Native/libshacal2_ref.dylib",
+            "Contents/MacOS/Native/libchachapoly_ref.dylib",
             "Contents/Info.plist",
         ];
         foreach (string relative in required)

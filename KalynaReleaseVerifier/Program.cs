@@ -39,15 +39,17 @@ catch (Exception ex)
 
 static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
 {
+    // The native half is taken from the application's own required set rather
+    // than listed again. Listed again, it went stale: this array named five
+    // libraries while the application refused to start without nine, so a
+    // portable release built without aes_ref.dll, mars_ref.dll,
+    // shacal2_ref.dll or chachapoly_ref.dll passed verification and then
+    // refused to open an archive on the machine it was verified for.
     string[] requiredTopLevelArtifacts =
     [
         "Keep Vault.exe",
         "Keep Vault Release Verifier.exe",
-        "zpaq.exe",
-        "argon2.exe",
-        "argon2_ref.dll",
-        "kalyna_ref.dll",
-        "threefish_ref.dll",
+        .. IntegrityService.RequiredNativeTools,
         "PORTABLE_README.txt",
     ];
     foreach (string required in requiredTopLevelArtifacts)
