@@ -289,13 +289,20 @@ internal static unsafe class NativeAes
     }
 
     /// <summary>
-    /// The reference AES, used when the platform implementation is unavailable
-    /// and by the tests to check the platform against something independent.
+    /// AES-256 in CTR, as every cascade stage that names AES runs it.
     /// </summary>
     /// <remarks>
-    /// This is the slow path on purpose. Production AES runs on the platform,
-    /// which reaches AES-NI and the Apple silicon crypto extensions; this one
-    /// is compiled with Crypto++'s assembly paths switched off.
+    /// This is the production path, not a fallback: there is no managed or
+    /// platform AES anywhere in this application, and ApplyCtrStage calls
+    /// straight into here. An earlier version of this comment claimed
+    /// otherwise, and that claim is what hid the fact that macOS was building
+    /// Crypto++ with its assembly and SIMD paths switched off — AES ran on
+    /// tables while the comment said it ran on AES-NI.
+    ///
+    /// It reaches the hardware now: the *_simd translation units are built
+    /// with their instruction-set flags, and which path runs is decided at
+    /// load time from CPUID on Intel and from the ARM feature registers on
+    /// Apple silicon.
     /// </remarks>
     public static void XCryptCtr256(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
     {

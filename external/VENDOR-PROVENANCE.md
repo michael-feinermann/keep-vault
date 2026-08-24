@@ -15,10 +15,43 @@ Generated: 2026-08-15T15:46:48Z
 - Release tag: `CRYPTOPP_8_9_0`
 - Source archive: https://github.com/weidai11/cryptopp/archive/refs/tags/CRYPTOPP_8_9_0.tar.gz
 - Archive SHA-256: `ab5174b9b5c6236588e15a1aa1aaecb6658cdbe09501c7981ac8db276a24d9ab`
-- Local changes (line-ending noise excluded): none, vendored verbatim
+- Local changes (line-ending noise excluded): one, in `cryptopp/cpu.cpp`, marked
+  in place with `KEEP VAULT LOCAL CHANGE`. See "Local change: Apple silicon
+  feature detection" below. Every other file is the upstream release verbatim.
 - Licence: Boost Software License 1.0 for the compilation; the individual
   algorithm files are placed in the public domain by their authors. See
   `cryptopp/License.txt`.
+
+### Local change: Apple silicon feature detection
+
+`AppleMachineInfo` in `cpu.cpp` decides which instruction set an arm64 Mac has
+by comparing `machdep.cpu.brand_string` to the literal string `"Apple M1"`.
+Anything else takes the unknown branch and is reported as plain ARMv8. Every
+call site in that file that answers for AES, PMULL, SHA-1, SHA-2 and CRC32 asks
+for ARMv8.2, so on an M2, M3, M4 or M5 — and on an M1 Pro, whose brand string is
+not `"Apple M1"` — Crypto++ reports those instructions absent and selects its
+portable C++ paths on hardware that implements all of them. Measured on an
+M5: AES-256-CTR ran at 1876 MB/s instead of 8862 MB/s.
+
+The change asks the kernel instead of the marketing name:
+`hw.optional.arm.FEAT_AES`, `FEAT_PMULL` and `FEAT_SHA256` via `sysctlbyname`.
+It is conservative in both directions — a core without them is reported as
+ARMv8, exactly as the old default did, and ARMv8.3 is never claimed, which
+nothing in the file queries. A kernel that does not publish those keys fails
+the lookup, which is the same answer as "not present", so the previous
+behaviour is what remains.
+
+Nothing outside CPU capability detection is touched, and no algorithm,
+constant or code path is altered: which implementation of a cipher runs
+changes, what it computes does not. The build gate that holds this is
+`tools/Build-Native-macOS.sh` plus the differential harness — every cipher
+compared before and after across 448 key, nonce and length combinations with no
+ciphertext difference, and `KeepVaultMac/Packaging/NativeKats.c` passing on both
+slices.
+
+Upstream carries the same defect in `CRYPTOPP_8_9_0`, the current release. To
+drop this change, take a release whose `AppleMachineInfo` no longer decides the
+instruction set from the brand string.
 
 Vendored whole rather than file by file. The algorithm sources cannot be taken
 out on their own: `rijndael.cpp` and its siblings all depend on `cryptlib.h`,
