@@ -151,6 +151,30 @@ inline bool IsVIA(const word32 output[4])
 
 #if defined(__APPLE__)
 
+// KEEP VAULT LOCAL CHANGE (see external/VENDOR-PROVENANCE.md).
+//
+// Asks the kernel which instructions the core implements, instead of inferring
+// it from the CPU's marketing name. Arm64 Macs are classified below by
+// comparing machdep.cpu.brand_string to the literal "Apple M1", so every other
+// part - M2, M3, M4, M5, and even an M1 Pro, whose string is not "Apple M1" -
+// takes the unknown branch and is reported as plain ARMv8. AES, PMULL, SHA-1,
+// SHA-2 and CRC32 all hang off the ARMv8.2 answer, so on those machines
+// Crypto++ selects its portable C++ paths on hardware that has every one of
+// those instructions.
+//
+// A name the kernel does not publish fails the call, which is the same answer
+// as "not present", so an OS without these keys behaves exactly as before.
+static bool HasAppleArmFeature(const char* name)
+{
+	// The kernel writes an int for these keys; a wider zeroed slot accepts that
+	// without this code having to care which width it chose.
+	unsigned long long value = 0;
+	size_t size = sizeof(value);
+	if (sysctlbyname(name, &value, &size, NULL, 0) != 0)
+		return false;
+	return value != 0;
+}
+
 // http://stackoverflow.com/questions/45637888/how-to-determine-armv8-features-at-runtime-on-ios
 class AppleMachineInfo
 {
@@ -240,15 +264,27 @@ public:
 				brand.resize(size);
 			}
 
-			if (brand == "Apple M1")
+			// KEEP VAULT LOCAL CHANGE (see external/VENDOR-PROVENANCE.md).
+			//
+			// Upstream compares `brand` to "Apple M1" here and treats every
+			// other part as an unknown ARMv8 core. The three features below are
+			// what ARMV82 stands for at every call site in this file, so they
+			// are asked for directly and the brand string is left to describe
+			// the machine rather than to decide its instruction set.
+			//
+			// Conservative both ways: a core without them is reported as ARMv8,
+			// exactly as the old default did, and ARMv8.3 is never claimed --
+			// nothing in this file queries it.
+			CRYPTOPP_UNUSED(brand);
+			m_device = Mac;
+			if (HasAppleArmFeature("hw.optional.arm.FEAT_AES") &&
+			    HasAppleArmFeature("hw.optional.arm.FEAT_PMULL") &&
+			    HasAppleArmFeature("hw.optional.arm.FEAT_SHA256"))
 			{
-				m_device = Mac;
 				m_arch = ARMV82;
 			}
 			else
 			{
-				// ???
-				m_device = 0;
 				m_arch = ARMV8;
 			}
 		}

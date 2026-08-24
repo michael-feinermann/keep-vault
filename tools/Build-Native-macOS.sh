@@ -106,15 +106,20 @@ build_architecture() {
   # list is incomplete.
   local cryptopp_dir=${repo_root}/external/cryptopp
   # Must be identical for the archive and for every adapter compiled against
-  # it: the headers branch on this macro, so a mismatch would give the two
-  # sides different class layouts.
-  local cryptopp_flags=(-std=c++17 -DCRYPTOPP_DISABLE_ASM)
+  # it: the headers branch on these, so a mismatch would give the two sides
+  # different class layouts.
+  #
+  # CRYPTOPP_DISABLE_ASM used to be set here, which cost AES-256 the crypto
+  # instructions every Mac this ships to has had since the first Apple silicon
+  # and every x86 Mac since Westmere. The Windows build never disabled them.
+  local cryptopp_flags=(-std=c++17)
   local cryptopp_objects=${output_dir}/cryptopp-objects
   local cryptopp_archive=${output_dir}/libcryptopp.a
   rm -rf -- ${cryptopp_objects}
   mkdir -p -- ${cryptopp_objects}
 
   local cryptopp_sources=()
+  local simd_sources=()
   local candidate
   for candidate in ${cryptopp_dir}/*.cpp(N:t); do
     # The validation, benchmark and self-test drivers ship in the same
@@ -126,11 +131,11 @@ build_architecture() {
       regtest*.cpp|validat*.cpp)
         continue
         ;;
-      # The *_simd translation units are compiled by Crypto++'s own makefile
-      # with per-file -m flags for AES-NI, SHA and NEON. This build uses one
-      # flag set for everything, so they are left out and the portable C++
-      # paths are selected instead; see CRYPTOPP_DISABLE_ASM below.
-      *_simd.cpp)
+      # Compiled below, each with the one instruction-set flag its own
+      # intrinsics need. Upstream gives every one of these its own makefile
+      # rule; the suffixes are its naming, not a guess.
+      *_simd.cpp|*_avx.cpp|*_sse.cpp|darn.cpp)
+        simd_sources+=(${candidate})
         continue
         ;;
     esac
@@ -145,6 +150,89 @@ build_architecture() {
   print -r -- ${(F)cryptopp_sources} \
     | xargs -P 10 -I{} ${cxx} ${common_flags[@]} ${cryptopp_flags[@]} -c \
         -I${cryptopp_dir} -o ${cryptopp_objects}/{}.o ${cryptopp_dir}/{}
+
+  # One flag set per file, copied from the rules in Crypto++'s own GNUmakefile.
+  #
+  # The flag goes only on the translation unit whose intrinsics need it, which
+  # is the whole reason upstream separates these files: give -maes to a unit
+  # whose run-time guard only tested for SSE2 and the compiler may put an AES
+  # instruction on a path that machine never proved it could run. Whether a
+  # path is taken is decided at run time by cpu.cpp from CPUID or the ARM
+  # feature registers, so a slice built this way still runs where the extension
+  # is absent - it just takes the portable code there.
+  #
+  # A file whose flag is empty compiles to nothing on this architecture: its
+  # contents sit behind an #if for the other one.
+  local -A simd_flags
+  if [[ ${architecture} == arm64 ]]; then
+    simd_flags=(
+      rijndael_simd.cpp '-march=armv8-a+crypto'
+      sha_simd.cpp      '-march=armv8-a+crypto'
+      shacal2_simd.cpp  '-march=armv8-a+crypto'
+      gcm_simd.cpp      '-march=armv8-a+crypto'
+      gf2n_simd.cpp     '-march=armv8-a+crypto'
+      crc_simd.cpp      '-march=armv8-a+crc'
+      sm4_simd.cpp      '-march=armv8-a'
+      neon_simd.cpp     '-march=armv8-a'
+      chacha_simd.cpp   '-march=armv8-a'
+      blake2b_simd.cpp  '-march=armv8-a'
+      blake2s_simd.cpp  '-march=armv8-a'
+      cham_simd.cpp     '-march=armv8-a'
+      lea_simd.cpp      '-march=armv8-a'
+      keccak_simd.cpp   '-march=armv8-a'
+      simon128_simd.cpp '-march=armv8-a'
+      speck128_simd.cpp '-march=armv8-a'
+      sse_simd.cpp      ''
+      ppc_simd.cpp      ''
+      donna_sse.cpp     ''
+      chacha_avx.cpp    ''
+      lsh256_sse.cpp    ''
+      lsh256_avx.cpp    ''
+      lsh512_sse.cpp    ''
+      lsh512_avx.cpp    ''
+      darn.cpp          ''
+    )
+  else
+    simd_flags=(
+      rijndael_simd.cpp '-msse4.1 -maes'
+      sha_simd.cpp      '-msse4.2 -msha'
+      shacal2_simd.cpp  '-msse4.2 -msha'
+      gcm_simd.cpp      '-mssse3 -mpclmul'
+      gf2n_simd.cpp     '-mpclmul'
+      crc_simd.cpp      '-msse4.2'
+      sm4_simd.cpp      '-mssse3 -maes'
+      chacha_simd.cpp   '-msse2'
+      blake2b_simd.cpp  '-msse4.1'
+      blake2s_simd.cpp  '-msse4.1'
+      cham_simd.cpp     '-mssse3'
+      lea_simd.cpp      '-mssse3'
+      keccak_simd.cpp   '-mssse3'
+      simon128_simd.cpp '-mssse3'
+      speck128_simd.cpp '-mssse3'
+      sse_simd.cpp      '-msse2'
+      donna_sse.cpp     '-msse2'
+      chacha_avx.cpp    '-mavx2'
+      lsh256_sse.cpp    '-mssse3'
+      lsh256_avx.cpp    '-mavx2'
+      lsh512_sse.cpp    '-mssse3'
+      lsh512_avx.cpp    '-mavx2'
+      neon_simd.cpp     ''
+      ppc_simd.cpp      ''
+      darn.cpp          ''
+    )
+  fi
+
+  local simd_source
+  for simd_source in ${simd_sources[@]}; do
+    if [[ -z ${simd_flags[${simd_source}]+set} ]]; then
+      print -u2 "Crypto++ has an instruction-set source this build has no flag for: ${simd_source}"
+      exit 1
+    fi
+
+    ${cxx} ${common_flags[@]} ${cryptopp_flags[@]} ${=simd_flags[${simd_source}]} -c \
+      -I${cryptopp_dir} -o ${cryptopp_objects}/${simd_source}.o ${cryptopp_dir}/${simd_source}
+  done
+
   xcrun ar rcs ${cryptopp_archive} ${cryptopp_objects}/*.o
   rm -rf -- ${cryptopp_objects}
 
@@ -186,10 +274,13 @@ build_architecture() {
     ${repo_root}/external/zpaq/libzpaq.cpp \
     -Wl,-pie ${link_flags[@]}
 
+  # kalyna_fast.c carries the table-driven encryption; the reference stays
+  # linked in and verifies it at start-up before it may be used.
   ${cc} ${common_flags[@]} -dynamiclib -pthread \
     -install_name @rpath/libkalyna_ref.dylib \
     -o ${output_dir}/libkalyna_ref.dylib \
     ${repo_root}/native/kalyna_ref_export.c \
+    ${repo_root}/native/kalyna_fast.c \
     ${repo_root}/external/Kalyna-reference/kalyna.c \
     ${repo_root}/external/Kalyna-reference/tables.c \
     ${link_flags[@]}

@@ -289,13 +289,20 @@ internal static unsafe class NativeAes
     }
 
     /// <summary>
-    /// The reference AES, used when the platform implementation is unavailable
-    /// and by the tests to check the platform against something independent.
+    /// AES-256 in CTR, as every cascade stage that names AES runs it.
     /// </summary>
     /// <remarks>
-    /// This is the slow path on purpose. Production AES runs on the platform,
-    /// which reaches AES-NI and the Apple silicon crypto extensions; this one
-    /// is compiled with Crypto++'s assembly paths switched off.
+    /// This is the production path, not a fallback: there is no managed or
+    /// platform AES anywhere in this application, and ApplyCtrStage calls
+    /// straight into here. An earlier version of this comment claimed
+    /// otherwise, and that claim is what hid the fact that macOS was building
+    /// Crypto++ with its assembly and SIMD paths switched off — AES ran on
+    /// tables while the comment said it ran on AES-NI.
+    ///
+    /// It reaches the hardware now: the *_simd translation units are built
+    /// with their instruction-set flags, and which path runs is decided at
+    /// load time from CPUID on Intel and from the ARM feature registers on
+    /// Apple silicon.
     /// </remarks>
     public static void XCryptCtr256(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
     {
@@ -385,6 +392,8 @@ internal static unsafe class NativeChaChaPoly
     private static nint _libraryHandle;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int> _encrypt;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int> _decrypt;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int> _xcrypt;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int> _xcryptSerial;
 
     public static string? LastLoadError { get; private set; }
 
@@ -474,6 +483,50 @@ internal static unsafe class NativeChaChaPoly
         ThrowOnError(result);
     }
 
+    /// <summary>
+    /// Raw ChaCha20 keyed at an explicit block counter, split across workers.
+    /// </summary>
+    /// <remarks>
+    /// Exercised by the differential test rather than by the container, which
+    /// reaches ChaCha20 only through the authenticated pair above.
+    /// </remarks>
+    internal static int XCrypt(byte[] key, byte[] nonce, uint blockCounter, byte[] input, byte[] output, int length)
+    {
+        return XCrypt(key, nonce, blockCounter, input, output, length, serial: false);
+    }
+
+    /// <summary>The same keystream produced on one thread.</summary>
+    internal static int XCryptSerial(byte[] key, byte[] nonce, uint blockCounter, byte[] input, byte[] output, int length)
+    {
+        return XCrypt(key, nonce, blockCounter, input, output, length, serial: true);
+    }
+
+    /// <remarks>
+    /// Returns the native status instead of throwing: the counter-exhaustion
+    /// refusal is one of the behaviours under test, and a test that has to
+    /// catch an exception to observe it cannot tell it apart from a fault.
+    /// </remarks>
+    private static int XCrypt(byte[] key, byte[] nonce, uint blockCounter, byte[] input, byte[] output, int length, bool serial)
+    {
+        if (key.Length != KeyBytes || nonce.Length != NonceBytes
+            || length < 0 || input.Length < length || output.Length < length)
+        {
+            throw new ArgumentException(
+                $"ChaCha20 requires a {KeyBytes}-byte key, a {NonceBytes}-byte nonce, and sufficiently large buffers.");
+        }
+
+        EnsureLoaded();
+        fixed (byte* keyPointer = key)
+        fixed (byte* noncePointer = nonce)
+        fixed (byte* inputPointer = input)
+        fixed (byte* outputPointer = output)
+        {
+            return serial
+                ? _xcryptSerial(keyPointer, noncePointer, blockCounter, inputPointer, outputPointer, (nuint)length)
+                : _xcrypt(keyPointer, noncePointer, blockCounter, inputPointer, outputPointer, (nuint)length);
+        }
+    }
+
     private static void Validate(byte[] key, byte[] nonce, byte[] tag, byte[] input, byte[] output, int length)
     {
         if (key.Length != KeyBytes || nonce.Length != NonceBytes || tag.Length != TagBytes
@@ -495,6 +548,12 @@ internal static unsafe class NativeChaChaPoly
         throw new CryptographicException(result switch
         {
             1 => "ChaCha20-Poly1305 reference library received invalid buffers.",
+            // The AEAD now produces its keystream through the same worker-split
+            // path as the block ciphers, so it can report what that path
+            // reports. Before it was one Crypto++ call that could only fail
+            // internally, and these two codes were unreachable.
+            3 => "ChaCha20-Poly1305 reference library could not start its keystream workers.",
+            4 => "ChaCha20 block counter is exhausted; the request is larger than one nonce may cover.",
             5 => "ChaCha20-Poly1305 reference library failed internally.",
             _ => $"ChaCha20-Poly1305 reference library returned error {result}.",
         });
@@ -516,6 +575,10 @@ internal static unsafe class NativeChaChaPoly
                     NativeLibrary.GetExport(handle, "chacha20poly1305_encrypt");
                 _decrypt = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int>)
                     NativeLibrary.GetExport(handle, "chacha20poly1305_decrypt");
+                _xcrypt = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
+                    NativeLibrary.GetExport(handle, "chacha20_xcrypt");
+                _xcryptSerial = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
+                    NativeLibrary.GetExport(handle, "chacha20_xcrypt_serial");
                 _libraryHandle = handle;
             }
             catch
@@ -523,6 +586,8 @@ internal static unsafe class NativeChaChaPoly
                 NativeLibrary.Free(handle);
                 _encrypt = null;
                 _decrypt = null;
+                _xcrypt = null;
+                _xcryptSerial = null;
                 throw;
             }
         }

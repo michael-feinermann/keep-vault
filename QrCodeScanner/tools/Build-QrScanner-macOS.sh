@@ -331,6 +331,13 @@ if [[ -z ${pfx_path} ]]; then
     break
   done
 fi
+# Where the keys actually live when no removable volume is mounted. Without
+# this the search ended empty on the machine that holds them, the signing block
+# below was skipped, and the build failed a minute later in the verifier with
+# a missing sidecar rather than with the reason.
+if [[ -z ${pfx_path} ]]; then
+  pfx_path="${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/hybrid-rsa4096.pfx"
+fi
 
 mldsa_private_key=${KEEPVAULT_MLDSA_PRIVATE_KEY:-}
 if [[ -z ${mldsa_private_key} ]]; then
@@ -339,6 +346,9 @@ if [[ -z ${mldsa_private_key} ]]; then
     mldsa_private_key=${candidate}
     break
   done
+fi
+if [[ -z ${mldsa_private_key} ]]; then
+  mldsa_private_key="${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key"
 fi
 mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${mldsa_private_key}.enc}
 mldsa_keychain_service=${KEEPVAULT_MLDSA_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-wrapping-key}
@@ -375,7 +385,19 @@ pfx_password_service=${KEEPVAULT_PFX_KEYCHAIN_SERVICE:-de.michael-feinermann.kee
 pfx_password_account=${KEEPVAULT_PFX_KEYCHAIN_ACCOUNT:-${USER:-}}
 pfx_password_environment=${KEEPVAULT_PFX_PASSWORD_ENV:-KEEPVAULT_HYBRID_PFX_PASSWORD}
 
-if [[ -n ${pfx_path} && -f ${pfx_path} && -n ${mldsa_private_key} && -f ${mldsa_private_key} && -x ${dotnet_command} ]]; then
+# The wrapped key is the normal case: once both halves are wrapped, the
+# plaintext ML-DSA key is deleted and only the .enc file remains. Testing for
+# the plaintext path alone made this block skip itself on exactly the tree that
+# had been migrated, which is the tree every release is built from.
+mldsa_key_present=0
+if [[ -f ${mldsa_private_key} && ! -L ${mldsa_private_key} ]]; then
+  mldsa_key_present=1
+fi
+if [[ -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} ]]; then
+  mldsa_key_present=1
+fi
+
+if [[ -n ${pfx_path} && -f ${pfx_path} && ${mldsa_key_present} -eq 1 && -x ${dotnet_command} ]]; then
   signer_dll=${repo_root}/KeepVaultMac/Packaging/HybridSigner/bin/Release/net10.0/KeepVaultMac.HybridSigner.dll
   (
     cd ${repo_root}/KeepVaultMac
@@ -423,6 +445,16 @@ if [[ -n ${pfx_path} && -f ${pfx_path} && -n ${mldsa_private_key} && -f ${mldsa_
   done
   codesign --verify --strict --verbose=2 ${app_bundle}
   print "scanner_dual_signature=${app_bundle}.khsig"
+else
+  # Everything that consumes this bundle pins its hybrid sidecars, so a copy
+  # without them is not a lesser build, it is an unusable one. Say which input
+  # was missing here rather than letting the verifier report the consequence.
+  print -u2 'QR-Scanner hybrid signing was skipped, so the bundle has no sidecars and nothing will accept it.'
+  print -u2 "  RSA PFX:            ${pfx_path} ($([[ -f ${pfx_path} ]] && print present || print MISSING))"
+  print -u2 "  ML-DSA key:         ${mldsa_private_key} ($([[ -f ${mldsa_private_key} ]] && print present || print absent))"
+  print -u2 "  ML-DSA key wrapped: ${mldsa_private_key_encrypted} ($([[ -f ${mldsa_private_key_encrypted} ]] && print present || print MISSING))"
+  print -u2 "  dotnet:             ${dotnet_command} ($([[ -x ${dotnet_command} ]] && print executable || print MISSING))"
+  exit 1
 fi
 
 if (( install_app )); then
