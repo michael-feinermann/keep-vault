@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../external/Kalyna-reference/kalyna.h"
+#include "kalyna_fast.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -145,7 +146,7 @@ static int xcrypt_ctr_range_prepared(
         size_t remaining = length - offset;
         size_t block = remaining < KALYNA_BLOCK_BYTES ? remaining : KALYNA_BLOCK_BYTES;
         memcpy(counter_words, counter, sizeof(counter_words));
-        KalynaEncipher(counter_words, ctx, stream_words);
+        kalyna_fast_encipher_512(ctx->round_keys, counter_words, stream_words);
         memcpy(stream, stream_words, sizeof(stream));
         for (size_t i = 0; i < block; ++i) {
             output[offset + i] = input[offset + i] ^ stream[i];
@@ -337,6 +338,15 @@ KALYNA_EXPORT int kalyna_512_512_ctr_xcrypt(
 {
     if (key == NULL || nonce == NULL || input == NULL || output == NULL) {
         return 1;
+    }
+
+    /* The table-driven path is only allowed to run once it has reproduced the
+       published vector and the reference implementation linked in beside it.
+       Refusing is the right answer to a mismatch: both come from the same
+       constants, so disagreement means the build or the machine is wrong, and
+       a container written from an unverified keystream is worse than none. */
+    if (!kalyna_fast_ready()) {
+        return 5;
     }
 
     if (length > SIZE_MAX - (KALYNA_BLOCK_BYTES - 1)) {

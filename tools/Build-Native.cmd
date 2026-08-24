@@ -28,7 +28,9 @@ set "HARDEN_LINK=/link /guard:cf /CETCOMPAT"
 cl %HARDEN_COMPILE% /DNOJIT /EHsc /Fetools\zpaq.exe external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
-cl %HARDEN_COMPILE% /LD /Fetools\kalyna_ref.dll native\kalyna_ref_export.c external\Kalyna-reference\kalyna.c external\Kalyna-reference\tables.c %HARDEN_LINK%
+REM kalyna_fast.c carries the table-driven encryption; the reference stays
+REM linked in and verifies it at start-up before it may be used.
+cl %HARDEN_COMPILE% /LD /Fetools\kalyna_ref.dll native\kalyna_ref_export.c native\kalyna_fast.c external\Kalyna-reference\kalyna.c external\Kalyna-reference\tables.c %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
 cl %HARDEN_COMPILE% /LD /D_CRT_SECURE_NO_WARNINGS ^
