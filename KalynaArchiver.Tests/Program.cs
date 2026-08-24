@@ -98,6 +98,10 @@ await RunEntropyGeneratorTestsAsync();
 Console.WriteLine("Two generated 1024-bit password factors and entropy mixer tests passed.");
 RunNativeIntegrityTests();
 Console.WriteLine("Native tool integrity and signature checks passed.");
+RunReleaseScriptToolCoverageTests();
+Console.WriteLine("Release scripts cover exactly the required native tool set.");
+RunLocalizationDefaultsTests();
+Console.WriteLine("MainWindow design-time text matches the strings ApplyLanguage installs.");
 await RunZpaqTraversalTestsAsync();
 Console.WriteLine("ZPAQ path-traversal and extraction-directory tests passed.");
 await RunZpaqInputBindingTestsAsync();
@@ -636,6 +640,36 @@ static void RunKeySheetTests()
         Assert(service.CreatePrintVisual(data, KeySheetFactor.First) is FrameworkElement, "first in-memory print visual can be created");
         Assert(service.CreatePrintVisual(data, KeySheetFactor.Second) is FrameworkElement, "second in-memory print visual can be created");
         Assert(service.CreatePrintDocument(data, new System.Windows.Size(793.7, 1122.5)).Pages.Count == 3, "print document has key sheet A, blank duplex page, and key sheet B");
+
+        // The sheet has to carry the whole factor. It did not: the macOS sheet
+        // printed the first 224 of its 256 hexadecimal characters, because
+        // XTextFormatter drops the lines that do not fit the rectangle it is
+        // handed and says nothing about it. A sheet missing the last 32
+        // characters looks complete and cannot open its archive.
+        //
+        // The same construction is on this side, so it is held the same way.
+        // The macOS suite runs this check as KeySheetFactorIsCompleteAsync.
+        string factor = string.Concat(Enumerable.Repeat("0123456789ABCDEF", 16));
+        Assert(factor.Length == PasswordKeyService.GeneratedPasswordLength, "a 1024-bit factor is 256 hexadecimal characters");
+
+        string grouped = KeySheetService.GroupGeneratedPasswordForSheet(factor);
+        string[] lines = grouped.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        string rejoined = string.Concat(lines.Select(line => line.Replace(" ", string.Empty).Trim()));
+        Assert(
+            string.Equals(rejoined, factor, StringComparison.Ordinal),
+            $"the sheet grouping changed the factor: {rejoined.Length} characters instead of {factor.Length}");
+        Assert(
+            lines.Length == 7,
+            $"a 256-character factor is seven rows of five groups; the grouping produced {lines.Length}");
+
+        KeySheetService.EnsurePdfFontResolver();
+        var monoFont = new PdfSharp.Drawing.XFont("Consolas", 14);
+        double reserved = KeySheetService.FactorBlockHeight(monoFont, grouped);
+        double needed = lines.Length * monoFont.GetHeight();
+        Assert(
+            reserved >= needed,
+            $"the factor block reserves {reserved:F1}pt for {lines.Length} lines that need {needed:F1}pt; "
+            + "the last lines would be dropped without a word");
     }
     finally
     {
@@ -1033,9 +1067,236 @@ static void IncrementCounterForTest(byte[] counter, long blocks)
     Assert(carry == 0, "test counter does not overflow");
 }
 
+// The release scripts sign and manifest a list of native tools. The
+// application refuses to start without a different list. Those two have to be
+// the same list, and three times now they were not: Sign-Binaries.ps1,
+// Generate-ReleaseManifests.ps1 and Sign-ManagedOutput.ps1 each kept a
+// six-or-fewer-entry copy, so the four Crypto++ adapters were built, shipped,
+// and never signed.
+//
+// Nothing downstream catches that on the machine that builds the release. The
+// scripts succeed, the binaries are there, and the failure appears only on a
+// user's machine as four tools reported missing by the integrity gate - with
+// archive operations disabled and no indication why.
+//
+// So the list now lives in tools\NativeToolTargets.ps1, and this reads it back
+// and holds it against IntegrityService.RequiredNativeTools.
+// MainWindow.xaml sets a Text on most of its named TextBlocks, and
+// ApplyLanguage overwrites nearly all of them from the T() table in the
+// constructor. So the XAML string is never seen - and that is the trap: a fix
+// applied to the XAML alone changes nothing a user can read, while the diff
+// looks exactly like a fix.
+//
+// It has happened. "Say four factors on the extraction panel" changed
+// ExtractPasswordTitle in the XAML on this side; the runtime table still said
+// "Password for extraction" and "Passwort zum Entpacken", so the Windows panel
+// went on contradicting its own four fields while the commit read as done.
+//
+// Holding the two equal makes the XAML a truthful preview of the running
+// window and gives the next such edit somewhere to fail.
+static void RunLocalizationDefaultsTests()
+{
+    string repositoryRoot = FindRepositoryRootForTest();
+    string xamlPath = Path.Combine(repositoryRoot, "KalynaArchiver", "MainWindow.xaml");
+    string codePath = Path.Combine(repositoryRoot, "KalynaArchiver", "MainWindow.xaml.cs");
+    Assert(File.Exists(xamlPath) && File.Exists(codePath), "MainWindow.xaml and its code-behind exist");
+
+    string xaml = File.ReadAllText(xamlPath);
+    string code = File.ReadAllText(codePath);
+
+    var xamlText = new Dictionary<string, string>(StringComparer.Ordinal);
+    foreach (System.Text.RegularExpressions.Match element in
+             System.Text.RegularExpressions.Regex.Matches(xaml, "<(\\w+)\\b((?:[^<>\"]|\"[^\"]*\")*?)/?>",
+                 System.Text.RegularExpressions.RegexOptions.Singleline))
+    {
+        string attributes = element.Groups[2].Value;
+        var name = System.Text.RegularExpressions.Regex.Match(attributes, "x:Name=\"([^\"]+)\"");
+        var text = System.Text.RegularExpressions.Regex.Match(attributes, "\\bText=\"([^\"]*)\"");
+        if (name.Success && text.Success)
+        {
+            xamlText[name.Groups[1].Value] = DecodeXamlAttribute(text.Groups[1].Value);
+        }
+    }
+
+    Assert(xamlText.Count > 40, $"the XAML sweep found only {xamlText.Count} named TextBlocks with a Text; the layout probably moved");
+
+    int applyStart = code.IndexOf("private void ApplyLanguage()", StringComparison.Ordinal);
+    int applyEnd = code.IndexOf("private string T(string key)", StringComparison.Ordinal);
+    Assert(applyStart >= 0 && applyEnd > applyStart, "ApplyLanguage and the T() table were both found");
+
+    var englishStrings = new Dictionary<string, string>(StringComparer.Ordinal);
+    foreach (System.Text.RegularExpressions.Match entry in
+             System.Text.RegularExpressions.Regex.Matches(code, "\\(\"en\",\\s*\"([^\"]+)\"\\)\\s*=>\\s*\"((?:[^\"\\\\]|\\\\.)*)\""))
+    {
+        englishStrings[entry.Groups[1].Value] = DecodeCSharpLiteral(entry.Groups[2].Value);
+    }
+
+    // Only the unconditional one-line assignments. The conditional ones - the
+    // key sheet and password-policy status lines - pick a string from the
+    // control's current state, so their XAML default is the starting state and
+    // is meant to differ from any single table entry.
+    var mismatches = new List<string>();
+    int compared = 0;
+    foreach (System.Text.RegularExpressions.Match assignment in
+             System.Text.RegularExpressions.Regex.Matches(
+                 code[applyStart..applyEnd], @"^\s*(\w+)\.Text = T\(""([^""]+)""\);\s*$",
+                 System.Text.RegularExpressions.RegexOptions.Multiline))
+    {
+        string element = assignment.Groups[1].Value;
+        string key = assignment.Groups[2].Value;
+        if (!xamlText.TryGetValue(element, out string? designTime)
+            || !englishStrings.TryGetValue(key, out string? runtime))
+        {
+            continue;
+        }
+
+        compared++;
+        if (!string.Equals(designTime.Trim(), runtime.Trim(), StringComparison.Ordinal))
+        {
+            mismatches.Add($"{element} [{key}]: XAML \"{designTime}\" vs English \"{runtime}\"");
+        }
+    }
+
+    Assert(compared > 30, $"only {compared} localized TextBlocks were compared; the match probably broke");
+    Assert(
+        mismatches.Count == 0,
+        "MainWindow.xaml design-time text must equal the English string ApplyLanguage puts there, "
+        + "or a fix applied to one of them changes nothing:"
+        + Environment.NewLine + string.Join(Environment.NewLine, mismatches));
+
+    // And both arms have to answer for the same keys. The switch ends in
+    // `_ => key`, so a key added to one language and not the other does not
+    // throw and does not fall back to the other language - it paints the key's
+    // own name into the window, in the middle of otherwise ordinary prose.
+    // Key sets, not values: an arm may answer with an expression rather than a
+    // literal - ProductInfo.Name does, for the window title - and those keys
+    // count just the same. Both sides are matched the same lenient way, or the
+    // comparison would report every such key as missing from whichever side was
+    // read strictly.
+    static HashSet<string> KeysOf(string source, string arm)
+    {
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (System.Text.RegularExpressions.Match entry in
+                 System.Text.RegularExpressions.Regex.Matches(source, "\\(" + arm + ",\\s*\"([^\"]+)\"\\)\\s*=>"))
+        {
+            keys.Add(entry.Groups[1].Value);
+        }
+
+        return keys;
+    }
+
+    HashSet<string> englishKeys = KeysOf(code, "\"en\"");
+    HashSet<string> germanKeys = KeysOf(code, "_");
+
+    Assert(englishKeys.Count > 100 && germanKeys.Count > 100,
+        $"the localization sweep found {englishKeys.Count} English and {germanKeys.Count} German keys; the table probably moved");
+
+    string[] englishOnly = [.. englishKeys.Where(key => !germanKeys.Contains(key)).Order()];
+    string[] germanOnly = [.. germanKeys.Where(key => !englishKeys.Contains(key)).Order()];
+    Assert(
+        englishOnly.Length == 0 && germanOnly.Length == 0,
+        $"every localization key needs both arms. English only: [{string.Join(", ", englishOnly)}]. "
+        + $"German only: [{string.Join(", ", germanOnly)}].");
+}
+
+static string DecodeXamlAttribute(string value)
+{
+    return value
+        .Replace("&#10;", "\n", StringComparison.Ordinal)
+        .Replace("&quot;", "\"", StringComparison.Ordinal)
+        .Replace("&lt;", "<", StringComparison.Ordinal)
+        .Replace("&gt;", ">", StringComparison.Ordinal)
+        .Replace("&amp;", "&", StringComparison.Ordinal);
+}
+
+static string DecodeCSharpLiteral(string value)
+{
+    return value
+        .Replace("\\\"", "\"", StringComparison.Ordinal)
+        .Replace("\\n", "\n", StringComparison.Ordinal)
+        .Replace("\\\\", "\\", StringComparison.Ordinal);
+}
+
+static void RunReleaseScriptToolCoverageTests()
+{
+    string repositoryRoot = FindRepositoryRootForTest();
+    string listScript = Path.Combine(repositoryRoot, "tools", "NativeToolTargets.ps1");
+    Assert(File.Exists(listScript), $"the shared native-tool list script exists at {listScript}");
+
+    string text = File.ReadAllText(listScript);
+    int bodyStart = text.IndexOf("function Get-NativeToolNames", StringComparison.Ordinal);
+    Assert(bodyStart >= 0, "NativeToolTargets.ps1 declares Get-NativeToolNames");
+    int bodyEnd = text.IndexOf("function Get-NativeToolTargets", StringComparison.Ordinal);
+    Assert(bodyEnd > bodyStart, "NativeToolTargets.ps1 declares Get-NativeToolTargets after Get-NativeToolNames");
+
+    string[] scriptNames = System.Text.RegularExpressions.Regex
+        .Matches(text[bodyStart..bodyEnd], "\"([A-Za-z0-9_]+\\.(?:dll|exe))\"")
+        .Select(match => match.Groups[1].Value)
+        .ToArray();
+
+    string[] required = [.. IntegrityService.RequiredNativeTools];
+    Assert(
+        scriptNames.SequenceEqual(required, StringComparer.Ordinal),
+        "tools\\NativeToolTargets.ps1 lists exactly IntegrityService.RequiredNativeTools, in the same order. "
+        + $"Script: [{string.Join(", ", scriptNames)}]. Required: [{string.Join(", ", required)}].");
+
+    // Each script has to take its targets from the shared list rather than
+    // build one. Asserted by what it calls, not by whether a tool name appears
+    // anywhere in the file: Sign-Binaries.ps1 legitimately names
+    // threefish_ref.dll once more as the Skein-1024 provider it computes the
+    // signer fingerprint with, which is a dependency, not a target.
+    foreach (string scriptName in new[] { "Sign-Binaries.ps1", "Generate-ReleaseManifests.ps1", "Sign-ManagedOutput.ps1" })
+    {
+        string path = Path.Combine(repositoryRoot, "tools", scriptName);
+        Assert(File.Exists(path), $"{scriptName} exists");
+        string script = File.ReadAllText(path);
+        Assert(
+            script.Contains("NativeToolTargets.ps1", StringComparison.Ordinal),
+            $"{scriptName} dot-sources the shared native-tool list");
+        Assert(
+            script.Contains("Get-NativeToolTargets", StringComparison.Ordinal)
+            || script.Contains("Get-NativeToolNames", StringComparison.Ordinal),
+            $"{scriptName} takes its native targets from the shared list");
+    }
+
+    // The portable-release verifier is the fourth place this list was copied
+    // to. It required five native binaries while the application required
+    // nine, so a portable build without the four Crypto++ adapters verified
+    // clean and then refused to open an archive.
+    string verifierPath = Path.Combine(repositoryRoot, "KalynaReleaseVerifier", "Program.cs");
+    Assert(File.Exists(verifierPath), "the portable release verifier exists");
+    string verifier = File.ReadAllText(verifierPath);
+    Assert(
+        verifier.Contains("IntegrityService.RequiredNativeTools", StringComparison.Ordinal),
+        "the portable release verifier requires the application's native tool set rather than a copy of it");
+}
+
+static string FindRepositoryRootForTest()
+{
+    // Accepts .git as either a directory or a file: in a git worktree it is a
+    // file pointing at the real git directory, and a directory-only check walks
+    // past the worktree to whatever repository contains it.
+    for (string? path = AppContext.BaseDirectory; path is not null; path = Path.GetDirectoryName(path))
+    {
+        string marker = Path.Combine(path, ".git");
+        if (Directory.Exists(marker) || File.Exists(marker))
+        {
+            return path;
+        }
+    }
+
+    throw new DirectoryNotFoundException("The Keep Vault repository root could not be located from the test binary.");
+}
+
 static void RunNativeIntegrityTests()
 {
-    string[] nativeTools = ["zpaq.exe", "argon2.exe", "kalyna_ref.dll", "threefish_ref.dll", "argon2_ref.dll"];
+    // The set the application refuses to run without, not a copy of it. This
+    // list used to be five hand-written names, so when the four Crypto++
+    // adapters arrived the suite kept passing while aes_ref.dll,
+    // mars_ref.dll, shacal2_ref.dll and chachapoly_ref.dll shipped unsigned
+    // and unmanifested - which is the one thing this test exists to catch.
+    IReadOnlyList<string> nativeTools = IntegrityService.RequiredNativeTools;
+    Assert(nativeTools.Count >= 9, $"the required native tool set has shrunk to {nativeTools.Count} entries");
     foreach (string tool in nativeTools)
     {
         string path = NativeToolIntegrity.ResolveKnownTool(tool)
@@ -1802,6 +2063,7 @@ static async Task AssertFileSha3Async(string path, byte[] expectedHash, string m
 static async Task RunEntropyGeneratorTestsAsync()
 {
     long lockedBaseline = SecureMemory.LockedBytesForTests;
+    long lockedAllocationBaseline = SecureMemory.LockedAllocationsForTests;
     long reservationBaseline = SecureMemory.ReservedWorkingSetBytesForTests;
     using Process reservationProcess = Process.GetCurrentProcess();
     reservationProcess.Refresh();
@@ -2086,9 +2348,18 @@ static async Task RunEntropyGeneratorTestsAsync()
             + postRace.NonceSecond
             + postRace.NonceThird,
         "concurrent generation preserves the current-total invariant");
+    // Counted, not weighed. Everything above this line has replaced each of the
+    // nine mouse pools many times over, and a pool buffer is charged the pages
+    // it spans: 64 bytes lands inside one page most of the time and across two
+    // in about one allocation in eighty, so the byte total moves by a page
+    // whenever the collector pins a replacement differently. Comparing bytes
+    // here made the suite fail on roughly one clean run in five. What the check
+    // is for is that nothing leaked, and the number of live locked buffers says
+    // that exactly.
     Assert(
-        SecureMemory.LockedBytesForTests == lockedBaseline,
-        "entropy generation and concurrent pool replacement return sensitive-memory lock accounting to baseline");
+        SecureMemory.LockedAllocationsForTests == lockedAllocationBaseline,
+        "entropy generation and concurrent pool replacement return every locked buffer they took "
+        + $"(baseline {lockedAllocationBaseline}, now {SecureMemory.LockedAllocationsForTests})");
 
     Assert(PasswordKeyService.MinPasswordLength == 24, "minimum password length is 24");
     Assert(PasswordKeyService.MaxPasswordLength == 256, "maximum password length is 256");
@@ -2636,7 +2907,7 @@ static async Task RunNativeArgon2WithSecureMemoryChurnAsync(
 {
     const int churnWorkerCount = 4;
     long reservationBaseline = SecureMemory.ReservedWorkingSetBytesForTests;
-    long lockedBytesBaseline = SecureMemory.LockedBytesForTests;
+    long lockedLeaseBaseline = SecureMemory.LockedAllocationsForTests;
     long maximumObservedReservation = reservationBaseline;
     int churnIterations = 0;
     using Process process = Process.GetCurrentProcess();
@@ -2697,7 +2968,10 @@ static async Task RunNativeArgon2WithSecureMemoryChurnAsync(
         SecureMemory.ReservedWorkingSetBytesForTests == reservationBaseline,
         "Argon2id releases its coordinated working-set reservation after churn");
     Assert(
-        SecureMemory.LockedBytesForTests == lockedBytesBaseline,
+        SecureMemory.LockedAllocationsForTests == lockedLeaseBaseline,
+        // Leases, not bytes: see SecureMemory.LockedAllocationsForTests. The
+        // byte total also moves with where the collector pins a replacement
+        // buffer, which is not something this test is entitled to an opinion on.
         "parallel secure-memory churn releases every managed VirtualLock lease");
     process.Refresh();
     Assert(
@@ -2842,7 +3116,7 @@ static async Task RunPdfRoundTripTestsAsync()
     byte[] originalHash = await Sha3FileAsync(sourcePdf);
     string root = Path.Combine(Path.GetTempPath(), $"kalyna-pdf-e2e-{Guid.NewGuid():N}");
     DateTime tempAuditStart = DateTime.UtcNow;
-    long lockedBytesBaseline = SecureMemory.LockedBytesForTests;
+    long lockedLeaseBaseline = SecureMemory.LockedAllocationsForTests;
     Directory.CreateDirectory(root);
 
     try
@@ -3172,7 +3446,10 @@ static async Task RunPdfRoundTripTestsAsync()
             "KPAR2-recovered encrypted PDF is readable");
         AssertNoNewPlaintextTempZpaq(tempAuditStart);
         Assert(
-            SecureMemory.LockedBytesForTests == lockedBytesBaseline,
+            SecureMemory.LockedAllocationsForTests == lockedLeaseBaseline,
+            // Leases, not bytes: see SecureMemory.LockedAllocationsForTests.
+            // Two round trips replace the nine entropy pools many times over,
+            // and each replacement may span one page or two.
             "both encrypted PDF roundtrips release every managed VirtualLock lease");
     }
     finally
@@ -4543,9 +4820,16 @@ static void RunFastPathDifferentialTests()
     {
         byte[] key = DerivedBytesForTest(64, keySeed);
         byte[] counter = CounterBlockForTest(nonceSeed, counterStart);
+        var stopwatch = Stopwatch.StartNew();
         RequireReferenceExport(() => NativeKalyna.XCryptCtr512Reference(key, counter, plaintext, fromReference, length));
+        TimeSpan referenceElapsed = stopwatch.Elapsed;
+        stopwatch.Restart();
         NativeKalyna.XCryptCtr512(key, counter, plaintext, fromFast, length);
+        TimeSpan fastElapsed = stopwatch.Elapsed;
         RequireIdenticalForTest(fromReference, fromFast, length, $"Kalyna {name}");
+        Console.WriteLine(
+            $"    Kalyna {name}: identical "
+            + $"({RateForTest(length, referenceElapsed)} reference, {RateForTest(length, fastElapsed)} tables)");
     }
 
     byte[] boundaryKey = DerivedBytesForTest(64, 9);
@@ -4556,6 +4840,8 @@ static void RunFastPathDifferentialTests()
         NativeKalyna.XCryptCtr512(boundaryKey, boundaryCounter, plaintext, fromFast, length);
         RequireIdenticalForTest(fromReference, fromFast, length, $"Kalyna boundary length {length}");
     }
+
+    Console.WriteLine($"    Kalyna boundary lengths identical: {string.Join(", ", boundaryLengths)}");
 
     const uint LargeBlocks = LargeBytes / 64;
     (string Name, ulong KeySeed, ulong NonceSeed, uint Counter, int Length)[] chachaCases =
@@ -4572,11 +4858,18 @@ static void RunFastPathDifferentialTests()
         byte[] key = DerivedBytesForTest(32, keySeed);
         byte[] nonce = DerivedBytesForTest(12, nonceSeed);
         int serialResult = 0;
+        var stopwatch = Stopwatch.StartNew();
         RequireReferenceExport(() => serialResult = NativeChaChaPoly.XCryptSerial(key, nonce, counter, plaintext, fromReference, length));
+        TimeSpan serialElapsed = stopwatch.Elapsed;
+        stopwatch.Restart();
         int parallelResult = NativeChaChaPoly.XCrypt(key, nonce, counter, plaintext, fromFast, length);
+        TimeSpan parallelElapsed = stopwatch.Elapsed;
         Assert(serialResult == 0 && parallelResult == 0,
             $"ChaCha20 {name}: serial returned {serialResult}, worker split returned {parallelResult}.");
         RequireIdenticalForTest(fromReference, fromFast, length, $"ChaCha20 {name}");
+        Console.WriteLine(
+            $"    ChaCha20 {name}: identical "
+            + $"({RateForTest(length, serialElapsed)} serial, {RateForTest(length, parallelElapsed)} split)");
     }
 
     byte[] chachaBoundaryKey = DerivedBytesForTest(32, 19);
@@ -4732,6 +5025,24 @@ static void RequireAeadRejectedForTest(
     }
 
     Assert(false, $"ChaCha20-Poly1305 accepted {what}.");
+}
+
+// What the two paths cost, printed beside the fact that they agree.
+//
+// The agreement is the assertion; the rate is what makes a lost fast path
+// visible. Kalyna on tables runs some two hundred times its reference and the
+// ChaCha split runs about twenty-five times its serial path on this machine, so
+// a build that quietly fell back reads as such in the log even though every
+// byte still matches. The macOS suite prints the same pair.
+static string RateForTest(int length, TimeSpan elapsed)
+{
+    double seconds = elapsed.TotalSeconds;
+    if (seconds <= 0)
+    {
+        return "n/a";
+    }
+
+    return $"{length / (1024.0 * 1024.0) / seconds:F0} MB/s";
 }
 
 static void RequireIdenticalForTest(byte[] reference, byte[] fast, int length, string label)

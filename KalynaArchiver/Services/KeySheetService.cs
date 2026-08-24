@@ -538,7 +538,11 @@ public sealed class KeySheetService
         }
     }
 
-    private static void EnsurePdfFontResolver()
+    /// <remarks>
+    /// Internal rather than private so the suite can measure the factor block
+    /// without drawing a sheet first, as the macOS side already does.
+    /// </remarks>
+    internal static void EnsurePdfFontResolver()
     {
         lock (FontResolverGate)
         {

@@ -11,6 +11,7 @@ internal static partial class SecureMemory
     private const long MaximumWorkingSetMargin = 256L * 1024 * 1024;
     private static readonly object WorkingSetGate = new();
     private static long _lockedBytes;
+    private static long _lockedAllocations;
     private static long _reservedWorkingSetBytes;
     private static nuint _originalMinimumWorkingSet;
     private static nuint _originalMaximumWorkingSet;
@@ -25,6 +26,31 @@ internal static partial class SecureMemory
             lock (WorkingSetGate)
             {
                 return _lockedBytes;
+            }
+        }
+    }
+
+    /// <summary>
+    /// How many locked buffers are alive right now.
+    /// </summary>
+    /// <remarks>
+    /// The leak counter that <see cref="LockedBytesForTests"/> cannot be. A
+    /// locked buffer is charged the pages it spans, and where the collector
+    /// pins a buffer decides whether it spans one page or two: a 64-byte
+    /// entropy pool straddles a page boundary in about one allocation in
+    /// eighty. So a test that replaces a pool and compares byte totals is
+    /// comparing where the collector happened to put things, and fails on a
+    /// tree with nothing wrong with it. The count answers the question such a
+    /// test is actually asking - whether every buffer taken was given back -
+    /// and answers it exactly.
+    /// </remarks>
+    internal static long LockedAllocationsForTests
+    {
+        get
+        {
+            lock (WorkingSetGate)
+            {
+                return _lockedAllocations;
             }
         }
     }
@@ -244,6 +270,7 @@ internal static partial class SecureMemory
                     }
 
                     _locked = true;
+                    _lockedAllocations = checked(_lockedAllocations + 1);
                 }
             }
             catch
@@ -275,6 +302,7 @@ internal static partial class SecureMemory
                         _lockedPages = [];
                     }
                     _locked = false;
+                    _lockedAllocations = Math.Max(0, _lockedAllocations - 1);
                     ReleaseWorkingSet(_reservedBytes);
                 }
             }
