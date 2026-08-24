@@ -122,6 +122,10 @@ RunKalynaReferenceVectorTest();
 Console.WriteLine("Kalyna-512/512 reference-vector test passed.");
 RunKalynaParallelCtrEquivalenceTest();
 Console.WriteLine("Kalyna-512/512 parallel CTR equivalence test passed.");
+RunFastPathDifferentialTests();
+Console.WriteLine("Kalyna and ChaCha20 fast paths matched their references over 256 MiB.");
+RunAeadFramingTests();
+Console.WriteLine("ChaCha20-Poly1305 framing matched RFC 8439 section 2.8.2.");
 RunThreefishReferenceAndIndependentTests();
 Console.WriteLine("Threefish-1024 official-vector and independent Bouncy Castle tests passed.");
 RunThreefishParallelCtrEquivalenceTest();
@@ -4485,6 +4489,304 @@ static DragEventArgs CreateDragArgs(UIElement target, string[] paths)
             new Point(0, 0),
         ],
         culture: null)!;
+}
+
+// The shipped fast cipher paths against the reference implementations that sit
+// beside them in the same library, over buffers the size of a real archive.
+//
+// Both libraries verify themselves at start-up, but a self-check runs on a few
+// blocks under a handful of keys. What it cannot reach is the mode wrapped
+// around the block function: the counter arithmetic across a quarter of a
+// gigabyte, the carry out of a counter that starts near its own limit, the tail
+// block of a length that is not a multiple of the block size, and the
+// boundaries where the driver switches from one thread to many and from one
+// claimed chunk to the next. Those are where a fast path that passes every
+// vector still writes a container that will not open.
+//
+// The macOS suite carries the same two tests. They are deliberately duplicated
+// rather than shared: the two suites have no common harness, and a check this
+// close to the ciphertext is worth having twice.
+static void RunFastPathDifferentialTests()
+{
+    const int LargeBytes = 256 * 1024 * 1024;
+    const int ChunkBytes = 256 * 1024;
+    const int ParallelThresholdBytes = 1024 * 1024;
+    int[] boundaryLengths =
+    [
+        1, 63, 64, 65,
+        ChunkBytes - 1, ChunkBytes, ChunkBytes + 1,
+        ParallelThresholdBytes - 1, ParallelThresholdBytes, ParallelThresholdBytes + 1,
+        (4 * 1024 * 1024) + 63,
+    ];
+
+    Assert(NativeKalyna.IsAvailable(), $"Kalyna reference library unavailable: {NativeKalyna.LastLoadError}");
+    Assert(NativeChaChaPoly.IsAvailable(), $"ChaCha20-Poly1305 library unavailable: {NativeChaChaPoly.LastLoadError}");
+
+    byte[] plaintext = DerivedBytesForTest(LargeBytes + 37, 0xABCDEF);
+    byte[] fromReference = new byte[plaintext.Length];
+    byte[] fromFast = new byte[plaintext.Length];
+
+    // Four places in the counter's range. The last three start high enough that
+    // a 256 MiB run carries out of the low 32 and 40 bits, which is the
+    // arithmetic a worker has to reproduce when it jumps to the block it
+    // claimed rather than walking there.
+    (string Name, ulong KeySeed, ulong NonceSeed, ulong CounterStart, int Length)[] kalynaCases =
+    [
+        ("counter 0", 1, 1001, 0, LargeBytes),
+        ("counter 2^32-1", 2, 1002, 0xFFFFFFFFUL, LargeBytes),
+        ("counter crossing 2^40", 3, 1003, 0xFFFFFFFFFFUL - 7, LargeBytes),
+        ("counter at 2^63", 4, 1004, 1UL << 63, LargeBytes),
+        ("256 MiB + 37, unaligned tail", 5, 1005, 0x0123456789ABCDEFUL, LargeBytes + 37),
+    ];
+
+    foreach ((string name, ulong keySeed, ulong nonceSeed, ulong counterStart, int length) in kalynaCases)
+    {
+        byte[] key = DerivedBytesForTest(64, keySeed);
+        byte[] counter = CounterBlockForTest(nonceSeed, counterStart);
+        RequireReferenceExport(() => NativeKalyna.XCryptCtr512Reference(key, counter, plaintext, fromReference, length));
+        NativeKalyna.XCryptCtr512(key, counter, plaintext, fromFast, length);
+        RequireIdenticalForTest(fromReference, fromFast, length, $"Kalyna {name}");
+    }
+
+    byte[] boundaryKey = DerivedBytesForTest(64, 9);
+    byte[] boundaryCounter = CounterBlockForTest(9009, 0xFFFFFFFEUL);
+    foreach (int length in boundaryLengths)
+    {
+        RequireReferenceExport(() => NativeKalyna.XCryptCtr512Reference(boundaryKey, boundaryCounter, plaintext, fromReference, length));
+        NativeKalyna.XCryptCtr512(boundaryKey, boundaryCounter, plaintext, fromFast, length);
+        RequireIdenticalForTest(fromReference, fromFast, length, $"Kalyna boundary length {length}");
+    }
+
+    const uint LargeBlocks = LargeBytes / 64;
+    (string Name, ulong KeySeed, ulong NonceSeed, uint Counter, int Length)[] chachaCases =
+    [
+        ("counter 0", 1, 2001, 0, LargeBytes),
+        ("counter 1, where the AEAD starts", 2, 2002, 1, LargeBytes),
+        ("counter 2^31-1", 3, 2003, 0x7FFFFFFF, LargeBytes),
+        ("ending one block below 2^32", 4, 2004, uint.MaxValue - LargeBlocks, LargeBytes),
+        ("256 MiB + 37, unaligned tail", 5, 2005, 12345, LargeBytes + 37),
+    ];
+
+    foreach ((string name, ulong keySeed, ulong nonceSeed, uint counter, int length) in chachaCases)
+    {
+        byte[] key = DerivedBytesForTest(32, keySeed);
+        byte[] nonce = DerivedBytesForTest(12, nonceSeed);
+        int serialResult = 0;
+        RequireReferenceExport(() => serialResult = NativeChaChaPoly.XCryptSerial(key, nonce, counter, plaintext, fromReference, length));
+        int parallelResult = NativeChaChaPoly.XCrypt(key, nonce, counter, plaintext, fromFast, length);
+        Assert(serialResult == 0 && parallelResult == 0,
+            $"ChaCha20 {name}: serial returned {serialResult}, worker split returned {parallelResult}.");
+        RequireIdenticalForTest(fromReference, fromFast, length, $"ChaCha20 {name}");
+    }
+
+    byte[] chachaBoundaryKey = DerivedBytesForTest(32, 19);
+    byte[] chachaBoundaryNonce = DerivedBytesForTest(12, 1919);
+    foreach (int length in boundaryLengths)
+    {
+        int serialResult = 0;
+        RequireReferenceExport(() => serialResult = NativeChaChaPoly.XCryptSerial(chachaBoundaryKey, chachaBoundaryNonce, 7, plaintext, fromReference, length));
+        int parallelResult = NativeChaChaPoly.XCrypt(chachaBoundaryKey, chachaBoundaryNonce, 7, plaintext, fromFast, length);
+        Assert(serialResult == 0 && parallelResult == 0,
+            $"ChaCha20 boundary length {length}: serial {serialResult}, split {parallelResult}.");
+        RequireIdenticalForTest(fromReference, fromFast, length, $"ChaCha20 boundary length {length}");
+    }
+
+    // RFC 8439 gives the block counter 32 bits. A run that would pass its end
+    // must be refused, not served with keystream that repeats under the same
+    // key: two plaintext blocks XORed with one keystream block is a two-time
+    // pad.
+    byte[] exhaustionKey = DerivedBytesForTest(32, 99);
+    byte[] exhaustionNonce = DerivedBytesForTest(12, 98);
+    int refused = NativeChaChaPoly.XCrypt(exhaustionKey, exhaustionNonce, uint.MaxValue - 1, plaintext, fromFast, 192);
+    Assert(refused == 4, $"ChaCha20 must refuse a run that would exhaust the block counter; it returned {refused}.");
+
+    // And the split has to reproduce this library's own RFC 8439 AEAD, whose
+    // keystream starts at block 1. That ties it to the standard rather than
+    // only to the implementation it replaced.
+    const int AeadLength = 16 * 1024 * 1024;
+    byte[] aeadTag = new byte[NativeChaChaPoly.TagBytes];
+    for (int trial = 0; trial < 4; trial++)
+    {
+        byte[] key = DerivedBytesForTest(32, 3000 + (ulong)trial);
+        byte[] nonce = DerivedBytesForTest(12, 4000 + (ulong)trial);
+        NativeChaChaPoly.Encrypt(key, nonce, ReadOnlySpan<byte>.Empty, plaintext, fromReference, AeadLength, aeadTag);
+        int parallelResult = NativeChaChaPoly.XCrypt(key, nonce, 1, plaintext, fromFast, AeadLength);
+        Assert(parallelResult == 0, $"ChaCha20 AEAD cross-check trial {trial}: the worker split returned {parallelResult}.");
+        RequireIdenticalForTest(fromReference, fromFast, AeadLength, $"ChaCha20 against the AEAD, trial {trial}");
+    }
+}
+
+// The authenticated pair against the published vector and its own rules.
+//
+// The framing - associated data padded to 16, ciphertext padded to 16, then
+// both lengths little-endian - is assembled in chachapoly_ref_export.cpp rather
+// than taken from Crypto++, so the vector in RFC 8439 section 2.8.2 is what
+// holds it. A padding or length-encoding slip produces a tag that is merely
+// different, and nothing else in this suite would notice, because both sides of
+// a round trip would be wrong in the same way.
+static void RunAeadFramingTests()
+{
+    Assert(NativeChaChaPoly.IsAvailable(), $"ChaCha20-Poly1305 library unavailable: {NativeChaChaPoly.LastLoadError}");
+
+    byte[] key = new byte[32];
+    for (int i = 0; i < key.Length; i++)
+    {
+        key[i] = (byte)(0x80 + i);
+    }
+
+    byte[] nonce = Convert.FromHexString("070000004041424344454647");
+    byte[] associated = Convert.FromHexString("50515253c0c1c2c3c4c5c6c7");
+    byte[] plaintext = System.Text.Encoding.ASCII.GetBytes(
+        "Ladies and Gentlemen of the class of '99: If I could offer you only "
+        + "one tip for the future, sunscreen would be it.");
+    byte[] expectedCiphertext = Convert.FromHexString(
+        "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d6"
+        + "3dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b36"
+        + "92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc"
+        + "3ff4def08e4b7a9de576d26586cec64b6116");
+    byte[] expectedTag = Convert.FromHexString("1ae10b594f09e26a7e902ecbd0600691");
+
+    Assert(plaintext.Length == 114, "The RFC 8439 vector plaintext is 114 bytes.");
+
+    byte[] ciphertext = new byte[plaintext.Length];
+    byte[] tag = new byte[NativeChaChaPoly.TagBytes];
+    NativeChaChaPoly.Encrypt(key, nonce, associated, plaintext, ciphertext, plaintext.Length, tag);
+    Assert(ciphertext.AsSpan().SequenceEqual(expectedCiphertext),
+        "ChaCha20-Poly1305 did not reproduce the RFC 8439 section 2.8.2 ciphertext.");
+    Assert(tag.AsSpan().SequenceEqual(expectedTag),
+        "ChaCha20-Poly1305 did not reproduce the RFC 8439 section 2.8.2 tag.");
+
+    byte[] recovered = new byte[plaintext.Length];
+    NativeChaChaPoly.Decrypt(key, nonce, associated, ciphertext, recovered, ciphertext.Length, tag);
+    Assert(recovered.AsSpan().SequenceEqual(plaintext),
+        "ChaCha20-Poly1305 did not recover the RFC 8439 vector plaintext.");
+
+    RequireAeadRejectedForTest("a flipped tag bit", key, nonce, associated, ciphertext, tag, mutateTag: true);
+    RequireAeadRejectedForTest("a flipped ciphertext bit", key, nonce, associated, ciphertext, tag, mutateCiphertext: true);
+    RequireAeadRejectedForTest("altered associated data", key, nonce, associated, ciphertext, tag, mutateAssociated: true);
+
+    // The container hands the same buffer in and out for both directions. The
+    // tag covers the ciphertext, so encryption has to take it after writing and
+    // decryption has to take it before overwriting; getting either backwards
+    // works out-of-place and fails only here.
+    byte[] scratch = plaintext.ToArray();
+    byte[] inPlaceTag = new byte[NativeChaChaPoly.TagBytes];
+    NativeChaChaPoly.Encrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
+    Assert(scratch.AsSpan().SequenceEqual(expectedCiphertext) && inPlaceTag.AsSpan().SequenceEqual(expectedTag),
+        "In-place ChaCha20-Poly1305 encryption did not match the out-of-place result.");
+    NativeChaChaPoly.Decrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
+    Assert(scratch.AsSpan().SequenceEqual(plaintext),
+        "In-place ChaCha20-Poly1305 decryption did not recover the plaintext.");
+}
+
+// The two differential tests need exports that only they call. A reference DLL
+// built before those exports existed is not a broken build, it is an old one,
+// and saying so is more useful than an EntryPointNotFoundException.
+static void RequireReferenceExport(Action action)
+{
+    try
+    {
+        action();
+    }
+    catch (EntryPointNotFoundException exception)
+    {
+        throw new InvalidOperationException(
+            "The reference DLL in tools\\ predates the exports the differential tests need. "
+            + "Re-run tools\\Build-Native.cmd on a machine with MSVC and try again.",
+            exception);
+    }
+}
+
+static void RequireAeadRejectedForTest(
+    string what,
+    byte[] key,
+    byte[] nonce,
+    byte[] associated,
+    byte[] ciphertext,
+    byte[] tag,
+    bool mutateTag = false,
+    bool mutateCiphertext = false,
+    bool mutateAssociated = false)
+{
+    byte[] usedTag = tag.ToArray();
+    byte[] usedCiphertext = ciphertext.ToArray();
+    byte[] usedAssociated = associated.ToArray();
+    if (mutateTag) { usedTag[9] ^= 0x40; }
+    if (mutateCiphertext) { usedCiphertext[usedCiphertext.Length / 2] ^= 0x01; }
+    if (mutateAssociated) { usedAssociated[3] ^= 0x80; }
+
+    byte[] output = new byte[usedCiphertext.Length];
+    output.AsSpan().Fill(0xCC);
+    try
+    {
+        NativeChaChaPoly.Decrypt(key, nonce, usedAssociated, usedCiphertext, output, usedCiphertext.Length, usedTag);
+    }
+    catch (CryptographicException)
+    {
+        foreach (byte value in output)
+        {
+            Assert(value == 0xCC, $"ChaCha20-Poly1305 wrote into the caller's buffer while refusing {what}.");
+        }
+
+        return;
+    }
+
+    Assert(false, $"ChaCha20-Poly1305 accepted {what}.");
+}
+
+static void RequireIdenticalForTest(byte[] reference, byte[] fast, int length, string label)
+{
+    // Not SequenceEqual: on a mismatch the offset is what says whether the fault
+    // is in the block function, in the tail, or at a chunk boundary.
+    for (int i = 0; i < length; i++)
+    {
+        if (reference[i] != fast[i])
+        {
+            throw new InvalidOperationException(
+                $"{label}: the fast path and the reference differ at byte {i} "
+                + $"(reference {reference[i]:x2}, fast {fast[i]:x2}) over {length} bytes.");
+        }
+    }
+}
+
+static byte[] CounterBlockForTest(ulong nonceSeed, ulong counterStart)
+{
+    byte[] block = new byte[64];
+    FillDerivedForTest(block.AsSpan(0, 56), nonceSeed);
+    for (int i = 0; i < 8; i++)
+    {
+        block[63 - i] = (byte)(counterStart >> (i * 8));
+    }
+
+    return block;
+}
+
+static byte[] DerivedBytesForTest(int length, ulong seed)
+{
+    byte[] buffer = new byte[length];
+    FillDerivedForTest(buffer, seed);
+    return buffer;
+}
+
+static void FillDerivedForTest(Span<byte> destination, ulong seed)
+{
+    for (int i = 0; i < destination.Length; i += 8)
+    {
+        ulong word = MixForTest(seed + (ulong)(i / 8));
+        int count = Math.Min(8, destination.Length - i);
+        for (int b = 0; b < count; b++)
+        {
+            destination[i + b] = (byte)(word >> (b * 8));
+        }
+    }
+}
+
+static ulong MixForTest(ulong value)
+{
+    value += 0x9E3779B97F4A7C15UL;
+    value = (value ^ (value >> 30)) * 0xBF58476D1CE4E5B9UL;
+    value = (value ^ (value >> 27)) * 0x94D049BB133111EBUL;
+    return value ^ (value >> 31);
 }
 
 sealed class ShortReadStream : Stream
