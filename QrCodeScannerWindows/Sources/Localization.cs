@@ -31,6 +31,7 @@ public sealed record Strings(
     Func<int, string> AcceptedRepeated,
     Func<int, string> Copied,
     string ClipboardCleared,
+    string ClipboardUnavailable,
     string CameraDeniedHint,
     string NoCamera,
     string CameraUnavailable,
@@ -43,6 +44,7 @@ public sealed record Strings(
     Func<int, string> NoticeBidirectional,
     Func<int, string> NoticeInvisible,
     string NoticeWhitespace,
+    string ScreenCaptureUnavailable,
     string WindowTitle,
     string ScannedValueLabel)
 {
@@ -67,6 +69,7 @@ public sealed record Strings(
         AcceptedRepeated: count => $"Erkannt: nur ein Code lesbar, {count}-mal mit gleichem Ergebnis gelesen.",
         Copied: seconds => $"Kopiert. Der Inhalt wird nach {seconds} Sekunden aus der Zwischenablage entfernt.",
         ClipboardCleared: "Die Zwischenablage wurde geleert. Zum erneuten Einfügen noch einmal auf „Kopieren“ klicken.",
+        ClipboardUnavailable: "Die Zwischenablage ist gerade belegt. Der Inhalt wurde nicht kopiert; bitte erneut versuchen.",
         CameraDeniedHint: "Kamerazugriff in den Windows-Einstellungen unter „Datenschutz und Sicherheit“ › „Kamera“ für Desktop-Apps erlauben.",
         NoCamera: "Es wurde keine Kamera gefunden.",
         CameraUnavailable: "Die Kamera konnte nicht geöffnet werden. Möglicherweise benutzt sie gerade ein anderes Programm.",
@@ -80,6 +83,7 @@ public sealed record Strings(
             $"Enthält {count} Zeichen, die die Leserichtung umkehren; der Text kann anders erscheinen als er gespeichert ist.",
         NoticeInvisible: count => $"Enthält {count} unsichtbare Zeichen ohne Breite.",
         NoticeWhitespace: "Beginnt oder endet mit Leerraum. Der Inhalt wird unverändert kopiert.",
+        ScreenCaptureUnavailable: "Warnung: Der Bildschirmaufnahme-Schutz konnte nicht aktiviert werden.",
         WindowTitle: "QR-Scanner",
         ScannedValueLabel: "Gelesener Inhalt");
 
@@ -95,6 +99,7 @@ public sealed record Strings(
         AcceptedRepeated: count => $"Read: only one code was readable, decoded {count} times with the same result.",
         Copied: seconds => $"Copied. The content is removed from the clipboard after {seconds} seconds.",
         ClipboardCleared: "The clipboard was cleared. Press \"Copy\" again to paste once more.",
+        ClipboardUnavailable: "The clipboard is busy. Nothing was copied; please try again.",
         CameraDeniedHint: "Allow camera access for desktop apps under Windows Settings › Privacy & security › Camera.",
         NoCamera: "No camera was found.",
         CameraUnavailable: "The camera could not be opened. Another program may be using it.",
@@ -108,6 +113,7 @@ public sealed record Strings(
             $"Contains {count} characters that reverse the reading direction; the text may appear differently from how it is stored.",
         NoticeInvisible: count => $"Contains {count} invisible zero-width characters.",
         NoticeWhitespace: "Starts or ends with whitespace. The content is copied unchanged.",
+        ScreenCaptureUnavailable: "Warning: screen-capture protection could not be enabled.",
         WindowTitle: "QR-Scanner",
         ScannedValueLabel: "Scanned content");
 

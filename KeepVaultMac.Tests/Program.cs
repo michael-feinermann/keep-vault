@@ -7,20 +7,21 @@ using KalynaArchiver.Signing;
 
 var smokeTests = new List<TestCase>
 {
-    new("SHA3-512 FIPS vector", TestSha3Async, TestResource.Light, "Smoke", IsSmoke: true),
-    new("HMAC-SHA3-512 vector", TestHmacSha3Async, TestResource.Light, "Smoke", IsSmoke: true),
-    new("descriptor identity", TestDescriptorIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("symlink rejection", TestSymlinkRejectionAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("archive-input symlink rejection", TestArchiveInputSymlinkRejectionAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("container-private archive-input snapshot", TestArchiveInputSnapshotLocationAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("overlapping archive-input normalization", TestOverlappingArchiveInputsAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("folder input with a trailing separator", TestTrailingSeparatorFolderInputAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("descriptor-bound private snapshot", TestDescriptorBoundPrivateSnapshotAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("private authenticated-input snapshot", TestPrivateSnapshotAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("Apple signature framework binding", TestAppleSignatureBindingAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("locked secret buffer lifecycle", TestLockedSecretBufferAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("password policy", TestPasswordPolicyAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("release companion version plumbing", TestReleaseCompanionVersionPlumbingAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("infra.runner-invariants", "test runner reservation, inventory, peak-RSS and result-schema invariants", TestCoordinator.RunInfrastructureRegressionTestsAsync, TestResource.ProcessGlobal, "Smoke", IsSmoke: true),
+    new("smoke.sha3-512-fips", "SHA3-512 FIPS vector", TestSha3Async, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.hmac-sha3-512", "HMAC-SHA3-512 vector", TestHmacSha3Async, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.descriptor-identity", "descriptor identity", TestDescriptorIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.symlink-rejection", "symlink rejection", TestSymlinkRejectionAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.archive-input-symlink", "archive-input symlink rejection", TestArchiveInputSymlinkRejectionAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.archive-input-snapshot-location", "container-private archive-input snapshot", TestArchiveInputSnapshotLocationAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.overlapping-input-normalization", "overlapping archive-input normalization", TestOverlappingArchiveInputsAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.trailing-separator-folder", "folder input with a trailing separator", TestTrailingSeparatorFolderInputAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.descriptor-bound-snapshot", "descriptor-bound private snapshot", TestDescriptorBoundPrivateSnapshotAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.private-authenticated-snapshot", "private authenticated-input snapshot", TestPrivateSnapshotAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.apple-signature-binding", "Apple signature framework binding", TestAppleSignatureBindingAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.locked-secret-lifecycle", "locked secret buffer lifecycle", TestLockedSecretBufferAsync, TestResource.ProcessGlobal, "Smoke", IsSmoke: true),
+    new("smoke.password-policy", "password policy", TestPasswordPolicyAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.release-companion-version", "release companion version plumbing", TestReleaseCompanionVersionPlumbingAsync, TestResource.Light, "Smoke", IsSmoke: true),
 };
 
 return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests).ConfigureAwait(false);

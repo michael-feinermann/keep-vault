@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 
@@ -127,9 +128,9 @@ public sealed partial class ZpaqService
         string temporarySkeinPath = ArchiveIntegrityService.GetSkeinManifestPath(temporaryArchivePath);
         string finalSha3Path = ArchiveIntegrityService.GetSha3ManifestPath(fullArchivePath);
         string finalSkeinPath = ArchiveIntegrityService.GetSkeinManifestPath(fullArchivePath);
-        bool sha3Installed = false;
-        bool skeinInstalled = false;
-        bool archiveInstalled = false;
+        BoundFileTransaction? archiveObject = null;
+        BoundFileTransaction? sha3Object = null;
+        BoundFileTransaction? skeinObject = null;
 #if KEEPVAULT_MACOS
         using MacInputSnapshot inputSnapshot = MacInputSnapshot.Create(workingDirectory, normalizedInputs);
 #else
@@ -146,42 +147,143 @@ public sealed partial class ZpaqService
             ProcessResult result = await RunTextProcessAsync(executable.Path, arguments, workingDirectory, progress, cancellationToken).ConfigureAwait(false);
             if (!result.Succeeded)
             {
-                return result;
+                return PreserveUnboundProducerOutput(result, temporaryArchivePath, progress);
             }
 
-            await _archiveIntegrity.CreateAsync(temporaryArchivePath, cancellationToken).ConfigureAwait(false);
-            if (File.Exists(fullArchivePath)
-                || Directory.Exists(fullArchivePath)
-                || File.Exists(finalSha3Path)
-                || Directory.Exists(finalSha3Path)
-                || File.Exists(finalSkeinPath)
-                || Directory.Exists(finalSkeinPath))
+            // Bind the completed ZPAQ object before hashing it, then create both
+            // manifests as held objects.  Thus no verify-close-reopen gap exists
+            // anywhere in the three-file commit.
+            archiveObject = BoundFileTransaction.OpenExistingForCommit(
+                temporaryArchivePath,
+                bufferSize: 1024 * 1024);
+            byte[] sha3 = [];
+            byte[] skein = [];
+            try
             {
-                throw new IOException("The ZPAQ archive target or one of its integrity manifests appeared before installation.");
+                archiveObject.Stream.Position = 0;
+                (sha3, skein) = await IntegrityService
+                    .HashStreamAsync(archiveObject.Stream, cancellationToken)
+                    .ConfigureAwait(false);
+                sha3Object = await ArchiveIntegrityService.CreateBoundManifestAsync(
+                    temporarySha3Path,
+                    sha3,
+                    cancellationToken).ConfigureAwait(false);
+                skeinObject = await ArchiveIntegrityService.CreateBoundManifestAsync(
+                    temporarySkeinPath,
+                    skein,
+                    cancellationToken).ConfigureAwait(false);
+                await ArchiveIntegrityService.VerifyBoundAsync(
+                    archiveObject.Stream,
+                    sha3Object.Stream,
+                    skeinObject.Stream,
+                    cancellationToken).ConfigureAwait(false);
+
+                sha3Object.RenameTo(finalSha3Path, overwrite: false);
+                skeinObject.RenameTo(finalSkeinPath, overwrite: false);
+                archiveObject.RenameTo(fullArchivePath, overwrite: false);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(sha3);
+                CryptographicOperations.ZeroMemory(skein);
             }
 
-            File.Move(temporarySha3Path, finalSha3Path, overwrite: false);
-            sha3Installed = true;
-            File.Move(temporarySkeinPath, finalSkeinPath, overwrite: false);
-            skeinInstalled = true;
-            File.Move(temporaryArchivePath, fullArchivePath, overwrite: false);
-            archiveInstalled = true;
             return result;
         }
-        catch
+        catch (Exception operationError)
         {
-            if (archiveInstalled) SecureFile.DeleteIfExists(fullArchivePath);
-            if (skeinInstalled) SecureFile.DeleteIfExists(finalSkeinPath);
-            if (sha3Installed) SecureFile.DeleteIfExists(finalSha3Path);
+            var cleanupErrors = new List<Exception>();
+            if (archiveObject is null)
+            {
+                try
+                {
+                    _ = ReportPreservedUnboundProducerOutput(temporaryArchivePath, progress);
+                }
+                catch (Exception reportError)
+                {
+                    cleanupErrors.Add(reportError);
+                }
+            }
+
+            DeleteBoundObjectOrCollect(archiveObject, cleanupErrors);
+            DeleteBoundObjectOrCollect(skeinObject, cleanupErrors);
+            DeleteBoundObjectOrCollect(sha3Object, cleanupErrors);
+            if (cleanupErrors.Count > 0)
+            {
+                throw new AggregateException(
+                    "Plain ZPAQ installation failed and one or more exact transaction objects could not be cleaned up.",
+                    [operationError, .. cleanupErrors]);
+            }
+
             throw;
         }
         finally
         {
-            SecureFile.DeleteIfExists(temporaryArchivePath);
-            SecureFile.DeleteIfExists(temporarySha3Path);
-            SecureFile.DeleteIfExists(temporarySkeinPath);
+            archiveObject?.Dispose();
+            skeinObject?.Dispose();
+            sha3Object?.Dispose();
         }
     }
+
+    private static void DeleteBoundObjectOrCollect(
+        BoundFileTransaction? boundObject,
+        List<Exception> cleanupErrors)
+    {
+        if (boundObject is null)
+        {
+            return;
+        }
+
+        try
+        {
+            boundObject.DeleteBound();
+        }
+        catch (Exception cleanupError)
+        {
+            cleanupErrors.Add(cleanupError);
+        }
+    }
+
+    private static ProcessResult PreserveUnboundProducerOutput(
+        ProcessResult result,
+        string path,
+        IProgress<string>? progress)
+    {
+        string? warning = ReportPreservedUnboundProducerOutput(path, progress);
+        if (warning is null)
+        {
+            return result;
+        }
+
+        string separator = string.IsNullOrEmpty(result.StandardError) ? string.Empty : Environment.NewLine;
+        return result with { StandardError = result.StandardError + separator + warning };
+    }
+
+    private static string? ReportPreservedUnboundProducerOutput(
+        string path,
+        IProgress<string>? progress)
+    {
+        if (!File.Exists(path) && !Directory.Exists(path))
+        {
+            return null;
+        }
+
+        // A failed native producer never handed us a file handle or identity.
+        // Opening whatever currently occupies its random pathname and deleting
+        // it would turn cleanup into a check/use race against an unrelated
+        // object. Preserve and report the name; successful output is bound
+        // before it can reach this point and is cleaned through that handle.
+        string warning =
+            "ZPAQ failed before ownership of its temporary output could be bound. "
+            + $"The unverified path was preserved instead of path-deleted: {path}";
+        progress?.Report(warning);
+        return warning;
+    }
+
+    internal static ProcessResult PreserveUnboundProducerOutputForTests(
+        ProcessResult result,
+        string path) =>
+        PreserveUnboundProducerOutput(result, path, progress: null);
 
     public async Task<ProcessResult> ExtractAsync(
         string archivePath,
@@ -221,7 +323,7 @@ public sealed partial class ZpaqService
             throw;
         }
 #else
-        ExtractionTarget target = PrepareExtractionTarget(outputFolder);
+        using var target = new WindowsExtractionStaging(outputFolder);
         try
         {
             ProcessResult result = await RunTextProcessAsync(
@@ -230,22 +332,33 @@ public sealed partial class ZpaqService
                 target.StagingPath,
                 progress,
                 cancellationToken,
-                monitorStagingDirectory: target.StagingPath).ConfigureAwait(false);
+                monitorStagingDirectory: target.StagingPath,
+                windowsStaging: target).ConfigureAwait(false);
             if (result.Succeeded)
             {
-                ValidateExtractedDirectoryLimits(target.StagingPath);
-                InstallExtractedDirectory(target);
+                ValidateExtractedDirectoryLimits(target.StagingPath, target);
+                target.Install();
             }
             else
             {
-                CleanupFailedExtractionDirectory(target.StagingPath);
+                target.Cleanup();
             }
 
             return result;
         }
-        catch
+        catch (Exception operationError)
         {
-            CleanupFailedExtractionDirectory(target.StagingPath);
+            try
+            {
+                target.Cleanup();
+            }
+            catch (Exception cleanupError)
+            {
+                throw new IOException(
+                    "Windows extraction failed and the exact bound staging directory could not be cleaned up.",
+                    new AggregateException(operationError, cleanupError));
+            }
+
             throw;
         }
 #endif
@@ -332,7 +445,7 @@ public sealed partial class ZpaqService
             throw;
         }
 #else
-        ExtractionTarget target = PrepareExtractionTarget(outputFolder);
+        using var target = new WindowsExtractionStaging(outputFolder);
         try
         {
             ProcessResult result = await RunStdinPipeAsync(
@@ -342,22 +455,33 @@ public sealed partial class ZpaqService
                 writeArchive,
                 progress,
                 cancellationToken,
-                monitorStagingDirectory: target.StagingPath).ConfigureAwait(false);
+                monitorStagingDirectory: target.StagingPath,
+                windowsStaging: target).ConfigureAwait(false);
             if (result.Succeeded)
             {
-                ValidateExtractedDirectoryLimits(target.StagingPath);
-                InstallExtractedDirectory(target);
+                ValidateExtractedDirectoryLimits(target.StagingPath, target);
+                target.Install();
             }
             else
             {
-                CleanupFailedExtractionDirectory(target.StagingPath);
+                target.Cleanup();
             }
 
             return result;
         }
-        catch
+        catch (Exception operationError)
         {
-            CleanupFailedExtractionDirectory(target.StagingPath);
+            try
+            {
+                target.Cleanup();
+            }
+            catch (Exception cleanupError)
+            {
+                throw new IOException(
+                    "Windows streaming extraction failed and the exact bound staging directory could not be cleaned up.",
+                    new AggregateException(operationError, cleanupError));
+            }
+
             throw;
         }
 #endif
@@ -378,132 +502,6 @@ public sealed partial class ZpaqService
         string executable = ResolveExecutable()
             ?? throw new FileNotFoundException("Die fest eingebundene ZPAQ-Komponente wurde nicht gefunden.");
         return NativeToolIntegrity.AcquireTrustedFile(executable);
-    }
-
-    private static ExtractionTarget PrepareExtractionTarget(string outputFolder)
-    {
-        string fullPath = Path.GetFullPath(outputFolder);
-        if (File.Exists(fullPath))
-        {
-            throw new InvalidOperationException("Extraction target must be a directory path.");
-        }
-
-        if (Directory.Exists(fullPath))
-        {
-            FileAttributes attributes = File.GetAttributes(fullPath);
-            if ((attributes & FileAttributes.ReparsePoint) != 0)
-            {
-                throw new InvalidOperationException("Extraction target must not be a symbolic link or junction.");
-            }
-
-            if (Directory.EnumerateFileSystemEntries(fullPath).Any())
-            {
-                throw new InvalidOperationException("Extraction target must be a new or empty directory.");
-            }
-        }
-
-        string parent = Path.GetDirectoryName(fullPath) ?? Environment.CurrentDirectory;
-        Directory.CreateDirectory(parent);
-        string stagingPath = Path.Combine(
-            parent,
-            $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.extract-part");
-        try
-        {
-            Directory.CreateDirectory(stagingPath);
-            if ((File.GetAttributes(stagingPath) & FileAttributes.ReparsePoint) != 0)
-            {
-                Directory.Delete(stagingPath);
-                throw new InvalidOperationException("Extraction staging directory resolved to a symbolic link or junction.");
-            }
-
-            return new ExtractionTarget(fullPath, stagingPath);
-        }
-        catch
-        {
-            CleanupFailedExtractionDirectory(stagingPath);
-            throw;
-        }
-    }
-
-    private static void InstallExtractedDirectory(ExtractionTarget target)
-    {
-        if (File.Exists(target.DestinationPath))
-        {
-            throw new IOException("A file appeared at the extraction target before installation.");
-        }
-
-        if (Directory.Exists(target.DestinationPath))
-        {
-            FileAttributes attributes = File.GetAttributes(target.DestinationPath);
-            if ((attributes & FileAttributes.ReparsePoint) != 0
-                || Directory.EnumerateFileSystemEntries(target.DestinationPath).Any())
-            {
-                throw new IOException("The extraction target changed while extraction was running.");
-            }
-
-            Directory.Delete(target.DestinationPath);
-        }
-
-        Directory.Move(target.StagingPath, target.DestinationPath);
-    }
-
-    /// <summary>
-    /// Removes the staging tree of an extraction that did not finish.
-    /// </summary>
-    /// <remarks>
-    /// Every one of this method's callers is already on a failure path, and two
-    /// of them are <c>catch { Cleanup(); throw; }</c>. So an exception raised
-    /// here does not report a new problem - it destroys the report of the old
-    /// one. That happened: an injected input failure came back to the caller as
-    /// "the process cannot access the file ... .extract-part because it is being
-    /// used by another process", with the actual cause gone.
-    ///
-    /// The reason for that IOException is not a defect to be fixed elsewhere,
-    /// it is the ordinary shape of the situation. The extraction has just killed
-    /// its ZPAQ child, whose working directory was this tree, and Windows keeps
-    /// the directory entry alive until the last handle closes - enumerable and
-    /// undeletable in the meantime. So: retry briefly, exactly as
-    /// TryDeletePrivateTree does for the snapshot mirror, and then give up
-    /// rather than throw.
-    ///
-    /// Giving up leaves a hidden .extract-part directory behind, which is the
-    /// cheaper of the two failures and is not silent in practice: the extraction
-    /// tests assert that no such directory survives, so a cleanup that stops
-    /// working is caught where it can be read, not where it can hide a real
-    /// error from a user.
-    /// </remarks>
-    private static void CleanupFailedExtractionDirectory(string fullOutputFolder)
-    {
-        string fullPath = Path.GetFullPath(fullOutputFolder);
-        for (int attempt = 0; ; attempt++)
-        {
-            try
-            {
-                if (!Directory.Exists(fullPath))
-                {
-                    return;
-                }
-
-                FileAttributes attributes = File.GetAttributes(fullPath);
-                if ((attributes & FileAttributes.ReparsePoint) != 0)
-                {
-                    Directory.Delete(fullPath);
-                    return;
-                }
-
-                Directory.Delete(fullPath, recursive: true);
-                return;
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                if (attempt >= 9)
-                {
-                    return;
-                }
-
-                Thread.Sleep(50 * (attempt + 1));
-            }
-        }
     }
 
     public static Dictionary<string, string> BuildArchiveEntryMap(IReadOnlyList<string> inputPaths)
@@ -728,9 +726,18 @@ public sealed partial class ZpaqService
     internal static int MaxExtractedFilesOverride = -1;
     internal static long MinFreeDiskSpaceBytesOverride = -1;
 
-    internal static void ValidateExtractedDirectoryLimits(string stagingDirectory)
+    internal static void ValidateExtractedDirectoryLimits(
+        string stagingDirectory
+#if !KEEPVAULT_MACOS
+        , WindowsExtractionStaging? windowsStaging = null
+#endif
+    )
     {
+#if !KEEPVAULT_MACOS
+        if (!Directory.Exists(stagingDirectory) && windowsStaging is null)
+#else
         if (!Directory.Exists(stagingDirectory))
+#endif
         {
             return;
         }
@@ -740,17 +747,9 @@ public sealed partial class ZpaqService
         int maxFiles = MaxExtractedFilesOverride > 0 ? MaxExtractedFilesOverride : DefaultMaxExtractedFiles;
         long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
 
+#if KEEPVAULT_MACOS
         long totalBytes = 0;
         int fileCount = 0;
-
-#if !KEEPVAULT_MACOS
-        // Nothing ZPAQ writes on Windows is a reparse point, so one appearing
-        // in staging was put there by something else. Refusing it here keeps
-        // the limit walk inside the staged tree and keeps the installed result
-        // free of links the archive never contained.
-        RequireNoReparsePointsWindows(stagingDirectory);
-#endif
-
         foreach (string file in Directory.EnumerateFiles(stagingDirectory, "*", SearchOption.AllDirectories))
         {
             fileCount++;
@@ -772,12 +771,27 @@ public sealed partial class ZpaqService
                 throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Gesamtgröße überschritten ({maxBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
             }
         }
-
-#if KEEPVAULT_MACOS
         long freeSpace = MacSafeFileSystem.GetFreeDiskSpaceBytes(stagingDirectory);
         if (freeSpace < 0 || freeSpace < minFreeSpace)
         {
             throw new IOException($"ZPAQ-Extraktion abgebrochen: Unzureichender freier Speicherplatz auf dem Ziellaufwerk ({freeSpace} Bytes verbleibend).");
+        }
+#else
+        DirectoryTreeMeasurement measurement = windowsStaging?.MeasureTree(allowWriters: false)
+            ?? WindowsExtractionStaging.MeasureTreeNoFollow(stagingDirectory, allowWriters: false);
+        if (measurement.MaxFileBytes > maxSingleBytes)
+        {
+            throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Einzeldateigröße überschritten ({maxSingleBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
+        }
+
+        if (measurement.FileCount > maxFiles)
+        {
+            throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Dateianzahl überschritten ({maxFiles}). Mögliche Decompression-Bomb abgelehnt.");
+        }
+
+        if (measurement.TotalBytes > maxBytes)
+        {
+            throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Gesamtgröße überschritten ({maxBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
         }
 #endif
     }
@@ -819,6 +833,8 @@ public sealed partial class ZpaqService
         CancellationToken cancellationToken
 #if KEEPVAULT_MACOS
         , MacFileIdentity? boundDirectoryIdentity = null
+#else
+        , WindowsExtractionStaging? windowsStaging = null
 #endif
     )
     {
@@ -865,7 +881,16 @@ public sealed partial class ZpaqService
                 return;
             }
 
-            if (hasExited || !Directory.Exists(stagingDirectory))
+            if (hasExited)
+            {
+                return;
+            }
+
+#if KEEPVAULT_MACOS
+            if (!Directory.Exists(stagingDirectory))
+#else
+            if (!Directory.Exists(stagingDirectory) && windowsStaging is null)
+#endif
             {
                 return;
             }
@@ -891,9 +916,9 @@ public sealed partial class ZpaqService
                 }
 #endif
 
+#if KEEPVAULT_MACOS
                 long totalBytes = 0;
                 int fileCount = 0;
-
                 foreach (string file in Directory.EnumerateFiles(stagingDirectory, "*", SearchOption.AllDirectories))
                 {
                     fileCount++;
@@ -924,8 +949,6 @@ public sealed partial class ZpaqService
                         return;
                     }
                 }
-
-#if KEEPVAULT_MACOS
                 long freeSpace = MacSafeFileSystem.GetFreeDiskSpaceBytes(stagingDirectory);
                 if (freeSpace < 0 || freeSpace < minFreeSpace)
                 {
@@ -934,8 +957,40 @@ public sealed partial class ZpaqService
                     limitViolation ??= new IOException($"ZPAQ-Extraktion abgebrochen: Unzureichender freier Speicherplatz auf dem Ziellaufwerk ({freeSpace} Bytes verbleibend).");
                     return;
                 }
+#else
+                DirectoryTreeMeasurement measurement = windowsStaging?.MeasureTree(allowWriters: true)
+                    ?? WindowsExtractionStaging.MeasureTreeNoFollow(stagingDirectory, allowWriters: true);
+                if (measurement.MaxFileBytes > maxSingleBytes)
+                {
+                    linkedCts.Cancel();
+                    try { process.Kill(entireProcessTree: true); } catch { }
+                    limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Einzeldateigröße überschritten ({maxSingleBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
+                    return;
+                }
+
+                if (measurement.FileCount > maxFiles)
+                {
+                    linkedCts.Cancel();
+                    try { process.Kill(entireProcessTree: true); } catch { }
+                    limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Dateianzahl überschritten ({maxFiles}). Mögliche Decompression-Bomb abgelehnt.");
+                    return;
+                }
+
+                if (measurement.TotalBytes > maxBytes)
+                {
+                    linkedCts.Cancel();
+                    try { process.Kill(entireProcessTree: true); } catch { }
+                    limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Gesamtgröße überschritten ({maxBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
+                    return;
+                }
 #endif
                 consecutiveErrors = 0;
+            }
+            catch (Exception ex) when (ex is InvalidDataException or IOException)
+            {
+                linkedCts.Cancel();
+                try { process.Kill(entireProcessTree: true); } catch { }
+                limitViolation ??= ex;
             }
             catch (Exception ex) when (ex is not InvalidDataException && ex is not IOException)
             {
@@ -1026,6 +1081,8 @@ public sealed partial class ZpaqService
         string? monitorStagingDirectory = null
 #if KEEPVAULT_MACOS
         , MacFileIdentity? expectedDirectoryIdentity = null
+#else
+        , WindowsExtractionStaging? windowsStaging = null
 #endif
     )
     {
@@ -1052,6 +1109,8 @@ public sealed partial class ZpaqService
                 linkedCts.Token
 #if KEEPVAULT_MACOS
                 , expectedDirectoryIdentity
+#else
+                , windowsStaging
 #endif
               )
             : null;
@@ -1106,6 +1165,8 @@ public sealed partial class ZpaqService
         string? monitorStagingDirectory = null
 #if KEEPVAULT_MACOS
         , MacFileIdentity? expectedDirectoryIdentity = null
+#else
+        , WindowsExtractionStaging? windowsStaging = null
 #endif
     )
     {
@@ -1134,6 +1195,8 @@ public sealed partial class ZpaqService
                 linkedCts.Token
 #if KEEPVAULT_MACOS
                 , expectedDirectoryIdentity
+#else
+                , windowsStaging
 #endif
               )
             : null;
@@ -2262,5 +2325,4 @@ public sealed partial class ZpaqService
     }
 #endif
 
-    private sealed record ExtractionTarget(string DestinationPath, string StagingPath);
 }

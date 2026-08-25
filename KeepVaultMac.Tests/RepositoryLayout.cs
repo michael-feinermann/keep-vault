@@ -41,13 +41,25 @@ internal static class RepositoryLayout
         [
             Path.Combine(repositoryRoot, "KalynaArchiver"),
             Path.Combine(repositoryRoot, "KalynaArchiver.Signing"),
+            Path.Combine(repositoryRoot, "KalynaSigningTool"),
+            Path.Combine(repositoryRoot, "KalynaReleaseVerifier"),
             Path.Combine(repositoryRoot, "KeepVaultMac"),
+            Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier"),
             Path.Combine(repositoryRoot, "QrCodeScanner", "Sources"),
+            Path.Combine(repositoryRoot, "QrCodeScanner", "tools"),
+            Path.Combine(repositoryRoot, "QrCodeScannerWindows", "Sources"),
+            Path.Combine(repositoryRoot, "QrCodeScannerWindows", "tools"),
             Path.Combine(repositoryRoot, "native"),
+            Path.Combine(repositoryRoot, "tools"),
         ];
 
-        string[] extensions = [".cs", ".c", ".h", ".swift", ".xaml", ".axaml"];
-        var files = new List<string>();
+        string[] extensions =
+        [
+            ".cs", ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx",
+            ".m", ".mm", ".swift", ".xaml", ".axaml", ".ps1", ".fsx", ".sh",
+            ".cmd", ".bat", ".props", ".targets", ".csproj",
+        ];
+        var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (string root in roots)
         {
             if (!Directory.Exists(root))
@@ -82,7 +94,21 @@ internal static class RepositoryLayout
             }
         }
 
-        return files;
+        string[] additionalBuildSources =
+        [
+            Path.Combine(repositoryRoot, "Directory.Build.props"),
+            Path.Combine(repositoryRoot, "QrCodeScannerWindows", "Directory.Build.props"),
+            Path.Combine(repositoryRoot, "QrCodeScannerWindows", "QrScanner.csproj"),
+        ];
+        foreach (string buildSource in additionalBuildSources)
+        {
+            if (File.Exists(buildSource))
+            {
+                files.Add(buildSource);
+            }
+        }
+
+        return [.. files.OrderBy(file => file, StringComparer.Ordinal)];
     }
 
     public static string ReadText(string path) => File.ReadAllText(path, Encoding.UTF8);

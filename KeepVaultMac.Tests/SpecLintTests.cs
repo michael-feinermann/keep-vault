@@ -43,6 +43,35 @@ internal static class SpecLintTests
         IReadOnlyList<string> sources = RepositoryLayout.EnumerateProductionSources(root);
         Require(sources.Count > 50, $"The production source sweep found only {sources.Count} files; the layout probably moved.");
 
+        var swept = new HashSet<string>(sources.Select(Path.GetFullPath), StringComparer.OrdinalIgnoreCase);
+        string nativeRoot = Path.Combine(root, "native");
+        string[] nativeWrappers =
+        [
+            .. Directory.EnumerateFiles(nativeRoot)
+                .Where(path => Path.GetExtension(path) is ".c" or ".cc" or ".cpp" or ".cxx" or ".h" or ".hh" or ".hpp" or ".hxx")
+                .Select(Path.GetFullPath),
+        ];
+        Require(nativeWrappers.Length > 5, "The native-wrapper inventory is unexpectedly small.");
+        string[] missedNativeWrappers = [.. nativeWrappers.Where(path => !swept.Contains(path))];
+        Require(
+            missedNativeWrappers.Length == 0,
+            "The production source sweep misses native wrapper(s): "
+            + string.Join(", ", missedNativeWrappers.Select(path => Path.GetRelativePath(root, path))));
+        Require(
+            nativeWrappers.Any(path => Path.GetExtension(path).Equals(".cpp", StringComparison.OrdinalIgnoreCase))
+                && nativeWrappers.Any(path => Path.GetExtension(path).Equals(".hpp", StringComparison.OrdinalIgnoreCase)),
+            "The NoLegacy self-test did not observe the active C++ and C++-header file types.");
+
+        string[] requiredBuildSources =
+        [
+            Path.Combine(root, "tools", "Build-Native.cmd"),
+            Path.Combine(root, "tools", "Build-Native-macOS.sh"),
+            Path.Combine(root, "Directory.Build.props"),
+        ];
+        Require(
+            requiredBuildSources.All(path => swept.Contains(Path.GetFullPath(path))),
+            "The production source sweep misses a native build script or MSBuild properties file.");
+
         var violations = new List<string>();
         foreach (string file in sources)
         {

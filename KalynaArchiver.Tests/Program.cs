@@ -92,13 +92,14 @@ if (args is ["--recovery-only"])
 // each group exactly once.
 var smokeTests = new List<TestCase>
 {
-    new("SHA3-512 reference vectors", Sync(RunSha3ReferenceVectorTests), TestResource.Light, "Smoke", IsSmoke: true),
-    new("Skein-1024 hash and MAC vectors", Sync(RunSkein1024ReferenceTests), TestResource.Light, "Smoke", IsSmoke: true),
-    new("Kalyna-512/512 reference vector", Sync(RunKalynaReferenceVectorTest), TestResource.Light, "Smoke", IsSmoke: true),
-    new("Threefish-1024 official vectors and an independent implementation", Sync(RunThreefishReferenceAndIndependentTests), TestResource.Light, "Smoke", IsSmoke: true),
-    new("ChaCha20-Poly1305 framing against RFC 8439", Sync(RunAeadFramingTests), TestResource.Light, "Smoke", IsSmoke: true),
-    new("release scripts cover the required native tool set", Sync(RunReleaseScriptToolCoverageTests), TestResource.Light, "Smoke", IsSmoke: true),
-    new("MainWindow design-time text against the installed strings", Sync(RunLocalizationDefaultsTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("infra.runner-invariants", "test runner reservation, inventory and result-schema invariants", TestCoordinator.RunInfrastructureRegressionTestsAsync, TestResource.ProcessGlobal, "Smoke", IsSmoke: true),
+    new("smoke.sha3-512-vectors", "SHA3-512 reference vectors", Sync(RunSha3ReferenceVectorTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.skein-1024-vectors", "Skein-1024 hash and MAC vectors", Sync(RunSkein1024ReferenceTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.kalyna-512-vector", "Kalyna-512/512 reference vector", Sync(RunKalynaReferenceVectorTest), TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.threefish-1024-vectors", "Threefish-1024 official vectors and an independent implementation", Sync(RunThreefishReferenceAndIndependentTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.chacha20-poly1305-rfc8439", "ChaCha20-Poly1305 framing against RFC 8439", Sync(RunAeadFramingTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.release-native-tool-coverage", "release scripts cover the required native tool set", Sync(RunReleaseScriptToolCoverageTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.localization-defaults", "MainWindow design-time text against the installed strings", Sync(RunLocalizationDefaultsTests), TestResource.Light, "Smoke", IsSmoke: true),
 };
 
 var comprehensiveTests = new List<TestCase>
@@ -106,77 +107,92 @@ var comprehensiveTests = new List<TestCase>
     // WPF wants a single-threaded apartment, and one at a time: the window
     // reads and writes the same isolated-storage settings and the same static
     // entropy mixer.
-    new("settings persistence, drag-and-drop and key sheets", () => Sta(() =>
+    new("gui.settings-drop-key-sheets", "settings persistence, drag-and-drop and key sheets", () => Sta(() =>
         {
             RunSettingsPersistenceTests();
             RunDropTests();
             RunKeySheetTests();
         }), TestResource.Gui, "Gui"),
 
-    new("generated factors, entropy pools and locked-page accounting",
+    new("entropy.generated-factors-pools-locks", "generated factors, entropy pools and locked-page accounting",
         RunEntropyGeneratorTestsAsync, TestResource.EntropyGlobal, "Entropy"),
 
-    new("native tool integrity and signatures",
+    new("integrity.native-tools-signatures", "native tool integrity and signatures",
         Sync(RunNativeIntegrityTests), TestResource.ProcessGlobal, "Integrity"),
 
-    new("the companion QR scanner is checked against the pinned keys",
+    new("integrity.companion-qr", "the companion QR scanner is checked against the pinned keys",
         Sync(RunCompanionScannerVerificationTests), TestResource.ProcessGlobal, "Integrity"),
 
-    new("object-bound reads: reparse points, hard links and directories",
+    new("files.object-bound-reads", "object-bound reads: reparse points, hard links and directories",
         Sync(RunObjectBoundReadTests), TestResource.Light, "Files"),
 
-    new("ZPAQ path traversal and extraction directories",
+    new("zpaq.path-traversal-extraction", "ZPAQ path traversal and extraction directories",
         RunZpaqTraversalTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
 
-    new("ZPAQ input binding: reparse points, post-check insertion, leases",
+    new("zpaq.input-binding", "ZPAQ input binding: reparse points, post-check insertion, leases",
         RunZpaqInputBindingTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
 
-    new("mutated ZPAQ pipe-parser crash and hang corpus",
+    new("zpaq.malformed-pipe-corpus", "mutated ZPAQ pipe-parser crash and hang corpus",
         RunMalformedZpaqCorpusTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
 
-    new("ZPAQ compression levels 0-5 for file and RAM-pipe paths",
+    new("zpaq.compression-level-matrix", "ZPAQ compression levels 0-5 for file and RAM-pipe paths",
         RunCompressionLevelMatrixTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
 
-    new("child-process cancellation and bounded output",
+    new("zpaq.child-process-containment", "child-process cancellation and bounded output",
         RunProcessContainmentTestsAsync, TestResource.ProcessGlobal, "Zpaq"),
 
-    new("process hardening",
+    new("hardening.process", "process hardening",
         Sync(RunProcessHardeningTests), TestResource.ProcessGlobal, "Hardening"),
 
-    new("ML-DSA-87 FIPS 204 interoperability and tamper rejection",
+    new("signing.mldsa87-interop", "ML-DSA-87 FIPS 204 interoperability and tamper rejection",
         Sync(RunMldsa87ReferenceTests), TestResource.CpuHeavy, "Signing"),
 
-    new("Argon2id PHC reference-CLI comparison",
+    new("kdf.argon2-reference-cli", "Argon2id PHC reference-CLI comparison",
         RunArgon2ReferenceCliTestAsync, TestResource.ArgonHeavy, "Kdf"),
 
-    new("Kalyna-512/512 parallel CTR equivalence",
+    new("crypto.kalyna-parallel-ctr", "Kalyna-512/512 parallel CTR equivalence",
         Sync(RunKalynaParallelCtrEquivalenceTest), TestResource.CpuHeavy, "Crypto"),
 
-    new("Kalyna-512/512 table path against the reference over 256 MiB",
+    new("crypto.kalyna-table-differential", "Kalyna-512/512 table path against the reference over 256 MiB",
         Sync(RunKalynaDifferentialTests), TestResource.CpuHeavy, "Crypto"),
 
-    new("ChaCha20 worker split against the serial keystream over 256 MiB",
+    new("crypto.chacha20-split-differential", "ChaCha20 worker split against the serial keystream over 256 MiB",
         Sync(RunChaChaDifferentialTests), TestResource.CpuHeavy, "Crypto"),
 
-    new("Threefish-1024 parallel CTR equivalence",
+    new("crypto.threefish-parallel-ctr", "Threefish-1024 parallel CTR equivalence",
         Sync(RunThreefishParallelCtrEquivalenceTest), TestResource.CpuHeavy, "Crypto"),
 
-    new("PDF ZPAQ and dual-suite encrypted containers",
+    new("crypto.ctr-counter-exhaustion", "native CTR counter exhaustion fails before output",
+        Sync(RunNativeCtrCounterExhaustionTests), TestResource.CpuHeavy, "Crypto"),
+
+    new("crypto.aes-runtime-provider", "AES runtime dispatch exposes the hardware provider",
+        Sync(RunAesRuntimeProviderTests), TestResource.Light, "Crypto"),
+
+    // Manual release gate: deliberately absent from bare/full/quick/changed
+    // selection. Use --performance (or its exact stable id) on an otherwise
+    // idle host so the medians are meaningful.
+    new("performance.cipher-suites", "individual cipher and cascade release-performance medians",
+        Sync(CipherSuitePerformanceTests.Run), TestResource.CpuHeavy, "Performance", IsPerformance: true)
+    {
+        Cost = new TestCost(4, 1024, false, TestConstraint.HostExclusive),
+    },
+
+    new("containers.pdf-dual-suite", "PDF ZPAQ and dual-suite encrypted containers",
         RunPdfRoundTripTestsAsync, TestResource.EntropyGlobal, "Containers"),
 
-    new("mixed text, empty, compressible and random sample data",
+    new("containers.mixed-samples", "mixed text, empty, compressible and random sample data",
         RunMixedSampleRoundTripTestsAsync, TestResource.EntropyGlobal, "Containers"),
 
-    new("short-read Kalyna stream",
+    new("containers.short-read-kalyna", "short-read Kalyna stream",
         RunShortReadKalynaStreamTestAsync, TestResource.EntropyGlobal, "Containers"),
 
-    new("KPAR2 v4 dual certification, metadata redundancy and recovery boundaries",
+    new("recovery.kpar2-v4-boundaries", "KPAR2 v4 dual certification, metadata redundancy and recovery boundaries",
         RunRecoveryTestsAsync, TestResource.EntropyGlobal, "Recovery"),
 
-    new("large streaming container",
+    new("containers.large-streaming", "large streaming container",
         RunLargeStreamingContainerTestAsync, TestResource.EntropyGlobal, "Containers"),
 
-    new("cryptographic erase",
+    new("erase.cryptographic", "cryptographic erase",
         RunCryptographicEraseTestsAsync, TestResource.EntropyGlobal, "Erase"),
 };
 
@@ -245,7 +261,14 @@ static void RunSettingsPersistenceTests()
             "GUI rename preserves the existing subtitle");
         Assert(typeof(MainWindow).Assembly.GetName().Name == "Keep Vault", "application assembly and executable identity use the product name");
         englishArgon2Profile = firstWindow.Argon2ProfileText.Text;
-        Assert(englishArgon2Profile.Contains("1 GiB", StringComparison.Ordinal), "GUI displays the fixed 1 GiB Argon2 profile");
+        Assert(
+            englishArgon2Profile.Contains("1 GiB", StringComparison.Ordinal)
+            && englishArgon2Profile.Contains("just under 2 GiB", StringComparison.Ordinal)
+            && englishArgon2Profile.Contains("PMI16", StringComparison.Ordinal)
+            && englishArgon2Profile.Contains("t=4", StringComparison.Ordinal)
+            && englishArgon2Profile.Contains("p=4", StringComparison.Ordinal)
+            && englishArgon2Profile.Contains("sequential", StringComparison.OrdinalIgnoreCase),
+            "English GUI describes the PMI16 memory range and sequential t=4, p=4 Argon2 profile");
         // The help text is localized user-facing prose, not a specification of
         // the key derivation. Assert only the user semantics it must convey,
         // and assert the cryptographic contract directly against the KDF.
@@ -379,8 +402,13 @@ static void RunSettingsPersistenceTests()
             "German GUI keeps its existing localized subtitle");
         Assert(
             restartedWindow.Argon2ProfileText.Text.Contains("1 GiB", StringComparison.Ordinal)
+            && restartedWindow.Argon2ProfileText.Text.Contains("knapp 2 GiB", StringComparison.Ordinal)
+            && restartedWindow.Argon2ProfileText.Text.Contains("PMI16", StringComparison.Ordinal)
+            && restartedWindow.Argon2ProfileText.Text.Contains("t=4", StringComparison.Ordinal)
+            && restartedWindow.Argon2ProfileText.Text.Contains("p=4", StringComparison.Ordinal)
+            && restartedWindow.Argon2ProfileText.Text.Contains("sequenziell", StringComparison.OrdinalIgnoreCase)
             && restartedWindow.Argon2ProfileText.Text != englishArgon2Profile,
-            "German GUI localizes the fixed Argon2 profile");
+            "German GUI localizes the PMI16 memory range and sequential t=4, p=4 Argon2 profile");
         restartedWindow.CipherSuiteBox.SelectedIndex = SuiteDisplayIndex(EncryptionSuiteCatalog.Default);
     }
 
@@ -1356,6 +1384,43 @@ static void RunReleaseScriptToolCoverageTests()
     Assert(
         verifier.Contains("IntegrityService.RequiredNativeTools", StringComparison.Ordinal),
         "the portable release verifier requires the application's native tool set rather than a copy of it");
+
+    string portableBuilderPath = Path.Combine(repositoryRoot, "tools", "Build-Portable.ps1");
+    string portableBuilder = File.ReadAllText(portableBuilderPath);
+    foreach (string forbiddenClaim in new[]
+    {
+        "Encrypted containers use format 7",
+        "encrypted version-7",
+        "two independent generated 512-bit hexadecimal factors",
+        "five evenly filled mouse pools",
+    })
+    {
+        Assert(
+            !portableBuilder.Contains(forbiddenClaim, StringComparison.OrdinalIgnoreCase),
+            $"the generated Windows portable README no longer publishes the legacy claim: {forbiddenClaim}");
+    }
+
+    foreach (string requiredClaim in new[]
+    {
+        "format v11 only",
+        "ten production suites",
+        "6-16 digit PIN",
+        "1024-bit hexadecimal",
+        "nine evenly filled mouse pools",
+        "PMI16",
+        "KPAR2 v4 with ContainerVersion 11",
+    })
+    {
+        Assert(
+            portableBuilder.Contains(requiredClaim, StringComparison.OrdinalIgnoreCase),
+            $"the generated Windows portable README states the v11 invariant: {requiredClaim}");
+    }
+
+    Assert(
+        portableBuilder.Contains("Build-QrScanner-Windows.ps1", StringComparison.Ordinal)
+        && portableBuilder.Contains("QR-Scanner.exe", StringComparison.Ordinal)
+        && portableBuilder.Contains("-Recurse -File", StringComparison.Ordinal),
+        "the Windows portable release builds, packages, and recursively signs the separate QR-Scanner companion");
 }
 
 // The check that vouches for the QR scanner.
@@ -1416,6 +1481,17 @@ static void RunCompanionScannerVerificationTests()
         Assert(
             trusted.Found && trusted.Trusted,
             $"a correctly signed scanner is trusted: {trusted.Message}");
+
+        // A normal .NET publish signs only the native apphost while executing
+        // the adjacent managed DLL. That layout must not be vouched for even
+        // when the apphost itself has a perfectly valid signature.
+        string externalApplicationPart = Path.Combine(scannerDirectory, "QR-Scanner.dll");
+        File.WriteAllBytes(externalApplicationPart, [0x4D, 0x5A]);
+        CompanionVerificationResult openPublish = WindowsCompanionVerification.VerifyQrScanner();
+        Assert(
+            openPublish.Found && !openPublish.Trusted,
+            "a signed apphost with unsigned external scanner code is refused");
+        File.Delete(externalApplicationPart);
 
         // And a single flipped bit in the signature is refused.
         byte[] signature = File.ReadAllBytes(sidecar);
@@ -2035,6 +2111,136 @@ static void RunObjectBoundReadTests()
         AssertThrows<IOException>(
             () => SecureFile.RequireReadableRegularFile(realDirectory, requireSingleLink: false),
             "a directory is refused where a regular file is required");
+
+        string boundTemporary = Path.Combine(root, ".bound-file.part");
+        string boundDestination = Path.Combine(root, "bound-file.bin");
+        using (BoundFileTransaction transaction = BoundFileTransaction.CreateNew(
+                   boundTemporary,
+                   bufferSize: 4096,
+                   FileOptions.Asynchronous | FileOptions.WriteThrough))
+        {
+            transaction.Stream.Write(payload);
+            transaction.Stream.Flush(flushToDisk: true);
+            AssertThrows<IOException>(
+                () => File.Open(boundTemporary, FileMode.Open, FileAccess.Write, FileShare.None).Dispose(),
+                "a bound temporary file cannot be replaced or opened for writing before commit");
+            transaction.RenameTo(boundDestination, overwrite: false);
+            Assert(
+                !File.Exists(boundTemporary) && File.Exists(boundDestination),
+                "handle-bound rename installs the exact temporary file under its final name");
+        }
+        Assert(
+            CryptographicOperations.FixedTimeEquals(payload, File.ReadAllBytes(boundDestination)),
+            "handle-bound rename preserves the exact written bytes");
+
+        string collisionTemporary = Path.Combine(root, ".collision.part");
+        string collisionDestination = Path.Combine(root, "collision.bin");
+        File.WriteAllBytes(collisionDestination, [0xA5]);
+        using (BoundFileTransaction transaction = BoundFileTransaction.CreateNew(
+                   collisionTemporary,
+                   bufferSize: 4096,
+                   FileOptions.WriteThrough))
+        {
+            transaction.Stream.WriteByte(0x5A);
+            transaction.Stream.Flush(flushToDisk: true);
+            AssertThrows<IOException>(
+                () => transaction.RenameTo(collisionDestination, overwrite: false),
+                "an object-bound exclusive commit refuses a destination that appeared during the write");
+            transaction.DeleteBound();
+        }
+        Assert(
+            File.ReadAllBytes(collisionDestination).SequenceEqual([(byte)0xA5]),
+            "a failed exclusive commit leaves the competing destination untouched");
+
+        string unboundProducerOutput = Path.Combine(root, ".failed-zpaq-output.zpaq-part");
+        File.WriteAllText(unboundProducerOutput, "foreign replacement");
+        ProcessResult failedProducer = ZpaqService.PreserveUnboundProducerOutputForTests(
+            new ProcessResult(2, string.Empty, "native failure"),
+            unboundProducerOutput);
+        Assert(
+            File.Exists(unboundProducerOutput)
+                && File.ReadAllText(unboundProducerOutput) == "foreign replacement",
+            "failed native-output cleanup never deletes an object whose ownership was not handle-bound");
+        Assert(
+            failedProducer.StandardError.Contains("preserved instead of path-deleted", StringComparison.Ordinal),
+            "preserving unbound native output is reported instead of becoming a silent leftover");
+
+        string extractionDestination = Path.Combine(root, "bound-extraction");
+        using (var staging = new WindowsExtractionStaging(extractionDestination))
+        {
+            string nested = Path.Combine(staging.StagingPath, "nested");
+            Directory.CreateDirectory(nested);
+            File.WriteAllBytes(Path.Combine(nested, "payload.bin"), payload);
+            DirectoryTreeMeasurement measurement = staging.MeasureTree(allowWriters: false);
+            Assert(
+                measurement.FileCount == 1
+                    && measurement.TotalBytes == payload.Length
+                    && measurement.MaxFileBytes == payload.Length,
+                "the Windows extraction walker measures the bound no-follow tree in one pass");
+            staging.Install();
+        }
+        Assert(
+            File.Exists(Path.Combine(extractionDestination, "nested", "payload.bin")),
+            "the Windows extraction install renames the validated bound directory object");
+
+        string preExistingDestination = Path.Combine(root, "pre-existing-empty-extraction");
+        Directory.CreateDirectory(preExistingDestination);
+        using (var staging = new WindowsExtractionStaging(preExistingDestination))
+        {
+            File.WriteAllBytes(Path.Combine(staging.StagingPath, "payload.bin"), payload);
+            staging.Install();
+        }
+        Assert(
+            File.Exists(Path.Combine(preExistingDestination, "payload.bin")),
+            "the exact pre-existing empty target is removed by handle before bound installation");
+
+        string renameProtectedDestination = Path.Combine(root, "rename-protected-extraction");
+        using (var staging = new WindowsExtractionStaging(renameProtectedDestination))
+        {
+            string attackerName = staging.StagingPath + ".swapped";
+            AssertThrows<IOException>(
+                () => Directory.Move(staging.StagingPath, attackerName),
+                "the held Windows staging root cannot be renamed during extraction");
+        }
+
+        string outsideTree = Path.Combine(root, "outside-tree");
+        Directory.CreateDirectory(outsideTree);
+        File.WriteAllBytes(Path.Combine(outsideTree, "must-not-be-counted.bin"), payload);
+        string linkedTreeDestination = Path.Combine(root, "linked-tree-extraction");
+        using (var staging = new WindowsExtractionStaging(linkedTreeDestination))
+        {
+            string nestedJunction = Path.Combine(staging.StagingPath, "foreign-junction");
+            if (TryCreateJunctionForTests(nestedJunction, outsideTree))
+            {
+                AssertThrows<InvalidDataException>(
+                    () => staging.MeasureTree(allowWriters: false),
+                    "the one-pass extraction walker rejects a nested junction before descending");
+            }
+        }
+        Assert(
+            File.Exists(Path.Combine(outsideTree, "must-not-be-counted.bin")),
+            "bound extraction cleanup never traverses or deletes a nested junction target");
+
+        string racedDestination = Path.Combine(root, "raced-extraction");
+        using (var staging = new WindowsExtractionStaging(racedDestination))
+        {
+            File.WriteAllBytes(Path.Combine(staging.StagingPath, "ours.bin"), [1, 2, 3]);
+            WindowsExtractionStaging.TestHookBeforeInstallRename =
+                () => Directory.CreateDirectory(racedDestination);
+            try
+            {
+                AssertThrows<IOException>(
+                    staging.Install,
+                    "the bound extraction install refuses a destination inserted at the final rename boundary");
+            }
+            finally
+            {
+                WindowsExtractionStaging.TestHookBeforeInstallRename = null;
+            }
+        }
+        Assert(
+            Directory.Exists(racedDestination),
+            "failed extraction cleanup does not delete the competing destination object");
 
         CryptographicOperations.ZeroMemory(payload);
     }
@@ -3860,7 +4066,7 @@ static async Task RunMixedSampleRoundTripTestsAsync()
             {
                 File.Copy(plainArchive + ".sha3", archiveAlias + ".sha3");
                 File.Copy(plainArchive + ".skein", archiveAlias + ".skein");
-                await AssertThrowsAsync<InvalidOperationException>(
+                await AssertThrowsAsync<IOException>(
                     () => archiveIntegrity.VerifyAsync(archiveAlias, CancellationToken.None),
                     "plain-archive symlink alias is rejected between verification and ZPAQ launch");
             }
@@ -4170,6 +4376,178 @@ static async Task RunRecoveryTestsAsync()
             await recovery.TryReadProtectionModeAsync(archive, CancellationToken.None)
                 == RecoveryProtectionMode.ErrorCorrectionOnly,
             "plain KPAR2 is explicitly marked as error correction only");
+
+        byte[] recoveryBeforeCommitGateFailure = await File.ReadAllBytesAsync(recoveryPath);
+        RecoveryService.SidecarHookBeforeCommitValidation = generated =>
+        {
+            const long firstBodyParityByte = 4L * 4096;
+            generated.Position = firstBodyParityByte;
+            int originalByte = generated.ReadByte();
+            Assert(originalByte >= 0, "generated KPAR2 parity fixture is long enough");
+            generated.Position = firstBodyParityByte;
+            generated.WriteByte((byte)(originalByte ^ 0x01));
+            generated.Flush(flushToDisk: true);
+        };
+        try
+        {
+            await AssertThrowsAsync<InvalidDataException>(
+                () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                "full KPAR2 commit gate rejects corruption outside the locator and metadata regions");
+        }
+        finally
+        {
+            RecoveryService.SidecarHookBeforeCommitValidation = null;
+        }
+
+        byte[] recoveryAfterCommitGateFailure = await File.ReadAllBytesAsync(recoveryPath);
+        Assert(
+            CryptographicOperations.FixedTimeEquals(
+                recoveryBeforeCommitGateFailure,
+                recoveryAfterCommitGateFailure),
+            "failed full KPAR2 commit validation leaves the previous known-good sidecar unchanged");
+        Assert(
+            !Directory.EnumerateFiles(root, "*.recovery-part", SearchOption.TopDirectoryOnly).Any(),
+            "failed full KPAR2 commit validation securely removes the generated sidecar");
+        CryptographicOperations.ZeroMemory(recoveryBeforeCommitGateFailure);
+        CryptographicOperations.ZeroMemory(recoveryAfterCommitGateFailure);
+
+        string stolenOldSidecar = Path.Combine(root, "stolen-old-sidecar.kpar2");
+        string stolenGeneratedSidecar = Path.Combine(root, "stolen-generated-sidecar.kpar2");
+        RecoveryService.SidecarHookBeforeOldQuarantineRename = () =>
+            AssertThrows<IOException>(
+                () => File.Move(recoveryPath, stolenOldSidecar),
+                "the bound previous KPAR2 object cannot be renamed behind the transaction");
+        RecoveryService.SidecarHookBeforeInstallRename = () =>
+        {
+            string generatedPath = Directory.GetFiles(
+                root,
+                "*.recovery-part",
+                SearchOption.TopDirectoryOnly).Single();
+            AssertThrows<IOException>(
+                () => File.Move(generatedPath, stolenGeneratedSidecar),
+                "the bound generated KPAR2 object cannot be renamed behind the transaction");
+        };
+        try
+        {
+            await recovery.CreateAsync(archive, null, CancellationToken.None);
+        }
+        finally
+        {
+            RecoveryService.SidecarHookBeforeOldQuarantineRename = null;
+            RecoveryService.SidecarHookBeforeInstallRename = null;
+        }
+        Assert(
+            !File.Exists(stolenOldSidecar) && !File.Exists(stolenGeneratedSidecar),
+            "Windows KPAR2 holds both source objects through their handle-bound renames");
+
+        byte[] transactionBaseline = await File.ReadAllBytesAsync(recoveryPath);
+
+        RecoveryService.SidecarHookAfterQuarantine =
+            () => throw new IOException("injected: after KPAR2 quarantine");
+        try
+        {
+            await AssertThrowsAsync<IOException>(
+                () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                "KPAR2 rollback surfaces a failure after quarantining the previous sidecar");
+        }
+        finally
+        {
+            RecoveryService.SidecarHookAfterQuarantine = null;
+        }
+
+        byte[] afterQuarantineRollback = await File.ReadAllBytesAsync(recoveryPath);
+        Assert(
+            CryptographicOperations.FixedTimeEquals(transactionBaseline, afterQuarantineRollback),
+            "KPAR2 rollback restores the exact previous sidecar after quarantine failure");
+        Assert(
+            !Directory.EnumerateFiles(root, "*.previous", SearchOption.TopDirectoryOnly).Any(),
+            "KPAR2 quarantine rollback leaves no stale previous-sidecar name");
+
+        RecoveryService.SidecarHookAfterInstall =
+            () => throw new IOException("injected: after KPAR2 install");
+        try
+        {
+            await AssertThrowsAsync<IOException>(
+                () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                "KPAR2 rollback surfaces a failure after installing the validated sidecar");
+        }
+        finally
+        {
+            RecoveryService.SidecarHookAfterInstall = null;
+        }
+
+        byte[] afterInstallRollback = await File.ReadAllBytesAsync(recoveryPath);
+        Assert(
+            CryptographicOperations.FixedTimeEquals(transactionBaseline, afterInstallRollback),
+            "KPAR2 rollback restores the exact previous sidecar after install failure");
+        Assert(
+            !Directory.EnumerateFiles(root, "*.previous", SearchOption.TopDirectoryOnly).Any()
+                && !Directory.EnumerateFiles(root, "*.failed-new", SearchOption.TopDirectoryOnly).Any(),
+            "KPAR2 install rollback removes only its bound failed-new object");
+
+        RecoveryService.SidecarHookAfterQuarantine =
+            () => File.WriteAllBytes(recoveryPath, [0xD1]);
+        try
+        {
+            await AssertThrowsAsync<IOException>(
+                () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                "KPAR2 exclusive install refuses a competing final-name object");
+        }
+        finally
+        {
+            RecoveryService.SidecarHookAfterQuarantine = null;
+        }
+
+        string[] collisionBackups = Directory.GetFiles(
+            root,
+            "*.previous",
+            SearchOption.TopDirectoryOnly);
+        Assert(
+            collisionBackups.Length == 1
+                && File.ReadAllBytes(recoveryPath) is [0xD1],
+            "KPAR2 collision rollback preserves both the foreign target and one previous-sidecar quarantine");
+        byte[] collisionBackupBytes = await File.ReadAllBytesAsync(collisionBackups[0]);
+        Assert(
+            CryptographicOperations.FixedTimeEquals(transactionBaseline, collisionBackupBytes),
+            "KPAR2 collision quarantine still contains the exact previous sidecar");
+        File.Delete(recoveryPath);
+        File.Move(collisionBackups[0], recoveryPath);
+
+        RecoveryService.SidecarHookBeforeBackupDestruction =
+            () => throw new IOException("injected: before KPAR2 backup destruction");
+        try
+        {
+            await AssertThrowsAsync<IOException>(
+                () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                "a post-commit KPAR2 backup-destruction failure remains observable");
+        }
+        finally
+        {
+            RecoveryService.SidecarHookBeforeBackupDestruction = null;
+        }
+
+        byte[] postCommitSidecar = await File.ReadAllBytesAsync(recoveryPath);
+        string[] postCommitBackups = Directory.GetFiles(
+            root,
+            "*.previous",
+            SearchOption.TopDirectoryOnly);
+        Assert(
+            !CryptographicOperations.FixedTimeEquals(transactionBaseline, postCommitSidecar)
+                && postCommitBackups.Length == 1,
+            "post-commit backup failure keeps the validated new KPAR2 installed and preserves the old one");
+        byte[] postCommitBackupBytes = await File.ReadAllBytesAsync(postCommitBackups[0]);
+        Assert(
+            CryptographicOperations.FixedTimeEquals(transactionBaseline, postCommitBackupBytes),
+            "the post-commit KPAR2 quarantine is the exact old sidecar");
+        File.Delete(postCommitBackups[0]);
+
+        CryptographicOperations.ZeroMemory(transactionBaseline);
+        CryptographicOperations.ZeroMemory(afterQuarantineRollback);
+        CryptographicOperations.ZeroMemory(afterInstallRollback);
+        CryptographicOperations.ZeroMemory(collisionBackupBytes);
+        CryptographicOperations.ZeroMemory(postCommitSidecar);
+        CryptographicOperations.ZeroMemory(postCommitBackupBytes);
+
         string replacedRecoveryPath = await recovery.CreateAsync(archive, null, CancellationToken.None);
         Assert(
             replacedRecoveryPath == recoveryPath && new FileInfo(recoveryPath).Length > 0,
@@ -4213,15 +4591,17 @@ static async Task RunRecoveryTestsAsync()
         Assert(
             TestNativeFileLinks.CreateHardLink(hostileSidecarLink, hardLinkTarget, nint.Zero),
             "test fixture creates a hostile hard-linked KPAR2 target");
-        // The replacement is bound to the object it verified, so a second name
-        // at the sidecar path is unlinked rather than refused. What has to hold
-        // either way is the property this fixture exists for: nothing may be
-        // written through the other name.
-        await recovery.CreateAsync(hardLinkArchive, null, CancellationToken.None);
+        // Replacement includes secure destruction of the previous sidecar.
+        // A second link would keep those sensitive parity bytes alive under an
+        // untracked name, so both platforms now refuse it before quarantine.
+        await AssertThrowsAsync<IOException>(
+            () => recovery.CreateAsync(hardLinkArchive, null, CancellationToken.None),
+            "KPAR2 replacement refuses a multiply linked previous sidecar");
         byte[] hardLinkTargetAfterHash = await Sha3FileAsync(hardLinkTarget);
         Assert(
-            CryptographicOperations.FixedTimeEquals(hardLinkTargetHash, hardLinkTargetAfterHash),
-            "the file behind a hard-linked sidecar path remains byte-for-byte unchanged");
+            File.Exists(hostileSidecarLink)
+            && CryptographicOperations.FixedTimeEquals(hardLinkTargetHash, hardLinkTargetAfterHash),
+            "hard-link refusal leaves both names and the linked file byte-for-byte unchanged");
         CryptographicOperations.ZeroMemory(hardLinkTargetHash);
         CryptographicOperations.ZeroMemory(hardLinkTargetAfterHash);
         File.Delete(hostileSidecarLink);
@@ -4298,6 +4678,49 @@ static async Task RunRecoveryTestsAsync()
             CryptographicOperations.ZeroMemory(mixedFailureHash);
             CryptographicOperations.ZeroMemory(mixedRepairedHash);
         }
+
+        string candidateCleanupArchive = Path.Combine(root, "candidate-cleanup-race.zpaq");
+        byte[] candidateCleanupBytes = RandomNumberGenerator.GetBytes(1024 * 1024);
+        await File.WriteAllBytesAsync(candidateCleanupArchive, candidateCleanupBytes);
+        CryptographicOperations.ZeroMemory(candidateCleanupBytes);
+        await recovery.CreateAsync(candidateCleanupArchive, null, CancellationToken.None);
+        for (int shardIndex = 0; shardIndex < 4; shardIndex++)
+        {
+            await CorruptRangeAsync(candidateCleanupArchive, shardIndex * 4096L, 4096);
+        }
+
+        string stolenCandidate = Path.Combine(root, "stolen-recovery-candidate.zpaq");
+        string? failedCandidatePath = null;
+        bool candidateRenameDenied = false;
+        RecoveryService.RecoveryCandidateHookBeforeFailureCleanup = path =>
+        {
+            failedCandidatePath = path;
+            try
+            {
+                File.Move(path, stolenCandidate);
+            }
+            catch (IOException)
+            {
+                candidateRenameDenied = true;
+            }
+        };
+        try
+        {
+            await AssertThrowsAsync<InvalidDataException>(
+                () => recovery.VerifyAndRepairAsync(candidateCleanupArchive, null, CancellationToken.None),
+                "four damaged data shards fail after creating a bound recovery candidate");
+        }
+        finally
+        {
+            RecoveryService.RecoveryCandidateHookBeforeFailureCleanup = null;
+        }
+
+        Assert(
+            failedCandidatePath is not null
+                && candidateRenameDenied
+                && !File.Exists(failedCandidatePath)
+                && !File.Exists(stolenCandidate),
+            "failed recovery cleanup keeps the candidate handle-bound through exact-object deletion");
 
         string metadataArchive = Path.Combine(root, "metadata-protection.zpaq");
         byte[] metadataBytes = RandomNumberGenerator.GetBytes(1024 * 1024);
@@ -5177,11 +5600,236 @@ static void RunKalynaDifferentialTests()
     Console.WriteLine($"    Kalyna boundary lengths identical: {string.Join(", ", boundaryLengths)}");
 }
 
+// Every block-wide CTR adapter must refuse the request before writing if the
+// final block would carry out of the nonce. In particular, the shared Crypto++
+// driver used to discard that carry and continue at zero.
+static void RunNativeCtrCounterExhaustionTests()
+{
+    byte[] aesKey = DerivedBytesForTest(32, 0x435452414553UL);
+    byte[] marsKey = DerivedBytesForTest(56, 0x4354524D415253UL);
+    byte[] shacalKey = DerivedBytesForTest(64, 0x435452534841UL);
+    try
+    {
+        AssertCryptoPpCtrMatchesBlockReference(
+            "AES-256",
+            NativeAes.BlockBytes,
+            (nonce, input, output, length) => NativeAes.XCryptCtr256(
+                aesKey, nonce, input, output, length),
+            (input, output) => NativeAes.EncryptBlock(aesKey, input, output));
+        AssertCryptoPpCtrMatchesBlockReference(
+            "MARS-448",
+            NativeMars.BlockBytes,
+            (nonce, input, output, length) => NativeMars.XCryptCtr448(
+                marsKey, nonce, input, output, length),
+            (input, output) => NativeMars.EncryptBlock(marsKey, input, output));
+        AssertCryptoPpCtrMatchesBlockReference(
+            "SHACAL-2-512",
+            NativeShacal2.BlockBytes,
+            (nonce, input, output, length) => NativeShacal2.XCryptCtr512(
+                shacalKey, nonce, input, output, length),
+            (input, output) => NativeShacal2.EncryptBlock(shacalKey, input, output));
+    }
+    finally
+    {
+        CryptographicOperations.ZeroMemory(aesKey);
+        CryptographicOperations.ZeroMemory(marsKey);
+        CryptographicOperations.ZeroMemory(shacalKey);
+    }
+
+    AssertNativeCtrCounterBoundary(
+        "AES-256",
+        NativeAes.BlockBytes,
+        (nonce, input, output) => NativeAes.XCryptCtr256(
+            new byte[32], nonce, input, output, input.Length));
+    AssertNativeCtrCounterBoundary(
+        "MARS-448",
+        NativeMars.BlockBytes,
+        (nonce, input, output) => NativeMars.XCryptCtr448(
+            new byte[56], nonce, input, output, input.Length));
+    AssertNativeCtrCounterBoundary(
+        "SHACAL-2-512",
+        NativeShacal2.BlockBytes,
+        (nonce, input, output) => NativeShacal2.XCryptCtr512(
+            new byte[64], nonce, input, output, input.Length));
+    AssertNativeCtrCounterBoundary(
+        "Kalyna-512/512",
+        64,
+        (nonce, input, output) => NativeKalyna.XCryptCtr512(
+            new byte[64], nonce, input, output, input.Length));
+    AssertNativeCtrCounterBoundary(
+        "Threefish-1024",
+        128,
+        (nonce, input, output) => NativeThreefish.XCryptCtr1024(
+            new byte[128], new byte[16], nonce, input, output, input.Length));
+}
+
+// Crypto++ exposes the provider chosen by the same branches its Rijndael
+// implementation uses for key setup and block encryption. This makes a build
+// that accidentally omits rijndael_simd.cpp/AES-NI support fail explicitly
+// instead of trying to infer instruction selection from a noisy wall clock.
+static void RunAesRuntimeProviderTests()
+{
+    NativeAesRuntimeProvider provider = NativeAes.RuntimeProvider;
+    Assert(provider != NativeAesRuntimeProvider.Unknown, "the AES adapter reports a known Crypto++ runtime provider");
+
+    if (System.Runtime.Intrinsics.X86.Aes.IsSupported)
+    {
+        Assert(
+            provider == NativeAesRuntimeProvider.AesNi,
+            $"AES-NI is available but the production adapter selected {provider}");
+    }
+
+    if (System.Runtime.Intrinsics.Arm.Aes.IsSupported)
+    {
+        Assert(
+            provider == NativeAesRuntimeProvider.ArmV8,
+            $"ARM AES is available but the production adapter selected {provider}");
+    }
+
+    Console.WriteLine($"    AES Crypto++ runtime provider: {provider}");
+}
+
+// CTR_Mode_ExternalCipher is the performance-critical bridge from the shared
+// range scheduler into Crypto++'s AdvancedProcessBlocks fast paths. Keep an
+// independent construction from the exported block primitive so an API or
+// counter-layout change cannot be accepted merely because encrypt/decrypt use
+// the same broken adapter. The cases cross partial-block, worker-chunk and
+// parallel-dispatch boundaries and exercise an in-place production buffer.
+static void AssertCryptoPpCtrMatchesBlockReference(
+    string algorithm,
+    int blockBytes,
+    Action<byte[], byte[], byte[], int> xcrypt,
+    Action<byte[], byte[]> encryptBlock)
+{
+    const int WorkerChunkBytes = 256 * 1024;
+    const int ParallelThresholdBytes = 1024 * 1024;
+    int[] lengths =
+    [
+        1,
+        blockBytes,
+        blockBytes + 1,
+        WorkerChunkBytes - 1,
+        WorkerChunkBytes,
+        WorkerChunkBytes + 1,
+        ParallelThresholdBytes + 17,
+    ];
+
+    byte[] nonce = DerivedBytesForTest(blockBytes, 0x4354524E4F4E4345UL + (ulong)blockBytes);
+    // The second block carries out of the low byte. Larger cases carry through
+    // it many more times, proving that the full-width big-endian counter used
+    // by the reference and by each independently scheduled range agrees.
+    nonce[^2] = 0x7A;
+    nonce[^1] = 0xFF;
+
+    foreach (int length in lengths)
+    {
+        byte[] input = DerivedBytesForTest(length, 0x435452494E505554UL + (ulong)length);
+        byte[] expected = new byte[length];
+        byte[] actual = new byte[length];
+        byte[] inPlace = input.ToArray();
+        try
+        {
+            BuildCtrFromBlockReference(nonce, input, expected, encryptBlock, blockBytes);
+            xcrypt(nonce, input, actual, length);
+            RequireIdenticalForTest(expected, actual, length, $"{algorithm} CTR block reference at {length} bytes");
+
+            xcrypt(nonce, inPlace, inPlace, length);
+            RequireIdenticalForTest(expected, inPlace, length, $"{algorithm} in-place CTR at {length} bytes");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(input);
+            CryptographicOperations.ZeroMemory(expected);
+            CryptographicOperations.ZeroMemory(actual);
+            CryptographicOperations.ZeroMemory(inPlace);
+        }
+    }
+
+    CryptographicOperations.ZeroMemory(nonce);
+    Console.WriteLine(
+        $"    {algorithm} CTR matches its block reference across {lengths.Length} boundary lengths, including in-place buffers");
+}
+
+static void BuildCtrFromBlockReference(
+    byte[] nonce,
+    byte[] input,
+    byte[] output,
+    Action<byte[], byte[]> encryptBlock,
+    int blockBytes)
+{
+    byte[] counter = nonce.ToArray();
+    byte[] keystream = new byte[blockBytes];
+    try
+    {
+        for (int offset = 0; offset < input.Length; offset += blockBytes)
+        {
+            encryptBlock(counter, keystream);
+            int count = Math.Min(blockBytes, input.Length - offset);
+            for (int index = 0; index < count; index++)
+            {
+                output[offset + index] = (byte)(input[offset + index] ^ keystream[index]);
+            }
+
+            if (offset + count < input.Length)
+            {
+                IncrementBigEndianCounterForTest(counter);
+            }
+        }
+    }
+    finally
+    {
+        CryptographicOperations.ZeroMemory(counter);
+        CryptographicOperations.ZeroMemory(keystream);
+    }
+}
+
+static void IncrementBigEndianCounterForTest(byte[] counter)
+{
+    for (int index = counter.Length - 1; index >= 0; index--)
+    {
+        counter[index]++;
+        if (counter[index] != 0)
+        {
+            return;
+        }
+    }
+
+    throw new InvalidOperationException("The test CTR counter unexpectedly overflowed.");
+}
+
+static void AssertNativeCtrCounterBoundary(
+    string algorithm,
+    int blockBytes,
+    Action<byte[], byte[], byte[]> xcrypt)
+{
+    byte[] maximumNonce = Enumerable.Repeat((byte)0xFF, blockBytes).ToArray();
+    byte[] oneBlock = Enumerable.Repeat((byte)0x3C, blockBytes).ToArray();
+    byte[] oneBlockOutput = new byte[blockBytes];
+
+    // The maximum counter value itself is valid for exactly one final block.
+    xcrypt(maximumNonce, oneBlock, oneBlockOutput);
+
+    byte[] crossingInput = Enumerable.Repeat((byte)0x5A, checked(blockBytes * 2)).ToArray();
+    byte[] crossingOutput = Enumerable.Repeat((byte)0xA5, crossingInput.Length).ToArray();
+    bool rejected = false;
+    try
+    {
+        xcrypt(maximumNonce, crossingInput, crossingOutput);
+    }
+    catch (CryptographicException)
+    {
+        rejected = true;
+    }
+
+    Assert(rejected, $"{algorithm} rejects a request that would wrap its CTR counter");
+    Assert(
+        crossingOutput.All(value => value == 0xA5),
+        $"{algorithm} rejects counter exhaustion before writing any output");
+}
+
 // The ChaCha20 worker split against the same keystream produced on one thread.
-//
-// Its own group for the reason above, and its own copy of the fixtures: they
-// are eleven lines of arithmetic, and sharing them across two groups that run
-// in different processes would buy nothing and couple them for no reason.
+// Its own group for the reason above, and its own copy of the fixtures so the
+// two groups can run independently in child processes.
 static void RunChaChaDifferentialTests()
 {
     const int LargeBytes = 256 * 1024 * 1024;
@@ -5248,8 +5896,25 @@ static void RunChaChaDifferentialTests()
     // pad.
     byte[] exhaustionKey = DerivedBytesForTest(32, 99);
     byte[] exhaustionNonce = DerivedBytesForTest(12, 98);
+    byte[] finalCounterInput = plaintext[..64];
+    byte[] finalCounterSerial = new byte[64];
+    byte[] finalCounterSplit = new byte[64];
+    int finalSerialResult = NativeChaChaPoly.XCryptSerial(
+        exhaustionKey, exhaustionNonce, uint.MaxValue, finalCounterInput, finalCounterSerial, finalCounterInput.Length);
+    int finalSplitResult = NativeChaChaPoly.XCrypt(
+        exhaustionKey, exhaustionNonce, uint.MaxValue, finalCounterInput, finalCounterSplit, finalCounterInput.Length);
+    Assert(
+        finalSerialResult == 0
+        && finalSplitResult == 0
+        && CryptographicOperations.FixedTimeEquals(finalCounterSerial, finalCounterSplit),
+        "ChaCha20 permits exactly one final block at counter 2^32-1 and both paths agree");
+
+    Array.Fill(fromFast, (byte)0xA5, 0, 192);
     int refused = NativeChaChaPoly.XCrypt(exhaustionKey, exhaustionNonce, uint.MaxValue - 1, plaintext, fromFast, 192);
     Assert(refused == 4, $"ChaCha20 must refuse a run that would exhaust the block counter; it returned {refused}.");
+    Assert(
+        fromFast.AsSpan(0, 192).IndexOfAnyExcept((byte)0xA5) < 0,
+        "ChaCha20 rejects counter exhaustion before writing output");
 
     // And the split has to reproduce this library's own RFC 8439 AEAD, whose
     // keystream starts at block 1. That ties it to the standard rather than

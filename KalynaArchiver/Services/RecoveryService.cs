@@ -264,8 +264,6 @@ public sealed partial class RecoveryService
         string temporaryPath = Path.Combine(
             recoveryDirectory,
             $".{Path.GetFileName(recoveryPath)}.{Guid.NewGuid():N}.recovery-part");
-        bool recoveryInstalled = false;
-        bool temporaryCreatedByThisOperation = false;
         byte[] archiveId = RandomNumberGenerator.GetBytes(32);
         ContainerRecoveryKdfInfo? kdfInfo = null;
 
@@ -351,15 +349,12 @@ public sealed partial class RecoveryService
                     Argon2Parallelism = 0,
                 };
 
-                await using (var recovery = new FileStream(
+                using (var sidecarTransaction = RecoverySidecarTransaction.Create(
                     temporaryPath,
-                    FileMode.CreateNew,
-                    FileAccess.ReadWrite,
-                    FileShare.None,
-                    bufferSize: 1024 * 1024,
-                    FileOptions.RandomAccess))
+                    recoveryPath,
+                    progress))
                 {
-                    temporaryCreatedByThisOperation = true;
+                    FileStream recovery = sidecarTransaction.Stream;
                     await WriteZeroBytesAsync(recovery, PrefixLocatorBytes, cancellationToken).ConfigureAwait(false);
 
                     if (headerLength > 0)
@@ -501,6 +496,16 @@ public sealed partial class RecoveryService
 #pragma warning disable CA1849 // Flush(true) makes the complete recovery file durable before installation.
                         recovery.Flush(flushToDisk: true);
 #pragma warning restore CA1849
+
+                        await sidecarTransaction.CommitAsync(
+                            (boundSidecar, validationCancellation) => ValidateGeneratedSidecarForCommitAsync(
+                                boundSidecar,
+                                locator,
+                                protectionMode,
+                                Path.GetFileName(fullArchivePath),
+                                recoveryKeys,
+                                validationCancellation),
+                            cancellationToken).ConfigureAwait(false);
                     }
                     finally
                     {
@@ -512,10 +517,6 @@ public sealed partial class RecoveryService
                         ZeroIfNotNull(locatorBlock);
                     }
                 }
-
-                await InstallRecoverySidecarTransactionallyAsync(
-                    temporaryPath, recoveryPath, progress, cancellationToken).ConfigureAwait(false);
-                recoveryInstalled = true;
                 progress?.Report(
                     protectionMode == RecoveryProtectionMode.DualAuthenticatedEncrypted
                         ? $"Dual-authenticated KPAR2 file written: {recoveryPath}"
@@ -532,15 +533,6 @@ public sealed partial class RecoveryService
         {
             kdfInfo?.Dispose();
             CryptographicOperations.ZeroMemory(archiveId);
-            if (temporaryCreatedByThisOperation
-                && !recoveryInstalled
-                && File.Exists(temporaryPath))
-            {
-                SecureFile.DestroyPrefixAndSuffixAndDelete(
-                    temporaryPath,
-                    RecoverySidecarDestructionBytes,
-                    RecoverySidecarDestructionBytes);
-            }
         }
     }
 
@@ -548,179 +540,220 @@ public sealed partial class RecoveryService
     /// Test hooks that fail one step of the sidecar replacement, so the
     /// transaction boundaries can be checked instead of assumed.
     /// </summary>
+    internal static Action<FileStream>? SidecarHookBeforeCommitValidation { get; set; }
+    internal static Action? SidecarHookBeforeOldQuarantineRename { get; set; }
     internal static Action? SidecarHookAfterQuarantine { get; set; }
+    internal static Action? SidecarHookBeforeInstallRename { get; set; }
     internal static Action? SidecarHookAfterInstall { get; set; }
     internal static Action? SidecarHookBeforeBackupDestruction { get; set; }
+    internal static Action<string>? RecoveryCandidateHookBeforeFailureCleanup { get; set; }
 
     /// <summary>
-    /// Replaces the recovery sidecar so that a valid one exists at every point
-    /// in time.
+    /// Proves the complete just-written KPAR2 object before the previous known-good
+    /// sidecar is moved. The already-derived recovery keys are reused so an
+    /// authenticated commit does not perform a second Argon2id derivation.
     /// </summary>
-    /// <remarks>
-    /// The previous code destroyed the existing sidecar first and moved the new
-    /// one into place afterwards. Anything that failed in between - a racing
-    /// creator of the target name, a permission or I/O error - left the archive
-    /// with no recovery data at all, even though the sidecar it already had was
-    /// perfectly good.
-    ///
-    /// The order is now: move the old one aside under a private name in the
-    /// same directory, install the new one, re-open and parse the installed
-    /// file, and only then destroy the old one. A failure before that last step
-    /// puts the old sidecar back. A failure *at* that last step is reported but
-    /// does not roll back: the new sidecar is already installed and verified,
-    /// and undoing it to tidy up a leftover backup would trade a working
-    /// recovery file for a cosmetic one.
-    /// </remarks>
-    private async Task InstallRecoverySidecarTransactionallyAsync(
-        string temporaryPath,
-        string recoveryPath,
-        IProgress<string>? progress,
+    private async Task ValidateGeneratedSidecarForCommitAsync(
+        FileStream recovery,
+        RecoveryLocator expectedLocator,
+        RecoveryProtectionMode expectedMode,
+        string expectedArchiveFileName,
+        RecoveryKeys? recoveryKeys,
         CancellationToken cancellationToken)
     {
-        string directory = Path.GetDirectoryName(recoveryPath) ?? Environment.CurrentDirectory;
-        string quarantinePath = Path.Combine(
-            directory,
-            $".{Path.GetFileName(recoveryPath)}.{Guid.NewGuid():N}.previous");
-        bool quarantined = false;
-
-        if (File.Exists(recoveryPath))
+        ArgumentNullException.ThrowIfNull(recovery);
+        if (!recovery.CanRead || !recovery.CanSeek)
         {
-            RequireReplaceableSidecar(recoveryPath);
-            File.Move(recoveryPath, quarantinePath, overwrite: false);
-            quarantined = true;
+            throw new InvalidOperationException("The generated KPAR2 commit gate requires one readable, seekable bound file.");
         }
 
-        bool installed = false;
+        if (expectedMode == RecoveryProtectionMode.DualAuthenticatedEncrypted && recoveryKeys is null)
+        {
+            throw new CryptographicException("Authenticated KPAR2 commit validation requires the already-derived recovery keys.");
+        }
+
+        await RequireAllGeneratedLocatorCopiesAsync(
+            recovery,
+            expectedLocator,
+            cancellationToken).ConfigureAwait(false);
+        await RequireAllGeneratedMetadataBlocksAsync(
+            recovery,
+            expectedLocator,
+            cancellationToken).ConfigureAwait(false);
+
+        RecoveryPackage package = await ReadRecoveryPackageAsync(
+            recovery,
+            expectedMode,
+            authenticateMetadata: true,
+            expectedArchiveFileName,
+            userPassword: null,
+            pin: null,
+            firstGeneratedPassword: null,
+            secondGeneratedPassword: null,
+            cancellationToken,
+            prederivedRecoveryKeys: recoveryKeys).ConfigureAwait(false);
+
+        if (expectedMode == RecoveryProtectionMode.DualAuthenticatedEncrypted
+            && !package.AuthenticationVerified)
+        {
+            throw new CryptographicException("The generated encrypted KPAR2 sidecar did not pass both keyed recovery certifications.");
+        }
+
+        await RequireAllGeneratedParityShardsAsync(
+            recovery,
+            package.Manifest,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task RequireAllGeneratedLocatorCopiesAsync(
+        FileStream recovery,
+        RecoveryLocator expectedLocator,
+        CancellationToken cancellationToken)
+    {
+        byte[] expectedBlock = BuildLocatorBlock(expectedLocator);
+        byte[] actualBlock = new byte[LocatorBlockSize];
         try
         {
-            // Everything from here on is inside the rollback scope. The hook
-            // sits inside it deliberately: a failure between the quarantine and
-            // the install has to restore the old sidecar just as much as a
-            // failing install does.
-            SidecarHookAfterQuarantine?.Invoke();
-            File.Move(temporaryPath, recoveryPath, overwrite: false);
-            installed = true;
-            SidecarHookAfterInstall?.Invoke();
-
-            // The installed bytes have to parse as a sidecar before the old one
-            // is destroyed; otherwise a truncated or partially written file
-            // would silently replace working recovery data.
-            await RequireInstalledSidecarReadableAsync(recoveryPath, cancellationToken).ConfigureAwait(false);
-        }
-        catch
-        {
-            if (installed)
+            for (int copy = 0; copy < PrefixLocatorCopies + SuffixLocatorCopies; copy++)
             {
-                TryMoveAside(recoveryPath, temporaryPath);
+                long offset = copy < PrefixLocatorCopies
+                    ? (long)copy * LocatorBlockSize
+                    : recovery.Length - SuffixLocatorBytes
+                        + ((long)(copy - PrefixLocatorCopies) * LocatorBlockSize);
+                bool readable = await TryReadAtAsync(
+                    recovery,
+                    offset,
+                    actualBlock,
+                    cancellationToken).ConfigureAwait(false);
+                if (!readable || !CryptographicOperations.FixedTimeEquals(actualBlock, expectedBlock))
+                {
+                    throw new InvalidDataException(
+                        $"Generated KPAR2 locator copy {copy + 1} of {PrefixLocatorCopies + SuffixLocatorCopies} is not the exact validated locator.");
+                }
+
+                CryptographicOperations.ZeroMemory(actualBlock);
             }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(expectedBlock);
+            CryptographicOperations.ZeroMemory(actualBlock);
+        }
+    }
 
-            if (quarantined && !File.Exists(recoveryPath))
+    private static async Task RequireAllGeneratedMetadataBlocksAsync(
+        FileStream recovery,
+        RecoveryLocator locator,
+        CancellationToken cancellationToken)
+    {
+        byte[] block = new byte[LocatorBlockSize];
+        try
+        {
+            for (int stripe = 0; stripe < locator.MetadataStripeCount; stripe++)
             {
+                byte[][] data = AllocateShards(DataShardCount, MetadataPayloadSize);
+                byte[][] writtenParity = AllocateShards(ParityShardCount, MetadataPayloadSize);
+                byte[][] computedParity = AllocateShards(ParityShardCount, MetadataPayloadSize);
                 try
                 {
-                    File.Move(quarantinePath, recoveryPath, overwrite: false);
+                    for (int shardIndex = 0; shardIndex < DataShardCount + ParityShardCount; shardIndex++)
+                    {
+                        bool isParity = shardIndex >= DataShardCount;
+                        int expectedPayloadLength = isParity
+                            ? MetadataPayloadSize
+                            : ExpectedMetadataPayloadLength(
+                                locator.MetadataEnvelopeLength,
+                                stripe,
+                                shardIndex);
+                        long blockOffset = checked(
+                            locator.MetadataOffset
+                            + (((long)stripe * (DataShardCount + ParityShardCount) + shardIndex)
+                                * LocatorBlockSize));
+                        bool readable = await TryReadAtAsync(
+                            recovery,
+                            blockOffset,
+                            block,
+                            cancellationToken).ConfigureAwait(false);
+                        if (!readable || !ValidateMetadataBlock(
+                                block,
+                                locator.FormatVersion,
+                                stripe,
+                                shardIndex,
+                                isParity,
+                                expectedPayloadLength))
+                        {
+                            throw new InvalidDataException(
+                                $"Generated KPAR2 metadata block is invalid: stripe {stripe}, shard {shardIndex}.");
+                        }
+
+                        block.AsSpan(MetadataBlockHeaderSize, MetadataPayloadSize).CopyTo(
+                            isParity
+                                ? writtenParity[shardIndex - DataShardCount]
+                                : data[shardIndex]);
+                        CryptographicOperations.ZeroMemory(block);
+                    }
+
+                    // The per-block dual hash proves only that a block is
+                    // internally self-consistent. Recompute RS(20,3) as well,
+                    // otherwise a substituted parity payload with freshly
+                    // recomputed unkeyed block hashes could pass the commit
+                    // gate and leave non-functional metadata redundancy.
+                    ComputeParity(data, computedParity, cancellationToken);
+                    for (int parityIndex = 0; parityIndex < ParityShardCount; parityIndex++)
+                    {
+                        if (!CryptographicOperations.FixedTimeEquals(
+                                writtenParity[parityIndex],
+                                computedParity[parityIndex]))
+                        {
+                            throw new InvalidDataException(
+                                $"Generated KPAR2 metadata parity is inconsistent: stripe {stripe}, parity {parityIndex}.");
+                        }
+                    }
                 }
-                catch (IOException)
+                finally
                 {
-                    progress?.Report(
-                        $"The previous KPAR2 file could not be restored to its name and is preserved at: {quarantinePath}");
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    progress?.Report(
-                        $"The previous KPAR2 file could not be restored to its name and is preserved at: {quarantinePath}");
+                    ZeroShards(data);
+                    ZeroShards(writtenParity);
+                    ZeroShards(computedParity);
                 }
             }
-
-            throw;
         }
-
-        if (!quarantined)
+        finally
         {
-            return;
-        }
-
-        SidecarHookBeforeBackupDestruction?.Invoke();
-        try
-        {
-            SecureFile.DestroyPrefixAndSuffixAndDelete(
-                quarantinePath,
-                RecoverySidecarDestructionBytes,
-                RecoverySidecarDestructionBytes);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            // Committed already. Report the leftover rather than undoing a
-            // verified installation.
-            progress?.Report(
-                $"The new KPAR2 file is installed, but the previous one could not be destroyed and remains at: {quarantinePath}");
+            CryptographicOperations.ZeroMemory(block);
         }
     }
 
-    /// <summary>
-    /// Refuses to move aside anything that is not a plain, single-link file.
-    /// </summary>
-    private static void RequireReplaceableSidecar(string recoveryPath)
-    {
-        FileAttributes attributes = File.GetAttributes(recoveryPath);
-        if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
-        {
-            throw new IOException(
-                $"The existing KPAR2 path is a directory or a link and will not be replaced: {recoveryPath}");
-        }
-
-        if (File.ResolveLinkTarget(recoveryPath, returnFinalTarget: false) is not null)
-        {
-            throw new IOException(
-                $"The existing KPAR2 path is a symbolic link and will not be replaced: {recoveryPath}");
-        }
-
-#if KEEPVAULT_MACOS
-        // Opened no-follow and checked through the descriptor: a second hard
-        // link means the bytes survive the destruction under another name.
-        using FileStream existing = MacSafeFileSystem.OpenReadNoSymlinks(recoveryPath);
-        MacSafeFileSystem.ValidateRegularFile(existing.SafeFileHandle, requireSingleLink: true, recoveryPath);
-#else
-        // Windows deliberately does not refuse here. Its replacement is bound
-        // to the object it verified, so a second name at the sidecar path is
-        // unlinked rather than rejected, and the hard-link guard test asserts
-        // the file behind that other name is left byte for byte alone. Adding
-        // the macOS refusal back - which an earlier branch did, before the
-        // object binding existed - turns that passing case into an exception.
-#endif
-    }
-
-    private async Task RequireInstalledSidecarReadableAsync(
-        string recoveryPath,
+    private static async Task RequireAllGeneratedParityShardsAsync(
+        FileStream recovery,
+        RecoveryManifest manifest,
         CancellationToken cancellationToken)
     {
-#if KEEPVAULT_MACOS
-        using MacPrivateFileSnapshot snapshot = await MacPrivateFileSnapshot
-            .CaptureAsync(recoveryPath, cancellationToken)
-            .ConfigureAwait(false);
-        FileStream recovery = snapshot.Stream;
-#else
-        await using FileStream recovery = OpenRecoveryForRead(recoveryPath);
-#endif
-        _ = await ReadConsensusLocatorAsync(recovery, cancellationToken).ConfigureAwait(false);
-    }
-
-    private static void TryMoveAside(string path, string destination)
-    {
-        try
+        foreach (RecoverySection section in manifest.Sections)
         {
-            if (File.Exists(destination))
+            byte[] shard = new byte[section.ShardSize];
+            try
             {
-                File.Delete(destination);
-            }
+                foreach (RecoveryParityShard parity in section.Parity)
+                {
+                    bool readable = await TryReadAtAsync(
+                        recovery,
+                        parity.Offset,
+                        shard,
+                        cancellationToken).ConfigureAwait(false);
+                    if (!readable || !DualDigestMatches(shard, parity.Digest))
+                    {
+                        throw new InvalidDataException(
+                            $"Generated KPAR2 parity shard is invalid: {section.Name}, stripe {parity.Stripe}, parity {parity.ParityIndex}.");
+                    }
 
-            File.Move(path, destination, overwrite: false);
-        }
-        catch (IOException)
-        {
-        }
-        catch (UnauthorizedAccessException)
-        {
+                    CryptographicOperations.ZeroMemory(shard);
+                }
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(shard);
+            }
         }
     }
 
@@ -771,6 +804,10 @@ public sealed partial class RecoveryService
         string? candidatePath = null;
         bool candidateCompleted = false;
         bool candidateCreatedByThisOperation = false;
+        BoundFileTransaction? candidateObject = null;
+        BoundFileTransaction? candidateSha3Manifest = null;
+        BoundFileTransaction? candidateSkeinManifest = null;
+        Exception? operationError = null;
         try
         {
 #if KEEPVAULT_MACOS
@@ -856,15 +893,13 @@ public sealed partial class RecoveryService
                     ? "Unauthenticated emergency recovery is writing a new candidate; the original remains unchanged."
                     : "KPAR2 detected damaged blocks; a verified recovery candidate is being created.");
 
-            await using (var candidate = new FileStream(
+            candidateObject = BoundFileTransaction.CreateNew(
                 candidatePath,
-                FileMode.CreateNew,
-                FileAccess.ReadWrite,
-                FileShare.None,
                 bufferSize: 1024 * 1024,
-                FileOptions.RandomAccess | FileOptions.WriteThrough))
+                FileOptions.RandomAccess | FileOptions.WriteThrough);
+            candidateCreatedByThisOperation = true;
+            FileStream candidate = candidateObject.Stream;
             {
-                candidateCreatedByThisOperation = true;
                 int unreadableBlocks = await CopyArchiveForRecoveryAsync(
                     archive,
                     candidate,
@@ -925,7 +960,8 @@ public sealed partial class RecoveryService
 
                 if (package.Locator.ProtectionMode == RecoveryProtectionMode.ErrorCorrectionOnly)
                 {
-                    await _archiveIntegrity.CreateFromVerifiedDigestsAsync(
+                    (candidateSha3Manifest, candidateSkeinManifest) =
+                        await _archiveIntegrity.CreateBoundFromVerifiedDigestsAsync(
                         candidatePath,
                         package.Manifest.ArchiveSha3_512,
                         package.Manifest.ArchiveSkein1024,
@@ -950,15 +986,82 @@ public sealed partial class RecoveryService
                     emergencyMode);
             }
         }
+        catch (Exception ex)
+        {
+            operationError = ex;
+            throw;
+        }
         finally
         {
+            var cleanupErrors = new List<Exception>();
             if (candidateCreatedByThisOperation
                 && !candidateCompleted
                 && candidatePath is not null)
             {
-                ArchiveIntegrityService.DeleteManifests(candidatePath);
-                SecureFile.DeleteIfExists(candidatePath);
+                try
+                {
+                    RecoveryCandidateHookBeforeFailureCleanup?.Invoke(candidatePath);
+                }
+                catch (Exception hookError)
+                {
+                    cleanupErrors.Add(hookError);
+                }
+
+                DeleteRecoveryCandidateObjectOrCollect(candidateSkeinManifest, cleanupErrors);
+                DeleteRecoveryCandidateObjectOrCollect(candidateSha3Manifest, cleanupErrors);
+                DeleteRecoveryCandidateObjectOrCollect(candidateObject, cleanupErrors);
             }
+
+            DisposeRecoveryCandidateObjectOrCollect(candidateSkeinManifest, cleanupErrors);
+            DisposeRecoveryCandidateObjectOrCollect(candidateSha3Manifest, cleanupErrors);
+            DisposeRecoveryCandidateObjectOrCollect(candidateObject, cleanupErrors);
+
+            if (cleanupErrors.Count > 0)
+            {
+                throw new AggregateException(
+                    "Recovery-candidate finalization failed; exact bound objects were not silently replaced or path-deleted.",
+                    operationError is null
+                        ? cleanupErrors
+                        : [operationError, .. cleanupErrors]);
+            }
+        }
+    }
+
+    private static void DeleteRecoveryCandidateObjectOrCollect(
+        BoundFileTransaction? candidate,
+        List<Exception> errors)
+    {
+        if (candidate is null)
+        {
+            return;
+        }
+
+        try
+        {
+            candidate.DeleteBound();
+        }
+        catch (Exception cleanupError)
+        {
+            errors.Add(cleanupError);
+        }
+    }
+
+    private static void DisposeRecoveryCandidateObjectOrCollect(
+        BoundFileTransaction? candidate,
+        List<Exception> errors)
+    {
+        if (candidate is null)
+        {
+            return;
+        }
+
+        try
+        {
+            candidate.Dispose();
+        }
+        catch (Exception disposeError)
+        {
+            errors.Add(disposeError);
         }
     }
 
@@ -971,7 +1074,8 @@ public sealed partial class RecoveryService
         string? pin,
         string? firstGeneratedPassword,
         string? secondGeneratedPassword,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        RecoveryKeys? prederivedRecoveryKeys = null)
     {
         RecoveryLocator locator = await ReadConsensusLocatorAsync(recovery, cancellationToken).ConfigureAwait(false);
         if (locator.ProtectionMode != expectedMode)
@@ -986,7 +1090,7 @@ public sealed partial class RecoveryService
         byte[]? payload = null;
         byte[]? expectedSha3 = null;
         byte[]? expectedSkein = null;
-        RecoveryKeys? recoveryKeys = null;
+        RecoveryKeys? ownedRecoveryKeys = null;
         try
         {
             (payload, expectedSha3, expectedSkein) = ParseMetadataEnvelope(envelope, locator.ProtectionMode, locator.FormatVersion);
@@ -1010,13 +1114,14 @@ public sealed partial class RecoveryService
                             + $"only container version {ContainerKeyDerivation.ContainerVersion} is supported.");
                     }
 
-                    recoveryKeys = await DeriveRecoveryKeysAsync(
-                        userPassword!,
-                        pin!,
-                        firstGeneratedPassword!,
-                        secondGeneratedPassword!,
-                        locator,
-                        cancellationToken).ConfigureAwait(false);
+                    RecoveryKeys recoveryKeys = prederivedRecoveryKeys
+                        ?? (ownedRecoveryKeys = await DeriveRecoveryKeysAsync(
+                            userPassword!,
+                            pin!,
+                            firstGeneratedPassword!,
+                            secondGeneratedPassword!,
+                            locator,
+                            cancellationToken).ConfigureAwait(false));
 
                     (byte[] actualSha3, byte[] actualSkein) = ComputeMetadataCertification(
                         locator,
@@ -1065,7 +1170,7 @@ public sealed partial class RecoveryService
         }
         finally
         {
-            recoveryKeys?.Dispose();
+            ownedRecoveryKeys?.Dispose();
             CryptographicOperations.ZeroMemory(envelope);
             ZeroIfNotNull(payload);
             ZeroIfNotNull(expectedSha3);

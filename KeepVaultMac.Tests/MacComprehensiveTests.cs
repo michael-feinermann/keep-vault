@@ -65,42 +65,52 @@ internal static partial class MacComprehensiveTests
     [
         // Source- and documentation-level gates. Cheap enough to run on every
         // changed-file pass, including documentation-only changes.
-        new("no legacy constructions in production source", SpecLintTests.NoLegacyLintAsync, TestResource.Light, "Spec"),
-        new("documentation matches the normative v11 specification", SpecLintTests.SpecConsistencyAsync, TestResource.Light, "Spec"),
-        new("lock files match the platform their project builds on", SpecLintTests.LockFileRuntimesAsync, TestResource.Light, "Spec"),
-        new("macOS process hardening", TestProcessHardeningAsync, TestResource.ProcessGlobal, "Security"),
-        new("signed native trust and tamper rejection", TestNativeTrustAsync, TestResource.Light, "Trust"),
-        new("every Mach-O in the release bundle carries a hybrid signature", TestBundleMachOClosureAsync, TestResource.Light, "Packaging"),
-        new("the companion QR scanner is checked against the pinned keys", TestCompanionScannerAsync, TestResource.Light, "Packaging"),
-        new("KDF primitives against independent second implementations", TestKdfPrimitivesAsync, TestResource.Light, "Crypto"),
-        new("creation PIN policy and weak-pattern rejection", TestPinCreationPolicyAsync, TestResource.Light, "Policy"),
-        new("password policy and KEEPVAULT term rejection", TestPasswordPolicyAsync, TestResource.Light, "Policy"),
-        new("KDF properties: credential binding, PMI range and round chaining", TestKdfPropertiesAsync, TestResource.ArgonHeavy, "KDF"),
-        new("peak memory stays at one Argon2 matrix, and the header leaks nothing", TestCostAndHeaderAsync, TestResource.ArgonPeakMemory, "KDF"),
-        new("SHA3, Skein, Kalyna and Threefish reference vectors", TestPrimitiveVectorsAsync, TestResource.Light, "Crypto"),
-        new("ML-DSA-87 managed/reference interoperability", TestMldsaInteropAsync, TestResource.CpuHeavy, "Crypto"),
-        new("randomised differential testing against every reference library", TestReferenceDifferentialAsync, TestResource.CpuHeavy, "Crypto"),
+        new("spec.no-legacy-source", "no legacy constructions in production source", SpecLintTests.NoLegacyLintAsync, TestResource.Light, "Spec"),
+        new("spec.normative-v11-docs", "documentation matches the normative v11 specification", SpecLintTests.SpecConsistencyAsync, TestResource.Light, "Spec"),
+        new("spec.lockfile-runtimes", "lock files match the platform their project builds on", SpecLintTests.LockFileRuntimesAsync, TestResource.Light, "Spec"),
+        new("security.process-hardening", "macOS process hardening", TestProcessHardeningAsync, TestResource.ProcessGlobal, "Security"),
+        new("trust.native-tools", "signed native trust and tamper rejection", TestNativeTrustAsync, TestResource.Light, "Trust"),
+        new("packaging.macho-signature-closure", "every Mach-O in the release bundle carries a hybrid signature", TestBundleMachOClosureAsync, TestResource.Light, "Packaging"),
+        new("packaging.companion-qr", "the companion QR scanner is checked against the pinned keys", TestCompanionScannerAsync, TestResource.Light, "Packaging"),
+        new("crypto.kdf-primitives", "KDF primitives against independent second implementations", TestKdfPrimitivesAsync, TestResource.Light, "Crypto"),
+        new("policy.pin-creation", "creation PIN policy and weak-pattern rejection", TestPinCreationPolicyAsync, TestResource.Light, "Policy"),
+        new("policy.password", "password policy and KEEPVAULT term rejection", TestPasswordPolicyAsync, TestResource.Light, "Policy"),
+        new("kdf.properties", "KDF properties: credential binding, PMI range and round chaining", TestKdfPropertiesAsync, TestResource.ArgonHeavy, "KDF"),
+        new("kdf.peak-memory-and-header", "peak memory stays at one Argon2 matrix, and the header leaks nothing", TestCostAndHeaderAsync, TestResource.ArgonPeakMemory, "KDF"),
+        new("crypto.primitive-vectors", "SHA3, Skein, Kalyna and Threefish reference vectors", TestPrimitiveVectorsAsync, TestResource.Light, "Crypto"),
+        new("crypto.mldsa87-interop", "ML-DSA-87 managed/reference interoperability", TestMldsaInteropAsync, TestResource.CpuHeavy, "Crypto"),
+        new("crypto.reference-differential", "randomised differential testing against every reference library", TestReferenceDifferentialAsync, TestResource.CpuHeavy, "Crypto"),
         .. FastPathDifferentialTests.Tests,
-        new("Argon2id fixed 1 GiB profile and independent equivalence", TestArgon2Async, TestResource.ArgonHeavy, "KDF"),
-        new("ZPAQ levels, streaming, traversal and malformed corpus", TestZpaqAsync, TestResource.ZpaqGlobal, "ZPAQ"),
-        new("v11 master KDF and 512/512 factor split mutation isolation", TestV11MasterKdfAsync, TestResource.ArgonHeavy, "KDF"),
-        new("v11 container header, decryption and KPAR2 round trip", TestV11ContainersAsync, TestResource.EntropyGlobal, "Containers"),
-        new("quarantine rollback object binding and symlink-safe directory traversal", TestQuarantineAndSymlinkSafetyAsync, TestResource.Light, "Deletion"),
+        // Manual release gate: deliberately absent from full/quick/changed
+        // selection. Run it on an otherwise idle host with --performance.
+        new("performance.cipher-suites", "individual cipher and cascade release-performance medians", () =>
+            {
+                CipherSuitePerformanceTests.Run();
+                return Task.CompletedTask;
+            }, TestResource.CpuHeavy, "Performance", IsPerformance: true)
+        {
+            Cost = new TestCost(4, 1024, false, TestConstraint.HostExclusive),
+        },
+        new("kdf.argon2-equivalence", "Argon2id fixed 1 GiB profile and independent equivalence", TestArgon2Async, TestResource.ArgonHeavy, "KDF"),
+        new("zpaq.full-matrix", "ZPAQ levels, streaming, traversal and malformed corpus", TestZpaqAsync, TestResource.ZpaqGlobal, "ZPAQ"),
+        new("kdf.v11-master-factor-split", "v11 master KDF and 512/512 factor split mutation isolation", TestV11MasterKdfAsync, TestResource.ArgonHeavy, "KDF"),
+        new("containers.v11-kpar2-roundtrip", "v11 container header, decryption and KPAR2 round trip", TestV11ContainersAsync, TestResource.EntropyGlobal, "Containers"),
+        new("deletion.quarantine-symlink", "quarantine rollback object binding and symlink-safe directory traversal", TestQuarantineAndSymlinkSafetyAsync, TestResource.Light, "Deletion"),
         // Reads the process-wide locked-byte counter, so it cannot share the
         // process with another test that locks or releases memory: in parallel
         // it fails at random and, worse, can hide a real leak behind another
         // test's release.
-        new("GeneratedArchiveEntropy exception safety and leak prevention", TestEntropyExceptionSafetyAsync, TestResource.ProcessGlobal, "Entropy"),
-        new("cascade layering: the outer layer alone reveals nothing", TestCascadeLayeringAsync, TestResource.Light, "Crypto"),
-        new("two-round key derivation from one pool consumption", TestTwoRoundDerivationAsync, TestResource.EntropyGlobal, "Crypto"),
-        new("salt and nonce for every single-round suite without prepared entropy", TestUnpreparedEncryptionParametersAsync, TestResource.EntropyGlobal, "Crypto"),
-        new("per-chunk nonces across a multi-chunk archive", TestPerChunkNoncesAsync, TestResource.CpuHeavy, "Crypto"),
-        new("MARS and SHACAL-2 published vectors and CTR behaviour", TestCascadeCipherVectorsAsync, TestResource.Light, "Crypto"),
-        new("secure deletion destroys and deletes the same object", TestSecureFileObjectBoundDeletionAsync, TestResource.Light, "Deletion"),
-        new("KPAR2 sidecar replacement survives a failure at every step", TestRecoverySidecarTransactionAsync, TestResource.Light, "Recovery"),
-        new("KPAR2 v4 repair, authentication and transplantation rejection", TestRecoveryAsync, TestResource.EntropyGlobal, "Recovery"),
-        new("cryptographic erase ordering and hard-link refusal", TestCryptographicEraseAsync, TestResource.EntropyGlobal, "Deletion"),
-        new("verified original deletion refuses on any mismatch", TestVerifiedOriginalDeletionAsync, TestResource.Light, "Deletion"),
+        new("entropy.exception-safety", "GeneratedArchiveEntropy exception safety and leak prevention", TestEntropyExceptionSafetyAsync, TestResource.ProcessGlobal, "Entropy"),
+        new("crypto.cascade-layering", "cascade layering: the outer layer alone reveals nothing", TestCascadeLayeringAsync, TestResource.Light, "Crypto"),
+        new("crypto.two-round-derivation", "two-round key derivation from one pool consumption", TestTwoRoundDerivationAsync, TestResource.EntropyGlobal, "Crypto"),
+        new("crypto.unprepared-parameters", "salt and nonce for every single-round suite without prepared entropy", TestUnpreparedEncryptionParametersAsync, TestResource.EntropyGlobal, "Crypto"),
+        new("crypto.per-chunk-nonces", "per-chunk nonces across a multi-chunk archive", TestPerChunkNoncesAsync, TestResource.CpuHeavy, "Crypto"),
+        new("crypto.mars-shacal-vectors", "MARS and SHACAL-2 published vectors and CTR behaviour", TestCascadeCipherVectorsAsync, TestResource.Light, "Crypto"),
+        new("deletion.secure-file-object-binding", "secure deletion destroys and deletes the same object", TestSecureFileObjectBoundDeletionAsync, TestResource.Light, "Deletion"),
+        new("recovery.sidecar-transaction", "KPAR2 sidecar replacement survives a failure at every step", TestRecoverySidecarTransactionAsync, TestResource.Light, "Recovery"),
+        new("recovery.kpar2-v4-adversarial", "KPAR2 v4 repair, authentication and transplantation rejection", TestRecoveryAsync, TestResource.EntropyGlobal, "Recovery"),
+        new("deletion.cryptographic-erase", "cryptographic erase ordering and hard-link refusal", TestCryptographicEraseAsync, TestResource.EntropyGlobal, "Deletion"),
+        new("deletion.original-verification", "verified original deletion refuses on any mismatch", TestVerifiedOriginalDeletionAsync, TestResource.Light, "Deletion"),
         .. ContainerSuiteCases(),
         .. RecoverySuiteCases(),
         .. MacGuiTests.Tests,
@@ -131,15 +141,6 @@ internal static partial class MacComprehensiveTests
         Require(status.DynamicLoaderEnvironmentCleared, "Dynamic-loader environment was not cleared.");
         return Task.CompletedTask;
     }
-
-    private static readonly string[] NativeLogicalNames =
-    [
-        "zpaq.exe",
-        "argon2.exe",
-        "argon2_ref.dll",
-        "kalyna_ref.dll",
-        "threefish_ref.dll",
-    ];
 
     private static readonly string[] SidecarSuffixes =
         [".sha3", ".skein", ".khsig", ".sha3.khsig", ".skein.khsig"];
@@ -172,7 +173,11 @@ internal static partial class MacComprehensiveTests
 
     private static Task TestNativeTrustAsync()
     {
-        string[] logicalNames = NativeLogicalNames;
+        IReadOnlyList<string> logicalNames = NativeToolIntegrity.RequiredLogicalToolNames;
+        Require(logicalNames.Count == 9, $"Production requires {logicalNames.Count} native tools instead of the normative v11 set of nine.");
+        Require(
+            logicalNames.Distinct(StringComparer.OrdinalIgnoreCase).Count() == logicalNames.Count,
+            "Production's required native-tool inventory contains duplicate logical names.");
 
         Require(SigningTrustPolicy.IsConfigured, "Compiled hybrid-signature policy is not configured.");
         HybridSignaturePolicy policy = SigningTrustPolicy.HybridPolicy
@@ -2123,6 +2128,7 @@ internal static partial class MacComprehensiveTests
     /// </remarks>
     internal static IEnumerable<TestCase> ContainerSuiteCases() =>
         Enum.GetValues<EncryptionSuite>().Select(suite => new TestCase(
+            ContainerSuiteId(suite),
             $"v11 container roundtrip and manipulation rejection: {suite}",
             () => TestContainersAsync(suite),
             TestResource.EntropyGlobal,
@@ -2345,10 +2351,41 @@ internal static partial class MacComprehensiveTests
     /// </remarks>
     internal static IEnumerable<TestCase> RecoverySuiteCases() =>
         EncryptionSuiteCatalog.DisplayOrder.Select(suite => new TestCase(
+            RecoverySuiteId(suite),
             $"KPAR2 v4 authenticates and rejects wrong credentials: {suite}",
             () => TestRecoveryAcrossSuitesAsync(suite),
             TestResource.EntropyGlobal,
             "Recovery"));
+
+    private static string ContainerSuiteId(EncryptionSuite suite) => suite switch
+    {
+        EncryptionSuite.Kalyna512_512 => "containers.suite.kalyna512-512",
+        EncryptionSuite.Threefish1024 => "containers.suite.threefish1024",
+        EncryptionSuite.ThreefishOverKalyna => "containers.suite.threefish-over-kalyna",
+        EncryptionSuite.ParanoiaCascade => "containers.suite.paranoia-cascade",
+        EncryptionSuite.ChaChaOverAes => "containers.suite.chacha-over-aes",
+        EncryptionSuite.Aes256 => "containers.suite.aes256",
+        EncryptionSuite.Mars448 => "containers.suite.mars448",
+        EncryptionSuite.Shacal2_512 => "containers.suite.shacal2-512",
+        EncryptionSuite.ChaCha20Poly1305 => "containers.suite.chacha20-poly1305",
+        EncryptionSuite.MixedCascade => "containers.suite.mixed-cascade",
+        _ => throw new ArgumentOutOfRangeException(nameof(suite), suite, "No stable container test id is registered for this suite."),
+    };
+
+    private static string RecoverySuiteId(EncryptionSuite suite) => suite switch
+    {
+        EncryptionSuite.Kalyna512_512 => "recovery.suite.kalyna512-512",
+        EncryptionSuite.Threefish1024 => "recovery.suite.threefish1024",
+        EncryptionSuite.ThreefishOverKalyna => "recovery.suite.threefish-over-kalyna",
+        EncryptionSuite.ParanoiaCascade => "recovery.suite.paranoia-cascade",
+        EncryptionSuite.ChaChaOverAes => "recovery.suite.chacha-over-aes",
+        EncryptionSuite.Aes256 => "recovery.suite.aes256",
+        EncryptionSuite.Mars448 => "recovery.suite.mars448",
+        EncryptionSuite.Shacal2_512 => "recovery.suite.shacal2-512",
+        EncryptionSuite.ChaCha20Poly1305 => "recovery.suite.chacha20-poly1305",
+        EncryptionSuite.MixedCascade => "recovery.suite.mixed-cascade",
+        _ => throw new ArgumentOutOfRangeException(nameof(suite), suite, "No stable recovery test id is registered for this suite."),
+    };
 
     private static async Task TestRecoveryAcrossSuitesAsync(EncryptionSuite? onlySuite = null)
     {
@@ -2712,6 +2749,116 @@ internal static partial class MacComprehensiveTests
                 return Directory.GetFiles(root, ".*.previous", SearchOption.TopDirectoryOnly).Length;
             }
 
+            // A locator-only post-install check used to accept corruption in a
+            // body parity shard and then destroy the known-good sidecar. The
+            // commit gate must read and dual-hash every parity shard before it
+            // moves the old sidecar at all.
+            RecoveryService.SidecarHookBeforeCommitValidation = generated =>
+            {
+                const long firstBodyParityByte = 4L * 4096;
+                generated.Position = firstBodyParityByte;
+                int originalByte = generated.ReadByte();
+                Require(originalByte >= 0, "The generated KPAR2 parity fixture is unexpectedly short.");
+                generated.Position = firstBodyParityByte;
+                generated.WriteByte((byte)(originalByte ^ 0x01));
+                generated.Flush(flushToDisk: true);
+            };
+            try
+            {
+                await RequireThrowsAsync<InvalidDataException>(
+                    () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                    "A corrupted generated parity shard passed the KPAR2 commit gate.").ConfigureAwait(false);
+            }
+            finally
+            {
+                RecoveryService.SidecarHookBeforeCommitValidation = null;
+            }
+
+            byte[] afterCommitGateFailure = await File.ReadAllBytesAsync(sidecarPath).ConfigureAwait(false);
+            Require(
+                FixedEqual(original, afterCommitGateFailure),
+                "A failed full KPAR2 commit gate changed the previous known-good sidecar.");
+            Require(
+                Directory.GetFiles(root, ".*.recovery-part", SearchOption.TopDirectoryOnly).Length == 0,
+                "A failed full KPAR2 commit gate left its generated sidecar behind.");
+
+            // macOS permits another process to rename an open file. Prove that
+            // both namespace boundaries detect such substitutions by inode,
+            // preserve foreign entries and keep the known-good sidecar.
+            string displacedPrevious = Path.Combine(root, "displaced-previous.kpar2");
+            RecoveryService.SidecarHookBeforeOldQuarantineRename = () =>
+            {
+                File.Move(sidecarPath, displacedPrevious);
+                File.WriteAllBytes(sidecarPath, [0xA7]);
+            };
+            try
+            {
+                await RequireThrowsAsync<IOException>(
+                    () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                    "A substituted old KPAR2 directory entry passed the quarantine identity check.").ConfigureAwait(false);
+            }
+            finally
+            {
+                RecoveryService.SidecarHookBeforeOldQuarantineRename = null;
+            }
+
+            string[] oldRaceQuarantines = Directory.GetFiles(
+                root,
+                ".*.previous",
+                SearchOption.TopDirectoryOnly);
+            Require(
+                File.Exists(displacedPrevious)
+                    && FixedEqual(original, await File.ReadAllBytesAsync(displacedPrevious).ConfigureAwait(false)),
+                "The exact old KPAR2 inode was not preserved after source-name substitution.");
+            Require(
+                !File.Exists(sidecarPath)
+                    && oldRaceQuarantines.Length == 1
+                    && File.ReadAllBytes(oldRaceQuarantines[0]) is [0xA7],
+                "The substituted old-sidecar entry was not preserved without deletion.");
+            File.Delete(oldRaceQuarantines[0]);
+            File.Move(displacedPrevious, sidecarPath);
+
+            string displacedGenerated = Path.Combine(root, "displaced-generated.kpar2");
+            RecoveryService.SidecarHookBeforeInstallRename = () =>
+            {
+                string generatedPath = Directory.GetFiles(
+                    root,
+                    ".*.recovery-part",
+                    SearchOption.TopDirectoryOnly).Single();
+                File.Move(generatedPath, displacedGenerated);
+                File.WriteAllBytes(generatedPath, [0xA8]);
+            };
+            try
+            {
+                await RequireThrowsAsync<IOException>(
+                    () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                    "A substituted generated KPAR2 directory entry passed the install identity check.").ConfigureAwait(false);
+            }
+            finally
+            {
+                RecoveryService.SidecarHookBeforeInstallRename = null;
+            }
+
+            string[] foreignGeneratedEntries = Directory.GetFiles(
+                root,
+                ".*.recovery-part",
+                SearchOption.TopDirectoryOnly);
+            byte[] afterGeneratedRace = await File.ReadAllBytesAsync(sidecarPath).ConfigureAwait(false);
+            Require(
+                FixedEqual(original, afterGeneratedRace),
+                "A generated-temp substitution did not restore the known-good KPAR2 sidecar.");
+            Require(
+                File.Exists(displacedGenerated)
+                    && new FileInfo(displacedGenerated).Length > 4096
+                    && foreignGeneratedEntries.Length == 1
+                    && File.ReadAllBytes(foreignGeneratedEntries[0]) is [0xA8],
+                "Generated-temp substitution cleanup touched a foreign entry or lost the bound generated inode.");
+            File.Delete(foreignGeneratedEntries[0]);
+            SecureFile.DestroyPrefixAndSuffixAndDelete(
+                displacedGenerated,
+                1024 * 1024,
+                1024 * 1024);
+
             // 1. A failure right after the old sidecar was moved aside must put
             //    it back under its own name.
             RecoveryService.SidecarHookAfterQuarantine = () => throw new IOException("injected: after quarantine");
@@ -2733,14 +2880,30 @@ internal static partial class MacComprehensiveTests
                 "A post-quarantine failure did not restore the original sidecar bytes.");
             Require(await CountSidecarLeftoversAsync().ConfigureAwait(false) == 0, "A post-quarantine failure left a stray backup behind.");
 
-            // 2. A failure after the new sidecar was installed but before it was
-            //    validated must roll back to the old one.
-            RecoveryService.SidecarHookAfterInstall = () => throw new IOException("injected: after install");
+            // 2. macOS permits an in-place write through a second descriptor
+            //    even though the inode is still the one we installed. The
+            //    post-rename full gate must catch that content race and roll
+            //    back to the old sidecar.
+            RecoveryService.SidecarHookAfterInstall = () =>
+            {
+                using var installedWriter = new FileStream(
+                    sidecarPath,
+                    FileMode.Open,
+                    FileAccess.ReadWrite,
+                    FileShare.ReadWrite | FileShare.Delete);
+                const long firstBodyParityByte = 4L * 4096;
+                installedWriter.Position = firstBodyParityByte;
+                int originalByte = installedWriter.ReadByte();
+                Require(originalByte >= 0, "The installed KPAR2 race fixture is unexpectedly short.");
+                installedWriter.Position = firstBodyParityByte;
+                installedWriter.WriteByte((byte)(originalByte ^ 0x40));
+                installedWriter.Flush(flushToDisk: true);
+            };
             try
             {
-                await RequireThrowsAsync<IOException>(
+                await RequireThrowsAsync<InvalidDataException>(
                     () => recovery.CreateAsync(archive, null, CancellationToken.None),
-                    "The injected post-install failure was swallowed.").ConfigureAwait(false);
+                    "An in-place mutation of the installed KPAR2 object passed the post-rename gate.").ConfigureAwait(false);
             }
             finally
             {
@@ -2826,11 +2989,22 @@ internal static partial class MacComprehensiveTests
                 "A multiply-linked KPAR2 sidecar was replaced instead of refused.").ConfigureAwait(false);
             File.Delete(secondLink);
 
-            Zero(original, current, afterQuarantineFailure, afterInstallFailure, preservedBytes, afterCommitFailure);
+            Zero(
+                original,
+                current,
+                afterCommitGateFailure,
+                afterGeneratedRace,
+                afterQuarantineFailure,
+                afterInstallFailure,
+                preservedBytes,
+                afterCommitFailure);
         }
         finally
         {
             RecoveryService.SidecarHookAfterQuarantine = null;
+            RecoveryService.SidecarHookBeforeCommitValidation = null;
+            RecoveryService.SidecarHookBeforeOldQuarantineRename = null;
+            RecoveryService.SidecarHookBeforeInstallRename = null;
             RecoveryService.SidecarHookAfterInstall = null;
             RecoveryService.SidecarHookBeforeBackupDestruction = null;
             Directory.Delete(root, recursive: true);

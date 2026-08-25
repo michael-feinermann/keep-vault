@@ -10,6 +10,7 @@
     <AssemblyName>QrScanner.Tests</AssemblyName>
     <RootNamespace>QrScanner.Tests</RootNamespace>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <SelfContained>true</SelfContained>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <!--
       Both projects live in this directory, so they cannot share the default

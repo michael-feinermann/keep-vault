@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Runtime.InteropServices;
 using AppLanguage = QrScanner.Language;
 
 namespace QrScanner;
@@ -33,6 +34,7 @@ internal sealed class MainWindow : Window
     private readonly ComboBox _languageBox = new() { Width = 130 };
     private readonly Image _preview = new() { Stretch = Stretch.Uniform, MinHeight = 240 };
     private readonly TextBlock _statusText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Muted };
+    private readonly TextBlock _captureProtectionText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Bad };
     private readonly TextBlock _noticesText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Warn };
     private readonly TextBlock _valueLabel = new() { Foreground = Muted, Margin = new Thickness(0, 12, 0, 4) };
     private readonly TextBox _valueBox;
@@ -47,6 +49,10 @@ internal sealed class MainWindow : Window
     private string? _payload;
     private bool _copied;
     private bool _cleared;
+    private bool _copyFailed;
+    private bool _closed;
+    private bool _captureProtectionAttempted;
+    private bool _captureProtected;
 
     internal MainWindow()
     {
@@ -97,6 +103,12 @@ internal sealed class MainWindow : Window
         Content = BuildLayout();
         ApplyLanguage();
 
+        SourceInitialized += (_, _) =>
+        {
+            _captureProtectionAttempted = true;
+            _captureProtected = WindowCaptureProtection.TryEnable(this);
+            ApplyLanguage();
+        };
         Loaded += async (_, _) => await StartAsync();
         Closed += async (_, _) => await ShutDownAsync();
     }
@@ -137,6 +149,8 @@ internal sealed class MainWindow : Window
         });
         _statusText.Margin = new Thickness(0, 12, 0, 0);
         stack.Children.Add(_statusText);
+        _captureProtectionText.Margin = new Thickness(0, 6, 0, 0);
+        stack.Children.Add(_captureProtectionText);
         _noticesText.Margin = new Thickness(0, 6, 0, 0);
         stack.Children.Add(_noticesText);
         stack.Children.Add(_valueLabel);
@@ -160,7 +174,7 @@ internal sealed class MainWindow : Window
         session.PreviewUpdated += frame => _preview.Source = frame;
         _session = session;
         await session.StartAsync();
-        if (_failure is null)
+        if (!_closed && _failure is null)
         {
             _outcome = ScanOutcome.Searching;
             ApplyLanguage();
@@ -172,8 +186,12 @@ internal sealed class MainWindow : Window
         // The value goes before the window does, and the clipboard entry with
         // it: a scan left on the clipboard because the window was closed early
         // is the one case the expiry timer cannot cover.
+        _closed = true;
         _payload = null;
+        _outcome = null;
+        _failure = null;
         _valueBox.Clear();
+        _preview.Source = null;
         _clipboard.ClearIfStillOurs();
         _clipboard.Dispose();
 
@@ -187,6 +205,11 @@ internal sealed class MainWindow : Window
 
     private void OnObserved(ScanOutcome outcome)
     {
+        if (_closed)
+        {
+            return;
+        }
+
         _outcome = outcome;
         _failure = null;
 
@@ -196,6 +219,7 @@ internal sealed class MainWindow : Window
             _copied = false;
             _cleared = false;
             _valueBox.Text = PayloadInspector.DisplayText(payload);
+            _preview.Source = null;
             _copyButton.IsEnabled = true;
             _rescanButton.IsEnabled = true;
 
@@ -210,6 +234,11 @@ internal sealed class MainWindow : Window
 
     private void OnFailed(ScannerFailure failure)
     {
+        if (_closed)
+        {
+            return;
+        }
+
         _failure = failure;
         _outcome = null;
         ApplyLanguage();
@@ -222,14 +251,28 @@ internal sealed class MainWindow : Window
             return;
         }
 
-        _clipboard.Copy(payload, () =>
+        try
         {
-            _cleared = true;
+            _clipboard.Copy(payload, () =>
+            {
+                _cleared = true;
+                _copied = false;
+                _copyFailed = false;
+                ApplyLanguage();
+            });
+        }
+        catch (Exception exception) when (exception is ExternalException or InvalidOperationException)
+        {
+            _copyFailed = true;
             _copied = false;
+            _cleared = false;
             ApplyLanguage();
-        });
+            return;
+        }
+
         _copied = true;
         _cleared = false;
+        _copyFailed = false;
         ApplyLanguage();
     }
 
@@ -238,6 +281,7 @@ internal sealed class MainWindow : Window
         _payload = null;
         _copied = false;
         _cleared = false;
+        _copyFailed = false;
         _valueBox.Clear();
         _copyButton.IsEnabled = false;
         _rescanButton.IsEnabled = false;
@@ -277,6 +321,9 @@ internal sealed class MainWindow : Window
         _copyButton.Content = strings.CopyButton;
         _rescanButton.Content = strings.RescanButton;
         _valueLabel.Text = strings.ScannedValueLabel;
+        _captureProtectionText.Text = _captureProtectionAttempted && !_captureProtected
+            ? strings.ScreenCaptureUnavailable
+            : string.Empty;
 
         if (_failure is { } failure)
         {
@@ -288,7 +335,12 @@ internal sealed class MainWindow : Window
             return;
         }
 
-        if (_cleared)
+        if (_copyFailed)
+        {
+            _statusText.Text = strings.ClipboardUnavailable;
+            _statusText.Foreground = Bad;
+        }
+        else if (_cleared)
         {
             _statusText.Text = strings.ClipboardCleared;
             _statusText.Foreground = Warn;

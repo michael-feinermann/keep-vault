@@ -27,10 +27,9 @@
 #define THREEFISH_BLOCK_BYTES 128
 #define THREEFISH_TWEAK_BYTES 16
 /* CTR mode splits into independent block ranges, so the ciphertext is
-   identical no matter how many workers process it. The cap therefore only
-   bounds the job tables; it is set well above any processor count Windows can
-   report (64 groups of 64) so that the hardware, not this number, decides how
-   wide the work runs - hyperthreads included. */
+   identical no matter how many workers process it. The cap is large enough for
+   current high-core-count hosts while still bounding the job tables if a bad
+   platform report is returned. */
 #define THREEFISH_MAX_THREADS 1024
 #define THREEFISH_PARALLEL_THRESHOLD_BYTES (1024 * 1024)
 
@@ -311,6 +310,27 @@ static int add_counter_blocks(
     return carry != 0;
 }
 
+/* Proves the last counter exists before any worker is allowed to modify the
+   output. Range-local checks remain as defence in depth, but without this
+   preflight one worker could have written a later chunk before another found
+   that a nonce near its maximum wrapped. */
+static int counter_range_overflows(
+    const uint8_t nonce[THREEFISH_BLOCK_BYTES],
+    size_t total_blocks)
+{
+    uint8_t final_counter[THREEFISH_BLOCK_BYTES];
+    int overflow;
+
+    if (total_blocks == 0) {
+        return 0;
+    }
+
+    memcpy(final_counter, nonce, sizeof(final_counter));
+    overflow = add_counter_blocks(final_counter, (uint64_t)(total_blocks - 1));
+    secure_zero(final_counter, sizeof(final_counter));
+    return overflow;
+}
+
 static void encrypt_block_reference(
     const uint8_t key[THREEFISH_BLOCK_BYTES],
     const uint8_t tweak[THREEFISH_TWEAK_BYTES],
@@ -582,6 +602,10 @@ THREEFISH_EXPORT int threefish_1024_ctr_xcrypt(
         return 0;
     }
 
+    if (counter_range_overflows(nonce, total_blocks)) {
+        return 4;
+    }
+
     size_t thread_count = choose_thread_count(length, total_blocks);
     if (thread_count > 1) {
 #if defined(_WIN32)
@@ -648,11 +672,14 @@ THREEFISH_EXPORT int threefish_1024_ctr_xcrypt(
 
         int result = 0;
 #if defined(_WIN32)
-        DWORD wait_result = WaitForMultipleObjects((DWORD)thread_count, handles, TRUE, INFINITE);
-        if (wait_result == WAIT_FAILED) {
-            result = 3;
-            for (size_t index = 0; index < thread_count; ++index) {
-                WaitForSingleObject(handles[index], INFINITE);
+        /* WaitForMultipleObjects rejects more than MAXIMUM_WAIT_OBJECTS (64)
+           handles. The worker limit deliberately exceeds one processor group,
+           so wait on each valid thread handle instead; all threads are already
+           running concurrently. */
+        for (size_t index = 0; index < thread_count; ++index) {
+            if (WaitForSingleObject(handles[index], INFINITE) != WAIT_OBJECT_0
+                && result == 0) {
+                result = 3;
             }
         }
 #endif

@@ -28,6 +28,8 @@ param(
 
     [string] $PfxPath,
 
+    [string] $PfxPassword,
+
     [switch] $SkipTests
 )
 
@@ -72,6 +74,20 @@ if (-not (Test-Path -LiteralPath $executable)) {
     throw "The scanner executable was not produced: $executable"
 }
 
+# The detached signature below covers one file. Any DLL or runtime/config file
+# that the app can load beside it would therefore be unsigned executable input
+# and would let a replaced QR-Scanner.dll run behind an untouched signed
+# apphost. PDBs are inert diagnostics; everything load-bearing must be inside
+# the single-file executable.
+$loadBearingSidecars = Get-ChildItem -LiteralPath $distribution -File |
+    Where-Object {
+        $_.FullName -ne $executable -and
+        $_.Extension -in @('.dll', '.json', '.config', '.exe')
+    }
+if ($loadBearingSidecars) {
+    throw "The scanner publish is not a closed single-file artifact: $($loadBearingSidecars.Name -join ', ')"
+}
+
 # The scanner must not be able to reach Keep Vault's own components, and the
 # simplest way to keep that true is to check it: nothing named like a Keep Vault
 # native tool belongs in this output.
@@ -83,21 +99,24 @@ if ($strayNatives) {
 
 if ($Sign) {
     $signBinaries = Join-Path $repoRoot 'tools\Sign-Binaries.ps1'
-    $hybridSignature = Join-Path $repoRoot 'tools\New-HybridSignature.ps1'
-    foreach ($script in @($signBinaries, $hybridSignature)) {
-        if (-not (Test-Path -LiteralPath $script)) {
-            throw "Signing was requested but $script is missing."
-        }
+    if (-not (Test-Path -LiteralPath $signBinaries)) {
+        throw "Signing was requested but $signBinaries is missing."
     }
 
-    $signArgs = @('-NoProfile', '-File', $signBinaries, '-Targets', $executable)
-    if ($CertificateThumbprint) { $signArgs += @('-CertificateThumbprint', $CertificateThumbprint) }
-    if ($PfxPath) { $signArgs += @('-PfxPath', $PfxPath) }
-    & pwsh @signArgs
-    if ($LASTEXITCODE -ne 0) { throw 'Authenticode signing of the scanner failed.' }
+    if ([bool] $CertificateThumbprint -eq [bool] $PfxPath) {
+        throw 'Signing requires exactly one of -CertificateThumbprint or -PfxPath.'
+    }
 
-    & pwsh -NoProfile -File $hybridSignature -TargetPath $executable
-    if ($LASTEXITCODE -ne 0) { throw 'Hybrid signing of the scanner failed.' }
+    # Sign-Binaries produces and verifies both Authenticode and the detached
+    # RSA-PSS/ML-DSA signature. Its public parameter is -Path (singular); the
+    # old -Targets/TargetPath calls never reached a valid release artifact.
+    $signParameters = @{ Path = @($executable) }
+    if ($CertificateThumbprint) { $signParameters.CertificateThumbprint = $CertificateThumbprint }
+    if ($PfxPath) { $signParameters.PfxPath = $PfxPath }
+    if ($PfxPassword) { $signParameters.PfxPassword = $PfxPassword }
+    # Invoke in this process so a PFX password is not copied to a child
+    # process's command line, where local process inspection could disclose it.
+    & $signBinaries @signParameters
 
     if (-not (Test-Path -LiteralPath ($executable + '.khsig'))) {
         throw 'The scanner has no detached hybrid signature; Keep Vault will refuse to vouch for it.'

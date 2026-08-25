@@ -33,7 +33,11 @@ public sealed class ArchiveIntegrityService
 #if KEEPVAULT_MACOS
             MacSafeFileSystem.OpenReadNoSymlinks(fullPath))
 #else
-            new(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            SecureFile.OpenReadNoReparse(
+                fullPath,
+                FileShare.Read,
+                bufferSize: 1024 * 1024,
+                requireSingleLink: true))
 #endif
         {
             fullPath = ResolveCanonicalArchivePath(stream, fullPath);
@@ -57,7 +61,7 @@ public sealed class ArchiveIntegrityService
         using ArchiveIntegrityLease lease = await AcquireVerifiedAsync(archivePath, cancellationToken).ConfigureAwait(false);
     }
 
-    internal async Task CreateFromVerifiedDigestsAsync(
+    internal async Task<(BoundFileTransaction Sha3, BoundFileTransaction Skein)> CreateBoundFromVerifiedDigestsAsync(
         string archivePath,
         string sha3Hex,
         string skeinHex,
@@ -66,27 +70,62 @@ public sealed class ArchiveIntegrityService
         ArgumentException.ThrowIfNullOrWhiteSpace(archivePath);
         byte[] sha3 = ParseManifest(sha3Hex, 64, "SHA3-512");
         byte[] skein = ParseManifest(skeinHex, 128, "Skein-1024");
+        BoundFileTransaction? sha3Manifest = null;
+        BoundFileTransaction? skeinManifest = null;
         try
         {
             string fullPath = Path.GetFullPath(archivePath);
-            await WriteManifestAsync(
+            sha3Manifest = await CreateBoundManifestAsync(
                 GetSha3ManifestPath(fullPath),
-                Convert.ToHexString(sha3),
+                sha3,
                 cancellationToken).ConfigureAwait(false);
-            await WriteManifestAsync(
+            skeinManifest = await CreateBoundManifestAsync(
                 GetSkeinManifestPath(fullPath),
-                Convert.ToHexString(skein),
+                skein,
                 cancellationToken).ConfigureAwait(false);
+            return (sha3Manifest, skeinManifest);
         }
-        catch
+        catch (Exception operationError)
         {
-            DeleteManifests(archivePath);
+            var cleanupErrors = new List<Exception>();
+            DeleteBoundManifestOrCollect(skeinManifest, cleanupErrors);
+            DeleteBoundManifestOrCollect(sha3Manifest, cleanupErrors);
+            if (cleanupErrors.Count > 0)
+            {
+                throw new AggregateException(
+                    "Creating recovery-candidate manifests failed and exact-object cleanup also failed.",
+                    [operationError, .. cleanupErrors]);
+            }
+
             throw;
         }
         finally
         {
             CryptographicOperations.ZeroMemory(sha3);
             CryptographicOperations.ZeroMemory(skein);
+        }
+    }
+
+    private static void DeleteBoundManifestOrCollect(
+        BoundFileTransaction? manifest,
+        List<Exception> errors)
+    {
+        if (manifest is null)
+        {
+            return;
+        }
+
+        try
+        {
+            manifest.DeleteBound();
+        }
+        catch (Exception cleanupError)
+        {
+            errors.Add(cleanupError);
+        }
+        finally
+        {
+            manifest.Dispose();
         }
     }
 
@@ -112,7 +151,11 @@ public sealed class ArchiveIntegrityService
             .ConfigureAwait(false);
         FileStream? stream = snapshot.Stream;
 #else
-        FileStream? stream = new(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        FileStream? stream = SecureFile.OpenReadNoReparse(
+            fullPath,
+            FileShare.Read,
+            bufferSize: 1024 * 1024,
+            requireSingleLink: true);
 #endif
         try
         {
@@ -165,6 +208,114 @@ public sealed class ArchiveIntegrityService
         }
     }
 
+    /// <summary>
+    /// Verifies the exact three objects held by an object-bound plain-archive
+    /// commit before any of their names are installed.
+    /// </summary>
+    internal static async Task VerifyBoundAsync(
+        FileStream archive,
+        FileStream sha3Manifest,
+        FileStream skeinManifest,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(archive);
+        ArgumentNullException.ThrowIfNull(sha3Manifest);
+        ArgumentNullException.ThrowIfNull(skeinManifest);
+
+        byte[] expectedSha3 = [];
+        byte[] expectedSkein = [];
+        byte[] actualSha3 = [];
+        byte[] actualSkein = [];
+        try
+        {
+            expectedSha3 = ParseManifest(
+                await ReadManifestStreamAsync(sha3Manifest, "SHA3-512", cancellationToken).ConfigureAwait(false),
+                64,
+                "SHA3-512");
+            expectedSkein = ParseManifest(
+                await ReadManifestStreamAsync(skeinManifest, "Skein-1024", cancellationToken).ConfigureAwait(false),
+                128,
+                "Skein-1024");
+
+            archive.Position = 0;
+            (actualSha3, actualSkein) = await IntegrityService
+                .HashStreamAsync(archive, cancellationToken)
+                .ConfigureAwait(false);
+            if (!(CryptographicOperations.FixedTimeEquals(expectedSha3, actualSha3)
+                    & CryptographicOperations.FixedTimeEquals(expectedSkein, actualSkein)))
+            {
+                throw new InvalidDataException(
+                    "The bound plain ZPAQ archive does not match its bound dual-integrity manifests.");
+            }
+        }
+        finally
+        {
+            if (archive.CanSeek) archive.Position = 0;
+            if (sha3Manifest.CanSeek) sha3Manifest.Position = 0;
+            if (skeinManifest.CanSeek) skeinManifest.Position = 0;
+            CryptographicOperations.ZeroMemory(expectedSha3);
+            CryptographicOperations.ZeroMemory(expectedSkein);
+            CryptographicOperations.ZeroMemory(actualSha3);
+            CryptographicOperations.ZeroMemory(actualSkein);
+        }
+    }
+
+    /// <summary>
+    /// Creates and durably writes one manifest while retaining the exact file
+    /// object for the caller's multi-file commit.
+    /// </summary>
+    internal static async Task<BoundFileTransaction> CreateBoundManifestAsync(
+        string path,
+        byte[] digest,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(digest);
+        byte[] bytes = Encoding.ASCII.GetBytes(Convert.ToHexString(digest));
+        BoundFileTransaction? manifest = null;
+        try
+        {
+            manifest = BoundFileTransaction.CreateNew(
+                path,
+                bufferSize: 4096,
+                FileOptions.WriteThrough);
+            FileStream output = manifest.Stream;
+            await output.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+            await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+#pragma warning disable CA1849 // Flush(true) requests durable media persistence before the multi-file commit.
+            output.Flush(flushToDisk: true);
+#if KEEPVAULT_MACOS
+            MacSafeFileSystem.FullSync(output.SafeFileHandle);
+#endif
+#pragma warning restore CA1849
+            return manifest;
+        }
+        catch (Exception operationError)
+        {
+            if (manifest is not null)
+            {
+                try
+                {
+                    manifest.DeleteBound();
+                }
+                catch (Exception cleanupError)
+                {
+                    manifest.Dispose();
+                    throw new IOException(
+                        "Writing a bound integrity manifest failed and its exact object could not be removed.",
+                        new AggregateException(operationError, cleanupError));
+                }
+
+                manifest.Dispose();
+            }
+
+            throw;
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(bytes);
+        }
+    }
+
     public static void DeleteManifests(string archivePath)
     {
         File.Delete(GetSha3ManifestPath(archivePath));
@@ -188,7 +339,10 @@ public sealed class ArchiveIntegrityService
 #if KEEPVAULT_MACOS
             MacSafeFileSystem.OpenReadNoSymlinks(path);
 #else
-            new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            SecureFile.OpenReadNoReparse(
+                path,
+                FileShare.Read,
+                requireSingleLink: true);
 #endif
         if (stream.Length is <= 0 or > MaxManifestBytes)
         {
@@ -207,38 +361,71 @@ public sealed class ArchiveIntegrityService
         }
     }
 
+    private static async Task<string> ReadManifestStreamAsync(
+        FileStream stream,
+        string algorithm,
+        CancellationToken cancellationToken)
+    {
+        stream.Position = 0;
+        if (stream.Length is <= 0 or > MaxManifestBytes)
+        {
+            throw new InvalidDataException($"Bound {algorithm} archive manifest has an invalid length.");
+        }
+
+        byte[] bytes = new byte[checked((int)stream.Length)];
+        try
+        {
+            await stream.ReadExactlyAsync(bytes, cancellationToken).ConfigureAwait(false);
+            return Encoding.ASCII.GetString(bytes);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(bytes);
+            stream.Position = 0;
+        }
+    }
+
     private static async Task WriteManifestAsync(string path, string hex, CancellationToken cancellationToken)
     {
         string fullPath = Path.GetFullPath(path);
         string directory = Path.GetDirectoryName(fullPath) ?? Environment.CurrentDirectory;
         string temporaryPath = Path.Combine(directory, $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.integrity-part");
         byte[] bytes = Encoding.ASCII.GetBytes(hex);
+        using BoundFileTransaction temporary = BoundFileTransaction.CreateNew(
+            temporaryPath,
+            bufferSize: 4096,
+            FileOptions.WriteThrough);
         try
         {
-            await using (FileStream output = new(
-                temporaryPath,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None,
-                bufferSize: 4096,
-                FileOptions.WriteThrough))
-            {
-                await output.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
-                await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+            FileStream output = temporary.Stream;
+            await output.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+            await output.FlushAsync(cancellationToken).ConfigureAwait(false);
 #pragma warning disable CA1849 // Flush(true) is required to request durable media persistence before the atomic move.
-                output.Flush(flushToDisk: true);
+            output.Flush(flushToDisk: true);
 #if KEEPVAULT_MACOS
-                MacSafeFileSystem.FullSync(output.SafeFileHandle);
+            MacSafeFileSystem.FullSync(output.SafeFileHandle);
 #endif
 #pragma warning restore CA1849
+            temporary.RenameTo(fullPath, overwrite: true);
+        }
+        catch (Exception operationError)
+        {
+            try
+            {
+                temporary.DeleteBound();
+            }
+            catch (Exception cleanupError)
+            {
+                throw new IOException(
+                    "Writing the integrity manifest failed and its exact temporary object could not be removed.",
+                    new AggregateException(operationError, cleanupError));
             }
 
-            File.Move(temporaryPath, fullPath, overwrite: true);
+            throw;
         }
         finally
         {
             CryptographicOperations.ZeroMemory(bytes);
-            File.Delete(temporaryPath);
         }
     }
 

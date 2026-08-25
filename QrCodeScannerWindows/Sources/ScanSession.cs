@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Security.Cryptography;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Windows.Devices.Enumeration;
@@ -57,6 +58,11 @@ public sealed class ScanSession : IAsyncDisposable
     /// </remarks>
     private static readonly TimeSpan DecodeInterval = TimeSpan.FromMilliseconds(80);
 
+    // A camera driver controls the dimensions it reports. Keep an invalid or
+    // hostile device from turning width*height*4 into an integer overflow or a
+    // multi-gigabyte allocation in this process.
+    private const int MaximumFrameBytes = 256 * 1024 * 1024;
+
     private readonly CodeArbiter _arbiter = new();
     private readonly BarcodeReaderGeneric _reader;
     private readonly SynchronizationContext _uiContext;
@@ -66,6 +72,8 @@ public sealed class ScanSession : IAsyncDisposable
     private MediaFrameReader? _frameReader;
     private DateTime _lastDecodeUtc = DateTime.MinValue;
     private bool _paused = true;
+    private bool _starting;
+    private bool _processingFrame;
     private bool _disposed;
 
     public ScanSession(SynchronizationContext uiContext)
@@ -94,84 +102,134 @@ public sealed class ScanSession : IAsyncDisposable
 
     public async Task StartAsync()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        DeviceInformationCollection cameras;
-        try
-        {
-            cameras = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
-        }
-        catch (Exception exception) when (exception is COMException or InvalidOperationException)
-        {
-            Report(new ScannerFailure(ScannerFailureKind.NoCamera));
-            return;
-        }
-
-        if (cameras.Count == 0)
-        {
-            Report(new ScannerFailure(ScannerFailureKind.NoCamera));
-            return;
-        }
-
-        var capture = new MediaCapture();
-        try
-        {
-            await capture.InitializeAsync(new MediaCaptureInitializationSettings
-            {
-                VideoDeviceId = cameras[0].Id,
-                StreamingCaptureMode = StreamingCaptureMode.Video,
-                MemoryPreference = MediaCaptureMemoryPreference.Cpu,
-                SharingMode = MediaCaptureSharingMode.ExclusiveControl,
-            });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            capture.Dispose();
-            Report(new ScannerFailure(ScannerFailureKind.AccessDenied));
-            return;
-        }
-        catch (Exception exception) when (exception is COMException or InvalidOperationException or ArgumentException)
-        {
-            capture.Dispose();
-            Report(new ScannerFailure(ScannerFailureKind.CameraUnavailable, exception.Message));
-            return;
-        }
-
-        MediaFrameSource? source = capture.FrameSources.Values
-            .FirstOrDefault(candidate => candidate.Info.SourceKind == MediaFrameSourceKind.Color);
-        if (source is null)
-        {
-            capture.Dispose();
-            Report(new ScannerFailure(ScannerFailureKind.CameraUnavailable));
-            return;
-        }
-
-        MediaFrameReader reader;
-        try
-        {
-            reader = await capture.CreateFrameReaderAsync(source, MediaEncodingSubtypes.Bgra8);
-            reader.FrameArrived += OnFrameArrived;
-            MediaFrameReaderStartStatus status = await reader.StartAsync();
-            if (status != MediaFrameReaderStartStatus.Success)
-            {
-                reader.FrameArrived -= OnFrameArrived;
-                reader.Dispose();
-                capture.Dispose();
-                Report(new ScannerFailure(ScannerFailureKind.CameraUnavailable, status.ToString()));
-                return;
-            }
-        }
-        catch (Exception exception) when (exception is COMException or InvalidOperationException or NotSupportedException)
-        {
-            capture.Dispose();
-            Report(new ScannerFailure(ScannerFailureKind.DecoderUnavailable, exception.Message));
-            return;
-        }
-
         lock (_gate)
         {
-            _capture = capture;
-            _frameReader = reader;
-            _paused = false;
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_starting || _capture is not null || _frameReader is not null)
+            {
+                throw new InvalidOperationException("The camera session has already been started.");
+            }
+
+            _starting = true;
+        }
+
+        MediaCapture? capture = null;
+        MediaFrameReader? reader = null;
+        bool readerStarted = false;
+        try
+        {
+            DeviceInformationCollection cameras;
+            try
+            {
+                cameras = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
+            }
+            catch (Exception exception) when (IsAccessDenied(exception))
+            {
+                Report(new ScannerFailure(ScannerFailureKind.AccessDenied, exception.Message));
+                return;
+            }
+            catch (Exception exception) when (exception is COMException or InvalidOperationException)
+            {
+                Report(new ScannerFailure(ScannerFailureKind.NoCamera));
+                return;
+            }
+
+            if (cameras.Count == 0)
+            {
+                Report(new ScannerFailure(ScannerFailureKind.NoCamera));
+                return;
+            }
+
+            capture = new MediaCapture();
+            try
+            {
+                await capture.InitializeAsync(new MediaCaptureInitializationSettings
+                {
+                    VideoDeviceId = cameras[0].Id,
+                    StreamingCaptureMode = StreamingCaptureMode.Video,
+                    MemoryPreference = MediaCaptureMemoryPreference.Cpu,
+                    SharingMode = MediaCaptureSharingMode.ExclusiveControl,
+                });
+            }
+            catch (Exception exception) when (IsAccessDenied(exception))
+            {
+                Report(new ScannerFailure(ScannerFailureKind.AccessDenied, exception.Message));
+                return;
+            }
+            catch (Exception exception) when (exception is COMException or InvalidOperationException or ArgumentException)
+            {
+                Report(new ScannerFailure(ScannerFailureKind.CameraUnavailable, exception.Message));
+                return;
+            }
+
+            MediaFrameSource? source = capture.FrameSources.Values
+                .FirstOrDefault(candidate => candidate.Info.SourceKind == MediaFrameSourceKind.Color);
+            if (source is null)
+            {
+                Report(new ScannerFailure(ScannerFailureKind.CameraUnavailable));
+                return;
+            }
+
+            try
+            {
+                reader = await capture.CreateFrameReaderAsync(source, MediaEncodingSubtypes.Bgra8);
+                reader.FrameArrived += OnFrameArrived;
+                MediaFrameReaderStartStatus status = await reader.StartAsync();
+                if (status != MediaFrameReaderStartStatus.Success)
+                {
+                    Report(new ScannerFailure(ScannerFailureKind.CameraUnavailable, status.ToString()));
+                    return;
+                }
+
+                readerStarted = true;
+            }
+            catch (Exception exception) when (exception is COMException or InvalidOperationException or NotSupportedException)
+            {
+                Report(new ScannerFailure(ScannerFailureKind.DecoderUnavailable, exception.Message));
+                return;
+            }
+
+            lock (_gate)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _capture = capture;
+                _frameReader = reader;
+                _paused = false;
+                capture = null;
+                reader = null;
+            }
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                _starting = false;
+            }
+
+            if (reader is not null)
+            {
+                reader.FrameArrived -= OnFrameArrived;
+                if (readerStarted)
+                {
+                    try
+                    {
+                        await reader.StopAsync();
+                    }
+                    catch (Exception exception) when (exception is COMException or InvalidOperationException)
+                    {
+                        // The device can disappear while a closing window is
+                        // waiting for an in-flight start to unwind.
+                    }
+                }
+
+                reader.Dispose();
+            }
+
+            capture?.Dispose();
         }
     }
 
@@ -206,7 +264,7 @@ public sealed class ScanSession : IAsyncDisposable
 
         lock (_gate)
         {
-            if (_paused || _disposed)
+            if (_paused || _disposed || _processingFrame)
             {
                 return;
             }
@@ -217,9 +275,11 @@ public sealed class ScanSession : IAsyncDisposable
             }
 
             _lastDecodeUtc = DateTime.UtcNow;
+            _processingFrame = true;
         }
 
         SoftwareBitmap? converted = null;
+        byte[]? pixels = null;
         try
         {
             SoftwareBitmap usable = bitmap.BitmapPixelFormat == BitmapPixelFormat.Bgra8
@@ -228,7 +288,14 @@ public sealed class ScanSession : IAsyncDisposable
 
             int width = usable.PixelWidth;
             int height = usable.PixelHeight;
-            byte[] pixels = new byte[width * height * 4];
+            long pixelCount = (long)width * height;
+            if (width <= 0 || height <= 0 || pixelCount > MaximumFrameBytes / 4)
+            {
+                throw new InvalidOperationException("The camera reported invalid frame dimensions.");
+            }
+
+            int requiredBytes = checked((int)pixelCount * 4);
+            pixels = new byte[requiredBytes];
             usable.CopyToBuffer(pixels.AsBuffer());
 
             IReadOnlyList<Detection> detections = Decode(pixels, width, height);
@@ -241,15 +308,38 @@ public sealed class ScanSession : IAsyncDisposable
                 }
 
                 outcome = _arbiter.Admit(detections);
+                if (outcome.Kind == ScanOutcomeKind.Accepted)
+                {
+                    // Latch acceptance before crossing to the UI thread. A
+                    // queued or concurrent camera callback must not replace the
+                    // result while the user reaches for Copy.
+                    _paused = true;
+                }
             }
+
+            BitmapSource preview = CreatePreview(pixels, width, height);
+            CryptographicOperations.ZeroMemory(pixels);
+            pixels = null;
 
             _uiContext.Post(
                 _ =>
                 {
-                    PreviewUpdated?.Invoke(CreatePreview(pixels, width, height));
+                    lock (_gate)
+                    {
+                        if (_disposed)
+                        {
+                            return;
+                        }
+                    }
+
+                    PreviewUpdated?.Invoke(preview);
                     Observed?.Invoke(outcome);
                 },
                 null);
+        }
+        catch (Exception exception) when (exception is ReaderException)
+        {
+            Report(new ScannerFailure(ScannerFailureKind.DecoderUnavailable, exception.Message));
         }
         catch (Exception exception) when (exception is COMException or InvalidOperationException or ArgumentException)
         {
@@ -257,7 +347,16 @@ public sealed class ScanSession : IAsyncDisposable
         }
         finally
         {
+            if (pixels is not null)
+            {
+                CryptographicOperations.ZeroMemory(pixels);
+            }
+
             converted?.Dispose();
+            lock (_gate)
+            {
+                _processingFrame = false;
+            }
         }
     }
 
@@ -329,7 +428,24 @@ public sealed class ScanSession : IAsyncDisposable
         return bitmap;
     }
 
-    private void Report(ScannerFailure failure) => _uiContext.Post(_ => Failed?.Invoke(failure), null);
+    private static bool IsAccessDenied(Exception exception) =>
+        exception is UnauthorizedAccessException
+        || exception.HResult == unchecked((int)0x80070005);
+
+    private void Report(ScannerFailure failure) => _uiContext.Post(
+        _ =>
+        {
+            lock (_gate)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+            }
+
+            Failed?.Invoke(failure);
+        },
+        null);
 
     public async ValueTask DisposeAsync()
     {

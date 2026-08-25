@@ -11,6 +11,8 @@
 #ifndef KEEPVAULT_CRYPTOPP_CTR_COMMON_HPP
 #define KEEPVAULT_CRYPTOPP_CTR_COMMON_HPP
 
+#include "modes.h"
+
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -38,10 +40,10 @@ constexpr std::size_t kChunkBytes = 256u * 1024u;
 /*
  * Only a sanity bound on the worker table, not a target.
  *
- * Set above any processor count Windows can report - 64 groups of 64 - so the
- * hardware decides how wide the work runs. The previous value was exactly the
- * size of one Windows processor group, which is the number a machine gets
- * stuck at for an entirely different reason; see
+ * Large enough for current high-core-count hosts while still preventing a bad
+ * platform report from creating an unbounded number of threads. The previous
+ * value was exactly the size of one Windows processor group, which is the
+ * number a machine gets stuck at for an entirely different reason; see
  * bind_worker_to_processor_group below.
  */
 constexpr std::size_t kMaxThreads = 1024;
@@ -121,7 +123,7 @@ inline void secure_zero(void* pointer, std::size_t length) noexcept
  * across the entire width rather than a trailing field is what lets a worker
  * jump straight to the block it claimed without walking there.
  */
-inline void add_counter_blocks(
+inline bool add_counter_blocks(
     std::uint8_t* counter,
     std::size_t counter_length,
     std::uint64_t blocks) noexcept
@@ -134,6 +136,8 @@ inline void add_counter_blocks(
         carry >>= 8;
         carry += sum >> 8;
     }
+
+    return carry != 0;
 }
 
 /*
@@ -144,7 +148,7 @@ inline void add_counter_blocks(
  * schedule and are not safe to share across threads.
  */
 template <typename Encryption>
-inline void xcrypt_ctr_range(
+inline int xcrypt_ctr_range(
     const std::uint8_t* key,
     std::size_t key_length,
     const std::uint8_t* nonce,
@@ -159,26 +163,29 @@ inline void xcrypt_ctr_range(
     cipher.SetKey(key, key_length);
 
     std::uint8_t counter[block_bytes];
-    std::uint8_t keystream[block_bytes];
     std::memcpy(counter, nonce, block_bytes);
-    add_counter_blocks(counter, block_bytes, static_cast<std::uint64_t>(first_block));
-
-    std::size_t offset = 0;
-    while (offset < length) {
-        cipher.ProcessBlock(counter, keystream);
-
-        const std::size_t remaining = length - offset;
-        const std::size_t count = remaining < block_bytes ? remaining : block_bytes;
-        for (std::size_t i = 0; i < count; ++i) {
-            output[offset + i] = static_cast<std::uint8_t>(input[offset + i] ^ keystream[i]);
-        }
-
-        offset += count;
-        add_counter_blocks(counter, block_bytes, 1u);
+    if (add_counter_blocks(counter, block_bytes, static_cast<std::uint64_t>(first_block))) {
+        secure_zero(counter, sizeof(counter));
+        return 4;
     }
 
+    // Crypto++'s CTR policy feeds aligned runs to AdvancedProcessBlocks with
+    // BT_InBlockIsCounter | BT_AllowParallel. That is the API through which
+    // AES-NI/ARM-AES and the MARS/SHACAL SIMD implementations process several
+    // blocks per call. Calling ProcessBlock here for every 16/32-byte block
+    // was correct but silently reduced the production fast path to roughly a
+    // tenth of its intended throughput.
+    //
+    // CTR_Mode_ExternalCipher preserves the same full-width big-endian counter
+    // semantics (including carries above the low byte), supports partial tails
+    // and in-place buffers, and uses the already-keyed cipher owned by this
+    // range. The whole-request preflight above xcrypt_ctr_range remains the
+    // authority that refuses exhaustion before any output is written.
+    CryptoPP::CTR_Mode_ExternalCipher::Encryption ctr(cipher, counter);
+    ctr.ProcessData(output, input, length);
+
     secure_zero(counter, sizeof(counter));
-    secure_zero(keystream, sizeof(keystream));
+    return 0;
 }
 
 /*
@@ -217,6 +224,21 @@ inline int xcrypt_ctr(
     const std::size_t total_blocks = (length + block_bytes - 1) / block_bytes;
     const std::size_t chunk_blocks = kChunkBytes / block_bytes;
 
+    // Refuse the whole request before writing a byte if its final block would
+    // carry out of the block-wide big-endian counter. The old driver discarded
+    // that carry and continued at zero, which can reuse keystream under the
+    // same key on a nonce near its maximum value.
+    std::uint8_t final_counter[block_bytes];
+    std::memcpy(final_counter, nonce, block_bytes);
+    const bool counter_overflow = add_counter_blocks(
+        final_counter,
+        block_bytes,
+        static_cast<std::uint64_t>(total_blocks - 1));
+    secure_zero(final_counter, sizeof(final_counter));
+    if (counter_overflow) {
+        return 4;
+    }
+
     std::size_t thread_count = 1;
     if (length >= kParallelThresholdBytes) {
         thread_count = logical_processor_count();
@@ -238,12 +260,11 @@ inline int xcrypt_ctr(
         // extern "C" boundary and terminate the process, while the same failure
         // on a large one returned an error the caller could report.
         try {
-            xcrypt_ctr_range<Encryption>(key, key_length, nonce, input, output, length, 0);
+            return xcrypt_ctr_range<Encryption>(
+                key, key_length, nonce, input, output, length, 0);
         } catch (...) {
             return 3;
         }
-
-        return 0;
     }
 
     std::atomic<std::size_t> next_chunk{0};
@@ -251,7 +272,12 @@ inline int xcrypt_ctr(
 
     auto worker = [&](std::size_t worker_index) noexcept {
 #if defined(_WIN32)
-        bind_worker_to_processor_group(worker_index);
+        // Spawned workers may be spread across processor groups. Index zero is
+        // the caller itself; changing its affinity here would permanently pin
+        // an application or thread-pool thread after this function returned.
+        if (worker_index != 0) {
+            bind_worker_to_processor_group(worker_index);
+        }
 #else
         (void)worker_index;
 #endif
@@ -268,8 +294,12 @@ inline int xcrypt_ctr(
                 const std::size_t remaining = length - offset;
                 const std::size_t count = remaining < span ? remaining : span;
 
-                xcrypt_ctr_range<Encryption>(
+                const int result = xcrypt_ctr_range<Encryption>(
                     key, key_length, nonce, input + offset, output + offset, count, first_block);
+                if (result != 0) {
+                    failure.store(result, std::memory_order_relaxed);
+                    return;
+                }
             }
         } catch (...) {
             // A worker that threw must not unwind out of a thread, and it must
@@ -279,8 +309,8 @@ inline int xcrypt_ctr(
     };
 
     std::vector<std::thread> threads;
-    threads.reserve(thread_count - 1);
     try {
+        threads.reserve(thread_count - 1);
         for (std::size_t i = 1; i < thread_count; ++i) {
             threads.emplace_back(worker, i);
         }

@@ -16,6 +16,8 @@ internal static class ArbiterTests
 
     private const string Factor =
         "A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4"
+        + "A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4"
+        + "A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4"
         + "A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4";
 
     private static int Main()
@@ -25,6 +27,7 @@ internal static class ArbiterTests
         ALoneCodeIsNotAcceptedOnItsFirstSighting();
         DisagreeingCodesAreRefused();
         ADuplicateReportIsNotASecondCode();
+        InvalidGeometryCannotCorroborate();
         FlickerDoesNotResetTheTally();
         AChangedPayloadRestartsTheTally();
         PayloadInspection();
@@ -58,6 +61,20 @@ internal static class ArbiterTests
         {
             _failures++;
             Console.Error.WriteLine($"FAIL {description}: expected {expected}, got {actual}");
+        }
+    }
+
+    private static void ExpectThrows<TException>(Action action, string description)
+        where TException : Exception
+    {
+        try
+        {
+            action();
+            Expect(false, description);
+        }
+        catch (TException)
+        {
+            Expect(true, description);
         }
     }
 
@@ -165,6 +182,40 @@ internal static class ArbiterTests
         ExpectConfirming(arbiter.Admit(overlapping), 1, 4, "two reports of one code are not treated as two codes");
     }
 
+    private static void InvalidGeometryCannotCorroborate()
+    {
+        var arbiter = new CodeArbiter(requiredRepeats: 4);
+        Detection[] oneRealOneInvalid =
+        [
+            new Detection(Factor, 0.5, 0.5),
+            new Detection(Factor, double.NaN, 0.8),
+        ];
+        ExpectConfirming(
+            arbiter.Admit(oneRealOneInvalid),
+            1,
+            4,
+            "a NaN decoder position cannot masquerade as a second printed code");
+
+        var conflictingInvalid = new CodeArbiter();
+        ExpectEqual(
+            conflictingInvalid.Admit(
+                [new Detection(Factor, 0.5, 0.5), new Detection("different", double.NaN, 0.8)]).Kind,
+            ScanOutcomeKind.Conflict,
+            "malformed geometry cannot hide a conflicting decoded payload");
+
+        var invalidOnly = new CodeArbiter();
+        ExpectEqual(
+            invalidOnly.Admit([new Detection(Factor, double.PositiveInfinity, 0.5)]).Kind,
+            ScanOutcomeKind.Searching,
+            "a detection without finite in-frame geometry is ignored");
+        ExpectThrows<ArgumentOutOfRangeException>(
+            () => _ = new CodeArbiter(minimumSeparation: double.NaN),
+            "a NaN separation threshold is rejected");
+        ExpectThrows<ArgumentOutOfRangeException>(
+            () => _ = new CodeArbiter(minimumSeparation: double.PositiveInfinity),
+            "an infinite separation threshold is rejected");
+    }
+
     /// <summary>
     /// Detection drops out between frames. A single missing frame must not
     /// throw away a tally, or a lone code would never reach the repeat count.
@@ -229,6 +280,15 @@ internal static class ArbiterTests
             PayloadInspector.Notices("a​b").Any(notice =>
                 notice.Kind == PayloadNoticeKind.InvisibleCharacters && notice.Count == 1),
             "a zero-width character is reported");
+        string unpairedSurrogate = "a\uD800b";
+        Expect(
+            PayloadInspector.Notices(unpairedSurrogate).Any(notice =>
+                notice.Kind == PayloadNoticeKind.ControlCharacters && notice.Count == 1),
+            "an unpaired UTF-16 surrogate is reported instead of crashing inspection");
+        ExpectEqual(
+            PayloadInspector.DisplayText(unpairedSurrogate),
+            "a‹U+D800›b",
+            "an unpaired UTF-16 surrogate is rendered visibly");
     }
 
     /// <summary>

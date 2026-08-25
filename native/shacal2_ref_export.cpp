@@ -1,9 +1,9 @@
 /*
  * Native adapter for SHACAL-2 with a 512-bit key, in CTR mode.
  *
- * SHACAL-2 is the third layer of the v9 paranoia cascade. Like MARS it has no
- * reference implementation of its own here and comes from the vendored Crypto++
- * release; see external/VENDOR-PROVENANCE.md.
+ * SHACAL-2 is used by the current v11 mixed and paranoia production cascades.
+ * Like MARS it has no separate in-repository reference implementation and
+ * comes from the vendored Crypto++ release; see external/VENDOR-PROVENANCE.md.
  *
  * Note the block width: SHACAL-2 works on 256-bit blocks, twice AES's and half
  * Kalyna's. The counter therefore spans 32 bytes, not 16, and the container's

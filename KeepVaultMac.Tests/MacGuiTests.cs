@@ -35,16 +35,16 @@ internal static class MacGuiTests
 
     internal static TestCase[] Tests =>
     [
-        new("GUI entropy display beyond the 512 minimum", () => RunOnUiThread(TestEntropyDisplayGrowsPastMinimum), TestResource.Gui, "GUI"),
-        new("GUI encryption toggle and target normalization", () => RunOnUiThread(TestEncryptionToggle), TestResource.Gui, "GUI"),
-        new("GUI folder target lands beside the folder", () => RunOnUiThread(TestFolderTargetSuggestion), TestResource.Gui, "GUI"),
-        new("GUI password policy feedback", () => RunOnUiThread(TestPasswordPolicyFeedback), TestResource.Gui, "GUI"),
-        new("GUI verified-original-deletion localization", () => RunOnUiThread(TestDeleteOriginalsLocalization), TestResource.Gui, "GUI"),
-        new("GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
-        new("GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
-        new("GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
-        new("GUI KDF and entropy profile description localization", () => RunOnUiThread(TestKdfAndEntropyLocalization), TestResource.Gui, "GUI"),
-        new("GUI full creation flow with mouse sampling and factor generation", () => RunOnUiThread(TestFullCreationFlowViaGui), TestResource.Gui, "GUI"),
+        new("gui.entropy-display", "GUI entropy display beyond the 512 minimum", () => RunOnUiThread(TestEntropyDisplayGrowsPastMinimum), TestResource.Gui, "GUI"),
+        new("gui.encryption-toggle-target", "GUI encryption toggle and target normalization", () => RunOnUiThread(TestEncryptionToggle), TestResource.Gui, "GUI"),
+        new("gui.folder-target", "GUI folder target lands beside the folder", () => RunOnUiThread(TestFolderTargetSuggestion), TestResource.Gui, "GUI"),
+        new("gui.password-policy", "GUI password policy feedback", () => RunOnUiThread(TestPasswordPolicyFeedback), TestResource.Gui, "GUI"),
+        new("gui.original-deletion-localization", "GUI verified-original-deletion localization", () => RunOnUiThread(TestDeleteOriginalsLocalization), TestResource.Gui, "GUI"),
+        new("gui.control-inventory", "GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
+        new("gui.factor-normalization", "GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
+        new("gui.secret-clearing", "GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
+        new("gui.kdf-entropy-localization", "GUI KDF and entropy profile description localization", () => RunOnUiThread(TestKdfAndEntropyLocalization), TestResource.Gui, "GUI"),
+        new("gui.full-creation-flow", "GUI full creation flow with mouse sampling and factor generation", () => RunOnUiThread(TestFullCreationFlowViaGui), TestResource.Gui, "GUI"),
     ];
 
     private static readonly BlockingCollection<(Action<MainWindow> Body, TaskCompletionSource Completion)> Work = new();

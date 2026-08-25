@@ -45,13 +45,13 @@ internal static class FastPathDifferentialTests
 
     internal static TestCase[] Tests =>
     [
-        new("Kalyna-512/512 table path against the reference over 256 MiB",
+        new("crypto.kalyna-fast-path-differential", "Kalyna-512/512 table path against the reference over 256 MiB",
             KalynaAgainstReferenceAsync, TestResource.CpuHeavy, "Crypto"),
-        new("ChaCha20 worker split against the serial keystream over 256 MiB",
+        new("crypto.chacha20-fast-path-differential", "ChaCha20 worker split against the serial keystream over 256 MiB",
             ChaChaAgainstSerialAsync, TestResource.CpuHeavy, "Crypto"),
-        new("ChaCha20-Poly1305 framing against RFC 8439",
+        new("crypto.chacha20-poly1305-rfc8439", "ChaCha20-Poly1305 framing against RFC 8439",
             AeadFramingAsync, TestResource.Light, "Crypto"),
-        new("the key sheet prints every character of the factor",
+        new("keysheet.full-factor-print", "the key sheet prints every character of the factor",
             KeySheetFactorIsCompleteAsync, TestResource.Light, "Packaging"),
     ];
 

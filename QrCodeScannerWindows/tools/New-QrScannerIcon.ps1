@@ -30,22 +30,19 @@ $sizes = @(16, 32, 48, 64, 128, 256)
 
 $scannerRoot = Split-Path -Parent $PSScriptRoot
 $packages = Join-Path $env:USERPROFILE '.nuget\packages\qrcoder'
-$qrCoder = Get-ChildItem -LiteralPath $packages -Recurse -Filter 'QRCoder.dll' -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -match 'net(6|8|9)\.0' } |
-    Select-Object -First 1
-if (-not $qrCoder) {
+$qrCoder = Join-Path $packages '1.8.0\lib\net6.0\QRCoder.dll'
+if (-not (Test-Path -LiteralPath $qrCoder -PathType Leaf)) {
     # Restoring the test project is what puts QRCoder in the package cache; the
-    # shipped scanner never encodes a code and has no such reference.
+    # shipped scanner never encodes a code and has no such reference. Name the
+    # exact locked version instead of loading whichever DLL happens to be found
+    # first in a cache that can contain several releases.
     & dotnet restore (Join-Path $scannerRoot 'QrScanner.Tests.csproj') | Out-Null
-    $qrCoder = Get-ChildItem -LiteralPath $packages -Recurse -Filter 'QRCoder.dll' -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -match 'net(6|8|9)\.0' } |
-        Select-Object -First 1
 }
-if (-not $qrCoder) {
-    throw 'QRCoder was not found in the NuGet cache; restore QrScanner.Tests.csproj first.'
+if (-not (Test-Path -LiteralPath $qrCoder -PathType Leaf)) {
+    throw 'The locked QRCoder 1.8.0 assembly was not found after restoring QrScanner.Tests.csproj.'
 }
 
-Add-Type -Path $qrCoder.FullName
+Add-Type -Path $qrCoder
 Add-Type -AssemblyName System.Drawing
 
 $generator = [QRCoder.QRCodeGenerator]::new()

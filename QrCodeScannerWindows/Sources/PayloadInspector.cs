@@ -89,9 +89,8 @@ public static class PayloadInspector
                 hidden++;
             }
 
-            if (scalar != '\n'
-                && scalar != '\r'
-                && CharUnicodeInfo.GetUnicodeCategory(char.ConvertFromUtf32(scalar), 0) == UnicodeCategory.Control)
+            UnicodeCategory category = GetUnicodeCategory(scalar);
+            if (category is UnicodeCategory.Control or UnicodeCategory.Surrogate)
             {
                 controls++;
             }
@@ -153,8 +152,10 @@ public static class PayloadInspector
                 continue;
             }
 
-            bool control = CharUnicodeInfo.GetUnicodeCategory(char.ConvertFromUtf32(scalar), 0) == UnicodeCategory.Control;
-            if (control || BidiOverrides.Contains(scalar) || Invisibles.Contains(scalar))
+            UnicodeCategory category = GetUnicodeCategory(scalar);
+            if (category is UnicodeCategory.Control or UnicodeCategory.Surrogate
+                || BidiOverrides.Contains(scalar)
+                || Invisibles.Contains(scalar))
             {
                 rendered.Append(CultureInfo.InvariantCulture, $"‹U+{scalar:X4}›");
             }
@@ -189,5 +190,12 @@ public static class PayloadInspector
                 yield return value[index];
             }
         }
+    }
+
+    private static UnicodeCategory GetUnicodeCategory(int scalar)
+    {
+        return scalar is >= 0xD800 and <= 0xDFFF
+            ? UnicodeCategory.Surrogate
+            : CharUnicodeInfo.GetUnicodeCategory(char.ConvertFromUtf32(scalar), 0);
     }
 }

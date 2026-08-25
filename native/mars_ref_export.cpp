@@ -1,9 +1,10 @@
 /*
  * Native adapter for MARS-448 in CTR mode.
  *
- * MARS is the innermost-but-one layer of the v9 paranoia cascade. It has no
- * reference implementation of its own in this repository, so it comes from the
- * vendored Crypto++ release; see external/VENDOR-PROVENANCE.md.
+ * MARS is used by the current v11 mixed and paranoia production cascades. It
+ * has no separate in-repository reference implementation, so both its verified
+ * production adapter and differential tests use the vendored Crypto++ release;
+ * see external/VENDOR-PROVENANCE.md.
  *
  * Build together with the Crypto++ objects into mars_ref.dll / libmars_ref.dylib.
  */

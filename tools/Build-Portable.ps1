@@ -37,6 +37,9 @@ $project = Join-Path $root "KalynaArchiver\KalynaArchiver.csproj"
 $verifierProject = Join-Path $root "KalynaReleaseVerifier\KalynaReleaseVerifier.csproj"
 $verifierPublishDir = Join-Path $distRoot ".KalynaReleaseVerifier-publish"
 $externalVerifierPath = Join-Path $distRoot "Keep Vault Release Verifier-win-x64.exe"
+$scannerBuildScript = Join-Path $root "QrCodeScannerWindows\tools\Build-QrScanner-Windows.ps1"
+$scannerDistribution = Join-Path $root "QrCodeScannerWindows\dist"
+$packagedScannerDirectory = Join-Path $publishDir "QR-Scanner"
 $signScript = Join-Path $root "tools\Sign-Binaries.ps1"
 $manifestScript = Join-Path $root "tools\Generate-Sha3Manifest.ps1"
 $skeinManifestScript = Join-Path $root "tools\Generate-SkeinManifest.ps1"
@@ -183,6 +186,8 @@ Assert-InRoot $zipSkeinPath
 Assert-InRoot $zipHybridPath
 Assert-InRoot $verifierPublishDir
 Assert-InRoot $externalVerifierPath
+Assert-InRoot $scannerDistribution
+Assert-InRoot $packagedScannerDirectory
 
 New-Item -ItemType Directory -Force -Path $distRoot | Out-Null
 if (Test-Path -LiteralPath $publishDir) {
@@ -271,7 +276,32 @@ $packagedVerifier = Join-Path $publishDir "Keep Vault Release Verifier.exe"
 Copy-Item -LiteralPath $publishedVerifier -Destination $packagedVerifier
 Remove-Item -LiteralPath $verifierPublishDir -Recurse -Force
 
-$portableBinaries = Get-ChildItem -LiteralPath $publishDir -File |
+# The QR scanner is a deliberately separate process, but it is part of the same
+# Windows release. Build its closed single-file artifact here, copy it into a
+# subdirectory that Keep Vault probes at startup, and then apply this release's
+# exact signing pins and manifests together with the main application. Keeping
+# the signing in this script also preserves all custom PFX/ML-DSA parameters.
+if (-not (Test-Path -LiteralPath $scannerBuildScript -PathType Leaf)) {
+    throw "Windows QR-Scanner build script is missing: $scannerBuildScript"
+}
+
+& pwsh -NoProfile -ExecutionPolicy Bypass -File $scannerBuildScript -Configuration $Configuration
+if ($LASTEXITCODE -ne 0) {
+    throw "Windows QR-Scanner build or test gate failed."
+}
+
+$scannerExecutable = Join-Path $scannerDistribution "QR-Scanner.exe"
+if (-not (Test-Path -LiteralPath $scannerExecutable -PathType Leaf)) {
+    throw "Windows QR-Scanner publish did not produce $scannerExecutable."
+}
+
+Copy-Item -LiteralPath $scannerDistribution -Destination $packagedScannerDirectory -Recurse
+$packagedScanner = Join-Path $packagedScannerDirectory "QR-Scanner.exe"
+if (-not (Test-Path -LiteralPath $packagedScanner -PathType Leaf)) {
+    throw "Portable package did not receive $packagedScanner."
+}
+
+$portableBinaries = Get-ChildItem -LiteralPath $publishDir -Recurse -File |
     Where-Object { $_.Extension -in @(".exe", ".dll") } |
     Select-Object -ExpandProperty FullName
 
@@ -364,8 +394,11 @@ Keep Vault Portable
 
 Start:
   Keep Vault.exe
+  QR-Scanner\QR-Scanner.exe (separate camera process for printed key sheets)
 
 This folder is self-contained for Windows x64 and does not require installing the .NET runtime.
+The signed QR-Scanner companion is included in the same verified release tree; Keep Vault
+checks its detached signature and both manifests at every start before vouching for it.
 Keep the EXE, native tools, .sha3, .skein, and .khsig files together. Every executable
 requires RSA-4096/SHA-512 Authenticode plus a detached RSA-PSS/SHA-512 and ML-DSA-87
 signature. Hash manifests and other release artifacts are also signed by RSA-PSS and
@@ -384,21 +417,25 @@ Windows root. Explorer can therefore report an untrusted development chain while
 accepts only its exact compiled pins. Public distribution requires a protected production
 code-signing key and an appropriate Windows trust chain.
 
-Encrypted containers use format 7 only and offer Kalyna-512/512 or Threefish-1024. Both
-use a user password plus two independent generated 512-bit hexadecimal factors. Print key
-sheet A and key sheet B separately and store them separately. The blank page between them
-prevents duplex front/back sharing.
+Encrypted containers use format v11 only and offer ten production suites: four cascades
+and six individual ciphers. Every suite requires the same four credentials: a 24-256
+character passphrase, a 6-16 digit PIN, and two independent generated 1024-bit hexadecimal
+factors. Print key sheet A and key sheet B separately and store them separately. The blank
+page between them prevents duplex front/back sharing.
 
-One atomic generation consumes five evenly filled mouse pools with at least 512 distinct
-samples each: factor A, factor B, salt, nonce 1, and nonce 2. The visible counters then
-restart at zero because those samples were consumed, while the matching salt and nonce stay
-available exactly once in locked RAM and remain bound to the displayed factors A and B.
-The key input is Argon2id(SHA3-512(UserPassword, A) ||
-SHA3-512(UserPassword, B), Salt), using length-prefixing and domain separation.
+One atomic generation consumes nine evenly filled mouse pools with at least 1024 samples
+each: A1, A2, B1, B2, the SHA3 salt, the Skein salt, and three nonce parts. The visible
+counters restart at zero after that epoch is consumed. Every output also includes the
+operating-system CSPRNG. The matching salt and nonce remain available exactly once in
+locked RAM and stay bound to the displayed factors A and B.
 
-Nonce creation hashes nonce pool 1 and nonce pool 2 separately with SHA3-512, concatenates
-the two digests, and XORs all 128 bytes with one 128-byte BCryptGenRandom result. Kalyna
-stores the first 64 bytes; Threefish stores all 128 bytes.
+The v11 KDF length-prefixes and domain-separates the passphrase, PIN and both factors in
+independent SHA3 and Skein branches. PMI16 is derived from the credentials and selects an
+Argon2id memory cost from 1 GiB to just under 2 GiB with t=4 and p=4; it is not stored in
+the header. The Paranoia cascade performs the complete second KDF round.
+
+Every 16 MiB container chunk derives its own nonce from the base nonce and chunk index.
+CTR and ChaCha20 counter exhaustion is rejected before any output mutation.
 
 Physical printing creates no PDF file in this app. Windows print spoolers and drivers are
 outside the app's storage control and can use their own temporary storage.
@@ -411,10 +448,11 @@ NTFS alternate data streams are intentionally omitted during archive creation an
 during extraction. OneDrive/cloud versions, backups, shadow copies and print spooling can
 retain data outside this app's control.
 
-Cryptographic erase only applies to encrypted version-7 ZPAQ containers. True SSD hardware secure
+Cryptographic erase only applies to encrypted v11 ZPAQ containers. True SSD hardware secure
 erase is a whole-drive firmware/vendor operation, not a reliable per-file app operation.
 
-KPAR2 is this app's custom RS(20,3) recovery format, not standard PAR2. At 1 TB, 15 percent
+KPAR2 v4 with ContainerVersion 11 is this app's custom RS(20,3) recovery format, not
+standard PAR2. At 1 TB, 15 percent
 recovery redundancy requires about 150 GiB of additional storage and several full I/O passes.
 Encrypted archives always use dual-authenticated KPAR2 metadata (HMAC-SHA3-512 and keyed
 Skein-1024 with domain-separated recovery keys). Plain archives explicitly receive error

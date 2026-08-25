@@ -60,7 +60,7 @@ internal static class WindowsCompanionVerification
 
         try
         {
-            HybridSignaturePolicy policy = SigningTrustPolicy.HybridPolicy
+            _ = SigningTrustPolicy.HybridPolicy
                 ?? throw new InvalidOperationException("The compiled hybrid signing policy is unavailable.");
 
             string sidecar = executable + HybridSignatureService.SidecarExtension;
@@ -73,24 +73,68 @@ internal static class WindowsCompanionVerification
                     $"{ScannerExecutable} has no detached hybrid signature beside it; it is not the scanner this build signs.");
             }
 
-            HybridSignatureVerificationResult signature = HybridSignatureService.VerifyFile(
-                executable,
-                sidecar,
-                policy);
-            if (!signature.IsTrusted || !signature.RsaPssValid || !signature.Mldsa87Valid)
+            string scannerDirectory = Path.GetDirectoryName(executable)
+                ?? throw new InvalidOperationException("The scanner path has no parent directory.");
+            string stem = Path.GetFileNameWithoutExtension(ScannerExecutable);
+            string[] externalApplicationParts =
+            [
+                Path.Combine(scannerDirectory, stem + ".dll"),
+                Path.Combine(scannerDirectory, stem + ".deps.json"),
+                Path.Combine(scannerDirectory, stem + ".runtimeconfig.json"),
+            ];
+            string? externalPart = externalApplicationParts.FirstOrDefault(File.Exists);
+            if (externalPart is not null)
             {
                 return new CompanionVerificationResult(
                     true,
                     false,
                     executable,
-                    $"{ScannerExecutable} failed its dual signature check: {signature.Message}");
+                    $"{ScannerExecutable} is not a closed single-file build; unsigned executable input remains in {Path.GetFileName(externalPart)}.");
+            }
+
+            // Deny write/delete sharing for both objects throughout hashing and
+            // signature verification. Besides closing the leaf replacement
+            // race, the canonical-handle check rejects a scanner or sidecar
+            // reached through a junction/symlink rather than the reported path.
+            using var executableLease = new FileStream(
+                executable,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+            using var sidecarLease = new FileStream(
+                sidecar,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+            _ = NativePathResolver.RequireCanonicalFilePath(
+                sidecarLease.SafeFileHandle,
+                sidecar,
+                "QR-Scanner signature");
+
+            ToolIntegrityStatus status = IntegrityService.CheckFile(
+                executableLease,
+                executable,
+                requireManifest: false);
+            bool trusted = status.HybridSignatureMatches
+                && IntegrityService.IsAcceptedSignatureState(status.SignatureState)
+                && SigningTrustPolicy.Matches(
+                    status.SignerSha256,
+                    status.SignerSha3_512,
+                    status.SignerSkein1024);
+            if (!trusted)
+            {
+                return new CompanionVerificationResult(
+                    true,
+                    false,
+                    executable,
+                    $"{ScannerExecutable} failed its Authenticode/dual-signature check: {status.SignatureMessage}; {status.HybridSignatureMessage}");
             }
 
             return new CompanionVerificationResult(
                 true,
                 true,
                 executable,
-                $"{ScannerExecutable} carries a valid RSA-PSS/SHA-512 and ML-DSA-87 signature from the pinned keys.");
+                $"{ScannerExecutable} is a closed single-file build with valid pinned Authenticode, RSA-PSS/SHA-512 and ML-DSA-87 signatures.");
         }
         catch (Exception exception)
         {

@@ -1,8 +1,8 @@
 /*
  * Native adapter for ChaCha20-Poly1305 (RFC 8439).
  *
- * The outermost layer of the v9 paranoia cascade, and the only one that is not
- * a block cipher in CTR mode. It authenticates as well as encrypts, so it does
+ * The outermost layer of the v11 paranoia and mixed cascades, and the only one
+ * that is not a block cipher in CTR mode. It authenticates as well as encrypts, so it does
  * not fit the shared CTR driver: it needs a nonce of its own width, produces a
  * tag, and on decryption either returns the plaintext or refuses.
  *
@@ -10,11 +10,10 @@
  * HMAC-SHA3-512 and Skein-MAC-1024. It authenticates the outermost ciphertext
  * as that layer sees it; the other two authenticate the container.
  *
- * Deliberately not parallelised. Poly1305 is a single pass over the ciphertext
- * with a carry chain, so splitting it means recombining polynomial evaluations,
- * and the wrong recombination produces a tag that is merely different rather
- * than obviously broken. The layer beneath it is already parallel, and this one
- * runs at the speed of one core over data that has been through five ciphers.
+ * The ChaCha20 keystream is split across independent block-aligned workers.
+ * Poly1305 remains a single pass over the ciphertext with a carry chain, since
+ * splitting it requires a correctly recombined polynomial evaluation. This is
+ * the v11 production fast path, not a test-only or legacy fallback.
  */
 #include "chacha.h"
 #include "misc.h"
@@ -140,7 +139,9 @@ extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
     }
 
     const std::size_t total_blocks = (length + kChaChaBlockBytes - 1) / kChaChaBlockBytes;
-    if (total_blocks > static_cast<std::size_t>(UINT32_MAX) - block_counter) {
+    const std::uint64_t available_blocks =
+        static_cast<std::uint64_t>(UINT32_MAX) - block_counter + 1u;
+    if (static_cast<std::uint64_t>(total_blocks) > available_blocks) {
         return 4;
     }
 
@@ -174,7 +175,12 @@ extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
 
     auto worker = [&](std::size_t worker_index) noexcept {
 #if defined(_WIN32)
-        keepvault::bind_worker_to_processor_group(worker_index);
+        // Spawned workers may be spread across processor groups. Index zero is
+        // the caller itself; changing its affinity here would permanently pin
+        // an application or thread-pool thread after this function returned.
+        if (worker_index != 0) {
+            keepvault::bind_worker_to_processor_group(worker_index);
+        }
 #else
         (void)worker_index;
 #endif
@@ -206,8 +212,8 @@ extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
     };
 
     std::vector<std::thread> threads;
-    threads.reserve(thread_count - 1);
     try {
+        threads.reserve(thread_count - 1);
         for (std::size_t i = 1; i < thread_count; ++i) {
             threads.emplace_back(worker, i);
         }
@@ -258,7 +264,9 @@ extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt_serial(
     /* The same refusal as the exported path: a comparison against a keystream
        the counter could not legitimately produce proves nothing. */
     const std::size_t total_blocks = (length + kChaChaBlockBytes - 1) / kChaChaBlockBytes;
-    if (total_blocks > static_cast<std::size_t>(UINT32_MAX) - block_counter) {
+    const std::uint64_t available_blocks =
+        static_cast<std::uint64_t>(UINT32_MAX) - block_counter + 1u;
+    if (static_cast<std::uint64_t>(total_blocks) > available_blocks) {
         return 4;
     }
 

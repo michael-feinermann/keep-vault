@@ -320,18 +320,16 @@ public sealed partial class KalynaContainerService
             string temporaryEncryptedPath = Path.Combine(
                 targetDirectory,
                 $".{Path.GetFileName(fullEncryptedPath)}.{Guid.NewGuid():N}.encrypted-part");
+            using BoundFileTransaction temporaryEncrypted = BoundFileTransaction.CreateNew(
+                temporaryEncryptedPath,
+                bufferSize: 1024 * 1024,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+            bool committed = false;
 
             try
             {
-                try
                 {
-                    await using FileStream output = new(
-                        temporaryEncryptedPath,
-                        FileMode.CreateNew,
-                        FileAccess.ReadWrite,
-                        FileShare.None,
-                        bufferSize: 1024 * 1024,
-                        FileOptions.SequentialScan);
+                    FileStream output = temporaryEncrypted.Stream;
                     using var hmac = new HmacSha3_512(keyMaterial.Sha3MacKey);
                     using NativeSkein1024Mac skeinMac = NativeThreefish.CreateSkeinMac(keyMaterial.SkeinMacKey);
                     await output.WriteAsync(Magic, cancellationToken).ConfigureAwait(false);
@@ -412,6 +410,9 @@ public sealed partial class KalynaContainerService
                             await output.FlushAsync(cancellationToken).ConfigureAwait(false);
 #pragma warning disable CA1849 // Flush(true) makes the completed ciphertext durable before the atomic rename.
                             output.Flush(flushToDisk: true);
+#if KEEPVAULT_MACOS
+                            MacSafeFileSystem.FullSync(output.SafeFileHandle);
+#endif
 #pragma warning restore CA1849
                         }
                         finally
@@ -426,20 +427,25 @@ public sealed partial class KalynaContainerService
                         CryptographicOperations.ZeroMemory(cipherChunk);
                     }
                 }
-                catch
-                {
-                    File.Delete(temporaryEncryptedPath);
-                    throw;
-                }
-
-                File.Move(temporaryEncryptedPath, fullEncryptedPath, overwrite: false);
+                temporaryEncrypted.RenameTo(fullEncryptedPath, overwrite: false);
+                committed = true;
                 progress?.Report($"{parameters.DisplayName} container written.");
             }
-            catch
+            catch (Exception operationError)
             {
-                if (File.Exists(temporaryEncryptedPath))
+                if (!committed)
                 {
-                    File.Delete(temporaryEncryptedPath);
+                    try
+                    {
+                        temporaryEncrypted.DeleteBound();
+                    }
+                    catch (Exception cleanupError)
+                    {
+                        throw new AggregateException(
+                            "Encrypted container creation failed and its exact temporary object could not be removed.",
+                            operationError,
+                            cleanupError);
+                    }
                 }
 
                 throw;
@@ -1277,6 +1283,59 @@ public sealed partial class KalynaContainerService
                     nameof(parameters),
                     parameters.Suite,
                     "Unknown encryption suite.");
+        }
+    }
+
+    /// <summary>
+    /// Exercises the exact production cipher stack for one chunk without the
+    /// container I/O/KDF layers. Used by the separate release performance gate
+    /// so every individual cipher and declared cascade is measured through the
+    /// same routing and key slicing used for real archives.
+    /// </summary>
+    internal static void EncryptSuiteChunkForTests(
+        EncryptionSuiteParameters parameters,
+        byte[] encryptionKey,
+        byte[] tweak,
+        byte[] counter,
+        byte[] input,
+        byte[] output,
+        int length,
+        ReadOnlySpan<byte> associatedData,
+        byte[] tag)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentNullException.ThrowIfNull(tag);
+        XCrypt(parameters, encryptionKey, tweak, counter, input, output, length);
+
+        if (parameters.Cascade is not { OutermostIsAead: true } aeadLayout)
+        {
+            return;
+        }
+
+        if (tag.Length != NativeChaChaPoly.TagBytes)
+        {
+            throw new ArgumentException(
+                $"The performance transform requires a {NativeChaChaPoly.TagBytes}-byte AEAD tag.",
+                nameof(tag));
+        }
+
+        (byte[] aeadKey, byte[] aeadNonce) =
+            SplitAeadMaterial(aeadLayout, encryptionKey, counter);
+        try
+        {
+            NativeChaChaPoly.Encrypt(
+                aeadKey,
+                aeadNonce,
+                associatedData,
+                output,
+                output,
+                length,
+                tag);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(aeadKey);
+            CryptographicOperations.ZeroMemory(aeadNonce);
         }
     }
 

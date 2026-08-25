@@ -1,6 +1,6 @@
 # Keep Vault
 
-Archiving, extraction and cryptographic erasure of ZPAQ archives for **macOS**.
+Archiving, extraction and cryptographic erasure of ZPAQ archives for **macOS and Windows**.
 Encrypted archives use container format **v11**: a chosen cascade of up to six
 independent ciphers over the compressed stream, keys from two Argon2id branches
 whose memory cost is itself derived from your credentials, two separate MACs,
@@ -10,10 +10,10 @@ the app generates.
 The application is under development. It is not a substitute for an external
 cryptographic audit, an HSM, or operating-system hardening.
 
-> **macOS only.** The Windows source tree has been carried to v11 and compiles,
-> but the WPF application has never been run or tested on Windows. No Windows
-> package is published, and the macOS version is the only one that should be
-> used.
+> **Platform verification is separate.** macOS releases are built and tested on
+> real Apple hardware. The Windows WPF application and its separate QR scanner
+> have their own Windows build, native-trust and full regression gates; passing
+> one platform's suite is never treated as evidence for the other.
 
 ---
 
@@ -22,6 +22,14 @@ cryptographic audit, an HSM, or operating-system hardening.
 Prebuilt packages are on the
 [Releases](https://github.com/michael-feinermann/keep-vault/releases) page.
 Requires macOS 14 or newer, Apple silicon or Intel (universal binary).
+
+For the locally built Windows x64 portable version, run
+`tools/Build-Portable.ps1` and then `tools/Install-KeepVaultShortcuts.ps1`.
+The shortcuts point at the verified portable tree inside this workspace, so a
+new successful portable build becomes the locally installed version without a
+second mutable copy. The same tree contains the separately built and signed
+`QR-Scanner\QR-Scanner.exe`; Keep Vault verifies that companion at startup, and
+the scanner remains the only Windows process in the release that uses a camera.
 
 The package contains **two applications**: `Keep Vault.app` and
 `QR-Scanner.app`. The second one reads the QR codes from the printed key sheets;
@@ -314,8 +322,11 @@ until the SSD/APFS limitation is explicitly acknowledged.
 
 A successful archive or extraction clears the associated password and factor
 fields; both panels also have a manual **Clear secrets** button. Failed archive
-runs remove partial archives, dual manifests and recovery leftovers; failed or
-cancelled extractions remove their partial output folder.
+runs remove every partial archive, manifest and recovery object whose identity
+the app successfully bound. If a native producer fails before ownership of its
+output can be bound, the unverified temporary path is preserved and reported
+instead of path-deleting a possibly substituted foreign object. Failed or
+cancelled extractions remove their bound partial output folder.
 
 Language, the last selected suite and the ZPAQ compression level are stored as
 strictly validated convenience settings in the user profile, capped at 64 bytes,
@@ -328,20 +339,23 @@ selection has no influence on it.
 
 ## Password model
 
-Extraction requires all three values:
+Extraction requires all four credentials:
 
-1. A user password of 24 to 128 characters.
-2. Factor A: 128 hex characters = 64 bytes = 512 bits.
-3. Factor B: 128 hex characters = 64 bytes = 512 bits.
+1. A user passphrase of 24 to 256 characters.
+2. A PIN of 6 to 16 decimal digits.
+3. Factor A: 256 hex characters = 128 bytes = 1024 bits.
+4. Factor B: 256 hex characters = 128 bytes = 1024 bits.
 
 The header stores none of them. It stores only public, necessary parameters:
-salt, nonce, tweak, suite and the Argon2id profile. The optional hint is also
-public, must not contain password material, and is shown explicitly as
-unauthenticated header text until the MAC check succeeds.
+salt, nonce, tweak, suite, format/KDF identifiers and framing lengths. PMI16 and
+the resulting Argon2id memory cost are derived from the credentials and are not
+published in the header. The optional hint is public, must not contain password
+material, and is shown explicitly as unauthenticated header text until both MACs
+succeed.
 
 ### User-password policy
 
-- at least 24 and at most 128 characters
+- at least 24 and at most 256 characters
 - at least 3 character groups
 - at least 12 distinct characters
 - at least 12 characters outside `0-9`, `A-F`, `a-f`
@@ -355,19 +369,10 @@ entropy for human passwords.
 
 ### The four credentials
 
-Each suite has separate domains for A and B. `LP` means every field — domain,
-UTF-8 passphrase, ASCII PIN and normalised ASCII hex factor — gets an explicit
-32-bit length prefix:
-
-```text
-Q_S = SHA3-512(LP(domain_A, pass, pin, A)) || SHA3-512(LP(domain_B, pass, pin, B))
-Q_K = Skein-MAC-1024-1024(key = A || B, pers = domain, msg = LP(pass, pin))
-```
-
-The two paths use the credentials differently on purpose. In `Q_S` the factors
-are hashed alongside the passphrase and PIN; in `Q_K` they *are* the MAC key and
-the passphrase and PIN are the message. Neither path can be computed from the
-other's output.
+The canonical length-prefixed SHA3 and Skein credential branches are specified
+in [The master key derivation](#the-master-key-derivation). Both use the
+passphrase, PIN and both 1024-bit factors, but deliberately combine them in
+different shapes. Neither branch can be computed from the other's output.
 
 `Q_S` and `Q_K` go into their own Argon2id branch untruncated, each with its own
 512-bit salt. The app compiles the unmodified PHC Argon2 reference sources; tests
@@ -447,7 +452,8 @@ factors must be printed or deliberately exported as a test PDF.
 - **Save test PDF** deliberately writes both factors to the chosen volume
   permanently and is not a safe default path.
 
-`QR-Scanner.app` from the same package reads the codes back. Printer spoolers,
+The platform companion (`QR-Scanner.app` on macOS, `QR-Scanner.exe` on Windows)
+from the same release reads the codes back. Printer spoolers,
 drivers and printers can create their own temporary data outside the app.
 
 ---

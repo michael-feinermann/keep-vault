@@ -32,6 +32,7 @@ internal static class TestRunner
         bool fullRequested = false;
         bool quickRequested = false;
         bool changedRequested = false;
+        bool performanceRequested = false;
         bool noSmokeRequested = false;
         bool smokeRequested = false;
         string? onlyFilter = null;
@@ -88,6 +89,10 @@ internal static class TestRunner
                 case "--changed":
                     changedRequested = true;
                     break;
+                case "--performance":
+                    performanceRequested = true;
+                    noSmokeRequested = true;
+                    break;
                 case "--no-smoke":
                     noSmokeRequested = true;
                     break;
@@ -128,9 +133,9 @@ internal static class TestRunner
                     i++;
                     break;
                 case "--parallel":
-                    if (i + 1 >= args.Length || !int.TryParse(args[i + 1], out int p) || (p != -1 && (p < 1 || p > 128)))
+                    if (i + 1 >= args.Length || !int.TryParse(args[i + 1], out int p) || p < 1 || p > 128)
                     {
-                        Console.Error.WriteLine("Usage error: --parallel requires -1 or an integer between 1 and 128.");
+                        Console.Error.WriteLine("Usage error: --parallel requires an integer between 1 and 128.");
                         return 64;
                     }
                     parallelOverride = p;
@@ -175,6 +180,25 @@ internal static class TestRunner
             }
         }
 
+        IReadOnlyList<TestCase> everyTest = [.. smokeTests, .. comprehensiveTests];
+
+        if (performanceRequested && (quickRequested || changedRequested || smokeRequested || smokeOnlyFilter is not null || rerunFailures))
+        {
+            Console.Error.WriteLine(
+                "Usage error: --performance cannot be combined with --quick, --changed, --smoke, --smoke-only or --rerun-failures.");
+            return 64;
+        }
+
+        try
+        {
+            TestInventory.Validate(smokeTests, comprehensiveTests);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.Error.WriteLine("Test inventory error: " + ex.Message);
+            return 70;
+        }
+
         // A worker runs exactly one test and reports one machine-readable line.
         // It must short-circuit before any selection logic: the coordinator
         // addresses it by id, not by the filters a human would use.
@@ -186,7 +210,6 @@ internal static class TestRunner
                 return 64;
             }
 
-            IReadOnlyList<TestCase> everyTest = [.. smokeTests, .. comprehensiveTests];
             return await TestCoordinator.RunWorkerModeAsync(everyTest, workerTestId, seedOverride ?? 1u).ConfigureAwait(false);
         }
 
@@ -195,14 +218,25 @@ internal static class TestRunner
             Console.WriteLine("Available smoke tests:");
             foreach (TestCase test in smokeTests)
             {
-                Console.WriteLine($"  [Smoke] [{test.Resource,-15}] {test.Name}");
+                Console.WriteLine($"  {test.Id,-48} [Smoke] [{test.Resource,-15}] {test.Name}");
             }
 
             Console.WriteLine();
             Console.WriteLine("Available comprehensive tests:");
-            foreach (TestCase test in comprehensiveTests)
+            foreach (TestCase test in comprehensiveTests.Where(IsAutomaticComprehensive))
             {
-                Console.WriteLine($"  [{test.Category,-11}] [{test.Resource,-15}] {test.Name}");
+                Console.WriteLine($"  {test.Id,-48} [{test.Category,-11}] [{test.Resource,-15}] {test.Name}");
+            }
+
+            TestCase[] performanceTests = [.. comprehensiveTests.Where(test => test.IsPerformance)];
+            if (performanceTests.Length > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Available manual performance gates:");
+                foreach (TestCase test in performanceTests)
+                {
+                    Console.WriteLine($"  {test.Id,-48} [Performance] [{test.Resource,-15}] {test.Name}");
+                }
             }
 
             return 0;
@@ -213,7 +247,17 @@ internal static class TestRunner
 
         if (rerunFailures)
         {
-            IReadOnlyList<string> failedIds = TestCoordinator.ReadFailedIds(resultsPath);
+            IReadOnlyList<string> failedIds;
+            try
+            {
+                failedIds = TestCoordinator.ReadFailedIds(resultsPath, everyTest);
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"Cannot re-run failures from {Path.GetFileName(resultsPath)}: {ex.Message}");
+                return 65;
+            }
+
             if (failedIds.Count == 0)
             {
                 Console.WriteLine($"No failures recorded in {Path.GetFileName(resultsPath)}; nothing to re-run.");
@@ -225,6 +269,23 @@ internal static class TestRunner
             selectedComprehensive.AddRange(comprehensiveTests.Where(t => failedSet.Contains(t.Id)));
             Console.WriteLine($"Re-running {selectedSmoke.Count + selectedComprehensive.Count} previously failing test(s).");
         }
+        else if (performanceRequested)
+        {
+            IEnumerable<TestCase> performance = comprehensiveTests.Where(test => test.IsPerformance);
+            if (onlyFilter is not null)
+            {
+                performance = performance.Where(test => MatchesSelector(test, onlyFilter));
+            }
+
+            if (categoryFilter is not null)
+            {
+                performance = performance.Where(test =>
+                    string.Equals(test.Category, categoryFilter, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(test.Resource.ToString(), categoryFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            selectedComprehensive.AddRange(performance);
+        }
         else if (changedRequested)
         {
             HashSet<string>? affected = DetermineAffectedTestsFromGit(baseRef);
@@ -232,12 +293,12 @@ internal static class TestRunner
             {
                 Console.WriteLine("Note: git impact detection could not determine changed files; running the full suite.");
                 selectedSmoke.AddRange(smokeTests);
-                selectedComprehensive.AddRange(comprehensiveTests);
+                selectedComprehensive.AddRange(comprehensiveTests.Where(IsAutomaticComprehensive));
             }
             else if (affected.Count == 0)
             {
                 selectedSmoke.AddRange(smokeTests);
-                selectedComprehensive.AddRange(comprehensiveTests.Where(t => t.Resource == TestResource.Light));
+                selectedComprehensive.AddRange(comprehensiveTests.Where(t => IsAutomaticComprehensive(t) && t.Resource == TestResource.Light));
             }
             else
             {
@@ -246,7 +307,7 @@ internal static class TestRunner
                 // security test could stop running without anyone noticing.
                 // Refuse the run instead of quietly covering less.
                 var known = new HashSet<string>(
-                    smokeTests.Select(t => t.Name).Concat(comprehensiveTests.Select(t => t.Name)),
+                    smokeTests.Select(t => t.Id).Concat(comprehensiveTests.Select(t => t.Id)),
                     StringComparer.Ordinal)
                 {
                     "ALL_SMOKE",
@@ -264,23 +325,31 @@ internal static class TestRunner
                     return 1;
                 }
 
-                selectedSmoke.AddRange(smokeTests.Where(t => affected.Contains(t.Name) || affected.Contains("ALL_SMOKE")));
+                if (affected.Contains("performance.cipher-suites"))
+                {
+                    Console.WriteLine(
+                        "Note: cipher/native/build changes require the manual release gate; "
+                        + "run this suite again with --performance on an otherwise idle host before release.");
+                }
+
+                selectedSmoke.AddRange(smokeTests.Where(t => affected.Contains(t.Id) || affected.Contains("ALL_SMOKE")));
                 selectedComprehensive.AddRange(comprehensiveTests.Where(t =>
-                    affected.Contains(t.Name)
+                    !t.IsPerformance
+                    && (affected.Contains(t.Id)
                     || affected.Contains("ALL_COMPREHENSIVE")
                     || (affected.Contains("ALL_CONTAINER_SUITES") && string.Equals(t.Category, "Containers", StringComparison.Ordinal))
-                    || (affected.Contains("ALL_RECOVERY_SUITES") && string.Equals(t.Category, "Recovery", StringComparison.Ordinal))));
+                    || (affected.Contains("ALL_RECOVERY_SUITES") && string.Equals(t.Category, "Recovery", StringComparison.Ordinal)))));
                 if (selectedSmoke.Count == 0 && selectedComprehensive.Count == 0)
                 {
                     selectedSmoke.AddRange(smokeTests);
-                    selectedComprehensive.AddRange(comprehensiveTests.Where(t => t.Resource == TestResource.Light));
+                    selectedComprehensive.AddRange(comprehensiveTests.Where(t => IsAutomaticComprehensive(t) && t.Resource == TestResource.Light));
                 }
             }
         }
         else if (quickRequested)
         {
             selectedSmoke.AddRange(smokeTests);
-            selectedComprehensive.AddRange(comprehensiveTests.Where(t => t.Resource == TestResource.Light));
+            selectedComprehensive.AddRange(comprehensiveTests.Where(t => IsAutomaticComprehensive(t) && t.Resource == TestResource.Light));
         }
         else
         {
@@ -288,7 +357,7 @@ internal static class TestRunner
             {
                 if (smokeOnlyFilter is not null)
                 {
-                    selectedSmoke.AddRange(smokeTests.Where(t => t.Name.Contains(smokeOnlyFilter, StringComparison.OrdinalIgnoreCase)));
+                    selectedSmoke.AddRange(smokeTests.Where(t => MatchesSelector(t, smokeOnlyFilter)));
                 }
                 else
                 {
@@ -301,13 +370,14 @@ internal static class TestRunner
             // that - a runner that quietly covered less than the script it
             // replaced would be the worst possible outcome of this change.
             bool anySelector = fullRequested || onlyFilter is not null || categoryFilter is not null
-                || smokeRequested || smokeOnlyFilter is not null;
+                || smokeRequested || smokeOnlyFilter is not null || performanceRequested;
             if (fullRequested || onlyFilter is not null || categoryFilter is not null || !anySelector)
             {
-                IEnumerable<TestCase> comprehensive = comprehensiveTests;
+                IEnumerable<TestCase> comprehensive = comprehensiveTests.Where(test =>
+                    IsSelectedByManualPerformanceMode(test, performanceRequested, onlyFilter, categoryFilter));
                 if (onlyFilter is not null)
                 {
-                    comprehensive = comprehensive.Where(t => t.Name.Contains(onlyFilter, StringComparison.OrdinalIgnoreCase));
+                    comprehensive = comprehensive.Where(t => MatchesSelector(t, onlyFilter));
                 }
 
                 if (categoryFilter is not null)
@@ -324,14 +394,29 @@ internal static class TestRunner
         if (selectedSmoke.Count == 0 && selectedComprehensive.Count == 0)
         {
             Console.WriteLine("No tests matched the specified criteria.");
-            bool explicitSelector = onlyFilter is not null || smokeOnlyFilter is not null || categoryFilter is not null;
+            bool explicitSelector = onlyFilter is not null || smokeOnlyFilter is not null
+                || categoryFilter is not null || performanceRequested;
             return explicitSelector ? 64 : 0;
         }
 
-        int workerCount = parallelOverride
-            ?? (int.TryParse(Environment.GetEnvironmentVariable("KEEPVAULT_TEST_WORKERS"), out int envWorkers)
-                ? Math.Clamp(envWorkers, 1, 32)
-                : Math.Clamp(Environment.ProcessorCount / 2, 2, 8));
+        int workerCount;
+        if (parallelOverride is int cliWorkers)
+        {
+            workerCount = cliWorkers;
+        }
+        else if (Environment.GetEnvironmentVariable("KEEPVAULT_TEST_WORKERS") is { Length: > 0 } workerEnvironment)
+        {
+            if (!int.TryParse(workerEnvironment, NumberStyles.None, CultureInfo.InvariantCulture, out workerCount)
+                || workerCount < 1 || workerCount > 128)
+            {
+                Console.Error.WriteLine("Usage error: KEEPVAULT_TEST_WORKERS requires an integer between 1 and 128.");
+                return 64;
+            }
+        }
+        else
+        {
+            workerCount = Math.Clamp(Environment.ProcessorCount / 2, 2, 8);
+        }
 
         Dictionary<string, double> cachedTimings = LoadTimings(timingsPath);
         var currentRunTimings = new ConcurrentDictionary<string, double>(cachedTimings);
@@ -344,137 +429,132 @@ internal static class TestRunner
             }
 
             Stopwatch totalTimer = Stopwatch.StartNew();
+            HardwareBudget budget = HardwareBudget.Detect();
+            var iterationOutcomes = new List<TestOutcome>();
+            Console.WriteLine(
+                $"scheduler: {budget.CpuCount} logical CPUs, {budget.TotalRamBytes / (1024 * 1024 * 1024)} GiB; "
+                + $"budget {budget.CpuTokens} CPU tokens / {budget.MemoryMiB} MiB, "
+                + $"{budget.ArgonSlots} Argon slot(s), {budget.ZpaqSlots} ZPAQ slot(s), max {workerCount} worker(s)"
+                + (inProcess ? ", in-process" : string.Empty));
 
+            bool smokeFailed = false;
             if (selectedSmoke.Count > 0)
             {
-                bool smokePassed = await RunSmokeBatchAsync(selectedSmoke, workerCount, cachedTimings, currentRunTimings).ConfigureAwait(false);
-                if (!smokePassed)
-                {
-                    SaveTimings(timingsPath, currentRunTimings);
-                    return 1;
-                }
-
-                Console.WriteLine($"{selectedSmoke.Count} Windows smoke tests passed.");
-            }
-
-            if (selectedComprehensive.Count > 0)
-            {
-                HardwareBudget budget = HardwareBudget.Detect();
-                Console.WriteLine(
-                    $"scheduler: {budget.CpuCount} logical CPUs, {budget.TotalRamBytes / (1024 * 1024 * 1024)} GiB; "
-                    + $"budget {budget.CpuTokens} CPU tokens / {budget.MemoryMiB} MiB, "
-                    + $"{budget.ArgonSlots} Argon slot(s), {budget.ZpaqSlots} ZPAQ slot(s)"
-                    + (inProcess ? ", in-process" : string.Empty));
-
-                IReadOnlyList<TestOutcome> outcomes = await TestCoordinator.RunAsync(
-                    selectedComprehensive,
+                IReadOnlyList<TestOutcome> smokeOutcomes = await TestCoordinator.RunAsync(
+                    selectedSmoke,
                     budget,
+                    workerCount,
                     cachedTimings,
                     seedOverride,
                     failFast,
                     inProcess,
                     CancellationToken.None).ConfigureAwait(false);
+                iterationOutcomes.AddRange(smokeOutcomes);
+                foreach (TestOutcome outcome in smokeOutcomes.Where(outcome => outcome.Status == TestStatus.Pass))
+                {
+                    currentRunTimings[outcome.Id] = outcome.Seconds;
+                }
+
+                smokeFailed = smokeOutcomes.Any(outcome => outcome.Status != TestStatus.Pass);
+                Console.WriteLine(
+                    $"{smokeOutcomes.Count} Windows smoke tests: "
+                    + $"{smokeOutcomes.Count(outcome => outcome.Status == TestStatus.Pass)} passed, "
+                    + $"{smokeOutcomes.Count(outcome => outcome.Status == TestStatus.Fail)} failed, "
+                    + $"{smokeOutcomes.Count(outcome => outcome.Status == TestStatus.Blocked)} blocked.");
+            }
+
+            if (selectedComprehensive.Count > 0 && ShouldRunComprehensive(smokeFailed, failFast))
+            {
+                IReadOnlyList<TestOutcome> outcomes = await TestCoordinator.RunAsync(
+                    selectedComprehensive,
+                    budget,
+                    workerCount,
+                    cachedTimings,
+                    seedOverride,
+                    failFast,
+                    inProcess,
+                    CancellationToken.None).ConfigureAwait(false);
+                iterationOutcomes.AddRange(outcomes);
 
                 foreach (TestOutcome outcome in outcomes.Where(o => o.Status == TestStatus.Pass))
                 {
-                    currentRunTimings[outcome.Name] = outcome.Seconds;
+                    currentRunTimings[outcome.Id] = outcome.Seconds;
                 }
-
-                TestCoordinator.WriteResults(resultsPath, outcomes, budget);
-
-                int passed = outcomes.Count(o => o.Status == TestStatus.Pass);
-                int failed = outcomes.Count(o => o.Status == TestStatus.Fail);
-                int blocked = outcomes.Count(o => o.Status == TestStatus.Blocked);
-                double sumSeconds = outcomes.Sum(o => o.Seconds);
-                totalTimer.Stop();
-
-                Console.WriteLine();
-                Console.WriteLine($"{outcomes.Count} comprehensive Windows groups: {passed} passed, {failed} failed, {blocked} blocked.");
-                Console.WriteLine(
-                    $"wall clock {totalTimer.Elapsed.TotalSeconds:F1}s; sum of test times {sumSeconds:F1}s; "
-                    + $"parallel speedup {(totalTimer.Elapsed.TotalSeconds > 0 ? sumSeconds / totalTimer.Elapsed.TotalSeconds : 0):F2}x");
-                Console.WriteLine($"results written to {resultsPath}");
-
-                if (failed > 0 || blocked > 0)
+            }
+            else if (selectedComprehensive.Count > 0)
+            {
+                foreach (TestCase blocked in selectedComprehensive)
                 {
-                    Console.WriteLine();
-                    Console.WriteLine("Failing tests:");
-                    foreach (TestOutcome outcome in outcomes.Where(o => o.Status != TestStatus.Pass))
-                    {
-                        Console.WriteLine($"  {outcome.Status.ToString().ToUpperInvariant()} {outcome.Name}");
-                    }
-
-                    SaveTimings(timingsPath, currentRunTimings);
-                    return 1;
+                    iterationOutcomes.Add(new TestOutcome(
+                        blocked.Id,
+                        blocked.Name,
+                        TestStatus.Blocked,
+                        0,
+                        0,
+                        seedOverride ?? 0,
+                        "not run: --fail-fast stopped after a smoke failure"));
                 }
-
-                Console.WriteLine($"{selectedComprehensive.Count} comprehensive Windows functional/cryptographic groups passed.");
             }
 
             totalTimer.Stop();
+            try
+            {
+                TestCoordinator.WriteResults(resultsPath, iterationOutcomes, budget, workerCount, everyTest);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"Could not write test results: {ex.Message}");
+                SaveTimings(timingsPath, currentRunTimings);
+                return 1;
+            }
+
+            int passed = iterationOutcomes.Count(outcome => outcome.Status == TestStatus.Pass);
+            int failed = iterationOutcomes.Count(outcome => outcome.Status == TestStatus.Fail);
+            int blockedCount = iterationOutcomes.Count(outcome => outcome.Status == TestStatus.Blocked);
+            double sumSeconds = iterationOutcomes.Sum(outcome => outcome.Seconds);
+            Console.WriteLine();
+            Console.WriteLine($"{iterationOutcomes.Count} Windows groups: {passed} passed, {failed} failed, {blockedCount} blocked.");
+            Console.WriteLine(
+                $"wall clock {totalTimer.Elapsed.TotalSeconds:F1}s; sum of test times {sumSeconds:F1}s; "
+                + $"parallel speedup {(totalTimer.Elapsed.TotalSeconds > 0 ? sumSeconds / totalTimer.Elapsed.TotalSeconds : 0):F2}x");
+            Console.WriteLine($"results written to {resultsPath}");
+
+            if (failed > 0 || blockedCount > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Failing tests:");
+                foreach (TestOutcome outcome in iterationOutcomes.Where(outcome => outcome.Status != TestStatus.Pass))
+                {
+                    Console.WriteLine($"  {outcome.Status.ToString().ToUpperInvariant()} {outcome.Id} — {outcome.Name}");
+                }
+
+                SaveTimings(timingsPath, currentRunTimings);
+                return 1;
+            }
         }
 
         SaveTimings(timingsPath, currentRunTimings);
         return 0;
     }
 
-    /// <remarks>
-    /// Longest first, across the CPU budget. Smoke tests are Light by
-    /// definition and run in this process: they exist to fail in seconds, and a
-    /// worker launch each would cost more than the test.
-    /// </remarks>
-    private static async Task<bool> RunSmokeBatchAsync(
-        IReadOnlyList<TestCase> tests,
-        int workerCount,
-        Dictionary<string, double> cachedTimings,
-        ConcurrentDictionary<string, double> currentTimings)
-    {
-        var sorted = tests
-            .OrderByDescending(t => cachedTimings.GetValueOrDefault(t.Name, 0.0))
-            .ToList();
+    internal static bool ShouldRunComprehensive(bool smokeFailed, bool failFast) =>
+        !smokeFailed || !failFast;
 
-        bool allPassed = true;
+    internal static bool IsAutomaticComprehensive(TestCase test) => !test.IsPerformance;
 
-        await Parallel.ForEachAsync(
-            sorted,
-            new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, workerCount) },
-            async (test, _) =>
-            {
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                try
-                {
-                    await test.Run().ConfigureAwait(false);
-                    stopwatch.Stop();
-                    currentTimings[test.Name] = stopwatch.Elapsed.TotalSeconds;
-                    lock (ConsoleLock)
-                    {
-                        Console.WriteLine($"PASS {test.Name}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    stopwatch.Stop();
-                    allPassed = false;
-                    lock (ConsoleLock)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine($"FAIL smoke: {test.Name}");
-                        Console.WriteLine($"  {ex.GetType().Name}: {ex.Message}");
-                        if (ex.InnerException is not null)
-                        {
-                            Console.WriteLine($"  Inner: {ex.InnerException.Message}");
-                        }
+    internal static bool IsSelectedByManualPerformanceMode(
+        TestCase test,
+        bool performanceRequested,
+        string? onlyFilter,
+        string? categoryFilter) =>
+        !test.IsPerformance
+        || performanceRequested
+        || (onlyFilter is not null && MatchesSelector(test, onlyFilter))
+        || string.Equals(categoryFilter, "Performance", StringComparison.OrdinalIgnoreCase);
 
-                        Console.WriteLine();
-                        Console.WriteLine("Re-run:");
-                        Console.WriteLine($"  dotnet run --no-build --no-restore --project KalynaArchiver.Tests -c Release -- --smoke-only \"{test.Name}\"");
-                        Console.WriteLine();
-                    }
-                }
-            }).ConfigureAwait(false);
-
-        return allPassed;
-    }
+    internal static bool MatchesSelector(TestCase test, string selector) =>
+        string.Equals(test.Id, selector, StringComparison.Ordinal)
+        || test.Name.Contains(selector, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Which tests the working tree's changes can plausibly have broken.
@@ -555,20 +635,20 @@ internal static class TestRunner
                         "PasswordKeyService", "ContainerKeyDerivation", "SecureMemory", "EntropyMixer"))
                 {
                     matched = true;
-                    affected.Add("generated factors, entropy pools and locked-page accounting");
-                    affected.Add("Argon2id PHC reference-CLI comparison");
+                    affected.Add("entropy.generated-factors-pools-locks");
+                    affected.Add("kdf.argon2-reference-cli");
                     affected.Add("ALL_CONTAINER_SUITES");
                 }
 
                 if (Mentions(file, "ZpaqService", "SecureFile", "CryptographicEraseService"))
                 {
                     matched = true;
-                    affected.Add("ZPAQ path traversal and extraction directories");
-                    affected.Add("ZPAQ input binding: reparse points, post-check insertion, leases");
-                    affected.Add("mutated ZPAQ pipe-parser crash and hang corpus");
-                    affected.Add("ZPAQ compression levels 0-5 for file and RAM-pipe paths");
-                    affected.Add("child-process cancellation and bounded output");
-                    affected.Add("cryptographic erase");
+                    affected.Add("zpaq.path-traversal-extraction");
+                    affected.Add("zpaq.input-binding");
+                    affected.Add("zpaq.malformed-pipe-corpus");
+                    affected.Add("zpaq.compression-level-matrix");
+                    affected.Add("zpaq.child-process-containment");
+                    affected.Add("erase.cryptographic");
                 }
 
                 if (Mentions(file, "RecoveryService", "Kpar2", "KPAR2"))
@@ -580,8 +660,8 @@ internal static class TestRunner
                 if (Mentions(file, "MainWindow", "AppSettingsStore", "KeySheetService", "WindowProtection"))
                 {
                     matched = true;
-                    affected.Add("settings persistence, drag-and-drop and key sheets");
-                    affected.Add("MainWindow design-time text against the installed strings");
+                    affected.Add("gui.settings-drop-key-sheets");
+                    affected.Add("smoke.localization-defaults");
                 }
 
                 if (Mentions(file, "IntegrityService", "SigningTrustPolicy", "HybridSignatureService",
@@ -589,47 +669,50 @@ internal static class TestRunner
                         "Sign-ManagedOutput", "KalynaReleaseVerifier"))
                 {
                     matched = true;
-                    affected.Add("native tool integrity and signatures");
-                    affected.Add("the companion QR scanner is checked against the pinned keys");
-                    affected.Add("release scripts cover the required native tool set");
-                    affected.Add("ML-DSA-87 FIPS 204 interoperability and tamper rejection");
+                    affected.Add("integrity.native-tools-signatures");
+                    affected.Add("integrity.companion-qr");
+                    affected.Add("smoke.release-native-tool-coverage");
+                    affected.Add("signing.mldsa87-interop");
                 }
 
                 if (Mentions(file, "WindowsCompanionVerification", "QrCodeScannerWindows", "QR-Scanner"))
                 {
                     matched = true;
-                    affected.Add("the companion QR scanner is checked against the pinned keys");
+                    affected.Add("integrity.companion-qr");
                 }
 
                 if (Mentions(file, "ProcessHardening"))
                 {
                     matched = true;
-                    affected.Add("process hardening");
+                    affected.Add("hardening.process");
                 }
 
                 if (Mentions(file, "Threefish", "Kalyna", "Sha3", "Skein", "Mars", "Shacal",
                         "chachapoly", "aes_ref", "cryptopp_ctr_common", "EncryptionSuite"))
                 {
                     matched = true;
-                    affected.Add("SHA3-512 reference vectors");
-                    affected.Add("Skein-1024 hash and MAC vectors");
-                    affected.Add("Kalyna-512/512 reference vector");
-                    affected.Add("Kalyna-512/512 parallel CTR equivalence");
-                    affected.Add("Kalyna-512/512 table path against the reference over 256 MiB");
-                    affected.Add("ChaCha20 worker split against the serial keystream over 256 MiB");
-                    affected.Add("ChaCha20-Poly1305 framing against RFC 8439");
-                    affected.Add("Threefish-1024 official vectors and an independent implementation");
-                    affected.Add("Threefish-1024 parallel CTR equivalence");
+                    affected.Add("smoke.sha3-512-vectors");
+                    affected.Add("smoke.skein-1024-vectors");
+                    affected.Add("smoke.kalyna-512-vector");
+                    affected.Add("crypto.kalyna-parallel-ctr");
+                    affected.Add("crypto.kalyna-table-differential");
+                    affected.Add("crypto.chacha20-split-differential");
+                    affected.Add("smoke.chacha20-poly1305-rfc8439");
+                    affected.Add("smoke.threefish-1024-vectors");
+                    affected.Add("crypto.threefish-parallel-ctr");
+                    affected.Add("crypto.ctr-counter-exhaustion");
                     affected.Add("ALL_CONTAINER_SUITES");
                 }
 
-                if (file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
-                    || file.EndsWith(".c", StringComparison.OrdinalIgnoreCase)
-                    || file.EndsWith(".h", StringComparison.OrdinalIgnoreCase)
-                    || file.EndsWith(".hpp", StringComparison.OrdinalIgnoreCase)
-                    || file.EndsWith(".cpp", StringComparison.OrdinalIgnoreCase))
+                if (IsPerformanceSensitiveFile(file))
                 {
-                    affected.Add("MainWindow design-time text against the installed strings");
+                    affected.Add("performance.cipher-suites");
+                }
+
+                if (IsSourceOrBuildFile(file))
+                {
+                    affected.Add("smoke.localization-defaults");
+                    affected.Add("smoke.release-native-tool-coverage");
                 }
 
                 if (!matched && !IsBenignFile(file))
@@ -649,6 +732,51 @@ internal static class TestRunner
 
     private static bool Mentions(string file, params string[] fragments) =>
         fragments.Any(fragment => file.Contains(fragment, StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsPerformanceSensitiveFile(string file)
+    {
+        string normalized = file.Replace('\\', '/');
+        return Mentions(
+            normalized,
+            "kalyna_fast.c",
+            "kalyna_ref_export.c",
+            "threefish_ref_export.c",
+            "chachapoly_ref_export.cpp",
+            "aes_ref_export.cpp",
+            "mars_ref_export.cpp",
+            "shacal2_ref_export.cpp",
+            "cryptopp_ctr_common.hpp",
+            "external/cryptopp/cpu.cpp",
+            "Build-Native.cmd",
+            "Build-Native-macOS.sh",
+            "NativeCascadeCiphers.cs",
+            "CipherSuitePerformanceTests.cs");
+    }
+
+    private static bool IsSourceOrBuildFile(string file)
+    {
+        string extension = Path.GetExtension(file);
+        return extension.Equals(".cs", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".c", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".cc", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".cpp", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".cxx", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".h", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".hh", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".hpp", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".hxx", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".swift", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".xaml", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".axaml", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".ps1", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".fsx", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".sh", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".bat", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".props", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".targets", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".csproj", StringComparison.OrdinalIgnoreCase);
+    }
 
     /// <summary>
     /// Files that cannot change what any test observes.

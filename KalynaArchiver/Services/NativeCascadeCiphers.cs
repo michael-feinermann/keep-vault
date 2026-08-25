@@ -259,6 +259,17 @@ internal static unsafe class NativeShacal2
     }
 }
 
+internal enum NativeAesRuntimeProvider
+{
+    Unknown = 0,
+    AesNi = 1,
+    ArmV8 = 2,
+    ArmV7 = 3,
+    Power8 = 4,
+    Sse2 = 5,
+    PortableCpp = 6,
+}
+
 internal static unsafe class NativeAes
 {
     private const string DllName = "aes_ref.dll";
@@ -270,6 +281,7 @@ internal static unsafe class NativeAes
     private static nint _libraryHandle;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int> _xcryptCtr;
     private static delegate* unmanaged[Cdecl]<byte*, nuint, byte*, byte*, int> _encryptBlock;
+    private static delegate* unmanaged[Cdecl]<int> _getRuntimeProvider;
 
     public static string? LastLoadError { get; private set; }
 
@@ -285,6 +297,21 @@ internal static unsafe class NativeAes
         {
             LastLoadError = $"{ex.GetType().Name}: {ex.Message}";
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Reports the read-only Crypto++ provider selected by the same runtime
+    /// dispatch that encrypts AES blocks.
+    /// </summary>
+    internal static NativeAesRuntimeProvider RuntimeProvider
+    {
+        get
+        {
+            EnsureLoaded();
+            return _getRuntimeProvider == null
+                ? NativeAesRuntimeProvider.Unknown
+                : (NativeAesRuntimeProvider)_getRuntimeProvider();
         }
     }
 
@@ -367,6 +394,10 @@ internal static unsafe class NativeAes
                     NativeLibrary.GetExport(handle, "aes_256_ctr_xcrypt");
                 _encryptBlock = (delegate* unmanaged[Cdecl]<byte*, nuint, byte*, byte*, int>)
                     NativeLibrary.GetExport(handle, "aes_encrypt_block");
+                if (NativeLibrary.TryGetExport(handle, "aes_get_runtime_provider", out nint providerExport))
+                {
+                    _getRuntimeProvider = (delegate* unmanaged[Cdecl]<int>)providerExport;
+                }
                 _libraryHandle = handle;
             }
             catch
@@ -374,6 +405,7 @@ internal static unsafe class NativeAes
                 NativeLibrary.Free(handle);
                 _xcryptCtr = null;
                 _encryptBlock = null;
+                _getRuntimeProvider = null;
                 throw;
             }
         }

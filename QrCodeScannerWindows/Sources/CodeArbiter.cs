@@ -131,7 +131,13 @@ public sealed class CodeArbiter
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(requiredRepeats, 1);
         ArgumentOutOfRangeException.ThrowIfNegative(toleratedMisses);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minimumSeparation);
+        if (!double.IsFinite(minimumSeparation) || minimumSeparation <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(minimumSeparation),
+                minimumSeparation,
+                "The separation must be a finite positive distance.");
+        }
         RequiredRepeats = requiredRepeats;
         ToleratedMisses = toleratedMisses;
         MinimumSeparation = minimumSeparation;
@@ -143,7 +149,21 @@ public sealed class CodeArbiter
     public ScanOutcome Admit(IReadOnlyList<Detection> detections)
     {
         ArgumentNullException.ThrowIfNull(detections);
-        if (detections.Count == 0)
+
+        // Geometry is part of the corroboration proof. A decoder result with
+        // NaN/out-of-frame coordinates cannot establish that two physical
+        // codes were present; NaN in particular made every duplicate look
+        // separate because all distance comparisons with it are false.
+        Detection[] withPayload = detections
+            .Where(detection => !string.IsNullOrEmpty(detection.Payload))
+            .ToArray();
+        Detection[] usable = withPayload
+            .Where(detection => double.IsFinite(detection.CenterX)
+                && double.IsFinite(detection.CenterY)
+                && detection.CenterX is >= 0 and <= 1
+                && detection.CenterY is >= 0 and <= 1)
+            .ToArray();
+        if (withPayload.Length == 0 || usable.Length == 0)
         {
             _misses++;
             if (_misses > ToleratedMisses)
@@ -159,7 +179,11 @@ public sealed class CodeArbiter
         _misses = 0;
 
         var distinct = new SortedSet<string>(StringComparer.Ordinal);
-        foreach (Detection detection in detections)
+        // Geometry can disqualify a report from proving that a second printed
+        // copy exists, but it must not hide a conflicting payload. A frame that
+        // decoded two different values is unsafe even if one decoder position
+        // is malformed.
+        foreach (Detection detection in withPayload)
         {
             distinct.Add(detection.Payload);
         }
@@ -174,7 +198,7 @@ public sealed class CodeArbiter
         }
 
         string payload = distinct.Min!;
-        int copies = SeparateCopies(detections);
+        int copies = SeparateCopies(usable);
         if (copies >= 2)
         {
             // Two printed codes carrying the same content. Each one already

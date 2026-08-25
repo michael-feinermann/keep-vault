@@ -1,5 +1,6 @@
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -39,6 +40,16 @@ public sealed class VolatileClipboard : IDisposable
     private const string ExcludeFromMonitorProcessing = "ExcludeClipboardContentFromMonitorProcessing";
 
     /// <summary>
+    /// A private, random marker that proves the current clipboard entry is the
+    /// exact DataObject this instance placed there. A sequence number alone is
+    /// racy: another process can replace the clipboard between SetDataObject
+    /// and GetClipboardSequenceNumber, making its entry look like ours.
+    /// </summary>
+    private const string OwnershipFormat = "KeepVault.QrScanner.ClipboardOwner.v1";
+
+    private static readonly TimeSpan ClearRetryInterval = TimeSpan.FromSeconds(1);
+
+    /// <summary>
     /// Long enough to switch windows and paste, short enough that the value is
     /// not still sitting there hours later.
     /// </summary>
@@ -46,6 +57,7 @@ public sealed class VolatileClipboard : IDisposable
 
     private readonly DispatcherTimer _expiry;
     private uint? _sequenceAtCopy;
+    private byte[]? _ownershipToken;
     private Action? _onExpiry;
     private bool _disposed;
 
@@ -69,17 +81,33 @@ public sealed class VolatileClipboard : IDisposable
         ArgumentNullException.ThrowIfNull(payload);
         ArgumentNullException.ThrowIfNull(onExpiry);
 
+        byte[] ownershipToken = RandomNumberGenerator.GetBytes(32);
         var data = new DataObject();
         data.SetData(DataFormats.UnicodeText, payload);
         data.SetData(CanIncludeInClipboardHistory, FalseDword());
         data.SetData(CanUploadToCloudClipboard, FalseDword());
         data.SetData(ExcludeFromMonitorProcessing, new MemoryStream());
+        data.SetData(OwnershipFormat, new MemoryStream(ownershipToken, writable: false));
 
         // Not the "copy" overload: leaving the data on the clipboard after this
         // process exits would outlive every guarantee made above, and the whole
         // point is that the value has a short life.
-        Clipboard.SetDataObject(data, copy: false);
+        try
+        {
+            Clipboard.SetDataObject(data, copy: false);
+        }
+        catch
+        {
+            CryptographicOperations.ZeroMemory(ownershipToken);
+            throw;
+        }
 
+        if (_ownershipToken is not null)
+        {
+            CryptographicOperations.ZeroMemory(_ownershipToken);
+        }
+
+        _ownershipToken = ownershipToken;
         _sequenceAtCopy = GetClipboardSequenceNumber();
         _onExpiry = onExpiry;
         _expiry.Stop();
@@ -99,24 +127,106 @@ public sealed class VolatileClipboard : IDisposable
     {
         _expiry.Stop();
         uint? stamp = _sequenceAtCopy;
-        _sequenceAtCopy = null;
-        Action? onExpiry = _onExpiry;
-        _onExpiry = null;
-
-        if (stamp is not null && GetClipboardSequenceNumber() == stamp)
+        byte[]? token = _ownershipToken;
+        if (stamp is null || token is null)
         {
-            try
-            {
-                Clipboard.Clear();
-            }
-            catch (Exception exception) when (exception is System.Runtime.InteropServices.ExternalException
-                or InvalidOperationException)
-            {
-                // Another process may hold the clipboard open for a moment. The
-                // value expiring late is better than the app falling over.
-            }
+            CompleteExpiry();
+            return;
         }
 
+        uint currentSequence = GetClipboardSequenceNumber();
+        if (currentSequence != stamp)
+        {
+            // Somebody copied something else. The scanned value is no longer
+            // the active clipboard entry, and clearing would destroy theirs.
+            CompleteExpiry();
+            return;
+        }
+
+        bool stillOurs;
+        try
+        {
+            stillOurs = ClipboardTokenMatches(token);
+        }
+        catch (Exception exception) when (exception is ExternalException or InvalidOperationException)
+        {
+            ScheduleRetry();
+            return;
+        }
+
+        if (!stillOurs)
+        {
+            // Covers the SetDataObject/GetClipboardSequenceNumber race: the
+            // sequence can belong to a replacement entry, but its private
+            // random marker cannot.
+            CompleteExpiry();
+            return;
+        }
+
+        try
+        {
+            Clipboard.Clear();
+        }
+        catch (Exception exception) when (exception is ExternalException or InvalidOperationException)
+        {
+            // Clipboard locks are transient. Keep ownership state and retry;
+            // dropping it here leaves the factor indefinitely while the UI
+            // incorrectly claims it was removed.
+            ScheduleRetry();
+            return;
+        }
+
+        CompleteExpiry();
+    }
+
+    private static bool ClipboardTokenMatches(byte[] expected)
+    {
+        object? marker = Clipboard.GetData(OwnershipFormat);
+        byte[]? actual = marker switch
+        {
+            byte[] bytes => [.. bytes],
+            MemoryStream stream => stream.ToArray(),
+            _ => null,
+        };
+        if (actual is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return actual.Length == expected.Length
+                && CryptographicOperations.FixedTimeEquals(actual, expected);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(actual);
+        }
+    }
+
+    private void ScheduleRetry()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _expiry.Interval = ClearRetryInterval;
+        _expiry.Start();
+    }
+
+    private void CompleteExpiry()
+    {
+        _expiry.Stop();
+        _sequenceAtCopy = null;
+        if (_ownershipToken is not null)
+        {
+            CryptographicOperations.ZeroMemory(_ownershipToken);
+            _ownershipToken = null;
+        }
+
+        Action? onExpiry = _onExpiry;
+        _onExpiry = null;
         onExpiry?.Invoke();
     }
 
@@ -129,6 +239,14 @@ public sealed class VolatileClipboard : IDisposable
 
         _disposed = true;
         _expiry.Stop();
+        if (_ownershipToken is not null)
+        {
+            CryptographicOperations.ZeroMemory(_ownershipToken);
+            _ownershipToken = null;
+        }
+
+        _sequenceAtCopy = null;
+        _onExpiry = null;
     }
 
     /// <summary>

@@ -16,6 +16,7 @@ internal static class Program
     [STAThread]
     private static int Main()
     {
+        ProcessHardening.Apply();
         var application = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
         var window = new MainWindow();
         application.MainWindow = window;
