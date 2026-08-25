@@ -147,8 +147,12 @@ extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
     const std::size_t chunk_blocks = keepvault::kChunkBytes / kChaChaBlockBytes;
     std::size_t thread_count = 1;
     if (length >= keepvault::kParallelThresholdBytes) {
-        const unsigned hardware = std::thread::hardware_concurrency();
-        thread_count = hardware == 0 ? 1 : static_cast<std::size_t>(hardware);
+        // The same count the block ciphers use: every logical processor on the
+        // machine, asked of the operating system rather than of the C++
+        // runtime. hardware_concurrency reports one processor group on a
+        // machine Windows has split into several, which is half a dual-socket
+        // server.
+        thread_count = keepvault::logical_processor_count();
         const std::size_t chunks = (total_blocks + chunk_blocks - 1) / chunk_blocks;
         if (thread_count > chunks) {
             thread_count = chunks;
@@ -168,7 +172,12 @@ extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
     std::atomic<std::size_t> next_chunk{0};
     std::atomic<int> failure{0};
 
-    auto worker = [&]() noexcept {
+    auto worker = [&](std::size_t worker_index) noexcept {
+#if defined(_WIN32)
+        keepvault::bind_worker_to_processor_group(worker_index);
+#else
+        (void)worker_index;
+#endif
         try {
             for (;;) {
                 const std::size_t chunk = next_chunk.fetch_add(1, std::memory_order_relaxed);
@@ -200,13 +209,14 @@ extern "C" KEEPVAULT_EXPORT int chacha20_xcrypt(
     threads.reserve(thread_count - 1);
     try {
         for (std::size_t i = 1; i < thread_count; ++i) {
-            threads.emplace_back(worker);
+            threads.emplace_back(worker, i);
         }
     } catch (...) {
         /* Fewer threads than hoped is not an error; this one runs the rest. */
     }
 
-    worker();
+    /* The calling thread keeps the group it already has and takes index 0. */
+    worker(0);
 
     for (std::thread& thread : threads) {
         if (thread.joinable()) {
