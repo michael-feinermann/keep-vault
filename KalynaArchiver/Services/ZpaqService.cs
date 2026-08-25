@@ -447,22 +447,63 @@ public sealed partial class ZpaqService
         Directory.Move(target.StagingPath, target.DestinationPath);
     }
 
+    /// <summary>
+    /// Removes the staging tree of an extraction that did not finish.
+    /// </summary>
+    /// <remarks>
+    /// Every one of this method's callers is already on a failure path, and two
+    /// of them are <c>catch { Cleanup(); throw; }</c>. So an exception raised
+    /// here does not report a new problem - it destroys the report of the old
+    /// one. That happened: an injected input failure came back to the caller as
+    /// "the process cannot access the file ... .extract-part because it is being
+    /// used by another process", with the actual cause gone.
+    ///
+    /// The reason for that IOException is not a defect to be fixed elsewhere,
+    /// it is the ordinary shape of the situation. The extraction has just killed
+    /// its ZPAQ child, whose working directory was this tree, and Windows keeps
+    /// the directory entry alive until the last handle closes - enumerable and
+    /// undeletable in the meantime. So: retry briefly, exactly as
+    /// TryDeletePrivateTree does for the snapshot mirror, and then give up
+    /// rather than throw.
+    ///
+    /// Giving up leaves a hidden .extract-part directory behind, which is the
+    /// cheaper of the two failures and is not silent in practice: the extraction
+    /// tests assert that no such directory survives, so a cleanup that stops
+    /// working is caught where it can be read, not where it can hide a real
+    /// error from a user.
+    /// </remarks>
     private static void CleanupFailedExtractionDirectory(string fullOutputFolder)
     {
         string fullPath = Path.GetFullPath(fullOutputFolder);
-        if (!Directory.Exists(fullPath))
+        for (int attempt = 0; ; attempt++)
         {
-            return;
-        }
+            try
+            {
+                if (!Directory.Exists(fullPath))
+                {
+                    return;
+                }
 
-        FileAttributes attributes = File.GetAttributes(fullPath);
-        if ((attributes & FileAttributes.ReparsePoint) != 0)
-        {
-            Directory.Delete(fullPath);
-            return;
-        }
+                FileAttributes attributes = File.GetAttributes(fullPath);
+                if ((attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    Directory.Delete(fullPath);
+                    return;
+                }
 
-        Directory.Delete(fullPath, recursive: true);
+                Directory.Delete(fullPath, recursive: true);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (attempt >= 9)
+                {
+                    return;
+                }
+
+                Thread.Sleep(50 * (attempt + 1));
+            }
+        }
     }
 
     public static Dictionary<string, string> BuildArchiveEntryMap(IReadOnlyList<string> inputPaths)

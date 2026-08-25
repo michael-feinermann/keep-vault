@@ -1833,7 +1833,16 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             return;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or CryptographicException or ArgumentException or NotSupportedException or SecurityException)
+        // InvalidDataException is in the list because it is not an IOException:
+        // System.IO.InvalidDataException derives from SystemException, so it
+        // fell through this filter. It is also the most likely outcome of
+        // pointing this at a file - the container reader throws it for a
+        // truncated header, an empty payload, or a .kzpaq that is not a
+        // container at all, which is exactly the file a user reaches for this
+        // panel with. The task simply faulted: no hint, no message, and a
+        // faulted Task nobody observed. Found on the Windows side, where a test
+        // began waiting for this task instead of abandoning it.
+        catch (Exception exception) when (exception is InvalidDataException or IOException or UnauthorizedAccessException or CryptographicException or ArgumentException or NotSupportedException or SecurityException)
         {
             error = exception.Message;
         }

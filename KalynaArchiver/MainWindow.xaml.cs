@@ -2062,6 +2062,18 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             return;
         }
+        // InvalidDataException before IOException, because it is not one:
+        // System.IO.InvalidDataException derives from SystemException, so it
+        // fell through every catch here. It is also the single most likely
+        // outcome of pointing this at a file - it is what the container reader
+        // throws for a truncated header, an empty payload, or a .kzpaq that is
+        // not a container at all, which is exactly the file a user reaches for
+        // this panel with. The task simply faulted: no hint, no message, and a
+        // faulted Task nobody observed.
+        catch (InvalidDataException ex)
+        {
+            errorMessage = ex.Message;
+        }
         catch (IOException ex)
         {
             errorMessage = ex.Message;

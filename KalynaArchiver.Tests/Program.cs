@@ -20,15 +20,14 @@ if (args is ["--check-native-trust", var trustPath])
 {
     ToolIntegrityStatus status = IntegrityService.CheckFile(trustPath, requireManifest: true);
     Console.WriteLine($"trusted={status.IsTrusted}; signature={status.SignatureState}; message={status.SignatureMessage}");
-    Environment.ExitCode = status.IsTrusted ? 0 : 3;
-    return;
+    return status.IsTrusted ? 0 : 3;
 }
 
 if (args is ["--delayed-sentinel-helper", var sentinelPath])
 {
     await Task.Delay(TimeSpan.FromSeconds(2));
     await File.WriteAllTextAsync(sentinelPath, "helper survived cancellation");
-    return;
+    return 0;
 }
 
 if (args is ["--large-output-helper"])
@@ -39,7 +38,7 @@ if (args is ["--large-output-helper"])
     {
         Console.Out.WriteLine(line);
     }
-    return;
+    return 0;
 }
 
 if (args is ["--argon2-working-set-stress", var repetitionsText])
@@ -53,7 +52,7 @@ if (args is ["--argon2-working-set-stress", var repetitionsText])
     RunNativeIntegrityTests();
     await RunArgon2WorkingSetStressAsync(repetitions);
     Console.WriteLine($"Argon2id 1 GiB working-set stress passed for {repetitions} repetitions.");
-    return;
+    return 0;
 }
 
 const string TestUserPassword = TestConstants.TestUserPassword;
@@ -65,89 +64,159 @@ if (args is ["--recovery-only"])
     RunNativeIntegrityTests();
     await RunRecoveryTestsAsync();
     Console.WriteLine("KPAR2 v4 focused recovery tests passed.");
-    return;
+    return 0;
 }
 
-Exception? failure = null;
-var thread = new Thread(() =>
+// The suite, as a set of groups the scheduler may place rather than a list it
+// must walk.
+//
+// Every group below is one of the functions this file already had; the change
+// is what decides when each runs. As a script it was twenty-seven phases in
+// fixed order in one process, which on this machine is about twelve minutes
+// with most cores idle - and a failure in phase three hid whatever phases four
+// through twenty-seven would have said.
+//
+// The arrangement is the macOS suite's: each group declares what it costs and
+// what it needs to itself, the coordinator spends a CPU and memory budget read
+// from the machine, and each group runs in its own worker process. The process
+// is the unit for two reasons that no thread count can work around. The native
+// Argon2id adapter serialises on a process-wide mutex, so two Argon groups in
+// one process never actually overlap. And several groups read or write
+// process-global state - the entropy mixer, locked-page accounting, process
+// hardening - which in one process forces them into a serial chain and lets
+// them mask each other's defects.
+//
+// Smoke first: the cheap checks that make a broken tree obvious in seconds,
+// run in this process because a worker launch each would cost more than the
+// test. They are not repeated in the comprehensive set, so a bare run executes
+// each group exactly once.
+var smokeTests = new List<TestCase>
 {
-    try
-    {
-        RunSettingsPersistenceTests();
-        RunDropTests();
-        RunKeySheetTests();
-    }
-    catch (Exception ex)
-    {
-        failure = ex;
-    }
-});
+    new("SHA3-512 reference vectors", Sync(RunSha3ReferenceVectorTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("Skein-1024 hash and MAC vectors", Sync(RunSkein1024ReferenceTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("Kalyna-512/512 reference vector", Sync(RunKalynaReferenceVectorTest), TestResource.Light, "Smoke", IsSmoke: true),
+    new("Threefish-1024 official vectors and an independent implementation", Sync(RunThreefishReferenceAndIndependentTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("ChaCha20-Poly1305 framing against RFC 8439", Sync(RunAeadFramingTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("release scripts cover the required native tool set", Sync(RunReleaseScriptToolCoverageTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("MainWindow design-time text against the installed strings", Sync(RunLocalizationDefaultsTests), TestResource.Light, "Smoke", IsSmoke: true),
+};
 
-thread.SetApartmentState(ApartmentState.STA);
-thread.Start();
-thread.Join();
-
-if (failure is not null)
+var comprehensiveTests = new List<TestCase>
 {
-    Console.Error.WriteLine(failure);
-    Environment.Exit(1);
+    // WPF wants a single-threaded apartment, and one at a time: the window
+    // reads and writes the same isolated-storage settings and the same static
+    // entropy mixer.
+    new("settings persistence, drag-and-drop and key sheets", () => Sta(() =>
+        {
+            RunSettingsPersistenceTests();
+            RunDropTests();
+            RunKeySheetTests();
+        }), TestResource.Gui, "Gui"),
+
+    new("generated factors, entropy pools and locked-page accounting",
+        RunEntropyGeneratorTestsAsync, TestResource.EntropyGlobal, "Entropy"),
+
+    new("native tool integrity and signatures",
+        Sync(RunNativeIntegrityTests), TestResource.ProcessGlobal, "Integrity"),
+
+    new("the companion QR scanner is checked against the pinned keys",
+        Sync(RunCompanionScannerVerificationTests), TestResource.ProcessGlobal, "Integrity"),
+
+    new("object-bound reads: reparse points, hard links and directories",
+        Sync(RunObjectBoundReadTests), TestResource.Light, "Files"),
+
+    new("ZPAQ path traversal and extraction directories",
+        RunZpaqTraversalTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
+
+    new("ZPAQ input binding: reparse points, post-check insertion, leases",
+        RunZpaqInputBindingTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
+
+    new("mutated ZPAQ pipe-parser crash and hang corpus",
+        RunMalformedZpaqCorpusTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
+
+    new("ZPAQ compression levels 0-5 for file and RAM-pipe paths",
+        RunCompressionLevelMatrixTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
+
+    new("child-process cancellation and bounded output",
+        RunProcessContainmentTestsAsync, TestResource.ProcessGlobal, "Zpaq"),
+
+    new("process hardening",
+        Sync(RunProcessHardeningTests), TestResource.ProcessGlobal, "Hardening"),
+
+    new("ML-DSA-87 FIPS 204 interoperability and tamper rejection",
+        Sync(RunMldsa87ReferenceTests), TestResource.CpuHeavy, "Signing"),
+
+    new("Argon2id PHC reference-CLI comparison",
+        RunArgon2ReferenceCliTestAsync, TestResource.ArgonHeavy, "Kdf"),
+
+    new("Kalyna-512/512 parallel CTR equivalence",
+        Sync(RunKalynaParallelCtrEquivalenceTest), TestResource.CpuHeavy, "Crypto"),
+
+    new("Kalyna-512/512 table path against the reference over 256 MiB",
+        Sync(RunKalynaDifferentialTests), TestResource.CpuHeavy, "Crypto"),
+
+    new("ChaCha20 worker split against the serial keystream over 256 MiB",
+        Sync(RunChaChaDifferentialTests), TestResource.CpuHeavy, "Crypto"),
+
+    new("Threefish-1024 parallel CTR equivalence",
+        Sync(RunThreefishParallelCtrEquivalenceTest), TestResource.CpuHeavy, "Crypto"),
+
+    new("PDF ZPAQ and dual-suite encrypted containers",
+        RunPdfRoundTripTestsAsync, TestResource.EntropyGlobal, "Containers"),
+
+    new("mixed text, empty, compressible and random sample data",
+        RunMixedSampleRoundTripTestsAsync, TestResource.EntropyGlobal, "Containers"),
+
+    new("short-read Kalyna stream",
+        RunShortReadKalynaStreamTestAsync, TestResource.EntropyGlobal, "Containers"),
+
+    new("KPAR2 v4 dual certification, metadata redundancy and recovery boundaries",
+        RunRecoveryTestsAsync, TestResource.EntropyGlobal, "Recovery"),
+
+    new("large streaming container",
+        RunLargeStreamingContainerTestAsync, TestResource.EntropyGlobal, "Containers"),
+
+    new("cryptographic erase",
+        RunCryptographicEraseTestsAsync, TestResource.EntropyGlobal, "Erase"),
+};
+
+return await TestRunner.RunAsync(args, smokeTests, comprehensiveTests);
+
+// Wraps a synchronous group so it can be registered beside the asynchronous
+// ones without each of them growing an async signature it does not need.
+static Func<Task> Sync(Action body) => () =>
+{
+    body();
+    return Task.CompletedTask;
+};
+
+// Runs a group on a single-threaded apartment and hands its exception back.
+//
+// WPF refuses to create a Window off an STA thread, and the scheduler's worker
+// threads are not one. The thread is created per group rather than kept alive,
+// because a WPF Dispatcher outlives the window it served and a second group on
+// the same thread would inherit the first one's static state.
+static Task Sta(Action body)
+{
+    var completion = new TaskCompletionSource();
+    var thread = new Thread(() =>
+    {
+        try
+        {
+            body();
+            completion.SetResult();
+        }
+        catch (Exception ex)
+        {
+            completion.SetException(ex);
+        }
+    });
+
+    thread.SetApartmentState(ApartmentState.STA);
+    thread.IsBackground = true;
+    thread.Start();
+    return completion.Task;
 }
-
-Console.WriteLine("Settings persistence, drag-and-drop, and key sheet tests passed.");
-await RunEntropyGeneratorTestsAsync();
-Console.WriteLine("Two generated 1024-bit password factors and entropy mixer tests passed.");
-RunNativeIntegrityTests();
-Console.WriteLine("Native tool integrity and signature checks passed.");
-RunReleaseScriptToolCoverageTests();
-Console.WriteLine("Release scripts cover exactly the required native tool set.");
-RunLocalizationDefaultsTests();
-Console.WriteLine("MainWindow design-time text matches the strings ApplyLanguage installs.");
-await RunZpaqTraversalTestsAsync();
-Console.WriteLine("ZPAQ path-traversal and extraction-directory tests passed.");
-await RunZpaqInputBindingTestsAsync();
-Console.WriteLine("ZPAQ input-binding matrix (reparse points, post-check insertion, leases) passed.");
-RunObjectBoundReadTests();
-Console.WriteLine("Object-bound read tests (reparse points, hard links, directories) passed.");
-await RunMalformedZpaqCorpusTestsAsync();
-Console.WriteLine("Mutated ZPAQ pipe-parser crash/hang corpus passed.");
-await RunCompressionLevelMatrixTestsAsync();
-Console.WriteLine("ZPAQ compression levels 0-5 passed for file and RAM-pipe paths.");
-await RunProcessContainmentTestsAsync();
-Console.WriteLine("Child-process cancellation and bounded-output tests passed.");
-RunProcessHardeningTests();
-Console.WriteLine("Process hardening smoke test passed.");
-RunSha3ReferenceVectorTests();
-Console.WriteLine("SHA3-512 reference-vector tests passed.");
-RunSkein1024ReferenceTests();
-Console.WriteLine("Skein-1024 hash/MAC official-vector and independent implementation tests passed.");
-RunMldsa87ReferenceTests();
-Console.WriteLine("ML-DSA-87 FIPS 204 managed/reference interoperability and tamper tests passed.");
-await RunArgon2ReferenceCliTestAsync();
-Console.WriteLine("Argon2id PHC reference-CLI comparison passed.");
-RunKalynaReferenceVectorTest();
-Console.WriteLine("Kalyna-512/512 reference-vector test passed.");
-RunKalynaParallelCtrEquivalenceTest();
-Console.WriteLine("Kalyna-512/512 parallel CTR equivalence test passed.");
-RunFastPathDifferentialTests();
-Console.WriteLine("Kalyna and ChaCha20 fast paths matched their references over 256 MiB.");
-RunAeadFramingTests();
-Console.WriteLine("ChaCha20-Poly1305 framing matched RFC 8439 section 2.8.2.");
-RunThreefishReferenceAndIndependentTests();
-Console.WriteLine("Threefish-1024 official-vector and independent Bouncy Castle tests passed.");
-RunThreefishParallelCtrEquivalenceTest();
-Console.WriteLine("Threefish-1024 parallel CTR equivalence test passed.");
-await RunPdfRoundTripTestsAsync();
-Console.WriteLine("PDF ZPAQ and dual-suite encrypted-container tests passed.");
-await RunMixedSampleRoundTripTestsAsync();
-Console.WriteLine("Mixed text, empty, compressible, and random sample-data tests passed.");
-await RunShortReadKalynaStreamTestAsync();
-Console.WriteLine("Short-read Kalyna stream test passed.");
-await RunRecoveryTestsAsync();
-Console.WriteLine("KPAR2 v4 dual-certification, metadata redundancy, and recovery-boundary tests passed.");
-await RunLargeStreamingContainerTestAsync();
-Console.WriteLine("Large streaming container test passed.");
-await RunCryptographicEraseTestsAsync();
-Console.WriteLine("Cryptographic erase tests passed.");
 
 static void RunSettingsPersistenceTests()
 {
@@ -490,16 +559,19 @@ static void RunDropTests()
             RaiseFileDragOver(window.ExtractArchiveBox, archive);
             RaiseFileDrop(window.ExtractArchiveBox, archive);
             Assert(window.ExtractArchiveBox.Text == archive, "preview drop on extract archive box");
+            WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
             Assert(window.OutputFolderBox.Text == Path.Combine(root, "archive(3)"), "preview drop on extract archive box suggests output");
 
             RaiseFileDragOver(window.ExtractPasswordBox, archive);
             RaiseFileDrop(window.ExtractPasswordBox, archive);
             Assert(window.ExtractArchiveBox.Text == archive, "preview drop on extract password area");
+            WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
             Assert(window.OutputFolderBox.Text == Path.Combine(root, "archive(3)"), "preview drop on extract password area suggests output");
 
             RaiseFileDragOver(window.ExtractPanel, misnamedEncryptedArchive);
             RaiseFileDrop(window.ExtractPanel, misnamedEncryptedArchive);
             Assert(window.ExtractArchiveBox.Text == misnamedEncryptedArchive, "misnamed encrypted archive with KZPAQ header can be dropped for extraction");
+            WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
             Assert(window.OutputFolderBox.Text == Path.Combine(root, "misnamed(1)"), "misnamed archive drop suggests output");
             Assert(
                 MainWindow.HasEncryptedArchiveExtension("damaged.KZPAQ")
@@ -524,15 +596,28 @@ static void RunDropTests()
             window.ExtractArchiveBox.Clear();
             RaiseFileDrop(window.ExtractPanel, archive);
             Assert(window.ExtractArchiveBox.Text == archive, "preview drop on extract panel background");
+            WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
         }
         finally
         {
+            // Every drop that sets an extract path starts a debounced read of
+            // that archive's public hint. The assertions above only look at the
+            // text box, so the last of those reads is still open on
+            // archive.zpaq when this method returns - and the directory delete
+            // below then fails with "used by another process".
+            //
+            // It passed for years because it was the second thing a single
+            // script did, on an idle machine, and the read won the race. Run
+            // beside twenty other groups it stops winning. Waiting here rather
+            // than after each drop covers the assertion failures too, which
+            // leave through this same finally.
+            WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
             window.Close();
         }
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -606,7 +691,7 @@ static async Task RunProcessContainmentTestsAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -675,7 +760,7 @@ static void RunKeySheetTests()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -1273,6 +1358,128 @@ static void RunReleaseScriptToolCoverageTests()
         "the portable release verifier requires the application's native tool set rather than a copy of it");
 }
 
+// The check that vouches for the QR scanner.
+//
+// The scanner reads both secret factors off the printed sheets and cannot
+// vouch for itself - an app that verifies its own signature proves nothing to
+// anyone who has already replaced it. Keep Vault checks it instead, and until
+// now nothing checked that check. macOS has had TestCompanionScannerAsync for a
+// while; this is the Windows half.
+//
+// It does not need a scanner to be installed, which is the difference from the
+// macOS test: any hybrid-signed artifact will do as a stand-in, because the
+// signature covers the file's bytes and not its name. That makes the negative
+// cases - no signature, a signature belonging to a different file, a corrupted
+// one - reachable on a plain development tree.
+static void RunCompanionScannerVerificationTests()
+{
+    string scannerDirectory = Path.Combine(AppContext.BaseDirectory, "QR-Scanner");
+    string scanner = Path.Combine(scannerDirectory, "QR-Scanner.exe");
+    string sidecar = scanner + HybridSignatureService.SidecarExtension;
+
+    Assert(!File.Exists(scanner), "the test starts without a scanner in the way");
+    CompanionVerificationResult absent = WindowsCompanionVerification.VerifyQrScanner();
+    Assert(!absent.Found && !absent.Trusted, "a missing scanner is reported absent and never trusted");
+
+    string signedArtifact = NativeToolIntegrity.ResolveKnownTool("zpaq.exe")
+        ?? throw new InvalidOperationException("zpaq.exe is unavailable as a signed stand-in.");
+    string signedSidecar = signedArtifact + HybridSignatureService.SidecarExtension;
+    Assert(File.Exists(signedSidecar), "the stand-in artifact carries a hybrid signature");
+
+    Directory.CreateDirectory(scannerDirectory);
+    try
+    {
+        // Present, but with nothing to check it against.
+        File.Copy(signedArtifact, scanner);
+        CompanionVerificationResult unsigned = WindowsCompanionVerification.VerifyQrScanner();
+        Assert(
+            unsigned.Found && !unsigned.Trusted,
+            $"a scanner without a detached signature is found but not trusted: {unsigned.Message}");
+
+        // A real signature that belongs to a different payload. This is the
+        // case that decides whether the check binds a signature to the bytes it
+        // covers or merely to a filename beside it.
+        string otherArtifact = NativeToolIntegrity.ResolveKnownTool("kalyna_ref.dll")
+            ?? throw new InvalidOperationException("kalyna_ref.dll is unavailable as a mismatched payload.");
+        File.Delete(scanner);
+        File.Copy(otherArtifact, scanner);
+        File.Copy(signedSidecar, sidecar);
+        CompanionVerificationResult mismatched = WindowsCompanionVerification.VerifyQrScanner();
+        Assert(
+            mismatched.Found && !mismatched.Trusted,
+            "a signature belonging to a different file must not vouch for the scanner");
+
+        // The matching pair: same bytes, its own signature.
+        File.Delete(scanner);
+        File.Copy(signedArtifact, scanner);
+        CompanionVerificationResult trusted = WindowsCompanionVerification.VerifyQrScanner();
+        Assert(
+            trusted.Found && trusted.Trusted,
+            $"a correctly signed scanner is trusted: {trusted.Message}");
+
+        // And a single flipped bit in the signature is refused.
+        byte[] signature = File.ReadAllBytes(sidecar);
+        byte[] corrupted = [.. signature];
+        corrupted[^64] ^= 0xFF;
+        File.WriteAllBytes(sidecar, corrupted);
+        CompanionVerificationResult tampered = WindowsCompanionVerification.VerifyQrScanner();
+        Assert(
+            tampered.Found && !tampered.Trusted,
+            "a corrupted scanner signature is refused");
+
+        // As is a flipped bit in the payload, against an untouched signature.
+        File.WriteAllBytes(sidecar, signature);
+        byte[] payload = File.ReadAllBytes(scanner);
+        payload[payload.Length / 2] ^= 0x01;
+        File.WriteAllBytes(scanner, payload);
+        CompanionVerificationResult patched = WindowsCompanionVerification.VerifyQrScanner();
+        Assert(
+            patched.Found && !patched.Trusted,
+            "a modified scanner binary is refused against its unchanged signature");
+    }
+    finally
+    {
+        DeleteTestDirectory(scannerDirectory);
+    }
+}
+
+// Removes a test's temporary tree, retrying briefly.
+//
+// Teardown only: every assertion a test makes about cleanup has already run by
+// the time this is called, so retrying here weakens nothing. What it absorbs is
+// Windows finishing with a directory after the code that owned it has returned
+// - a killed child process whose working directory was the staging tree keeps
+// the entry alive until the last handle closes, and a directory in that state
+// is still enumerable and still refuses to be removed.
+//
+// It showed up the moment the suite began running its groups beside each other:
+// as a script this raced nothing and won every time. The same retry, for the
+// same reason, is in ZpaqService.TryDeletePrivateTree.
+static void DeleteTestDirectory(string path)
+{
+    for (int attempt = 0; ; attempt++)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+
+            return;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            if (attempt >= 9)
+            {
+                throw;
+            }
+
+            Thread.Sleep(50 * (attempt + 1));
+        }
+    }
+}
+
 static string FindRepositoryRootForTest()
 {
     // Accepts .git as either a directory or a file: in a git worktree it is a
@@ -1591,7 +1798,7 @@ static async Task RunZpaqTraversalTestsAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -1757,7 +1964,7 @@ static async Task RunZpaqInputBindingTestsAsync()
         // so cleanup trouble is reported and not allowed to mask the result.
         try
         {
-            Directory.Delete(root, recursive: true);
+            DeleteTestDirectory(root);
         }
         catch (Exception cleanupFailure) when (cleanupFailure is IOException or UnauthorizedAccessException)
         {
@@ -1835,7 +2042,7 @@ static void RunObjectBoundReadTests()
     {
         try
         {
-            Directory.Delete(root, recursive: true);
+            DeleteTestDirectory(root);
         }
         catch (IOException)
         {
@@ -1964,7 +2171,14 @@ static async Task RunMalformedZpaqCorpusTestsAsync()
             corpus.AddRange(truncationLengths.Select(length => seed[..Math.Clamp(length, 0, seed.Length)]));
 
 #pragma warning disable CA5394 // Reproducible parser mutations, never security material.
-            var random = new Random(0x4B5A5041);
+            // Seeded from the run rather than from a constant. Thirty-six fixed
+            // mutations are thirty-six mutations however often the suite runs;
+            // drawing them from the run's seed makes each run a different
+            // thirty-six, and the seed is printed with any failure and accepted
+            // back through --seed, so the run that found something can be
+            // repeated exactly. The macOS suite seeds its randomised tests the
+            // same way.
+            var random = new Random(unchecked((int)TestState.Seed));
             for (int caseIndex = 0; caseIndex < 36; caseIndex++)
             {
                 byte[] mutated = (byte[])seed.Clone();
@@ -2005,7 +2219,7 @@ static async Task RunMalformedZpaqCorpusTestsAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -2129,7 +2343,7 @@ static async Task RunCompressionLevelMatrixTestsAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -2149,6 +2363,17 @@ static async Task AssertFileSha3Async(string path, byte[] expectedHash, string m
 
 static async Task RunEntropyGeneratorTestsAsync()
 {
+    // The nine mouse pools are locked buffers created by EntropyMixer's static
+    // constructor, and they live for the process. Reading the mixer here forces
+    // that to have happened before the baseline is taken.
+    //
+    // Without it the baseline depends on whether something earlier in the same
+    // process had already touched the mixer. As a single script something
+    // always had; as one test in its own worker, nothing had, and the run ended
+    // with "baseline 0, now 9" - nine pools reported as a leak because they
+    // were created after the measurement rather than before it.
+    _ = EntropyMixer.GetPoolStatus();
+
     long lockedBaseline = SecureMemory.LockedBytesForTests;
     long lockedAllocationBaseline = SecureMemory.LockedAllocationsForTests;
     long reservationBaseline = SecureMemory.ReservedWorkingSetBytesForTests;
@@ -2958,9 +3183,15 @@ static async Task RunArgon2WorkingSetStressAsync(int repetitions)
             try
             {
                 await RunNativeArgon2WithSecureMemoryChurnAsync(directPassword, directSalt, directOutput);
+                // The digests go into the message. A differential assertion
+                // that says only "they differ" leaves the two interesting cases
+                // - an all-zero output, meaning nothing was written, and a
+                // plausible-looking but wrong digest, meaning it was computed
+                // differently - indistinguishable from each other.
                 Assert(
                     CryptographicOperations.FixedTimeEquals(reference, directOutput),
-                    $"native Argon2id stress attempt {attempt + 1} remains byte-exact with the unmodified PHC CLI");
+                    $"native Argon2id stress attempt {attempt + 1} remains byte-exact with the unmodified PHC CLI "
+                    + $"(CLI {Convert.ToHexString(reference)}, adapter {Convert.ToHexString(directOutput)})");
             }
             finally
             {
@@ -2994,6 +3225,9 @@ static async Task RunNativeArgon2WithSecureMemoryChurnAsync(
 {
     const int churnWorkerCount = 4;
     long reservationBaseline = SecureMemory.ReservedWorkingSetBytesForTests;
+    // Same reason as the two callers above: the mixer's nine pools have to
+    // exist before the baseline, not after it.
+    _ = EntropyMixer.GetPoolStatus();
     long lockedLeaseBaseline = SecureMemory.LockedAllocationsForTests;
     long maximumObservedReservation = reservationBaseline;
     int churnIterations = 0;
@@ -3203,6 +3437,10 @@ static async Task RunPdfRoundTripTestsAsync()
     byte[] originalHash = await Sha3FileAsync(sourcePdf);
     string root = Path.Combine(Path.GetTempPath(), $"kalyna-pdf-e2e-{Guid.NewGuid():N}");
     DateTime tempAuditStart = DateTime.UtcNow;
+    // The nine mouse pools are locked for the life of the process and are
+    // created on first use of the mixer. Touch it first, or a run where this
+    // group is the first to reach the mixer counts them as its own leak.
+    _ = EntropyMixer.GetPoolStatus();
     long lockedLeaseBaseline = SecureMemory.LockedAllocationsForTests;
     Directory.CreateDirectory(root);
 
@@ -3541,7 +3779,7 @@ static async Task RunPdfRoundTripTestsAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -3743,7 +3981,7 @@ static async Task RunMixedSampleRoundTripTestsAsync()
             CryptographicOperations.ZeroMemory(hash);
         }
 
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -3829,7 +4067,7 @@ static async Task RunLargeStreamingContainerTestAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -3874,7 +4112,7 @@ static async Task RunShortReadKalynaStreamTestAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -4298,7 +4536,7 @@ static async Task RunRecoveryTestsAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -4378,7 +4616,7 @@ static async Task RunCryptographicEraseTestsAsync()
     }
     finally
     {
-        Directory.Delete(root, recursive: true);
+        DeleteTestDirectory(root);
     }
 }
 
@@ -4870,7 +5108,15 @@ static DragEventArgs CreateDragArgs(UIElement target, string[] paths)
 // The macOS suite carries the same two tests. They are deliberately duplicated
 // rather than shared: the two suites have no common harness, and a check this
 // close to the ciphertext is worth having twice.
-static void RunFastPathDifferentialTests()
+// The shipped Kalyna table path against the reference beside it in the same
+// library, over buffers the size of a real archive.
+//
+// Split from the ChaCha20 half, as the macOS suite has it. They share nothing
+// but the shape of the check, and together they were the longest group in the
+// run: the reference Kalyna moves about 20 MB/s, so five 256 MiB cases are over
+// a minute, and the ChaCha comparison sat behind all of it for its own ten
+// seconds.
+static void RunKalynaDifferentialTests()
 {
     const int LargeBytes = 256 * 1024 * 1024;
     const int ChunkBytes = 256 * 1024;
@@ -4929,6 +5175,31 @@ static void RunFastPathDifferentialTests()
     }
 
     Console.WriteLine($"    Kalyna boundary lengths identical: {string.Join(", ", boundaryLengths)}");
+}
+
+// The ChaCha20 worker split against the same keystream produced on one thread.
+//
+// Its own group for the reason above, and its own copy of the fixtures: they
+// are eleven lines of arithmetic, and sharing them across two groups that run
+// in different processes would buy nothing and couple them for no reason.
+static void RunChaChaDifferentialTests()
+{
+    const int LargeBytes = 256 * 1024 * 1024;
+    const int ChunkBytes = 256 * 1024;
+    const int ParallelThresholdBytes = 1024 * 1024;
+    int[] boundaryLengths =
+    [
+        1, 63, 64, 65,
+        ChunkBytes - 1, ChunkBytes, ChunkBytes + 1,
+        ParallelThresholdBytes - 1, ParallelThresholdBytes, ParallelThresholdBytes + 1,
+        (4 * 1024 * 1024) + 63,
+    ];
+
+    Assert(NativeChaChaPoly.IsAvailable(), $"ChaCha20-Poly1305 library unavailable: {NativeChaChaPoly.LastLoadError}");
+
+    byte[] plaintext = DerivedBytesForTest(LargeBytes + 37, 0xABCDEF);
+    byte[] fromReference = new byte[plaintext.Length];
+    byte[] fromFast = new byte[plaintext.Length];
 
     const uint LargeBlocks = LargeBytes / 64;
     (string Name, ulong KeySeed, ulong NonceSeed, uint Counter, int Length)[] chachaCases =
