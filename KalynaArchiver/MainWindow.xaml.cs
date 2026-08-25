@@ -157,6 +157,7 @@ public sealed partial class MainWindow : Window, IDisposable
             Log(_kalyna.IsNativeThreefishAvailable
                 ? T("threefishAvailable")
                 : T("threefishMissing"));
+            LogCompanionScannerState();
         }
         else
         {
@@ -164,6 +165,34 @@ public sealed partial class MainWindow : Window, IDisposable
         }
 
         UpdateEntropyStatus();
+    }
+
+    /// <summary>
+    /// Reports whether the QR scanner shipped alongside is signed by the same
+    /// pinned keys as Keep Vault.
+    /// </summary>
+    /// <remarks>
+    /// The scanner reads the two secret factors off the printed sheets, and it
+    /// cannot vouch for itself - a replaced app would simply say it is fine.
+    /// Keep Vault checks it because it holds the same six key fingerprints and
+    /// is verified before it runs.
+    ///
+    /// A failure is loud but not fatal: the scanner is a separate program whose
+    /// code Keep Vault never loads, so refusing to archive over it would punish
+    /// the wrong thing.
+    /// </remarks>
+    private void LogCompanionScannerState()
+    {
+        CompanionVerificationResult scanner = WindowsCompanionVerification.VerifyQrScanner();
+        if (!scanner.Found)
+        {
+            Log(T("scannerAbsent"));
+            return;
+        }
+
+        Log(scanner.Trusted
+            ? $"{T("scannerTrusted")}: {scanner.Path}"
+            : $"{T("scannerUntrusted")}: {scanner.Message}");
     }
 
     private void MainWindow_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -2482,6 +2511,9 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "keySheetRequired") => "Print the separate key sheets (recommended), or explicitly save a test PDF, before creating the encrypted archive.",
             ("en", "keySheetTestPdfSavedLog") => "Test key-sheet PDF saved to persistent storage: {0}",
             ("en", "keySheetPrintedLog") => "Key sheets sent to a physical printer without an app-created PDF. The Windows print spooler and driver remain outside the app's storage control.",
+            ("en", "scannerAbsent") => "QR-Scanner.exe was not found; nothing to verify.",
+            ("en", "scannerTrusted") => "QR-Scanner.exe verified against the pinned RSA-PSS/SHA-512 and ML-DSA-87 keys",
+            ("en", "scannerUntrusted") => "WARNING: QR-Scanner.exe failed its dual signature check — do not scan key sheets with it",
             ("en", "saveTestKeySheetDialog") => "Save test key-sheet PDF (writes secrets to disk)",
             ("en", "pdfFilter") => "PDF files (*.pdf)|*.pdf|All files (*.*)|*.*",
             ("en", "generatedPasswordLength") => "The generated factor must contain exactly 256 hexadecimal characters.",
@@ -2662,6 +2694,9 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "keySheetRequired") => "Die getrennten Schlüsselzettel vor dem Erstellen drucken (empfohlen) oder ausdrücklich eine Test-PDF speichern.",
             (_, "keySheetTestPdfSavedLog") => "Test-Schlüsselzettel-PDF im permanenten Speicher abgelegt: {0}",
             (_, "keySheetPrintedLog") => "Schlüsselzettel ohne von der App erzeugte PDF an einen physischen Drucker gesendet. Windows-Druckspooler und Treiber liegen außerhalb der Speicherkontrolle der App.",
+            (_, "scannerAbsent") => "QR-Scanner.exe wurde nicht gefunden; nichts zu prüfen.",
+            (_, "scannerTrusted") => "QR-Scanner.exe gegen die fest gebundenen RSA-PSS/SHA-512- und ML-DSA-87-Schlüssel geprüft",
+            (_, "scannerUntrusted") => "WARNUNG: QR-Scanner.exe hat die doppelte Signaturprüfung nicht bestanden — damit keine Schlüsselzettel scannen",
             (_, "saveTestKeySheetDialog") => "Test-Schlüsselzettel-PDF speichern (schreibt Geheimnisse auf die Festplatte)",
             (_, "pdfFilter") => "PDF-Dateien (*.pdf)|*.pdf|Alle Dateien (*.*)|*.*",
             (_, "generatedPasswordLength") => "Der generierte Faktor muss exakt 256 Hexadezimalzeichen enthalten.",
