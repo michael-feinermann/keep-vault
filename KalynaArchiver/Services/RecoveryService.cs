@@ -277,13 +277,11 @@ public sealed partial class RecoveryService
                 .ConfigureAwait(false);
             FileStream archive = archiveSnapshot.Stream;
 #else
-            await using FileStream archive = new FileStream(
+            await using FileStream archive = SecureFile.OpenReadNoReparse(
                 fullArchivePath,
-                FileMode.Open,
-                FileAccess.Read,
                 FileShare.Read,
                 bufferSize: 1024 * 1024,
-                FileOptions.RandomAccess);
+                randomAccess: true);
 #endif
             long archiveLength = archive.Length;
             if (archiveLength > MaxArchiveBytes)
@@ -682,6 +680,13 @@ public sealed partial class RecoveryService
         // link means the bytes survive the destruction under another name.
         using FileStream existing = MacSafeFileSystem.OpenReadNoSymlinks(recoveryPath);
         MacSafeFileSystem.ValidateRegularFile(existing.SafeFileHandle, requireSingleLink: true, recoveryPath);
+#else
+        // Windows deliberately does not refuse here. Its replacement is bound
+        // to the object it verified, so a second name at the sidecar path is
+        // unlinked rather than rejected, and the hard-link guard test asserts
+        // the file behind that other name is left byte for byte alone. Adding
+        // the macOS refusal back - which an earlier branch did, before the
+        // object binding existed - turns that passing case into an exception.
 #endif
     }
 
@@ -793,13 +798,11 @@ public sealed partial class RecoveryService
                 .ConfigureAwait(false);
             FileStream archive = archiveSnapshot.Stream;
 #else
-            await using FileStream archive = new FileStream(
+            await using FileStream archive = SecureFile.OpenReadNoReparse(
                 fullArchivePath,
-                FileMode.Open,
-                FileAccess.Read,
                 FileShare.None,
                 bufferSize: 1024 * 1024,
-                FileOptions.RandomAccess);
+                randomAccess: true);
 #endif
             if (archive.Length != package.Manifest.ArchiveLength)
             {
@@ -2525,13 +2528,11 @@ public sealed partial class RecoveryService
 #if KEEPVAULT_MACOS
         return MacSafeFileSystem.OpenReadNoSymlinks(recoveryPath);
 #else
-        return new FileStream(
+        return SecureFile.OpenReadNoReparse(
             recoveryPath,
-            FileMode.Open,
-            FileAccess.Read,
             FileShare.Read,
             bufferSize: 1024 * 1024,
-            FileOptions.RandomAccess);
+            randomAccess: true);
 #endif
     }
 

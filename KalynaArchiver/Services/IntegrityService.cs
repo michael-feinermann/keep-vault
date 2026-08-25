@@ -747,12 +747,6 @@ public enum SignatureState
 
 internal static class NativeToolIntegrity
 {
-    public static string RequireTrustedFile(string path)
-    {
-        using TrustedNativeFileLease lease = AcquireTrustedFile(path);
-        return lease.Path;
-    }
-
     public static TrustedNativeFileLease AcquireTrustedFile(string path)
     {
         string fullPath = Path.GetFullPath(path);

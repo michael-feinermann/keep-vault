@@ -67,6 +67,7 @@ internal static partial class MacComprehensiveTests
         // changed-file pass, including documentation-only changes.
         new("no legacy constructions in production source", SpecLintTests.NoLegacyLintAsync, TestResource.Light, "Spec"),
         new("documentation matches the normative v11 specification", SpecLintTests.SpecConsistencyAsync, TestResource.Light, "Spec"),
+        new("lock files match the platform their project builds on", SpecLintTests.LockFileRuntimesAsync, TestResource.Light, "Spec"),
         new("macOS process hardening", TestProcessHardeningAsync, TestResource.ProcessGlobal, "Security"),
         new("signed native trust and tamper rejection", TestNativeTrustAsync, TestResource.Light, "Trust"),
         new("every Mach-O in the release bundle carries a hybrid signature", TestBundleMachOClosureAsync, TestResource.Light, "Packaging"),

@@ -18,6 +18,7 @@ public static partial class SecureFile
     private const uint FileFlagOverlapped = 0x40000000;
     private const uint FileFlagOpenReparsePoint = 0x00200000;
     private const uint FileFlagSequentialScan = 0x08000000;
+    private const uint FileFlagRandomAccess = 0x10000000;
 
     public static void DeleteIfExists(string? path)
     {
@@ -104,7 +105,7 @@ public static partial class SecureFile
             flags |= FileFlagOverlapped;
         }
 
-        SafeFileHandle handle = CreateFileForDestruction(
+        SafeFileHandle handle = CreateFileHandle(
             fullPath,
             GenericRead | GenericWrite | DeleteAccess,
             0,
@@ -145,6 +146,113 @@ public static partial class SecureFile
                 Marshal.GetLastPInvokeError(),
                 "Could not mark the securely corrupted file for deletion.");
         }
+    }
+
+    /// <summary>
+    /// Opens a file for reading bound to the object the name resolved to, with
+    /// no reparse point followed anywhere along the way.
+    /// </summary>
+    /// <remarks>
+    /// <c>new FileStream(path, ...)</c> follows symbolic links, junctions and
+    /// every other reparse point without saying so. The recovery sidecar and
+    /// the archive both sit next to each other in a directory the user chose,
+    /// which is exactly where a link planted under the expected name redirects
+    /// the read somewhere else. macOS already opens both no-follow; this is the
+    /// Windows counterpart, so the same guarantee holds on both platforms:
+    /// the bytes that get parsed come from the object at the path that was
+    /// asked for, or the open fails.
+    /// </remarks>
+    internal static FileStream OpenReadNoReparse(
+        string path,
+        FileShare share,
+        int bufferSize = 4096,
+        bool randomAccess = false,
+        bool requireSingleLink = false)
+    {
+        string fullPath = Path.GetFullPath(path);
+        uint flags = FileAttributeNormal | FileFlagOpenReparsePoint
+            | (randomAccess ? FileFlagRandomAccess : FileFlagSequentialScan);
+
+        SafeFileHandle handle = CreateFileHandle(
+            fullPath,
+            GenericRead,
+            ToShareMode(share),
+            0,
+            OpenExisting,
+            flags,
+            0);
+        if (handle.IsInvalid)
+        {
+            int error = Marshal.GetLastPInvokeError();
+            handle.Dispose();
+
+            // IOException, not the bare Win32Exception: the callers around the
+            // recovery and archive opens catch IOException, and a missing or
+            // locked file has to keep landing in those handlers rather than
+            // escaping as an unhandled crash.
+            throw new IOException(
+                $"Could not open the file bound to its own object: {fullPath}",
+                new Win32Exception(error));
+        }
+
+        try
+        {
+            ValidateReadableRegularFile(handle, fullPath, requireSingleLink);
+            return new FileStream(handle, FileAccess.Read, bufferSize, isAsync: false);
+        }
+        catch
+        {
+            handle.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Proves an already opened path is a plain file, optionally with exactly
+    /// one name, without resolving the path a second time.
+    /// </summary>
+    internal static void RequireReadableRegularFile(string path, bool requireSingleLink)
+    {
+        using FileStream stream = OpenReadNoReparse(
+            path,
+            FileShare.Read | FileShare.Delete,
+            requireSingleLink: requireSingleLink);
+    }
+
+    private static uint ToShareMode(FileShare share)
+    {
+        uint mode = 0;
+        if ((share & FileShare.Read) != 0) mode |= 0x00000001;
+        if ((share & FileShare.Write) != 0) mode |= 0x00000002;
+        if ((share & FileShare.Delete) != 0) mode |= 0x00000004;
+        return mode;
+    }
+
+    private static void ValidateReadableRegularFile(
+        SafeFileHandle handle,
+        string fullPath,
+        bool requireSingleLink)
+    {
+        if (!GetFileInformationByHandle(handle, out ByHandleFileInformation information))
+        {
+            throw new IOException(
+                $"Could not inspect the opened file handle: {fullPath}",
+                new Win32Exception(Marshal.GetLastPInvokeError()));
+        }
+
+        if ((information.FileAttributes
+                & (uint)(FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
+        {
+            throw new IOException($"The path is a directory or a reparse point: {fullPath}");
+        }
+
+        if (requireSingleLink && information.NumberOfLinks != 1)
+        {
+            throw new IOException(
+                $"The file has more than one hard link and will not be used here: {fullPath}");
+        }
+
+        _ = NativePathResolver.RequireCanonicalFilePath(handle, fullPath, "File");
     }
 
     private static void ValidateSingleLinkHandle(SafeFileHandle handle, string fullPath)
@@ -206,7 +314,7 @@ public static partial class SecureFile
         SetLastError = true,
         StringMarshalling = StringMarshalling.Utf16)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial SafeFileHandle CreateFileForDestruction(
+    private static partial SafeFileHandle CreateFileHandle(
         string fileName,
         uint desiredAccess,
         uint shareMode,

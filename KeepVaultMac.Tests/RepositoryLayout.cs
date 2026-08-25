@@ -58,9 +58,19 @@ internal static class RepositoryLayout
             foreach (string file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
             {
                 string relative = Path.GetRelativePath(repositoryRoot, file);
-                if (relative.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    || relative.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    || relative.Contains($"{Path.DirectorySeparatorChar}Native{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                // build-obj is this repository's intermediate directory, set by
+                // Directory.Build.props. Leaving it in made the sweep read
+                // generated sources - XAML code-behind, assembly attributes -
+                // so the same commit linted a different file set before and
+                // after a build.
+                string[] generated =
+                [
+                    $"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}",
+                    $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
+                    $"{Path.DirectorySeparatorChar}build-obj{Path.DirectorySeparatorChar}",
+                    $"{Path.DirectorySeparatorChar}Native{Path.DirectorySeparatorChar}",
+                ];
+                if (generated.Any(fragment => relative.Contains(fragment, StringComparison.Ordinal)))
                 {
                     continue;
                 }

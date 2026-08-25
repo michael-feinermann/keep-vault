@@ -55,6 +55,13 @@ public sealed partial class ZpaqService
         snapshotPaths = snapshot.InputPaths;
         return snapshot;
     }
+
+    /// <summary>
+    /// Leases still held because their snapshot hard link could not be removed.
+    /// Zero in normal operation; anything else means a cleanup failed and this
+    /// process is holding the user's file open to keep it write-protected.
+    /// </summary>
+    internal static int RetainedInputSnapshotLeases => WindowsInputSnapshot.RetainedLeaseCount;
 #endif
 
     public string? ResolveExecutable()
@@ -1636,7 +1643,13 @@ public sealed partial class ZpaqService
         private const uint FileAttributeReparsePoint = 0x00000400;
 
         private readonly string _snapshotRoot;
-        private readonly List<FileStream> _fileLeases = [];
+        private readonly List<SnapshotFile> _files = [];
+
+        /// <summary>
+        /// Leases whose snapshot hard link outlived the cleanup, kept open on
+        /// purpose so the write block on the user's file survives with them.
+        /// </summary>
+        private static readonly List<FileStream> RetainedLeases = [];
         private readonly List<string> _readOnlyCopies = [];
         private bool _disposed;
 
@@ -1862,9 +1875,13 @@ public sealed partial class ZpaqService
             try
             {
                 lease = AcquireVerifiedFileLease(sourceFile);
-                _fileLeases.Add(lease);
                 FileStream owned = lease;
                 lease = null;
+
+                // Registered before the mirror is built, so a failure below
+                // still hands the lease to Dispose instead of leaking it.
+                var entry = new SnapshotFile(owned, destinationFile);
+                _files.Add(entry);
 
                 // A hard link shares one file record with the original, so its
                 // read-only flag cannot be cleared for cleanup without changing
@@ -1880,6 +1897,10 @@ public sealed partial class ZpaqService
                         File.SetAttributes(destinationFile, File.GetAttributes(destinationFile) | FileAttributes.ReadOnly);
                         _readOnlyCopies.Add(destinationFile);
                     }
+                }
+                else
+                {
+                    entry.IsHardLink = true;
                 }
             }
             finally
@@ -2033,20 +2054,62 @@ public sealed partial class ZpaqService
             }
         }
 
+        /// <summary>
+        /// Removes the private mirror, retrying briefly because the usual
+        /// reason this fails is a scanner or an indexer holding a handle for a
+        /// moment, not a permanent condition.
+        /// </summary>
         private static void TryDeletePrivateTree(string path)
         {
-            try
+            for (int attempt = 0; ; attempt++)
             {
-                if (Directory.Exists(path))
+                try
                 {
-                    Directory.Delete(path, recursive: true);
+                    if (Directory.Exists(path))
+                    {
+                        Directory.Delete(path, recursive: true);
+                    }
+
+                    return;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    if (attempt >= 4)
+                    {
+                        return;
+                    }
+
+                    Thread.Sleep(50 * (attempt + 1));
                 }
             }
-            catch (IOException)
+        }
+
+        private sealed class SnapshotFile(FileStream lease, string destination)
+        {
+            internal FileStream Lease { get; } = lease;
+
+            internal string Destination { get; } = destination;
+
+            /// <summary>
+            /// True when the snapshot name shares the user's file record, so
+            /// removing that name is what ends the second path to it.
+            /// </summary>
+            internal bool IsHardLink { get; set; }
+        }
+
+        /// <summary>
+        /// How many leases this process is still holding because their snapshot
+        /// hard link could not be removed. Anything above zero is a cleanup
+        /// failure worth investigating, not normal operation.
+        /// </summary>
+        internal static int RetainedLeaseCount
+        {
+            get
             {
-            }
-            catch (UnauthorizedAccessException)
-            {
+                lock (RetainedLeases)
+                {
+                    return RetainedLeases.Count;
+                }
             }
         }
 
@@ -2085,12 +2148,31 @@ public sealed partial class ZpaqService
             _readOnlyCopies.Clear();
             TryDeletePrivateTree(_snapshotRoot);
 
-            for (int index = _fileLeases.Count - 1; index >= 0; index--)
+            for (int index = _files.Count - 1; index >= 0; index--)
             {
-                _fileLeases[index].Dispose();
+                SnapshotFile file = _files[index];
+
+                // A snapshot hard link that survived the cleanup is a second,
+                // writable name for the user's file, and this lease is the only
+                // thing still denying writes through it. Closing it now would
+                // reopen exactly the window the cleanup order exists to close,
+                // silently. Holding a handle until the process exits is the
+                // cheaper of the two failures, so the lease is retained instead
+                // of released - and counted, so it cannot pass unnoticed.
+                if (file.IsHardLink && File.Exists(file.Destination))
+                {
+                    lock (RetainedLeases)
+                    {
+                        RetainedLeases.Add(file.Lease);
+                    }
+
+                    continue;
+                }
+
+                file.Lease.Dispose();
             }
 
-            _fileLeases.Clear();
+            _files.Clear();
         }
 
         [StructLayout(LayoutKind.Sequential)]

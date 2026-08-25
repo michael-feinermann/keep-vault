@@ -558,12 +558,6 @@ internal static class NativeToolIntegrity
         ["argon2.exe"] = "argon2",
     };
 
-    internal static string RequireTrustedFile(string path)
-    {
-        using TrustedNativeFileLease lease = AcquireTrustedFile(path);
-        return lease.Path;
-    }
-
     internal static TrustedNativeFileLease AcquireTrustedFile(string path)
     {
         string fullPath = Path.GetFullPath(path);
