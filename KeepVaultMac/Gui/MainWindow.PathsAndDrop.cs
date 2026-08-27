@@ -54,6 +54,24 @@ public sealed partial class MainWindow
         return BuildNumberedArchivePath(directory, string.IsNullOrWhiteSpace(stem) ? "archive" : stem, extension);
     }
 
+    /// <summary>
+    /// Suggests a new archive inside a destination folder selected by the
+    /// user. This is deliberately distinct from <see cref="SuggestTargetArchivePath"/>,
+    /// whose directory argument denotes an input folder and therefore has to
+    /// place the archive beside that input.
+    /// </summary>
+    internal static string SuggestArchivePathInDestinationFolder(string destinationFolder, bool encrypted)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(destinationFolder);
+        string full = Path.GetFullPath(destinationFolder.Trim());
+        if (!Directory.Exists(full))
+        {
+            throw new DirectoryNotFoundException($"Der gewählte Archiv-Zielordner existiert nicht: {full}");
+        }
+
+        return BuildNumberedArchivePath(full, "archive", encrypted ? ".kzpaq" : ".zpaq");
+    }
+
     internal static string SuggestOutputFolderPath(string archivePath)
     {
         if (string.IsNullOrWhiteSpace(archivePath))

@@ -89,14 +89,17 @@ internal static class TestInventory
 
         TestCase[] invalidPerformance =
         [
-            .. allTests.Where(test => test.IsPerformance
-                && (test.IsSmoke
-                    || !string.Equals(test.Category, "Performance", StringComparison.Ordinal))),
+            .. allTests.Where(test =>
+                (test.IsPerformance
+                    && (test.IsSmoke
+                        || !string.Equals(test.Category, "Performance", StringComparison.Ordinal)))
+                || (!test.IsPerformance
+                    && string.Equals(test.Category, "Performance", StringComparison.Ordinal))),
         ];
         if (invalidPerformance.Length > 0)
         {
             throw new InvalidOperationException(
-                "Performance tests must be non-smoke tests in the Performance category: "
+                "The Performance category and IsPerformance flag must identify exactly the same non-smoke tests: "
                 + string.Join(", ", invalidPerformance.Select(test => test.Id)));
         }
     }
@@ -294,6 +297,36 @@ internal static class TestRunner
             return 64;
         }
 
+        if (onlyFilter is not null && smokeOnlyFilter is not null)
+        {
+            Console.Error.WriteLine("Usage error: --only and --smoke-only are mutually exclusive.");
+            return 64;
+        }
+
+        if (onlyFilter is not null
+            && (quickRequested || changedRequested || rerunFailures))
+        {
+            Console.Error.WriteLine(
+                "Usage error: --only cannot be combined with --quick, --changed or --rerun-failures.");
+            return 64;
+        }
+
+        if (onlyFilter is not null
+            && categoryFilter is not null
+            && !performanceRequested)
+        {
+            Console.Error.WriteLine(
+                "Usage error: --only and --category are alternative selectors outside the performance gate.");
+            return 64;
+        }
+
+        if (!performanceRequested
+            && string.Equals(categoryFilter, "Performance", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine("Usage error: performance tests require the explicit --performance gate.");
+            return 64;
+        }
+
         try
         {
             TestInventory.Validate(smokeTests, comprehensiveTests);
@@ -315,7 +348,11 @@ internal static class TestRunner
                 return 64;
             }
 
-            return await TestCoordinator.RunWorkerModeAsync(everyTest, workerTestId, seedOverride ?? 1u);
+            return await TestCoordinator.RunWorkerModeAsync(
+                everyTest,
+                workerTestId,
+                seedOverride ?? 1u,
+                performanceRequested);
         }
 
         if (listOnly)
@@ -368,6 +405,14 @@ internal static class TestRunner
                 return 0;
             }
 
+            if (ContainsManualPerformanceTest(failedIds, comprehensiveTests))
+            {
+                Console.Error.WriteLine(
+                    "Cannot re-run a manual performance failure without --performance. "
+                    + "Run the performance gate explicitly on an otherwise idle host.");
+                return 64;
+            }
+
             var failedSet = new HashSet<string>(failedIds, StringComparer.Ordinal);
             selectedSmoke.AddRange(smokeTests.Where(t => failedSet.Contains(t.Id)));
             selectedComprehensive.AddRange(comprehensiveTests.Where(t => failedSet.Contains(t.Id)));
@@ -375,20 +420,8 @@ internal static class TestRunner
         }
         else if (performanceRequested)
         {
-            IEnumerable<TestCase> performance = comprehensiveTests.Where(test => test.IsPerformance);
-            if (onlyFilter is not null)
-            {
-                performance = performance.Where(test => MatchesSelector(test, onlyFilter));
-            }
-
-            if (categoryFilter is not null)
-            {
-                performance = performance.Where(test =>
-                    string.Equals(test.Category, categoryFilter, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(test.Resource.ToString(), categoryFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            selectedComprehensive.AddRange(performance);
+            selectedComprehensive.AddRange(
+                SelectManualPerformanceTests(comprehensiveTests, onlyFilter, categoryFilter));
         }
         else if (changedRequested)
         {
@@ -456,10 +489,22 @@ internal static class TestRunner
             selectedSmoke.AddRange(smokeTests);
             selectedComprehensive.AddRange(comprehensiveTests.Where(t => IsAutomaticComprehensive(t) && t.Resource == TestResource.Light));
         }
+        else if (onlyFilter is not null)
+        {
+            // --only is the stable primary-key selector for the complete
+            // inventory. It must never fall back to display-name matching, and
+            // a manual performance gate still requires --performance.
+            if (!noSmokeRequested)
+            {
+                selectedSmoke.AddRange(smokeTests.Where(test => MatchesSelector(test, onlyFilter)));
+            }
+            selectedComprehensive.AddRange(comprehensiveTests.Where(test =>
+                IsAutomaticComprehensive(test) && MatchesSelector(test, onlyFilter)));
+        }
         else
         {
             // Smoke test selection
-            if (!noSmokeRequested && (onlyFilter is null || smokeOnlyFilter is not null || smokeRequested))
+            if (!noSmokeRequested)
             {
                 if (smokeOnlyFilter is not null)
                 {
@@ -472,14 +517,10 @@ internal static class TestRunner
             }
 
             // Comprehensive test selection
-            if (fullRequested || onlyFilter is not null || categoryFilter is not null)
+            if (fullRequested || categoryFilter is not null)
             {
                 IEnumerable<TestCase> comp = comprehensiveTests.Where(test =>
                     IsSelectedByManualPerformanceMode(test, performanceRequested, onlyFilter, categoryFilter));
-                if (onlyFilter is not null)
-                {
-                    comp = comp.Where(t => MatchesSelector(t, onlyFilter));
-                }
                 if (categoryFilter is not null)
                 {
                     comp = comp.Where(t =>
@@ -498,24 +539,21 @@ internal static class TestRunner
             return explicitSelector ? 64 : 0;
         }
 
-        // Determine worker count
+        // Determine the one global worker cap used by both phases. CLI wins
+        // before the environment is even parsed, which makes the precedence
+        // deterministic even if a stale environment value is malformed.
         int workerCount;
-        if (parallelOverride is int cliWorkers)
+        try
         {
-            workerCount = cliWorkers;
+            workerCount = ResolveWorkerCount(
+                parallelOverride,
+                Environment.GetEnvironmentVariable("KEEPVAULT_TEST_WORKERS"),
+                Environment.ProcessorCount);
         }
-        else if (Environment.GetEnvironmentVariable("KEEPVAULT_TEST_WORKERS") is { Length: > 0 } workerEnvironment)
+        catch (ArgumentException)
         {
-            if (!int.TryParse(workerEnvironment, NumberStyles.None, CultureInfo.InvariantCulture, out workerCount)
-                || workerCount < 1 || workerCount > 128)
-            {
-                Console.Error.WriteLine("Usage error: KEEPVAULT_TEST_WORKERS requires an integer between 1 and 128.");
-                return 64;
-            }
-        }
-        else
-        {
-            workerCount = Math.Clamp(Environment.ProcessorCount / 2, 2, 8);
+            Console.Error.WriteLine("Usage error: KEEPVAULT_TEST_WORKERS requires an integer between 1 and 128.");
+            return 64;
         }
 
         // Load cached timings for Longest-Processing-Time (LPT) scheduling
@@ -656,180 +694,481 @@ internal static class TestRunner
         string? onlyFilter,
         string? categoryFilter) =>
         !test.IsPerformance
-        || performanceRequested
-        || (onlyFilter is not null && MatchesSelector(test, onlyFilter))
-        || string.Equals(categoryFilter, "Performance", StringComparison.OrdinalIgnoreCase);
+        || performanceRequested;
 
     internal static bool MatchesSelector(TestCase test, string selector) =>
-        string.Equals(test.Id, selector, StringComparison.Ordinal)
-        || test.Name.Contains(selector, StringComparison.OrdinalIgnoreCase);
+        string.Equals(test.Id, selector, StringComparison.Ordinal);
 
-    private static HashSet<string>? DetermineAffectedTestsFromGit(string? baseRef)
+    internal static int ResolveWorkerCount(
+        int? parallelOverride,
+        string? workerEnvironment,
+        int processorCount)
     {
-        var affected = new HashSet<string>(StringComparer.Ordinal);
+        if (parallelOverride is int cliWorkers)
+        {
+            if (cliWorkers is < 1 or > 128)
+            {
+                throw new ArgumentOutOfRangeException(nameof(parallelOverride));
+            }
+
+            return cliWorkers;
+        }
+
+        if (!string.IsNullOrEmpty(workerEnvironment))
+        {
+            if (!int.TryParse(workerEnvironment, NumberStyles.None, CultureInfo.InvariantCulture, out int environmentWorkers)
+                || environmentWorkers is < 1 or > 128)
+            {
+                throw new ArgumentException("Invalid worker environment value.", nameof(workerEnvironment));
+            }
+
+            return environmentWorkers;
+        }
+
+        return Math.Clamp(processorCount / 2, 2, 8);
+    }
+
+    internal static bool ContainsManualPerformanceTest(
+        IReadOnlyList<string> selectedIds,
+        IReadOnlyList<TestCase> comprehensiveTests)
+    {
+        var selected = new HashSet<string>(selectedIds, StringComparer.Ordinal);
+        return comprehensiveTests.Any(test => test.IsPerformance && selected.Contains(test.Id));
+    }
+
+    internal static IReadOnlyList<TestCase> SelectManualPerformanceTests(
+        IReadOnlyList<TestCase> comprehensiveTests,
+        string? onlyFilter,
+        string? categoryFilter)
+    {
+        IEnumerable<TestCase> selected = comprehensiveTests.Where(test => test.IsPerformance);
+        if (onlyFilter is not null)
+        {
+            selected = selected.Where(test => MatchesSelector(test, onlyFilter));
+        }
+
+        if (categoryFilter is not null)
+        {
+            selected = selected.Where(test =>
+                string.Equals(test.Category, categoryFilter, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(test.Resource.ToString(), categoryFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return [.. selected];
+    }
+
+    internal static HashSet<string>? DetermineAffectedTestsFromGit(
+        string? baseRef,
+        string? workingDirectory = null)
+    {
         try
         {
-            List<string> diffArgsList = new();
+            List<string[]> diffArgumentLists = new();
             if (!string.IsNullOrWhiteSpace(baseRef))
             {
-                diffArgsList.Add($"diff --name-only {baseRef}...HEAD");
+                diffArgumentLists.Add(
+                [
+                    "diff",
+                    "--name-status",
+                    "-z",
+                    "--find-renames",
+                    "--find-copies",
+                    "--end-of-options",
+                    $"{baseRef}...HEAD",
+                    "--",
+                ]);
             }
             else
             {
-                diffArgsList.Add("diff --name-only HEAD");
-                diffArgsList.Add("diff --name-only --cached");
-                diffArgsList.Add("diff --name-only HEAD~1...HEAD");
+                diffArgumentLists.Add(
+                [
+                    "diff",
+                    "--name-status",
+                    "-z",
+                    "--find-renames",
+                    "--find-copies",
+                    "HEAD",
+                    "--",
+                ]);
+                diffArgumentLists.Add(
+                [
+                    "diff",
+                    "--name-status",
+                    "-z",
+                    "--find-renames",
+                    "--find-copies",
+                    "--cached",
+                    "--",
+                ]);
+                diffArgumentLists.Add(
+                [
+                    "diff",
+                    "--name-status",
+                    "-z",
+                    "--find-renames",
+                    "--find-copies",
+                    "HEAD~1...HEAD",
+                    "--",
+                ]);
             }
 
             var allFiles = new HashSet<string>(StringComparer.Ordinal);
-            bool anySuccess = false;
-
-            foreach (string gitArg in diffArgsList)
+            var addedOrCopiedFiles = new HashSet<string>(StringComparer.Ordinal);
+            bool anyDiffSucceeded = false;
+            foreach (IReadOnlyList<string> arguments in diffArgumentLists)
             {
-                using var proc = new Process();
-                proc.StartInfo.FileName = "git";
-                proc.StartInfo.Arguments = gitArg;
-                proc.StartInfo.UseShellExecute = false;
-                proc.StartInfo.RedirectStandardOutput = true;
-                proc.StartInfo.RedirectStandardError = true;
-                proc.StartInfo.CreateNoWindow = true;
-                if (proc.Start())
+                if (!TryRunGit(arguments, out string output, workingDirectory))
                 {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit();
-                    if (proc.ExitCode == 0)
-                    {
-                        anySuccess = true;
-                        string[] files = output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                        foreach (var f in files) allFiles.Add(f);
-                    }
+                    continue;
                 }
+
+                anyDiffSucceeded = true;
+                allFiles.UnionWith(ParseGitNameStatusZ(output));
+                addedOrCopiedFiles.UnionWith(ParseGitAddedOrCopiedPathsZ(output));
             }
 
-            if (!anySuccess)
+            if (!anyDiffSucceeded)
             {
                 return null;
             }
 
-            if (allFiles.Count == 0)
+            // Untracked files are outside every diff, including an explicit
+            // base...HEAD comparison. Omitting them lets a newly added security
+            // boundary bypass --changed entirely.
+            if (!TryRunGit(
+                ["ls-files", "--others", "--exclude-standard", "-z"],
+                out string untrackedOutput,
+                workingDirectory))
             {
-                return affected;
+                return null;
             }
 
-            foreach (string file in allFiles)
+            HashSet<string> untrackedFiles = ParseGitPathListZ(untrackedOutput);
+            allFiles.UnionWith(untrackedFiles);
+            HashSet<string> affected = MapChangedPathsToTests(allFiles);
+            if (addedOrCopiedFiles.Concat(untrackedFiles).Any(IsSourceOrBuildFile))
             {
-                bool matched = false;
-                if (file.Contains("V11MasterKdf") || file.Contains("KdfPrimitives") || file.Contains("KdfSalts") || file.Contains("SuiteKeySchedule") || file.Contains("PasswordKeyService") || file.Contains("ContainerKeyDerivation") || file.Contains("SecureMemory"))
-                {
-                    matched = true;
-                    affected.Add("crypto.kdf-primitives");
-                    affected.Add("kdf.properties");
-                    affected.Add("kdf.v11-master-factor-split");
-                    affected.Add("kdf.argon2-equivalence");
-                    affected.Add("kdf.peak-memory-and-header");
-                    affected.Add("policy.password");
-                    affected.Add("policy.pin-creation");
-                    affected.Add("ALL_CONTAINER_SUITES");
-                    affected.Add("containers.v11-kpar2-roundtrip");
-                }
-                if (file.Contains("ZpaqService") || file.Contains("MacPlatformSecurity") || file.Contains("MacSecureFile") || file.Contains("MacOriginalDeletionService"))
-                {
-                    matched = true;
-                    affected.Add("zpaq.full-matrix");
-                    affected.Add("deletion.original-verification");
-                    affected.Add("deletion.cryptographic-erase");
-                    affected.Add("smoke.descriptor-identity");
-                    affected.Add("smoke.symlink-rejection");
-                    affected.Add("smoke.archive-input-symlink");
-                    affected.Add("smoke.archive-input-snapshot-location");
-                    affected.Add("smoke.overlapping-input-normalization");
-                    affected.Add("smoke.descriptor-bound-snapshot");
-                }
-                if (file.Contains("RecoveryService") || file.Contains("Kpar2"))
-                {
-                    matched = true;
-                    affected.Add("recovery.kpar2-v4-adversarial");
-                    affected.Add("ALL_RECOVERY_SUITES");
-                }
-                if (file.Contains("MainWindow") || file.Contains("MacGuiTests") || file.Contains("Avalonia"))
-                {
-                    matched = true;
-                    affected.Add("gui.entropy-display");
-                    affected.Add("gui.encryption-toggle-target");
-                    affected.Add("gui.folder-target");
-                    affected.Add("gui.password-policy");
-                    affected.Add("gui.original-deletion-localization");
-                    affected.Add("gui.control-inventory");
-                    affected.Add("gui.factor-normalization");
-                    affected.Add("gui.secret-clearing");
-                    affected.Add("gui.kdf-entropy-localization");
-                    affected.Add("gui.full-creation-flow");
-                }
-                if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-                {
-                    matched = true;
-                    affected.Add("spec.normative-v11-docs");
-                    affected.Add("spec.no-legacy-source");
-                }
-                if (file.Contains("QrCodeScanner") || file.Contains("QR-Scanner") || file.Contains("Verify-QR-Scanner"))
-                {
-                    matched = true;
-                    affected.Add("packaging.companion-qr");
-                    affected.Add("smoke.release-companion-version");
-                }
-                if (file.Contains("Packaging") || file.Contains("HybridSigner") || file.Contains("Integrity"))
-                {
-                    matched = true;
-                    affected.Add("trust.native-tools");
-                    affected.Add("packaging.macho-signature-closure");
-                    affected.Add("crypto.mldsa87-interop");
-                }
-                if (file.Contains("Threefish", StringComparison.OrdinalIgnoreCase)
-                    || file.Contains("Kalyna", StringComparison.OrdinalIgnoreCase)
-                    || file.Contains("Sha3", StringComparison.OrdinalIgnoreCase)
-                    || file.Contains("Skein", StringComparison.OrdinalIgnoreCase)
-                    || file.Contains("Mars", StringComparison.OrdinalIgnoreCase)
-                    || file.Contains("Shacal", StringComparison.OrdinalIgnoreCase)
-                    || file.Contains("ChaCha", StringComparison.OrdinalIgnoreCase)
-                    || file.Contains("aes_ref", StringComparison.OrdinalIgnoreCase)
-                    || file.Contains("cryptopp_ctr_common", StringComparison.OrdinalIgnoreCase))
-                {
-                    matched = true;
-                    affected.Add("crypto.primitive-vectors");
-                    affected.Add("crypto.cascade-layering");
-                    affected.Add("crypto.two-round-derivation");
-                    affected.Add("crypto.unprepared-parameters");
-                    affected.Add("crypto.per-chunk-nonces");
-                    affected.Add("crypto.mars-shacal-vectors");
-                    affected.Add("crypto.reference-differential");
-                    affected.Add("crypto.kalyna-fast-path-differential");
-                    affected.Add("crypto.chacha20-fast-path-differential");
-                    affected.Add("crypto.chacha20-poly1305-rfc8439");
-                }
-
-                if (IsPerformanceSensitiveFile(file))
-                {
-                    affected.Add("performance.cipher-suites");
-                }
-
-                if (IsSourceOrBuildFile(file))
-                {
-                    affected.Add("spec.no-legacy-source");
-                    affected.Add("spec.normative-v11-docs");
-                }
-
-                if (!matched && !IsBenignFile(file))
-                {
-                    affected.Add("ALL_SMOKE");
-                    affected.Add("ALL_COMPREHENSIVE");
-                }
+                // A new source/build boundary is not equivalent to a change in
+                // an existing, mapped file. Even if its name contains a known
+                // substring, its complete interaction surface is still new.
+                affected.Add("ALL_SMOKE");
+                affected.Add("ALL_COMPREHENSIVE");
             }
+
             return affected;
         }
         catch
         {
+            // Git/process/parser failures must widen test coverage, never
+            // silently produce an incomplete impacted-test selection.
             return null;
         }
+    }
+
+    internal static bool TryRunGit(
+        IReadOnlyList<string> arguments,
+        out string output,
+        string? workingDirectory = null)
+    {
+        output = string.Empty;
+        using var process = new Process();
+        process.StartInfo.FileName = "git";
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.RedirectStandardError = true;
+        process.StartInfo.CreateNoWindow = true;
+        process.StartInfo.StandardOutputEncoding =
+            new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+        if (workingDirectory is not null)
+        {
+            process.StartInfo.WorkingDirectory = Path.GetFullPath(workingDirectory);
+        }
+
+        foreach (string argument in arguments)
+        {
+            process.StartInfo.ArgumentList.Add(argument);
+        }
+
+        if (!process.Start())
+        {
+            return false;
+        }
+
+        Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
+        Task<string> standardError = process.StandardError.ReadToEndAsync();
+        process.WaitForExit();
+        Task.WaitAll(standardOutput, standardError);
+        if (process.ExitCode != 0)
+        {
+            return false;
+        }
+
+        output = standardOutput.Result;
+        return true;
+    }
+
+    internal static HashSet<string> ParseGitNameStatusZ(string output)
+    {
+        var paths = new HashSet<string>(StringComparer.Ordinal);
+        foreach ((_, string[] recordPaths) in ParseGitNameStatusRecordsZ(output))
+        {
+            paths.UnionWith(recordPaths);
+        }
+
+        return paths;
+    }
+
+    internal static HashSet<string> ParseGitAddedOrCopiedPathsZ(string output)
+    {
+        var paths = new HashSet<string>(StringComparer.Ordinal);
+        foreach ((char kind, string[] recordPaths) in ParseGitNameStatusRecordsZ(output))
+        {
+            if (kind == 'A')
+            {
+                paths.Add(recordPaths[0]);
+            }
+            else if (kind == 'C')
+            {
+                paths.Add(recordPaths[1]);
+            }
+        }
+
+        return paths;
+    }
+
+    private static List<(char Kind, string[] Paths)> ParseGitNameStatusRecordsZ(string output)
+    {
+        string[] fields = SplitGitZOutput(output);
+        var records = new List<(char Kind, string[] Paths)>();
+        int index = 0;
+        while (index < fields.Length)
+        {
+            string status = fields[index++];
+            if (status.Length == 0
+                || "ACDMRTUXB".IndexOf(status[0], StringComparison.Ordinal) < 0
+                || status.AsSpan(1).ContainsAnyExceptInRange('0', '9'))
+            {
+                throw new InvalidDataException("Git emitted an invalid name-status field.");
+            }
+
+            int pathCount = status[0] is 'R' or 'C' ? 2 : 1;
+            if (fields.Length - index < pathCount)
+            {
+                throw new InvalidDataException("Git emitted a truncated name-status record.");
+            }
+
+            var recordPaths = new string[pathCount];
+            for (int pathIndex = 0; pathIndex < pathCount; pathIndex++)
+            {
+                recordPaths[pathIndex] = RequireNormalizedChangedPath(fields[index++]);
+            }
+
+            records.Add((status[0], recordPaths));
+        }
+
+        return records;
+    }
+
+    internal static HashSet<string> ParseGitPathListZ(string output)
+    {
+        string[] fields = SplitGitZOutput(output);
+        var paths = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string field in fields)
+        {
+            paths.Add(RequireNormalizedChangedPath(field));
+        }
+
+        return paths;
+    }
+
+    private static string[] SplitGitZOutput(string output)
+    {
+        ArgumentNullException.ThrowIfNull(output);
+        if (output.Length == 0)
+        {
+            return [];
+        }
+
+        if (output[^1] != '\0')
+        {
+            throw new InvalidDataException("Git -z output was not NUL-terminated.");
+        }
+
+        string[] fields = output[..^1].Split('\0');
+        if (fields.Any(static field => field.Length == 0))
+        {
+            throw new InvalidDataException("Git -z output contained an empty field.");
+        }
+
+        return fields;
+    }
+
+    private static string RequireNormalizedChangedPath(string path) =>
+        NormalizeChangedPath(path)
+        ?? throw new InvalidDataException("Git emitted an unsafe repository-relative path.");
+
+    internal static string? NormalizeChangedPath(string path)
+    {
+        if (string.IsNullOrEmpty(path) || path.IndexOf('\0') >= 0)
+        {
+            return null;
+        }
+
+        string portable = path.Replace('\\', '/');
+        if (portable.StartsWith("/", StringComparison.Ordinal)
+            || (portable.Length >= 2 && portable[1] == ':'))
+        {
+            return null;
+        }
+
+        var segments = new List<string>();
+        foreach (string segment in portable.Split('/'))
+        {
+            if (segment.Length == 0 || string.Equals(segment, ".", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (string.Equals(segment, "..", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            segments.Add(segment);
+        }
+
+        return segments.Count == 0 ? null : string.Join('/', segments);
+    }
+
+    internal static HashSet<string> MapChangedPathsToTests(IEnumerable<string> changedPaths)
+    {
+        ArgumentNullException.ThrowIfNull(changedPaths);
+        var affected = new HashSet<string>(StringComparer.Ordinal);
+        var normalizedFiles = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string changedPath in changedPaths)
+        {
+            string? normalized = NormalizeChangedPath(changedPath);
+            if (normalized is null)
+            {
+                affected.Add("ALL_SMOKE");
+                affected.Add("ALL_COMPREHENSIVE");
+                continue;
+            }
+
+            normalizedFiles.Add(normalized);
+        }
+
+        foreach (string file in normalizedFiles)
+        {
+            bool matched = false;
+            if (file.Contains("V11MasterKdf") || file.Contains("KdfPrimitives") || file.Contains("KdfSalts") || file.Contains("SuiteKeySchedule") || file.Contains("PasswordKeyService") || file.Contains("ContainerKeyDerivation") || file.Contains("SecureMemory"))
+            {
+                matched = true;
+                affected.Add("crypto.kdf-primitives");
+                affected.Add("kdf.properties");
+                affected.Add("kdf.v11-master-factor-split");
+                affected.Add("kdf.argon2-equivalence");
+                affected.Add("kdf.peak-memory-and-header");
+                affected.Add("policy.password");
+                affected.Add("policy.pin-creation");
+                affected.Add("ALL_CONTAINER_SUITES");
+                affected.Add("containers.v11-kpar2-roundtrip");
+            }
+            if (file.Contains("ZpaqService") || file.Contains("MacPlatformSecurity") || file.Contains("MacSecureFile") || file.Contains("MacOriginalDeletionService"))
+            {
+                matched = true;
+                affected.Add("zpaq.full-matrix");
+                affected.Add("deletion.original-verification");
+                affected.Add("deletion.cryptographic-erase");
+                affected.Add("smoke.descriptor-identity");
+                affected.Add("smoke.symlink-rejection");
+                affected.Add("smoke.archive-input-symlink");
+                affected.Add("smoke.archive-input-snapshot-location");
+                affected.Add("smoke.overlapping-input-normalization");
+                affected.Add("smoke.descriptor-bound-snapshot");
+            }
+            if (file.Contains("RecoveryService") || file.Contains("Kpar2"))
+            {
+                matched = true;
+                affected.Add("recovery.kpar2-v4-adversarial");
+                affected.Add("ALL_RECOVERY_SUITES");
+            }
+            if (file.Contains("MainWindow") || file.Contains("MacGuiTests") || file.Contains("Avalonia"))
+            {
+                matched = true;
+                affected.Add("gui.entropy-display");
+                affected.Add("gui.encryption-toggle-target");
+                affected.Add("gui.folder-target");
+                affected.Add("gui.password-policy");
+                affected.Add("gui.original-deletion-localization");
+                affected.Add("gui.control-inventory");
+                affected.Add("gui.factor-normalization");
+                affected.Add("gui.secret-clearing");
+                affected.Add("gui.kdf-entropy-localization");
+                affected.Add("gui.full-creation-flow");
+            }
+            if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+            {
+                matched = true;
+                affected.Add("spec.normative-v11-docs");
+                affected.Add("spec.no-legacy-source");
+            }
+            if (file.Contains("QrCodeScanner") || file.Contains("QR-Scanner") || file.Contains("Verify-QR-Scanner"))
+            {
+                matched = true;
+                affected.Add("packaging.companion-qr");
+                affected.Add("smoke.release-companion-version");
+            }
+            if (file.Contains("Packaging") || file.Contains("HybridSigner") || file.Contains("Integrity"))
+            {
+                matched = true;
+                affected.Add("trust.native-tools");
+                affected.Add("packaging.macho-signature-closure");
+                affected.Add("crypto.mldsa87-interop");
+            }
+            if (file.Contains("Threefish", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("Kalyna", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("Sha3", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("Skein", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("Mars", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("Shacal", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("ChaCha", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("aes_ref", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("cryptopp_ctr_common", StringComparison.OrdinalIgnoreCase))
+            {
+                matched = true;
+                affected.Add("crypto.primitive-vectors");
+                affected.Add("crypto.cascade-layering");
+                affected.Add("crypto.two-round-derivation");
+                affected.Add("crypto.unprepared-parameters");
+                affected.Add("crypto.per-chunk-nonces");
+                affected.Add("crypto.mars-shacal-vectors");
+                affected.Add("crypto.reference-differential");
+                affected.Add("crypto.kalyna-fast-path-differential");
+                affected.Add("crypto.chacha20-fast-path-differential");
+                affected.Add("crypto.chacha20-poly1305-rfc8439");
+                affected.Add("crypto.aes-ctr-differential");
+            }
+
+            foreach (string impactedTest in GetPerformanceSensitiveImpact(file))
+            {
+                affected.Add(impactedTest);
+            }
+
+            if (IsSourceOrBuildFile(file))
+            {
+                affected.Add("spec.no-legacy-source");
+                affected.Add("spec.normative-v11-docs");
+            }
+
+            if (!matched && !IsBenignFile(file))
+            {
+                affected.Add("ALL_SMOKE");
+                affected.Add("ALL_COMPREHENSIVE");
+            }
+        }
+
+        return affected;
     }
 
     private static bool IsBenignFile(string file)
@@ -840,13 +1179,13 @@ internal static class TestRunner
         // absent: they state the normative security architecture, and a README
         // that contradicts the code is how a later reader "fixes" the working
         // side. They select the spec-consistency gate instead, which is fast.
-        if (string.Equals(normalized, "LICENSE", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(normalized, "LICENSE.txt", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(normalized, "NOTICE", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(normalized, "NOTICE.txt", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(normalized, ".gitignore", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(normalized, ".gitattributes", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(normalized, ".editorconfig", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(normalized, "LICENSE", StringComparison.Ordinal) ||
+            string.Equals(normalized, "LICENSE.txt", StringComparison.Ordinal) ||
+            string.Equals(normalized, "NOTICE", StringComparison.Ordinal) ||
+            string.Equals(normalized, "NOTICE.txt", StringComparison.Ordinal) ||
+            string.Equals(normalized, ".gitignore", StringComparison.Ordinal) ||
+            string.Equals(normalized, ".gitattributes", StringComparison.Ordinal) ||
+            string.Equals(normalized, ".editorconfig", StringComparison.Ordinal))
         {
             return true;
         }
@@ -893,6 +1232,14 @@ internal static class TestRunner
     private static bool IsPerformanceSensitiveFile(string file)
     {
         string normalized = file.Replace('\\', '/');
+        string extension = Path.GetExtension(normalized);
+        if (normalized.Contains("external/cryptopp/", StringComparison.OrdinalIgnoreCase)
+            && (extension.Equals(".cpp", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".h", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
         string[] sensitiveNames =
         [
             "kalyna_fast.c",
@@ -910,6 +1257,28 @@ internal static class TestRunner
             "CipherSuitePerformanceTests.cs",
         ];
         return sensitiveNames.Any(name => normalized.Contains(name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    internal static IReadOnlySet<string> GetPerformanceSensitiveImpact(string file)
+    {
+        if (!IsPerformanceSensitiveFile(file))
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        return new HashSet<string>(StringComparer.Ordinal)
+        {
+            "performance.cipher-suites",
+            "trust.native-tools",
+            "crypto.primitive-vectors",
+            "crypto.cascade-layering",
+            "crypto.mars-shacal-vectors",
+            "crypto.reference-differential",
+            "crypto.kalyna-fast-path-differential",
+            "crypto.chacha20-fast-path-differential",
+            "crypto.chacha20-poly1305-rfc8439",
+            "crypto.aes-ctr-differential",
+        };
     }
 
     private static Dictionary<string, double> LoadTimings(string path)

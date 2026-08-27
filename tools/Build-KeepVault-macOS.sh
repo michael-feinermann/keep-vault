@@ -974,7 +974,8 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
 (
   cd ${repo_root}
   test_sheet_dir=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-test-sheets.XXXXXX")
-  ${dotnet_command} run --project KeepVaultMac.Tests/KeepVaultMac.Tests.csproj -c Release -- --full --dump-key-sheets "${test_sheet_dir}"
+  KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+    ${dotnet_command} run --project KeepVaultMac.Tests/KeepVaultMac.Tests.csproj -c Release -- --full --dump-key-sheets "${test_sheet_dir}"
   rm -rf -- "${test_sheet_dir}"
 )
 

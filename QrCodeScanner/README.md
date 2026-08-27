@@ -6,9 +6,11 @@ Inhalt wird **nicht** in eine Datei geschrieben.
 
 Die App ist von Keep Vault unabhaengig: eigener Ordner, eigene Bundle-ID
 (`de.michael-feinermann.qr-scanner`), eigene Signatur, eigener Build. Sie teilt
-keinen Code mit Keep Vault, liest nichts aus dessen Bundle und wird von dessen
-Build-Skript nicht angefasst. Reines Swift — der .NET-Werkzeugkasten von Keep
-Vault wird nicht gebraucht.
+keinen Anwendungscode mit Keep Vault und liest nichts aus dessen Bundle. Der
+Keep-Vault-Releasebuild ruft den separaten Scanner-Build mit derselben Versions-
+und Buildnummer auf. Die App selbst besteht ausschließlich aus Swift; für die
+verbindlichen hybriden RSA-PSS-/ML-DSA-Signaturen verwendet das Buildskript den
+gesperrt wiederhergestellten Keep-Vault-Signer auf Basis des gepinnten .NET-SDKs.
 
 ## Bauen und installieren
 

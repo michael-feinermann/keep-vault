@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Runtime.InteropServices;
 using System.Text;
 using KalynaArchiver.Signing;
+using Microsoft.Win32.SafeHandles;
 
 namespace KalynaArchiver.Services;
 
@@ -658,66 +659,108 @@ internal static class NativeToolIntegrity
     {
         string directory = MacSafeFileSystem.ResolveExistingRealPath(
             Directory.CreateTempSubdirectory("keep-vault-native-").FullName);
-        File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         string target = Path.Combine(directory, Path.GetFileName(sourcePath));
         FileStream? targetStream = null;
+        SafeFileHandle? directoryHandle = null;
         try
         {
-            source.Position = 0;
-            using (FileStream output = new(target, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.WriteThrough))
-            {
-                source.CopyTo(output);
-                output.Flush(flushToDisk: true);
-                MacSafeFileSystem.FullSync(output.SafeFileHandle);
-            }
+            directoryHandle = MacSafeFileSystem.OpenDirectoryHandle(directory);
+            MacFileIdentity directoryIdentity = MacSafeFileSystem.GetIdentity(directoryHandle);
+            MacSafeFileSystem.RequirePathStillNamesHandle(directoryHandle, directory);
+            MacSafeFileSystem.SetUnixFileMode(directoryHandle, 0x01C0 /* 0700 */);
 
-            File.SetUnixFileMode(target, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+            source.Position = 0;
+            MacSafeFileSystem.CloneOpenedFileIntoDirectory(
+                source.SafeFileHandle,
+                directoryHandle,
+                Path.GetFileName(target));
+            targetStream = MacSafeFileSystem.OpenReadAt(directoryHandle, Path.GetFileName(target));
+            MacSafeFileSystem.SetUnixFileMode(targetStream.SafeFileHandle, 0x0140 /* 0500 */);
             string sourceSidecarBase = IntegrityService.ResolveSidecarBasePath(sourcePath);
             foreach (string extension in new[] { ".sha3", ".skein", ".khsig", ".sha3.khsig", ".skein.khsig" })
             {
-                CopySidecarNoFollow(sourceSidecarBase + extension, target + extension);
+                CopySidecarNoFollow(
+                    sourceSidecarBase + extension,
+                    directoryHandle,
+                    Path.GetFileName(target) + extension);
             }
 
-            targetStream = MacSafeFileSystem.OpenReadNoSymlinks(target);
+            MacSafeFileSystem.RequirePathStillNamesHandle(directoryHandle, directory);
+            MacSafeFileSystem.RequirePathStillNamesHandle(targetStream.SafeFileHandle, target);
             ToolIntegrityStatus snapshotStatus = IntegrityService.CheckFile(targetStream, target, requireManifest: true);
             if (!snapshotStatus.IsTrusted)
             {
                 throw new InvalidOperationException($"The private native snapshot failed re-verification: {snapshotStatus.Message} {snapshotStatus.HybridSignatureMessage} {snapshotStatus.SignatureMessage}");
             }
+            MacSafeFileSystem.RequirePathStillNamesHandle(directoryHandle, directory);
+            MacSafeFileSystem.RequirePathStillNamesHandle(targetStream.SafeFileHandle, target);
 
-            var lease = new TrustedNativeFileLease(target, targetStream, directory);
+            var lease = new TrustedNativeFileLease(
+                target,
+                targetStream,
+                directory,
+                directoryHandle,
+                directoryIdentity);
             targetStream = null;
+            directoryHandle = null;
             return lease;
         }
-        catch
+        catch (Exception operationError)
         {
             targetStream?.Dispose();
-            TryDeleteSnapshotDirectory(directory);
+            try
+            {
+                DeleteSnapshotDirectory(directory, directoryHandle);
+                directoryHandle = null;
+            }
+            catch (Exception cleanupError)
+            {
+                throw new IOException(
+                    "Authenticated native snapshot creation failed and its exact bound directory could not be cleaned up.",
+                    new AggregateException(operationError, cleanupError));
+            }
             throw;
         }
+        finally
+        {
+            directoryHandle?.Dispose();
+        }
     }
 
-    private static void CopySidecarNoFollow(string sourcePath, string destinationPath)
+    private static void CopySidecarNoFollow(
+        string sourcePath,
+        SafeFileHandle destinationDirectory,
+        string destinationName)
     {
         using FileStream input = MacSafeFileSystem.OpenReadNoSymlinks(sourcePath);
-        using FileStream output = new(destinationPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, FileOptions.WriteThrough);
-        input.CopyTo(output);
-        output.Flush(flushToDisk: true);
-        MacSafeFileSystem.FullSync(output.SafeFileHandle);
-        File.SetUnixFileMode(destinationPath, UnixFileMode.UserRead);
+        MacSafeFileSystem.CloneOpenedFileIntoDirectory(
+            input.SafeFileHandle,
+            destinationDirectory,
+            destinationName);
+        using FileStream output = MacSafeFileSystem.OpenReadAt(destinationDirectory, destinationName);
+        MacSafeFileSystem.SetUnixFileMode(output.SafeFileHandle, 0x0100 /* 0400 */);
     }
 
-    internal static void TryDeleteSnapshotDirectory(string directory)
+    private static void DeleteSnapshotDirectory(
+        string directory,
+        SafeFileHandle? directoryHandle)
     {
+        if (directoryHandle is null)
+        {
+            return;
+        }
+
+        MacFileIdentity identity = MacSafeFileSystem.GetIdentity(directoryHandle);
         try
         {
-            if (Directory.Exists(directory))
-            {
-                Directory.Delete(directory, recursive: true);
-            }
+            MacSafeFileSystem.DeleteDirectoryContentsDescriptor(directoryHandle);
+            directoryHandle.Dispose();
+            directoryHandle = null;
+            MacSafeFileSystem.DeleteDirectoryTreeBound(directory, identity);
         }
-        catch
+        finally
         {
+            directoryHandle?.Dispose();
         }
     }
 }
@@ -726,12 +769,21 @@ internal sealed class TrustedNativeFileLease : IDisposable
 {
     private FileStream? _stream;
     private string? _snapshotDirectory;
+    private SafeFileHandle? _snapshotDirectoryHandle;
+    private readonly MacFileIdentity _snapshotDirectoryIdentity;
 
-    internal TrustedNativeFileLease(string path, FileStream stream, string? snapshotDirectory = null)
+    internal TrustedNativeFileLease(
+        string path,
+        FileStream stream,
+        string? snapshotDirectory = null,
+        SafeFileHandle? snapshotDirectoryHandle = null,
+        MacFileIdentity snapshotDirectoryIdentity = default)
     {
         Path = path;
         _stream = stream;
         _snapshotDirectory = snapshotDirectory;
+        _snapshotDirectoryHandle = snapshotDirectoryHandle;
+        _snapshotDirectoryIdentity = snapshotDirectoryIdentity;
     }
 
     internal string Path { get; }
@@ -741,9 +793,20 @@ internal sealed class TrustedNativeFileLease : IDisposable
     {
         Interlocked.Exchange(ref _stream, null)?.Dispose();
         string? directory = Interlocked.Exchange(ref _snapshotDirectory, null);
-        if (directory is not null)
+        SafeFileHandle? directoryHandle = Interlocked.Exchange(ref _snapshotDirectoryHandle, null);
+        if (directory is not null && directoryHandle is not null)
         {
-            NativeToolIntegrity.TryDeleteSnapshotDirectory(directory);
+            try
+            {
+                MacSafeFileSystem.DeleteDirectoryContentsDescriptor(directoryHandle);
+                directoryHandle.Dispose();
+                directoryHandle = null;
+                MacSafeFileSystem.DeleteDirectoryTreeBound(directory, _snapshotDirectoryIdentity);
+            }
+            finally
+            {
+                directoryHandle?.Dispose();
+            }
         }
     }
 }

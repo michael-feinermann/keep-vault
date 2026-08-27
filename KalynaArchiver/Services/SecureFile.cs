@@ -20,16 +20,6 @@ public static partial class SecureFile
     private const uint FileFlagSequentialScan = 0x08000000;
     private const uint FileFlagRandomAccess = 0x10000000;
 
-    public static void DeleteIfExists(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-        {
-            return;
-        }
-
-        File.Delete(path);
-    }
-
     public static void DestroyPrefixAndDelete(string? path, int prefixBytes)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(prefixBytes);

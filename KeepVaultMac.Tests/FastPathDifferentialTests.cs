@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
 using KalynaArchiver.Services;
 
 /// <summary>
@@ -34,6 +35,7 @@ internal static class FastPathDifferentialTests
     /// </remarks>
     private const int LargeBytes = 256 * 1024 * 1024;
 
+    private const int AesBlockBytes = 16;
     private const int KalynaBlockBytes = 64;
     private const int ChaChaBlockBytes = 64;
 
@@ -45,12 +47,17 @@ internal static class FastPathDifferentialTests
 
     internal static TestCase[] Tests =>
     [
+        new("crypto.aes-ctr-differential", "AES-256 Crypto++ CTR against independent platform AES over 256 MiB",
+            AesAgainstIndependentReferenceAsync, TestResource.CpuHeavy, "Crypto")
+        {
+            Cost = new TestCost(4, 1536, false, TestConstraint.None),
+        },
         new("crypto.kalyna-fast-path-differential", "Kalyna-512/512 table path against the reference over 256 MiB",
             KalynaAgainstReferenceAsync, TestResource.CpuHeavy, "Crypto"),
         new("crypto.chacha20-fast-path-differential", "ChaCha20 worker split against the serial keystream over 256 MiB",
             ChaChaAgainstSerialAsync, TestResource.CpuHeavy, "Crypto"),
-        new("crypto.chacha20-poly1305-rfc8439", "ChaCha20-Poly1305 framing against RFC 8439",
-            AeadFramingAsync, TestResource.Light, "Crypto"),
+        new("crypto.chacha20-poly1305-rfc8439", "ChaCha20-Poly1305 RFC KAT and independent padding matrix",
+            AeadFramingAsync, TestResource.CpuHeavy, "Crypto"),
         new("keysheet.full-factor-print", "the key sheet prints every character of the factor",
             KeySheetFactorIsCompleteAsync, TestResource.Light, "Packaging"),
     ];
@@ -193,6 +200,234 @@ internal static class FastPathDifferentialTests
         }
     }
 
+    /// <summary>
+    /// Holds the production Crypto++ CTR adapter against the platform AES block
+    /// primitive. The reference constructs the full-width big-endian counter
+    /// itself, so a wrong mode, endian choice, worker offset or tail cannot be
+    /// hidden by using the same adapter for encryption and decryption.
+    /// </summary>
+    private static Task AesAgainstIndependentReferenceAsync()
+    {
+        MacComprehensiveTests.Require(
+            NativeAes.IsAvailable(),
+            $"AES reference library unavailable: {NativeAes.LastLoadError}");
+
+        NativeAesRuntimeProvider provider = NativeAes.RuntimeProvider;
+        if (OperatingSystem.IsMacOS()
+            && System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture
+                == System.Runtime.InteropServices.Architecture.Arm64)
+        {
+            MacComprehensiveTests.Require(
+                provider == NativeAesRuntimeProvider.ArmV8,
+                $"Apple-silicon AES selected {provider} instead of the mandatory Crypto++ ArmV8 provider.");
+        }
+
+        int[] lengths =
+        [
+            1,
+            AesBlockBytes - 1,
+            AesBlockBytes,
+            AesBlockBytes + 1,
+            ChunkBytes - 1,
+            ChunkBytes,
+            ChunkBytes + 1,
+            ParallelThresholdBytes - 1,
+            ParallelThresholdBytes,
+            ParallelThresholdBytes + 1,
+            (4 * 1024 * 1024) + 17,
+        ];
+
+        for (int trial = 0; trial < 3; trial++)
+        {
+            byte[] key = DerivedBytes(32, 0x4145534B4559UL + (ulong)trial);
+            byte[] counter = BuildAesCounterBlock(
+                0x4145534E4F4E4345UL + (ulong)trial,
+                trial switch
+                {
+                    0 => 0,
+                    1 => 0xFFFFFFFFUL,
+                    _ => 1UL << 63,
+                });
+            try
+            {
+                foreach (int length in lengths)
+                {
+                    byte[] input = DerivedBytes(length, 0x414553494E505554UL + (ulong)length + (ulong)trial);
+                    byte[] expected = new byte[length];
+                    byte[] actual = new byte[length];
+                    byte[] inPlace = input.ToArray();
+                    try
+                    {
+                        BuildAesCtrReference(key, counter, input, expected);
+                        NativeAes.XCryptCtr256(key, counter, input, actual, length);
+                        RequireIdentical(expected, actual, length, $"AES trial {trial}, length {length}");
+
+                        NativeAes.XCryptCtr256(key, counter, inPlace, inPlace, length);
+                        RequireIdentical(expected, inPlace, length, $"AES in-place trial {trial}, length {length}");
+                    }
+                    finally
+                    {
+                        CryptographicOperations.ZeroMemory(input);
+                        CryptographicOperations.ZeroMemory(expected);
+                        CryptographicOperations.ZeroMemory(actual);
+                        CryptographicOperations.ZeroMemory(inPlace);
+                    }
+                }
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(key);
+                CryptographicOperations.ZeroMemory(counter);
+            }
+        }
+
+        const int largeLength = LargeBytes + 37;
+        byte[] largeKey = DerivedBytes(32, 0x4145534C41524745UL);
+        byte[] largeCounter = BuildAesCounterBlock(0x414553435452UL, 0x0123456789ABCDEFUL);
+        byte[] largeInput = DerivedBytes(largeLength, 0x414553323536UL);
+        byte[] largeExpected = new byte[largeLength];
+        byte[] largeActual = new byte[largeLength];
+        try
+        {
+            var stopwatch = Stopwatch.StartNew();
+            BuildAesCtrReference(largeKey, largeCounter, largeInput, largeExpected);
+            TimeSpan referenceElapsed = stopwatch.Elapsed;
+            stopwatch.Restart();
+            NativeAes.XCryptCtr256(largeKey, largeCounter, largeInput, largeActual, largeLength);
+            TimeSpan nativeElapsed = stopwatch.Elapsed;
+            RequireIdentical(largeExpected, largeActual, largeLength, "AES 256 MiB + 37 bytes");
+            Console.WriteLine(
+                $"    AES 256 MiB + 37 bytes: independent CTR identical "
+                + $"({Rate(largeLength, referenceElapsed)} platform reference, "
+                + $"{Rate(largeLength, nativeElapsed)} Crypto++ {provider})");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(largeKey);
+            CryptographicOperations.ZeroMemory(largeCounter);
+            CryptographicOperations.ZeroMemory(largeInput);
+            CryptographicOperations.ZeroMemory(largeExpected);
+            CryptographicOperations.ZeroMemory(largeActual);
+        }
+
+        RequireBlockCounterBoundary(
+            "AES-256",
+            AesBlockBytes,
+            (nonce, input, output) => NativeAes.XCryptCtr256(
+                new byte[32], nonce, input, output, input.Length));
+        Console.WriteLine(
+            $"    AES boundary lengths and in-place buffers agree; provider={provider}; counter exhaustion is preflighted");
+        return Task.CompletedTask;
+    }
+
+    private static byte[] BuildAesCounterBlock(ulong nonceSeed, ulong counterStart)
+    {
+        byte[] block = new byte[AesBlockBytes];
+        FillDerived(block.AsSpan(0, 8), nonceSeed);
+        for (int index = 0; index < 8; index++)
+        {
+            block[block.Length - 1 - index] = (byte)(counterStart >> (index * 8));
+        }
+
+        return block;
+    }
+
+    private static void BuildAesCtrReference(
+        byte[] key,
+        byte[] initialCounter,
+        byte[] input,
+        byte[] output)
+    {
+        const int BatchBytes = 1024 * 1024;
+        byte[] counter = initialCounter.ToArray();
+        byte[] counterBlocks = new byte[BatchBytes];
+        byte[] keystream = new byte[BatchBytes];
+        using Aes aes = Aes.Create();
+        aes.Key = key;
+        aes.Mode = CipherMode.ECB;
+        aes.Padding = PaddingMode.None;
+        try
+        {
+            for (int offset = 0; offset < input.Length;)
+            {
+                int byteCount = Math.Min(BatchBytes, input.Length - offset);
+                int blocks = (byteCount + AesBlockBytes - 1) / AesBlockBytes;
+                int encryptedBytes = checked(blocks * AesBlockBytes);
+                for (int block = 0; block < blocks; block++)
+                {
+                    counter.CopyTo(counterBlocks, block * AesBlockBytes);
+                    int blockOffset = offset + (block * AesBlockBytes);
+                    if (blockOffset + AesBlockBytes < input.Length)
+                    {
+                        IncrementBigEndianCounter(counter);
+                    }
+                }
+
+                int written = aes.EncryptEcb(
+                    counterBlocks.AsSpan(0, encryptedBytes),
+                    keystream.AsSpan(0, encryptedBytes),
+                    PaddingMode.None);
+                MacComprehensiveTests.Require(
+                    written == encryptedBytes,
+                    $"Independent AES ECB wrote {written} of {encryptedBytes} counter bytes.");
+                for (int index = 0; index < byteCount; index++)
+                {
+                    output[offset + index] = (byte)(input[offset + index] ^ keystream[index]);
+                }
+
+                offset += byteCount;
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(counter);
+            CryptographicOperations.ZeroMemory(counterBlocks);
+            CryptographicOperations.ZeroMemory(keystream);
+        }
+    }
+
+    private static void IncrementBigEndianCounter(byte[] counter)
+    {
+        for (int index = counter.Length - 1; index >= 0; index--)
+        {
+            counter[index]++;
+            if (counter[index] != 0)
+            {
+                return;
+            }
+        }
+
+        throw new InvalidOperationException("The independent CTR counter overflowed unexpectedly.");
+    }
+
+    private static void RequireBlockCounterBoundary(
+        string algorithm,
+        int blockBytes,
+        Action<byte[], byte[], byte[]> xcrypt)
+    {
+        byte[] maximumCounter = Enumerable.Repeat((byte)0xFF, blockBytes).ToArray();
+        byte[] finalInput = Enumerable.Repeat((byte)0x3C, blockBytes).ToArray();
+        byte[] finalOutput = new byte[blockBytes];
+        xcrypt(maximumCounter, finalInput, finalOutput);
+
+        byte[] crossingInput = Enumerable.Repeat((byte)0x5A, checked(blockBytes * 2)).ToArray();
+        byte[] crossingOutput = Enumerable.Repeat((byte)0xA5, crossingInput.Length).ToArray();
+        bool rejected = false;
+        try
+        {
+            xcrypt(maximumCounter, crossingInput, crossingOutput);
+        }
+        catch (CryptographicException)
+        {
+            rejected = true;
+        }
+
+        MacComprehensiveTests.Require(rejected, $"{algorithm} accepted a CTR request that wraps the counter.");
+        MacComprehensiveTests.Require(
+            crossingOutput.All(value => value == 0xA5),
+            $"{algorithm} wrote output before refusing CTR counter exhaustion.");
+    }
+
     private static Task KalynaAgainstReferenceAsync()
     {
         MacComprehensiveTests.Require(
@@ -244,9 +479,26 @@ internal static class FastPathDifferentialTests
             NativeKalyna.XCryptCtr512Reference(boundaryKey, boundaryCounter, plaintext, fromReference, length);
             NativeKalyna.XCryptCtr512(boundaryKey, boundaryCounter, plaintext, fromFast, length);
             RequireIdentical(fromReference, fromFast, length, $"Kalyna boundary length {length}");
+
+            byte[] inPlace = plaintext.AsSpan(0, length).ToArray();
+            try
+            {
+                NativeKalyna.XCryptCtr512(boundaryKey, boundaryCounter, inPlace, inPlace, length);
+                RequireIdentical(fromReference, inPlace, length, $"Kalyna in-place boundary length {length}");
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(inPlace);
+            }
         }
 
+        RequireBlockCounterBoundary(
+            "Kalyna-512/512",
+            KalynaBlockBytes,
+            (nonce, input, output) => NativeKalyna.XCryptCtr512(
+                new byte[64], nonce, input, output, input.Length));
         Console.WriteLine($"    Kalyna boundary lengths identical: {string.Join(", ", BoundaryLengths)}");
+        Console.WriteLine("    Kalyna in-place output agrees and counter exhaustion is rejected before output");
         return Task.CompletedTask;
     }
 
@@ -302,6 +554,21 @@ internal static class FastPathDifferentialTests
                 serialResult == 0 && parallelResult == 0,
                 $"ChaCha20 boundary length {length}: serial returned {serialResult}, worker split returned {parallelResult}.");
             RequireIdentical(fromSerial, fromParallel, length, $"ChaCha20 boundary length {length}");
+
+            byte[] inPlace = plaintext.AsSpan(0, length).ToArray();
+            try
+            {
+                int inPlaceResult = NativeChaChaPoly.XCrypt(
+                    boundaryKey, boundaryNonce, counter, inPlace, inPlace, length);
+                MacComprehensiveTests.Require(
+                    inPlaceResult == 0,
+                    $"ChaCha20 in-place boundary length {length} returned {inPlaceResult}.");
+                RequireIdentical(fromSerial, inPlace, length, $"ChaCha20 in-place boundary length {length}");
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(inPlace);
+            }
         }
 
         Console.WriteLine($"    ChaCha20 boundary lengths identical: {string.Join(", ", BoundaryLengths)}");
@@ -312,12 +579,47 @@ internal static class FastPathDifferentialTests
         // block is the classic two-time pad.
         byte[] exhaustionKey = DerivedBytes(32, 99);
         byte[] exhaustionNonce = DerivedBytes(12, 98);
+        byte[] finalCounterInput = plaintext.AsSpan(0, ChaChaBlockBytes).ToArray();
+        byte[] finalCounterSerial = new byte[ChaChaBlockBytes];
+        byte[] finalCounterSplit = new byte[ChaChaBlockBytes];
+        int finalSerialResult = NativeChaChaPoly.XCryptSerial(
+            exhaustionKey,
+            exhaustionNonce,
+            uint.MaxValue,
+            finalCounterInput,
+            finalCounterSerial,
+            finalCounterInput.Length);
+        int finalSplitResult = NativeChaChaPoly.XCrypt(
+            exhaustionKey,
+            exhaustionNonce,
+            uint.MaxValue,
+            finalCounterInput,
+            finalCounterSplit,
+            finalCounterInput.Length);
+        MacComprehensiveTests.Require(
+            finalSerialResult == 0
+                && finalSplitResult == 0
+                && CryptographicOperations.FixedTimeEquals(finalCounterSerial, finalCounterSplit),
+            "ChaCha20 must permit exactly one final block at counter 2^32-1 and both paths must agree.");
+
+        fromParallel.AsSpan(0, 3 * ChaChaBlockBytes).Fill(0xA5);
         int refused = NativeChaChaPoly.XCrypt(
             exhaustionKey, exhaustionNonce, uint.MaxValue - 1, plaintext, fromParallel, 3 * ChaChaBlockBytes);
         MacComprehensiveTests.Require(
             refused == 4,
             $"ChaCha20 must refuse a run that would exhaust the block counter; it returned {refused}.");
-        Console.WriteLine("    ChaCha20 refuses a run that would exhaust the 32-bit block counter");
+        MacComprehensiveTests.Require(
+            fromParallel.AsSpan(0, 3 * ChaChaBlockBytes).IndexOfAnyExcept((byte)0xA5) < 0,
+            "ChaCha20 split wrote output before refusing counter exhaustion.");
+
+        fromSerial.AsSpan(0, 3 * ChaChaBlockBytes).Fill(0x5A);
+        int serialRefused = NativeChaChaPoly.XCryptSerial(
+            exhaustionKey, exhaustionNonce, uint.MaxValue - 1, plaintext, fromSerial, 3 * ChaChaBlockBytes);
+        MacComprehensiveTests.Require(
+            serialRefused == 4
+                && fromSerial.AsSpan(0, 3 * ChaChaBlockBytes).IndexOfAnyExcept((byte)0x5A) < 0,
+            "ChaCha20 serial did not refuse counter exhaustion before writing output.");
+        Console.WriteLine("    ChaCha20 permits the final counter and refuses exhaustion before either path writes output");
 
         // And the split has to reproduce this library's own RFC 8439 AEAD,
         // whose keystream starts at block 1. That anchors it to the standard
@@ -426,7 +728,197 @@ internal static class FastPathDifferentialTests
             "In-place ChaCha20-Poly1305 decryption did not recover the plaintext.");
         Console.WriteLine("    in-place encryption and decryption match the out-of-place result");
 
+        RunAeadReferenceMatrix();
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Compares the shipped framing against .NET's independent RFC 8439
+    /// implementation at every pad16 boundary used by the audit contract.
+    /// </summary>
+    private static void RunAeadReferenceMatrix()
+    {
+        int[] payloadLengths =
+        [
+            0, 1, 15, 16, 17, 31, 32, 33,
+            63, 64, 65,
+            255, 256, 257,
+            4095, 4096, 4097,
+            (1024 * 1024) - 1, 1024 * 1024, (1024 * 1024) + 1,
+            16 * 1024 * 1024,
+        ];
+        int[] aadLengths = [0, 1, 15, 16, 17, 31, 32, 33, 255, 256];
+        int checkedCases = 0;
+
+        for (int trial = 0; trial < 3; trial++)
+        {
+            byte[] key = DerivedBytes(32, 0x414541444B4559UL + (ulong)trial);
+            byte[] nonce = DerivedBytes(12, 0x414541444E4F4E43UL + (ulong)trial);
+            using var reference = new ChaCha20Poly1305(key);
+            try
+            {
+                foreach (int payloadLength in payloadLengths)
+                {
+                    byte[] plaintext = DerivedBytes(
+                        payloadLength,
+                        0x5041594C4F4144UL + (ulong)payloadLength + (ulong)trial);
+                    foreach (int aadLength in aadLengths)
+                    {
+                        byte[] associated = DerivedBytes(
+                            aadLength,
+                            0x414144UL + (ulong)aadLength + ((ulong)trial << 32));
+                        byte[] expectedCiphertext = new byte[payloadLength];
+                        byte[] expectedTag = new byte[NativeChaChaPoly.TagBytes];
+                        byte[] nativeCiphertext = new byte[payloadLength];
+                        byte[] nativeTag = new byte[NativeChaChaPoly.TagBytes];
+                        byte[] recovered = new byte[payloadLength];
+                        byte[] independentRecovered = new byte[payloadLength];
+                        byte[] inPlace = plaintext.ToArray();
+                        byte[] inPlaceTag = new byte[NativeChaChaPoly.TagBytes];
+                        try
+                        {
+                            reference.Encrypt(
+                                nonce,
+                                plaintext,
+                                expectedCiphertext,
+                                expectedTag,
+                                associated);
+                            NativeChaChaPoly.Encrypt(
+                                key,
+                                nonce,
+                                associated,
+                                plaintext,
+                                nativeCiphertext,
+                                payloadLength,
+                                nativeTag);
+                            RequireIdentical(
+                                expectedCiphertext,
+                                nativeCiphertext,
+                                payloadLength,
+                                $"ChaCha20-Poly1305 payload {payloadLength}, AAD {aadLength}, trial {trial}");
+                            MacComprehensiveTests.Require(
+                                CryptographicOperations.FixedTimeEquals(expectedTag, nativeTag),
+                                $"ChaCha20-Poly1305 tag differs from the independent RFC implementation "
+                                + $"at payload {payloadLength}, AAD {aadLength}, trial {trial}.");
+
+                            NativeChaChaPoly.Decrypt(
+                                key,
+                                nonce,
+                                associated,
+                                nativeCiphertext,
+                                recovered,
+                                payloadLength,
+                                nativeTag);
+                            reference.Decrypt(
+                                nonce,
+                                nativeCiphertext,
+                                nativeTag,
+                                independentRecovered,
+                                associated);
+                            RequireIdentical(
+                                plaintext,
+                                recovered,
+                                payloadLength,
+                                $"Native AEAD decrypt payload {payloadLength}, AAD {aadLength}, trial {trial}");
+                            RequireIdentical(
+                                plaintext,
+                                independentRecovered,
+                                payloadLength,
+                                $"Independent AEAD decrypt payload {payloadLength}, AAD {aadLength}, trial {trial}");
+
+                            NativeChaChaPoly.Encrypt(
+                                key,
+                                nonce,
+                                associated,
+                                inPlace,
+                                inPlace,
+                                payloadLength,
+                                inPlaceTag);
+                            RequireIdentical(
+                                expectedCiphertext,
+                                inPlace,
+                                payloadLength,
+                                $"In-place AEAD payload {payloadLength}, AAD {aadLength}, trial {trial}");
+                            MacComprehensiveTests.Require(
+                                CryptographicOperations.FixedTimeEquals(expectedTag, inPlaceTag),
+                                $"In-place AEAD tag differs at payload {payloadLength}, AAD {aadLength}, trial {trial}.");
+                            NativeChaChaPoly.Decrypt(
+                                key,
+                                nonce,
+                                associated,
+                                inPlace,
+                                inPlace,
+                                payloadLength,
+                                inPlaceTag);
+                            RequireIdentical(
+                                plaintext,
+                                inPlace,
+                                payloadLength,
+                                $"In-place AEAD roundtrip payload {payloadLength}, AAD {aadLength}, trial {trial}");
+
+                            RequireRejected(
+                                $"a flipped tag at payload {payloadLength}, AAD {aadLength}, trial {trial}",
+                                key,
+                                nonce,
+                                associated,
+                                nativeCiphertext,
+                                nativeTag,
+                                mutateTag: true);
+                            if (payloadLength != 0)
+                            {
+                                RequireRejected(
+                                    $"a flipped ciphertext at payload {payloadLength}, AAD {aadLength}, trial {trial}",
+                                    key,
+                                    nonce,
+                                    associated,
+                                    nativeCiphertext,
+                                    nativeTag,
+                                    mutateCiphertext: true);
+                            }
+                            if (aadLength != 0)
+                            {
+                                RequireRejected(
+                                    $"flipped AAD at payload {payloadLength}, AAD {aadLength}, trial {trial}",
+                                    key,
+                                    nonce,
+                                    associated,
+                                    nativeCiphertext,
+                                    nativeTag,
+                                    mutateAssociated: true);
+                            }
+
+                            checkedCases++;
+                        }
+                        finally
+                        {
+                            CryptographicOperations.ZeroMemory(associated);
+                            CryptographicOperations.ZeroMemory(expectedCiphertext);
+                            CryptographicOperations.ZeroMemory(expectedTag);
+                            CryptographicOperations.ZeroMemory(nativeCiphertext);
+                            CryptographicOperations.ZeroMemory(nativeTag);
+                            CryptographicOperations.ZeroMemory(recovered);
+                            CryptographicOperations.ZeroMemory(independentRecovered);
+                            CryptographicOperations.ZeroMemory(inPlace);
+                            CryptographicOperations.ZeroMemory(inPlaceTag);
+                        }
+                    }
+
+                    CryptographicOperations.ZeroMemory(plaintext);
+                }
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(key);
+                CryptographicOperations.ZeroMemory(nonce);
+            }
+        }
+
+        MacComprehensiveTests.Require(
+            checkedCases == 3 * payloadLengths.Length * aadLengths.Length,
+            $"The AEAD padding matrix ran {checkedCases} cases instead of the complete cross product.");
+        Console.WriteLine(
+            $"    ChaCha20-Poly1305 independent reference matrix: {checkedCases} payload/AAD/key/nonce cases, "
+            + "out-of-place, in-place and authentication-before-output");
     }
 
     private static void RequireRejected(
@@ -445,28 +937,34 @@ internal static class FastPathDifferentialTests
         byte[] usedAssociated = associated.ToArray();
         if (mutateTag) { usedTag[9] ^= 0x40; }
         if (mutateCiphertext) { usedCiphertext[usedCiphertext.Length / 2] ^= 0x01; }
-        if (mutateAssociated) { usedAssociated[3] ^= 0x80; }
+        if (mutateAssociated) { usedAssociated[usedAssociated.Length / 2] ^= 0x80; }
 
         byte[] output = new byte[usedCiphertext.Length];
         output.AsSpan().Fill(0xCC);
+        bool rejected = false;
+        bool outputUntouched = false;
         try
         {
             NativeChaChaPoly.Decrypt(
                 key, nonce, usedAssociated, usedCiphertext, output, usedCiphertext.Length, usedTag);
         }
-        catch (System.Security.Cryptography.CryptographicException)
+        catch (CryptographicException)
         {
-            foreach (byte value in output)
-            {
-                MacComprehensiveTests.Require(
-                    value == 0xCC,
-                    $"ChaCha20-Poly1305 wrote into the caller's buffer while refusing {what}.");
-            }
-
-            return;
+            rejected = true;
+            outputUntouched = output.All(value => value == 0xCC);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(usedTag);
+            CryptographicOperations.ZeroMemory(usedCiphertext);
+            CryptographicOperations.ZeroMemory(usedAssociated);
+            CryptographicOperations.ZeroMemory(output);
         }
 
-        MacComprehensiveTests.Require(false, $"ChaCha20-Poly1305 accepted {what}.");
+        MacComprehensiveTests.Require(rejected, $"ChaCha20-Poly1305 accepted {what}.");
+        MacComprehensiveTests.Require(
+            outputUntouched,
+            $"ChaCha20-Poly1305 wrote into the caller's buffer while refusing {what}.");
     }
 
     private static string Rate(int length, TimeSpan elapsed)

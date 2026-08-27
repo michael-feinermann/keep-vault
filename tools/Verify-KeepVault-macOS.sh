@@ -101,7 +101,17 @@ launcher=${app_path}/Contents/MacOS/Keep\ Vault\ Launcher
 core=${app_path}/Contents/MacOS/Keep\ Vault
 supervisor=${app_path}/Contents/MacOS/Keep\ Vault\ Supervisor
 native_dir=${app_path}/Contents/MacOS/Native
-required_native=(zpaq argon2 libargon2_ref.dylib libkalyna_ref.dylib libthreefish_ref.dylib)
+required_native=(
+  zpaq
+  libkalyna_ref.dylib
+  libthreefish_ref.dylib
+  libmars_ref.dylib
+  libshacal2_ref.dylib
+  libaes_ref.dylib
+  libchachapoly_ref.dylib
+  libargon2_ref.dylib
+  argon2
+)
 for required_path in ${launcher} ${core} ${supervisor} ${required_native[@]/#/${native_dir}/}; do
   if [[ ! -f ${required_path} || -L ${required_path} ]]; then
     print -u2 "Required executable component is missing or a symbolic link: ${required_path}"
@@ -115,6 +125,27 @@ for required_path in ${launcher} ${core} ${supervisor} ${required_native[@]/#/${
     print -u2 "Required executable component is not Mach-O: ${required_path}"
     exit 1
   }
+done
+
+# The list above is the macOS spelling of
+# NativeToolIntegrity.RequiredLogicalToolNames. Presence alone is not enough:
+# an unreviewed extra helper in Native/ is executable payload too and must not
+# slip past the release inventory merely because the nine expected files are
+# present as well.
+native_entries=(${native_dir}/*(N))
+if (( ${#native_entries[@]} != ${#required_native[@]} )); then
+  print -u2 "The shipped Native directory is not the exact required nine-component set."
+  exit 1
+fi
+typeset -A required_native_set
+for required_name in ${required_native[@]}; do
+  required_native_set[${required_name}]=1
+done
+for native_entry in ${native_entries[@]}; do
+  if [[ ! -f ${native_entry} || -z ${required_native_set[${native_entry:t}]:-} ]]; then
+    print -u2 "Unexpected object in the shipped Native directory: ${native_entry}"
+    exit 1
+  fi
 done
 
 codesign --verify --deep --strict --verbose=4 ${app_path}
@@ -131,7 +162,8 @@ while IFS= read -r -d '' candidate; do
     macho_files+=(${candidate})
   fi
 done < <(find ${app_path}/Contents -type f -print0)
-(( ${#macho_files[@]} >= 8 )) || {
+minimum_macho_count=$(( 3 + ${#required_native[@]} ))
+(( ${#macho_files[@]} >= minimum_macho_count )) || {
   print -u2 'The signed bundle has fewer Mach-O components than expected.'
   exit 1
 }
@@ -208,19 +240,24 @@ extract_entitlements() {
   local executable=$1
   local output=$2
   codesign -d --entitlements :- --xml ${executable} > ${output} 2>/dev/null
+  # A correctly signed dylib normally carries no entitlement blob at all.
+  # codesign reports that state successfully but writes zero bytes, whereas
+  # plutil quite properly rejects a zero-length file. Normalize only that
+  # successful no-entitlements result to an empty plist so every Mach-O can
+  # still flow through the same deny-list below.
+  if [[ ! -s ${output} ]]; then
+    plutil -create xml1 ${output}
+  fi
   plutil -lint ${output} >/dev/null
 }
 
-core_entitlements=${entitlement_root}/core.plist
-launcher_entitlements=${entitlement_root}/launcher.plist
-zpaq_entitlements=${entitlement_root}/zpaq.plist
-argon_entitlements=${entitlement_root}/argon.plist
-supervisor_entitlements=${entitlement_root}/supervisor.plist
-extract_entitlements ${core} ${core_entitlements}
-extract_entitlements ${launcher} ${launcher_entitlements}
-extract_entitlements ${native_dir}/zpaq ${zpaq_entitlements}
-extract_entitlements ${native_dir}/argon2 ${argon_entitlements}
-extract_entitlements ${supervisor} ${supervisor_entitlements}
+entitlement_files=()
+for macho in ${macho_files[@]}; do
+  entitlement_name=$(print -n -- ${macho#${app_path}/} | shasum -a 256 | awk '{print $1 ".plist"}')
+  entitlement_file=${entitlement_root}/${entitlement_name}
+  extract_entitlements ${macho} ${entitlement_file}
+  entitlement_files+=(${entitlement_file})
+done
 
 # Keep Vault does not use the App Sandbox: it is mutually exclusive with the
 # integrity chain on macOS, because a sandboxed process is not served a file
@@ -231,8 +268,7 @@ extract_entitlements ${supervisor} ${supervisor_entitlements}
 # That trade-off is only defensible if it stays deliberate, so assert the
 # sandbox is absent everywhere rather than letting it reappear unnoticed and
 # silently break panels again.
-for image_entitlements in ${core_entitlements} ${launcher_entitlements} \
-    ${zpaq_entitlements} ${argon_entitlements} ${supervisor_entitlements}; do
+for image_entitlements in ${entitlement_files[@]}; do
   for sandbox_key in com.apple.security.app-sandbox com.apple.security.inherit; do
     if /usr/libexec/PlistBuddy -c "Print :${sandbox_key}" ${image_entitlements} >/dev/null 2>&1; then
       print -u2 "The App Sandbox must not be declared: ${sandbox_key} in ${image_entitlements:t}"
@@ -244,7 +280,7 @@ done
 # Nothing in this bundle reaches hardware any more. Reading a printed key sheet
 # by camera moved to a separate application, so no image here declares a device
 # capability at all — the core included.
-for bare_entitlements in ${core_entitlements} ${launcher_entitlements} ${zpaq_entitlements} ${argon_entitlements} ${supervisor_entitlements}; do
+for bare_entitlements in ${entitlement_files[@]}; do
   if /usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.camera' ${bare_entitlements} >/dev/null 2>&1; then
     print -u2 "No component may declare camera access: ${bare_entitlements:t}"
     exit 1
@@ -267,7 +303,7 @@ disallowed_entitlements=(
   com.apple.security.device.bluetooth
   com.apple.security.automation.apple-events
 )
-for entitlement_file in ${core_entitlements} ${launcher_entitlements} ${zpaq_entitlements} ${argon_entitlements} ${supervisor_entitlements}; do
+for entitlement_file in ${entitlement_files[@]}; do
   for disallowed in ${disallowed_entitlements[@]}; do
     if /usr/libexec/PlistBuddy -c "Print :${disallowed}" ${entitlement_file} >/dev/null 2>&1; then
       print -u2 "Disallowed entitlement is present: ${disallowed}"
@@ -281,7 +317,15 @@ done
 # mirroring the layout below Contents/MacOS.
 macos_root=${app_path}/Contents/MacOS
 signature_root=${app_path}/Contents/Resources/HybridSignatures
-hybrid_targets=(${core} ${supervisor} ${required_native[@]/#/${native_dir}/})
+hybrid_targets=()
+for macho in ${macho_files[@]}; do
+  [[ ${macho} == ${launcher} ]] && continue
+  if [[ ${macho} != ${macos_root}/* ]]; then
+    print -u2 "Mach-O payload exists outside Contents/MacOS and has no defined hybrid-sidecar layout: ${macho}"
+    exit 1
+  fi
+  hybrid_targets+=(${macho})
+done
 for target in ${hybrid_targets[@]}; do
   sidecar_base=${signature_root}/${target#${macos_root}/}
   for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do

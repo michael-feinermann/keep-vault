@@ -14,11 +14,14 @@ using Avalonia.Threading;
 using KalynaArchiver.Gui;
 using KalynaArchiver.Services;
 using KalynaArchiver.Signing;
+using Microsoft.Win32.SafeHandles;
 
 namespace KalynaArchiver;
 
 public sealed partial class MainWindow : Window, IDisposable
 {
+    internal static Action? TestHookBeforeVerificationRootCleanup { get; set; }
+
     private const int DefaultCompressionLevel = 1;
     private const int MaxCompressionLevel = 5;
     private const int MaxLogCharacters = 1_000_000;
@@ -346,7 +349,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            ArchivePathBox.Text = SuggestTargetArchivePath(path, encrypted);
+            ArchivePathBox.Text = SuggestArchivePathInDestinationFolder(path, encrypted);
             ResetKeySheetStatus();
             return;
         }
@@ -360,7 +363,7 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             Title = T("chooseArchiveDialog"),
             AllowMultiple = false,
-            FileTypeFilter = new[] { AnyArchiveType },
+            FileTypeFilter = BuildArchivePickerFilter(AnyArchiveType),
         });
         IStorageFile? file = files.FirstOrDefault();
         foreach (IStorageFile extra in files.Skip(1))
@@ -375,6 +378,13 @@ public sealed partial class MainWindow : Window, IDisposable
 
         if (GetLocalPath(file) is { } path)
         {
+            if (!HasArchiveExtension(path))
+            {
+                file.Dispose();
+                await WarnAsync(T("archiveSelectionTypeInvalid"));
+                return;
+            }
+
             if (!RetainExtractArchiveAccess(file))
             {
                 return;
@@ -608,7 +618,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 Log(result.StandardError);
                 if (createdArchive is not null)
                 {
-                    CleanupFailedArchive(createdArchive);
+                    Log(BuildPreservedArtifactWarning(createdArchive));
                     createdArchive = null;
                 }
 
@@ -656,7 +666,7 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             if (createdArchive is not null)
             {
-                TryCleanupFailedArchive(createdArchive);
+                Log(BuildPreservedArtifactWarning(createdArchive));
             }
 
             Log(exception.ToString());
@@ -1087,13 +1097,15 @@ public sealed partial class MainWindow : Window, IDisposable
         // symlink to /private/var. Every read here goes through the
         // symlink-refusing open, which rejects a symlink anywhere in the path,
         // so the real path has to be resolved before the directory is used.
-        string verifyRoot = MacSafeFileSystem.ResolveExistingRealPath(
+        string verifyParent = MacSafeFileSystem.ResolveExistingRealPath(
             Directory.CreateTempSubdirectory("keep-vault-verify-").FullName);
+        using SafeFileHandle verifyParentHandle = MacSafeFileSystem.OpenDirectoryHandle(verifyParent);
+        MacFileIdentity verifyParentIdentity = MacSafeFileSystem.GetIdentity(verifyParentHandle);
+        MacSafeFileSystem.RequirePathStillNamesHandle(verifyParentHandle, verifyParent);
+        string verifyRoot = Path.Combine(verifyParent, "extracted");
         try
         {
-            File.SetUnixFileMode(
-                verifyRoot,
-                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            MacSafeFileSystem.SetUnixFileMode(verifyParentHandle, 0x01C0 /* 0700 */);
             Log(T("verifyingBeforeDelete"));
             OperationStatusText.Text = T("verifyingBeforeDelete");
 
@@ -1169,13 +1181,29 @@ public sealed partial class MainWindow : Window, IDisposable
             // not.
             try
             {
-                Directory.Delete(verifyRoot, recursive: true);
+                CleanupBoundVerificationRoot(verifyParentHandle, verifyParent, verifyParentIdentity);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                Log($"{T("verifyCleanupFailed")} — {verifyRoot}");
+                Log($"{T("verifyCleanupFailed")} — {verifyParent}");
             }
         }
+    }
+
+    internal static void CleanupBoundVerificationRoot(
+        SafeFileHandle verifyParentHandle,
+        string verifyParent,
+        MacFileIdentity verifyParentIdentity)
+    {
+        ArgumentNullException.ThrowIfNull(verifyParentHandle);
+        ArgumentException.ThrowIfNullOrWhiteSpace(verifyParent);
+        TestHookBeforeVerificationRootCleanup?.Invoke();
+
+        // Destroy the exact descriptor-bound plaintext tree even if its public
+        // pathname was renamed. Only remove the directory name if it still
+        // denotes that same inode; a replacement is preserved untouched.
+        MacSafeFileSystem.DeleteDirectoryContentsDescriptor(verifyParentHandle);
+        MacSafeFileSystem.DeleteDirectoryTreeBound(verifyParent, verifyParentIdentity);
     }
 
     private async Task<ProcessResult> ExtractEncryptedForVerificationAsync(string archivePath, string outputRoot)
@@ -1201,7 +1229,7 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             Title = T("chooseEraseDialog"),
             AllowMultiple = false,
-            FileTypeFilter = new[] { EncryptedArchiveType },
+            FileTypeFilter = BuildArchivePickerFilter(EncryptedArchiveType),
         });
         IStorageFile? file = files.FirstOrDefault();
         foreach (IStorageFile extra in files.Skip(1))
@@ -1216,6 +1244,13 @@ public sealed partial class MainWindow : Window, IDisposable
 
         if (GetLocalPath(file) is { } path)
         {
+            if (!HasEncryptedArchiveExtension(path))
+            {
+                file.Dispose();
+                await WarnAsync(T("eraseSelectionTypeInvalid"));
+                return;
+            }
+
             if (!RetainEraseArchiveAccess(file))
             {
                 return;
@@ -1997,23 +2032,39 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private Task ShowBlockedAsync() => WarnAsync(T("integrityActionBlocked"));
 
-    private static void CleanupFailedArchive(string archivePath)
+    /// <summary>
+    /// Reports committed outputs instead of deleting whatever later occupies
+    /// their path after a downstream failure. Each producer already removes
+    /// its own uncommitted, descriptor-bound temporary object. Once a producer
+    /// has returned, this window no longer owns a live file handle that could
+    /// prove an archive, sidecar or manifest is still that exact object, so a
+    /// pathname cleanup would risk removing an unrelated replacement.
+    /// </summary>
+    internal static string BuildPreservedArtifactWarning(string archivePath)
     {
-        RecoveryService.SecureDeleteRecoverySidecar(archivePath);
-        ArchiveIntegrityService.DeleteManifests(archivePath);
-        SecureFile.DeleteIfExists(archivePath);
+        string fullArchivePath = Path.GetFullPath(archivePath);
+        string[] preservedPaths =
+        [
+            fullArchivePath,
+            RecoveryService.GetRecoveryPath(fullArchivePath),
+            ArchiveIntegrityService.GetSha3ManifestPath(fullArchivePath),
+            ArchiveIntegrityService.GetSkeinManifestPath(fullArchivePath),
+        ];
+        return "Archive creation failed after at least one output was committed. "
+            + "No pathname-based cleanup was attempted; any produced files were preserved for inspection: "
+            + string.Join(", ", preservedPaths);
     }
 
-    private void TryCleanupFailedArchive(string archivePath)
+    /// <summary>
+    /// Avoids configuring the shared native NSOpenPanel with file-type filters.
+    /// Avalonia can reuse that panel for a later folder selection on macOS, where
+    /// a retained archive filter disables every directory. The caller validates
+    /// the selected archive extension after the native picker returns instead.
+    /// </summary>
+    internal static IReadOnlyList<FilePickerFileType>? BuildArchivePickerFilter(FilePickerFileType type)
     {
-        try
-        {
-            CleanupFailedArchive(archivePath);
-        }
-        catch (Exception exception)
-        {
-            Log($"Cleanup failed: {exception}");
-        }
+        ArgumentNullException.ThrowIfNull(type);
+        return OperatingSystem.IsMacOS() ? null : [type];
     }
 
     private static readonly FilePickerFileType EncryptedArchiveType = new("Keep Vault encrypted archive")

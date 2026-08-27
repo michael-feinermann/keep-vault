@@ -525,7 +525,10 @@ public sealed partial class MainWindow : Window, IDisposable
                     _shutdown.Token);
                 if (!result.Succeeded)
                 {
-                    CleanupFailedArchiveArtifacts(archivePath);
+                    if (createdArchivePath is not null)
+                    {
+                        Log(BuildPreservedArtifactWarning(createdArchivePath));
+                    }
                     createdArchivePath = null;
                     Log(result.StandardError);
                     MessageBox.Show(this, T("zpaqCreateFailed"), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
@@ -575,14 +578,7 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             if (createdArchivePath is not null)
             {
-                try
-                {
-                    CleanupFailedArchiveArtifacts(createdArchivePath);
-                }
-                catch (Exception cleanupException)
-                {
-                    Log($"Cleanup failed: {cleanupException}");
-                }
+                Log(BuildPreservedArtifactWarning(createdArchivePath));
             }
 
             UpdateEntropyStatus();
@@ -871,11 +867,23 @@ public sealed partial class MainWindow : Window, IDisposable
         ExtractGeneratedPasswordSecondBox.Clear();
     }
 
-    private static void CleanupFailedArchiveArtifacts(string archivePath)
+    /// <summary>
+    /// Reports committed outputs instead of deleting whatever later occupies
+    /// their pathnames. Each producer owns cleanup of its still-bound temporary
+    /// object; once a producer commits, the GUI no longer has deletion authority.
+    /// </summary>
+    internal static string BuildPreservedArtifactWarning(string archivePath)
     {
-        RecoveryService.SecureDeleteRecoverySidecar(archivePath);
-        ArchiveIntegrityService.DeleteManifests(archivePath);
-        SecureFile.DeleteIfExists(archivePath);
+        string[] preservedPaths =
+        [
+            archivePath,
+            RecoveryService.GetRecoveryPath(archivePath),
+            ArchiveIntegrityService.GetSha3ManifestPath(archivePath),
+            ArchiveIntegrityService.GetSkeinManifestPath(archivePath),
+        ];
+        return "Archive creation failed after at least one output was committed. "
+            + "No pathname-based cleanup was attempted; any produced files were preserved for inspection: "
+            + string.Join(", ", preservedPaths);
     }
 
     private async Task<string> PrepareArchiveForUseAsync(string archive)

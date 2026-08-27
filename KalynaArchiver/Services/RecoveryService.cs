@@ -500,6 +500,7 @@ public sealed partial class RecoveryService
                         await sidecarTransaction.CommitAsync(
                             (boundSidecar, validationCancellation) => ValidateGeneratedSidecarForCommitAsync(
                                 boundSidecar,
+                                archive,
                                 locator,
                                 protectionMode,
                                 Path.GetFileName(fullArchivePath),
@@ -545,7 +546,9 @@ public sealed partial class RecoveryService
     internal static Action? SidecarHookAfterQuarantine { get; set; }
     internal static Action? SidecarHookBeforeInstallRename { get; set; }
     internal static Action? SidecarHookAfterInstall { get; set; }
-    internal static Action? SidecarHookBeforeBackupDestruction { get; set; }
+    internal static Action<FileStream>? SidecarHookBeforeBackupDestruction { get; set; }
+    internal static Action? SidecarHookBeforePostCommitBackupCleanup { get; set; }
+    internal static Action<byte[][]>? GeneratedParityHookAfterDigestValidation { get; set; }
     internal static Action<string>? RecoveryCandidateHookBeforeFailureCleanup { get; set; }
 
     /// <summary>
@@ -555,6 +558,7 @@ public sealed partial class RecoveryService
     /// </summary>
     private async Task ValidateGeneratedSidecarForCommitAsync(
         FileStream recovery,
+        FileStream archive,
         RecoveryLocator expectedLocator,
         RecoveryProtectionMode expectedMode,
         string expectedArchiveFileName,
@@ -601,6 +605,7 @@ public sealed partial class RecoveryService
 
         await RequireAllGeneratedParityShardsAsync(
             recovery,
+            archive,
             package.Manifest,
             cancellationToken).ConfigureAwait(false);
     }
@@ -726,33 +731,99 @@ public sealed partial class RecoveryService
 
     private static async Task RequireAllGeneratedParityShardsAsync(
         FileStream recovery,
+        FileStream archive,
         RecoveryManifest manifest,
         CancellationToken cancellationToken)
     {
         foreach (RecoverySection section in manifest.Sections)
         {
-            byte[] shard = new byte[section.ShardSize];
+            byte[][] data = AllocateShards(section.DataShardCount, section.ShardSize);
+            byte[][] writtenParity = AllocateShards(section.ParityShardCount, section.ShardSize);
+            byte[][] computedParity = AllocateShards(section.ParityShardCount, section.ShardSize);
             try
             {
-                foreach (RecoveryParityShard parity in section.Parity)
+                for (int stripe = 0; stripe < section.StripeCount; stripe++)
                 {
-                    bool readable = await TryReadAtAsync(
-                        recovery,
-                        parity.Offset,
-                        shard,
-                        cancellationToken).ConfigureAwait(false);
-                    if (!readable || !DualDigestMatches(shard, parity.Digest))
+                    for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
                     {
-                        throw new InvalidDataException(
-                            $"Generated KPAR2 parity shard is invalid: {section.Name}, stripe {parity.Stripe}, parity {parity.ParityIndex}.");
+                        long shardOffset = section.Offset
+                            + (((long)stripe * section.DataShardCount + dataIndex) * section.ShardSize);
+                        await ReadArchiveShardAsync(
+                            archive,
+                            shardOffset,
+                            section.Offset + section.Length,
+                            data[dataIndex],
+                            cancellationToken).ConfigureAwait(false);
+                        string expectedDataDigest = section.DataDigests[
+                            (stripe * section.DataShardCount) + dataIndex];
+                        if (!DualDigestMatches(data[dataIndex], expectedDataDigest))
+                        {
+                            throw new InvalidDataException(
+                                $"Generated KPAR2 data shard changed before commit: {section.Name}, stripe {stripe}, shard {dataIndex}.");
+                        }
                     }
 
-                    CryptographicOperations.ZeroMemory(shard);
+                    for (int parityIndex = 0; parityIndex < section.ParityShardCount; parityIndex++)
+                    {
+                        RecoveryParityShard parity = section.Parity[
+                            (stripe * section.ParityShardCount) + parityIndex];
+                        bool readable = await TryReadAtAsync(
+                            recovery,
+                            parity.Offset,
+                            writtenParity[parityIndex],
+                            cancellationToken).ConfigureAwait(false);
+                        if (!readable || !DualDigestMatches(writtenParity[parityIndex], parity.Digest))
+                        {
+                            throw new InvalidDataException(
+                                $"Generated KPAR2 parity shard is invalid: {section.Name}, stripe {stripe}, parity {parityIndex}.");
+                        }
+                    }
+
+                    // The manifest digest authenticates which parity bytes were
+                    // written. It does not prove those bytes are RS(20,3) of
+                    // the archive data. Recompute that relation independently
+                    // before the old sidecar can be destroyed.
+                    GeneratedParityHookAfterDigestValidation?.Invoke(writtenParity);
+                    ComputeParity(data, computedParity, cancellationToken);
+                    RequireParityRelation(
+                        writtenParity,
+                        computedParity,
+                        section.Name,
+                        stripe);
+
+                    ZeroShards(data);
+                    ZeroShards(writtenParity);
+                    ZeroShards(computedParity);
                 }
             }
             finally
             {
-                CryptographicOperations.ZeroMemory(shard);
+                ZeroShards(data);
+                ZeroShards(writtenParity);
+                ZeroShards(computedParity);
+            }
+        }
+    }
+
+    private static void RequireParityRelation(
+        byte[][] writtenParity,
+        byte[][] computedParity,
+        string sectionName,
+        int stripe)
+    {
+        if (writtenParity.Length != computedParity.Length)
+        {
+            throw new InvalidDataException("Generated KPAR2 parity has an invalid RS(20,3) row count.");
+        }
+
+        for (int parityIndex = 0; parityIndex < writtenParity.Length; parityIndex++)
+        {
+            if (!CryptographicOperations.FixedTimeEquals(
+                    writtenParity[parityIndex],
+                    computedParity[parityIndex]))
+            {
+                throw new InvalidDataException(
+                    $"Generated KPAR2 parity is not RS(20,3) of the archive data: {sectionName}, stripe {stripe}, parity {parityIndex}.");
             }
         }
     }
@@ -2274,10 +2345,9 @@ public sealed partial class RecoveryService
                 Path.GetFileName(manifest.ArchiveFileName),
                 StringComparison.Ordinal)
             || (expectedArchiveFileName is not null
-                && !string.Equals(
+                && !ArchiveFileNamesMatchForTests(
                     manifest.ArchiveFileName,
-                    expectedArchiveFileName,
-                    StringComparison.OrdinalIgnoreCase)))
+                    expectedArchiveFileName)))
         {
             throw new InvalidDataException("KPAR2 manifest does not match its authenticated locator context.");
         }
@@ -2414,6 +2484,9 @@ public sealed partial class RecoveryService
             throw new InvalidDataException("KPAR2 manifest does not exactly cover archive and parity regions.");
         }
     }
+
+    internal static bool ArchiveFileNamesMatchForTests(string manifestName, string expectedName) =>
+        string.Equals(manifestName, expectedName, StringComparison.Ordinal);
 
     private static async Task<bool> ArchiveMatchesManifestAsync(
         FileStream archive,

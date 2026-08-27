@@ -3,13 +3,145 @@ set -euo pipefail
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
-output_root=${repo_root}/KeepVaultMac/Native
+final_output_root=${repo_root}/KeepVaultMac/Native
 reference_dir=${repo_root}/external/ML-DSA-reference
+cc=$(xcrun --find clang)
+cxx=$(xcrun --find clang++)
+sdk_root=$(xcrun --sdk macosx --show-sdk-path)
 
-if [[ -L ${repo_root} || -L ${output_root:h} ]]; then
+compile_rename_swap_helper() {
+  local helper_path=$1
+  # Build for the host that must execute the helper. The output tree itself is
+  # still arm64+x86_64 below; forcing this tiny tool to arm64 would make the
+  # universal build impossible to run on a supported Intel Mac.
+  ${cc} -isysroot ${sdk_root} -mmacosx-version-min=14.0 \
+    -O2 -x c - -o ${helper_path} <<'EOF'
+#include <fcntl.h>
+#include <sys/stdio.h>
+#include <unistd.h>
+int main(int argc, char **argv) {
+  if (argc != 3) return 64;
+  return renameatx_np(AT_FDCWD, argv[1], AT_FDCWD, argv[2], RENAME_SWAP);
+}
+EOF
+}
+
+publish_native_tree() {
+  local current_tree=$1
+  local staged_tree=$2
+  local helper_directory=$3
+  local inject_pre_publish_failure=${4:-0}
+
+  # This hook is an argument to the helper rather than an ambient environment
+  # variable, so production builds cannot accidentally inherit it. The
+  # executable self-test below uses it to prove that all staging work remains
+  # invisible if the last pre-publish step fails.
+  if [[ ${inject_pre_publish_failure} == 1 ]]; then
+    return 86
+  fi
+
+  if [[ -e ${current_tree} ]]; then
+    local swap_helper=${helper_directory}/rename-swap
+    if [[ ! -x ${swap_helper} ]]; then
+      compile_rename_swap_helper ${swap_helper}
+    fi
+    ${swap_helper} ${current_tree} ${staged_tree}
+  else
+    mv -- ${staged_tree} ${current_tree}
+  fi
+}
+
+run_atomic_publish_self_test() {
+  local self_test_root=$1
+  local current_tree=${self_test_root}/Native
+  local staged_tree=${self_test_root}/stage/Native
+  local outside_hard_link=${self_test_root}/old-hard-link
+  mkdir -p -- ${current_tree} ${staged_tree}
+
+  print -rn -- 'old-a' > ${current_tree}/a
+  print -rn -- 'old-only' > ${current_tree}/only-old
+  ln ${current_tree}/a ${outside_hard_link}
+  local original_inode=$(stat -f %i ${current_tree}/a)
+  [[ $(stat -f %l ${current_tree}/a) == 2 ]]
+
+  print -rn -- 'new-a' > ${staged_tree}/a
+  print -rn -- 'new-only' > ${staged_tree}/only-new
+  for staged_artifact in ${staged_tree}/*(N); do
+    [[ -f ${staged_artifact} && ! -L ${staged_artifact} \
+        && $(stat -f %l ${staged_artifact}) == 1 ]]
+  done
+
+  if publish_native_tree ${current_tree} ${staged_tree} ${self_test_root} 1; then
+    print -u2 'Atomic native publish self-test did not inject the requested pre-publish failure.'
+    return 1
+  fi
+  [[ $(<${current_tree}/a) == 'old-a' \
+      && $(<${current_tree}/only-old) == 'old-only' \
+      && ! -e ${current_tree}/only-new \
+      && $(stat -f %i ${current_tree}/a) == ${original_inode} \
+      && $(stat -f %i ${outside_hard_link}) == ${original_inode} \
+      && $(<${outside_hard_link}) == 'old-a' \
+      && $(<${staged_tree}/a) == 'new-a' \
+      && $(<${staged_tree}/only-new) == 'new-only' ]] || {
+    print -u2 'A pre-publish failure changed the old native target or exposed a partial staged tree.'
+    return 1
+  }
+
+  publish_native_tree ${current_tree} ${staged_tree} ${self_test_root} 0
+  [[ $(<${current_tree}/a) == 'new-a' \
+      && $(<${current_tree}/only-new) == 'new-only' \
+      && ! -e ${current_tree}/only-old \
+      && $(<${staged_tree}/a) == 'old-a' \
+      && $(<${staged_tree}/only-old) == 'old-only' \
+      && ! -e ${staged_tree}/only-new \
+      && $(stat -f %i ${staged_tree}/a) == ${original_inode} \
+      && $(stat -f %i ${outside_hard_link}) == ${original_inode} \
+      && $(<${outside_hard_link}) == 'old-a' ]] || {
+    print -u2 'Atomic native publish self-test observed a partial exchange or a followed old hard link.'
+    return 1
+  }
+
+  print 'atomic_publish_pre_publish_failure_preserved_old_tree=true'
+  print 'atomic_publish_hard_link_not_followed=true'
+  print 'atomic_publish_exchange_complete=true'
+}
+
+if (( $# > 0 )); then
+  if [[ $# != 1 || $1 != --self-test-atomic-publish ]]; then
+    print -u2 'Usage: Build-Native-macOS.sh [--self-test-atomic-publish]'
+    exit 64
+  fi
+  atomic_self_test_root=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-native-publish-selftest.XXXXXXXX")
+  cleanup_atomic_self_test() {
+    if [[ -n ${atomic_self_test_root:-} && -d ${atomic_self_test_root} \
+        && ${atomic_self_test_root} == ${TMPDIR:-/tmp}/keep-vault-native-publish-selftest.* ]]; then
+      rm -rf -- ${atomic_self_test_root}
+    fi
+  }
+  trap cleanup_atomic_self_test EXIT INT TERM
+  run_atomic_publish_self_test ${atomic_self_test_root}
+  exit 0
+fi
+
+if [[ -L ${repo_root} || -L ${final_output_root:h} || -L ${final_output_root} ]]; then
   print -u2 "Refusing to build through a symbolic-link workspace path."
   exit 1
 fi
+
+# Compile into a private sibling tree. Writing directly into tracked Native/
+# follows any prepared hard link and leaves a mixture of old and new slices if
+# one later compiler invocation fails. The complete, validated tree is swapped
+# into place only after both thin builds and every universal artifact exist.
+native_build_root=$(mktemp -d "${repo_root}/KeepVaultMac/.native-build.XXXXXXXX")
+output_root=${native_build_root}/Native
+mkdir -p -- ${output_root}
+cleanup_native_build() {
+  if [[ -n ${native_build_root:-} && -d ${native_build_root} \
+      && ${native_build_root} == ${repo_root}/KeepVaultMac/.native-build.* ]]; then
+    rm -rf -- ${native_build_root}
+  fi
+}
+trap cleanup_native_build EXIT INT TERM
 
 expected_commit='d35ba3fe5449bee3e6d43e1f296c3ca818bd36be'
 actual_commit=$(<${reference_dir}/PINNED_COMMIT.txt)
@@ -34,9 +166,6 @@ while read -r expected relative_path; do
   fi
 done < ${reference_dir}/SOURCE_SHA256SUMS
 
-cc=$(xcrun --find clang)
-cxx=$(xcrun --find clang++)
-sdk_root=$(xcrun --sdk macosx --show-sdk-path)
 link_flags=(
   -Wl,-dead_strip
   -Wl,-fatal_warnings
@@ -330,8 +459,8 @@ build_architecture() {
 
   chmod 0755 ${output_dir}/zpaq ${output_dir}/argon2 ${output_dir}/*.dylib
   for artifact in ${output_dir}/zpaq ${output_dir}/argon2 ${output_dir}/*.dylib; do
-    if [[ -L ${artifact} ]]; then
-      print -u2 "Native build unexpectedly produced a symbolic link: ${artifact}"
+    if [[ ! -f ${artifact} || -L ${artifact} || $(stat -f %l ${artifact}) != 1 ]]; then
+      print -u2 "Native build did not produce a regular single-link file: ${artifact}"
       exit 1
     fi
     xcrun lipo ${artifact} -verify_arch ${architecture}
@@ -353,6 +482,46 @@ for artifact_name in ${artifacts[@]}; do
   chmod 0755 ${universal_dir}/${artifact_name}
   xcrun lipo ${universal_dir}/${artifact_name} -verify_arch arm64 x86_64
   file -- ${universal_dir}/${artifact_name}
+done
+
+for runtime in osx-arm64 osx-x64 osx-universal; do
+  runtime_dir=${output_root}/${runtime}
+  if [[ ! -d ${runtime_dir} || -L ${runtime_dir} ]]; then
+    print -u2 "Native staging directory is missing or is a symbolic link: ${runtime_dir}"
+    exit 1
+  fi
+  for artifact in ${runtime_dir}/*(N); do
+    if [[ ! -f ${artifact} || -L ${artifact} || $(stat -f %l ${artifact}) != 1 ]]; then
+      print -u2 "Native staging artifact is not a regular single-link file: ${artifact}"
+      exit 1
+    fi
+  done
+done
+
+# renameatx_np(RENAME_SWAP) is an atomic exchange on the same macOS volume. A
+# failed or interrupted compile never touched Native/, and a process crash just
+# after this exchange leaves the previous complete tree in .native-build.* for
+# manual recovery rather than leaving half a build installed.
+if [[ -e ${final_output_root} ]]; then
+  publish_native_tree ${final_output_root} ${output_root} ${native_build_root} 0 || {
+    print -u2 'Atomic native-output directory exchange failed; the previous Native tree remains untouched.'
+    exit 1
+  }
+else
+  publish_native_tree ${final_output_root} ${output_root} ${native_build_root} 0
+fi
+
+for runtime in osx-arm64 osx-x64 osx-universal; do
+  if [[ ! -d ${final_output_root}/${runtime} || -L ${final_output_root}/${runtime} ]]; then
+    print -u2 "Published native directory is invalid: ${final_output_root}/${runtime}"
+    exit 1
+  fi
+  for artifact in ${final_output_root}/${runtime}/*(N); do
+    if [[ ! -f ${artifact} || -L ${artifact} || $(stat -f %l ${artifact}) != 1 ]]; then
+      print -u2 "Published native artifact is not a regular single-link file: ${artifact}"
+      exit 1
+    fi
+  done
 done
 
 print "macOS native builds complete: osx-arm64, osx-x64, and osx-universal"

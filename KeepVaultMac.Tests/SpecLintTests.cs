@@ -17,6 +17,16 @@ using KalynaArchiver.Services;
 internal static class SpecLintTests
 {
     private sealed record ForbiddenPattern(string Pattern, string Why);
+    private sealed record LockFileExpectation(
+        string Project,
+        string ProjectFileName,
+        string BaseTarget,
+        string[] RuntimeIdentifiers,
+        string? IlCompilerVersion,
+        string? IlLinkVersion,
+        string LockFileName = "packages.lock.json");
+
+    private const string NativeAotPackVersion = "10.0.11";
 
     /// <summary>
     /// Constructions that must not exist in shipping source at all.
@@ -117,55 +127,314 @@ internal static class SpecLintTests
     internal static Task LockFileRuntimesAsync()
     {
         string root = RepositoryLayout.FindRepositoryRoot();
-        // The runtimes each project legitimately declares. Anything else in
-        // its lock file came from a restore on the wrong operating system.
-        (string Project, string[] AllowedRuntimes)[] projects =
+        // These are the complete target graphs, not merely an allowlist. A
+        // missing RID is just as fatal to locked restore/release coverage as a
+        // foreign RID, and the NativeAOT packs must remain pinned as direct
+        // graph inputs for the two AOT deliverables.
+        LockFileExpectation[] projects =
         [
-            ("KalynaArchiver", ["win-x64"]),
-            ("KalynaArchiver.Tests", ["win-x64"]),
-            ("KalynaArchiver.Signing", ["win-x64"]),
-            ("KeepVaultMac", ["osx-arm64", "osx-x64"]),
-            ("KeepVaultMac.Tests", ["osx-arm64"]),
+            new("KalynaArchiver", "KalynaArchiver.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
+            new("KalynaArchiver.Tests", "KalynaArchiver.Tests.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
+            new("KalynaArchiver.Signing", "KalynaArchiver.Signing.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
+            new("KalynaReleaseVerifier", "KalynaReleaseVerifier.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
+            new("KalynaSigningTool", "KalynaSigningTool.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
+            new("KeepVaultMac", "KeepVaultMac.csproj", "net10.0", ["osx-arm64", "osx-x64"], NativeAotPackVersion, NativeAotPackVersion),
+            new("KeepVaultMac.Tests", "KeepVaultMac.Tests.csproj", "net10.0", ["osx-arm64"], null, null),
+            new("KeepVaultMac.ReleaseVerifier", "KeepVaultMac.ReleaseVerifier.csproj", "net10.0", ["osx-arm64", "osx-x64"], NativeAotPackVersion, NativeAotPackVersion),
+            new("KeepVaultMac/Packaging/HybridSigner", "KeepVaultMac.HybridSigner.csproj", "net10.0", ["osx-arm64"], null, null),
+            new("QrCodeScannerWindows", "QrScanner.csproj", "net9.0-windows10.0.19041", ["win-x64"], null, "9.0.19"),
+            new("QrCodeScannerWindows", "QrScanner.Tests.csproj", "net9.0-windows10.0.19041", ["win-x64"], null, null, "packages.tests.lock.json"),
         ];
 
         var violations = new List<string>();
-        foreach ((string project, string[] allowed) in projects)
+        var expectedLockFiles = new HashSet<string>(
+            projects.Select(project =>
+                Path.Combine(project.Project, project.LockFileName).Replace('\\', '/')),
+            StringComparer.Ordinal);
+        string[] actualLockFiles =
+        [
+            .. Directory.EnumerateFiles(root, "packages*.lock.json", SearchOption.AllDirectories)
+                .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
+                .Where(relative => !relative.Split('/').Any(segment =>
+                    segment is ".git" or ".claude" or "bin" or "obj" or "obj_alt" or "build-obj")),
+        ];
+        string[] uncheckedLocks =
+        [
+            .. actualLockFiles.Where(path => !expectedLockFiles.Contains(path)).Order(StringComparer.Ordinal),
+        ];
+        if (uncheckedLocks.Length > 0)
         {
-            string lockFile = Path.Combine(root, project, "packages.lock.json");
+            violations.Add("Lock graph has unchecked lock file(s): " + string.Join(", ", uncheckedLocks) + ".");
+        }
+
+        var expectedProjectFiles = new HashSet<string>(
+            projects.Select(project =>
+                Path.Combine(project.Project, project.ProjectFileName).Replace('\\', '/')),
+            StringComparer.Ordinal);
+        string[] uncheckedProjects =
+        [
+            .. Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
+                .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
+                .Where(relative => !relative.Split('/').Any(segment =>
+                    segment is ".git" or ".claude" or "bin" or "obj" or "obj_alt" or "build-obj"))
+                .Where(path => !expectedProjectFiles.Contains(path))
+                .Order(StringComparer.Ordinal),
+        ];
+        if (uncheckedProjects.Length > 0)
+        {
+            violations.Add("Lock graph has unchecked project(s): " + string.Join(", ", uncheckedProjects) + ".");
+        }
+
+        foreach (LockFileExpectation project in projects)
+        {
+            string projectFile = Path.Combine(root, project.Project, project.ProjectFileName);
+            if (!File.Exists(projectFile))
+            {
+                violations.Add($"{project.Project}/{project.ProjectFileName} is missing.");
+            }
+
+            string lockFile = Path.Combine(root, project.Project, project.LockFileName);
             if (!File.Exists(lockFile))
             {
-                violations.Add($"{project}/packages.lock.json is missing.");
+                violations.Add($"{project.Project}/{project.LockFileName} is missing.");
                 continue;
             }
 
-            using JsonDocument document = JsonDocument.Parse(RepositoryLayout.ReadText(lockFile));
-            if (!document.RootElement.TryGetProperty("dependencies", out JsonElement dependencies))
+            try
             {
-                violations.Add($"{project}/packages.lock.json has no dependency targets.");
-                continue;
+                using JsonDocument document = JsonDocument.Parse(RepositoryLayout.ReadText(lockFile));
+                ValidateLockFileDocument(project, document.RootElement, violations);
             }
-
-            foreach (JsonProperty target in dependencies.EnumerateObject())
+            catch (JsonException ex)
             {
-                int separator = target.Name.IndexOf('/', StringComparison.Ordinal);
-                if (separator < 0)
-                {
-                    continue;
-                }
-
-                string runtime = target.Name[(separator + 1)..];
-                if (!allowed.Contains(runtime, StringComparer.Ordinal))
-                {
-                    violations.Add(
-                        $"{project}/packages.lock.json carries the foreign runtime target \"{target.Name}\"; "
-                        + $"the project declares {string.Join(", ", allowed)}, so a locked restore on its own "
-                        + "platform fails with NU1004.");
-                }
+                violations.Add($"{project.Project}/{project.LockFileName} is malformed JSON: {ex.Message}");
             }
         }
 
+        (string Path, string RollForward)[] globalJsonFiles =
+        [
+            ("global.json", "latestMajor"),
+            ("KeepVaultMac/global.json", "latestPatch"),
+            ("KeepVaultMac.Tests/global.json", "latestPatch"),
+            ("KeepVaultMac.ReleaseVerifier/global.json", "latestPatch"),
+        ];
+        foreach ((string relativePath, string expectedRollForward) in globalJsonFiles)
+        {
+            string path = Path.Combine(root, relativePath);
+            if (!File.Exists(path))
+            {
+                violations.Add($"{relativePath} is missing.");
+                continue;
+            }
+
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(RepositoryLayout.ReadText(path));
+                JsonElement sdk = document.RootElement.GetProperty("sdk");
+                if (sdk.GetProperty("version").GetString() != "10.0.400"
+                    || sdk.GetProperty("rollForward").GetString() != expectedRollForward
+                    || sdk.GetProperty("allowPrerelease").ValueKind != JsonValueKind.False)
+                {
+                    violations.Add(
+                        $"{relativePath} must preserve .NET SDK 10.0.400 with "
+                        + $"{expectedRollForward} and no prereleases.");
+                }
+            }
+            catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
+            {
+                violations.Add($"{relativePath} has no valid pinned SDK contract: {ex.Message}");
+            }
+        }
+
+        RunLockFileValidatorSelfTests(
+            projects.First(project => project.IlCompilerVersion is not null),
+            projects.Single(project => project.Project == "KeepVaultMac.Tests"));
         Require(violations.Count == 0, "Lock files do not match their build platform:\n  " + string.Join("\n  ", violations));
         return Task.CompletedTask;
+    }
+
+    private static void ValidateLockFileDocument(
+        LockFileExpectation expectation,
+        JsonElement root,
+        List<string> violations)
+    {
+        string name = expectation.Project + "/" + expectation.LockFileName;
+        if (!root.TryGetProperty("version", out JsonElement version)
+            || version.ValueKind != JsonValueKind.Number
+            || !version.TryGetInt32(out int lockVersion)
+            || lockVersion != 1)
+        {
+            violations.Add($"{name} must use NuGet lock schema version 1.");
+        }
+
+        if (!root.TryGetProperty("dependencies", out JsonElement dependencies)
+            || dependencies.ValueKind != JsonValueKind.Object)
+        {
+            violations.Add($"{name} has no dependency target object.");
+            return;
+        }
+
+        string[] expectedTargets =
+        [
+            expectation.BaseTarget,
+            .. expectation.RuntimeIdentifiers.Select(runtime => $"{expectation.BaseTarget}/{runtime}"),
+        ];
+        string[] actualTargets = [.. dependencies.EnumerateObject().Select(target => target.Name)];
+        foreach (JsonProperty target in dependencies.EnumerateObject())
+        {
+            if (target.Value.ValueKind != JsonValueKind.Object)
+            {
+                violations.Add($"{name} target {target.Name} is not a dependency object.");
+            }
+        }
+        string[] missing = [.. expectedTargets.Except(actualTargets, StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        string[] foreign = [.. actualTargets.Except(expectedTargets, StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        if (missing.Length > 0)
+        {
+            violations.Add($"{name} is missing target(s): {string.Join(", ", missing)}.");
+        }
+        if (foreign.Length > 0)
+        {
+            violations.Add($"{name} carries foreign target(s): {string.Join(", ", foreign)}.");
+        }
+
+        (string Package, string? ExpectedVersion)[] toolPacks =
+        [
+            ("Microsoft.DotNet.ILCompiler", expectation.IlCompilerVersion),
+            ("Microsoft.NET.ILLink.Tasks", expectation.IlLinkVersion),
+        ];
+        if (!dependencies.TryGetProperty(expectation.BaseTarget, out JsonElement baseTarget)
+            || baseTarget.ValueKind != JsonValueKind.Object)
+        {
+            return;
+        }
+
+        foreach ((string package, string? expectedVersion) in toolPacks)
+        {
+            foreach (JsonProperty target in dependencies.EnumerateObject())
+            {
+                if (!string.Equals(target.Name, expectation.BaseTarget, StringComparison.Ordinal)
+                    && target.Value.ValueKind == JsonValueKind.Object
+                    && target.Value.TryGetProperty(package, out _))
+                {
+                    violations.Add($"{name} carries SDK tool pack {package} outside its base dependency target.");
+                }
+            }
+
+            bool found = baseTarget.TryGetProperty(package, out JsonElement entry)
+                && entry.ValueKind == JsonValueKind.Object;
+            if (expectedVersion is null)
+            {
+                if (found)
+                {
+                    violations.Add($"{name} unexpectedly carries the direct SDK tool pack {package}.");
+                }
+                continue;
+            }
+
+            if (!found)
+            {
+                violations.Add($"{name} is missing the direct SDK tool pack {package}.");
+                continue;
+            }
+
+            string? type = entry.TryGetProperty("type", out JsonElement typeElement)
+                && typeElement.ValueKind == JsonValueKind.String ? typeElement.GetString() : null;
+            string? requested = entry.TryGetProperty("requested", out JsonElement requestedElement)
+                && requestedElement.ValueKind == JsonValueKind.String ? requestedElement.GetString() : null;
+            string? resolved = entry.TryGetProperty("resolved", out JsonElement resolvedElement)
+                && resolvedElement.ValueKind == JsonValueKind.String ? resolvedElement.GetString() : null;
+            if (type != "Direct"
+                || requested != $"[{expectedVersion}, )"
+                || resolved != expectedVersion)
+            {
+                violations.Add(
+                    $"{name} must pin {package} directly to {expectedVersion}; "
+                    + $"found type={type ?? "missing"}, requested={requested ?? "missing"}, resolved={resolved ?? "missing"}.");
+            }
+        }
+    }
+
+    private static void RunLockFileValidatorSelfTests(
+        LockFileExpectation nativeAot,
+        LockFileExpectation managed)
+    {
+        static List<string> ValidateSynthetic(
+            LockFileExpectation expectation,
+            bool includeAot,
+            bool omitLastTarget = false,
+            string? foreignTarget = null,
+            bool omitCompiler = false,
+            string? compilerVersion = null)
+        {
+            using JsonDocument document = CreateSyntheticLockFile(
+                expectation,
+                includeAot,
+                omitLastTarget,
+                foreignTarget,
+                omitCompiler,
+                compilerVersion);
+            var found = new List<string>();
+            ValidateLockFileDocument(expectation, document.RootElement, found);
+            return found;
+        }
+
+        Require(ValidateSynthetic(nativeAot, includeAot: true).Count == 0, "The lock graph validator rejected a valid NativeAOT graph.");
+        Require(ValidateSynthetic(managed, includeAot: false).Count == 0, "The lock graph validator rejected a valid managed graph.");
+        Require(ValidateSynthetic(nativeAot, includeAot: true, omitLastTarget: true).Count > 0, "The lock graph validator accepted a missing RID target.");
+        Require(ValidateSynthetic(nativeAot, includeAot: true, foreignTarget: "net10.0/linux-x64").Count > 0, "The lock graph validator accepted a foreign RID target.");
+        Require(ValidateSynthetic(nativeAot, includeAot: true, omitCompiler: true).Count > 0, "The lock graph validator accepted a missing ILCompiler pack.");
+        Require(ValidateSynthetic(nativeAot, includeAot: true, compilerVersion: "10.0.12").Count > 0, "The lock graph validator accepted an unpinned ILCompiler pack.");
+        Require(ValidateSynthetic(managed, includeAot: true).Count > 0, "The lock graph validator accepted NativeAOT packs in a managed-only project.");
+    }
+
+    private static JsonDocument CreateSyntheticLockFile(
+        LockFileExpectation expectation,
+        bool includeAot,
+        bool omitLastTarget,
+        string? foreignTarget,
+        bool omitCompiler,
+        string? compilerVersion)
+    {
+        string[] targets =
+        [
+            expectation.BaseTarget,
+            .. expectation.RuntimeIdentifiers.Select(runtime => $"{expectation.BaseTarget}/{runtime}"),
+        ];
+        if (omitLastTarget)
+        {
+            targets = targets[..^1];
+        }
+
+        var dependencies = targets.ToDictionary(
+            target => target,
+            _ => new Dictionary<string, object?>(StringComparer.Ordinal),
+            StringComparer.Ordinal);
+        if (foreignTarget is not null)
+        {
+            dependencies[foreignTarget] = new Dictionary<string, object?>(StringComparer.Ordinal);
+        }
+        if (includeAot)
+        {
+            string version = compilerVersion ?? NativeAotPackVersion;
+            if (!omitCompiler)
+            {
+                dependencies[expectation.BaseTarget]["Microsoft.DotNet.ILCompiler"] = new
+                {
+                    type = "Direct",
+                    requested = $"[{version}, )",
+                    resolved = version,
+                };
+            }
+            dependencies[expectation.BaseTarget]["Microsoft.NET.ILLink.Tasks"] = new
+            {
+                type = "Direct",
+                requested = $"[{NativeAotPackVersion}, )",
+                resolved = NativeAotPackVersion,
+            };
+        }
+
+        return JsonDocument.Parse(JsonSerializer.Serialize(new { version = 1, dependencies }));
     }
 
     internal static Task SpecConsistencyAsync()
@@ -206,8 +475,24 @@ internal static class SpecLintTests
 
         Require(missing.Count == 0, "README no longer matches the normative specification:\n  " + string.Join("\n  ", missing));
 
-        // Claims that must never come back, in any documentation file.
-        string[] docs = [Path.Combine(root, "README.md"), .. Directory.EnumerateFiles(Path.Combine(root, "docs"), "*.md")];
+        // Claims that must never come back in user-facing product
+        // documentation. The Codex audit is a normative test plan and contains
+        // forbidden legacy strings as search needles and negative examples; it
+        // is deliberately not a product claim.
+        const string AuditFileName = "KEEP_VAULT_V11_MACOS_CODEX_AUDIT.md";
+        string docsDirectory = Path.Combine(root, "docs");
+        string[] referenceDocuments =
+        [
+            .. Directory.EnumerateFiles(docsDirectory, "*.md")
+                .Where(path => string.Equals(Path.GetFileName(path), AuditFileName, StringComparison.OrdinalIgnoreCase)),
+        ];
+        Require(referenceDocuments.Length == 1, "The normative Codex audit reference is missing or ambiguous.");
+        string[] docs =
+        [
+            Path.Combine(root, "README.md"),
+            .. Directory.EnumerateFiles(docsDirectory, "*.md")
+                .Where(path => !string.Equals(Path.GetFileName(path), AuditFileName, StringComparison.OrdinalIgnoreCase)),
+        ];
         (string Pattern, string Why)[] forbidden =
         [
             (@"PIN\s*6\s*(-|–|to)\s*12", "a 6-12 PIN policy"),

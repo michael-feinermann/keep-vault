@@ -89,7 +89,7 @@ internal sealed class RecoverySidecarTransaction : IDisposable
             temporary = null;
             return transaction;
         }
-        catch
+        catch (Exception operationError)
         {
             if (temporary is not null)
             {
@@ -97,8 +97,13 @@ internal sealed class RecoverySidecarTransaction : IDisposable
                 {
                     temporary.DeleteBound();
                 }
-                catch
+                catch (Exception cleanupError)
                 {
+                    temporary.Dispose();
+                    parentHandle?.Dispose();
+                    throw new IOException(
+                        "KPAR2 transaction creation failed and its exact temporary object could not be removed.",
+                        new AggregateException(operationError, cleanupError));
                 }
                 temporary.Dispose();
             }
@@ -147,6 +152,13 @@ internal sealed class RecoverySidecarTransaction : IDisposable
             RecoveryService.SidecarHookAfterInstall?.Invoke();
             await fullValidator(Stream, cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
+            if (_previous is not null)
+            {
+                RecoveryService.SidecarHookBeforeBackupDestruction?.Invoke(Stream);
+                cancellationToken.ThrowIfCancellationRequested();
+                await fullValidator(Stream, cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
         }
         catch
         {
@@ -154,18 +166,19 @@ internal sealed class RecoverySidecarTransaction : IDisposable
             throw;
         }
 
-        // The complete descriptor was validated on both sides of the
-        // descriptor-relative rename, and the installed name was proven to
-        // carry the same inode. The second validation closes the macOS window
-        // where a same-inode in-place write could otherwise survive identity
-        // checks; it reuses the already-derived recovery keys.
+        // The installed descriptor passed a final complete validation after
+        // every pre-commit scheduling boundary. This closes the macOS window
+        // where a same-inode in-place write after the first post-rename gate
+        // could otherwise survive identity checks. The cleanup hook below is
+        // deliberately post-commit: a cleanup failure preserves both objects
+        // and must never roll back the validated new sidecar.
         _committed = true;
         if (_previous is null)
         {
             return;
         }
 
-        RecoveryService.SidecarHookBeforeBackupDestruction?.Invoke();
+        RecoveryService.SidecarHookBeforePostCommitBackupCleanup?.Invoke();
         try
         {
             DestroyPreviousBound();
@@ -209,17 +222,22 @@ internal sealed class RecoverySidecarTransaction : IDisposable
             "previous KPAR2 sidecar");
 
         RecoveryService.SidecarHookBeforeOldQuarantineRename?.Invoke();
+        VerifyParentIdentity();
+        RequireEntryIdentity(
+            Path.GetFileName(_recoveryPath),
+            _previousIdentity,
+            "previous KPAR2 sidecar");
         MacSafeFileSystem.RenameAtExclusive(
             _parentHandle,
             Path.GetFileName(_recoveryPath),
             _parentHandle,
             Path.GetFileName(_quarantinePath));
         _previousCurrentPath = _quarantinePath;
+        _previousQuarantined = true;
         RequireEntryIdentity(
             Path.GetFileName(_quarantinePath),
             _previousIdentity,
             "quarantined previous KPAR2 sidecar");
-        _previousQuarantined = true;
     }
 
     private void RollBackBeforeCommit()

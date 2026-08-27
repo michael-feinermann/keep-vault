@@ -139,6 +139,7 @@ internal sealed record HardwareBudget(int CpuCount, long TotalRamBytes, int CpuT
 internal sealed class ReservationToken
 {
     internal ReservationToken(
+        string testId,
         int cpuTokens,
         int memoryMiB,
         int argonSlots,
@@ -149,6 +150,7 @@ internal sealed class ReservationToken
         bool processExclusive,
         bool oversized)
     {
+        TestId = testId;
         CpuTokens = cpuTokens;
         MemoryMiB = memoryMiB;
         ArgonSlots = argonSlots;
@@ -160,6 +162,7 @@ internal sealed class ReservationToken
         Oversized = oversized;
     }
 
+    internal string TestId { get; }
     internal int CpuTokens { get; }
     internal int MemoryMiB { get; }
     internal int ArgonSlots { get; }
@@ -170,6 +173,28 @@ internal sealed class ReservationToken
     internal bool ProcessExclusive { get; }
     internal bool Oversized { get; }
     internal bool Released { get; set; }
+    internal bool WorkerStarted { get; private set; }
+
+    internal void ClaimForWorker(string testId)
+    {
+        if (Released)
+        {
+            throw new InvalidOperationException("A released scheduler reservation cannot start a worker.");
+        }
+
+        if (!string.Equals(TestId, testId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"The reservation for '{TestId}' cannot start worker '{testId}'.");
+        }
+
+        if (WorkerStarted)
+        {
+            throw new InvalidOperationException("A scheduler reservation cannot start more than one worker.");
+        }
+
+        WorkerStarted = true;
+    }
 }
 
 internal sealed class SchedulerResourceLedger
@@ -212,6 +237,12 @@ internal sealed class SchedulerResourceLedger
     internal bool CanStartAnother => RunningWorkers < _maxWorkers && !_hostExclusiveRunning;
     internal int FreeCpu => _freeCpu;
     internal int FreeMemory => _freeMemory;
+    internal int FreeArgon => _freeArgon;
+    internal int FreeZpaq => _freeZpaq;
+    internal int FreeGui => _freeGui;
+    internal int FreeEntropy => _freeEntropy;
+    internal bool HostExclusiveRunning => _hostExclusiveRunning;
+    internal bool ProcessExclusiveRunning => _processExclusiveRunning;
 
     internal bool TryReserve(TestCase test, out ReservationToken? reservation)
     {
@@ -250,6 +281,7 @@ internal sealed class SchedulerResourceLedger
         }
 
         reservation = new ReservationToken(
+            test.Id,
             cost.CpuTokens,
             cost.MemoryMiB,
             argonSlots,
@@ -287,6 +319,7 @@ internal sealed class SchedulerResourceLedger
         }
 
         var reservation = new ReservationToken(
+            test.Id,
             _budget.CpuTokens,
             _budget.MemoryMiB,
             argonSlots,
@@ -396,7 +429,7 @@ internal static class TestCoordinator
 {
     private static readonly object ConsoleLock = new();
     internal const int WorkerResultSchemaVersion = 1;
-    internal const int RunResultSchemaVersion = 2;
+    internal const int RunResultSchemaVersion = 3;
 
     internal static async Task<IReadOnlyList<TestOutcome>> RunAsync(
         IReadOnlyList<TestCase> tests,
@@ -447,7 +480,12 @@ internal static class TestCoordinator
                     pending.RemoveAt(index);
 
                     uint seed = seedOverride ?? checked((uint)System.Security.Cryptography.RandomNumberGenerator.GetInt32(1, int.MaxValue));
-                    Task<TestOutcome> task = RunSafelyAsync(candidate, seed, inProcess, cancellationToken);
+                    Task<TestOutcome> task = RunSafelyAsync(
+                        candidate,
+                        normalReservation!,
+                        seed,
+                        inProcess,
+                        cancellationToken);
                     running.Add((task, candidate, normalReservation!));
                     started = true;
                     break;
@@ -482,7 +520,10 @@ internal static class TestCoordinator
                     ReservationToken oversizedReservation = resources.ReserveOversizedExclusive(oversized);
                     oversizedReservationUsed = true;
                     uint seed = seedOverride ?? checked((uint)System.Security.Cryptography.RandomNumberGenerator.GetInt32(1, int.MaxValue));
-                    running.Add((RunSafelyAsync(oversized, seed, inProcess, cancellationToken), oversized, oversizedReservation));
+                    running.Add((
+                        RunSafelyAsync(oversized, oversizedReservation, seed, inProcess, cancellationToken),
+                        oversized,
+                        oversizedReservation));
                 }
 
                 continue;
@@ -523,15 +564,17 @@ internal static class TestCoordinator
 
     private static async Task<TestOutcome> RunSafelyAsync(
         TestCase test,
+        ReservationToken reservation,
         uint seed,
         bool inProcess,
         CancellationToken cancellationToken)
     {
         try
         {
+            reservation.ClaimForWorker(test.Id);
             return await (inProcess
                 ? RunInProcessAsync(test, seed)
-                : RunWorkerAsync(test, seed, cancellationToken)).ConfigureAwait(false);
+                : RunWorkerAsync(test, reservation, seed, cancellationToken)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -559,9 +602,109 @@ internal static class TestCoordinator
 
         var singleWorker = new SchedulerResourceLedger(budget, maxWorkers: 1, isolatesProcessState: true);
         Require(singleWorker.TryReserve(light, out ReservationToken? firstReservation), "The first worker could not reserve resources.");
-        Require(!singleWorker.TryReserve(second, out _), "The global max-worker limit allowed a second worker.");
+        Require(
+            !singleWorker.TryReserve(second, out ReservationToken? deniedWorker) && deniedWorker is null,
+            "The global max-worker limit allowed a second worker or returned a token for a denied start.");
         singleWorker.Release(firstReservation!);
-        Require(singleWorker.FreeCpu == budget.CpuTokens && singleWorker.FreeMemory == budget.MemoryMiB, "A regular release did not restore the budget exactly.");
+        RequireLedgerRestored(singleWorker, budget, "A regular release did not restore the budget exactly.");
+
+        var claimedWorker = new SchedulerResourceLedger(budget, maxWorkers: 1, isolatesProcessState: true);
+        Require(claimedWorker.TryReserve(light, out ReservationToken? claimedReservation), "The worker-claim test could not reserve resources.");
+        RequireThrows<InvalidOperationException>(
+            () => claimedReservation!.ClaimForWorker(second.Id),
+            "A reservation started a worker for a different test id.");
+        claimedReservation!.ClaimForWorker(light.Id);
+        Require(claimedReservation.WorkerStarted, "A live reservation did not record its worker start.");
+        RequireThrows<InvalidOperationException>(
+            () => claimedReservation.ClaimForWorker(light.Id),
+            "One reservation started more than one worker.");
+        claimedWorker.Release(claimedReservation);
+        RequireThrows<InvalidOperationException>(
+            () => claimedReservation.ClaimForWorker(light.Id),
+            "A released reservation started a worker.");
+        RequireLedgerRestored(claimedWorker, budget, "The claimed worker reservation did not restore the budget.");
+
+        var argon = light with
+        {
+            Id = "infra.synthetic-argon",
+            Name = "synthetic Argon",
+            Cost = new TestCost(1, 256, true, TestConstraint.None),
+        };
+        var argonLedger = new SchedulerResourceLedger(budget, maxWorkers: 4, isolatesProcessState: true);
+        Require(argonLedger.TryReserve(argon, out ReservationToken? argonOne), "The first Argon slot could not be reserved.");
+        Require(argonLedger.TryReserve(argon with { Id = "infra.synthetic-argon-two" }, out ReservationToken? argonTwo), "The second Argon slot could not be reserved.");
+        Require(
+            !argonLedger.TryReserve(argon with { Id = "infra.synthetic-argon-three" }, out ReservationToken? deniedArgon)
+                && deniedArgon is null,
+            "The scheduler over-reserved its Argon slots.");
+        argonLedger.Release(argonOne!);
+        argonLedger.Release(argonTwo!);
+        RequireLedgerRestored(argonLedger, budget, "Argon reservations did not restore their slot and budget counters.");
+
+        var zpaq = light with
+        {
+            Id = "infra.synthetic-zpaq",
+            Name = "synthetic ZPAQ",
+            Cost = new TestCost(1, 256, false, TestConstraint.ZpaqProcess),
+        };
+        var zpaqLedger = new SchedulerResourceLedger(budget, maxWorkers: 4, isolatesProcessState: true);
+        Require(zpaqLedger.TryReserve(zpaq, out ReservationToken? zpaqReservation), "The ZPAQ slot could not be reserved.");
+        Require(
+            !zpaqLedger.TryReserve(zpaq with { Id = "infra.synthetic-zpaq-two" }, out ReservationToken? deniedZpaq)
+                && deniedZpaq is null,
+            "The scheduler over-reserved its ZPAQ slot.");
+        zpaqLedger.Release(zpaqReservation!);
+        RequireLedgerRestored(zpaqLedger, budget, "The ZPAQ reservation did not restore its counters.");
+
+        var gui = light with
+        {
+            Id = "infra.synthetic-gui",
+            Name = "synthetic GUI",
+            Cost = new TestCost(1, 256, false, TestConstraint.Gui),
+        };
+        var guiLedger = new SchedulerResourceLedger(budget, maxWorkers: 4, isolatesProcessState: true);
+        Require(guiLedger.TryReserve(gui, out ReservationToken? guiReservation), "The GUI slot could not be reserved.");
+        Require(!guiLedger.TryReserve(gui with { Id = "infra.synthetic-gui-two" }, out _), "The scheduler over-reserved its GUI slot.");
+        guiLedger.Release(guiReservation!);
+        RequireLedgerRestored(guiLedger, budget, "The GUI reservation did not restore its counters.");
+
+        var entropy = light with
+        {
+            Id = "infra.synthetic-entropy",
+            Name = "synthetic entropy",
+            Cost = new TestCost(1, 256, false, TestConstraint.EntropyState),
+        };
+        var entropyLedger = new SchedulerResourceLedger(budget, maxWorkers: 4, isolatesProcessState: false);
+        Require(entropyLedger.TryReserve(entropy, out ReservationToken? entropyReservation), "The entropy slot could not be reserved.");
+        Require(!entropyLedger.TryReserve(entropy with { Id = "infra.synthetic-entropy-two" }, out _), "The scheduler over-reserved its entropy slot.");
+        entropyLedger.Release(entropyReservation!);
+        RequireLedgerRestored(entropyLedger, budget, "The entropy reservation did not restore its counters.");
+
+        var processExclusive = light with
+        {
+            Id = "infra.synthetic-process-exclusive",
+            Name = "synthetic process exclusive",
+            Cost = new TestCost(1, 256, false, TestConstraint.ProcessExclusive),
+        };
+        var processLedger = new SchedulerResourceLedger(budget, maxWorkers: 4, isolatesProcessState: false);
+        Require(processLedger.TryReserve(processExclusive, out ReservationToken? processReservation), "The process-exclusive reservation failed.");
+        Require(processLedger.ProcessExclusiveRunning, "The process-exclusive flag was not recorded.");
+        Require(!processLedger.TryReserve(light, out _), "A normal worker overlapped a process-exclusive reservation.");
+        processLedger.Release(processReservation!);
+        RequireLedgerRestored(processLedger, budget, "The process-exclusive reservation did not restore its counters.");
+
+        var hostExclusive = light with
+        {
+            Id = "infra.synthetic-host-exclusive",
+            Name = "synthetic host exclusive",
+            Cost = new TestCost(1, 256, false, TestConstraint.HostExclusive),
+        };
+        var hostLedger = new SchedulerResourceLedger(budget, maxWorkers: 4, isolatesProcessState: true);
+        Require(hostLedger.TryReserve(hostExclusive, out ReservationToken? hostReservation), "The host-exclusive reservation failed.");
+        Require(hostLedger.HostExclusiveRunning, "The host-exclusive flag was not recorded.");
+        Require(!hostLedger.TryReserve(light, out _), "A normal worker overlapped a host-exclusive reservation.");
+        hostLedger.Release(hostReservation!);
+        RequireLedgerRestored(hostLedger, budget, "The host-exclusive reservation did not restore its counters.");
 
         var tinyBudget = new HardwareBudget(2, 4L * 1024 * 1024 * 1024, 1, 2048, 1, 1);
         var oversized = light with
@@ -576,7 +719,7 @@ internal static class TestCoordinator
         Require(oversizedReservation.Oversized, "The oversized reservation was not marked explicit.");
         Require(oversizedLedger.FreeCpu == 0 && oversizedLedger.FreeMemory == 0, "The oversized test did not reserve the whole schedulable budget.");
         oversizedLedger.Release(oversizedReservation);
-        Require(oversizedLedger.FreeCpu == tinyBudget.CpuTokens && oversizedLedger.FreeMemory == tinyBudget.MemoryMiB, "The oversized release over- or under-restored the budget.");
+        RequireLedgerRestored(oversizedLedger, tinyBudget, "The oversized release over- or under-restored the budget.");
         RequireThrows<InvalidOperationException>(() => oversizedLedger.Release(oversizedReservation), "A reservation could be released twice.");
 
         var duplicate = second with { Id = light.Id };
@@ -597,6 +740,9 @@ internal static class TestCoordinator
         RequireThrows<InvalidOperationException>(
             () => TestInventory.Validate([light, second], [performance with { Category = "Crypto" }]),
             "A performance test outside the Performance category was accepted.");
+        RequireThrows<InvalidOperationException>(
+            () => TestInventory.Validate([light, second], [performance with { IsPerformance = false }]),
+            "A test in the Performance category without the manual-performance flag was accepted.");
 
         string root = Directory.CreateTempSubdirectory("keep-vault-result-schema-").FullName;
         string resultPath = Path.Combine(root, "results.json");
@@ -611,22 +757,56 @@ internal static class TestCoordinator
             IReadOnlyList<string> failed = ReadFailedIds(resultPath, inventory);
             Require(failed.Count == 1 && failed[0] == light.Id, "A valid failure result did not round-trip.");
 
-            JsonNode validDocument = JsonNode.Parse(File.ReadAllText(resultPath))
-                ?? throw new InvalidOperationException("The self-test result file is empty.");
-            validDocument["schemaVersion"] = RunResultSchemaVersion + 1;
-            File.WriteAllText(resultPath, validDocument.ToJsonString());
-            RequireThrows<InvalidDataException>(
-                () => ReadFailedIds(resultPath, inventory),
-                "An unknown result schema was accepted.");
+            void RequireMutatedResultRejected(Action<JsonObject> mutate, string message)
+            {
+                WriteResults(resultPath, outcomes, budget, maxWorkers: 1, inventory);
+                JsonObject document = JsonNode.Parse(File.ReadAllText(resultPath)) as JsonObject
+                    ?? throw new InvalidOperationException("The self-test result file is not an object.");
+                mutate(document);
+                File.WriteAllText(resultPath, document.ToJsonString());
+                RequireThrows<InvalidDataException>(() => ReadFailedIds(resultPath, inventory), message);
+            }
 
-            WriteResults(resultPath, outcomes, budget, maxWorkers: 1, inventory);
-            JsonNode staleDocument = JsonNode.Parse(File.ReadAllText(resultPath))
-                ?? throw new InvalidOperationException("The self-test result file is empty.");
-            staleDocument["tests"]![0]!["id"] = "infra.removed-test";
-            File.WriteAllText(resultPath, staleDocument.ToJsonString());
+            RequireMutatedResultRejected(
+                document => document["schemaVersion"] = RunResultSchemaVersion + 1,
+                "An unknown result schema was accepted.");
+            RequireMutatedResultRejected(
+                document => document["testInventoryHash"] = new string('0', 64),
+                "A stale inventory hash was accepted.");
+            RequireMutatedResultRejected(
+                document => document["head"] = "unknown",
+                "An unverifiable Git HEAD was accepted.");
+            RequireMutatedResultRejected(
+                document => document["head"] = new string('0', 40),
+                "A stale Git HEAD was accepted.");
+            RequireMutatedResultRejected(
+                document => document["platform"] = "different-platform",
+                "A result from a different platform was accepted.");
+            RequireMutatedResultRejected(
+                document => document["osArchitecture"] = "different-os-architecture",
+                "A result from a different OS architecture was accepted.");
+            RequireMutatedResultRejected(
+                document => document["processArchitecture"] = "different-process-architecture",
+                "A result from a different process architecture was accepted.");
+            RequireMutatedResultRejected(
+                document => document["tests"]![0]!["id"] = "infra.removed-test",
+                "A stale result test id was accepted.");
+            RequireMutatedResultRejected(
+                document => document["tests"]![0]!["status"] = "UNKNOWN",
+                "A malformed result status was accepted.");
+            RequireMutatedResultRejected(
+                document =>
+                {
+                    JsonArray tests = document["tests"] as JsonArray
+                        ?? throw new InvalidOperationException("The self-test result has no tests array.");
+                    tests.Add(tests[0]!.DeepClone());
+                },
+                "A duplicate result test id was accepted.");
+
+            File.WriteAllText(resultPath, "{");
             RequireThrows<InvalidDataException>(
                 () => ReadFailedIds(resultPath, inventory),
-                "A stale result test id was accepted.");
+                "Malformed result JSON was accepted.");
         }
         finally
         {
@@ -636,7 +816,7 @@ internal static class TestCoordinator
         Require(TestRunner.ShouldRunComprehensive(smokeFailed: true, failFast: false), "A normal full run would stop after a smoke failure.");
         Require(!TestRunner.ShouldRunComprehensive(smokeFailed: true, failFast: true), "--fail-fast would continue after a smoke failure.");
         Require(TestRunner.MatchesSelector(light, light.Id), "--only did not match an exact stable test id.");
-        Require(TestRunner.MatchesSelector(light, "synthetic light"), "--only no longer supports a display-name substring.");
+        Require(!TestRunner.MatchesSelector(light, "synthetic light"), "--only accepted a display-name substring instead of a stable id.");
         Require(TestRunner.MatchesSelector(performance, performance.Id), "--only did not match a stable performance-test id.");
         Require(!TestRunner.IsAutomaticComprehensive(performance), "A manual performance gate was included in an automatic run.");
         Require(TestRunner.IsAutomaticComprehensive(light), "A normal comprehensive test was excluded as a performance gate.");
@@ -645,9 +825,151 @@ internal static class TestCoordinator
             "A resource-category selection implicitly included a manual performance gate.");
         Require(
             TestRunner.IsSelectedByManualPerformanceMode(performance, true, null, null)
-                && TestRunner.IsSelectedByManualPerformanceMode(performance, false, performance.Id, null)
-                && TestRunner.IsSelectedByManualPerformanceMode(performance, false, null, "Performance"),
-            "An explicit performance selector did not include the manual gate.");
+                && !TestRunner.IsSelectedByManualPerformanceMode(performance, false, performance.Id, null)
+                && !TestRunner.IsSelectedByManualPerformanceMode(performance, false, null, "Performance"),
+            "The manual performance gate was selectable without --performance.");
+        IReadOnlyList<TestCase> exactPerformanceSelection =
+            TestRunner.SelectManualPerformanceTests([light, performance], performance.Id, null);
+        Require(
+            exactPerformanceSelection.Count == 1
+                && ReferenceEquals(exactPerformanceSelection[0], performance)
+                && TestRunner.SelectManualPerformanceTests([light, performance], "performance.unknown", null).Count == 0,
+            "--performance --only did not select exactly one matching stable performance id.");
+        string performanceRerun = BuildRerunCommand(performance, 0x1234ABCD);
+        Require(
+            performanceRerun.Contains("--performance --only \"performance.synthetic-cipher-suites\" --parallel 1", StringComparison.Ordinal)
+                && !performanceRerun.Contains("--full", StringComparison.Ordinal),
+            "A failed manual performance gate emitted a rerun command that bypasses --performance.");
+        string forwardedPerformanceOutput = ExtractWorkerDiagnostics(
+            "    Kalyna 123.4 MiB/s\n    PERF_RESULT_JSON={\"schemaVersion\":2}\n"
+            + WorkerResultMarker + "{\"schemaVersion\":1,\"status\":\"PASS\"}\n");
+        Require(
+            forwardedPerformanceOutput.Contains("Kalyna 123.4 MiB/s", StringComparison.Ordinal)
+                && forwardedPerformanceOutput.Contains("PERF_RESULT_JSON={\"schemaVersion\":2}", StringComparison.Ordinal)
+                && !forwardedPerformanceOutput.Contains(WorkerResultMarker, StringComparison.Ordinal),
+            "The coordinator discarded performance medians/JSON or exposed its private worker envelope.");
+        IReadOnlySet<string> nativeBuildImpact =
+            TestRunner.GetPerformanceSensitiveImpact("tools/Build-Native-macOS.sh");
+        Require(
+            nativeBuildImpact.Contains("performance.cipher-suites")
+                && nativeBuildImpact.Contains("trust.native-tools")
+                && nativeBuildImpact.Contains("crypto.kalyna-fast-path-differential")
+                && nativeBuildImpact.Contains("crypto.chacha20-fast-path-differential")
+                && nativeBuildImpact.Contains("crypto.aes-ctr-differential")
+                && TestRunner.GetPerformanceSensitiveImpact("external/cryptopp/rijndael_simd.cpp").Contains("performance.cipher-suites")
+                && TestRunner.GetPerformanceSensitiveImpact("README.md").Count == 0,
+            "Changed-impact mapping omitted functional/trust gates for a performance-sensitive native build change.");
+        string syntheticNameStatus =
+            "M\0./KeepVaultMac//Services\\Normalized.cs\0"
+            + "R097\0KeepVaultMac/Services/OldBoundary.cs\0KeepVaultMac/Services/NewBoundary.cs\0"
+            + "C100\0KeepVaultMac/Services/CopySource.cs\0KeepVaultMac/Services/CopyTarget.cs\0"
+            + "M\0KeepVaultMac/Services/CaseBoundary.cs\0"
+            + "M\0KeepVaultMac/Services/caseBoundary.cs\0";
+        IReadOnlySet<string> parsedChangedPaths = TestRunner.ParseGitNameStatusZ(syntheticNameStatus);
+        IReadOnlySet<string> parsedAddedOrCopiedPaths =
+            TestRunner.ParseGitAddedOrCopiedPathsZ(
+                syntheticNameStatus
+                + "A\0KeepVaultMac/Services/AddedBoundary.cs\0");
+        Require(
+            parsedChangedPaths.Count == 7
+                && parsedChangedPaths.Contains("KeepVaultMac/Services/Normalized.cs")
+                && parsedChangedPaths.Contains("KeepVaultMac/Services/OldBoundary.cs")
+                && parsedChangedPaths.Contains("KeepVaultMac/Services/NewBoundary.cs")
+                && parsedChangedPaths.Contains("KeepVaultMac/Services/CopySource.cs")
+                && parsedChangedPaths.Contains("KeepVaultMac/Services/CopyTarget.cs")
+                && parsedChangedPaths.Contains("KeepVaultMac/Services/CaseBoundary.cs")
+                && parsedChangedPaths.Contains("KeepVaultMac/Services/caseBoundary.cs"),
+            "NUL-delimited changed-path parsing lost M/R/C paths, normalization, or case-distinct entries.");
+        Require(
+            parsedAddedOrCopiedPaths.SetEquals(
+                ["KeepVaultMac/Services/CopyTarget.cs", "KeepVaultMac/Services/AddedBoundary.cs"]),
+            "Added/copy-destination paths were not distinguished from modified, renamed, or copy-source paths.");
+        Require(
+            string.Equals(
+                TestRunner.NormalizeChangedPath("././KeepVaultMac\\Services///Nested/./Boundary.cs"),
+                "KeepVaultMac/Services/Nested/Boundary.cs",
+                StringComparison.Ordinal)
+                && TestRunner.NormalizeChangedPath("../outside.cs") is null
+                && TestRunner.NormalizeChangedPath("/absolute.cs") is null
+                && TestRunner.NormalizeChangedPath("C:\\absolute.cs") is null,
+            "Changed-path normalization accepted an unsafe path or produced a non-canonical path.");
+        RequireThrows<InvalidDataException>(
+            () => TestRunner.ParseGitNameStatusZ("R100\0old.cs\0"),
+            "A truncated rename record was accepted.");
+        RequireThrows<InvalidDataException>(
+            () => TestRunner.ParseGitPathListZ("../outside.cs\0"),
+            "An unsafe untracked path was accepted.");
+        IReadOnlySet<string> untrackedPaths = TestRunner.ParseGitPathListZ(
+            ".\\KeepVaultMac//Services/NewSecurityBoundary.cs\0");
+        IReadOnlySet<string> untrackedImpact = TestRunner.MapChangedPathsToTests(untrackedPaths);
+        Require(
+            untrackedPaths.SetEquals(["KeepVaultMac/Services/NewSecurityBoundary.cs"])
+                && untrackedImpact.Contains("ALL_SMOKE")
+                && untrackedImpact.Contains("ALL_COMPREHENSIVE"),
+            "An untracked security source did not select the complete automatic suite.");
+        Require(
+            TestRunner.MapChangedPathsToTests(["LICENSE"]).Count == 0
+                && TestRunner.MapChangedPathsToTests(["license"]).Contains("ALL_COMPREHENSIVE"),
+            "The benign-path allowlist ignored repository path case.");
+        string changedRepository = Directory.CreateTempSubdirectory("keep-vault-changed-git-").FullName;
+        try
+        {
+            Require(
+                TestRunner.TryRunGit(["init", "--quiet"], out _, changedRepository),
+                "The changed-file integration test could not initialize its Git repository.");
+            File.WriteAllText(Path.Combine(changedRepository, "baseline.txt"), "baseline\n");
+            Require(
+                TestRunner.TryRunGit(["add", "--", "baseline.txt"], out _, changedRepository)
+                    && TestRunner.TryRunGit(
+                        [
+                            "-c",
+                            "user.name=Keep Vault Tests",
+                            "-c",
+                            "user.email=keep-vault-tests.invalid",
+                            "commit",
+                            "--quiet",
+                            "-m",
+                            "baseline",
+                        ],
+                        out _,
+                        changedRepository),
+                "The changed-file integration test could not create its baseline commit.");
+            string untrackedSecurityDirectory = Path.Combine(changedRepository, "KeepVaultMac", "Services");
+            Directory.CreateDirectory(untrackedSecurityDirectory);
+            File.WriteAllText(
+                Path.Combine(untrackedSecurityDirectory, "PasswordKeyServiceExtension.cs"),
+                "// adversarial untracked security source\n");
+            IReadOnlySet<string>? explicitBaseImpact =
+                TestRunner.DetermineAffectedTestsFromGit("HEAD", changedRepository);
+            Require(
+                explicitBaseImpact is not null
+                    && explicitBaseImpact.Contains("ALL_SMOKE")
+                    && explicitBaseImpact.Contains("ALL_COMPREHENSIVE"),
+                "--changed --base ignored an untracked security source.");
+        }
+        finally
+        {
+            Directory.Delete(changedRepository, recursive: true);
+        }
+        Require(
+            TestRunner.ContainsManualPerformanceTest([performance.Id], [light, performance])
+                && !TestRunner.ContainsManualPerformanceTest([light.Id], [light, performance]),
+            "--rerun-failures did not distinguish a manual performance result from an automatic failure.");
+        Require(
+            TestRunner.ResolveWorkerCount(1, "invalid", 64) == 1,
+            "The CLI worker limit did not override the environment.");
+        Require(
+            TestRunner.ResolveWorkerCount(null, "2", 64) == 2,
+            "KEEPVAULT_TEST_WORKERS did not control the global worker limit.");
+        Require(
+            TestRunner.ResolveWorkerCount(null, null, 16) == 8,
+            "The automatic worker limit no longer uses the bounded CPU-derived default.");
+        RequireThrows<ArgumentException>(
+            () => TestRunner.ResolveWorkerCount(null, "0", 16),
+            "An invalid environment worker limit was accepted.");
+        Require(DarwinMaxRssBytesToMiB(1024 * 1024) == 1, "Darwin peak RSS bytes were not converted to MiB.");
+        Require(DarwinMaxRssBytesToMiB(2L * 1024 * 1024 - 1) == 1, "Darwin peak RSS conversion did not use byte units.");
+        CipherSuitePerformanceTests.RunContractRegressionTests();
         if (OperatingSystem.IsMacOS())
         {
             Require(GetPeakRssMiB() > 0, "Darwin returned no process peak RSS high-water mark.");
@@ -687,6 +1009,116 @@ internal static class TestCoordinator
                 && collectAll.Count(outcome => outcome.Status == TestStatus.Fail) == 1
                 && executedAfterFailure == 1,
             "Collect-all stopped after the first failure.");
+
+        int activeWorkers = 0;
+        int observedWorkers = 0;
+        async Task SerialProbeAsync()
+        {
+            int active = Interlocked.Increment(ref activeWorkers);
+            UpdateMaximum(ref observedWorkers, active);
+            await Task.Delay(20).ConfigureAwait(false);
+            Interlocked.Decrement(ref activeWorkers);
+        }
+
+        TestCase serialProbeOne = light with
+        {
+            Id = "infra.synthetic-serial-one",
+            Name = "synthetic serial one",
+            IsSmoke = false,
+            Run = SerialProbeAsync,
+        };
+        TestCase serialProbeTwo = serialProbeOne with
+        {
+            Id = "infra.synthetic-serial-two",
+            Name = "synthetic serial two",
+        };
+        IReadOnlyList<TestOutcome> serialOutcomes = await RunAsync(
+            [serialProbeOne, serialProbeTwo],
+            budget,
+            maxWorkers: 1,
+            cachedTimings: [],
+            seedOverride: 1,
+            failFast: false,
+            inProcess: true,
+            CancellationToken.None,
+            reportOutcomes: false).ConfigureAwait(false);
+        Require(
+            serialOutcomes.All(outcome => outcome.Status == TestStatus.Pass) && observedWorkers == 1,
+            "The coordinator exceeded --parallel 1.");
+
+        activeWorkers = 0;
+        observedWorkers = 0;
+        int enteredWorkers = 0;
+        var bothStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        async Task ParallelProbeAsync()
+        {
+            int active = Interlocked.Increment(ref activeWorkers);
+            UpdateMaximum(ref observedWorkers, active);
+            if (Interlocked.Increment(ref enteredWorkers) == 2)
+            {
+                bothStarted.TrySetResult();
+            }
+
+            await bothStarted.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            Interlocked.Decrement(ref activeWorkers);
+        }
+
+        TestCase parallelProbeOne = serialProbeOne with
+        {
+            Id = "infra.synthetic-parallel-one",
+            Name = "synthetic parallel one",
+            Run = ParallelProbeAsync,
+        };
+        TestCase parallelProbeTwo = parallelProbeOne with
+        {
+            Id = "infra.synthetic-parallel-two",
+            Name = "synthetic parallel two",
+        };
+        IReadOnlyList<TestOutcome> parallelOutcomes = await RunAsync(
+            [parallelProbeOne, parallelProbeTwo],
+            budget,
+            maxWorkers: 2,
+            cachedTimings: [],
+            seedOverride: 1,
+            failFast: false,
+            inProcess: true,
+            CancellationToken.None,
+            reportOutcomes: false).ConfigureAwait(false);
+        Require(
+            parallelOutcomes.All(outcome => outcome.Status == TestStatus.Pass) && observedWorkers == 2,
+            "The coordinator did not apply --parallel 2 as one global worker cap.");
+    }
+
+    private static void UpdateMaximum(ref int target, int candidate)
+    {
+        int observed;
+        do
+        {
+            observed = Volatile.Read(ref target);
+            if (candidate <= observed)
+            {
+                return;
+            }
+        }
+        while (Interlocked.CompareExchange(ref target, candidate, observed) != observed);
+    }
+
+    private static void RequireLedgerRestored(
+        SchedulerResourceLedger ledger,
+        HardwareBudget budget,
+        string message)
+    {
+        Require(
+            ledger.RunningWorkers == 0
+                && ledger.FreeCpu == budget.CpuTokens
+                && ledger.FreeMemory == budget.MemoryMiB
+                && ledger.FreeArgon == budget.ArgonSlots
+                && ledger.FreeZpaq == budget.ZpaqSlots
+                && ledger.FreeGui == 1
+                && ledger.FreeEntropy == 1
+                && !ledger.HostExclusiveRunning
+                && !ledger.ProcessExclusiveRunning,
+            message);
     }
 
     private static void Require(bool condition, string message)
@@ -728,12 +1160,16 @@ internal static class TestCoordinator
             Console.WriteLine($"  {outcome.Failure}");
             Console.WriteLine();
             Console.WriteLine("Re-run:");
-            Console.WriteLine(test.IsSmoke
-                ? $"  dotnet run --no-build --no-restore --project KeepVaultMac.Tests -c Release -- --smoke-only \"{outcome.Id}\" --seed 0x{outcome.Seed:X8}"
-                : $"  dotnet run --no-build --no-restore --project KeepVaultMac.Tests -c Release -- --full --no-smoke --only \"{outcome.Id}\" --seed 0x{outcome.Seed:X8}");
+            Console.WriteLine(BuildRerunCommand(test, outcome.Seed));
             Console.WriteLine();
         }
     }
+
+    internal static string BuildRerunCommand(TestCase test, uint seed) => test.IsPerformance
+        ? $"  dotnet run --no-build --no-restore --project KeepVaultMac.Tests -c Release -- --performance --only \"{test.Id}\" --parallel 1 --seed 0x{seed:X8}"
+        : test.IsSmoke
+            ? $"  dotnet run --no-build --no-restore --project KeepVaultMac.Tests -c Release -- --smoke-only \"{test.Id}\" --seed 0x{seed:X8}"
+            : $"  dotnet run --no-build --no-restore --project KeepVaultMac.Tests -c Release -- --full --no-smoke --only \"{test.Id}\" --seed 0x{seed:X8}";
 
     private static async Task<TestOutcome> RunInProcessAsync(TestCase test, uint seed)
     {
@@ -755,9 +1191,24 @@ internal static class TestCoordinator
 
     internal const string WorkerResultMarker = "##KVTEST ";
 
-    private static async Task<TestOutcome> RunWorkerAsync(TestCase test, uint seed, CancellationToken cancellationToken)
+    private static async Task<TestOutcome> RunWorkerAsync(
+        TestCase test,
+        ReservationToken reservation,
+        uint seed,
+        CancellationToken cancellationToken)
     {
+        if (!reservation.WorkerStarted
+            || reservation.Released
+            || !string.Equals(reservation.TestId, test.Id, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Worker '{test.Id}' has no matching live scheduler reservation.");
+        }
+
         (string fileName, List<string> arguments) = BuildWorkerCommand();
+        if (test.IsPerformance)
+        {
+            arguments.Add("--performance");
+        }
         arguments.Add("--worker");
         arguments.Add("--test-id");
         arguments.Add(test.Id);
@@ -819,6 +1270,8 @@ internal static class TestCoordinator
                             $"invalid worker result envelope for {test.Id}: schema={schemaVersion}, id={id}, status={status}, exit={process.ExitCode}");
                     }
 
+                    ReportWorkerDiagnostics(test, output, errors);
+
                     return new TestOutcome(
                         test.Id,
                         test.Name,
@@ -845,6 +1298,36 @@ internal static class TestCoordinator
         return new TestOutcome(test.Id, test.Name, TestStatus.Fail, stopwatch.Elapsed.TotalSeconds, 0, seed, detail);
     }
 
+    private static void ReportWorkerDiagnostics(TestCase test, string standardOutput, string standardError)
+    {
+        if (!test.IsPerformance)
+        {
+            return;
+        }
+
+        string diagnostics = ExtractWorkerDiagnostics(standardOutput);
+        lock (ConsoleLock)
+        {
+            if (!string.IsNullOrWhiteSpace(diagnostics))
+            {
+                Console.WriteLine(diagnostics);
+            }
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Console.Error.WriteLine(standardError.TrimEnd());
+            }
+        }
+    }
+
+    internal static string ExtractWorkerDiagnostics(string standardOutput) => string.Join(
+        Environment.NewLine,
+        standardOutput
+            .Split('\n')
+            .Select(line => line.TrimEnd('\r'))
+            .Where(line => !line.StartsWith(WorkerResultMarker, StringComparison.Ordinal)
+                && !string.IsNullOrWhiteSpace(line)));
+
     private static (string FileName, List<string> Arguments) BuildWorkerCommand()
     {
         string? host = Environment.ProcessPath;
@@ -870,7 +1353,11 @@ internal static class TestCoordinator
     /// <summary>
     /// Runs exactly one test and prints a machine-readable result line.
     /// </summary>
-    internal static async Task<int> RunWorkerModeAsync(IReadOnlyList<TestCase> allTests, string testId, uint seed)
+    internal static async Task<int> RunWorkerModeAsync(
+        IReadOnlyList<TestCase> allTests,
+        string testId,
+        uint seed,
+        bool performanceRequested)
     {
         TestCase? test = allTests.SingleOrDefault(t => string.Equals(t.Id, testId, StringComparison.Ordinal));
         if (test is null)
@@ -884,6 +1371,24 @@ internal static class TestCoordinator
                 peakRssMiB = 0,
                 seed,
                 failure = $"unknown test id: {testId}",
+            }));
+            return 1;
+        }
+
+        if (test.IsPerformance != performanceRequested)
+        {
+            string selectionFailure = test.IsPerformance
+                ? "manual performance workers require the explicit --performance gate"
+                : "--performance cannot address a non-performance worker";
+            Console.Out.WriteLine(WorkerResultMarker + JsonSerializer.Serialize(new
+            {
+                schemaVersion = WorkerResultSchemaVersion,
+                id = testId,
+                status = "FAIL",
+                seconds = 0.0,
+                peakRssMiB = 0,
+                seed,
+                failure = selectionFailure,
             }));
             return 1;
         }
@@ -943,7 +1448,7 @@ internal static class TestCoordinator
     {
         if (OperatingSystem.IsMacOS() && GetRusage(0, out RUsage usage) == 0 && usage.MaxRss > 0)
         {
-            return checked((int)Math.Min(int.MaxValue, usage.MaxRss / (1024 * 1024)));
+            return DarwinMaxRssBytesToMiB(usage.MaxRss);
         }
 
         try
@@ -956,6 +1461,17 @@ internal static class TestCoordinator
         {
             return 0;
         }
+    }
+
+    internal static int DarwinMaxRssBytesToMiB(long maxRssBytes)
+    {
+        if (maxRssBytes <= 0)
+        {
+            return 0;
+        }
+
+        long mebibytes = maxRssBytes / (1024 * 1024);
+        return checked((int)Math.Min(int.MaxValue, mebibytes));
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -1001,14 +1517,16 @@ internal static class TestCoordinator
         IReadOnlyList<TestCase> inventory)
     {
         string platform = CurrentPlatform();
-        string architecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
+        string osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
+        string processArchitecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
         var document = new
         {
             schemaVersion = RunResultSchemaVersion,
             head = ReadHead(),
             testInventoryHash = TestInventory.ComputeHash(inventory),
             platform,
-            architecture,
+            osArchitecture,
+            processArchitecture,
             hardware = $"{budget.CpuCount} logical CPUs, {budget.TotalRamBytes / (1024 * 1024 * 1024)} GiB, "
                 + $"{RuntimeInformation.OSDescription}",
             budget = new
@@ -1080,21 +1598,22 @@ internal static class TestCoordinator
             }
 
             string platform = document["platform"]?.GetValue<string>() ?? string.Empty;
-            string architecture = document["architecture"]?.GetValue<string>() ?? string.Empty;
+            string osArchitecture = document["osArchitecture"]?.GetValue<string>() ?? string.Empty;
+            string processArchitecture = document["processArchitecture"]?.GetValue<string>() ?? string.Empty;
             if (!string.Equals(platform, CurrentPlatform(), StringComparison.Ordinal)
-                || !string.Equals(architecture, RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(), StringComparison.Ordinal))
+                || !string.Equals(osArchitecture, RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(), StringComparison.Ordinal)
+                || !string.Equals(processArchitecture, RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant(), StringComparison.Ordinal))
             {
-                throw new InvalidDataException("Result file belongs to a different platform or architecture.");
+                throw new InvalidDataException("Result file belongs to a different platform, OS architecture or process architecture.");
             }
 
             string recordedHead = document["head"]?.GetValue<string>() ?? string.Empty;
             string currentHead = ReadHead();
-            if (recordedHead.Length == 0
-                || (!string.Equals(recordedHead, "unknown", StringComparison.Ordinal)
-                    && !string.Equals(currentHead, "unknown", StringComparison.Ordinal)
-                    && !string.Equals(recordedHead, currentHead, StringComparison.Ordinal)))
+            if (!IsCommitId(recordedHead)
+                || !IsCommitId(currentHead)
+                || !string.Equals(recordedHead, currentHead, StringComparison.Ordinal))
             {
-                throw new InvalidDataException("Result file belongs to a different Git HEAD.");
+                throw new InvalidDataException("Result file Git HEAD is unverifiable or stale.");
             }
 
             if (document["tests"] is not JsonArray tests)
@@ -1145,10 +1664,11 @@ internal static class TestCoordinator
     {
         try
         {
+            string repositoryRoot = RepositoryLayout.FindRepositoryRoot();
             using Process? process = Process.Start(new ProcessStartInfo
             {
                 FileName = "git",
-                ArgumentList = { "rev-parse", "HEAD" },
+                ArgumentList = { "-C", repositoryRoot, "rev-parse", "--verify", "HEAD" },
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -1159,12 +1679,27 @@ internal static class TestCoordinator
             }
 
             string head = process.StandardOutput.ReadToEnd().Trim();
-            process.WaitForExit(5000);
-            return string.IsNullOrEmpty(head) ? "unknown" : head;
+            if (!process.WaitForExit(5000) || process.ExitCode != 0 || !IsCommitId(head))
+            {
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+                catch (InvalidOperationException)
+                {
+                }
+
+                return "unknown";
+            }
+
+            return head.ToLowerInvariant();
         }
         catch (SystemException)
         {
             return "unknown";
         }
     }
+
+    private static bool IsCommitId(string value) =>
+        value.Length is 40 or 64 && value.All(char.IsAsciiHexDigit);
 }

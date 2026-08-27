@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
+using System.Xml.Linq;
 using KalynaArchiver.Signing;
 
 namespace KalynaArchiver.Services;
@@ -45,6 +46,8 @@ internal static class MacCompanionVerification
 {
     private const string ScannerBundleName = "QR-Scanner.app";
     private const string ScannerExecutable = "Contents/MacOS/QR-Scanner";
+    private const string ScannerBundleIdentifier = "de.michael-feinermann.qr-scanner";
+    private const string KeepVaultBundleIdentifier = "de.michael-feinermann.keep-vault";
 
     /// <summary>
     /// Looks for the scanner beside Keep Vault and in /Applications, and
@@ -62,8 +65,63 @@ internal static class MacCompanionVerification
                 "QR-Scanner.app was not found beside Keep Vault or in /Applications.");
         }
 
+        string? hostBundle = LocateHostBundle();
+        if (hostBundle is null)
+        {
+            return new CompanionVerificationResult(
+                true,
+                false,
+                bundle,
+                "Keep Vault could not locate its own signed bundle metadata for the companion-version check.");
+        }
+
+        return VerifyQrScannerPair(hostBundle, bundle);
+    }
+
+    /// <summary>
+    /// Verifies one explicit release pair without consulting the running
+    /// process, environment variables, adjacent paths or /Applications.
+    /// </summary>
+    /// <remarks>
+    /// The packaging suite runs from its own test apphost, not from inside the
+    /// signed Keep Vault bundle. Giving that suite the two final distribution
+    /// paths keeps production discovery fail-closed while making the release
+    /// artifact under test unambiguous.
+    /// </remarks>
+    internal static CompanionVerificationResult VerifyQrScannerPairForTests(
+        string keepVaultBundle,
+        string scannerBundle) =>
+        VerifyQrScannerPair(keepVaultBundle, scannerBundle);
+
+    private static CompanionVerificationResult VerifyQrScannerPair(
+        string keepVaultBundle,
+        string scannerBundle)
+    {
+        string bundle = scannerBundle;
+
         try
         {
+            keepVaultBundle = Path.GetFullPath(keepVaultBundle);
+            bundle = Path.GetFullPath(scannerBundle);
+            if (!Directory.Exists(bundle) || new DirectoryInfo(bundle).LinkTarget is not null)
+            {
+                return new CompanionVerificationResult(
+                    false,
+                    false,
+                    bundle,
+                    "The explicitly selected QR-Scanner.app is missing or is a symbolic link.");
+            }
+
+            if (!Directory.Exists(keepVaultBundle)
+                || new DirectoryInfo(keepVaultBundle).LinkTarget is not null)
+            {
+                return new CompanionVerificationResult(
+                    true,
+                    false,
+                    bundle,
+                    "The explicitly selected Keep Vault.app is missing or is a symbolic link.");
+            }
+
             HybridSignaturePolicy policy = SigningTrustPolicy.HybridPolicy
                 ?? throw new InvalidOperationException("The compiled hybrid signing policy is unavailable.");
 
@@ -77,6 +135,28 @@ internal static class MacCompanionVerification
                     false,
                     bundle,
                     $"QR-Scanner.app has no {ScannerExecutable}; it is not the scanner this build signs.");
+            }
+
+            // The detached hybrid signature binds the executable, not the
+            // bundle metadata. Validate Apple's seal and pinned Team ID before
+            // trusting Info.plist, then require the companion to be from this
+            // exact marketing/build pair. Otherwise an authentic but old
+            // scanner would be reported as current, and editing its plist
+            // could disguise that mismatch unless the bundle seal were checked.
+            MacSignatureInfo appleSignature = MacCodeSignature.Check(bundle, nestedBundle: true);
+            if (appleSignature.State != SignatureState.Trusted)
+            {
+                return new CompanionVerificationResult(
+                    true,
+                    false,
+                    bundle,
+                    $"QR-Scanner.app failed its Apple signature or pinned Team-ID check: {appleSignature.Message}");
+            }
+
+            string? metadataFailure = VerifyMatchingReleaseMetadataForTests(keepVaultBundle, bundle);
+            if (metadataFailure is not null)
+            {
+                return new CompanionVerificationResult(true, false, bundle, metadataFailure);
             }
 
             HybridSignatureVerificationResult signature = HybridSignatureService.VerifyFile(
@@ -104,12 +184,26 @@ internal static class MacCompanionVerification
                 return new CompanionVerificationResult(true, false, bundle, manifestFailure);
             }
 
+            // Recheck the bundle seal after reading metadata and detached
+            // artifacts. This does not make path-based LaunchServices object
+            // binding, but it closes the ordinary replace/edit window and
+            // ensures the state finally classified as trusted is still sealed.
+            appleSignature = MacCodeSignature.Check(bundle, nestedBundle: true);
+            if (appleSignature.State != SignatureState.Trusted)
+            {
+                return new CompanionVerificationResult(
+                    true,
+                    false,
+                    bundle,
+                    $"QR-Scanner.app changed while it was being verified: {appleSignature.Message}");
+            }
+
             return new CompanionVerificationResult(
                 true,
                 true,
                 bundle,
-                "QR-Scanner.app matches its SHA3-512/Skein-1024 manifest and carries a valid "
-                + "RSA-PSS/SHA-512 and ML-DSA-87 signature from the pinned keys.");
+                "QR-Scanner.app matches this Keep Vault release version, its Apple Team-ID signature, "
+                + "its SHA3-512/Skein-1024 manifests, and both pinned hybrid signatures.");
         }
         catch (Exception exception)
         {
@@ -209,6 +303,96 @@ internal static class MacCompanionVerification
 
         return null;
     }
+
+    private static string? LocateHostBundle()
+    {
+        string? processPath = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(processPath))
+        {
+            return null;
+        }
+
+        DirectoryInfo? macOs = Directory.GetParent(Path.GetFullPath(processPath));
+        DirectoryInfo? contents = macOs?.Parent;
+        DirectoryInfo? bundle = contents?.Parent;
+        return macOs?.Name == "MacOS"
+            && contents?.Name == "Contents"
+            && bundle?.Name.EndsWith(".app", StringComparison.OrdinalIgnoreCase) == true
+                ? bundle.FullName
+                : null;
+    }
+
+    /// <summary>
+    /// Returns null only when the two sealed bundle metadata records form the
+    /// same release pair. Kept internal so the smoke suite can exercise stale,
+    /// malformed and wrong-identifier companions without launching a camera app.
+    /// </summary>
+    internal static string? VerifyMatchingReleaseMetadataForTests(
+        string keepVaultBundle,
+        string scannerBundle)
+    {
+        try
+        {
+            BundleMetadata keepVault = ReadBundleMetadata(keepVaultBundle);
+            BundleMetadata scanner = ReadBundleMetadata(scannerBundle);
+            if (!string.Equals(keepVault.Identifier, KeepVaultBundleIdentifier, StringComparison.Ordinal)
+                || !string.Equals(scanner.Identifier, ScannerBundleIdentifier, StringComparison.Ordinal))
+            {
+                return "Keep Vault or QR-Scanner has the wrong release bundle identifier.";
+            }
+
+            if (!string.Equals(keepVault.MarketingVersion, scanner.MarketingVersion, StringComparison.Ordinal)
+                || !string.Equals(keepVault.BuildVersion, scanner.BuildVersion, StringComparison.Ordinal))
+            {
+                return $"QR-Scanner.app belongs to release {scanner.MarketingVersion} ({scanner.BuildVersion}), "
+                    + $"but this Keep Vault is {keepVault.MarketingVersion} ({keepVault.BuildVersion}).";
+            }
+
+            return null;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or System.Xml.XmlException)
+        {
+            return $"Release companion metadata is missing or malformed: {exception.Message}";
+        }
+    }
+
+    private static BundleMetadata ReadBundleMetadata(string bundle)
+    {
+        string plistPath = Path.Combine(Path.GetFullPath(bundle), "Contents", "Info.plist");
+        XDocument document = XDocument.Load(plistPath, LoadOptions.None);
+        XElement dictionary = document.Root?.Elements().FirstOrDefault(element => element.Name.LocalName == "dict")
+            ?? throw new InvalidDataException($"Info.plist has no root dictionary: {plistPath}");
+        XElement[] entries = dictionary.Elements().ToArray();
+
+        string ReadString(string key)
+        {
+            for (int index = 0; index + 1 < entries.Length; index++)
+            {
+                if (entries[index].Name.LocalName == "key"
+                    && string.Equals(entries[index].Value, key, StringComparison.Ordinal)
+                    && entries[index + 1].Name.LocalName == "string"
+                    && !string.IsNullOrWhiteSpace(entries[index + 1].Value))
+                {
+                    return entries[index + 1].Value;
+                }
+            }
+
+            throw new InvalidDataException($"Info.plist has no non-empty {key}: {plistPath}");
+        }
+
+        return new BundleMetadata(
+            ReadString("CFBundleIdentifier"),
+            ReadString("CFBundleShortVersionString"),
+            ReadString("CFBundleVersion"));
+    }
+
+    private sealed record BundleMetadata(
+        string Identifier,
+        string MarketingVersion,
+        string BuildVersion);
 
     private static IEnumerable<string> CandidateDirectories()
     {

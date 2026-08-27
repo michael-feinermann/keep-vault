@@ -70,6 +70,11 @@ if [[ ${bundle_id} != ${expected_bundle} ]]; then
   print -u2 "The QR-Scanner bundle identifier '${bundle_id}' does not match '${expected_bundle}'."
   exit 1
 fi
+single_instance=$(/usr/libexec/PlistBuddy -c 'Print :LSMultipleInstancesProhibited' ${info_plist} 2>/dev/null || true)
+if [[ ${single_instance} != true ]]; then
+  print -u2 'QR-Scanner must prohibit multiple simultaneous camera/payload instances.'
+  exit 1
+fi
 
 scanner_binary=${app_path}/Contents/MacOS/QR-Scanner
 if [[ ! -f ${scanner_binary} || -L ${scanner_binary} || ! -x ${scanner_binary} ]]; then

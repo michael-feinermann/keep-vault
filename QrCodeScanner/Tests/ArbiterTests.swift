@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import Foundation
 
@@ -51,6 +52,7 @@ private func single(_ payload: String) -> [Detection] {
 private let factor = String(repeating: "A1B2C3D4", count: 16)
 
 @main
+@MainActor
 private enum ArbiterTests {
     static func main() {
         bothCodesReadableIsAcceptedImmediately()
@@ -61,6 +63,9 @@ private enum ArbiterTests {
         flickerDoesNotResetTheTally()
         aChangedPayloadRestartsTheTally()
         payloadInspection()
+        scanSessionLifecycle()
+        singleInstancePolicy()
+        clipboardLifecycle()
         bothLanguagesAreComplete()
 
         if failures == 0 {
@@ -69,6 +74,95 @@ private enum ArbiterTests {
         }
         FileHandle.standardError.write(Data("ArbiterTests: \(failures) of \(checks) checks failed\n".utf8))
         exit(1)
+    }
+
+    static func scanSessionLifecycle() {
+        var lifecycle = ScanSessionLifecycle()
+        expect(!lifecycle.acceptsDetections, "a new scan session rejects frames before camera start")
+        lifecycle.resume()
+        expect(lifecycle.acceptsDetections, "a resumed scan session accepts detections")
+        lifecycle.suspend()
+        expect(!lifecycle.acceptsDetections, "an accepted payload suspends further detections")
+        lifecycle.resume()
+        expect(lifecycle.acceptsDetections, "a cleared result starts a fresh scan")
+        lifecycle.stop()
+        expect(!lifecycle.acceptsDetections, "closing the window stops detection delivery")
+        expect(!lifecycle.canResume, "closing the window makes the scan session terminal")
+        expect(!lifecycle.resume(), "a delayed camera-start callback cannot resume a stopped session")
+        expect(!lifecycle.acceptsDetections, "resume after stop cannot re-enable detection delivery")
+        lifecycle.suspend()
+        expect(!lifecycle.acceptsDetections, "suspend after stop cannot weaken the terminal state")
+
+        let terminationGate = ScanSessionTerminationGate()
+        expect(!terminationGate.isStopped, "a new off-main camera gate permits initial start")
+        terminationGate.stop()
+        expect(terminationGate.isStopped, "the off-main camera gate remains terminal after stop")
+    }
+
+    static func clipboardLifecycle() {
+        let name = NSPasteboard.Name("de.michael-feinermann.qr-scanner.tests.\(UUID().uuidString)")
+        let pasteboard = NSPasteboard(name: name)
+        pasteboard.clearContents()
+        defer {
+            pasteboard.clearContents()
+            pasteboard.releaseGlobally()
+        }
+
+        var expiryCallbacks = 0
+        let clipboard = VolatileClipboard(lifetime: 3600, pasteboard: pasteboard)
+        clipboard.copy("factor-secret") { expiryCallbacks += 1 }
+        expectEqual(
+            pasteboard.string(forType: .string),
+            "factor-secret",
+            "the requested payload reaches the isolated test pasteboard")
+        expect(
+            pasteboard.types?.contains(NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")) == true,
+            "the copied payload carries the concealed clipboard marker")
+        clipboard.clearIfStillOurs()
+        expect(pasteboard.string(forType: .string) == nil, "the scanner clears a clipboard item it still owns")
+        expectEqual(expiryCallbacks, 1, "clearing the owned payload reports one expiry")
+
+        clipboard.copy("second-secret") { expiryCallbacks += 1 }
+        pasteboard.clearContents()
+        pasteboard.setString("user-copy", forType: .string)
+        clipboard.clearIfStillOurs()
+        expectEqual(
+            pasteboard.string(forType: .string),
+            "user-copy",
+            "expiry never erases a clipboard value copied later by the user")
+        expectEqual(expiryCallbacks, 2, "losing clipboard ownership still closes the scanner lifecycle once")
+    }
+
+    static func singleInstancePolicy() {
+        expect(
+            SingleInstancePolicy.shouldContinue(currentPID: 100, runningPIDs: []),
+            "the first scanner process owns the camera/payload instance")
+        expect(
+            SingleInstancePolicy.shouldContinue(currentPID: 100, runningPIDs: [100, 101]),
+            "the oldest scanner PID remains the single-instance winner")
+        expect(
+            !SingleInstancePolicy.shouldContinue(currentPID: 101, runningPIDs: [100, 101]),
+            "a direct second executable instance is rejected")
+        expect(
+            !SingleInstancePolicy.shouldContinue(currentPID: 102, runningPIDs: [100, 101]),
+            "multiple observed peers cannot make a later scanner instance win")
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("qr-scanner-lock-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+            let path = root.appendingPathComponent("instance.lock").path
+            var first = try SingleInstancePolicy.acquireLock(at: path)
+            expect(first != nil, "the first process atomically acquires the scanner instance lock")
+            let second = try SingleInstancePolicy.acquireLock(at: path)
+            expect(second == nil, "a simultaneous second process is refused by the kernel lock")
+            first = nil
+            let replacement = try SingleInstancePolicy.acquireLock(at: path)
+            expect(replacement != nil, "the scanner instance lock is released with its process lease")
+        } catch {
+            expect(false, "the scanner instance-lock regression failed: \(error)")
+        }
+        try? FileManager.default.removeItem(at: root)
     }
 
     /// Both printed codes decode. They agree, so the payload is taken at once —

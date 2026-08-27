@@ -4,11 +4,12 @@ import Foundation
 // QR-Scanner — reads a QR code through the webcam and shows its content.
 //
 // A normal double-clickable app: one window, one camera, one result. It is
-// sandboxed and declares exactly one capability, the camera. It has no file
-// access at all, because it has nothing to read and nothing to write.
+// sandboxed and declares exactly one capability, the camera. It never reads or
+// writes user files; the only filesystem object it creates is the process-wide
+// exclusion lock inside its private sandbox container.
 //
 // The scanned value exists in this process's memory and, if the user asks for
-// it, on the pasteboard for ninety seconds. It is never written to a file.
+// it, on the pasteboard for thirty seconds. It is never written to a file.
 
 @MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -73,6 +74,7 @@ private enum QrScannerApp {
     @MainActor
     static func main() {
         let application = NSApplication.shared
+        guard SingleInstancePolicy.claimOrActivateExisting() else { return }
         // NSApplication holds its delegate weakly, so this local is what keeps
         // it alive. run() does not return until the app terminates, so the
         // local outlives everything that uses it.

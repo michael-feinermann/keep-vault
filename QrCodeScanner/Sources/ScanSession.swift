@@ -75,8 +75,10 @@ final class ScanSession: NSObject {
     private let session = AVCaptureSession()
     private let output = AVCaptureVideoDataOutput()
     private let captureQueue = DispatchQueue(label: "de.michael-feinermann.qr-scanner.capture")
+    private let sessionControlQueue = DispatchQueue(label: "de.michael-feinermann.qr-scanner.session-control")
+    private let terminationGate = ScanSessionTerminationGate()
     private var arbiter = CodeArbiter()
-    private var isSuspended = true
+    private var lifecycle = ScanSessionLifecycle()
 
     /// Read and written only on `captureQueue`, which is serial, so no lock is
     /// needed. It exists to stop the frame work early while a result is on
@@ -115,6 +117,11 @@ final class ScanSession: NSObject {
         AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
             Task { @MainActor in
                 guard let self else { return }
+                // The permission sheet is outside this process. Its callback
+                // may arrive after the user closed the window; stop is
+                // terminal, so neither a failure UI nor a camera start is
+                // allowed to resurrect that session.
+                guard self.lifecycle.canResume else { return }
                 guard granted else {
                     let after = AVCaptureDevice.authorizationStatus(for: .video)
                     self.delegate?.scanSession(self, didFailWith: .accessDenied(before: before, after: after))
@@ -132,6 +139,7 @@ final class ScanSession: NSObject {
     }
 
     private func start() throws {
+        guard lifecycle.canResume else { return }
         guard session.inputs.isEmpty else {
             resume()
             return
@@ -177,14 +185,14 @@ final class ScanSession: NSObject {
     /// drifts through the frame next while the user is reaching for the copy
     /// button.
     func suspend() {
-        isSuspended = true
+        lifecycle.suspend()
         arbiter.reset()
         captureQueue.async { self.isPausedOnCaptureQueue = true }
     }
 
     func resume() {
+        guard lifecycle.resume(), !terminationGate.isStopped else { return }
         arbiter.reset()
-        isSuspended = false
         captureQueue.async { self.isPausedOnCaptureQueue = false }
         startRunning()
     }
@@ -193,27 +201,36 @@ final class ScanSession: NSObject {
     /// signal that the app has stopped watching, so this runs whenever the
     /// window closes rather than being left to process exit.
     func stop() {
-        isSuspended = true
+        terminationGate.stop()
+        lifecycle.stop()
         captureQueue.async { self.isPausedOnCaptureQueue = true }
-        guard session.isRunning else { return }
         let session = self.session
-        DispatchQueue.global(qos: .userInitiated).async {
-            session.stopRunning()
+        sessionControlQueue.async {
+            if session.isRunning {
+                session.stopRunning()
+            }
         }
     }
 
     private func startRunning() {
-        guard !session.isRunning else { return }
         // startRunning blocks until the device is configured, which is long
         // enough to stall the first paint of the window if it runs here.
         let session = self.session
-        DispatchQueue.global(qos: .userInitiated).async {
+        let terminationGate = self.terminationGate
+        sessionControlQueue.async {
+            guard !terminationGate.isStopped, !session.isRunning else { return }
             session.startRunning()
+            // stop() may have won while startRunning() was blocked inside
+            // AVFoundation. Close again on this same serial control queue so a
+            // late permission callback cannot leave the camera running.
+            if terminationGate.isStopped, session.isRunning {
+                session.stopRunning()
+            }
         }
     }
 
     private func handle(_ detections: [Detection]) {
-        guard !isSuspended else { return }
+        guard lifecycle.acceptsDetections else { return }
 
         let outcome = arbiter.admit(detections)
         if case .accepted = outcome {

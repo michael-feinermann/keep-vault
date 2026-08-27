@@ -33,6 +33,9 @@ public sealed partial class ZpaqService
     internal static void ValidatePortableInputTreeForTests(string root) =>
         MacInputSnapshot.ValidatePortableTree(root);
 
+    internal static Action<string>? InputSnapshotHookBeforeSourceEntryOpenForTests { get; set; }
+    internal static Action<string>? InputSnapshotHookAfterReadyForTests { get; set; }
+
     internal static IDisposable CaptureInputSnapshotForTests(
         string workingDirectory,
         IReadOnlyList<string> inputPaths,
@@ -144,7 +147,9 @@ public sealed partial class ZpaqService
         arguments.Add($"-m{compressionLevel}");
         try
         {
+            inputSnapshot.RequireReadyForUse();
             ProcessResult result = await RunTextProcessAsync(executable.Path, arguments, workingDirectory, progress, cancellationToken).ConfigureAwait(false);
+            inputSnapshot.RequireReadyForUse();
             if (!result.Succeeded)
             {
                 return PreserveUnboundProducerOutput(result, temporaryArchivePath, progress);
@@ -304,11 +309,11 @@ public sealed partial class ZpaqService
                 progress,
                 cancellationToken,
                 monitorStagingDirectory: staging.StagingPath,
-                expectedDirectoryIdentity: staging.StagingIdentity).ConfigureAwait(false);
+                macStaging: staging).ConfigureAwait(false);
             if (result.Succeeded)
             {
-                ValidateExtractedDirectoryLimits(staging.StagingPath);
-                staging.Install();
+                ValidateExtractedDirectoryLimits(staging.StagingPath, staging);
+                staging.Install(ValidateExtractedTreeMeasurement);
             }
             else
             {
@@ -317,9 +322,18 @@ public sealed partial class ZpaqService
 
             return result;
         }
-        catch
+        catch (Exception operationError)
         {
-            staging.Cleanup();
+            try
+            {
+                staging.Cleanup();
+            }
+            catch (Exception cleanupError)
+            {
+                throw new IOException(
+                    "macOS extraction failed and the exact bound staging tree could not be cleaned up.",
+                    new AggregateException(operationError, cleanupError));
+            }
             throw;
         }
 #else
@@ -403,7 +417,16 @@ public sealed partial class ZpaqService
         arguments.AddRange(normalizedInputs.Select(path => Path.GetRelativePath(workingDirectory, path)));
         arguments.Add("-method");
         arguments.Add(GetStreamingMethod(compressionLevel));
-        return await RunStdoutPipeAsync(executable.Path, arguments, workingDirectory, consumeArchive, progress, cancellationToken).ConfigureAwait(false);
+        inputSnapshot.RequireReadyForUse();
+        ProcessResult result = await RunStdoutPipeAsync(
+            executable.Path,
+            arguments,
+            workingDirectory,
+            consumeArchive,
+            progress,
+            cancellationToken).ConfigureAwait(false);
+        inputSnapshot.RequireReadyForUse();
+        return result;
     }
 
     public async Task<ProcessResult> ExtractStreamingAsync(
@@ -426,11 +449,11 @@ public sealed partial class ZpaqService
                 progress,
                 cancellationToken,
                 monitorStagingDirectory: staging.StagingPath,
-                expectedDirectoryIdentity: staging.StagingIdentity).ConfigureAwait(false);
+                macStaging: staging).ConfigureAwait(false);
             if (result.Succeeded)
             {
-                ValidateExtractedDirectoryLimits(staging.StagingPath);
-                staging.Install();
+                ValidateExtractedDirectoryLimits(staging.StagingPath, staging);
+                staging.Install(ValidateExtractedTreeMeasurement);
             }
             else
             {
@@ -439,9 +462,18 @@ public sealed partial class ZpaqService
 
             return result;
         }
-        catch
+        catch (Exception operationError)
         {
-            staging.Cleanup();
+            try
+            {
+                staging.Cleanup();
+            }
+            catch (Exception cleanupError)
+            {
+                throw new IOException(
+                    "macOS streaming extraction failed and the exact bound staging tree could not be cleaned up.",
+                    new AggregateException(operationError, cleanupError));
+            }
             throw;
         }
 #else
@@ -726,59 +758,12 @@ public sealed partial class ZpaqService
     internal static int MaxExtractedFilesOverride = -1;
     internal static long MinFreeDiskSpaceBytesOverride = -1;
 
-    internal static void ValidateExtractedDirectoryLimits(
-        string stagingDirectory
-#if !KEEPVAULT_MACOS
-        , WindowsExtractionStaging? windowsStaging = null
-#endif
-    )
+    private static void ValidateExtractedTreeMeasurement(DirectoryTreeMeasurement measurement)
     {
-#if !KEEPVAULT_MACOS
-        if (!Directory.Exists(stagingDirectory) && windowsStaging is null)
-#else
-        if (!Directory.Exists(stagingDirectory))
-#endif
-        {
-            return;
-        }
-
         long maxBytes = MaxExtractedBytesOverride > 0 ? MaxExtractedBytesOverride : DefaultMaxExtractedBytes;
         long maxSingleBytes = MaxSingleFileBytesOverride > 0 ? MaxSingleFileBytesOverride : DefaultMaxSingleFileBytes;
         int maxFiles = MaxExtractedFilesOverride > 0 ? MaxExtractedFilesOverride : DefaultMaxExtractedFiles;
-        long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
 
-#if KEEPVAULT_MACOS
-        long totalBytes = 0;
-        int fileCount = 0;
-        foreach (string file in Directory.EnumerateFiles(stagingDirectory, "*", SearchOption.AllDirectories))
-        {
-            fileCount++;
-            var info = new FileInfo(file);
-            totalBytes += info.Length;
-
-            if (info.Length > maxSingleBytes)
-            {
-                throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Einzeldateigröße überschritten ({maxSingleBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
-            }
-
-            if (fileCount > maxFiles)
-            {
-                throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Dateianzahl überschritten ({maxFiles}). Mögliche Decompression-Bomb abgelehnt.");
-            }
-
-            if (totalBytes > maxBytes)
-            {
-                throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Gesamtgröße überschritten ({maxBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
-            }
-        }
-        long freeSpace = MacSafeFileSystem.GetFreeDiskSpaceBytes(stagingDirectory);
-        if (freeSpace < 0 || freeSpace < minFreeSpace)
-        {
-            throw new IOException($"ZPAQ-Extraktion abgebrochen: Unzureichender freier Speicherplatz auf dem Ziellaufwerk ({freeSpace} Bytes verbleibend).");
-        }
-#else
-        DirectoryTreeMeasurement measurement = windowsStaging?.MeasureTree(allowWriters: false)
-            ?? WindowsExtractionStaging.MeasureTreeNoFollow(stagingDirectory, allowWriters: false);
         if (measurement.MaxFileBytes > maxSingleBytes)
         {
             throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Einzeldateigröße überschritten ({maxSingleBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
@@ -793,10 +778,63 @@ public sealed partial class ZpaqService
         {
             throw new InvalidDataException($"ZPAQ-Extraktionsgrenze für Gesamtgröße überschritten ({maxBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
         }
+    }
+
+    internal static void ValidateExtractedDirectoryLimits(
+        string stagingDirectory
+#if KEEPVAULT_MACOS
+        , MacExtractionStaging? macStaging = null
+#else
+        , WindowsExtractionStaging? windowsStaging = null
+#endif
+    )
+    {
+#if KEEPVAULT_MACOS
+        if (!Directory.Exists(stagingDirectory) && macStaging is null)
+#else
+        if (!Directory.Exists(stagingDirectory) && windowsStaging is null)
+#endif
+        {
+            return;
+        }
+
+        long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
+
+#if KEEPVAULT_MACOS
+        DirectoryTreeMeasurement measurement = macStaging?.MeasureTree(allowWriters: false)
+            ?? MeasureMacDirectoryTreeNoFollow(stagingDirectory, allowWriters: false);
+        ValidateExtractedTreeMeasurement(measurement);
+
+        macStaging?.VerifyIdentity();
+        long freeSpace = MacSafeFileSystem.GetFreeDiskSpaceBytes(stagingDirectory);
+        if (freeSpace < 0 || freeSpace < minFreeSpace)
+        {
+            throw new IOException($"ZPAQ-Extraktion abgebrochen: Unzureichender freier Speicherplatz auf dem Ziellaufwerk ({freeSpace} Bytes verbleibend).");
+        }
+#else
+        DirectoryTreeMeasurement measurement = windowsStaging?.MeasureTree(allowWriters: false)
+            ?? WindowsExtractionStaging.MeasureTreeNoFollow(stagingDirectory, allowWriters: false);
+        ValidateExtractedTreeMeasurement(measurement);
 #endif
     }
 
-#if !KEEPVAULT_MACOS
+#if KEEPVAULT_MACOS
+    private static DirectoryTreeMeasurement MeasureMacDirectoryTreeNoFollow(
+        string stagingDirectory,
+        bool allowWriters)
+    {
+        string fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(stagingDirectory));
+        using SafeFileHandle rootHandle = MacSafeFileSystem.OpenDirectoryHandle(fullPath);
+        MacSafeFileSystem.RequirePathStillNamesHandle(rootHandle, fullPath);
+        MacFileIdentity identity = MacSafeFileSystem.GetIdentity(rootHandle);
+        DirectoryTreeMeasurement measurement = MacSafeFileSystem.MeasureDirectoryTreeNoFollow(
+            rootHandle,
+            identity,
+            allowWriters);
+        MacSafeFileSystem.RequirePathStillNamesHandle(rootHandle, fullPath);
+        return measurement;
+    }
+#else
     /// <summary>
     /// Walks the staged extraction tree one level at a time and refuses any
     /// reparse point, without ever descending through one.
@@ -832,42 +870,18 @@ public sealed partial class ZpaqService
         CancellationTokenSource linkedCts,
         CancellationToken cancellationToken
 #if KEEPVAULT_MACOS
-        , MacFileIdentity? boundDirectoryIdentity = null
+        , MacExtractionStaging? macStaging = null
 #else
         , WindowsExtractionStaging? windowsStaging = null
 #endif
     )
     {
-        long maxBytes = MaxExtractedBytesOverride > 0 ? MaxExtractedBytesOverride : DefaultMaxExtractedBytes;
-        long maxSingleBytes = MaxSingleFileBytesOverride > 0 ? MaxSingleFileBytesOverride : DefaultMaxSingleFileBytes;
-        int maxFiles = MaxExtractedFilesOverride > 0 ? MaxExtractedFilesOverride : DefaultMaxExtractedFiles;
         long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
 
         Exception? limitViolation = null;
         int consecutiveErrors = 0;
         const int maxConsecutiveTransientErrors = 3;
         object checkLock = new object();
-
-#if KEEPVAULT_MACOS
-        MacFileIdentity? expectedDirectoryIdentity = boundDirectoryIdentity;
-        if (!expectedDirectoryIdentity.HasValue)
-        {
-            try
-            {
-                if (Directory.Exists(stagingDirectory))
-                {
-                    expectedDirectoryIdentity = MacSafeFileSystem.GetPathIdentityNoFollow(stagingDirectory);
-                }
-            }
-            catch (Exception ex)
-            {
-                linkedCts.Cancel();
-                try { process.Kill(entireProcessTree: true); } catch { }
-                limitViolation = new InvalidOperationException($"Konnte Identität des Staging-Verzeichnisses nicht ermitteln: {ex.Message}", ex);
-                throw limitViolation;
-            }
-        }
-#endif
 
         void CheckLimits()
         {
@@ -887,7 +901,7 @@ public sealed partial class ZpaqService
             }
 
 #if KEEPVAULT_MACOS
-            if (!Directory.Exists(stagingDirectory))
+            if (!Directory.Exists(stagingDirectory) && macStaging is null)
 #else
             if (!Directory.Exists(stagingDirectory) && windowsStaging is null)
 #endif
@@ -903,52 +917,11 @@ public sealed partial class ZpaqService
             try
             {
 #if KEEPVAULT_MACOS
-                if (expectedDirectoryIdentity.HasValue)
-                {
-                    MacFileIdentity currentIdentity = MacSafeFileSystem.GetPathIdentityNoFollow(stagingDirectory);
-                    if (!currentIdentity.SameObject(expectedDirectoryIdentity.Value))
-                    {
-                        linkedCts.Cancel();
-                        try { process.Kill(entireProcessTree: true); } catch { }
-                        limitViolation ??= new InvalidOperationException("Staging-Verzeichnis wurde während der Extraktion ausgetauscht. Prozess abgebrochen.");
-                        return;
-                    }
-                }
-#endif
+                DirectoryTreeMeasurement measurement = macStaging?.MeasureTree(allowWriters: true)
+                    ?? MeasureMacDirectoryTreeNoFollow(stagingDirectory, allowWriters: true);
+                ValidateExtractedTreeMeasurement(measurement);
 
-#if KEEPVAULT_MACOS
-                long totalBytes = 0;
-                int fileCount = 0;
-                foreach (string file in Directory.EnumerateFiles(stagingDirectory, "*", SearchOption.AllDirectories))
-                {
-                    fileCount++;
-                    var info = new FileInfo(file);
-                    totalBytes += info.Length;
-
-                    if (info.Length > maxSingleBytes)
-                    {
-                        linkedCts.Cancel();
-                        try { process.Kill(entireProcessTree: true); } catch { }
-                        limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Einzeldateigröße überschritten ({maxSingleBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
-                        return;
-                    }
-
-                    if (fileCount > maxFiles)
-                    {
-                        linkedCts.Cancel();
-                        try { process.Kill(entireProcessTree: true); } catch { }
-                        limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Dateianzahl überschritten ({maxFiles}). Mögliche Decompression-Bomb abgelehnt.");
-                        return;
-                    }
-
-                    if (totalBytes > maxBytes)
-                    {
-                        linkedCts.Cancel();
-                        try { process.Kill(entireProcessTree: true); } catch { }
-                        limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Gesamtgröße überschritten ({maxBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
-                        return;
-                    }
-                }
+                macStaging?.VerifyIdentity();
                 long freeSpace = MacSafeFileSystem.GetFreeDiskSpaceBytes(stagingDirectory);
                 if (freeSpace < 0 || freeSpace < minFreeSpace)
                 {
@@ -960,29 +933,7 @@ public sealed partial class ZpaqService
 #else
                 DirectoryTreeMeasurement measurement = windowsStaging?.MeasureTree(allowWriters: true)
                     ?? WindowsExtractionStaging.MeasureTreeNoFollow(stagingDirectory, allowWriters: true);
-                if (measurement.MaxFileBytes > maxSingleBytes)
-                {
-                    linkedCts.Cancel();
-                    try { process.Kill(entireProcessTree: true); } catch { }
-                    limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Einzeldateigröße überschritten ({maxSingleBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
-                    return;
-                }
-
-                if (measurement.FileCount > maxFiles)
-                {
-                    linkedCts.Cancel();
-                    try { process.Kill(entireProcessTree: true); } catch { }
-                    limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Dateianzahl überschritten ({maxFiles}). Mögliche Decompression-Bomb abgelehnt.");
-                    return;
-                }
-
-                if (measurement.TotalBytes > maxBytes)
-                {
-                    linkedCts.Cancel();
-                    try { process.Kill(entireProcessTree: true); } catch { }
-                    limitViolation ??= new InvalidDataException($"ZPAQ-Extraktionsgrenze für Gesamtgröße überschritten ({maxBytes} Bytes). Mögliche Decompression-Bomb abgelehnt.");
-                    return;
-                }
+                ValidateExtractedTreeMeasurement(measurement);
 #endif
                 consecutiveErrors = 0;
             }
@@ -1080,7 +1031,7 @@ public sealed partial class ZpaqService
         CancellationToken cancellationToken,
         string? monitorStagingDirectory = null
 #if KEEPVAULT_MACOS
-        , MacFileIdentity? expectedDirectoryIdentity = null
+        , MacExtractionStaging? macStaging = null
 #else
         , WindowsExtractionStaging? windowsStaging = null
 #endif
@@ -1108,7 +1059,7 @@ public sealed partial class ZpaqService
                 linkedCts,
                 linkedCts.Token
 #if KEEPVAULT_MACOS
-                , expectedDirectoryIdentity
+                , macStaging
 #else
                 , windowsStaging
 #endif
@@ -1164,7 +1115,7 @@ public sealed partial class ZpaqService
         CancellationToken cancellationToken,
         string? monitorStagingDirectory = null
 #if KEEPVAULT_MACOS
-        , MacFileIdentity? expectedDirectoryIdentity = null
+        , MacExtractionStaging? macStaging = null
 #else
         , WindowsExtractionStaging? windowsStaging = null
 #endif
@@ -1194,7 +1145,7 @@ public sealed partial class ZpaqService
                 linkedCts,
                 linkedCts.Token
 #if KEEPVAULT_MACOS
-                , expectedDirectoryIdentity
+                , macStaging
 #else
                 , windowsStaging
 #endif
@@ -1510,74 +1461,199 @@ public sealed partial class ZpaqService
 #if KEEPVAULT_MACOS
     private sealed partial class MacInputSnapshot : IDisposable
     {
-        private const uint CloneNoOwnerCopy = 0x0002;
-        private const uint CloneNoFollowAny = 0x0008;
-        private readonly string _snapshotRoot;
+        private const ushort OwnerDirectoryMode = 0x01C0; // 0700
+        private const ushort OwnerReadMode = 0x0100; // 0400
+        private const ushort FileTypeMask = 0xF000;
+        private const ushort RegularFileMode = 0x8000;
+        private const ushort DirectoryMode = 0x4000;
+        private const ushort SymbolicLinkMode = 0xA000;
+        private const int AtRemoveDirectory = 0x0080;
+
+        private readonly string _snapshotRootPath;
+        private readonly string _snapshotName;
+        private SafeFileHandle? _snapshotParentHandle;
+        private SafeFileHandle? _snapshotRootHandle;
+        private readonly MacFileIdentity _snapshotParentIdentity;
+        private readonly MacFileIdentity _snapshotRootIdentity;
+        private readonly string _treeFingerprint;
         private bool _disposed;
 
-        private MacInputSnapshot(string snapshotRoot, string[] inputPaths)
+        private MacInputSnapshot(
+            string snapshotRootPath,
+            string snapshotName,
+            SafeFileHandle snapshotParentHandle,
+            MacFileIdentity snapshotParentIdentity,
+            SafeFileHandle snapshotRootHandle,
+            MacFileIdentity snapshotRootIdentity,
+            string treeFingerprint,
+            IReadOnlyList<string> relativeInputs)
         {
-            _snapshotRoot = snapshotRoot;
-            WorkingDirectory = snapshotRoot;
-            InputPaths = inputPaths;
+            _snapshotRootPath = snapshotRootPath;
+            _snapshotName = snapshotName;
+            _snapshotParentHandle = snapshotParentHandle;
+            _snapshotParentIdentity = snapshotParentIdentity;
+            _snapshotRootHandle = snapshotRootHandle;
+            _snapshotRootIdentity = snapshotRootIdentity;
+            _treeFingerprint = treeFingerprint;
+
+            // macOS exposes directory descriptors below /dev/fd for stat, but
+            // does not permit path traversal or chdir through them. Keep the
+            // unpredictable private pathname for ProcessStartInfo; the held
+            // root descriptor remains the identity and cleanup authority, and
+            // the child process binds the directory as its cwd at spawn.
+            WorkingDirectory = snapshotRootPath;
+            InputPaths = relativeInputs
+                .Select(relative => Path.Combine(WorkingDirectory, relative))
+                .ToArray();
         }
 
         internal string WorkingDirectory { get; }
         internal string[] InputPaths { get; }
 
+        internal void RequireReadyForUse()
+        {
+            SafeFileHandle parentHandle = _snapshotParentHandle
+                ?? throw new ObjectDisposedException(nameof(MacInputSnapshot));
+            SafeFileHandle rootHandle = _snapshotRootHandle
+                ?? throw new ObjectDisposedException(nameof(MacInputSnapshot));
+            MacFileIdentity parentIdentity = MacSafeFileSystem.GetIdentity(parentHandle);
+            MacFileIdentity rootIdentity = MacSafeFileSystem.GetIdentity(rootHandle);
+            MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, _snapshotName);
+            if (!parentIdentity.SameObject(_snapshotParentIdentity)
+                || !rootIdentity.SameObjectAndMetadata(_snapshotRootIdentity)
+                || !entryIdentity.SameObjectAndMetadata(rootIdentity))
+            {
+                throw new IOException("The private archive-input root changed before native ZPAQ use.");
+            }
+
+            DirectoryTreeMeasurement current = MacSafeFileSystem.MeasureDirectoryTreeNoFollow(
+                rootHandle,
+                _snapshotRootIdentity,
+                allowWriters: false);
+            if (!string.Equals(current.TreeFingerprint, _treeFingerprint, StringComparison.Ordinal))
+            {
+                throw new IOException("The private archive-input tree changed before native ZPAQ use.");
+            }
+        }
+
         internal static MacInputSnapshot Create(string workingDirectory, IReadOnlyList<string> inputPaths)
         {
             string sourceRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(workingDirectory));
             string[] snapshotSources = NormalizeSnapshotSources(inputPaths);
-            string snapshotRoot = MacSafeFileSystem.ResolveExistingRealPath(
-                Directory.CreateTempSubdirectory("keep-vault-input-").FullName);
-            File.SetUnixFileMode(
-                snapshotRoot,
-                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            using SafeFileHandle sourceRootHandle = MacSafeFileSystem.OpenDirectoryHandle(sourceRoot);
+            MacSafeFileSystem.RequirePathStillNamesHandle(sourceRootHandle, sourceRoot);
+            MacFileIdentity sourceRootIdentity = MacSafeFileSystem.GetIdentity(sourceRootHandle);
 
+            string temporaryParentPath = Path.TrimEndingDirectorySeparator(
+                MacSafeFileSystem.ResolveExistingRealPath(Path.GetTempPath()));
+            SafeFileHandle? snapshotParentHandle = null;
+            SafeFileHandle? snapshotRootHandle = null;
+            MacFileIdentity snapshotParentIdentity = default;
+            MacFileIdentity snapshotRootIdentity = default;
+            string snapshotName = string.Empty;
+            string snapshotRootPath = string.Empty;
             try
             {
-                var snapshots = new string[snapshotSources.Length];
+                snapshotParentHandle = MacSafeFileSystem.OpenDirectoryHandle(temporaryParentPath);
+                MacSafeFileSystem.RequirePathStillNamesHandle(snapshotParentHandle, temporaryParentPath);
+                snapshotParentIdentity = MacSafeFileSystem.GetIdentity(snapshotParentHandle);
+                snapshotRootHandle = CreatePrivateSnapshotDirectory(
+                    snapshotParentHandle,
+                    snapshotParentIdentity,
+                    out snapshotName,
+                    out snapshotRootIdentity);
+                snapshotRootPath = Path.Combine(temporaryParentPath, snapshotName);
+
+                var relativeInputs = new string[snapshotSources.Length];
+                var selectionRoot = new SnapshotSelectionNode();
                 for (int index = 0; index < snapshotSources.Length; index++)
                 {
                     string source = snapshotSources[index];
                     string relative = Path.GetRelativePath(sourceRoot, source);
                     ValidateRelativeSnapshotPath(relative);
-                    string destination = Path.GetFullPath(Path.Combine(snapshotRoot, relative));
-                    EnsureWithinSnapshot(snapshotRoot, destination);
-
-                    string? parent = Path.GetDirectoryName(destination);
-                    if (string.IsNullOrWhiteSpace(parent))
-                    {
-                        throw new IOException("A secure input snapshot destination has no parent directory.");
-                    }
-
-                    Directory.CreateDirectory(parent);
-                    if (File.Exists(destination) || Directory.Exists(destination))
-                    {
-                        throw new IOException(
-                            $"Two archive inputs collide inside the private snapshot: {relative}");
-                    }
-
-                    if (CloneFile(source, destination, CloneNoOwnerCopy | CloneNoFollowAny) != 0)
-                    {
-                        int error = Marshal.GetLastPInvokeError();
-                        throw new IOException(
-                            $"macOS could not create the required atomic copy-on-write input snapshot for {source}. " +
-                            "The selected item may be on a different file-system volume from the private app container. " +
-                            "Keep Vault refuses a non-atomic fallback.",
-                            new Win32Exception(error));
-                    }
-
-                    snapshots[index] = destination;
+                    string[] components = SplitRelativePath(relative);
+                    AddSelection(selectionRoot, components, relative);
+                    relativeInputs[index] = string.Join(Path.DirectorySeparatorChar, components);
                 }
 
-                ValidatePortableTree(snapshotRoot);
-                return new MacInputSnapshot(snapshotRoot, snapshots);
+                var visitedDirectories = new HashSet<(int Device, ulong Inode)>
+                {
+                    (sourceRootIdentity.Device, sourceRootIdentity.Inode),
+                };
+                MirrorSelectionDirectory(
+                    sourceRootHandle,
+                    snapshotRootHandle,
+                    selectionRoot,
+                    string.Empty,
+                    visitedDirectories);
+
+                MacFileIdentity finalSourceRootIdentity = MacSafeFileSystem.GetIdentity(sourceRootHandle);
+                if (!finalSourceRootIdentity.SameObjectAndMetadata(sourceRootIdentity))
+                {
+                    throw new IOException("The bound archive-input working directory changed during snapshot creation.");
+                }
+
+                ValidatePortableTree(snapshotRootHandle, snapshotRootIdentity);
+                DirectoryTreeMeasurement validatedTree = MacSafeFileSystem.MeasureDirectoryTreeNoFollow(
+                    snapshotRootHandle,
+                    snapshotRootIdentity,
+                    allowWriters: false);
+                MacFileIdentity validatedSnapshotIdentity =
+                    MacSafeFileSystem.GetIdentity(snapshotRootHandle);
+
+                InputSnapshotHookAfterReadyForTests?.Invoke(snapshotRootPath);
+                MacFileIdentity finalSnapshotHandleIdentity =
+                    MacSafeFileSystem.GetIdentity(snapshotRootHandle);
+                MacFileIdentity finalSnapshotEntryIdentity =
+                    MacSafeFileSystem.GetIdentityAt(snapshotParentHandle, snapshotName);
+                if (!finalSnapshotHandleIdentity.SameObjectAndMetadata(validatedSnapshotIdentity)
+                    || !finalSnapshotEntryIdentity.SameObjectAndMetadata(finalSnapshotHandleIdentity)
+                    || !MacSafeFileSystem.GetIdentity(snapshotParentHandle).SameObject(snapshotParentIdentity))
+                {
+                    throw new IOException(
+                        "The private archive-input root changed after final validation and before use.");
+                }
+                var snapshot = new MacInputSnapshot(
+                    snapshotRootPath,
+                    snapshotName,
+                    snapshotParentHandle,
+                    snapshotParentIdentity,
+                    snapshotRootHandle,
+                    validatedSnapshotIdentity,
+                    validatedTree.TreeFingerprint,
+                    relativeInputs);
+                snapshotParentHandle = null;
+                snapshotRootHandle = null;
+                return snapshot;
             }
-            catch
+            catch (Exception operationError)
             {
-                TryDeletePrivateTree(snapshotRoot);
+                Exception? cleanupError = null;
+                if (snapshotParentHandle is not null && snapshotRootHandle is not null)
+                {
+                    try
+                    {
+                        MacSafeFileSystem.DeleteDirectoryTreeBound(
+                            snapshotParentHandle,
+                            snapshotParentIdentity,
+                            snapshotName,
+                            snapshotRootHandle,
+                            snapshotRootIdentity);
+                    }
+                    catch (Exception error)
+                    {
+                        cleanupError = error;
+                    }
+                }
+
+                snapshotRootHandle?.Dispose();
+                snapshotParentHandle?.Dispose();
+                if (cleanupError is not null)
+                {
+                    throw new IOException(
+                        "Archive-input snapshot creation failed and the exact bound private tree could not be cleaned up.",
+                        new AggregateException(operationError, cleanupError));
+                }
                 throw;
             }
         }
@@ -1585,13 +1661,12 @@ public sealed partial class ZpaqService
         private static string[] NormalizeSnapshotSources(IReadOnlyList<string> inputPaths)
         {
             string[] distinct = inputPaths
-                .Select(Path.GetFullPath)
+                .Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
             return distinct
                 .Where(source => !distinct.Any(candidate =>
                     !string.Equals(candidate, source, StringComparison.Ordinal)
-                    && Directory.Exists(candidate)
                     && IsPathWithinDirectory(source, candidate)))
                 .ToArray();
         }
@@ -1608,48 +1683,512 @@ public sealed partial class ZpaqService
             }
         }
 
-        private static void EnsureWithinSnapshot(string snapshotRoot, string path)
+        private static string[] SplitRelativePath(string relative)
         {
-            string prefix = Path.TrimEndingDirectorySeparator(snapshotRoot) + Path.DirectorySeparatorChar;
-            if (!path.StartsWith(prefix, StringComparison.Ordinal))
+            string[] components = relative.Split(
+                [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+                StringSplitOptions.RemoveEmptyEntries);
+            if (components.Length == 0)
             {
-                throw new IOException("An input snapshot path escapes its private root.");
+                throw new IOException("An input path does not name an entry below the bound working directory.");
             }
+            foreach (string component in components)
+            {
+                ValidatePortableComponent(component);
+            }
+            return components;
         }
 
         internal static void ValidatePortableTree(string root)
         {
-            var pending = new Stack<string>();
-            pending.Push(root);
-            while (pending.Count > 0)
+            string fullRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+            using SafeFileHandle rootHandle = MacSafeFileSystem.OpenDirectoryHandle(fullRoot);
+            MacSafeFileSystem.RequirePathStillNamesHandle(rootHandle, fullRoot);
+            ValidatePortableTree(rootHandle, MacSafeFileSystem.GetIdentity(rootHandle));
+        }
+
+        private static void ValidatePortableTree(
+            SafeFileHandle rootHandle,
+            MacFileIdentity rootIdentity)
+        {
+            var visited = new HashSet<(int Device, ulong Inode)>
             {
-                string directory = pending.Pop();
-                var portableNames = new HashSet<string>(StringComparer.Ordinal);
-                foreach (string entry in Directory.EnumerateFileSystemEntries(directory))
+                (rootIdentity.Device, rootIdentity.Inode),
+            };
+            ValidatePortableDirectory(rootHandle, string.Empty, visited);
+            if (!MacSafeFileSystem.GetIdentity(rootHandle).SameObject(rootIdentity))
+            {
+                throw new IOException("The bound portable-tree root changed during validation.");
+            }
+        }
+
+        private static void ValidatePortableDirectory(
+            SafeFileHandle directoryHandle,
+            string relativePrefix,
+            HashSet<(int Device, ulong Inode)> visited)
+        {
+            MacFileIdentity beforeDirectory = MacSafeFileSystem.GetIdentity(directoryHandle);
+            IReadOnlyList<MacDirectoryEntry> beforeEntries =
+                MacSafeFileSystem.ReadDirectoryEntriesNoFollow(directoryHandle);
+            ValidatePortableNames(beforeEntries, relativePrefix);
+
+            foreach (MacDirectoryEntry entry in beforeEntries)
+            {
+                string relativePath = CombineRelative(relativePrefix, entry.Name);
+                ushort type = (ushort)(entry.Identity.Mode & FileTypeMask);
+                if (type == SymbolicLinkMode)
                 {
-                    string name = Path.GetFileName(entry);
-                    ValidatePortableComponent(name);
-                    string collisionKey = name.Normalize(NormalizationForm.FormC).ToUpperInvariant();
-                    if (!portableNames.Add(collisionKey))
+                    throw new IOException(
+                        $"The input contains a symbolic link and cannot be archived safely: {relativePath}");
+                }
+                if (type == RegularFileMode)
+                {
+                    if (entry.Identity.LinkCount != 1)
                     {
-                        throw new IOException(
-                            $"The input contains names that collide after portable Unicode/case normalization: {directory}");
+                        throw new IOException($"The input contains a multiply linked file: {relativePath}");
+                    }
+                    using FileStream file = MacSafeFileSystem.OpenReadAt(directoryHandle, entry.Name);
+                    MacFileIdentity opened = MacSafeFileSystem.GetIdentity(file.SafeFileHandle);
+                    MacFileIdentity finalEntry = MacSafeFileSystem.GetIdentityAt(directoryHandle, entry.Name);
+                    if (!opened.SameObjectAndMetadata(entry.Identity)
+                        || !finalEntry.SameObjectAndMetadata(opened)
+                        || opened.LinkCount != 1)
+                    {
+                        throw new IOException($"The portable-tree file changed during validation: {relativePath}");
+                    }
+                    continue;
+                }
+                if (type != DirectoryMode)
+                {
+                    throw new IOException($"The input contains a non-regular object: {relativePath}");
+                }
+
+                using SafeFileHandle child = MacSafeFileSystem.OpenDirectoryHandleAt(directoryHandle, entry.Name);
+                MacFileIdentity openedChild = MacSafeFileSystem.GetIdentity(child);
+                if (!openedChild.SameObjectAndMetadata(entry.Identity))
+                {
+                    throw new IOException($"The portable-tree directory changed before descent: {relativePath}");
+                }
+                if (!visited.Add((openedChild.Device, openedChild.Inode)))
+                {
+                    throw new IOException($"The input contains a directory cycle: {relativePath}");
+                }
+                try
+                {
+                    ValidatePortableDirectory(child, relativePath, visited);
+                }
+                finally
+                {
+                    visited.Remove((openedChild.Device, openedChild.Inode));
+                }
+
+                MacFileIdentity finalChild = MacSafeFileSystem.GetIdentity(child);
+                MacFileIdentity finalEntryIdentity = MacSafeFileSystem.GetIdentityAt(directoryHandle, entry.Name);
+                if (!finalChild.SameObjectAndMetadata(openedChild)
+                    || !finalEntryIdentity.SameObjectAndMetadata(finalChild))
+                {
+                    throw new IOException($"The portable-tree directory changed during validation: {relativePath}");
+                }
+            }
+
+            IReadOnlyList<MacDirectoryEntry> afterEntries =
+                MacSafeFileSystem.ReadDirectoryEntriesNoFollow(directoryHandle);
+            RequireSameEntries(beforeEntries, afterEntries, relativePrefix);
+            if (!MacSafeFileSystem.GetIdentity(directoryHandle).SameObjectAndMetadata(beforeDirectory))
+            {
+                throw new IOException($"The portable-tree directory changed during validation: {relativePrefix}");
+            }
+        }
+
+        private static void MirrorSelectionDirectory(
+            SafeFileHandle sourceDirectory,
+            SafeFileHandle destinationDirectory,
+            SnapshotSelectionNode selection,
+            string relativePrefix,
+            HashSet<(int Device, ulong Inode)> visitedDirectories)
+        {
+            MacFileIdentity beforeDirectory = MacSafeFileSystem.GetIdentity(sourceDirectory);
+            ValidatePortableSelectionNames(selection.Children.Keys, relativePrefix);
+            foreach ((string name, SnapshotSelectionNode childSelection) in
+                     selection.Children.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+            {
+                MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(sourceDirectory, name);
+                string relativePath = CombineRelative(relativePrefix, name);
+                MirrorBoundEntry(
+                    sourceDirectory,
+                    destinationDirectory,
+                    name,
+                    relativePath,
+                    entryIdentity,
+                    childSelection.Selected ? null : childSelection,
+                    visitedDirectories);
+            }
+
+            if (!MacSafeFileSystem.GetIdentity(sourceDirectory).SameObjectAndMetadata(beforeDirectory))
+            {
+                throw new IOException($"The selected archive-input directory changed: {relativePrefix}");
+            }
+        }
+
+        private static void MirrorWholeDirectory(
+            SafeFileHandle sourceDirectory,
+            SafeFileHandle destinationDirectory,
+            string relativePrefix,
+            HashSet<(int Device, ulong Inode)> visitedDirectories)
+        {
+            MacFileIdentity beforeDirectory = MacSafeFileSystem.GetIdentity(sourceDirectory);
+            IReadOnlyList<MacDirectoryEntry> beforeEntries =
+                MacSafeFileSystem.ReadDirectoryEntriesNoFollow(sourceDirectory);
+            ValidatePortableNames(beforeEntries, relativePrefix);
+            foreach (MacDirectoryEntry entry in beforeEntries)
+            {
+                string relativePath = CombineRelative(relativePrefix, entry.Name);
+                MirrorBoundEntry(
+                    sourceDirectory,
+                    destinationDirectory,
+                    entry.Name,
+                    relativePath,
+                    entry.Identity,
+                    childSelection: null,
+                    visitedDirectories);
+            }
+
+            IReadOnlyList<MacDirectoryEntry> afterEntries =
+                MacSafeFileSystem.ReadDirectoryEntriesNoFollow(sourceDirectory);
+            RequireSameEntries(beforeEntries, afterEntries, relativePrefix);
+            if (!MacSafeFileSystem.GetIdentity(sourceDirectory).SameObjectAndMetadata(beforeDirectory))
+            {
+                throw new IOException($"The archive-input directory changed during snapshot creation: {relativePrefix}");
+            }
+        }
+
+        private static void MirrorBoundEntry(
+            SafeFileHandle sourceDirectory,
+            SafeFileHandle destinationDirectory,
+            string name,
+            string relativePath,
+            MacFileIdentity entryIdentity,
+            SnapshotSelectionNode? childSelection,
+            HashSet<(int Device, ulong Inode)> visitedDirectories)
+        {
+            InputSnapshotHookBeforeSourceEntryOpenForTests?.Invoke(relativePath);
+            ushort type = (ushort)(entryIdentity.Mode & FileTypeMask);
+            if (type == SymbolicLinkMode)
+            {
+                throw new IOException($"The input contains a symbolic link: {relativePath}");
+            }
+
+            if (type == RegularFileMode)
+            {
+                if (childSelection is not null)
+                {
+                    throw new IOException($"An archive input traverses through a regular file: {relativePath}");
+                }
+                if (entryIdentity.LinkCount != 1)
+                {
+                    throw new IOException($"The input contains a file with multiple hard links: {relativePath}");
+                }
+
+                using FileStream source = MacSafeFileSystem.OpenReadAt(sourceDirectory, name);
+                MacFileIdentity openedIdentity = MacSafeFileSystem.GetIdentity(source.SafeFileHandle);
+                if (!openedIdentity.SameObjectAndMetadata(entryIdentity)
+                    || openedIdentity.LinkCount != 1)
+                {
+                    throw new IOException($"The archive-input file changed before cloning: {relativePath}");
+                }
+
+                MacSafeFileSystem.CloneOpenedFileIntoDirectory(
+                    source.SafeFileHandle,
+                    destinationDirectory,
+                    name);
+
+                MacFileIdentity finalHandleIdentity = MacSafeFileSystem.GetIdentity(source.SafeFileHandle);
+                MacFileIdentity finalEntryIdentity = MacSafeFileSystem.GetIdentityAt(sourceDirectory, name);
+                if (!finalHandleIdentity.SameObjectAndMetadata(openedIdentity)
+                    || !finalEntryIdentity.SameObjectAndMetadata(finalHandleIdentity)
+                    || finalHandleIdentity.LinkCount != 1
+                    || finalEntryIdentity.LinkCount != 1)
+                {
+                    throw new IOException($"The archive-input file changed while it was cloned: {relativePath}");
+                }
+
+                using FileStream destination = MacSafeFileSystem.OpenReadAt(destinationDirectory, name);
+                MacSafeFileSystem.SetUnixFileMode(destination.SafeFileHandle, OwnerReadMode);
+                MacFileIdentity destinationIdentity = MacSafeFileSystem.GetIdentity(destination.SafeFileHandle);
+                MacFileIdentity destinationEntry = MacSafeFileSystem.GetIdentityAt(destinationDirectory, name);
+                if (!destinationIdentity.SameObject(destinationEntry)
+                    || destinationIdentity.LinkCount != 1
+                    || destinationEntry.LinkCount != 1
+                    || (destinationIdentity.Mode & FileTypeMask) != RegularFileMode
+                    || (destinationIdentity.Mode & 0x01FF) != OwnerReadMode)
+                {
+                    throw new IOException($"The private archive-input clone is not bound safely: {relativePath}");
+                }
+                return;
+            }
+
+            if (type != DirectoryMode)
+            {
+                throw new IOException($"The input is neither a regular file nor a directory: {relativePath}");
+            }
+
+            using SafeFileHandle sourceChild = MacSafeFileSystem.OpenDirectoryHandleAt(sourceDirectory, name);
+            MacFileIdentity openedDirectory = MacSafeFileSystem.GetIdentity(sourceChild);
+            if (!openedDirectory.SameObjectAndMetadata(entryIdentity))
+            {
+                throw new IOException($"The archive-input directory changed before descent: {relativePath}");
+            }
+            if (!visitedDirectories.Add((openedDirectory.Device, openedDirectory.Inode)))
+            {
+                throw new IOException($"The input contains a directory cycle: {relativePath}");
+            }
+
+            using SafeFileHandle destinationChild = CreatePrivateDirectoryAt(destinationDirectory, name);
+            try
+            {
+                if (childSelection is null)
+                {
+                    MirrorWholeDirectory(
+                        sourceChild,
+                        destinationChild,
+                        relativePath,
+                        visitedDirectories);
+                }
+                else
+                {
+                    MirrorSelectionDirectory(
+                        sourceChild,
+                        destinationChild,
+                        childSelection,
+                        relativePath,
+                        visitedDirectories);
+                }
+            }
+            finally
+            {
+                visitedDirectories.Remove((openedDirectory.Device, openedDirectory.Inode));
+            }
+
+            MacFileIdentity finalDirectory = MacSafeFileSystem.GetIdentity(sourceChild);
+            MacFileIdentity finalDirectoryEntry = MacSafeFileSystem.GetIdentityAt(sourceDirectory, name);
+            if (!finalDirectory.SameObjectAndMetadata(openedDirectory)
+                || !finalDirectoryEntry.SameObjectAndMetadata(finalDirectory))
+            {
+                throw new IOException($"The archive-input directory changed during cloning: {relativePath}");
+            }
+        }
+
+        private static SafeFileHandle CreatePrivateSnapshotDirectory(
+            SafeFileHandle parentHandle,
+            MacFileIdentity parentIdentity,
+            out string name,
+            out MacFileIdentity identity)
+        {
+            for (int attempt = 0; attempt < 64; attempt++)
+            {
+                byte[] random = RandomNumberGenerator.GetBytes(16);
+                try
+                {
+                    name = $"keep-vault-input-{Convert.ToHexString(random).ToLowerInvariant()}";
+                }
+                finally
+                {
+                    CryptographicOperations.ZeroMemory(random);
+                }
+
+                try
+                {
+                    MacSafeFileSystem.MkdirAt(parentHandle, name, OwnerDirectoryMode);
+                }
+                catch (Win32Exception exception) when (exception.NativeErrorCode == 17 /* EEXIST */)
+                {
+                    continue;
+                }
+
+                SafeFileHandle? directoryHandle = null;
+                try
+                {
+                    MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, name);
+                    directoryHandle = MacSafeFileSystem.OpenDirectoryHandleAt(parentHandle, name);
+                    MacSafeFileSystem.SetUnixFileMode(directoryHandle, OwnerDirectoryMode);
+                    identity = MacSafeFileSystem.GetIdentity(directoryHandle);
+                    MacFileIdentity finalEntry = MacSafeFileSystem.GetIdentityAt(parentHandle, name);
+                    if (!identity.SameObject(entryIdentity)
+                        || !finalEntry.SameObject(identity)
+                        || (identity.Mode & FileTypeMask) != DirectoryMode
+                        || (identity.Mode & 0x01FF) != OwnerDirectoryMode
+                        || !MacSafeFileSystem.GetIdentity(parentHandle).SameObject(parentIdentity))
+                    {
+                        throw new IOException("The private archive-input root changed while it was bound.");
                     }
 
-                    FileAttributes attributes = File.GetAttributes(entry);
-                    if ((attributes & FileAttributes.ReparsePoint) != 0)
+                    SafeFileHandle result = directoryHandle;
+                    directoryHandle = null;
+                    return result;
+                }
+                catch (Exception operationError)
+                {
+                    Exception? cleanupError = null;
+                    try
                     {
-                        throw new IOException(
-                            $"The input contains a symbolic link or other reparse point and cannot be archived safely: {entry}");
+                        MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, name);
+                        if (directoryHandle is not null
+                            && MacSafeFileSystem.GetIdentity(directoryHandle).SameObject(entryIdentity))
+                        {
+                            MacSafeFileSystem.UnlinkAt(parentHandle, name, AtRemoveDirectory);
+                        }
+                    }
+                    catch (Exception error)
+                    {
+                        cleanupError = error;
+                    }
+                    finally
+                    {
+                        directoryHandle?.Dispose();
                     }
 
-                    if ((attributes & FileAttributes.Directory) != 0)
+                    if (cleanupError is not null)
                     {
-                        pending.Push(entry);
+                        throw new IOException(
+                            "Private archive-input root creation failed and its exact directory could not be removed.",
+                            new AggregateException(operationError, cleanupError));
                     }
+                    throw;
+                }
+            }
+
+            throw new IOException("macOS could not allocate a unique private archive-input directory.");
+        }
+
+        private static SafeFileHandle CreatePrivateDirectoryAt(
+            SafeFileHandle parentHandle,
+            string name)
+        {
+            MacSafeFileSystem.MkdirAt(parentHandle, name, OwnerDirectoryMode);
+            SafeFileHandle? directoryHandle = null;
+            try
+            {
+                MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, name);
+                directoryHandle = MacSafeFileSystem.OpenDirectoryHandleAt(parentHandle, name);
+                MacSafeFileSystem.SetUnixFileMode(directoryHandle, OwnerDirectoryMode);
+                MacFileIdentity openedIdentity = MacSafeFileSystem.GetIdentity(directoryHandle);
+                MacFileIdentity finalEntryIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, name);
+                if (!openedIdentity.SameObject(entryIdentity)
+                    || !finalEntryIdentity.SameObject(openedIdentity)
+                    || (openedIdentity.Mode & FileTypeMask) != DirectoryMode
+                    || (openedIdentity.Mode & 0x01FF) != OwnerDirectoryMode)
+                {
+                    throw new IOException($"The private snapshot directory changed while it was created: {name}");
+                }
+
+                SafeFileHandle result = directoryHandle;
+                directoryHandle = null;
+                return result;
+            }
+            catch (Exception operationError)
+            {
+                Exception? cleanupError = null;
+                try
+                {
+                    MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, name);
+                    if (directoryHandle is not null
+                        && MacSafeFileSystem.GetIdentity(directoryHandle).SameObject(entryIdentity))
+                    {
+                        MacSafeFileSystem.UnlinkAt(parentHandle, name, AtRemoveDirectory);
+                    }
+                }
+                catch (Exception error)
+                {
+                    cleanupError = error;
+                }
+                finally
+                {
+                    directoryHandle?.Dispose();
+                }
+
+                if (cleanupError is not null)
+                {
+                    throw new IOException(
+                        "Private snapshot directory creation failed and its exact entry could not be removed.",
+                        new AggregateException(operationError, cleanupError));
+                }
+                throw;
+            }
+        }
+
+        private static void AddSelection(
+            SnapshotSelectionNode root,
+            IReadOnlyList<string> components,
+            string displayPath)
+        {
+            SnapshotSelectionNode current = root;
+            foreach (string component in components)
+            {
+                if (current.Selected)
+                {
+                    throw new IOException($"An archive input is nested below another selected input: {displayPath}");
+                }
+                if (!current.Children.TryGetValue(component, out SnapshotSelectionNode? child))
+                {
+                    child = new SnapshotSelectionNode();
+                    current.Children.Add(component, child);
+                }
+                current = child;
+            }
+
+            if (current.Selected || current.Children.Count != 0)
+            {
+                throw new IOException($"Two archive inputs collide inside the private snapshot: {displayPath}");
+            }
+            current.Selected = true;
+        }
+
+        private static void ValidatePortableSelectionNames(
+            IEnumerable<string> names,
+            string relativePrefix)
+        {
+            var portableNames = new HashSet<string>(StringComparer.Ordinal);
+            foreach (string name in names)
+            {
+                ValidatePortableComponent(name);
+                string collisionKey = name.Normalize(NormalizationForm.FormC).ToUpperInvariant();
+                if (!portableNames.Add(collisionKey))
+                {
+                    throw new IOException(
+                        $"The input contains names that collide after portable Unicode/case normalization: {relativePrefix}");
                 }
             }
         }
+
+        private static void ValidatePortableNames(
+            IEnumerable<MacDirectoryEntry> entries,
+            string relativePrefix) =>
+            ValidatePortableSelectionNames(entries.Select(entry => entry.Name), relativePrefix);
+
+        private static void RequireSameEntries(
+            IReadOnlyList<MacDirectoryEntry> before,
+            IReadOnlyList<MacDirectoryEntry> after,
+            string relativePrefix)
+        {
+            if (before.Count != after.Count)
+            {
+                throw new IOException($"The archive-input directory changed during enumeration: {relativePrefix}");
+            }
+            for (int index = 0; index < before.Count; index++)
+            {
+                if (!string.Equals(before[index].Name, after[index].Name, StringComparison.Ordinal)
+                    || !before[index].Identity.SameObjectAndMetadata(after[index].Identity))
+                {
+                    throw new IOException(
+                        $"The archive-input directory changed during enumeration: {relativePrefix}; "
+                        + $"before={before[index].Name}:{before[index].Identity}; "
+                        + $"after={after[index].Name}:{after[index].Identity}");
+                }
+            }
+        }
+
+        private static string CombineRelative(string prefix, string name) =>
+            string.IsNullOrEmpty(prefix) ? name : Path.Combine(prefix, name);
 
         private static void ValidatePortableComponent(string component)
         {
@@ -1674,20 +2213,6 @@ public sealed partial class ZpaqService
             }
         }
 
-        private static void TryDeletePrivateTree(string path)
-        {
-            try
-            {
-                if (Directory.Exists(path))
-                {
-                    Directory.Delete(path, recursive: true);
-                }
-            }
-            catch
-            {
-            }
-        }
-
         public void Dispose()
         {
             if (_disposed)
@@ -1696,11 +2221,34 @@ public sealed partial class ZpaqService
             }
 
             _disposed = true;
-            TryDeletePrivateTree(_snapshotRoot);
+            SafeFileHandle? rootHandle = Interlocked.Exchange(ref _snapshotRootHandle, null);
+            SafeFileHandle? parentHandle = Interlocked.Exchange(ref _snapshotParentHandle, null);
+            try
+            {
+                if (rootHandle is not null && parentHandle is not null)
+                {
+                    MacSafeFileSystem.DeleteDirectoryTreeBound(
+                        parentHandle,
+                        _snapshotParentIdentity,
+                        _snapshotName,
+                        rootHandle,
+                        _snapshotRootIdentity);
+                }
+            }
+            finally
+            {
+                rootHandle?.Dispose();
+                parentHandle?.Dispose();
+            }
         }
 
-        [LibraryImport("libSystem.B.dylib", EntryPoint = "clonefile", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
-        private static partial int CloneFile(string source, string destination, uint flags);
+        private sealed class SnapshotSelectionNode
+        {
+            internal Dictionary<string, SnapshotSelectionNode> Children { get; } =
+                new(StringComparer.Ordinal);
+
+            internal bool Selected { get; set; }
+        }
     }
 #endif
 
@@ -1766,6 +2314,19 @@ public sealed partial class ZpaqService
 
         internal string WorkingDirectory { get; }
         internal string[] InputPaths { get; private set; }
+
+        internal void RequireReadyForUse()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            RequireNoReparsePointsWindows(_snapshotRoot);
+            foreach (SnapshotFile file in _files)
+            {
+                if (!file.Lease.CanRead)
+                {
+                    throw new IOException("A leased Windows archive-input file is no longer readable.");
+                }
+            }
+        }
 
         internal static WindowsInputSnapshot Create(string workingDirectory, IReadOnlyList<string> inputPaths)
         {

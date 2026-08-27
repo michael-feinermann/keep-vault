@@ -320,6 +320,9 @@ public sealed partial class MainWindow
             "zpaqCreateFailed" => en ? "ZPAQ could not create the archive." : "ZPAQ konnte das Archiv nicht erstellen.",
             "extractInputMissing" => en ? "Select an archive and output folder." : "Bitte Archiv und Zielordner auswählen.",
             "archiveMissing" => en ? "Select an existing archive." : "Bitte ein vorhandenes Archiv auswählen.",
+            "archiveSelectionTypeInvalid" => en
+                ? "Select a .kzpaq or .zpaq archive."
+                : "Bitte ein .kzpaq- oder .zpaq-Archiv auswählen.",
             "extracting" => en ? "Extracting archive …" : "Archiv wird entpackt …",
             "extractingStreaming" => en ? "Authenticating and streaming the decrypted archive to ZPAQ …" : "Container wird authentifiziert und entschlüsselt direkt an ZPAQ gestreamt …",
             "archiveExtracted" => en ? "The archive was extracted." : "Das Archiv wurde entpackt.",
@@ -339,6 +342,9 @@ public sealed partial class MainWindow
             "recoveryNewFile" => en ? "Recovery selected a new file: {0}" : "Wiederherstellung hat eine neue Datei ausgewählt: {0}",
             "retryAfterRecovery" => en ? "Container repaired; authentication and decryption are retried exactly once." : "Container repariert; Authentifizierung und Entschlüsselung werden genau einmal wiederholt.",
             "eraseMissing" => en ? "Select an existing encrypted container." : "Bitte einen vorhandenen verschlüsselten Container auswählen.",
+            "eraseSelectionTypeInvalid" => en
+                ? "Select a .kzpaq encrypted container."
+                : "Bitte einen verschlüsselten .kzpaq-Container auswählen.",
             "eraseConfirmMissing" => en ? "Confirm the SSD/APFS limitation first." : "Bitte zuerst die SSD- und APFS-Grenze bestätigen.",
             "eraseFinalConfirm" => en
                 ? "KPAR2 recovery data will be destroyed first, then this encrypted container will be corrupted and deleted. Continue?"

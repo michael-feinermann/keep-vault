@@ -7,16 +7,6 @@ namespace KalynaArchiver.Services;
 
 public static partial class SecureFile
 {
-    public static void DeleteIfExists(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-        {
-            return;
-        }
-
-        File.Delete(path);
-    }
-
     public static void DestroyPrefixAndDelete(string? path, int prefixBytes)
     {
         DestroyPrefixAndSuffixAndDelete(path, prefixBytes, prefixBytes);

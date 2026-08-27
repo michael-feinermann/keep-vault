@@ -110,8 +110,8 @@ REM sources reach cryptlib, misc, secblock and from there the integer
 REM machinery, so a hand-picked subset does not link and would have to be
 REM re-picked at every update.
 REM
-REM Unlike the macOS build this one keeps the assembly and SIMD paths on:
-REM MSVC selects them through intrinsics without per-file flags, and
+REM Both release builds keep their architecture-specific acceleration enabled.
+REM On Windows, MSVC selects the SIMD paths through intrinsics without per-file flags, and
 REM x64dll.asm supplies the CPUID and XGETBV helpers cpu.cpp needs on
 REM x64. CRYPTOPP_DISABLE_ASM must therefore stay unset for the archive
 REM AND for every adapter compiled against it - the headers branch on it,

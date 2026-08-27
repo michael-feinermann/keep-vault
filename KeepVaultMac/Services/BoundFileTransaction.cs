@@ -11,8 +11,6 @@ namespace KalynaArchiver.Services;
 /// </summary>
 internal sealed class BoundFileTransaction : IDisposable
 {
-    private const int OpenCreate = 0x0200;
-    private const int OpenExclusive = 0x0800;
     private const int OwnerReadWriteMode = 0x0180; // 0600
 
     private readonly SafeFileHandle _parentHandle;
@@ -55,23 +53,10 @@ internal sealed class BoundFileTransaction : IDisposable
         try
         {
             parentHandle = MacSafeFileSystem.OpenDirectoryHandle(parentPath);
-            int descriptor = OpenAt(
+            fileHandle = MacSafeFileSystem.CreateFileAtExclusive(
                 parentHandle,
                 fileName,
-                MacSafeFileSystem.OpenReadWrite
-                    | OpenCreate
-                    | OpenExclusive
-                    | MacSafeFileSystem.OpenCloseOnExec
-                    | MacSafeFileSystem.OpenNoFollowAny,
-                OwnerReadWriteMode);
-            if (descriptor < 0)
-            {
-                throw new IOException(
-                    $"macOS could not create the bound temporary file '{fileName}'.",
-                    new Win32Exception(Marshal.GetLastPInvokeError()));
-            }
-
-            fileHandle = new SafeFileHandle(descriptor, ownsHandle: true);
+                checked((ushort)OwnerReadWriteMode));
             MacSafeFileSystem.ValidateRegularFile(fileHandle, requireSingleLink: true, fullPath);
             stream = new FileStream(fileHandle, FileAccess.ReadWrite, bufferSize, isAsync: false);
             fileHandle = null;

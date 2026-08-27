@@ -82,7 +82,7 @@ internal sealed class RecoverySidecarTransaction : IDisposable
             temporary = null;
             return transaction;
         }
-        catch
+        catch (Exception operationError)
         {
             if (temporary is not null)
             {
@@ -90,8 +90,13 @@ internal sealed class RecoverySidecarTransaction : IDisposable
                 {
                     temporary.DeleteBound();
                 }
-                catch
+                catch (Exception cleanupError)
                 {
+                    temporary.Dispose();
+                    parentHandle?.Dispose();
+                    throw new IOException(
+                        "KPAR2 transaction creation failed and its exact temporary object could not be removed.",
+                        new AggregateException(operationError, cleanupError));
                 }
                 temporary.Dispose();
             }
@@ -130,6 +135,13 @@ internal sealed class RecoverySidecarTransaction : IDisposable
             RecoveryService.SidecarHookAfterInstall?.Invoke();
             await fullValidator(Stream, cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
+            if (_previous is not null)
+            {
+                RecoveryService.SidecarHookBeforeBackupDestruction?.Invoke(Stream);
+                cancellationToken.ThrowIfCancellationRequested();
+                await fullValidator(Stream, cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
         }
         catch
         {
@@ -137,17 +149,20 @@ internal sealed class RecoverySidecarTransaction : IDisposable
             throw;
         }
 
-        // The generated object was completely validated on both sides of the
-        // rename, and RenameTo proved that the final name identifies that
-        // exact file record. Reusing the validator does not repeat Argon2id:
-        // RecoveryService keeps the already-derived recovery keys alive.
+        // The installed object passed a final complete validation after every
+        // pre-commit scheduling boundary, and RenameTo proved that the final
+        // name identifies that exact file record. The cleanup hook below is
+        // deliberately post-commit: a cleanup failure preserves both objects
+        // and must never roll back the validated new sidecar. Reusing the
+        // validator does not repeat Argon2id because RecoveryService retains
+        // the already-derived recovery keys.
         _committed = true;
         if (_previous is null)
         {
             return;
         }
 
-        RecoveryService.SidecarHookBeforeBackupDestruction?.Invoke();
+        RecoveryService.SidecarHookBeforePostCommitBackupCleanup?.Invoke();
         try
         {
             DestroyPreviousBound();

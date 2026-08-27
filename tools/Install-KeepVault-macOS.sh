@@ -7,10 +7,14 @@ source_app=''
 applications_dir='/Applications'
 create_desktop_alias=1
 allow_development=0
+test_root=''
+injected_failure=''
+deferred_test_failure=''
 
 usage() {
   print -u2 'Usage: Install-KeepVault-macOS.sh [--app "Keep Vault.app"] [--development]'
   print -u2 '       [--applications-dir /Applications] [--no-desktop-alias]'
+  print -u2 '       [--test-root PRIVATE_MKTEMP_ROOT --inject-failure NAME]'
   exit 64
 }
 
@@ -34,12 +38,133 @@ while (( $# != 0 )); do
       create_desktop_alias=0
       shift
       ;;
+    --test-root)
+      (( $# >= 2 )) || usage
+      test_root=$2
+      shift 2
+      ;;
+    --inject-failure)
+      (( $# >= 2 )) || usage
+      injected_failure=$2
+      shift 2
+      ;;
     *) usage ;;
   esac
 done
 
+test_mode=0
+if [[ -n ${test_root} ]]; then
+  test_mode=1
+  test_tmp_parent=${TMPDIR:-/tmp}
+  test_tmp_parent=${test_tmp_parent:A}
+  test_root_logical=${test_root:a}
+  test_root_physical=${test_root:A}
+  if [[ -L ${test_root_logical} || ${test_root_logical} != ${test_root_physical} \
+      || ${test_root_physical:h} != ${test_tmp_parent} \
+      || ${test_root_physical:t} != keep-vault-installer-test.* ]]; then
+    print -u2 'Installer test mode requires a physical mktemp root named keep-vault-installer-test.* directly below TMPDIR.'
+    exit 64
+  fi
+  test_root=${test_root_physical}
+  test_root_uid=$(stat -f '%u' ${test_root} 2>/dev/null || print -1)
+  test_root_mode=$(stat -f '%Lp' ${test_root} 2>/dev/null || print 0)
+  if [[ ! -d ${test_root} || -L ${test_root} || ${test_root_uid} != ${EUID} || ${test_root_mode} != 700 ]]; then
+    print -u2 'Installer test mode requires an existing, caller-owned 0700 directory.'
+    exit 64
+  fi
+  test_root_identity=$(stat -f '%d:%i' ${test_root})
+  test_marker=${test_root}/.keep-vault-installer-test-root
+  if [[ ! -f ${test_marker} || -L ${test_marker} \
+      || $(stat -f '%u:%Lp:%l' ${test_marker} 2>/dev/null || print invalid) != ${EUID}:600:1 \
+      || $(<${test_marker}) != keep-vault-installer-test-v1:${EUID}:${test_root_identity} ]]; then
+    print -u2 'Installer test mode requires the self-test marker bound to this private root inode.'
+    exit 64
+  fi
+  expected_test_applications=${test_root}/Applications
+  if [[ ${applications_dir:a} != ${expected_test_applications} || ${applications_dir:A} != ${expected_test_applications} \
+      || ! -d ${expected_test_applications} || -L ${expected_test_applications} \
+      || $(stat -f '%u:%Lp' ${expected_test_applications} 2>/dev/null || print invalid) != ${EUID}:700 ]]; then
+    print -u2 'Installer test mode requires a caller-owned 0700 Applications directory directly below its private root.'
+    exit 64
+  fi
+  if (( create_desktop_alias )); then
+    print -u2 'Installer test mode requires --no-desktop-alias.'
+    exit 64
+  fi
+  print "installer_test_isolation=${test_root}"
+else
+  if [[ -n ${injected_failure} ]]; then
+    print -u2 '--inject-failure is accepted only inside the validated installer test mode.'
+    exit 64
+  fi
+fi
+
+allowed_injected_failures=(
+  main-app-replace
+  launcher-replace
+  scanner-replace
+  native-verify
+  main-verify
+  anchor-create
+  anchor-replace
+  anchor-post-check
+  rollback-anchor
+  rollback-app
+  recovery-dir-create
+  backup-move-main-app
+  backup-move-launcher-sha3
+  backup-move-launcher-skein
+  backup-move-launcher-khsig
+  backup-move-launcher-sha3-khsig
+  backup-move-launcher-skein-khsig
+  backup-move-scanner-app
+  backup-move-scanner-sha3
+  backup-move-scanner-skein
+  backup-move-scanner-khsig
+  backup-move-scanner-sha3-khsig
+  backup-move-scanner-skein-khsig
+  launch-services
+  finder-alias
+  exit-trap
+)
+if [[ -n ${injected_failure} ]]; then
+  injected_failure_allowed=0
+  for allowed_injected_failure in ${allowed_injected_failures[@]}; do
+    if [[ ${injected_failure} == ${allowed_injected_failure} ]]; then
+      injected_failure_allowed=1
+      break
+    fi
+  done
+  if (( ! injected_failure_allowed )); then
+    print -u2 "Unknown installer failure-injection point: ${injected_failure}"
+    exit 64
+  fi
+fi
+
+inject_failure_now() {
+  local point=$1
+  [[ ${injected_failure} == ${point} ]] || return 0
+  print -u2 "installer_fault_injected=${point}"
+  exit 86
+}
+
+defer_injected_failure() {
+  local point=$1
+  [[ ${injected_failure} == ${point} ]] || return 0
+  [[ -z ${deferred_test_failure} ]] || {
+    print -u2 "Multiple deferred installer faults requested: ${deferred_test_failure}, ${point}"
+    exit 70
+  }
+  deferred_test_failure=${point}
+  print -u2 "installer_fault_deferred=${point}"
+}
+
 # ACQUIRE EXCLUSIVE INSTALLATION LOCK
-lock_file="${TMPDIR:-/tmp}/keep-vault-install.lock"
+if (( test_mode )); then
+  lock_file=${test_root}/install.lock
+else
+  lock_file="${TMPDIR:-/tmp}/keep-vault-install.lock"
+fi
 if ! shlock -f "${lock_file}" -p $$; then
   print -u2 'Another Keep Vault installation is currently in progress.'
   exit 1
@@ -105,6 +230,14 @@ if [[ ! -d ${applications_dir} || -L ${applications_dir} || ! -w ${applications_
   print -u2 "Applications directory is unavailable, a symbolic link, or not writable: ${applications_dir}"
   exit 1
 fi
+applications_dir_identity=$(stat -f '%d:%i' ${applications_dir} 2>/dev/null || true)
+if [[ ! ${applications_dir_identity} =~ '^[0-9]+:[0-9]+$' ]]; then
+  release_lock
+  print -u2 "Could not bind the Applications directory to a stable device/inode identity: ${applications_dir}"
+  exit 1
+fi
+applications_dir_device=${applications_dir_identity%%:*}
+applications_dir_inode=${applications_dir_identity#*:}
 
 desktop_dir=''
 alias_path=''
@@ -125,7 +258,45 @@ if (( create_desktop_alias )); then
   fi
 fi
 
+bound_delete_source=${script_dir}/InstallerBoundDelete.c
+bound_delete_compiler=$(xcrun --find clang 2>/dev/null || true)
+if [[ ! -f ${bound_delete_source} || -L ${bound_delete_source} || ! -x ${bound_delete_compiler} ]]; then
+  release_lock
+  print -u2 'The trusted installer rollback helper source or Apple clang is unavailable.'
+  exit 1
+fi
+
 install_root=$(mktemp -d "${applications_dir}/.keep-vault-install.XXXXXXXX")
+chmod 0700 ${install_root}
+install_root_identity=$(stat -f '%d:%i' ${install_root} 2>/dev/null || true)
+if [[ ! ${install_root_identity} =~ '^[0-9]+:[0-9]+$' \
+    || $(stat -f '%u:%Lp' ${install_root} 2>/dev/null || print invalid) != ${EUID}:700 ]]; then
+  release_lock
+  print -u2 "The private installation root has invalid identity or permissions and was preserved: ${install_root}"
+  exit 1
+fi
+
+rollback_quarantine=${install_root}/rollback-quarantine
+mkdir -m 0700 -- ${rollback_quarantine}
+rollback_quarantine_identity=$(stat -f '%d:%i' ${rollback_quarantine} 2>/dev/null || true)
+if [[ ! ${rollback_quarantine_identity} =~ '^[0-9]+:[0-9]+$' \
+    || $(stat -f '%u:%Lp' ${rollback_quarantine} 2>/dev/null || print invalid) != ${EUID}:700 ]]; then
+  release_lock
+  print -u2 "The private rollback quarantine has invalid identity or permissions and was preserved: ${rollback_quarantine}"
+  exit 1
+fi
+rollback_quarantine_device=${rollback_quarantine_identity%%:*}
+rollback_quarantine_inode=${rollback_quarantine_identity#*:}
+
+bound_delete_helper=${install_root}/installer-bound-delete
+if ! xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
+    ${bound_delete_source} -o ${bound_delete_helper} \
+    || ! chmod 0500 ${bound_delete_helper}; then
+  release_lock
+  print -u2 "The object-bound rollback helper could not be built; the private root was preserved: ${install_root}"
+  exit 1
+fi
+
 staged_app=${install_root}/Keep\ Vault.app
 backup_dir=${install_root}/backup
 mkdir -p ${backup_dir}
@@ -145,10 +316,51 @@ transaction_active=0
 transaction_committed=0
 anchor_updated=0
 had_existing_anchor=0
+had_existing_anchor_directory=0
 recorded_version=0
 rollback_failed=0
+staged_app_identity=''
+staged_scanner_identity=''
+typeset -A staged_launcher_sidecar_identities
+typeset -A staged_scanner_sidecar_identities
 
-anchor_directory='/Library/Application Support/Keep Vault'
+bound_delete_expected() {
+  local object=$1
+  local expected_identity=$2
+  local description=$3
+  local object_parent=${object:h}
+  local object_name=${object:t}
+
+  if [[ ${object_parent} != ${applications_dir} \
+      || ! ${expected_identity} =~ '^[0-9]+:[0-9]+$' ]]; then
+    rollback_errors+=("Refused object-bound rollback deletion for ${description}: invalid parent or expected identity.")
+    preserve_install_root=1
+    return 1
+  fi
+
+  ${bound_delete_helper} \
+    ${applications_dir} \
+    ${object_name} \
+    ${applications_dir_device} \
+    ${applications_dir_inode} \
+    ${rollback_quarantine} \
+    ${rollback_quarantine_device} \
+    ${rollback_quarantine_inode} \
+    ${expected_identity}
+  local helper_status=$?
+  if (( helper_status != 0 )); then
+    rollback_errors+=("Object-bound rollback deletion failed for ${description} (helper exit ${helper_status}); any quarantined object was preserved.")
+    preserve_install_root=1
+    return 1
+  fi
+  return 0
+}
+
+if (( test_mode )); then
+  anchor_directory=${test_root}/State
+else
+  anchor_directory='/Library/Application Support/Keep Vault'
+fi
 anchor_parent=${anchor_directory:h}
 anchor_path=${anchor_directory}/minimum-version
 
@@ -159,20 +371,31 @@ anchor_path=${anchor_directory}/minimum-version
 # would come far too late to prevent the side effects. The privileged block
 # repeats these checks atomically under root; this pre-check fails early and
 # without an authentication prompt.
-if [[ -L ${anchor_parent} || ! -d ${anchor_parent} ]]; then
-  release_lock
-  print -u2 "The rollback anchor parent directory is invalid or a symlink: ${anchor_parent}"
-  exit 1
-fi
-anchor_parent_uid=$(stat -f '%u' ${anchor_parent} 2>/dev/null || print -1)
-anchor_parent_mode=$(stat -f '%Lp' ${anchor_parent} 2>/dev/null || print 0)
-if (( anchor_parent_uid != 0 || (8#${anchor_parent_mode} & 8#022) != 0 )); then
-  release_lock
-  print -u2 "The rollback anchor parent directory has insecure owner/permissions: ${anchor_parent}"
-  exit 1
+if (( test_mode )); then
+  if [[ -L ${anchor_parent} || ! -d ${anchor_parent} \
+      || $(stat -f '%d:%i' ${anchor_parent} 2>/dev/null || print invalid) != ${test_root_identity} \
+      || $(stat -f '%u:%Lp' ${anchor_parent} 2>/dev/null || print invalid) != ${EUID}:700 ]]; then
+    release_lock
+    print -u2 "The private rollback-anchor parent changed identity or permissions: ${anchor_parent}"
+    exit 1
+  fi
+else
+  if [[ -L ${anchor_parent} || ! -d ${anchor_parent} ]]; then
+    release_lock
+    print -u2 "The rollback anchor parent directory is invalid or a symlink: ${anchor_parent}"
+    exit 1
+  fi
+  anchor_parent_uid=$(stat -f '%u' ${anchor_parent} 2>/dev/null || print -1)
+  anchor_parent_mode=$(stat -f '%Lp' ${anchor_parent} 2>/dev/null || print 0)
+  if (( anchor_parent_uid != 0 || (8#${anchor_parent_mode} & 8#022) != 0 )); then
+    release_lock
+    print -u2 "The rollback anchor parent directory has insecure owner/permissions: ${anchor_parent}"
+    exit 1
+  fi
 fi
 
 if [[ -e ${anchor_directory} || -L ${anchor_directory} ]]; then
+  had_existing_anchor_directory=1
   if [[ -L ${anchor_directory} || ! -d ${anchor_directory} ]]; then
     release_lock
     print -u2 "The rollback anchor directory is invalid or a symlink: ${anchor_directory}"
@@ -180,7 +403,13 @@ if [[ -e ${anchor_directory} || -L ${anchor_directory} ]]; then
   fi
   anchor_dir_uid=$(stat -f '%u' ${anchor_directory} 2>/dev/null || print -1)
   anchor_dir_mode=$(stat -f '%Lp' ${anchor_directory} 2>/dev/null || print 0)
-  if (( anchor_dir_uid != 0 || (8#${anchor_dir_mode} & 8#022) != 0 )); then
+  if (( test_mode )); then
+    if (( anchor_dir_uid != EUID )) || [[ ${anchor_dir_mode} != 700 ]]; then
+      release_lock
+      print -u2 "The private rollback anchor directory has insecure owner/permissions: ${anchor_directory}"
+      exit 1
+    fi
+  elif (( anchor_dir_uid != 0 || (8#${anchor_dir_mode} & 8#022) != 0 )); then
     release_lock
     print -u2 "The rollback anchor directory has insecure owner/permissions: ${anchor_directory}"
     exit 1
@@ -196,7 +425,13 @@ if [[ -e ${anchor_path} || -L ${anchor_path} ]]; then
   anchor_uid=$(stat -f '%u' ${anchor_path} 2>/dev/null || print -1)
   anchor_links=$(stat -f '%l' ${anchor_path} 2>/dev/null || print 0)
   anchor_mode=$(stat -f '%Lp' ${anchor_path} 2>/dev/null || print 0)
-  if (( anchor_uid != 0 || anchor_links != 1 || (8#${anchor_mode} & 8#022) != 0 )); then
+  if (( test_mode )); then
+    if (( anchor_uid != EUID || anchor_links != 1 )) || [[ ${anchor_mode} != 600 ]]; then
+      release_lock
+      print -u2 "The private rollback anchor file has insecure owner/permissions or multiple links: ${anchor_path}"
+      exit 1
+    fi
+  elif (( anchor_uid != 0 || anchor_links != 1 || (8#${anchor_mode} & 8#022) != 0 )); then
     release_lock
     print -u2 "The rollback anchor file has insecure owner/permissions or multiple links: ${anchor_path}"
     exit 1
@@ -217,26 +452,44 @@ execute_rollback() {
     print -u2 'Installation incomplete or verification failed; executing unified rollback transaction...'
     rollback_errors=()
 
-    # Rollback Keep Vault
+    # Roll back only objects that this transaction actually displaced or whose
+    # device/inode is still the staged object. In particular, a failure after
+    # replacing the main app but before replacing the scanner must never delete
+    # the untouched pre-existing scanner.
     if (( has_existing_installation )) && [[ -d ${backup_path} && ! -L ${backup_path} ]]; then
       failed_name=.Keep\ Vault.failed.$(date -u +%Y%m%dT%H%M%SZ).app
       if ! atomic_replace ${destination} ${backup_path} ${failed_name}; then
         rollback_errors+=("Failed to restore previous Keep Vault app bundle from ${backup_path}")
-      fi
-      for launcher_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-        if [[ -f ${backup_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix} ]]; then
-          if ! ditto ${backup_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix} \
-            ${applications_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix}; then
-            rollback_errors+=("Failed to restore launcher signature ${launcher_sidecar_suffix}")
-          fi
+      else
+        failed_path=${applications_dir}/${failed_name}
+        if [[ -e ${failed_path} || -L ${failed_path} ]]; then
+          bound_delete_expected ${failed_path} ${staged_app_identity:-} \
+            'the failed Keep Vault staging bundle'
+        else
+          rollback_errors+=("The failed Keep Vault staging bundle disappeared before object-bound rollback deletion.")
         fi
-      done
-      print -u2 'Previous Keep Vault app and launcher signatures restore attempted.'
-    elif [[ -d ${destination} && ! -L ${destination} ]]; then
-      rm -rf -- ${destination}
-      for launcher_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-        rm -f -- ${applications_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix}
-      done
+      fi
+    elif (( ! has_existing_installation )) && [[ -e ${destination} || -L ${destination} ]]; then
+      bound_delete_expected ${destination} ${staged_app_identity:-} \
+        'the newly installed Keep Vault app'
+    fi
+
+    for launcher_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+      launcher_backup=${backup_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix}
+      launcher_final=${applications_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix}
+      if [[ -f ${launcher_backup} && ! -L ${launcher_backup} ]]; then
+        if ! ditto ${launcher_backup} ${launcher_final}; then
+          rollback_errors+=("Failed to restore launcher signature ${launcher_sidecar_suffix}")
+        fi
+      elif [[ -e ${launcher_final} || -L ${launcher_final} ]]; then
+        expected_launcher_identity=${staged_launcher_sidecar_identities[${launcher_sidecar_suffix}]:-}
+        bound_delete_expected ${launcher_final} ${expected_launcher_identity} \
+          "the new launcher signature ${launcher_sidecar_suffix}"
+      fi
+    done
+    (( has_existing_installation )) && print -u2 'Previous Keep Vault app and launcher signatures restore attempted.'
+    if [[ ${injected_failure} == rollback-app ]]; then
+      print -u2 'installer_fault_injected=rollback-app'
     fi
 
     # Rollback QR-Scanner
@@ -245,27 +498,62 @@ execute_rollback() {
         scanner_failed_name=.QR-Scanner.failed.$(date -u +%Y%m%dT%H%M%SZ).app
         if ! atomic_replace ${scanner_destination} ${scanner_backup_path} ${scanner_failed_name}; then
           rollback_errors+=("Failed to restore previous QR-Scanner app bundle from ${scanner_backup_path}")
-        fi
-        for scanner_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-          if [[ -f ${backup_dir}/QR-Scanner.app${scanner_sidecar_suffix} ]]; then
-            if ! ditto ${backup_dir}/QR-Scanner.app${scanner_sidecar_suffix} \
-              ${applications_dir}/QR-Scanner.app${scanner_sidecar_suffix}; then
-              rollback_errors+=("Failed to restore scanner signature ${scanner_sidecar_suffix}")
-            fi
+        else
+          scanner_failed_path=${applications_dir}/${scanner_failed_name}
+          if [[ -e ${scanner_failed_path} || -L ${scanner_failed_path} ]]; then
+            bound_delete_expected ${scanner_failed_path} ${staged_scanner_identity:-} \
+              'the failed QR-Scanner staging bundle'
+          else
+            rollback_errors+=("The failed QR-Scanner staging bundle disappeared before object-bound rollback deletion.")
           fi
-        done
-        print -u2 'Previous QR-Scanner app and signatures restore attempted.'
-      elif [[ -d ${scanner_destination} && ! -L ${scanner_destination} ]]; then
-        rm -rf -- ${scanner_destination}
-        for scanner_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-          rm -f -- ${applications_dir}/QR-Scanner.app${scanner_sidecar_suffix}
-        done
+        fi
+      elif (( ! has_existing_scanner )) && [[ -e ${scanner_destination} || -L ${scanner_destination} ]]; then
+        bound_delete_expected ${scanner_destination} ${staged_scanner_identity:-} \
+          'the newly installed QR-Scanner app'
       fi
+
+      for scanner_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+        scanner_backup=${backup_dir}/QR-Scanner.app${scanner_sidecar_suffix}
+        scanner_final=${applications_dir}/QR-Scanner.app${scanner_sidecar_suffix}
+        if [[ -f ${scanner_backup} && ! -L ${scanner_backup} ]]; then
+          if ! ditto ${scanner_backup} ${scanner_final}; then
+            rollback_errors+=("Failed to restore scanner signature ${scanner_sidecar_suffix}")
+          fi
+        elif [[ -e ${scanner_final} || -L ${scanner_final} ]]; then
+          expected_scanner_sidecar_identity=${staged_scanner_sidecar_identities[${scanner_sidecar_suffix}]:-}
+          bound_delete_expected ${scanner_final} ${expected_scanner_sidecar_identity} \
+            "the new scanner signature ${scanner_sidecar_suffix}"
+        fi
+      done
+      (( has_existing_scanner )) && print -u2 'Previous QR-Scanner app and signatures restore attempted.'
     fi
 
     # Rollback Anchor if modified
     if (( anchor_updated )); then
-      if (( had_existing_anchor )); then
+      if (( test_mode )); then
+        if (( had_existing_anchor )); then
+          if [[ -L ${anchor_directory} || ! -d ${anchor_directory} ]]; then
+            rollback_errors+=("Private rollback anchor directory was replaced.")
+          else
+            rollback_anchor_stage=$(mktemp "${anchor_directory}/.minimum-version.XXXXXXXX")
+            if ! print -rn -- ${recorded_version} > ${rollback_anchor_stage} \
+                || ! chmod 0600 ${rollback_anchor_stage} \
+                || ! mv -f -- ${rollback_anchor_stage} ${anchor_path}; then
+              rollback_errors+=("Failed to restore private rollback anchor")
+              rm -f -- ${rollback_anchor_stage}
+            fi
+          fi
+        else
+          if [[ -f ${anchor_path} && ! -L ${anchor_path} && $(stat -f '%l' ${anchor_path}) == 1 ]]; then
+            rm -f -- ${anchor_path} || rollback_errors+=("Failed to remove private rollback anchor")
+          elif [[ -e ${anchor_path} || -L ${anchor_path} ]]; then
+            rollback_errors+=("Private rollback anchor pathname was replaced and was preserved.")
+          fi
+          if (( ! had_existing_anchor_directory )) && [[ -d ${anchor_directory} && ! -L ${anchor_directory} ]]; then
+            rmdir ${anchor_directory} 2>/dev/null || rollback_errors+=("Failed to remove newly-created private anchor directory")
+          fi
+        fi
+      elif (( had_existing_anchor )); then
         ANCHOR_DIR=${anchor_directory} ANCHOR_PATH=${anchor_path} PREV_VERSION=${recorded_version} osascript <<'APPLESCRIPT' || rollback_errors+=("Failed to restore rollback anchor")
 set anchorDir to system attribute "ANCHOR_DIR"
 set anchorPath to system attribute "ANCHOR_PATH"
@@ -284,6 +572,9 @@ set anchorPath to system attribute "ANCHOR_PATH"
 set commandText to "/bin/rm -f " & quoted form of anchorPath
 do shell script commandText with administrator privileges
 APPLESCRIPT
+      fi
+      if [[ ${injected_failure} == rollback-anchor ]]; then
+        print -u2 'installer_fault_injected=rollback-anchor'
       fi
     fi
 
@@ -329,7 +620,7 @@ cleanup() {
   # left another launchable Keep Vault behind - pointing at a path that no
   # longer exists.
   local launch_services_cleanup='/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
-  if [[ -x ${launch_services_cleanup} && -n ${install_root:-} && ${install_root} == ${applications_dir}/.keep-vault-install.* ]]; then
+  if (( ! test_mode )) && [[ -x ${launch_services_cleanup} && -n ${install_root:-} && ${install_root} == ${applications_dir}/.keep-vault-install.* ]]; then
     # By name, not by glob: a successful install has already moved the staged
     # bundle to its destination, so nothing matches here any more while the
     # database still holds the staging path it was indexed under.
@@ -357,11 +648,17 @@ cleanup() {
     rm -- ${temporary_alias_path}
   fi
   release_lock
+  if (( test_mode )) && [[ ${injected_failure} == exit-trap ]]; then
+    print -u2 'installer_fault_injected=exit-trap'
+    trap - EXIT INT TERM
+    exit 86
+  fi
 }
 trap cleanup EXIT INT TERM
 
 # 1. STAGE KEEP VAULT
 ditto ${source_app} ${staged_app}
+staged_app_identity=$(stat -f '%d:%i' ${staged_app})
 
 for launcher_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
   launcher_sidecar=${source_app}.launcher${launcher_sidecar_suffix}
@@ -370,6 +667,8 @@ for launcher_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
     exit 1
   fi
   ditto ${launcher_sidecar} ${install_root}/Keep\ Vault.app.launcher${launcher_sidecar_suffix}
+  staged_launcher_sidecar_identities[${launcher_sidecar_suffix}]=$( \
+    stat -f '%d:%i' ${install_root}/Keep\ Vault.app.launcher${launcher_sidecar_suffix})
 done
 
 # Check if staged app is signed with Apple Development or Developer ID
@@ -385,6 +684,7 @@ fi
 kv_verify_flags=(--app ${staged_app} --require-launcher-signature)
 (( allow_development )) && kv_verify_flags+=(--allow-development)
 ${script_dir}/Verify-KeepVault-macOS.sh ${kv_verify_flags[@]}
+inject_failure_now native-verify
 
 # 2. READ CANDIDATE VERSION FROM VERIFIED STAGED APP
 candidate_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' ${staged_app}/Contents/Info.plist 2>/dev/null || true)
@@ -405,20 +705,25 @@ if [[ -d ${scanner_source} && ! -L ${scanner_source} ]]; then
   install_scanner=1
   for scanner_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
     if [[ ! -f ${scanner_source}${scanner_sidecar_suffix} || -L ${scanner_source}${scanner_sidecar_suffix} ]]; then
-      print -u2 "QR-Scanner.app has no ${scanner_sidecar_suffix} signature beside it and will not be installed."
-      install_scanner=0
-      break
+      print -u2 "QR-Scanner.app has no ${scanner_sidecar_suffix} signature beside it; the release pair is incomplete."
+      exit 1
     fi
   done
   if (( install_scanner )); then
     ditto ${scanner_source} ${install_root}/QR-Scanner.app
+    staged_scanner_identity=$(stat -f '%d:%i' ${install_root}/QR-Scanner.app)
     for scanner_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
       ditto ${scanner_source}${scanner_sidecar_suffix} ${install_root}/QR-Scanner.app${scanner_sidecar_suffix}
+      staged_scanner_sidecar_identities[${scanner_sidecar_suffix}]=$( \
+        stat -f '%d:%i' ${install_root}/QR-Scanner.app${scanner_sidecar_suffix})
     done
 
     scanner_verify_flags=(--app ${install_root}/QR-Scanner.app)
     (( allow_development )) && scanner_verify_flags+=(--allow-development)
     ${script_dir}/Verify-QR-Scanner-macOS.sh ${scanner_verify_flags[@]}
+    ${script_dir}/Verify-ReleasePairMetadata-macOS.sh \
+      --app ${staged_app} \
+      --scanner ${install_root}/QR-Scanner.app
   fi
 fi
 
@@ -500,25 +805,31 @@ if (( has_existing_installation )); then
 else
   mv ${staged_app} ${destination}
 fi
+if [[ ${injected_failure} == rollback-app ]]; then
+  print -u2 'installer_fault_trigger=rollback-app'
+  exit 86
+fi
+inject_failure_now main-app-replace
 
 for launcher_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
   staged_sidecar=${install_root}/Keep\ Vault.app.launcher${launcher_sidecar_suffix}
   final_sidecar=${applications_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix}
   mv -f -- ${staged_sidecar} ${final_sidecar}
 done
+inject_failure_now launcher-replace
 
 # Execute installation of QR-Scanner
 if (( install_scanner )); then
-  for scanner_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-    mv -f -- ${install_root}/QR-Scanner.app${scanner_sidecar_suffix} \
-      ${applications_dir}/QR-Scanner.app${scanner_sidecar_suffix}
-  done
-
   if (( has_existing_scanner )); then
     atomic_replace ${scanner_destination} ${install_root}/QR-Scanner.app ${scanner_backup_name}
   else
     mv ${install_root}/QR-Scanner.app ${scanner_destination}
   fi
+  inject_failure_now scanner-replace
+  for scanner_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+    mv -f -- ${install_root}/QR-Scanner.app${scanner_sidecar_suffix} \
+      ${applications_dir}/QR-Scanner.app${scanner_sidecar_suffix}
+  done
   print "installed_scanner=${scanner_destination}"
 fi
 
@@ -528,6 +839,7 @@ final_kv_verify_flags=(--app ${destination} --require-launcher-signature)
 (( allow_development )) && final_kv_verify_flags+=(--allow-development)
 if ${script_dir}/Verify-KeepVault-macOS.sh ${final_kv_verify_flags[@]}; then
   main_verification_passed=1
+  inject_failure_now main-verify
 fi
 
 scanner_verification_passed=1
@@ -535,6 +847,11 @@ if (( install_scanner )); then
   final_scanner_flags=(--app ${scanner_destination})
   (( allow_development )) && final_scanner_flags+=(--allow-development)
   if ! ${script_dir}/Verify-QR-Scanner-macOS.sh ${final_scanner_flags[@]}; then
+    scanner_verification_passed=0
+  fi
+  if ! ${script_dir}/Verify-ReleasePairMetadata-macOS.sh \
+      --app ${destination} \
+      --scanner ${scanner_destination}; then
     scanner_verification_passed=0
   fi
 fi
@@ -555,7 +872,26 @@ fi
 
 if (( update_anchor )); then
   anchor_updated=1
-  ANCHOR_PARENT=${anchor_parent} ANCHOR_DIR=${anchor_directory} ANCHOR_PATH=${anchor_path} NEW_VERSION=${installed_version} osascript <<'APPLESCRIPT' || {
+  if (( test_mode )); then
+    if [[ ! -d ${anchor_directory} ]]; then
+      mkdir -m 0700 -- ${anchor_directory}
+    fi
+    if [[ -L ${anchor_directory} || ! -d ${anchor_directory} \
+        || $(stat -f '%u:%Lp' ${anchor_directory} 2>/dev/null || print invalid) != ${EUID}:700 ]]; then
+      print -u2 "The private rollback anchor directory is invalid before update: ${anchor_directory}"
+      exit 1
+    fi
+    anchor_stage=$(mktemp "${anchor_directory}/.minimum-version.XXXXXXXX")
+    print -rn -- ${installed_version} > ${anchor_stage}
+    chmod 0600 ${anchor_stage}
+    mv -f -- ${anchor_stage} ${anchor_path}
+    if (( had_existing_anchor )); then
+      inject_failure_now anchor-replace
+    else
+      inject_failure_now anchor-create
+    fi
+  else
+    ANCHOR_PARENT=${anchor_parent} ANCHOR_DIR=${anchor_directory} ANCHOR_PATH=${anchor_path} NEW_VERSION=${installed_version} osascript <<'APPLESCRIPT' || {
 set anchorParent to system attribute "ANCHOR_PARENT"
 set anchorDir to system attribute "ANCHOR_DIR"
 set anchorPath to system attribute "ANCHOR_PATH"
@@ -576,9 +912,10 @@ set commandText to "set -e; " & ¬
   "/usr/bin/printf '%s' \"$version\" > \"$tmp\"; /usr/sbin/chown 0:0 \"$tmp\"; /bin/chmod 0644 \"$tmp\"; /bin/mv -f \"$tmp\" \"$anchor\""
 do shell script commandText with administrator privileges
 APPLESCRIPT
-    print -u2 "Failed to update machine-wide rollback anchor to version ${installed_version}"
-    exit 1
-  }
+      print -u2 "Failed to update machine-wide rollback anchor to version ${installed_version}"
+      exit 1
+    }
+  fi
 
   if [[ -L ${anchor_directory} || ! -d ${anchor_directory} ]]; then
     print -u2 "The rollback anchor directory is invalid or a symlink after update: ${anchor_directory}"
@@ -586,7 +923,12 @@ APPLESCRIPT
   fi
   anchor_dir_uid=$(stat -f '%u' ${anchor_directory} 2>/dev/null || print -1)
   anchor_dir_mode=$(stat -f '%Lp' ${anchor_directory} 2>/dev/null || print 0)
-  if (( anchor_dir_uid != 0 || (8#${anchor_dir_mode} & 8#022) != 0 )); then
+  if (( test_mode )); then
+    if (( anchor_dir_uid != EUID )) || [[ ${anchor_dir_mode} != 700 ]]; then
+      print -u2 "The private rollback anchor directory has insecure owner/permissions after update: ${anchor_directory}"
+      exit 1
+    fi
+  elif (( anchor_dir_uid != 0 || (8#${anchor_dir_mode} & 8#022) != 0 )); then
     print -u2 "The rollback anchor directory has insecure owner/permissions after update: ${anchor_directory}"
     exit 1
   fi
@@ -598,7 +940,12 @@ APPLESCRIPT
   anchor_uid=$(stat -f '%u' ${anchor_path} 2>/dev/null || print -1)
   anchor_links=$(stat -f '%l' ${anchor_path} 2>/dev/null || print 0)
   anchor_mode=$(stat -f '%Lp' ${anchor_path} 2>/dev/null || print 0)
-  if (( anchor_uid != 0 || anchor_links != 1 || (8#${anchor_mode} & 8#022) != 0 )); then
+  if (( test_mode )); then
+    if (( anchor_uid != EUID || anchor_links != 1 )) || [[ ${anchor_mode} != 600 ]]; then
+      print -u2 "Private rollback anchor has insecure permissions, ownership, or multiple links after update: ${anchor_path}"
+      exit 1
+    fi
+  elif (( anchor_uid != 0 || anchor_links != 1 || (8#${anchor_mode} & 8#022) != 0 )); then
     print -u2 "Rollback anchor has insecure permissions, ownership, or multiple links after update: ${anchor_path}"
     exit 1
   fi
@@ -607,6 +954,11 @@ APPLESCRIPT
   if [[ "${current_anchor_content}" != "${installed_version}" ]]; then
     print -u2 "Rollback anchor content '${current_anchor_content}' does not match installed version '${installed_version}'"
     exit 1
+  fi
+  inject_failure_now anchor-post-check
+  if [[ ${injected_failure} == rollback-anchor ]]; then
+    print -u2 'installer_fault_trigger=rollback-anchor'
+    exit 86
   fi
   print "rollback_anchor=${anchor_path} (${installed_version})"
 else
@@ -624,18 +976,32 @@ retained_paths=()
 relocated_paths=()
 
 if [[ -d ${backup_path} && ! -L ${backup_path} ]] || [[ -d ${scanner_backup_path} && ! -L ${scanner_backup_path} ]]; then
-  trash_dir=${HOME}/.Trash
-  if [[ ! -d ${trash_dir} ]]; then
-    mkdir -p ${trash_dir} 2>/dev/null || true
-  fi
-
-  if [[ -d ${trash_dir} ]] && recovery_dir=$(mktemp -d "${trash_dir}/Keep Vault previous.XXXXXXXX" 2>/dev/null); then
-    :
-  elif recovery_dir=$(mktemp -d "${TMPDIR:-/tmp}/Keep Vault previous.XXXXXXXX" 2>/dev/null); then
-    :
+  if (( test_mode )); then
+    test_recovery_parent=${test_root}/Recovery
+    if [[ ! -e ${test_recovery_parent} ]]; then
+      mkdir -m 0700 -- ${test_recovery_parent}
+    fi
+    if [[ -d ${test_recovery_parent} && ! -L ${test_recovery_parent} \
+        && $(stat -f '%u:%Lp' ${test_recovery_parent} 2>/dev/null || print invalid) == ${EUID}:700 ]]; then
+      recovery_dir=$(mktemp -d "${test_recovery_parent}/previous.XXXXXXXX")
+    else
+      recovery_dir=''
+    fi
   else
-    recovery_dir=''
+    trash_dir=${HOME}/.Trash
+    if [[ ! -d ${trash_dir} ]]; then
+      mkdir -p ${trash_dir} 2>/dev/null || true
+    fi
+
+    if [[ -d ${trash_dir} ]] && recovery_dir=$(mktemp -d "${trash_dir}/Keep Vault previous.XXXXXXXX" 2>/dev/null); then
+      :
+    elif recovery_dir=$(mktemp -d "${TMPDIR:-/tmp}/Keep Vault previous.XXXXXXXX" 2>/dev/null); then
+      :
+    else
+      recovery_dir=''
+    fi
   fi
+  [[ -z ${recovery_dir} ]] || defer_injected_failure recovery-dir-create
 
   if [[ -z ${recovery_dir} || ! -d ${recovery_dir} ]]; then
     print -u2 "Warning: Could not create a destination directory for previous version backups; preserving backups in ${backup_dir}"
@@ -647,6 +1013,7 @@ if [[ -d ${backup_path} && ! -L ${backup_path} ]] || [[ -d ${scanner_backup_path
     if [[ -d ${backup_path} && ! -L ${backup_path} ]]; then
       if mv ${backup_path} ${recovery_dir}/Keep\ Vault.app 2>/dev/null; then
         relocated_paths+=(${recovery_dir}/Keep\ Vault.app)
+        defer_injected_failure backup-move-main-app
       else
         print -u2 "Warning: Could not move previous Keep Vault backup to ${recovery_dir}; backup remains at ${backup_path}"
         post_commit_recovery_failed=1
@@ -658,6 +1025,14 @@ if [[ -d ${backup_path} && ! -L ${backup_path} ]] || [[ -d ${scanner_backup_path
         if [[ -f ${old_sidecar} && ! -L ${old_sidecar} ]]; then
           if mv ${old_sidecar} ${recovery_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix} 2>/dev/null; then
             relocated_paths+=(${recovery_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix})
+            case ${launcher_sidecar_suffix} in
+              .sha3) backup_fault_point=backup-move-launcher-sha3 ;;
+              .skein) backup_fault_point=backup-move-launcher-skein ;;
+              .khsig) backup_fault_point=backup-move-launcher-khsig ;;
+              .sha3.khsig) backup_fault_point=backup-move-launcher-sha3-khsig ;;
+              .skein.khsig) backup_fault_point=backup-move-launcher-skein-khsig ;;
+            esac
+            defer_injected_failure ${backup_fault_point}
           else
             print -u2 "Warning: Could not move launcher signature ${launcher_sidecar_suffix} to ${recovery_dir}; remains at ${old_sidecar}"
             post_commit_recovery_failed=1
@@ -671,6 +1046,7 @@ if [[ -d ${backup_path} && ! -L ${backup_path} ]] || [[ -d ${scanner_backup_path
     if [[ -d ${scanner_backup_path} && ! -L ${scanner_backup_path} ]]; then
       if mv ${scanner_backup_path} ${recovery_dir}/QR-Scanner.app 2>/dev/null; then
         relocated_paths+=(${recovery_dir}/QR-Scanner.app)
+        defer_injected_failure backup-move-scanner-app
       else
         print -u2 "Warning: Could not move previous QR-Scanner backup to ${recovery_dir}; backup remains at ${scanner_backup_path}"
         post_commit_recovery_failed=1
@@ -682,6 +1058,14 @@ if [[ -d ${backup_path} && ! -L ${backup_path} ]] || [[ -d ${scanner_backup_path
         if [[ -f ${old_scanner_sidecar} && ! -L ${old_scanner_sidecar} ]]; then
           if mv ${old_scanner_sidecar} ${recovery_dir}/QR-Scanner.app${scanner_sidecar_suffix} 2>/dev/null; then
             relocated_paths+=(${recovery_dir}/QR-Scanner.app${scanner_sidecar_suffix})
+            case ${scanner_sidecar_suffix} in
+              .sha3) backup_fault_point=backup-move-scanner-sha3 ;;
+              .skein) backup_fault_point=backup-move-scanner-skein ;;
+              .khsig) backup_fault_point=backup-move-scanner-khsig ;;
+              .sha3.khsig) backup_fault_point=backup-move-scanner-sha3-khsig ;;
+              .skein.khsig) backup_fault_point=backup-move-scanner-skein-khsig ;;
+            esac
+            defer_injected_failure ${backup_fault_point}
           else
             print -u2 "Warning: Could not move scanner signature ${scanner_sidecar_suffix} to ${recovery_dir}; remains at ${old_scanner_sidecar}"
             post_commit_recovery_failed=1
@@ -699,7 +1083,7 @@ if [[ -d ${backup_path} && ! -L ${backup_path} ]] || [[ -d ${scanner_backup_path
 fi
 
 launch_services='/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
-if [[ -x ${launch_services} ]]; then
+if (( ! test_mode )) && [[ -x ${launch_services} ]]; then
   ${launch_services} -f ${destination} 2>/dev/null || true
   (( install_scanner )) && ${launch_services} -f ${scanner_destination} 2>/dev/null || true
 
@@ -727,6 +1111,7 @@ if [[ -x ${launch_services} ]]; then
     unregister_stale_bundle ${trashed}
   done
 fi
+defer_injected_failure launch-services
 
 # MOVE LEFTOVERS FROM EARLIER RUNS OUT OF THE APPLICATIONS FOLDER
 #
@@ -755,17 +1140,28 @@ done
 if (( ${#stale_leftovers[@]} > 0 )); then
   leftover_dir=${recovery_dir:-}
   if [[ -z ${leftover_dir} || ! -d ${leftover_dir} ]]; then
-    leftover_trash=${HOME}/.Trash
-    [[ -d ${leftover_trash} ]] || mkdir -p ${leftover_trash} 2>/dev/null || true
-    if [[ -d ${leftover_trash} ]]; then
-      leftover_dir=$(mktemp -d "${leftover_trash}/Keep Vault leftovers.XXXXXXXX" 2>/dev/null) || leftover_dir=''
+    if (( test_mode )); then
+      leftover_parent=${test_root}/Recovery
+      [[ -d ${leftover_parent} ]] || mkdir -m 0700 -- ${leftover_parent}
+      if [[ -d ${leftover_parent} && ! -L ${leftover_parent} \
+          && $(stat -f '%u:%Lp' ${leftover_parent} 2>/dev/null || print invalid) == ${EUID}:700 ]]; then
+        leftover_dir=$(mktemp -d "${leftover_parent}/leftovers.XXXXXXXX" 2>/dev/null) || leftover_dir=''
+      else
+        leftover_dir=''
+      fi
     else
-      leftover_dir=''
+      leftover_trash=${HOME}/.Trash
+      [[ -d ${leftover_trash} ]] || mkdir -p ${leftover_trash} 2>/dev/null || true
+      if [[ -d ${leftover_trash} ]]; then
+        leftover_dir=$(mktemp -d "${leftover_trash}/Keep Vault leftovers.XXXXXXXX" 2>/dev/null) || leftover_dir=''
+      else
+        leftover_dir=''
+      fi
     fi
   fi
 
   for stale in ${stale_leftovers[@]}; do
-    if [[ -x ${launch_services} ]]; then
+    if (( ! test_mode )) && [[ -x ${launch_services} ]]; then
       ${launch_services} -u ${stale} 2>/dev/null || true
     fi
 
@@ -831,6 +1227,7 @@ APPLESCRIPT
     fi
   fi
 fi
+defer_injected_failure finder-alias
 
 print "installed_app=${destination}"
 if [[ -n ${recovery_path} ]]; then
@@ -845,4 +1242,9 @@ else
   for ret in ${retained_paths[@]}; do
     print "previous_version_retained_at=${ret}"
   done
+fi
+
+if [[ -n ${deferred_test_failure} ]]; then
+  print -u2 "installer_fault_injected=${deferred_test_failure}"
+  exit 86
 fi

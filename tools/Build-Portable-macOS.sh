@@ -125,18 +125,115 @@ for required_command in xcrun codesign security ditto shasum lipo; do
 done
 
 if [[ -z ${identity} ]]; then
+  identity=$(security find-identity -v -p codesigning | awk '/Developer ID Application/{print $2; exit}')
+fi
+if [[ -z ${identity} ]]; then
   identity=$(security find-identity -v -p codesigning | awk '/Apple Development/{print $2; exit}')
 fi
 [[ -n ${identity} ]] || {
-  print -u2 'No Apple Development code-signing identity was found.'
+  print -u2 'No Developer ID Application or Apple Development code-signing identity was found.'
   exit 1
 }
+identity_details=$(security find-identity -v -p codesigning | grep -F -- "${identity}" | head -1 || true)
+codesign_timestamp_arguments=()
+if [[ ${identity_details} == *'Developer ID Application'* ]]; then
+  portable_signing_description='Developer ID Application identity. This portable archive has not itself been submitted to Apple for notarization.'
+  codesign_timestamp_arguments=(--timestamp)
+else
+  portable_signing_description='local Apple Development identity. It is not a public Gatekeeper release and has not been notarized.'
+fi
+
+input_verify_flags=(--app ${source_app} --allow-development --require-launcher-signature --mldsa-public-key ${mldsa_public_key})
+${script_dir}/Verify-KeepVault-macOS.sh ${input_verify_flags[@]}
+${script_dir}/Verify-QR-Scanner-macOS.sh --app ${scanner_app} --allow-development
+
+required_architectures=(arm64)
+[[ ${architecture} == universal ]] && required_architectures+=(x86_64)
+for input_macho in \
+    ${source_app}/Contents/MacOS/Keep\ Vault\ Launcher \
+    ${scanner_app}/Contents/MacOS/QR-Scanner; do
+  for required_architecture in ${required_architectures[@]}; do
+    xcrun lipo ${input_macho} -verify_arch ${required_architecture}
+  done
+done
 
 build_root=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-portable.XXXXXXXX")
+release_stage=''
+exclusive_rename_helper=''
+published_paths=()
+published_identities=()
+publish_committed=0
 cleanup() {
-  [[ -n ${build_root:-} && -d ${build_root} ]] && rm -rf -- ${build_root}
+  if (( ! ${publish_committed:-0} )); then
+    local published_index=1
+    local published_path current_identity expected_identity
+    while (( published_index <= ${#published_paths[@]} )); do
+      published_path=${published_paths[${published_index}]}
+      expected_identity=${published_identities[${published_index}]}
+      if [[ ! -L ${published_path} && ( -f ${published_path} || -d ${published_path} ) ]]; then
+        current_identity=$(stat -f '%d:%i' ${published_path} 2>/dev/null || true)
+        if [[ ${current_identity} == ${expected_identity} ]]; then
+          if [[ -d ${published_path} ]]; then
+            rm -rf -- ${published_path}
+          elif [[ $(stat -f %l ${published_path}) == 1 ]]; then
+            rm -f -- ${published_path}
+          fi
+        fi
+      fi
+      (( ++published_index ))
+    done
+  fi
+  if [[ -n ${release_stage:-} && -d ${release_stage} \
+      && ${release_stage} == ${repo_root}/dist/.keep-vault-portable-publish.* ]]; then
+    rm -rf -- ${release_stage}
+  fi
+  if [[ -n ${build_root:-} && -d ${build_root} \
+      && ${build_root} == ${TMPDIR:-/tmp}/keep-vault-portable.* ]]; then
+    rm -rf -- ${build_root}
+  fi
 }
 trap cleanup EXIT INT TERM
+
+# Publish each already-verified top-level artifact without an overwrite race.
+# RENAME_EXCL is the macOS same-volume no-replace primitive. The expected
+# device/inode is registered before the syscall, so an interrupt immediately
+# after a successful rename can remove only the object that came from this
+# private staging tree; a concurrently created destination is never touched.
+exclusive_rename_source=${build_root}/exclusive-rename.c
+exclusive_rename_helper=${build_root}/exclusive-rename
+cat > ${exclusive_rename_source} <<'EOF'
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+
+int main(int argc, char **argv) {
+  if (argc != 3) return 64;
+  if (renameatx_np(AT_FDCWD, argv[1], AT_FDCWD, argv[2], RENAME_EXCL) != 0) {
+    perror("renameatx_np(RENAME_EXCL)");
+    return 1;
+  }
+  return 0;
+}
+EOF
+xcrun --sdk macosx clang -O2 -Wall -Wextra -Werror \
+  -mmacosx-version-min=14.0 ${exclusive_rename_source} -o ${exclusive_rename_helper}
+
+publish_exclusively() {
+  local staged_path=$1
+  local final_path=$2
+  [[ ! -L ${staged_path} && ( -f ${staged_path} || -d ${staged_path} ) ]] || {
+    print -u2 "Refusing to publish a missing, symbolic-link, or special artifact: ${staged_path}"
+    return 1
+  }
+  local staged_identity=$(stat -f '%d:%i' ${staged_path})
+  published_paths+=(${final_path})
+  published_identities+=(${staged_identity})
+  ${exclusive_rename_helper} ${staged_path} ${final_path}
+  [[ ! -L ${final_path} && $(stat -f '%d:%i' ${final_path}) == ${staged_identity} ]] || {
+    print -u2 "Published portable artifact changed identity: ${final_path}"
+    return 1
+  }
+}
 
 # --- Standalone release verifier -------------------------------------------
 verifier_slices=()
@@ -146,9 +243,17 @@ for runtime in ${verifier_runtimes[@]}; do
   publish_dir=${build_root}/verifier-${runtime}
   (
     cd ${repo_root}/KeepVaultMac.ReleaseVerifier
+    # NativeAOT runtime packs are part of the locked dependency graph. Resolve
+    # exactly that graph for the slice, then make publish incapable of reaching
+    # NuGet or silently changing it.
+    ${dotnet_command} restore ${verifier_project} \
+      --locked-mode \
+      --runtime ${runtime} \
+      --nologo
     ${dotnet_command} publish ${verifier_project} \
       -c Release \
       -r ${runtime} \
+      --no-restore \
       --self-contained true \
       --nologo \
       -p:PublishAot=true \
@@ -176,22 +281,27 @@ codesign \
   --force \
   --sign ${identity} \
   --options runtime \
+  ${codesign_timestamp_arguments[@]} \
   --identifier ${bundle_identifier}.releaseverifier \
   ${verifier_path}
 codesign --verify --strict ${verifier_path}
 
 # --- Portable folder --------------------------------------------------------
 dist_dir=${repo_root}/dist
-portable_dir=${dist_dir}/${output_name}
-portable_zip=${dist_dir}/${output_name}.zip
-for existing in ${portable_dir} ${portable_zip} ${portable_zip}.sha3 ${portable_zip}.skein \
-    ${portable_zip}.khsig ${portable_zip}.sha3.khsig ${portable_zip}.skein.khsig; do
+mkdir -p -- ${dist_dir}
+final_portable_dir=${dist_dir}/${output_name}
+final_portable_zip=${dist_dir}/${output_name}.zip
+for existing in ${final_portable_dir} ${final_portable_zip} ${final_portable_zip}.sha3 ${final_portable_zip}.skein \
+    ${final_portable_zip}.khsig ${final_portable_zip}.sha3.khsig ${final_portable_zip}.skein.khsig; do
   if [[ -e ${existing} || -L ${existing} ]]; then
     print -u2 "Refusing to overwrite an existing portable artifact: ${existing}"
     exit 1
   fi
 done
 
+release_stage=$(mktemp -d "${dist_dir}/.keep-vault-portable-publish.XXXXXXXX")
+portable_dir=${release_stage}/${output_name}
+portable_zip=${release_stage}/${output_name}.zip
 mkdir -p ${portable_dir}
 ditto ${source_app} ${portable_dir}/Keep\ Vault.app
 
@@ -239,8 +349,9 @@ installer and no .NET runtime. Keep the app bundle, the verifier, and the
 .sha3, .skein and .khsig files together.
 
 Check the download before launching anything:
-  "./Keep Vault Release Verifier" "Keep Vault.app"
-  "./Keep Vault Release Verifier" "${output_name}.zip"
+  From the directory that contains both the portable folder and its ZIP:
+  "./${output_name}/Keep Vault Release Verifier" "./${output_name}.zip"
+  "./${output_name}/Keep Vault Release Verifier" "./${output_name}/Keep Vault.app"
 
 Every executable carries an Apple code signature bound to the pinned Team ID
 below, plus a detached RSA-PSS/SHA-512 and ML-DSA-87 signature. The hash
@@ -259,9 +370,8 @@ Pinned ML-DSA-87 SHA-256: $(read_pin KalynaExpectedMldsa87Sha256)
 Pinned ML-DSA-87 SHA3-512: $(read_pin KalynaExpectedMldsa87Sha3_512)
 Pinned ML-DSA-87 Skein-1024: $(read_pin KalynaExpectedMldsa87Skein1024)
 
-This build is signed with a local Apple Development identity and is NOT
-notarized. Gatekeeper will therefore refuse it on another Mac until it is
-signed with a Developer ID Application certificate and notarized by Apple.
+Signing status:
+  ${portable_signing_description}
 The app accepts only its exact compiled pins regardless.
 
 macOS cannot enforce an application-level exclusion from screenshots or screen
@@ -273,12 +383,20 @@ README
 # is signed before the archive is built, and the archive is signed after, so both
 # steps need them.
 signer_dll=${packaging_dir}/HybridSigner/bin/Release/net10.0/KeepVaultMac.HybridSigner.dll
-if [[ ! -f ${signer_dll} || -L ${signer_dll} ]]; then
-  (
-    cd ${mac_project}
-    ${dotnet_command} build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj -c Release --nologo
-  )
-fi
+(
+  cd ${mac_project}
+  ${dotnet_command} restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \
+    --locked-mode \
+    --nologo
+  ${dotnet_command} build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \
+    -c Release \
+    --no-restore \
+    --nologo
+)
+[[ -f ${signer_dll} && ! -L ${signer_dll} ]] || {
+  print -u2 'The locked HybridSigner build did not produce its release assembly.'
+  exit 1
+}
 keychain_temp=${build_root}/keychain-temp
 mkdir -p ${keychain_temp}
 
@@ -371,7 +489,17 @@ ${portable_dir}/Keep\ Vault\ Release\ Verifier ${portable_dir}/Keep\ Vault.app
 # signature.
 ${portable_dir}/Keep\ Vault\ Release\ Verifier ${portable_dir}
 
-print "portable_folder=${portable_dir}"
-print "portable_archive=${portable_zip}"
-print "verifier=${portable_dir}/Keep Vault Release Verifier"
+# Nothing becomes visible at a release name before all gates above pass.
+# Publish the directory last. If any no-replace rename fails or the process is
+# interrupted, the EXIT trap removes only already-published objects whose
+# device/inode still matches this private stage, leaving no partial release.
+for portable_suffix in '' .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+  publish_exclusively ${portable_zip}${portable_suffix} ${final_portable_zip}${portable_suffix}
+done
+publish_exclusively ${portable_dir} ${final_portable_dir}
+publish_committed=1
+
+print "portable_folder=${final_portable_dir}"
+print "portable_archive=${final_portable_zip}"
+print "verifier=${final_portable_dir}/Keep Vault Release Verifier"
 print 'notarization=not_performed (Developer ID and notary credentials are a separate release gate)'

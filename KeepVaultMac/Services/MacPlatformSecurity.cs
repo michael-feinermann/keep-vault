@@ -19,14 +19,18 @@ internal static partial class MacSafeFileSystem
     private const uint CloneResolveBeneath = 0x0010;
     private const int FFullFsync = 51;
     private const uint RegularFileMode = 0x8000;
+    private const uint DirectoryMode = 0x4000;
+    private const uint SymbolicLinkMode = 0xA000;
     private const uint FileTypeMask = 0xF000;
 
-    internal static FileStream OpenReadNoSymlinks(string path)
+    internal static Action<string>? TestHookBeforeDirectoryDescend { get; set; }
+
+    internal static FileStream OpenReadNoSymlinks(string path, bool requireSingleLink = false)
     {
         SafeFileHandle handle = OpenHandleNoSymlinks(path, write: false);
         try
         {
-            ValidateRegularFile(handle, requireSingleLink: false, path);
+            ValidateRegularFile(handle, requireSingleLink, path);
             return new FileStream(handle, FileAccess.Read, bufferSize: 1024 * 1024, isAsync: false);
         }
         catch
@@ -84,32 +88,31 @@ internal static partial class MacSafeFileSystem
         string destinationFileName)
     {
         ArgumentNullException.ThrowIfNull(sourceHandle);
+        using SafeFileHandle directoryHandle = OpenDirectoryHandle(destinationDirectory);
+        CloneOpenedFileIntoDirectory(sourceHandle, directoryHandle, destinationFileName);
+    }
+
+    internal static void CloneOpenedFileIntoDirectory(
+        SafeFileHandle sourceHandle,
+        SafeFileHandle destinationDirectoryHandle,
+        string destinationFileName)
+    {
+        ArgumentNullException.ThrowIfNull(sourceHandle);
+        ArgumentNullException.ThrowIfNull(destinationDirectoryHandle);
         if (string.IsNullOrWhiteSpace(destinationFileName)
             || !string.Equals(destinationFileName, Path.GetFileName(destinationFileName), StringComparison.Ordinal))
         {
             throw new ArgumentException("A private clone destination must be a single file name.", nameof(destinationFileName));
         }
 
-        string canonicalDirectory = ResolveExistingRealPath(destinationDirectory);
-        int directoryDescriptor = Open(
-            canonicalDirectory,
-            OpenReadOnly | OpenDirectory | OpenCloseOnExec | OpenNoFollowAny);
-        if (directoryDescriptor < 0)
-        {
-            throw new IOException(
-                $"macOS refused the private snapshot directory: {canonicalDirectory}",
-                new Win32Exception(Marshal.GetLastPInvokeError()));
-        }
-
-        using var directoryHandle = new SafeFileHandle(directoryDescriptor, ownsHandle: true);
         bool sourceAdded = false;
         bool directoryAdded = false;
         try
         {
             sourceHandle.DangerousAddRef(ref sourceAdded);
-            directoryHandle.DangerousAddRef(ref directoryAdded);
+            destinationDirectoryHandle.DangerousAddRef(ref directoryAdded);
             int sourceDescriptor = checked((int)sourceHandle.DangerousGetHandle());
-            int targetDescriptor = checked((int)directoryHandle.DangerousGetHandle());
+            int targetDescriptor = checked((int)destinationDirectoryHandle.DangerousGetHandle());
             if (FCloneFileAt(
                     sourceDescriptor,
                     targetDescriptor,
@@ -122,7 +125,10 @@ internal static partial class MacSafeFileSystem
                 const int Eopnotsupp = 102;
                 if (errorCode == Exdev || errorCode == Enotsup || errorCode == Eopnotsupp)
                 {
-                    StreamCopyDescriptorIntoPrivateDirectory(sourceDescriptor, targetDescriptor, destinationFileName);
+                    StreamCopyDescriptorIntoPrivateDirectory(
+                        sourceDescriptor,
+                        destinationDirectoryHandle,
+                        destinationFileName);
                 }
                 else
                 {
@@ -136,7 +142,7 @@ internal static partial class MacSafeFileSystem
         {
             if (directoryAdded)
             {
-                directoryHandle.DangerousRelease();
+                destinationDirectoryHandle.DangerousRelease();
             }
 
             if (sourceAdded)
@@ -148,7 +154,7 @@ internal static partial class MacSafeFileSystem
 
     private static unsafe void StreamCopyDescriptorIntoPrivateDirectory(
         int sourceDescriptor,
-        int targetDirectoryDescriptor,
+        SafeFileHandle targetDirectoryHandle,
         string destinationFileName)
     {
         if (FStat(sourceDescriptor, out DarwinStat beforeStat) != 0)
@@ -156,20 +162,11 @@ internal static partial class MacSafeFileSystem
             throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS could not stat source descriptor before copy.");
         }
 
-        // Open target file descriptor directly via openat
-        const int openFlags = 0x0002 /* O_RDWR */
-            | 0x0200 /* O_CREAT */
-            | 0x0800 /* O_EXCL */
-            | 0x20000000 /* O_NOFOLLOW_ANY */
-            | 0x01000000 /* O_CLOEXEC */;
-
-        int targetFileFd = PInvokeOpenAt(targetDirectoryDescriptor, destinationFileName, openFlags, 0x180 /* 0600 */);
-        if (targetFileFd < 0)
-        {
-            throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS openat failed for snapshot destination.");
-        }
-
-        using var targetFileHandle = new SafeFileHandle(targetFileFd, ownsHandle: true);
+        using SafeFileHandle targetFileHandle = CreateFileAtExclusive(
+            targetDirectoryHandle,
+            destinationFileName,
+            0x0180 /* 0600 */);
+        int targetFileFd = checked((int)targetFileHandle.DangerousGetHandle());
 
         using var hashStream = IncrementalHash.CreateHash(HashAlgorithmName.SHA512);
         byte[] buffer = new byte[64 * 1024];
@@ -283,7 +280,14 @@ internal static partial class MacSafeFileSystem
 
         if (!stable)
         {
-            PInvokeUnlinkAt(targetDirectoryDescriptor, destinationFileName, 0);
+            MacFileIdentity targetIdentity = GetIdentity(targetFileHandle);
+            MacFileIdentity entryIdentity = GetIdentityAt(targetDirectoryHandle, destinationFileName);
+            if (targetIdentity.SameObject(entryIdentity)
+                && targetIdentity.LinkCount == 1
+                && entryIdentity.LinkCount == 1)
+            {
+                UnlinkAt(targetDirectoryHandle, destinationFileName);
+            }
             throw new InvalidOperationException("Source file metadata or content mutated concurrently during cross-volume snapshot copy.");
         }
     }
@@ -302,6 +306,9 @@ internal static partial class MacSafeFileSystem
 
     [LibraryImport("libSystem.B.dylib", EntryPoint = "readdir", SetLastError = true)]
     private static partial nint ReadDir(nint dirp);
+
+    [LibraryImport("libSystem.B.dylib", EntryPoint = "rewinddir")]
+    private static partial void RewindDir(nint dirp);
 
     [LibraryImport("libSystem.B.dylib", EntryPoint = "closedir", SetLastError = true)]
     private static partial int CloseDir(nint dirp);
@@ -330,7 +337,7 @@ internal static partial class MacSafeFileSystem
                 throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS could not inspect the open file descriptor.");
             }
 
-            return new MacFileIdentity(status.Device, status.Inode, status.LinkCount, status.Mode, status.Size);
+            return IdentityFromStat(status);
         }
         finally
         {
@@ -341,6 +348,17 @@ internal static partial class MacSafeFileSystem
         }
     }
 
+    private static MacFileIdentity IdentityFromStat(DarwinStat status) => new(
+        status.Device,
+        status.Inode,
+        status.LinkCount,
+        status.Mode,
+        status.Size,
+        status.ModificationTime.Seconds,
+        status.ModificationTime.Nanoseconds,
+        status.ChangeTime.Seconds,
+        status.ChangeTime.Nanoseconds);
+
     internal static MacFileIdentity GetPathIdentityNoFollow(string path)
     {
         if (LStat(Path.GetFullPath(path), out DarwinStat status) != 0)
@@ -348,7 +366,7 @@ internal static partial class MacSafeFileSystem
             throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS could not inspect the file path without following links.");
         }
 
-        return new MacFileIdentity(status.Device, status.Inode, status.LinkCount, status.Mode, status.Size);
+        return IdentityFromStat(status);
     }
 
     internal static string ResolveExistingRealPath(string path)
@@ -395,6 +413,27 @@ internal static partial class MacSafeFileSystem
         {
             throw new IOException("The file path was replaced while its security properties were being verified.");
         }
+    }
+
+    /// <summary>
+    /// Reports whether <paramref name="path"/> still names the exact object
+    /// behind <paramref name="handle"/>.
+    /// </summary>
+    /// <remarks>
+    /// A pathname that now names a different object, or names nothing at all,
+    /// answers false instead of raising. Callers that must refuse to unlink a
+    /// foreign replacement need that as an outcome they can act on, not as an
+    /// error that would mask the reason they were rolling back.
+    /// </remarks>
+    internal static bool PathStillNamesHandle(SafeFileHandle handle, string path)
+    {
+        MacFileIdentity handleIdentity = GetIdentity(handle);
+        if (LStat(Path.GetFullPath(path), out DarwinStat status) != 0)
+        {
+            return false;
+        }
+
+        return handleIdentity.SameObject(IdentityFromStat(status));
     }
 
     internal static void FullSync(SafeFileHandle handle)
@@ -488,6 +527,218 @@ internal static partial class MacSafeFileSystem
         }
     }
 
+    internal static FileStream OpenReadAt(
+        SafeFileHandle parentHandle,
+        string name,
+        bool requireSingleLink = true)
+    {
+        ArgumentNullException.ThrowIfNull(parentHandle);
+        if (string.IsNullOrWhiteSpace(name)
+            || !string.Equals(name, Path.GetFileName(name), StringComparison.Ordinal))
+        {
+            throw new ArgumentException("A descriptor-relative file open requires one entry name.", nameof(name));
+        }
+
+        bool added = false;
+        SafeFileHandle? fileHandle = null;
+        try
+        {
+            parentHandle.DangerousAddRef(ref added);
+            int parentFd = checked((int)parentHandle.DangerousGetHandle());
+            int fileFd = PInvokeOpenAt(
+                parentFd,
+                name,
+                OpenReadOnly | OpenCloseOnExec | OpenNoFollowAny,
+                0);
+            if (fileFd < 0)
+            {
+                throw new IOException(
+                    $"macOS could not open '{name}' relative to the bound directory.",
+                    new Win32Exception(Marshal.GetLastPInvokeError()));
+            }
+
+            fileHandle = new SafeFileHandle(fileFd, ownsHandle: true);
+            ValidateRegularFile(fileHandle, requireSingleLink, name);
+            var stream = new FileStream(fileHandle, FileAccess.Read, bufferSize: 1024 * 1024, isAsync: false);
+            fileHandle = null;
+            return stream;
+        }
+        finally
+        {
+            fileHandle?.Dispose();
+            if (added)
+            {
+                parentHandle.DangerousRelease();
+            }
+        }
+    }
+
+    internal static void SetUnixFileMode(SafeFileHandle fileHandle, ushort mode)
+    {
+        ArgumentNullException.ThrowIfNull(fileHandle);
+        if ((mode & ~0x01FF) != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode), "Only POSIX permission bits 0000 through 0777 are accepted.");
+        }
+
+        bool added = false;
+        try
+        {
+            fileHandle.DangerousAddRef(ref added);
+            int fd = checked((int)fileHandle.DangerousGetHandle());
+            if (PInvokeFChmod(fd, mode) != 0)
+            {
+                throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS fchmod failed for the bound file.");
+            }
+        }
+        finally
+        {
+            if (added)
+            {
+                fileHandle.DangerousRelease();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates one private regular file below a bound directory without calling
+    /// the variadic openat(2) entry point from managed code.
+    /// </summary>
+    /// <remarks>
+    /// Apple's arm64 ABI puts variadic arguments on the stack. A conventional
+    /// four-argument P/Invoke therefore does not pass openat's optional mode
+    /// where libc reads it. mkostempsat_np has a fixed signature and atomically
+    /// returns a descriptor for a 0600 file. The random name is then moved to
+    /// the requested name with RENAME_EXCL and every namespace boundary is
+    /// checked against that descriptor.
+    /// </remarks>
+    internal static unsafe SafeFileHandle CreateFileAtExclusive(
+        SafeFileHandle parentHandle,
+        string name,
+        ushort mode = 0x0180 /* 0600 */)
+    {
+        ArgumentNullException.ThrowIfNull(parentHandle);
+        if (string.IsNullOrWhiteSpace(name)
+            || !string.Equals(name, Path.GetFileName(name), StringComparison.Ordinal))
+        {
+            throw new ArgumentException("A descriptor-relative file create requires one entry name.", nameof(name));
+        }
+        if ((mode & ~0x0180) != 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(mode),
+                "A private file may grant only owner read and owner write permissions.");
+        }
+
+        const int TemporaryNameCharacters = 24;
+        byte[] temporaryNameBytes = Encoding.ASCII.GetBytes(
+            $".keep-vault-create.{new string('X', TemporaryNameCharacters)}\0");
+        bool parentAdded = false;
+        SafeFileHandle? createdHandle = null;
+        string? currentName = null;
+        try
+        {
+            parentHandle.DangerousAddRef(ref parentAdded);
+            int parentFd = checked((int)parentHandle.DangerousGetHandle());
+            MacFileIdentity parentIdentity = GetIdentity(parentHandle);
+            int createdFd;
+            fixed (byte* template = temporaryNameBytes)
+            {
+                createdFd = PInvokeMkOStempsAtNp(
+                    parentFd,
+                    template,
+                    suffixLength: 0,
+                    OpenCloseOnExec);
+            }
+            if (createdFd < 0)
+            {
+                throw new IOException(
+                    "macOS could not create a descriptor-bound private temporary file.",
+                    new Win32Exception(Marshal.GetLastPInvokeError()));
+            }
+
+            int terminator = Array.IndexOf(temporaryNameBytes, (byte)0);
+            if (terminator <= 0)
+            {
+                CloseDescriptor(createdFd);
+                throw new IOException("macOS returned an invalid private temporary file name.");
+            }
+            currentName = Encoding.ASCII.GetString(temporaryNameBytes, 0, terminator);
+            createdHandle = new SafeFileHandle(createdFd, ownsHandle: true);
+            ValidateRegularFile(createdHandle, requireSingleLink: true, currentName);
+            SetUnixFileMode(createdHandle, mode);
+            MacFileIdentity createdIdentity = GetIdentity(createdHandle);
+            if ((createdIdentity.Mode & 0x01FF) != mode)
+            {
+                throw new IOException("The private temporary file does not have the requested owner-only mode.");
+            }
+
+            if (!parentIdentity.SameObject(GetIdentity(parentHandle)))
+            {
+                throw new IOException("The private-file parent directory changed during creation.");
+            }
+            MacFileIdentity temporaryEntry = GetIdentityAt(parentHandle, currentName);
+            if (!createdIdentity.SameObject(temporaryEntry)
+                || temporaryEntry.LinkCount != 1)
+            {
+                throw new IOException("The private temporary file name no longer identifies the created descriptor.");
+            }
+
+            RenameAtExclusive(parentHandle, currentName, parentHandle, name);
+            currentName = name;
+            if (!parentIdentity.SameObject(GetIdentity(parentHandle)))
+            {
+                throw new IOException("The private-file parent directory changed during installation.");
+            }
+            MacFileIdentity installedEntry = GetIdentityAt(parentHandle, name);
+            MacFileIdentity installedHandle = GetIdentity(createdHandle);
+            if (!installedHandle.SameObject(installedEntry)
+                || installedHandle.LinkCount != 1
+                || installedEntry.LinkCount != 1
+                || (installedHandle.Mode & 0x01FF) != mode)
+            {
+                throw new IOException("The installed private file does not identify the created descriptor.");
+            }
+
+            SafeFileHandle result = createdHandle;
+            createdHandle = null;
+            currentName = null;
+            return result;
+        }
+        catch
+        {
+            if (createdHandle is not null && currentName is not null)
+            {
+                try
+                {
+                    MacFileIdentity handleIdentity = GetIdentity(createdHandle);
+                    MacFileIdentity entryIdentity = GetIdentityAt(parentHandle, currentName);
+                    if (handleIdentity.SameObject(entryIdentity)
+                        && handleIdentity.LinkCount == 1
+                        && entryIdentity.LinkCount == 1)
+                    {
+                        UnlinkAt(parentHandle, currentName);
+                    }
+                }
+                catch
+                {
+                    // Preserve the construction error and never unlink an
+                    // entry whose identity cannot be proved.
+                }
+            }
+            throw;
+        }
+        finally
+        {
+            createdHandle?.Dispose();
+            CryptographicOperations.ZeroMemory(temporaryNameBytes);
+            if (parentAdded)
+            {
+                parentHandle.DangerousRelease();
+            }
+        }
+    }
+
     internal static void MkdirAt(SafeFileHandle parentHandle, string relativePath, int mode)
     {
         ArgumentNullException.ThrowIfNull(parentHandle);
@@ -530,6 +781,7 @@ internal static partial class MacSafeFileSystem
                 CloseDescriptor(dupFd);
                 throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS fdopendir failed.");
             }
+            RewindDir(dirp);
             try
             {
                 while (true)
@@ -565,14 +817,104 @@ internal static partial class MacSafeFileSystem
         }
     }
 
+    internal static IReadOnlyList<MacDirectoryEntry> ReadDirectoryEntriesNoFollow(
+        SafeFileHandle dirHandle)
+    {
+        ArgumentNullException.ThrowIfNull(dirHandle);
+        MacFileIdentity directoryIdentity = GetIdentity(dirHandle);
+        if ((directoryIdentity.Mode & FileTypeMask) != DirectoryMode)
+        {
+            throw new IOException("A descriptor-relative directory read requires a directory handle.");
+        }
+
+        var entries = new List<MacDirectoryEntry>();
+        bool added = false;
+        try
+        {
+            dirHandle.DangerousAddRef(ref added);
+            int fd = checked((int)dirHandle.DangerousGetHandle());
+            int dupFd = Dup(fd);
+            if (dupFd < 0)
+            {
+                throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS could not dup directory descriptor.");
+            }
+
+            nint dirp = FdOpenDir(dupFd);
+            if (dirp == 0)
+            {
+                CloseDescriptor(dupFd);
+                throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS fdopendir failed.");
+            }
+            RewindDir(dirp);
+
+            try
+            {
+                while (true)
+                {
+                    nint entryPtr = ReadDir(dirp);
+                    if (entryPtr == 0)
+                    {
+                        break;
+                    }
+
+                    unsafe
+                    {
+                        var entry = (DarwinDirent*)entryPtr;
+                        string name = Marshal.PtrToStringUTF8((nint)entry->d_name, entry->d_namlen)
+                            ?? throw new IOException("macOS returned an invalid directory entry name.");
+                        if (name is "." or "..")
+                        {
+                            continue;
+                        }
+
+                        // Never trust d_type. The no-follow stat is the
+                        // classification that every later descriptor open must
+                        // still match.
+                        entries.Add(new MacDirectoryEntry(name, GetIdentityAt(dirHandle, name)));
+                    }
+                }
+            }
+            finally
+            {
+                CloseDir(dirp);
+            }
+        }
+        finally
+        {
+            if (added)
+            {
+                dirHandle.DangerousRelease();
+            }
+        }
+
+        if (!GetIdentity(dirHandle).SameObject(directoryIdentity))
+        {
+            throw new IOException("The bound directory changed identity while it was enumerated.");
+        }
+
+        entries.Sort(static (left, right) => string.CompareOrdinal(left.Name, right.Name));
+        return entries;
+    }
+
     internal static List<(string FullPath, string RelativePath)> EnumerateDirectoryTreeNoFollow(string rootDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(rootDirectory);
         string fullRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(rootDirectory));
         using SafeFileHandle rootHandle = OpenDirectoryHandle(fullRoot);
         RequirePathStillNamesHandle(rootHandle, fullRoot);
+        MacFileIdentity rootIdentity = GetIdentity(rootHandle);
         var results = new List<(string FullPath, string RelativePath)>();
-        EnumerateDirectoryTreeNoFollowDescriptor(rootHandle, fullRoot, string.Empty, results);
+        var visitedDirectories = new HashSet<(int Device, ulong Inode)>
+        {
+            (rootIdentity.Device, rootIdentity.Inode),
+        };
+        EnumerateDirectoryTreeNoFollowDescriptor(
+            rootHandle,
+            fullRoot,
+            string.Empty,
+            results,
+            visitedDirectories);
+        RequirePathStillNamesHandle(rootHandle, fullRoot);
         return results;
     }
 
@@ -580,7 +922,8 @@ internal static partial class MacSafeFileSystem
         SafeFileHandle dirHandle,
         string currentFullPath,
         string relativePrefix,
-        List<(string FullPath, string RelativePath)> results)
+        List<(string FullPath, string RelativePath)> results,
+        HashSet<(int Device, ulong Inode)> visitedDirectories)
     {
         ArgumentNullException.ThrowIfNull(dirHandle);
         bool added = false;
@@ -599,6 +942,7 @@ internal static partial class MacSafeFileSystem
                 CloseDescriptor(dupFd);
                 throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS fdopendir failed.");
             }
+            RewindDir(dirp);
             try
             {
                 while (true)
@@ -620,30 +964,20 @@ internal static partial class MacSafeFileSystem
                         string itemRelPath = string.IsNullOrEmpty(relativePrefix) ? name : Path.Combine(relativePrefix, name);
                         string itemFullPath = Path.Combine(currentFullPath, name);
 
-                        if (entry->d_type == 10 /* DT_LNK */)
+                        // d_type is only a directory-stream hint. Classify the
+                        // exact name without following links and then prove the
+                        // descriptor opened for use still denotes that inode.
+                        // This closes the readdir-to-open substitution window.
+                        MacFileIdentity entryIdentity = GetIdentityAt(dirHandle, name);
+                        uint fileType = (uint)(entryIdentity.Mode & FileTypeMask);
+                        if (fileType == SymbolicLinkMode)
                         {
                             throw new IOException($"Die Eingabe enthält einen symbolischen Link: {itemFullPath}");
                         }
 
-                        bool isDirectory = entry->d_type == 4 /* DT_DIR */;
-                        bool isRegular = entry->d_type == 8 /* DT_REG */;
-
-                        if (entry->d_type == 0 /* DT_UNKNOWN */ || (!isDirectory && !isRegular))
+                        if (fileType == DirectoryMode)
                         {
-                            if (FStatAt(fd, name, out DarwinStat status, 0x0020 /* AT_SYMLINK_NOFOLLOW */) == 0)
-                            {
-                                uint fileType = (uint)(status.Mode & 0xF000 /* S_IFMT */);
-                                if (fileType == 0xA000 /* S_IFLNK */)
-                                {
-                                    throw new IOException($"Die Eingabe enthält einen symbolischen Link: {itemFullPath}");
-                                }
-                                isDirectory = fileType == 0x4000 /* S_IFDIR */;
-                                isRegular = fileType == 0x8000 /* S_IFREG */;
-                            }
-                        }
-
-                        if (isDirectory)
-                        {
+                            TestHookBeforeDirectoryDescend?.Invoke(itemFullPath);
                             int subFd = PInvokeOpenAt(fd, name, OpenReadOnly | OpenDirectory | OpenCloseOnExec | OpenNoFollowAny, 0);
                             if (subFd < 0)
                             {
@@ -654,11 +988,74 @@ internal static partial class MacSafeFileSystem
                             }
                             using (var subHandle = new SafeFileHandle(subFd, ownsHandle: true))
                             {
-                                EnumerateDirectoryTreeNoFollowDescriptor(subHandle, itemFullPath, itemRelPath, results);
+                                MacFileIdentity openedIdentity = GetIdentity(subHandle);
+                                if (!openedIdentity.SameObject(entryIdentity)
+                                    || (openedIdentity.Mode & FileTypeMask) != DirectoryMode)
+                                {
+                                    throw new IOException(
+                                        $"Der Verzeichniseintrag wurde vor dem sicheren Abstieg ausgetauscht: {itemFullPath}");
+                                }
+
+                                if (!visitedDirectories.Add((openedIdentity.Device, openedIdentity.Inode)))
+                                {
+                                    throw new IOException($"Die Eingabe enthält einen Verzeichniszyklus: {itemFullPath}");
+                                }
+
+                                try
+                                {
+                                    EnumerateDirectoryTreeNoFollowDescriptor(
+                                        subHandle,
+                                        itemFullPath,
+                                        itemRelPath,
+                                        results,
+                                        visitedDirectories);
+                                }
+                                finally
+                                {
+                                    visitedDirectories.Remove((openedIdentity.Device, openedIdentity.Inode));
+                                }
+
+                                MacFileIdentity afterWalkIdentity = GetIdentity(subHandle);
+                                MacFileIdentity finalEntryIdentity = GetIdentityAt(dirHandle, name);
+                                if (!afterWalkIdentity.SameObject(openedIdentity)
+                                    || !finalEntryIdentity.SameObject(openedIdentity))
+                                {
+                                    throw new IOException(
+                                        $"Der Verzeichniseintrag wurde während des sicheren Walks ausgetauscht: {itemFullPath}");
+                                }
                             }
                         }
-                        else if (isRegular)
+                        else if (fileType == RegularFileMode)
                         {
+                            if (entryIdentity.LinkCount != 1)
+                            {
+                                throw new IOException($"Die Eingabe enthält eine Datei mit mehreren Hardlinks: {itemFullPath}");
+                            }
+
+                            int fileFd = PInvokeOpenAt(
+                                fd,
+                                name,
+                                OpenReadOnly | OpenCloseOnExec | OpenNoFollowAny,
+                                0);
+                            if (fileFd < 0)
+                            {
+                                throw new IOException(
+                                    $"macOS could not bind input file '{itemFullPath}' without following links.",
+                                    new Win32Exception(Marshal.GetLastPInvokeError()));
+                            }
+
+                            using var fileHandle = new SafeFileHandle(fileFd, ownsHandle: true);
+                            MacFileIdentity openedIdentity = GetIdentity(fileHandle);
+                            MacFileIdentity finalEntryIdentity = GetIdentityAt(dirHandle, name);
+                            if (!openedIdentity.SameObject(entryIdentity)
+                                || !finalEntryIdentity.SameObject(openedIdentity)
+                                || openedIdentity.LinkCount != 1
+                                || (openedIdentity.Mode & FileTypeMask) != RegularFileMode)
+                            {
+                                throw new IOException(
+                                    $"Der Dateieintrag wurde während des sicheren Walks ausgetauscht: {itemFullPath}");
+                            }
+
                             results.Add((itemFullPath, itemRelPath));
                         }
                         else
@@ -701,6 +1098,7 @@ internal static partial class MacSafeFileSystem
                 CloseDescriptor(dupFd);
                 throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS fdopendir failed.");
             }
+            RewindDir(dirp);
             try
             {
                 while (true)
@@ -719,25 +1117,35 @@ internal static partial class MacSafeFileSystem
                             continue;
                         }
 
-                        bool isDirectory = entry->d_type == 4 /* DT_DIR */;
-                        if (entry->d_type == 0 /* DT_UNKNOWN */)
-                        {
-                            if (FStatAt(fd, name, out DarwinStat status, 0x0020 /* AT_SYMLINK_NOFOLLOW */) == 0)
-                            {
-                                isDirectory = (status.Mode & 0xF000 /* S_IFMT */) == 0x4000 /* S_IFDIR */;
-                            }
-                        }
-
-                        if (isDirectory)
+                        MacFileIdentity entryIdentity = GetIdentityAt(dirHandle, name);
+                        uint fileType = (uint)(entryIdentity.Mode & FileTypeMask);
+                        if (fileType == DirectoryMode)
                         {
                             int subFd = PInvokeOpenAt(fd, name, OpenReadOnly | OpenDirectory | OpenCloseOnExec | OpenNoFollowAny, 0);
-                            if (subFd >= 0)
+                            if (subFd < 0)
                             {
-                                using (var subHandle = new SafeFileHandle(subFd, ownsHandle: true))
+                                throw new IOException(
+                                    $"Could not bind cleanup directory '{name}'.",
+                                    new Win32Exception(Marshal.GetLastPInvokeError()));
+                            }
+
+                            using (var subHandle = new SafeFileHandle(subFd, ownsHandle: true))
+                            {
+                                MacFileIdentity openedIdentity = GetIdentity(subHandle);
+                                if (!openedIdentity.SameObject(entryIdentity)
+                                    || (openedIdentity.Mode & FileTypeMask) != DirectoryMode)
                                 {
-                                    DeleteDirectoryContentsDescriptor(subHandle);
+                                    throw new IOException($"Cleanup directory '{name}' changed before descent.");
+                                }
+
+                                DeleteDirectoryContentsDescriptor(subHandle);
+                                MacFileIdentity finalEntryIdentity = GetIdentityAt(dirHandle, name);
+                                if (!finalEntryIdentity.SameObject(openedIdentity))
+                                {
+                                    throw new IOException($"Cleanup directory '{name}' changed before removal.");
                                 }
                             }
+
                             if (PInvokeUnlinkAt(fd, name, 0x0080 /* AT_REMOVEDIR */) != 0)
                             {
                                 int err = Marshal.GetLastPInvokeError();
@@ -749,6 +1157,33 @@ internal static partial class MacSafeFileSystem
                         }
                         else
                         {
+                            if (fileType != RegularFileMode || entryIdentity.LinkCount != 1)
+                            {
+                                throw new IOException(
+                                    $"Cleanup refused a non-regular or multiply linked entry '{name}'.");
+                            }
+
+                            int fileFd = PInvokeOpenAt(fd, name, OpenReadOnly | OpenCloseOnExec | OpenNoFollowAny, 0);
+                            if (fileFd < 0)
+                            {
+                                throw new IOException(
+                                    $"Could not bind cleanup file '{name}'.",
+                                    new Win32Exception(Marshal.GetLastPInvokeError()));
+                            }
+
+                            using (var fileHandle = new SafeFileHandle(fileFd, ownsHandle: true))
+                            {
+                                MacFileIdentity openedIdentity = GetIdentity(fileHandle);
+                                MacFileIdentity finalEntryIdentity = GetIdentityAt(dirHandle, name);
+                                if (!openedIdentity.SameObject(entryIdentity)
+                                    || !finalEntryIdentity.SameObject(openedIdentity)
+                                    || openedIdentity.LinkCount != 1
+                                    || (openedIdentity.Mode & FileTypeMask) != RegularFileMode)
+                                {
+                                    throw new IOException($"Cleanup file '{name}' changed before removal.");
+                                }
+                            }
+
                             if (PInvokeUnlinkAt(fd, name, 0) != 0)
                             {
                                 int err = Marshal.GetLastPInvokeError();
@@ -775,6 +1210,357 @@ internal static partial class MacSafeFileSystem
         }
     }
 
+    internal static DirectoryTreeMeasurement MeasureDirectoryTreeNoFollow(
+        SafeFileHandle rootHandle,
+        MacFileIdentity expectedRootIdentity,
+        bool allowWriters)
+    {
+        ArgumentNullException.ThrowIfNull(rootHandle);
+        MacFileIdentity currentRootIdentity = GetIdentity(rootHandle);
+        if (!currentRootIdentity.SameObject(expectedRootIdentity)
+            || (currentRootIdentity.Mode & FileTypeMask) != DirectoryMode)
+        {
+            throw new IOException("The bound extraction root no longer identifies the expected directory.");
+        }
+
+        var visitedDirectories = new HashSet<(int Device, ulong Inode)>
+        {
+            (currentRootIdentity.Device, currentRootIdentity.Inode),
+        };
+        var fingerprintEntries = new List<MacTreeFingerprintEntry>
+        {
+            new(string.Empty, IsDirectory: true, currentRootIdentity),
+        };
+        DirectoryTreeMeasurement measurement = MeasureDirectoryTreeNoFollowDescriptor(
+            rootHandle,
+            allowWriters,
+            visitedDirectories,
+            string.Empty,
+            fingerprintEntries);
+        MacFileIdentity finalRootIdentity = GetIdentity(rootHandle);
+        if (!finalRootIdentity.SameObject(expectedRootIdentity)
+            || (!allowWriters && !finalRootIdentity.SameObjectAndMetadata(currentRootIdentity)))
+        {
+            throw new IOException("The bound extraction root changed while it was being measured.");
+        }
+
+        return measurement with
+        {
+            TreeFingerprint = ComputeTreeFingerprint(fingerprintEntries),
+        };
+    }
+
+    private static DirectoryTreeMeasurement MeasureDirectoryTreeNoFollowDescriptor(
+        SafeFileHandle dirHandle,
+        bool allowWriters,
+        HashSet<(int Device, ulong Inode)> visitedDirectories,
+        string relativePrefix,
+        List<MacTreeFingerprintEntry> fingerprintEntries)
+    {
+        bool added = false;
+        int fileCount = 0;
+        long totalBytes = 0;
+        long maxFileBytes = 0;
+        try
+        {
+            dirHandle.DangerousAddRef(ref added);
+            int fd = checked((int)dirHandle.DangerousGetHandle());
+            int dupFd = Dup(fd);
+            if (dupFd < 0)
+            {
+                throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS could not dup extraction directory descriptor.");
+            }
+
+            nint dirp = FdOpenDir(dupFd);
+            if (dirp == 0)
+            {
+                CloseDescriptor(dupFd);
+                throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS fdopendir failed for extraction measurement.");
+            }
+            RewindDir(dirp);
+
+            try
+            {
+                while (true)
+                {
+                    nint entryPtr = ReadDir(dirp);
+                    if (entryPtr == 0)
+                    {
+                        break;
+                    }
+
+                    unsafe
+                    {
+                        var entry = (DarwinDirent*)entryPtr;
+                        string name = Marshal.PtrToStringUTF8((nint)entry->d_name, entry->d_namlen);
+                        if (name is "." or "..")
+                        {
+                            continue;
+                        }
+
+                        string relativePath = string.IsNullOrEmpty(relativePrefix)
+                            ? name
+                            : Path.Combine(relativePrefix, name);
+
+                        MacFileIdentity entryIdentity = GetIdentityAt(dirHandle, name);
+                        uint fileType = (uint)(entryIdentity.Mode & FileTypeMask);
+                        if (fileType == SymbolicLinkMode)
+                        {
+                            throw new InvalidDataException(
+                                $"The extracted tree contains a symbolic link that ZPAQ cannot have created: {name}");
+                        }
+
+                        if (fileType == DirectoryMode)
+                        {
+                            int subFd = PInvokeOpenAt(
+                                fd,
+                                name,
+                                OpenReadOnly | OpenDirectory | OpenCloseOnExec | OpenNoFollowAny,
+                                0);
+                            if (subFd < 0)
+                            {
+                                throw new IOException(
+                                    $"macOS could not bind extracted directory '{name}'.",
+                                    new Win32Exception(Marshal.GetLastPInvokeError()));
+                            }
+
+                            using var subHandle = new SafeFileHandle(subFd, ownsHandle: true);
+                            MacFileIdentity openedIdentity = GetIdentity(subHandle);
+                            if (!openedIdentity.SameObject(entryIdentity)
+                                || (openedIdentity.Mode & FileTypeMask) != DirectoryMode)
+                            {
+                                throw new IOException($"Extracted directory '{name}' changed before descent.");
+                            }
+
+                            if (!visitedDirectories.Add((openedIdentity.Device, openedIdentity.Inode)))
+                            {
+                                throw new IOException($"The extracted tree contains a directory cycle at '{name}'.");
+                            }
+
+                            DirectoryTreeMeasurement child;
+                            try
+                            {
+                                child = MeasureDirectoryTreeNoFollowDescriptor(
+                                    subHandle,
+                                    allowWriters,
+                                    visitedDirectories,
+                                    relativePath,
+                                    fingerprintEntries);
+                            }
+                            finally
+                            {
+                                visitedDirectories.Remove((openedIdentity.Device, openedIdentity.Inode));
+                            }
+
+                            MacFileIdentity afterWalkIdentity = GetIdentity(subHandle);
+                            MacFileIdentity finalEntryIdentity = GetIdentityAt(dirHandle, name);
+                            if (!afterWalkIdentity.SameObject(openedIdentity)
+                                || !finalEntryIdentity.SameObject(openedIdentity)
+                                || (!allowWriters
+                                    && (!afterWalkIdentity.SameObjectAndMetadata(openedIdentity)
+                                        || !finalEntryIdentity.SameObjectAndMetadata(afterWalkIdentity))))
+                            {
+                                throw new IOException($"Extracted directory '{name}' changed during measurement.");
+                            }
+
+                            fingerprintEntries.Add(new MacTreeFingerprintEntry(
+                                relativePath,
+                                IsDirectory: true,
+                                finalEntryIdentity));
+
+                            fileCount = checked(fileCount + child.FileCount);
+                            totalBytes = checked(totalBytes + child.TotalBytes);
+                            maxFileBytes = Math.Max(maxFileBytes, child.MaxFileBytes);
+                            continue;
+                        }
+
+                        if (fileType != RegularFileMode || entryIdentity.LinkCount != 1)
+                        {
+                            throw new InvalidDataException(
+                                $"The extracted tree contains a non-regular or multiply linked entry: {name}");
+                        }
+
+                        int fileFd = PInvokeOpenAt(fd, name, OpenReadOnly | OpenCloseOnExec | OpenNoFollowAny, 0);
+                        if (fileFd < 0)
+                        {
+                            throw new IOException(
+                                $"macOS could not bind extracted file '{name}'.",
+                                new Win32Exception(Marshal.GetLastPInvokeError()));
+                        }
+
+                        using var fileHandle = new SafeFileHandle(fileFd, ownsHandle: true);
+                        MacFileIdentity openedFileIdentity = GetIdentity(fileHandle);
+                        MacFileIdentity finalFileIdentity = GetIdentity(fileHandle);
+                        MacFileIdentity finalFileEntryIdentity = GetIdentityAt(dirHandle, name);
+                        if (!openedFileIdentity.SameObject(entryIdentity)
+                            || !finalFileIdentity.SameObject(openedFileIdentity)
+                            || !finalFileEntryIdentity.SameObject(openedFileIdentity)
+                            || openedFileIdentity.LinkCount != 1
+                            || finalFileIdentity.LinkCount != 1
+                            || finalFileEntryIdentity.LinkCount != 1
+                            || (openedFileIdentity.Mode & FileTypeMask) != RegularFileMode
+                            || (!allowWriters
+                                && (!finalFileIdentity.SameObjectAndMetadata(openedFileIdentity)
+                                    || !finalFileEntryIdentity.SameObjectAndMetadata(finalFileIdentity))))
+                        {
+                            throw new IOException($"Extracted file '{name}' changed during measurement.");
+                        }
+
+                        fingerprintEntries.Add(new MacTreeFingerprintEntry(
+                            relativePath,
+                            IsDirectory: false,
+                            finalFileEntryIdentity));
+
+                        fileCount = checked(fileCount + 1);
+                        totalBytes = checked(totalBytes + finalFileIdentity.Size);
+                        maxFileBytes = Math.Max(maxFileBytes, finalFileIdentity.Size);
+                    }
+                }
+            }
+            finally
+            {
+                CloseDir(dirp);
+            }
+        }
+        finally
+        {
+            if (added)
+            {
+                dirHandle.DangerousRelease();
+            }
+        }
+
+        return new DirectoryTreeMeasurement(fileCount, totalBytes, maxFileBytes, string.Empty);
+    }
+
+    private static string ComputeTreeFingerprint(List<MacTreeFingerprintEntry> entries)
+    {
+        entries.Sort(static (left, right) => string.CompareOrdinal(left.RelativePath, right.RelativePath));
+        using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA512);
+        Span<byte> numbers = stackalloc byte[64];
+        foreach (MacTreeFingerprintEntry entry in entries)
+        {
+            byte[] relativePath = Encoding.UTF8.GetBytes(entry.RelativePath);
+            try
+            {
+                numbers.Clear();
+                numbers[0] = entry.IsDirectory ? (byte)1 : (byte)0;
+                BitConverter.TryWriteBytes(numbers[1..5], relativePath.Length);
+                BitConverter.TryWriteBytes(numbers[5..9], entry.Identity.Device);
+                BitConverter.TryWriteBytes(numbers[9..17], entry.Identity.Inode);
+                BitConverter.TryWriteBytes(numbers[17..19], entry.Identity.LinkCount);
+                BitConverter.TryWriteBytes(numbers[19..21], entry.Identity.Mode);
+                BitConverter.TryWriteBytes(numbers[21..29], entry.Identity.Size);
+                BitConverter.TryWriteBytes(numbers[29..37], entry.Identity.ModificationSeconds);
+                BitConverter.TryWriteBytes(numbers[37..45], entry.Identity.ModificationNanoseconds);
+                BitConverter.TryWriteBytes(numbers[45..53], entry.Identity.ChangeSeconds);
+                BitConverter.TryWriteBytes(numbers[53..61], entry.Identity.ChangeNanoseconds);
+                hash.AppendData(numbers);
+                hash.AppendData(relativePath);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(relativePath);
+            }
+        }
+
+        numbers.Clear();
+        return Convert.ToHexString(hash.GetHashAndReset());
+    }
+
+    private readonly record struct MacTreeFingerprintEntry(
+        string RelativePath,
+        bool IsDirectory,
+        MacFileIdentity Identity);
+
+    /// <summary>
+    /// Removes a private directory only when its parent entry still denotes the
+    /// expected bound inode. A replacement at the same path is never traversed
+    /// or removed.
+    /// </summary>
+    internal static void DeleteDirectoryTreeBound(string directoryPath, MacFileIdentity expectedIdentity)
+    {
+        string fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(directoryPath));
+        string parentPath = Path.GetDirectoryName(fullPath)
+            ?? throw new InvalidOperationException("A bound directory cleanup requires a parent directory.");
+        string name = Path.GetFileName(fullPath);
+        using SafeFileHandle parentHandle = OpenDirectoryHandle(parentPath);
+        MacFileIdentity entryIdentity = GetIdentityAt(parentHandle, name);
+        if (!entryIdentity.SameObject(expectedIdentity)
+            || (entryIdentity.Mode & FileTypeMask) != DirectoryMode)
+        {
+            throw new IOException("Refusing to clean a directory path that no longer identifies the bound object.");
+        }
+
+        using SafeFileHandle directoryHandle = OpenDirectoryHandleAt(parentHandle, name);
+        MacFileIdentity openedIdentity = GetIdentity(directoryHandle);
+        if (!openedIdentity.SameObject(expectedIdentity))
+        {
+            throw new IOException("The cleanup directory changed while it was being opened.");
+        }
+
+        DeleteDirectoryTreeBound(
+            parentHandle,
+            GetIdentity(parentHandle),
+            name,
+            directoryHandle,
+            expectedIdentity);
+    }
+
+    /// <summary>
+    /// Cleans the exact held directory even if its pathname was displaced, but
+    /// removes the original parent entry only when it still denotes that inode.
+    /// A foreign replacement is preserved and reported to the caller.
+    /// </summary>
+    internal static void DeleteDirectoryTreeBound(
+        SafeFileHandle parentHandle,
+        MacFileIdentity expectedParentIdentity,
+        string directoryName,
+        SafeFileHandle directoryHandle,
+        MacFileIdentity expectedDirectoryIdentity)
+    {
+        ArgumentNullException.ThrowIfNull(parentHandle);
+        ArgumentNullException.ThrowIfNull(directoryHandle);
+        if (string.IsNullOrWhiteSpace(directoryName)
+            || !string.Equals(directoryName, Path.GetFileName(directoryName), StringComparison.Ordinal))
+        {
+            throw new ArgumentException("A bound directory cleanup requires one entry name.", nameof(directoryName));
+        }
+
+        MacFileIdentity openedIdentity = GetIdentity(directoryHandle);
+        if (!openedIdentity.SameObject(expectedDirectoryIdentity)
+            || (openedIdentity.Mode & FileTypeMask) != DirectoryMode)
+        {
+            throw new IOException("The held cleanup directory no longer identifies the expected object.");
+        }
+        if (!GetIdentity(parentHandle).SameObject(expectedParentIdentity))
+        {
+            throw new IOException("The held cleanup parent no longer identifies the expected directory.");
+        }
+
+        DeleteDirectoryContentsDescriptor(directoryHandle);
+
+        MacFileIdentity finalHandleIdentity = GetIdentity(directoryHandle);
+        if (!finalHandleIdentity.SameObject(expectedDirectoryIdentity))
+        {
+            throw new IOException("The held cleanup directory changed while its contents were removed.");
+        }
+        if (!GetIdentity(parentHandle).SameObject(expectedParentIdentity))
+        {
+            throw new IOException("The held cleanup parent changed before final removal.");
+        }
+
+        MacFileIdentity finalEntryIdentity = GetIdentityAt(parentHandle, directoryName);
+        if (!finalEntryIdentity.SameObject(expectedDirectoryIdentity)
+            || (finalEntryIdentity.Mode & FileTypeMask) != DirectoryMode)
+        {
+            throw new IOException(
+                "Refusing to remove a private-directory name that now identifies a foreign replacement.");
+        }
+
+        UnlinkAt(parentHandle, directoryName, 0x0080 /* AT_REMOVEDIR */);
+    }
+
     internal static long GetFreeDiskSpaceBytes(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
@@ -799,7 +1585,7 @@ internal static partial class MacSafeFileSystem
             {
                 throw new Win32Exception(Marshal.GetLastPInvokeError(), $"macOS could not inspect '{relativePath}' relative to directory descriptor.");
             }
-            return new MacFileIdentity(status.Device, status.Inode, status.LinkCount, status.Mode, status.Size);
+            return IdentityFromStat(status);
         }
         finally
         {
@@ -926,6 +1712,16 @@ internal static partial class MacSafeFileSystem
     [LibraryImport("libSystem.B.dylib", EntryPoint = "mkdirat", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
     internal static partial int PInvokeMkdirAt(int dirfd, string path, uint mode);
 
+    [LibraryImport("libSystem.B.dylib", EntryPoint = "fchmod", SetLastError = true)]
+    private static partial int PInvokeFChmod(int fd, uint mode);
+
+    [LibraryImport("libSystem.B.dylib", EntryPoint = "mkostempsat_np", SetLastError = true)]
+    private static unsafe partial int PInvokeMkOStempsAtNp(
+        int dirfd,
+        byte* template,
+        int suffixLength,
+        int openFlags);
+
     [LibraryImport("libSystem.B.dylib", EntryPoint = "renameat", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
     internal static partial int PInvokeRenameAt(int fromDirFd, string fromPath, int toDirFd, string toPath);
 
@@ -955,10 +1751,39 @@ internal struct DarwinStatVfs
     public ulong f_namemax;
 }
 
-internal readonly record struct MacFileIdentity(int Device, ulong Inode, ushort LinkCount, ushort Mode, long Size)
+internal readonly record struct MacFileIdentity(
+    int Device,
+    ulong Inode,
+    ushort LinkCount,
+    ushort Mode,
+    long Size,
+    long ModificationSeconds,
+    long ModificationNanoseconds,
+    long ChangeSeconds,
+    long ChangeNanoseconds)
 {
     internal bool SameObject(MacFileIdentity other) => Device == other.Device && Inode == other.Inode;
+
+    internal bool SameObjectAndMetadata(MacFileIdentity other) =>
+        SameObject(other)
+        && LinkCount == other.LinkCount
+        && Mode == other.Mode
+        && Size == other.Size
+        && ModificationSeconds == other.ModificationSeconds
+        && ModificationNanoseconds == other.ModificationNanoseconds
+        && ChangeSeconds == other.ChangeSeconds
+        && ChangeNanoseconds == other.ChangeNanoseconds;
 }
+
+internal readonly record struct MacDirectoryEntry(
+    string Name,
+    MacFileIdentity Identity);
+
+internal readonly record struct DirectoryTreeMeasurement(
+    int FileCount,
+    long TotalBytes,
+    long MaxFileBytes,
+    string TreeFingerprint);
 
 internal static partial class NativePathResolver
 {
@@ -1075,6 +1900,8 @@ internal static partial class MacCodeSignature
 internal sealed class MacExtractionStaging : IDisposable
 {
     private readonly SafeFileHandle _parentHandle;
+    private readonly string _parentPath;
+    private readonly MacFileIdentity _parentIdentity;
     private readonly SafeFileHandle _stagingHandle;
     private readonly MacFileIdentity _stagingIdentity;
     public string DestinationPath { get; }
@@ -1082,23 +1909,50 @@ internal sealed class MacExtractionStaging : IDisposable
     public string StagingName { get; }
     public MacFileIdentity StagingIdentity => _stagingIdentity;
     private bool _installed;
+    private bool _cleaned;
+    private string? _validatedTreeFingerprint;
 
     internal static Action? TestHookBeforeInstallRename { get; set; }
+    internal static Action? TestHookAfterEmptyDestinationCheck { get; set; }
 
     public MacExtractionStaging(string destinationPath)
     {
-        DestinationPath = Path.GetFullPath(destinationPath);
-        if (File.Exists(DestinationPath))
+        string requestedDestination = Path.GetFullPath(destinationPath);
+        if (File.Exists(requestedDestination))
         {
             throw new InvalidOperationException("Extraction target must be a directory path.");
         }
 
-        string parentDir = Path.GetDirectoryName(DestinationPath) ?? Environment.CurrentDirectory;
-        Directory.CreateDirectory(parentDir);
-        string canonicalParent = MacSafeFileSystem.ResolveExistingRealPath(parentDir);
+        string destinationName = Path.GetFileName(requestedDestination);
+        if (string.IsNullOrWhiteSpace(destinationName))
+        {
+            throw new InvalidOperationException("Extraction target must end in a directory name.");
+        }
 
-        _parentHandle = MacSafeFileSystem.OpenDirectoryHandle(canonicalParent);
-        StagingName = $".{Path.GetFileName(DestinationPath)}.{Guid.NewGuid():N}.extract-part";
+        string parentDir = Path.GetDirectoryName(requestedDestination) ?? Environment.CurrentDirectory;
+        Directory.CreateDirectory(parentDir);
+        // Open the caller-supplied parent before canonicalizing it. macOS
+        // O_NOFOLLOW_ANY then rejects a symlink in any parent component.
+        SafeFileHandle openedParent = MacSafeFileSystem.OpenDirectoryHandle(parentDir);
+        string canonicalParent;
+        MacFileIdentity parentIdentity;
+        try
+        {
+            canonicalParent = MacSafeFileSystem.ResolveExistingRealPath(parentDir);
+            parentIdentity = MacSafeFileSystem.GetIdentity(openedParent);
+            MacSafeFileSystem.RequirePathStillNamesHandle(openedParent, canonicalParent);
+        }
+        catch
+        {
+            openedParent.Dispose();
+            throw;
+        }
+
+        _parentHandle = openedParent;
+        _parentPath = canonicalParent;
+        _parentIdentity = parentIdentity;
+        DestinationPath = Path.Combine(canonicalParent, destinationName);
+        StagingName = $".{destinationName}.{Guid.NewGuid():N}.extract-part";
         StagingPath = Path.Combine(canonicalParent, StagingName);
 
         bool parentAdded = false;
@@ -1156,15 +2010,32 @@ internal sealed class MacExtractionStaging : IDisposable
 
     public void VerifyIdentity()
     {
+        VerifyParentIdentity();
         MacSafeFileSystem.RequirePathStillNamesHandle(_stagingHandle, StagingPath);
         MacFileIdentity current = MacSafeFileSystem.GetIdentity(_stagingHandle);
-        if (current.Device != _stagingIdentity.Device || current.Inode != _stagingIdentity.Inode)
+        MacFileIdentity entry = MacSafeFileSystem.GetIdentityAt(_parentHandle, StagingName);
+        if (!current.SameObject(_stagingIdentity) || !entry.SameObject(_stagingIdentity))
         {
             throw new InvalidOperationException("Extraction staging directory identity changed during extraction.");
         }
     }
 
-    public void Install()
+    internal DirectoryTreeMeasurement MeasureTree(bool allowWriters)
+    {
+        VerifyIdentity();
+        DirectoryTreeMeasurement measurement = MacSafeFileSystem.MeasureDirectoryTreeNoFollow(
+            _stagingHandle,
+            _stagingIdentity,
+            allowWriters);
+        if (!allowWriters)
+        {
+            _validatedTreeFingerprint = measurement.TreeFingerprint;
+        }
+
+        return measurement;
+    }
+
+    public void Install(Action<DirectoryTreeMeasurement>? validateFinalTree = null)
     {
         VerifyIdentity();
         string destName = Path.GetFileName(DestinationPath);
@@ -1176,7 +2047,34 @@ internal sealed class MacExtractionStaging : IDisposable
             throw new InvalidOperationException("Extraction staging directory entry changed before installation.");
         }
 
+        string expectedTreeFingerprint = _validatedTreeFingerprint
+            ?? MeasureTree(allowWriters: false).TreeFingerprint;
+
+        // The hook is intentionally before the last complete bound-tree gate,
+        // so a deterministic substitution is caught rather than merely making
+        // the subsequent rename fail by chance.
         TestHookBeforeInstallRename?.Invoke();
+        VerifyParentIdentity();
+        DirectoryTreeMeasurement finalTree = MacSafeFileSystem.MeasureDirectoryTreeNoFollow(
+            _stagingHandle,
+            _stagingIdentity,
+            allowWriters: false);
+        validateFinalTree?.Invoke(finalTree);
+        if (!string.Equals(
+                finalTree.TreeFingerprint,
+                expectedTreeFingerprint,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                "The extracted tree changed after its final validation and before installation.");
+        }
+
+        _validatedTreeFingerprint = finalTree.TreeFingerprint;
+        parentStagingIdentity = MacSafeFileSystem.GetIdentityAt(_parentHandle, StagingName);
+        if (!parentStagingIdentity.SameObject(_stagingIdentity))
+        {
+            throw new InvalidOperationException("Extraction staging directory changed at the final install gate.");
+        }
 
         // Attempt atomic exclusive rename
         try
@@ -1200,10 +2098,16 @@ internal sealed class MacExtractionStaging : IDisposable
                 {
                     using (var existingHandle = new SafeFileHandle(destFd, ownsHandle: true))
                     {
+                        MacFileIdentity existingIdentity = MacSafeFileSystem.GetIdentity(existingHandle);
                         if (MacSafeFileSystem.IsDirectoryEmptyDescriptor(existingHandle))
                         {
-                            // 0x0080 is AT_REMOVEDIR on macOS
-                            if (MacSafeFileSystem.PInvokeUnlinkAt(parentFd, destName, 0x0080) == 0)
+                            TestHookAfterEmptyDestinationCheck?.Invoke();
+                            VerifyParentIdentity();
+                            MacFileIdentity finalHandleIdentity = MacSafeFileSystem.GetIdentity(existingHandle);
+                            MacFileIdentity finalEntryIdentity = MacSafeFileSystem.GetIdentityAt(_parentHandle, destName);
+                            if (finalHandleIdentity.SameObject(existingIdentity)
+                                && finalEntryIdentity.SameObject(existingIdentity)
+                                && MacSafeFileSystem.PInvokeUnlinkAt(parentFd, destName, 0x0080 /* AT_REMOVEDIR */) == 0)
                             {
                                 removed = true;
                             }
@@ -1233,16 +2137,8 @@ internal sealed class MacExtractionStaging : IDisposable
         MacFileIdentity postRenameIdentity = MacSafeFileSystem.GetIdentityAt(_parentHandle, destName);
         if (!postRenameIdentity.SameObject(_stagingIdentity))
         {
-            // Isolate the foreign tree away from destName so destination is not left corrupted
-            string quarantineName = $".keepvault_quarantine_{Guid.NewGuid():N}.extract-mismatch";
-            try
-            {
-                MacSafeFileSystem.RenameAtExclusive(_parentHandle, destName, _parentHandle, quarantineName);
-            }
-            catch
-            {
-            }
-            throw new InvalidOperationException($"Installed directory identity mismatch after atomic rename. Foreign item isolated under '{quarantineName}'.");
+            throw new InvalidOperationException(
+                "Installed directory identity mismatch after atomic rename. The foreign destination was preserved untouched.");
         }
 
         _installed = true;
@@ -1250,100 +2146,29 @@ internal sealed class MacExtractionStaging : IDisposable
 
     public void Cleanup()
     {
-        if (_installed)
+        if (_installed || _cleaned)
         {
             return;
         }
 
         try
         {
-            // Verify that staging handle and parent directory entry still match before deletion
-            if (!_stagingHandle.IsInvalid && !_stagingHandle.IsClosed && !_parentHandle.IsInvalid && !_parentHandle.IsClosed)
-            {
-                MacFileIdentity currentDescriptorIdentity = MacSafeFileSystem.GetIdentity(_stagingHandle);
-                if (!currentDescriptorIdentity.SameObject(_stagingIdentity))
-                {
-                    return; // Descriptor mutated; refuse deletion
-                }
-
-                MacFileIdentity parentEntryIdentity;
-                try
-                {
-                    parentEntryIdentity = MacSafeFileSystem.GetIdentityAt(_parentHandle, StagingName);
-                }
-                catch
-                {
-                    return; // Staging directory entry vanished or inaccessible
-                }
-
-                if (!parentEntryIdentity.SameObject(_stagingIdentity))
-                {
-                    return; // Path swapped; refuse recursive deletion of foreign directory!
-                }
-
-                // Atomically rename staging directory to a unique private cleanup name in parent
-                string cleanupName = $".keepvault_cleanup_{Guid.NewGuid():N}.extract-part";
-                try
-                {
-                    MacSafeFileSystem.RenameAt(_parentHandle, StagingName, _parentHandle, cleanupName);
-                }
-                catch
-                {
-                    return;
-                }
-
-                // Verify identity of renamed cleanup entry
-                MacFileIdentity cleanupIdentity;
-                try
-                {
-                    cleanupIdentity = MacSafeFileSystem.GetIdentityAt(_parentHandle, cleanupName);
-                }
-                catch
-                {
-                    return;
-                }
-
-                if (!cleanupIdentity.SameObject(_stagingIdentity))
-                {
-                    return; // Cleanup entry mismatch! Refuse deletion.
-                }
-
-                // Safely remove the isolated cleanup directory descriptor-bound without path-based recursive delete
-                try
-                {
-                    using SafeFileHandle cleanupDirHandle = MacSafeFileSystem.OpenDirectoryHandleAt(_parentHandle, cleanupName);
-                    MacFileIdentity currentCleanupIdentity = MacSafeFileSystem.GetIdentity(cleanupDirHandle);
-                    if (currentCleanupIdentity.SameObject(_stagingIdentity))
-                    {
-                        MacSafeFileSystem.DeleteDirectoryContentsDescriptor(cleanupDirHandle);
-                    }
-                }
-                catch
-                {
-                }
-
-                try
-                {
-                    bool parentAdded = false;
-                    try
-                    {
-                        _parentHandle.DangerousAddRef(ref parentAdded);
-                        int parentFd = checked((int)_parentHandle.DangerousGetHandle());
-                        MacSafeFileSystem.PInvokeUnlinkAt(parentFd, cleanupName, 0x0080 /* AT_REMOVEDIR */);
-                    }
-                    finally
-                    {
-                        if (parentAdded) _parentHandle.DangerousRelease();
-                    }
-                }
-                catch
-                {
-                }
-            }
+            MacSafeFileSystem.DeleteDirectoryTreeBound(
+                _parentHandle,
+                _parentIdentity,
+                StagingName,
+                _stagingHandle,
+                _stagingIdentity);
+            _cleaned = true;
         }
         catch
         {
-            // best effort non-destructive cleanup
+            // The descriptor-bound contents have either been removed or the
+            // operation failed closed before touching a foreign name. Report
+            // the cleanup failure once; Dispose must not silently retry and
+            // mask the original exception at a later boundary.
+            _cleaned = true;
+            throw;
         }
     }
 
@@ -1355,6 +2180,17 @@ internal sealed class MacExtractionStaging : IDisposable
         }
         _stagingHandle?.Dispose();
         _parentHandle?.Dispose();
+    }
+
+    private void VerifyParentIdentity()
+    {
+        MacFileIdentity current = MacSafeFileSystem.GetIdentity(_parentHandle);
+        if (!current.SameObject(_parentIdentity))
+        {
+            throw new IOException("Extraction target parent identity changed.");
+        }
+
+        MacSafeFileSystem.RequirePathStillNamesHandle(_parentHandle, _parentPath);
     }
 }
 

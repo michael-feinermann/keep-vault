@@ -309,9 +309,7 @@ internal static unsafe class NativeAes
         get
         {
             EnsureLoaded();
-            return _getRuntimeProvider == null
-                ? NativeAesRuntimeProvider.Unknown
-                : (NativeAesRuntimeProvider)_getRuntimeProvider();
+            return (NativeAesRuntimeProvider)_getRuntimeProvider();
         }
     }
 
@@ -394,9 +392,26 @@ internal static unsafe class NativeAes
                     NativeLibrary.GetExport(handle, "aes_256_ctr_xcrypt");
                 _encryptBlock = (delegate* unmanaged[Cdecl]<byte*, nuint, byte*, byte*, int>)
                     NativeLibrary.GetExport(handle, "aes_encrypt_block");
-                if (NativeLibrary.TryGetExport(handle, "aes_get_runtime_provider", out nint providerExport))
+                _getRuntimeProvider = (delegate* unmanaged[Cdecl]<int>)
+                    NativeLibrary.GetExport(handle, "aes_get_runtime_provider");
+                NativeAesRuntimeProvider provider = (NativeAesRuntimeProvider)_getRuntimeProvider();
+                if (!Enum.IsDefined(provider) || provider == NativeAesRuntimeProvider.Unknown)
                 {
-                    _getRuntimeProvider = (delegate* unmanaged[Cdecl]<int>)providerExport;
+                    throw new CryptographicException(
+                        $"The AES adapter reported an invalid Crypto++ runtime provider ({(int)provider}).");
+                }
+
+                // Every Apple-silicon Mac has the ARM cryptography extension.
+                // A portable result here means the SIMD translation unit was
+                // omitted or Crypto++ feature detection regressed. Continuing
+                // would silently ship the exact fallback the release contract
+                // forbids, so native arm64 macOS treats it as a load failure.
+                if (OperatingSystem.IsMacOS()
+                    && RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+                    && provider != NativeAesRuntimeProvider.ArmV8)
+                {
+                    throw new PlatformNotSupportedException(
+                        $"Apple-silicon AES must use the Crypto++ ArmV8 provider; the library selected {provider}.");
                 }
                 _libraryHandle = handle;
             }

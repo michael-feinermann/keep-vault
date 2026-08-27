@@ -1,11 +1,13 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using KalynaArchiver.Services;
 using KalynaArchiver.Signing;
+using Microsoft.Win32.SafeHandles;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Macs;
@@ -105,7 +107,7 @@ internal static partial class MacComprehensiveTests
         new("crypto.two-round-derivation", "two-round key derivation from one pool consumption", TestTwoRoundDerivationAsync, TestResource.EntropyGlobal, "Crypto"),
         new("crypto.unprepared-parameters", "salt and nonce for every single-round suite without prepared entropy", TestUnpreparedEncryptionParametersAsync, TestResource.EntropyGlobal, "Crypto"),
         new("crypto.per-chunk-nonces", "per-chunk nonces across a multi-chunk archive", TestPerChunkNoncesAsync, TestResource.CpuHeavy, "Crypto"),
-        new("crypto.mars-shacal-vectors", "MARS and SHACAL-2 published vectors and CTR behaviour", TestCascadeCipherVectorsAsync, TestResource.Light, "Crypto"),
+        new("crypto.mars-shacal-vectors", "AES, MARS, SHACAL-2 and Threefish vectors plus independent CTR behaviour", TestCascadeCipherVectorsAsync, TestResource.CpuHeavy, "Crypto"),
         new("deletion.secure-file-object-binding", "secure deletion destroys and deletes the same object", TestSecureFileObjectBoundDeletionAsync, TestResource.Light, "Deletion"),
         new("recovery.sidecar-transaction", "KPAR2 sidecar replacement survives a failure at every step", TestRecoverySidecarTransactionAsync, TestResource.Light, "Recovery"),
         new("recovery.kpar2-v4-adversarial", "KPAR2 v4 repair, authentication and transplantation rejection", TestRecoveryAsync, TestResource.EntropyGlobal, "Recovery"),
@@ -360,9 +362,23 @@ internal static partial class MacComprehensiveTests
     /// </remarks>
     private static async Task TestCompanionScannerAsync()
     {
-        CompanionVerificationResult live = MacCompanionVerification.VerifyQrScanner();
-        Require(live.Found, "QR-Scanner.app was not found; install the portable package before the full suite.");
-        Require(live.Trusted, $"The installed QR scanner is not trusted: {live.Message}");
+        string releaseRoot = Environment.GetEnvironmentVariable("KEEPVAULT_TEST_RELEASE_ROOT")
+            ?? Path.Combine(RepositoryRoot(), "build", "dev", "Keep Vault-macOS");
+        releaseRoot = Path.GetFullPath(releaseRoot);
+        string keepVaultBundle = Path.Combine(releaseRoot, "Keep Vault.app");
+        string scannerBundle = Path.Combine(releaseRoot, "QR-Scanner.app");
+        Require(
+            Directory.Exists(keepVaultBundle),
+            "The final signed dist Keep Vault.app is missing; run tools/Build-KeepVault-macOS.sh before the full suite.");
+        Require(
+            Directory.Exists(scannerBundle),
+            "The final signed dist QR-Scanner.app is missing; run tools/Build-KeepVault-macOS.sh before the full suite.");
+
+        CompanionVerificationResult live = MacCompanionVerification.VerifyQrScannerPairForTests(
+            keepVaultBundle,
+            scannerBundle);
+        Require(live.Found, $"The explicit final QR scanner was not found: {live.Message}");
+        Require(live.Trusted, $"The explicit final release pair is not trusted: {live.Message}");
 
         string root = CreateTempRoot("keep-vault-scanner-");
         try
@@ -375,6 +391,18 @@ internal static partial class MacComprehensiveTests
                 Require(File.Exists(sidecar), $"The scanner is missing its {suffix} sidecar.");
                 File.Copy(sidecar, bundle + suffix);
             }
+
+            CompanionVerificationResult copied = MacCompanionVerification.VerifyQrScannerPairForTests(
+                keepVaultBundle,
+                bundle);
+            Require(copied.Trusted, $"The copied explicit scanner release did not verify: {copied.Message}");
+
+            CompanionVerificationResult missingHost = MacCompanionVerification.VerifyQrScannerPairForTests(
+                Path.Combine(root, "missing-keep-vault.app"),
+                bundle);
+            Require(
+                missingHost.Found && !missingHost.Trusted,
+                "Explicit companion verification silently fell back to the running process or an installed app.");
 
             HybridSignaturePolicy policy = SigningTrustPolicy.HybridPolicy
                 ?? throw new InvalidOperationException("The compiled hybrid signing policy is unavailable.");
@@ -390,6 +418,12 @@ internal static partial class MacComprehensiveTests
             Require(
                 !HybridSignatureService.VerifyFile(executable, bundle + ".khsig", policy).IsTrusted,
                 "A corrupted ML-DSA-87 signature was accepted for the scanner.");
+            CompanionVerificationResult corruptedPair = MacCompanionVerification.VerifyQrScannerPairForTests(
+                keepVaultBundle,
+                bundle);
+            Require(
+                corruptedPair.Found && !corruptedPair.Trusted,
+                "Explicit release-pair verification accepted a corrupted scanner signature.");
 
             await File.WriteAllBytesAsync(bundle + ".khsig", signature).ConfigureAwait(false);
             byte[] binary = await File.ReadAllBytesAsync(executable).ConfigureAwait(false);
@@ -399,6 +433,12 @@ internal static partial class MacComprehensiveTests
             Require(
                 !HybridSignatureService.VerifyFile(executable, bundle + ".khsig", policy).IsTrusted,
                 "A modified scanner binary was accepted against its unchanged signature.");
+            CompanionVerificationResult patchedPair = MacCompanionVerification.VerifyQrScannerPairForTests(
+                keepVaultBundle,
+                bundle);
+            Require(
+                patchedPair.Found && !patchedPair.Trusted,
+                "Explicit release-pair verification accepted a modified scanner executable.");
 
             File.Delete(bundle + ".khsig");
             Require(
@@ -1684,10 +1724,25 @@ internal static partial class MacComprehensiveTests
 
         try
         {
-            staging.Cleanup();
+            IOException? cleanupFailure = null;
+            try
+            {
+                staging.Cleanup();
+            }
+            catch (IOException exception)
+            {
+                cleanupFailure = exception;
+            }
 
+            Require(
+                cleanupFailure is not null,
+                "Staging cleanup silently ignored that its public name had become a foreign directory.");
             Require(Directory.Exists(realStaging), "Staging cleanup deleted a substituted foreign directory!");
             Require(File.Exists(Path.Combine(realStaging, "valuable_user_data.txt")), "Staging cleanup deleted foreign files inside substituted directory!");
+            Require(
+                Directory.Exists(tempBackup)
+                    && !Directory.EnumerateFileSystemEntries(tempBackup).Any(),
+                "Staging cleanup did not erase the exact displaced descriptor-bound directory.");
         }
         finally
         {
@@ -2732,6 +2787,9 @@ internal static partial class MacComprehensiveTests
 
             string sidecarPath = await recovery.CreateAsync(archive, null, CancellationToken.None).ConfigureAwait(false);
             Require(File.Exists(sidecarPath), "The initial KPAR2 sidecar was not created.");
+            Require(
+                (File.GetUnixFileMode(sidecarPath) & UnixFileMode.UserWrite) != 0,
+                $"The initial KPAR2 sidecar is not owner-writable: {File.GetUnixFileMode(sidecarPath)}.");
             byte[] original = await File.ReadAllBytesAsync(sidecarPath).ConfigureAwait(false);
 
             async Task RequireSidecarUsableAsync(string because)
@@ -2782,40 +2840,84 @@ internal static partial class MacComprehensiveTests
                 Directory.GetFiles(root, ".*.recovery-part", SearchOption.TopDirectoryOnly).Length == 0,
                 "A failed full KPAR2 commit gate left its generated sidecar behind.");
 
+            // A parity shard can carry the digest named by the manifest and
+            // still be unrelated to the 20 archive data shards. Inject the
+            // mutation after digest validation so only the independent
+            // RS(20,3) recomputation can reject it.
+            RecoveryService.GeneratedParityHookAfterDigestValidation = parity => parity[0][0] ^= 0x20;
+            try
+            {
+                await RequireThrowsAsync<InvalidDataException>(
+                    () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                    "Manifest-consistent but RS-inconsistent KPAR2 parity passed the commit gate.").ConfigureAwait(false);
+            }
+            finally
+            {
+                RecoveryService.GeneratedParityHookAfterDigestValidation = null;
+            }
+
+            await RequireSidecarUsableAsync("after an RS relation failure").ConfigureAwait(false);
+            Require(
+                (File.GetUnixFileMode(sidecarPath) & UnixFileMode.UserWrite) != 0,
+                $"The known-good KPAR2 sidecar lost owner-write permission: {File.GetUnixFileMode(sidecarPath)}.");
+            Require(
+                !RecoveryService.ArchiveFileNamesMatchForTests("archive.zpaq", "Archive.zpaq"),
+                "KPAR2 archive names were compared case-insensitively on a potentially case-sensitive APFS volume.");
+
             // macOS permits another process to rename an open file. Prove that
             // both namespace boundaries detect such substitutions by inode,
             // preserve foreign entries and keep the known-good sidecar.
             string displacedPrevious = Path.Combine(root, "displaced-previous.kpar2");
+            bool oldRenameCompleted = false;
+            bool foreignOldEntryCreated = false;
             RecoveryService.SidecarHookBeforeOldQuarantineRename = () =>
             {
-                File.Move(sidecarPath, displacedPrevious);
+                using var parent = MacSafeFileSystem.OpenDirectoryHandle(root);
+                MacSafeFileSystem.RenameAt(
+                    parent,
+                    Path.GetFileName(sidecarPath),
+                    parent,
+                    Path.GetFileName(displacedPrevious));
+                oldRenameCompleted = true;
                 File.WriteAllBytes(sidecarPath, [0xA7]);
+                foreignOldEntryCreated = true;
             };
+            IOException? oldRenameFailure = null;
             try
             {
-                await RequireThrowsAsync<IOException>(
-                    () => recovery.CreateAsync(archive, null, CancellationToken.None),
-                    "A substituted old KPAR2 directory entry passed the quarantine identity check.").ConfigureAwait(false);
+                await recovery.CreateAsync(archive, null, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (IOException exception)
+            {
+                oldRenameFailure = exception;
             }
             finally
             {
                 RecoveryService.SidecarHookBeforeOldQuarantineRename = null;
             }
 
+            Require(
+                oldRenameFailure is not null,
+                "A substituted old KPAR2 directory entry passed the quarantine identity check.");
+
             string[] oldRaceQuarantines = Directory.GetFiles(
                 root,
                 ".*.previous",
                 SearchOption.TopDirectoryOnly);
+            byte[] displacedPreviousBytes = File.Exists(displacedPrevious)
+                ? await File.ReadAllBytesAsync(displacedPrevious).ConfigureAwait(false)
+                : [];
             Require(
-                File.Exists(displacedPrevious)
-                    && FixedEqual(original, await File.ReadAllBytesAsync(displacedPrevious).ConfigureAwait(false)),
-                "The exact old KPAR2 inode was not preserved after source-name substitution.");
+                oldRenameCompleted
+                    && foreignOldEntryCreated
+                    && displacedPreviousBytes.Length > 0
+                    && FixedEqual(original, displacedPreviousBytes),
+                $"The exact old KPAR2 inode was not preserved after source-name substitution (rename={oldRenameCompleted}, replacement={foreignOldEntryCreated}, failure={oldRenameFailure}).");
             Require(
-                !File.Exists(sidecarPath)
-                    && oldRaceQuarantines.Length == 1
-                    && File.ReadAllBytes(oldRaceQuarantines[0]) is [0xA7],
-                "The substituted old-sidecar entry was not preserved without deletion.");
-            File.Delete(oldRaceQuarantines[0]);
+                File.ReadAllBytes(sidecarPath) is [0xA7]
+                    && oldRaceQuarantines.Length == 0,
+                "The substituted old-sidecar entry was moved or deleted instead of being left untouched.");
+            File.Delete(sidecarPath);
             File.Move(displacedPrevious, sidecarPath);
 
             string displacedGenerated = Path.Combine(root, "displaced-generated.kpar2");
@@ -2825,7 +2927,12 @@ internal static partial class MacComprehensiveTests
                     root,
                     ".*.recovery-part",
                     SearchOption.TopDirectoryOnly).Single();
-                File.Move(generatedPath, displacedGenerated);
+                using var parent = MacSafeFileSystem.OpenDirectoryHandle(root);
+                MacSafeFileSystem.RenameAt(
+                    parent,
+                    Path.GetFileName(generatedPath),
+                    parent,
+                    Path.GetFileName(displacedGenerated));
                 File.WriteAllBytes(generatedPath, [0xA8]);
             };
             try
@@ -2917,13 +3024,65 @@ internal static partial class MacComprehensiveTests
                 "A post-install failure did not roll back to the original sidecar.");
             Require(await CountSidecarLeftoversAsync().ConfigureAwait(false) == 0, "A post-install failure left a stray backup behind.");
 
-            // 3. A racing process that occupies the target name between the
+            // 3. An adversary can wait for the first installed-object gate and
+            //    then mutate the same inode through another descriptor. The
+            //    final pre-commit gate must catch that last-window mutation;
+            //    otherwise the transaction would destroy its only good copy.
+            RecoveryService.SidecarHookBeforeBackupDestruction = _ =>
+            {
+                using var installedWriter = new FileStream(
+                    sidecarPath,
+                    FileMode.Open,
+                    FileAccess.ReadWrite,
+                    FileShare.ReadWrite | FileShare.Delete);
+                long[] locatorOffsets =
+                [
+                    0,
+                    4096,
+                    2L * 4096,
+                    3L * 4096,
+                    installedWriter.Length - (4L * 4096),
+                ];
+                foreach (long offset in locatorOffsets)
+                {
+                    installedWriter.Position = offset;
+                    int originalByte = installedWriter.ReadByte();
+                    Require(originalByte >= 0, "The final KPAR2 mutation fixture is unexpectedly short.");
+                    installedWriter.Position = offset;
+                    installedWriter.WriteByte((byte)(originalByte ^ 0x80));
+                }
+
+                installedWriter.Flush(flushToDisk: true);
+            };
+            try
+            {
+                await RequireThrowsAsync<InvalidDataException>(
+                    () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                    "An in-place mutation after the first installed KPAR2 validation passed the final commit gate.").ConfigureAwait(false);
+            }
+            finally
+            {
+                RecoveryService.SidecarHookBeforeBackupDestruction = null;
+            }
+
+            await RequireSidecarUsableAsync("after a final commit-validation failure").ConfigureAwait(false);
+            byte[] afterFinalCommitValidationFailure = await File.ReadAllBytesAsync(sidecarPath).ConfigureAwait(false);
+            Require(
+                FixedEqual(original, afterFinalCommitValidationFailure),
+                "A final KPAR2 commit-validation failure did not restore the previous known-good sidecar.");
+            Require(
+                await CountSidecarLeftoversAsync().ConfigureAwait(false) == 0
+                    && Directory.GetFiles(root, ".*.failed-new", SearchOption.TopDirectoryOnly).Length == 0
+                    && Directory.GetFiles(root, ".*.recovery-part", SearchOption.TopDirectoryOnly).Length == 0,
+                "A final KPAR2 commit-validation failure left transaction objects behind.");
+
+            // 4. A racing process that occupies the target name between the
             //    quarantine and the install must not cost the old sidecar: it
             //    stays recoverable under the quarantine name.
             RecoveryService.SidecarHookAfterQuarantine = () => File.WriteAllBytes(sidecarPath, [0x00]);
             try
             {
-                await RequireThrowsAsync<IOException>(
+                await RequireThrowsAsync<System.ComponentModel.Win32Exception>(
                     () => recovery.CreateAsync(archive, null, CancellationToken.None),
                     "An occupied KPAR2 target name was accepted.").ConfigureAwait(false);
             }
@@ -2942,9 +3101,9 @@ internal static partial class MacComprehensiveTests
             File.Move(preserved[0], sidecarPath);
             await RequireSidecarUsableAsync("after restoring the preserved sidecar").ConfigureAwait(false);
 
-            // 4. A failure while destroying the old backup happens after the
+            // 5. A failure while destroying the old backup happens after the
             //    commit point. The new sidecar must stay installed.
-            RecoveryService.SidecarHookBeforeBackupDestruction = () => throw new IOException("injected: before backup destruction");
+            RecoveryService.SidecarHookBeforePostCommitBackupCleanup = () => throw new IOException("injected: during backup cleanup");
             try
             {
                 await RequireThrowsAsync<IOException>(
@@ -2953,7 +3112,7 @@ internal static partial class MacComprehensiveTests
             }
             finally
             {
-                RecoveryService.SidecarHookBeforeBackupDestruction = null;
+                RecoveryService.SidecarHookBeforePostCommitBackupCleanup = null;
             }
 
             await RequireSidecarUsableAsync("after a post-commit backup-destruction failure").ConfigureAwait(false);
@@ -2966,7 +3125,7 @@ internal static partial class MacComprehensiveTests
                 File.Delete(leftover);
             }
 
-            // 5. A sidecar that is a symbolic link is not something to move
+            // 6. A sidecar that is a symbolic link is not something to move
             //    aside and destroy; it is refused.
             byte[] current = await File.ReadAllBytesAsync(sidecarPath).ConfigureAwait(false);
             string realSidecar = Path.Combine(root, "elsewhere.kpar2");
@@ -2979,7 +3138,7 @@ internal static partial class MacComprehensiveTests
             Require(File.Exists(realSidecar), "Refusing a symlinked sidecar destroyed its target.");
             File.Delete(sidecarPath);
 
-            // 6. Neither is one with a second hard link: the bytes would survive
+            // 7. Neither is one with a second hard link: the bytes would survive
             //    the destruction under the other name.
             File.Copy(realSidecar, sidecarPath);
             string secondLink = Path.Combine(root, "second-link.kpar2");
@@ -2993,9 +3152,11 @@ internal static partial class MacComprehensiveTests
                 original,
                 current,
                 afterCommitGateFailure,
+                displacedPreviousBytes,
                 afterGeneratedRace,
                 afterQuarantineFailure,
                 afterInstallFailure,
+                afterFinalCommitValidationFailure,
                 preservedBytes,
                 afterCommitFailure);
         }
@@ -3007,6 +3168,8 @@ internal static partial class MacComprehensiveTests
             RecoveryService.SidecarHookBeforeInstallRename = null;
             RecoveryService.SidecarHookAfterInstall = null;
             RecoveryService.SidecarHookBeforeBackupDestruction = null;
+            RecoveryService.SidecarHookBeforePostCommitBackupCleanup = null;
+            RecoveryService.GeneratedParityHookAfterDigestValidation = null;
             Directory.Delete(root, recursive: true);
         }
     }
@@ -3242,25 +3405,187 @@ internal static partial class MacComprehensiveTests
                 }
             }
 
-            // Test MacExtractionStaging post-rename mismatch isolation
-            string stagingTarget = Path.Combine(root, "staging_target_dir");
+            // A same-sized, entirely regular replacement has identical limit
+            // aggregates. Only the bound tree fingerprint exposes the changed
+            // child inode between the final limit gate and installation.
+            string stagingTarget = Path.Combine(root, "staging-target");
+            string displacedChild = Path.Combine(root, "displaced-staging-child");
             using (var staging = new MacExtractionStaging(stagingTarget))
             {
-                await File.WriteAllTextAsync(Path.Combine(staging.StagingPath, "part.txt"), "part data").ConfigureAwait(false);
+                string child = Path.Combine(staging.StagingPath, "child");
+                Directory.CreateDirectory(child);
+                byte[] originalChildBytes = Enumerable.Repeat((byte)0x42, 4096).ToArray();
+                await File.WriteAllBytesAsync(Path.Combine(child, "part.bin"), originalChildBytes).ConfigureAwait(false);
+                DirectoryTreeMeasurement baseline = staging.MeasureTree(allowWriters: false);
                 MacExtractionStaging.TestHookBeforeInstallRename = () =>
                 {
-                    // Foreign adversary injects directory at destination right after rename check
+                    Directory.Move(child, displacedChild);
+                    Directory.CreateDirectory(child);
+                    File.WriteAllBytes(Path.Combine(child, "part.bin"), originalChildBytes);
                 };
 
-                // Normal install works
-                staging.Install();
-                Require(Directory.Exists(stagingTarget), "Staging install did not complete.");
+                try
+                {
+                    RequireThrows<InvalidDataException>(
+                        () => staging.Install(),
+                        "A same-sized nested-directory substitution passed the final staging fingerprint gate.");
+                }
+                finally
+                {
+                    MacExtractionStaging.TestHookBeforeInstallRename = null;
+                }
+
+                DirectoryTreeMeasurement substituted = staging.MeasureTree(allowWriters: false);
+                Require(
+                    baseline.FileCount == substituted.FileCount
+                        && baseline.TotalBytes == substituted.TotalBytes
+                        && baseline.MaxFileBytes == substituted.MaxFileBytes
+                        && !string.Equals(baseline.TreeFingerprint, substituted.TreeFingerprint, StringComparison.Ordinal),
+                    "The same-sized staging substitution fixture did not isolate the inode-sensitive fingerprint gate.");
+                Require(!Directory.Exists(stagingTarget), "A changed staging tree was installed at the destination.");
+                Zero(originalChildBytes);
+            }
+
+            string limitTarget = Path.Combine(root, "limit-staging-target");
+            using (var staging = new MacExtractionStaging(limitTarget))
+            {
+                string growingFile = Path.Combine(staging.StagingPath, "growing.bin");
+                await File.WriteAllBytesAsync(growingFile, new byte[512]).ConfigureAwait(false);
+                _ = staging.MeasureTree(allowWriters: false);
+                MacExtractionStaging.TestHookBeforeInstallRename = () =>
+                    File.WriteAllBytes(growingFile, new byte[4096]);
+                bool finalLimitValidatorCalled = false;
+                try
+                {
+                    RequireThrows<InvalidDataException>(
+                        () => staging.Install(finalTree =>
+                        {
+                            finalLimitValidatorCalled = true;
+                            if (finalTree.MaxFileBytes > 1024)
+                            {
+                                throw new InvalidDataException("injected final extraction limit");
+                            }
+                        }),
+                        "A file grown past the extraction limit after the earlier gate was installed.");
+                }
+                finally
+                {
+                    MacExtractionStaging.TestHookBeforeInstallRename = null;
+                }
+
+                Require(finalLimitValidatorCalled, "Install did not invoke the final bound-tree limit validator.");
+                Require(!Directory.Exists(limitTarget), "A staging tree beyond the final size limit was installed.");
+            }
+
+            // Replacing a previously empty destination after its emptiness
+            // check must preserve the foreign canary rather than unlinking the
+            // new directory by name.
+            string emptyTarget = Path.Combine(root, "empty-target");
+            string displacedEmptyTarget = Path.Combine(root, "displaced-empty-target");
+            using (var staging = new MacExtractionStaging(emptyTarget))
+            {
+                await File.WriteAllTextAsync(Path.Combine(staging.StagingPath, "part.txt"), "part data").ConfigureAwait(false);
+                _ = staging.MeasureTree(allowWriters: false);
+                Directory.CreateDirectory(emptyTarget);
+                string canary = Path.Combine(emptyTarget, "foreign-canary.txt");
+                MacExtractionStaging.TestHookAfterEmptyDestinationCheck = () =>
+                {
+                    Directory.Move(emptyTarget, displacedEmptyTarget);
+                    Directory.CreateDirectory(emptyTarget);
+                    File.WriteAllText(canary, "foreign canary");
+                };
+
+                try
+                {
+                    RequireThrows<IOException>(
+                        () => staging.Install(),
+                        "A replacement of the empty destination passed the identity recheck.");
+                }
+                finally
+                {
+                    MacExtractionStaging.TestHookAfterEmptyDestinationCheck = null;
+                }
+
+                Require(
+                    File.Exists(canary) && File.ReadAllText(canary) == "foreign canary",
+                    "Empty-target race handling removed or changed the foreign canary directory.");
+            }
+
+            // Cleanup must empty the exact held plaintext tree after a root
+            // rename, report that the public name was replaced, and never
+            // traverse or delete the foreign replacement.
+            string cleanupStagingTarget = Path.Combine(root, "cleanup-staging-target");
+            string displacedStagingRoot = Path.Combine(root, "cleanup-staging-displaced");
+            using (var staging = new MacExtractionStaging(cleanupStagingTarget))
+            {
+                await File.WriteAllTextAsync(
+                    Path.Combine(staging.StagingPath, "plaintext.txt"),
+                    "sensitive extracted plaintext").ConfigureAwait(false);
+                Directory.Move(staging.StagingPath, displacedStagingRoot);
+                Directory.CreateDirectory(staging.StagingPath);
+                string replacementCanary = Path.Combine(staging.StagingPath, "foreign.txt");
+                await File.WriteAllTextAsync(replacementCanary, "foreign staging root").ConfigureAwait(false);
+
+                RequireThrows<IOException>(
+                    staging.Cleanup,
+                    "Extraction cleanup accepted a replacement staging-root pathname.");
+                Require(
+                    File.Exists(replacementCanary)
+                        && File.ReadAllText(replacementCanary) == "foreign staging root",
+                    "Extraction cleanup changed the replacement staging root.");
+                Require(
+                    !Directory.EnumerateFileSystemEntries(displacedStagingRoot).Any(),
+                    "Extraction cleanup left plaintext in the displaced bound staging root.");
+
+                Directory.Delete(staging.StagingPath, recursive: true);
+                Directory.Delete(displacedStagingRoot);
+            }
+
+            // Bound recursive cleanup refuses a replacement root and can still
+            // remove the original object under its new, explicitly identified
+            // name.
+            string cleanupRoot = Path.Combine(root, "bound-cleanup-root");
+            string displacedCleanupRoot = Path.Combine(root, "bound-cleanup-displaced");
+            Directory.CreateDirectory(Path.Combine(cleanupRoot, "nested"));
+            await File.WriteAllTextAsync(Path.Combine(cleanupRoot, "nested", "owned.txt"), "owned").ConfigureAwait(false);
+            MacFileIdentity cleanupIdentity;
+            using (SafeFileHandle cleanupHandle = MacSafeFileSystem.OpenDirectoryHandle(cleanupRoot))
+            {
+                cleanupIdentity = MacSafeFileSystem.GetIdentity(cleanupHandle);
+            }
+
+            Directory.Move(cleanupRoot, displacedCleanupRoot);
+            Directory.CreateDirectory(cleanupRoot);
+            string cleanupCanary = Path.Combine(cleanupRoot, "foreign.txt");
+            await File.WriteAllTextAsync(cleanupCanary, "foreign root").ConfigureAwait(false);
+            RequireThrows<IOException>(
+                () => MacSafeFileSystem.DeleteDirectoryTreeBound(cleanupRoot, cleanupIdentity),
+                "Bound cleanup traversed a replacement root.");
+            Require(
+                File.Exists(cleanupCanary) && File.ReadAllText(cleanupCanary) == "foreign root",
+                "Bound cleanup changed the replacement root.");
+            MacSafeFileSystem.DeleteDirectoryTreeBound(displacedCleanupRoot, cleanupIdentity);
+            Require(!Directory.Exists(displacedCleanupRoot), "Bound cleanup did not remove the exact displaced root.");
+
+            // Control: an unchanged validated staging tree still installs.
+            string normalTarget = Path.Combine(root, "normal-staging-target");
+            using (var staging = new MacExtractionStaging(normalTarget))
+            {
+                await File.WriteAllTextAsync(Path.Combine(staging.StagingPath, "part.txt"), "part data").ConfigureAwait(false);
+                DirectoryTreeMeasurement measured = staging.MeasureTree(allowWriters: false);
+                staging.Install(final => Require(
+                    final.FileCount == measured.FileCount && final.TotalBytes == measured.TotalBytes,
+                    "The final install validator received different staging limits."));
+                Require(Directory.Exists(normalTarget), "An unchanged staging tree did not install.");
             }
 
             CryptographicOperations.ZeroMemory(payload);
         }
         finally
         {
+            MacExtractionStaging.TestHookBeforeInstallRename = null;
+            MacExtractionStaging.TestHookAfterEmptyDestinationCheck = null;
+            MacSafeFileSystem.TestHookBeforeDirectoryDescend = null;
             Directory.Delete(root, recursive: true);
         }
     }
@@ -3475,9 +3800,7 @@ internal static partial class MacComprehensiveTests
             // credentials; a header that published it would give away the one
             // KDF parameter that is deliberately secret.
             Require(header.GetProperty("Argon2MemoryKiB").GetInt32() == 0, "Container header published the Argon2id memory cost.");
-            string expectedKdfMode = version == 10
-                ? "DualArgon2id-SHA3+Skein1024-Sequential-Master1024"
-                : "DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024";
+            const string expectedKdfMode = "DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024";
             Require(header.GetProperty("KdfMode").GetString() == expectedKdfMode, "Container KDF mode mismatch.");
             Require(header.GetProperty("Argon2Iterations").GetInt32() == Argon2ExecutionProfile.DefaultIterations, "Container Argon2 iterations mismatch.");
             Require(header.GetProperty("Argon2Parallelism").GetInt32() == Argon2ExecutionProfile.DefaultParallelism, "Container Argon2 parallelism mismatch.");
@@ -3679,6 +4002,177 @@ internal static partial class MacComprehensiveTests
         Require(carry == 0, "Test CTR counter overflowed.");
     }
 
+    private static byte[] CreateCtrTestBytes(int length, uint seed)
+    {
+        byte[] output = new byte[length];
+        uint state = seed == 0 ? 0x9E3779B9U : seed;
+        for (int index = 0; index < output.Length; index++)
+        {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            output[index] = (byte)state;
+        }
+
+        return output;
+    }
+
+    /// <summary>
+    /// Constructs CTR independently from the exported block primitive. A
+    /// roundtrip cannot detect a shared counter-endian or worker-offset bug;
+    /// this comparison can.
+    /// </summary>
+    private static void AssertCtrMatchesBlockReference(
+        string algorithm,
+        int blockBytes,
+        Action<byte[], byte[], byte[], int> xcrypt,
+        Action<byte[], byte[]> encryptBlock)
+    {
+        const int WorkerChunkBytes = 256 * 1024;
+        const int ParallelThresholdBytes = 1024 * 1024;
+        int[] lengths =
+        [
+            1,
+            blockBytes - 1,
+            blockBytes,
+            blockBytes + 1,
+            WorkerChunkBytes - 1,
+            WorkerChunkBytes,
+            WorkerChunkBytes + 1,
+            ParallelThresholdBytes - 1,
+            ParallelThresholdBytes,
+            ParallelThresholdBytes + 1,
+        ];
+
+        for (int counterTrial = 0; counterTrial < 3; counterTrial++)
+        {
+            byte[] nonce = CreateCtrTestBytes(blockBytes, 0x43545200U + (uint)blockBytes + (uint)counterTrial);
+            if (counterTrial == 0)
+            {
+                Array.Clear(nonce);
+            }
+            else if (counterTrial == 1)
+            {
+                Array.Clear(nonce);
+                nonce[^4] = 0xFF;
+                nonce[^3] = 0xFF;
+                nonce[^2] = 0xFF;
+                nonce[^1] = 0xFF;
+            }
+            else
+            {
+                nonce[^8] = 0x80;
+                nonce[^2] = 0x7A;
+                nonce[^1] = 0xFF;
+            }
+
+            try
+            {
+                foreach (int length in lengths)
+                {
+                    byte[] input = CreateCtrTestBytes(length, 0x494E0000U + (uint)length + (uint)counterTrial);
+                    byte[] expected = new byte[length];
+                    byte[] actual = new byte[length];
+                    byte[] inPlace = input.ToArray();
+                    try
+                    {
+                        BuildCtrFromBlockReference(nonce, input, expected, encryptBlock, blockBytes);
+                        xcrypt(nonce, input, actual, length);
+                        Require(
+                            CryptographicOperations.FixedTimeEquals(expected, actual),
+                            $"{algorithm} CTR differs from its block reference at {length} bytes, counter trial {counterTrial}.");
+
+                        xcrypt(nonce, inPlace, inPlace, length);
+                        Require(
+                            CryptographicOperations.FixedTimeEquals(expected, inPlace),
+                            $"{algorithm} in-place CTR differs at {length} bytes, counter trial {counterTrial}.");
+                    }
+                    finally
+                    {
+                        Zero(input, expected, actual, inPlace);
+                    }
+                }
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(nonce);
+            }
+        }
+
+        Console.WriteLine(
+            $"    {algorithm} CTR matches the independent block construction across "
+            + $"{lengths.Length} boundary lengths, three counters and in-place buffers");
+    }
+
+    private static void BuildCtrFromBlockReference(
+        byte[] nonce,
+        byte[] input,
+        byte[] output,
+        Action<byte[], byte[]> encryptBlock,
+        int blockBytes)
+    {
+        byte[] counter = nonce.ToArray();
+        byte[] keystream = new byte[blockBytes];
+        try
+        {
+            for (int offset = 0; offset < input.Length; offset += blockBytes)
+            {
+                encryptBlock(counter, keystream);
+                int count = Math.Min(blockBytes, input.Length - offset);
+                for (int index = 0; index < count; index++)
+                {
+                    output[offset + index] = (byte)(input[offset + index] ^ keystream[index]);
+                }
+
+                if (offset + count < input.Length)
+                {
+                    IncrementCounter(counter, 1);
+                }
+            }
+        }
+        finally
+        {
+            Zero(counter, keystream);
+        }
+    }
+
+    private static void AssertNativeCtrCounterBoundary(
+        string algorithm,
+        int blockBytes,
+        Action<byte[], byte[], byte[]> xcrypt)
+    {
+        byte[] maximumNonce = Enumerable.Repeat((byte)0xFF, blockBytes).ToArray();
+        byte[] finalInput = Enumerable.Repeat((byte)0x3C, blockBytes).ToArray();
+        byte[] finalOutput = new byte[blockBytes];
+        byte[] crossingInput = Enumerable.Repeat((byte)0x5A, checked(blockBytes * 2)).ToArray();
+        byte[] crossingOutput = Enumerable.Repeat((byte)0xA5, crossingInput.Length).ToArray();
+        try
+        {
+            // The maximum value itself remains valid for one final block.
+            xcrypt(maximumNonce, finalInput, finalOutput);
+
+            bool rejected = false;
+            try
+            {
+                xcrypt(maximumNonce, crossingInput, crossingOutput);
+            }
+            catch (CryptographicException)
+            {
+                rejected = true;
+            }
+
+            Require(rejected, $"{algorithm} accepted a CTR request that wraps its counter.");
+            Require(
+                crossingOutput.All(value => value == 0xA5),
+                $"{algorithm} wrote output before refusing CTR counter exhaustion.");
+            Console.WriteLine($"    {algorithm} permits the final counter and rejects wrap before output");
+        }
+        finally
+        {
+            Zero(maximumNonce, finalInput, finalOutput, crossingInput, crossingOutput);
+        }
+    }
+
     /// <summary>
     /// Proves the second Argon2id round is real, independent, and costs no
     /// extra mouse entropy.
@@ -3718,17 +4212,15 @@ internal static partial class MacComprehensiveTests
     /// instead of being checked against numbers frozen at the time this was
     /// written.
     ///
-    /// A gap worth naming: SHACAL-2's file covers the 512-bit key the cascade
-    /// actually uses, but MARS's covers only 128, 192 and 256 bits. The AES
-    /// submission published no 448-bit vectors, so the test proves the MARS
-    /// cipher core and the key schedule at three lengths, and cannot prove the
-    /// 448-bit schedule. That one still needs a second implementation to agree
-    /// with it.
+    /// SHACAL-2's file covers the 512-bit key the cascade uses. MARS's published
+    /// file stops at 256 bits, so the separate Botan-derived oracle below holds
+    /// the actual 448-bit production schedule against 32 independent answers.
     /// </remarks>
     private static Task TestCascadeCipherVectorsAsync()
     {
         Require(NativeMars.IsAvailable(), $"MARS reference library unavailable: {NativeMars.LastLoadError}");
         Require(NativeShacal2.IsAvailable(), $"SHACAL-2 reference library unavailable: {NativeShacal2.LastLoadError}");
+        Require(NativeThreefish.IsAvailable(), "Threefish reference library unavailable.");
 
         string vectorRoot = ResolveVectorDirectory();
 
@@ -3752,6 +4244,16 @@ internal static partial class MacComprehensiveTests
         Require(NativeAes.IsAvailable(), $"AES reference library unavailable: {NativeAes.LastLoadError}");
         Require(NativeChaChaPoly.IsAvailable(), $"ChaCha20-Poly1305 library unavailable: {NativeChaChaPoly.LastLoadError}");
 
+        NativeAesRuntimeProvider aesProvider = NativeAes.RuntimeProvider;
+        if (OperatingSystem.IsMacOS()
+            && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            Require(
+                aesProvider == NativeAesRuntimeProvider.ArmV8,
+                $"Apple-silicon AES selected {aesProvider} instead of the mandatory Crypto++ ArmV8 provider.");
+        }
+        Console.WriteLine($"    AES Crypto++ runtime provider: {aesProvider}");
+
         // FIPS-197 C.3: the published AES-256 known-answer.
         byte[] fipsKey = Enumerable.Range(0, 32).Select(i => (byte)i).ToArray();
         byte[] fipsBlock = Convert.FromHexString("00112233445566778899AABBCCDDEEFF");
@@ -3761,9 +4263,10 @@ internal static partial class MacComprehensiveTests
             Convert.ToHexString(fipsActual) == "8EA2B7CA516745BFEAFC49904B496089",
             $"AES-256 does not reproduce the FIPS-197 vector: {Convert.ToHexString(fipsActual)}.");
 
-        // The platform AES and the reference must agree. The platform path is
-        // what production uses; the reference is what it can be checked
-        // against, and a disagreement means one of them is wrong.
+        // The native Crypto++ AES used by production and the independent .NET
+        // platform AES test oracle must agree. A disagreement means one of the
+        // two block implementations is wrong; a production roundtrip could
+        // not reveal that because both directions would share the same fault.
         for (int trial = 0; trial < 16; trial++)
         {
             byte[] key = RandomNumberGenerator.GetBytes(32);
@@ -3817,51 +4320,64 @@ internal static partial class MacComprehensiveTests
                 aeadKey, aeadNonce, brokenAad, aeadCipher, aeadRestored, aeadPlain.Length, aeadTag),
             "ChaCha20-Poly1305 accepted altered associated data.");
 
-        // CTR is its own inverse and must not depend on how many threads ran.
-        // The sizes straddle the block width, the 256 KiB claim and the 1 MiB
-        // threshold at which the driver starts handing work to other cores.
-        foreach (int length in new[] { 1, 15, 16, 31, 32, 33, 65536, (1 << 20) - 1, 1 << 20, (5 << 20) + 7 })
+        byte[] marsCtrKey = CreateCtrTestBytes(56, 0x4D415253);
+        byte[] shacalCtrKey = CreateCtrTestBytes(64, 0x53484143);
+        byte[] threefishCtrKey = CreateCtrTestBytes(128, 0x54485245);
+        byte[] threefishTweak = CreateCtrTestBytes(16, 0x54574541);
+        try
         {
-            RoundTrip(
-                length,
-                keyBytes: 56,
-                nonceBytes: NativeMars.BlockBytes,
-                (k, n, i, o, l) => NativeMars.XCryptCtr448(k, n, i, o, l),
-                "MARS-448");
-            RoundTrip(
-                length,
-                keyBytes: 64,
-                nonceBytes: NativeShacal2.BlockBytes,
-                (k, n, i, o, l) => NativeShacal2.XCryptCtr512(k, n, i, o, l),
-                "SHACAL-2-512");
+            AssertCtrMatchesBlockReference(
+                "MARS-448",
+                NativeMars.BlockBytes,
+                (nonce, input, output, length) => NativeMars.XCryptCtr448(
+                    marsCtrKey, nonce, input, output, length),
+                (input, output) => NativeMars.EncryptBlock(marsCtrKey, input, output));
+            AssertCtrMatchesBlockReference(
+                "SHACAL-2-512",
+                NativeShacal2.BlockBytes,
+                (nonce, input, output, length) => NativeShacal2.XCryptCtr512(
+                    shacalCtrKey, nonce, input, output, length),
+                (input, output) => NativeShacal2.EncryptBlock(shacalCtrKey, input, output));
+            AssertCtrMatchesBlockReference(
+                "Threefish-1024",
+                128,
+                (nonce, input, output, length) => NativeThreefish.XCryptCtr1024(
+                    threefishCtrKey, threefishTweak, nonce, input, output, length),
+                (input, output) => NativeThreefish.EncryptBlock1024(
+                    threefishCtrKey, threefishTweak, input, output));
         }
+        finally
+        {
+            Zero(marsCtrKey, shacalCtrKey, threefishCtrKey, threefishTweak);
+        }
+
+        AssertNativeCtrCounterBoundary(
+            "AES-256",
+            NativeAes.BlockBytes,
+            (nonce, input, output) => NativeAes.XCryptCtr256(
+                new byte[32], nonce, input, output, input.Length));
+        AssertNativeCtrCounterBoundary(
+            "MARS-448",
+            NativeMars.BlockBytes,
+            (nonce, input, output) => NativeMars.XCryptCtr448(
+                new byte[56], nonce, input, output, input.Length));
+        AssertNativeCtrCounterBoundary(
+            "SHACAL-2-512",
+            NativeShacal2.BlockBytes,
+            (nonce, input, output) => NativeShacal2.XCryptCtr512(
+                new byte[64], nonce, input, output, input.Length));
+        AssertNativeCtrCounterBoundary(
+            "Kalyna-512/512",
+            64,
+            (nonce, input, output) => NativeKalyna.XCryptCtr512(
+                new byte[64], nonce, input, output, input.Length));
+        AssertNativeCtrCounterBoundary(
+            "Threefish-1024",
+            128,
+            (nonce, input, output) => NativeThreefish.XCryptCtr1024(
+                new byte[128], new byte[16], nonce, input, output, input.Length));
 
         return Task.CompletedTask;
-
-        static void RoundTrip(
-            int length,
-            int keyBytes,
-            int nonceBytes,
-            Action<byte[], byte[], byte[], byte[], int> xcrypt,
-            string label)
-        {
-            byte[] key = RandomNumberGenerator.GetBytes(keyBytes);
-            byte[] nonce = RandomNumberGenerator.GetBytes(nonceBytes);
-            byte[] plain = RandomNumberGenerator.GetBytes(length);
-            byte[] cipher = new byte[length];
-            byte[] restored = new byte[length];
-
-            xcrypt(key, nonce, plain, cipher, length);
-            xcrypt(key, nonce, cipher, restored, length);
-
-            Require(restored.AsSpan().SequenceEqual(plain), $"{label} did not round trip at {length} bytes.");
-            if (length >= nonceBytes)
-            {
-                Require(
-                    !cipher.AsSpan(0, nonceBytes).SequenceEqual(plain.AsSpan(0, nonceBytes)),
-                    $"{label} returned its input unchanged at {length} bytes.");
-            }
-        }
     }
 
 

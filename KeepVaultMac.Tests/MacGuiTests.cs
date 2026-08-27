@@ -3,9 +3,11 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using KalynaArchiver;
 using KalynaArchiver.Services;
+using Microsoft.Win32.SafeHandles;
 
 /// <summary>
 /// Drives the real <see cref="MainWindow"/> through Avalonia's headless
@@ -38,12 +40,19 @@ internal static class MacGuiTests
         new("gui.entropy-display", "GUI entropy display beyond the 512 minimum", () => RunOnUiThread(TestEntropyDisplayGrowsPastMinimum), TestResource.Gui, "GUI"),
         new("gui.encryption-toggle-target", "GUI encryption toggle and target normalization", () => RunOnUiThread(TestEncryptionToggle), TestResource.Gui, "GUI"),
         new("gui.folder-target", "GUI folder target lands beside the folder", () => RunOnUiThread(TestFolderTargetSuggestion), TestResource.Gui, "GUI"),
+        new("gui.destination-folder-target", "GUI destination picker keeps the archive inside its retained folder", () => RunOnUiThread(TestDestinationFolderTargetSuggestion), TestResource.Gui, "GUI"),
+        new("gui.archive-picker-filter-reset", "GUI archive picker does not poison the shared macOS folder panel", () => RunOnUiThread(TestArchivePickerFilterReset), TestResource.Gui, "GUI"),
         new("gui.password-policy", "GUI password policy feedback", () => RunOnUiThread(TestPasswordPolicyFeedback), TestResource.Gui, "GUI"),
         new("gui.original-deletion-localization", "GUI verified-original-deletion localization", () => RunOnUiThread(TestDeleteOriginalsLocalization), TestResource.Gui, "GUI"),
         new("gui.control-inventory", "GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
         new("gui.factor-normalization", "GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
         new("gui.secret-clearing", "GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
         new("gui.kdf-entropy-localization", "GUI KDF and entropy profile description localization", () => RunOnUiThread(TestKdfAndEntropyLocalization), TestResource.Gui, "GUI"),
+        new("gui.failed-archive-preservation", "GUI downstream failure preserves committed path replacements", () => RunOnUiThread(TestFailedArchivePreservation), TestResource.Gui, "GUI"),
+        new("gui.verification-root-cleanup-identity", "GUI verification plaintext cleanup stays descriptor-bound", () => RunOnUiThread(TestVerificationRootCleanupIdentity), TestResource.Gui, "GUI"),
+        new("keysheet.pair-cleanup-identity", "key-sheet pair rollback preserves pathname replacements", () => RunOnUiThread(TestKeySheetPairCleanupIdentity), TestResource.Gui, "GUI"),
+        new("keysheet.cleanup-failure-visible", "key-sheet cleanup failures remain visible with the export failure", () => RunOnUiThread(TestKeySheetCleanupFailureVisible), TestResource.Gui, "GUI"),
+        new("keysheet.pair-atomic-commit", "key-sheet pair final gate rolls both outputs back safely", () => RunOnUiThread(TestKeySheetPairAtomicCommit), TestResource.Gui, "GUI"),
         new("gui.full-creation-flow", "GUI full creation flow with mouse sampling and factor generation", () => RunOnUiThread(TestFullCreationFlowViaGui), TestResource.Gui, "GUI"),
     ];
 
@@ -169,7 +178,7 @@ internal static class MacGuiTests
     }
 
     /// <summary>
-    /// 512 samples per pool is the threshold that unlocks generation, not a
+    /// 1024 samples per pool is the threshold that unlocks generation, not a
     /// ceiling. Collection continues while the pointer moves, and the reported
     /// counts have to keep rising with it — an earlier build clamped the value
     /// the throttle compared against, which froze the entire status line at the
@@ -303,6 +312,65 @@ internal static class MacGuiTests
         {
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    /// <summary>
+    /// A directory selected in the destination picker represents the granted
+    /// parent, not an input. The suggestion must remain inside that exact
+    /// folder so the retained security-scoped lease still covers the archive.
+    /// </summary>
+    private static void TestDestinationFolderTargetSuggestion(MainWindow window)
+    {
+        _ = window;
+        string destination = Directory.CreateTempSubdirectory("keep-vault-destination-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(destination, "archive(1).kzpaq"), "occupied");
+            string encrypted = MainWindow.SuggestArchivePathInDestinationFolder(destination, encrypted: true);
+            string plain = MainWindow.SuggestArchivePathInDestinationFolder(destination, encrypted: false);
+
+            MacComprehensiveTests.Require(
+                string.Equals(Path.GetDirectoryName(encrypted), destination, StringComparison.Ordinal)
+                    && string.Equals(Path.GetFileName(encrypted), "archive(2).kzpaq", StringComparison.Ordinal),
+                $"The encrypted picker suggestion escaped or reused its retained destination folder: {encrypted}");
+            MacComprehensiveTests.Require(
+                string.Equals(Path.GetDirectoryName(plain), destination, StringComparison.Ordinal)
+                    && string.Equals(Path.GetFileName(plain), "archive(1).zpaq", StringComparison.Ordinal),
+                $"The plain picker suggestion escaped its retained destination folder: {plain}");
+        }
+        finally
+        {
+            Directory.Delete(destination, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// Avalonia reuses the native NSOpenPanel. Leaving an archive type filter
+    /// on that panel makes the following folder picker reject every directory.
+    /// macOS therefore has to clear the native filter and validate the returned
+    /// archive path itself.
+    /// </summary>
+    private static void TestArchivePickerFilterReset(MainWindow window)
+    {
+        _ = window;
+        var archiveType = new FilePickerFileType("Regression archive")
+        {
+            Patterns = ["*.kzpaq", "*.zpaq"],
+        };
+
+        MacComprehensiveTests.Require(
+            MainWindow.BuildArchivePickerFilter(archiveType) is null,
+            "The macOS archive picker retained a file-type filter that can poison the shared folder panel.");
+        MacComprehensiveTests.Require(
+            MainWindow.HasArchiveExtension("test.KZPAQ")
+                && MainWindow.HasArchiveExtension("test.ZpAq")
+                && !MainWindow.HasArchiveExtension("test.zip"),
+            "The post-picker archive extension gate does not accept exactly .kzpaq/.zpaq case-insensitively.");
+        MacComprehensiveTests.Require(
+            MainWindow.HasEncryptedArchiveExtension("test.KzPaQ")
+                && !MainWindow.HasEncryptedArchiveExtension("test.zpaq")
+                && !MainWindow.HasEncryptedArchiveExtension("test.kzpaq.zip"),
+            "The secure-erase picker extension gate does not accept exactly .kzpaq case-insensitively.");
     }
 
     private static void TestEncryptionToggle(MainWindow window)
@@ -607,6 +675,327 @@ internal static class MacGuiTests
         MacComprehensiveTests.Require(
             enKdf.Contains("1024-bit master", StringComparison.Ordinal) || enKdf.Contains("KDF paths", StringComparison.Ordinal),
             $"English KDF description is missing master details: {enKdf}");
+    }
+
+    /// <summary>
+    /// A later failure must not turn an archive pathname into deletion
+    /// authority. Simulate all four possible committed names being occupied by
+    /// replacement canaries and prove the GUI failure policy only reports them.
+    /// </summary>
+    private static void TestFailedArchivePreservation(MainWindow window)
+    {
+        _ = window;
+        string root = Directory.CreateTempSubdirectory("keep-vault-gui-preserve-").FullName;
+        string archivePath = Path.Combine(root, "failed.kzpaq");
+        string[] paths =
+        [
+            archivePath,
+            RecoveryService.GetRecoveryPath(archivePath),
+            ArchiveIntegrityService.GetSha3ManifestPath(archivePath),
+            ArchiveIntegrityService.GetSkeinManifestPath(archivePath),
+        ];
+        byte[][] canaries =
+        [
+            [0x11, 0x22, 0x33],
+            [0x44, 0x55, 0x66],
+            [0x77, 0x88, 0x99],
+            [0xAA, 0xBB, 0xCC],
+        ];
+        try
+        {
+            for (int index = 0; index < paths.Length; index++)
+            {
+                File.WriteAllBytes(paths[index], canaries[index]);
+            }
+
+            string warning = MainWindow.BuildPreservedArtifactWarning(archivePath);
+            foreach (string path in paths)
+            {
+                MacComprehensiveTests.Require(
+                    warning.Contains(path, StringComparison.Ordinal),
+                    $"The preservation warning omitted a possible committed output: {path}");
+            }
+
+            for (int index = 0; index < paths.Length; index++)
+            {
+                MacComprehensiveTests.Require(
+                    File.ReadAllBytes(paths[index]).AsSpan().SequenceEqual(canaries[index]),
+                    $"The GUI downstream-failure policy modified or removed a replacement canary: {paths[index]}");
+            }
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static void TestVerificationRootCleanupIdentity(MainWindow window)
+    {
+        _ = window;
+        string root = MacSafeFileSystem.ResolveExistingRealPath(
+            Directory.CreateTempSubdirectory("keep-vault-verify-cleanup-").FullName);
+        string displacedRoot = root + "-displaced";
+        string canaryPath = Path.Combine(root, "replacement-canary.bin");
+        byte[] canary = [0x56, 0x45, 0x52, 0x49, 0x46, 0x59];
+        using SafeFileHandle rootHandle = MacSafeFileSystem.OpenDirectoryHandle(root);
+        MacFileIdentity rootIdentity = MacSafeFileSystem.GetIdentity(rootHandle);
+        try
+        {
+            using (SafeFileHandle plaintextHandle = MacSafeFileSystem.CreateFileAtExclusive(
+                rootHandle,
+                "plaintext.bin"))
+            using (var plaintext = new FileStream(plaintextHandle, FileAccess.ReadWrite))
+            {
+                plaintext.Write(new byte[4096]);
+                plaintext.Flush(flushToDisk: true);
+            }
+
+            MainWindow.TestHookBeforeVerificationRootCleanup = () =>
+            {
+                Directory.Move(root, displacedRoot);
+                Directory.CreateDirectory(root);
+                File.WriteAllBytes(canaryPath, canary);
+            };
+
+            bool rejectedReplacement = false;
+            try
+            {
+                MainWindow.CleanupBoundVerificationRoot(rootHandle, root, rootIdentity);
+            }
+            catch (IOException)
+            {
+                rejectedReplacement = true;
+            }
+
+            MacComprehensiveTests.Require(
+                rejectedReplacement,
+                "Verification cleanup accepted a replacement at the private-root pathname.");
+            MacComprehensiveTests.Require(
+                File.ReadAllBytes(canaryPath).AsSpan().SequenceEqual(canary),
+                "Verification cleanup deleted or modified the replacement-root canary.");
+            MacComprehensiveTests.Require(
+                !Directory.EnumerateFileSystemEntries(displacedRoot).Any(),
+                "Verification cleanup left plaintext inside the displaced bound root.");
+        }
+        finally
+        {
+            MainWindow.TestHookBeforeVerificationRootCleanup = null;
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+            if (Directory.Exists(displacedRoot))
+            {
+                Directory.Delete(displacedRoot, recursive: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Replaces factor A's pathname after its PDF is durably written and then
+    /// interrupts the pair export. Rollback may destroy the still-open PDF
+    /// object, but it must never delete the replacement canary now occupying
+    /// the original name.
+    /// </summary>
+    private static void TestKeySheetPairCleanupIdentity(MainWindow window)
+    {
+        _ = window;
+        string root = MacSafeFileSystem.ResolveExistingRealPath(
+            Directory.CreateTempSubdirectory("keep-vault-keysheet-pair-").FullName);
+        string firstPath = Path.Combine(root, "factor-a.pdf");
+        string displacedPath = Path.Combine(root, "factor-a-displaced.pdf");
+        string secondPath = Path.Combine(root, "factor-b.pdf");
+        byte[] canary = [0x41, 0x2D, 0x43, 0x41, 0x4E, 0x41, 0x52, 0x59];
+        string first = new('a', 256);
+        string second = new('b', 256);
+        try
+        {
+            KeySheetService.TestHookBeforeSecondTestPdf = (_, expectedPath) =>
+            {
+                File.Move(expectedPath, displacedPath);
+                File.WriteAllBytes(expectedPath, canary);
+                throw new IOException("Injected second key-sheet export failure.");
+            };
+
+            var service = new KeySheetService();
+            bool rejected = false;
+            try
+            {
+                service.SaveTestPdf(
+                    new KeySheetData(
+                        Path.Combine(root, "archive.kzpaq"),
+                        EncryptionSuite.ParanoiaCascade,
+                        first,
+                        second,
+                        DateTime.UnixEpoch,
+                        false,
+                        string.Empty),
+                    firstPath,
+                    secondPath);
+            }
+            catch (IOException exception) when (exception.Message.Contains("Injected", StringComparison.Ordinal))
+            {
+                rejected = true;
+            }
+
+            MacComprehensiveTests.Require(rejected, "The injected key-sheet pair failure was not propagated.");
+            MacComprehensiveTests.Require(
+                File.ReadAllBytes(firstPath).AsSpan().SequenceEqual(canary),
+                "Key-sheet rollback deleted or modified the pathname replacement canary.");
+            MacComprehensiveTests.Require(
+                File.Exists(displacedPath),
+                "Key-sheet rollback lost the still-bound first PDF object after pathname replacement.");
+            MacComprehensiveTests.Require(
+                !File.Exists(secondPath),
+                "The interrupted key-sheet pair unexpectedly committed factor B.");
+        }
+        finally
+        {
+            KeySheetService.TestHookBeforeSecondTestPdf = null;
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// A partial key-sheet export is sensitive output. If both the export and
+    /// its descriptor-bound destruction fail, callers must receive both causes
+    /// instead of a plausible-looking lone export error that hides the file
+    /// which still needs attention.
+    /// </summary>
+    private static void TestKeySheetCleanupFailureVisible(MainWindow window)
+    {
+        _ = window;
+        // The service canonicalizes its target before it reaches the hook, so a
+        // raw /var temp root would make the hook's path assertion compare two
+        // spellings of the same file.
+        string root = MacSafeFileSystem.ResolveExistingRealPath(
+            Directory.CreateTempSubdirectory("keep-vault-keysheet-cleanup-error-").FullName);
+        string firstPath = Path.Combine(root, "factor-a.pdf");
+        string secondPath = Path.Combine(root, "factor-b.pdf");
+        const string exportSentinel = "Injected second key-sheet export failure.";
+        const string cleanupSentinel = "Injected partial key-sheet cleanup failure.";
+        try
+        {
+            KeySheetService.TestHookBeforeSecondTestPdf = (_, _) =>
+                throw new IOException(exportSentinel);
+            KeySheetService.TestHookBeforePartialTestPdfDestroy = (_, expectedPath) =>
+            {
+                MacComprehensiveTests.Require(
+                    string.Equals(expectedPath, firstPath, StringComparison.Ordinal),
+                    "The cleanup hook received a different partial PDF path.");
+                throw new UnauthorizedAccessException(cleanupSentinel);
+            };
+
+            var service = new KeySheetService();
+            AggregateException? observed = null;
+            try
+            {
+                service.SaveTestPdf(
+                    new KeySheetData(
+                        Path.Combine(root, "archive.kzpaq"),
+                        EncryptionSuite.ParanoiaCascade,
+                        new string('a', 256),
+                        new string('b', 256),
+                        DateTime.UnixEpoch,
+                        false,
+                        string.Empty),
+                    firstPath,
+                    secondPath);
+            }
+            catch (AggregateException exception)
+            {
+                observed = exception.Flatten();
+            }
+
+            MacComprehensiveTests.Require(observed is not null, "The export hid its partial-file cleanup failure.");
+            MacComprehensiveTests.Require(
+                observed!.InnerExceptions.Any(exception => exception.Message.Contains(exportSentinel, StringComparison.Ordinal))
+                    && observed.InnerExceptions.Any(exception => exception.Message.Contains(cleanupSentinel, StringComparison.Ordinal)),
+                "The aggregate did not preserve both the export and cleanup causes.");
+            MacComprehensiveTests.Require(
+                File.Exists(firstPath),
+                "The injected cleanup failure did not leave an observable partial file for recovery handling.");
+            MacComprehensiveTests.Require(
+                !File.Exists(secondPath),
+                "The interrupted pair unexpectedly created factor B.");
+        }
+        finally
+        {
+            KeySheetService.TestHookBeforeSecondTestPdf = null;
+            KeySheetService.TestHookBeforePartialTestPdfDestroy = null;
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// Replaces factor A only after factor B has been durably written. The
+    /// final pair gate must reject the split commit, remove the still-bound B
+    /// output, and preserve the replacement occupying A's pathname.
+    /// </summary>
+    private static void TestKeySheetPairAtomicCommit(MainWindow window)
+    {
+        _ = window;
+        string root = MacSafeFileSystem.ResolveExistingRealPath(
+            Directory.CreateTempSubdirectory("keep-vault-keysheet-atomic-").FullName);
+        string firstPath = Path.Combine(root, "factor-a.pdf");
+        string displacedPath = Path.Combine(root, "factor-a-displaced.pdf");
+        string secondPath = Path.Combine(root, "factor-b.pdf");
+        string modeFirstPath = Path.Combine(root, "mode-factor-a.pdf");
+        string modeSecondPath = Path.Combine(root, "mode-factor-b.pdf");
+        byte[] canary = [0x41, 0x54, 0x4F, 0x4D, 0x49, 0x43];
+        string first = new('a', 256);
+        string second = new('b', 256);
+        try
+        {
+            var service = new KeySheetService();
+            var data = new KeySheetData(
+                Path.Combine(root, "archive.kzpaq"),
+                EncryptionSuite.ParanoiaCascade,
+                first,
+                second,
+                DateTime.UnixEpoch,
+                false,
+                string.Empty);
+            service.SaveTestPdf(data, modeFirstPath, modeSecondPath);
+            UnixFileMode expectedMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            MacComprehensiveTests.Require(
+                File.GetUnixFileMode(modeFirstPath) == expectedMode
+                    && File.GetUnixFileMode(modeSecondPath) == expectedMode,
+                "The key-sheet pair was not initially created with exact 0600 permissions on arm64 macOS.");
+
+            KeySheetService.TestHookBeforeTestPdfPairCommit =
+                (_, expectedFirstPath, _, _) =>
+                {
+                    File.Move(expectedFirstPath, displacedPath);
+                    File.WriteAllBytes(expectedFirstPath, canary);
+                };
+
+            bool rejected = false;
+            try
+            {
+                service.SaveTestPdf(data, firstPath, secondPath);
+            }
+            catch (IOException)
+            {
+                rejected = true;
+            }
+
+            MacComprehensiveTests.Require(rejected, "The key-sheet pair final gate accepted a replaced factor A.");
+            MacComprehensiveTests.Require(
+                File.ReadAllBytes(firstPath).AsSpan().SequenceEqual(canary),
+                "The pair rollback deleted or modified factor A's pathname replacement canary.");
+            MacComprehensiveTests.Require(
+                File.Exists(displacedPath),
+                "The pair rollback lost the displaced, still-bound factor A object.");
+            MacComprehensiveTests.Require(
+                !File.Exists(secondPath),
+                "The pair rollback left factor B behind after factor A failed its final identity gate.");
+        }
+        finally
+        {
+            KeySheetService.TestHookBeforeTestPdfPairCommit = null;
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     /// <summary>

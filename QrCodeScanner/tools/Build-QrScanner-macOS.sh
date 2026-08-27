@@ -26,6 +26,7 @@ deployment_target='14.0'
 install_app=0
 run_tests=1
 preflight_only=0
+atomic_publish_self_test=0
 identity=${QRSCANNER_CODESIGN_IDENTITY:-}
 # Name of an "xcrun notarytool store-credentials" keychain profile. Empty means
 # the build stops short of notarization; no secret ever lives in this file.
@@ -64,13 +65,16 @@ while (( $# > 0 )); do
     --preflight)
       preflight_only=1
       ;;
+    --self-test-atomic-publish)
+      atomic_publish_self_test=1
+      ;;
     --skip-tests)
       run_tests=0
       ;;
     -h|--help)
       print 'Usage: Build-QrScanner-macOS.sh [--install] [--identity NAME] [--notary-profile NAME]'
       print '       [--arch universal|arm64|x86_64] [--version X.Y.Z] [--build-number N]'
-      print '       [--skip-tests] [--preflight]'
+      print '       [--skip-tests] [--preflight] [--self-test-atomic-publish]'
       exit 0
       ;;
     *)
@@ -104,6 +108,10 @@ render_info_plist() {
     print -u2 'The rendered QR-Scanner build number is incorrect.'
     exit 1
   }
+  [[ $(/usr/libexec/PlistBuddy -c 'Print :LSMultipleInstancesProhibited' ${destination}) == true ]] || {
+    print -u2 'The rendered QR-Scanner does not prohibit multiple camera/payload instances.'
+    exit 1
+  }
 }
 
 for required_command in xcrun codesign security plutil ditto iconutil; do
@@ -124,6 +132,7 @@ if (( preflight_only )); then
   render_info_plist ${preflight_root}/Info.plist
   print "preflight_version=${marketing_version}"
   print "preflight_build=${build_version}"
+  print 'preflight_single_instance=true'
   exit 0
 fi
 
@@ -151,11 +160,137 @@ else
   print "signing=development (${identity}) — usable on this Mac; the notary service rejects this certificate"
 fi
 
-# Everything this build produces stays inside the app's own folder. Nothing is
-# written to, or read from, any other project in this repository.
-build_root=${project_root}/dist
-rm -rf ${build_root}
-mkdir -p ${build_root}
+# Build the complete distribution in a private sibling tree. The previous
+# signed scanner remains untouched if compilation, signing, notarization or a
+# final trust gate fails. Only a fully verified tree is exchanged into `dist`
+# with one same-volume kernel rename at the end.
+final_build_root=${project_root}/dist
+if [[ -L ${project_root} || -L ${final_build_root} ]]; then
+  print -u2 'Refusing to build or publish QR-Scanner through a symbolic-link path.'
+  exit 1
+fi
+staging_root=$(mktemp -d "${project_root}/.qr-build.XXXXXXXX")
+publish_helper_root=$(mktemp -d "${project_root}/.qr-publish-helper.XXXXXXXX")
+backup_dir=''
+cleanup_build() {
+  if [[ -n ${backup_dir:-} && -d ${backup_dir} \
+      && ${backup_dir} == ${TMPDIR:-/tmp}/qr-scanner-backup.* ]]; then
+    rm -rf -- ${backup_dir}
+  fi
+  if [[ -n ${staging_root:-} && -d ${staging_root} \
+      && ${staging_root} == ${project_root}/.qr-build.* ]]; then
+    rm -rf -- ${staging_root}
+  fi
+  if [[ -n ${publish_helper_root:-} && -d ${publish_helper_root} \
+      && ${publish_helper_root} == ${project_root}/.qr-publish-helper.* ]]; then
+    rm -rf -- ${publish_helper_root}
+  fi
+}
+trap cleanup_build EXIT INT TERM
+
+atomic_publish_helper=${publish_helper_root}/atomic-publish
+xcrun --sdk macosx clang -O2 -Wall -Wextra -Werror \
+  -mmacosx-version-min=${deployment_target} -x c - -o ${atomic_publish_helper} <<'EOF'
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+int main(int argc, char **argv) {
+  if (argc != 4) return 64;
+  unsigned int flags;
+  if (strcmp(argv[1], "swap") == 0) {
+    flags = RENAME_SWAP;
+  } else if (strcmp(argv[1], "exclusive") == 0) {
+    flags = RENAME_EXCL;
+  } else {
+    return 64;
+  }
+  if (renameatx_np(AT_FDCWD, argv[2], AT_FDCWD, argv[3], flags) != 0) {
+    perror("renameatx_np");
+    return 1;
+  }
+  return 0;
+}
+EOF
+
+publish_distribution() {
+  local staged_distribution=$1
+  local final_distribution=$2
+  local inject_pre_publish_failure=${3:-0}
+
+  if [[ ${inject_pre_publish_failure} == 1 ]]; then
+    return 86
+  fi
+  if [[ -e ${final_distribution} || -L ${final_distribution} ]]; then
+    if [[ ! -d ${final_distribution} || -L ${final_distribution} ]]; then
+      print -u2 "Refusing to replace a non-directory QR distribution: ${final_distribution}"
+      return 1
+    fi
+    ${atomic_publish_helper} swap ${staged_distribution} ${final_distribution}
+  else
+    ${atomic_publish_helper} exclusive ${staged_distribution} ${final_distribution}
+  fi
+}
+
+run_atomic_publish_self_test() {
+  local self_test_root=${publish_helper_root}/self-test
+  local current_distribution=${self_test_root}/dist
+  local staged_distribution=${self_test_root}/stage
+  local outside_hard_link=${self_test_root}/old-hard-link
+  mkdir -p -- ${current_distribution} ${staged_distribution}
+  print -rn -- 'old-release' > ${current_distribution}/sentinel
+  print -rn -- 'new-release' > ${staged_distribution}/sentinel
+  print -rn -- 'complete' > ${staged_distribution}/new-only
+  ln ${current_distribution}/sentinel ${outside_hard_link}
+  local old_inode=$(stat -f %i ${current_distribution}/sentinel)
+
+  if publish_distribution ${staged_distribution} ${current_distribution} 1; then
+    print -u2 'QR publish self-test did not inject the requested pre-publish failure.'
+    return 1
+  fi
+  [[ $(<${current_distribution}/sentinel) == old-release \
+      && ! -e ${current_distribution}/new-only \
+      && $(<${staged_distribution}/sentinel) == new-release \
+      && $(stat -f %i ${current_distribution}/sentinel) == ${old_inode} \
+      && $(stat -f %i ${outside_hard_link}) == ${old_inode} ]] || {
+    print -u2 'A QR pre-publish failure changed the old distribution or exposed a partial new tree.'
+    return 1
+  }
+
+  publish_distribution ${staged_distribution} ${current_distribution} 0
+  [[ $(<${current_distribution}/sentinel) == new-release \
+      && $(<${current_distribution}/new-only) == complete \
+      && $(<${staged_distribution}/sentinel) == old-release \
+      && $(stat -f %i ${staged_distribution}/sentinel) == ${old_inode} \
+      && $(stat -f %i ${outside_hard_link}) == ${old_inode} \
+      && $(<${outside_hard_link}) == old-release ]] || {
+    print -u2 'The QR distribution exchange was partial or followed an old hard link.'
+    return 1
+  }
+
+  local first_distribution=${self_test_root}/first-stage
+  local first_destination=${self_test_root}/first-dist
+  mkdir -p -- ${first_distribution}
+  print -rn -- 'first-release' > ${first_distribution}/sentinel
+  publish_distribution ${first_distribution} ${first_destination} 0
+  [[ ! -e ${first_distribution} && $(<${first_destination}/sentinel) == first-release ]] || {
+    print -u2 'The first QR distribution was not published as one complete exclusive tree.'
+    return 1
+  }
+
+  print 'qr_atomic_publish_pre_publish_failure_preserved_old_tree=true'
+  print 'qr_atomic_publish_hard_link_not_followed=true'
+  print 'qr_atomic_publish_exchange_complete=true'
+  print 'qr_atomic_publish_first_release_exclusive=true'
+}
+
+if (( atomic_publish_self_test )); then
+  run_atomic_publish_self_test
+  exit 0
+fi
+
+build_root=${staging_root}
 
 app_bundle=${build_root}/${app_name}.app
 contents=${app_bundle}/Contents
@@ -175,7 +310,11 @@ if (( run_tests )); then
     ${sources_dir}/CodeArbiter.swift \
     ${sources_dir}/PayloadInspector.swift \
     ${sources_dir}/Localization.swift \
+    ${sources_dir}/VolatileClipboard.swift \
+    ${sources_dir}/ScanSessionLifecycle.swift \
+    ${sources_dir}/SingleInstancePolicy.swift \
     ${project_root}/Tests/ArbiterTests.swift \
+    -framework AppKit \
     -o ${test_binary}
   ${test_binary}
   rm -f ${test_binary}
@@ -192,7 +331,7 @@ esac
 # The Info.plist is linked into the executable as well as written into the
 # bundle. LaunchServices reads the bundle's copy; the embedded section is what
 # the camera prompt reads when the process is examined directly.
-plist_path=${build_root}/Info.plist
+plist_path=${publish_helper_root}/Info.plist
 render_info_plist ${plist_path}
 
 thin_binaries=()
@@ -205,8 +344,10 @@ for slice in ${architectures[@]}; do
     ${sources_dir}/PayloadInspector.swift \
     ${sources_dir}/Localization.swift \
     ${sources_dir}/VolatileClipboard.swift \
+    ${sources_dir}/ScanSessionLifecycle.swift \
     ${sources_dir}/ScanSession.swift \
     ${sources_dir}/MainWindowController.swift \
+    ${sources_dir}/SingleInstancePolicy.swift \
     ${sources_dir}/App.swift \
     -framework AppKit -framework AVFoundation \
     -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker ${plist_path} \
@@ -301,22 +442,23 @@ print 'hardened-runtime=enabled'
 #   xcrun notarytool store-credentials "QR-Scanner" \
 #     --apple-id you@example.com --team-id TEAMID --password APP-SPECIFIC-PASSWORD
 #
-# then pass --notary-profile "QR-Scanner".
+# then pass --notary-profile "QR-Scanner". The submission ZIP is scratch: the
+# released ZIP is assembled only after the stapled app and all five hybrid
+# sidecars exist, otherwise users would receive an archive that the repository
+# verifier necessarily rejects.
 release_zip=${build_root}/${app_name}-macOS.zip
-ditto -c -k --keepParent ${app_bundle} ${release_zip}
-
 if [[ -z ${notary_profile} ]]; then
   print 'notarization=not_performed (pass --notary-profile NAME once a Developer ID certificate and a notarytool profile exist)'
-elif [[ ${identity} != 'Developer ID Application: '* ]]; then
+elif [[ ${signature_details} != *'Authority=Developer ID Application:'* ]]; then
   print -u2 'Notarization requires a Developer ID Application identity; the notary service rejects an Apple Development certificate.'
   exit 1
 else
-  xcrun notarytool submit ${release_zip} --keychain-profile ${notary_profile} --wait
+  notary_submission_zip=${publish_helper_root}/QR-Scanner-notary-submission.zip
+  ditto -c -k --keepParent ${app_bundle} ${notary_submission_zip}
+  xcrun notarytool submit ${notary_submission_zip} --keychain-profile ${notary_profile} --wait
   xcrun stapler staple ${app_bundle}
   xcrun stapler validate ${app_bundle}
   spctl --assess --type execute --verbose=4 ${app_bundle}
-  rm -f ${release_zip}
-  ditto -c -k --keepParent ${app_bundle} ${release_zip}
   print "notarization=stapled (${notary_profile})"
 fi
 
@@ -414,7 +556,7 @@ if [[ -n ${pfx_path} && -f ${pfx_path} && ${mldsa_key_present} -eq 1 && -x ${dot
     --mldsa-public-key ${mldsa_public_key}
     --reference-library ${repo_root}/KeepVaultMac/Native/osx-arm64/libmldsa87_ref.dylib
     --policy ${repo_root}/KeepVaultMac/Directory.Build.props
-    --launcher-pins ${build_root}/ScannerPins.swift
+    --launcher-pins ${publish_helper_root}/ScannerPins.swift
     --target ${app_bundle}/Contents/MacOS/QR-Scanner
   )
   if [[ ${#pfx_password_arguments[@]} -eq 0 ]]; then
@@ -426,7 +568,7 @@ if [[ -n ${pfx_path} && -f ${pfx_path} && ${mldsa_key_present} -eq 1 && -x ${dot
     fi
   fi
 
-  hybrid_keychain_tmp=${build_root}/hybrid-keychain-tmp
+  hybrid_keychain_tmp=${publish_helper_root}/hybrid-keychain-app
   mkdir -p -m 0700 ${hybrid_keychain_tmp}
   (
     cd ${repo_root}/KeepVaultMac
@@ -435,13 +577,14 @@ if [[ -n ${pfx_path} && -f ${pfx_path} && ${mldsa_key_present} -eq 1 && -x ${dot
       DOTNET_EnableDiagnostics=0 \
       ${dotnet_command} ${hybrid_arguments[@]}
   )
-  rm -rf -- ${hybrid_keychain_tmp}
 
   scanner_bin=${app_bundle}/Contents/MacOS/QR-Scanner
   for sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-    if [[ -f ${scanner_bin}${sidecar_suffix} ]]; then
-      mv -f -- ${scanner_bin}${sidecar_suffix} ${app_bundle}${sidecar_suffix}
+    if [[ ! -f ${scanner_bin}${sidecar_suffix} || -L ${scanner_bin}${sidecar_suffix} ]]; then
+      print -u2 "QR-Scanner hybrid signing omitted ${sidecar_suffix}."
+      exit 1
     fi
+    mv -- ${scanner_bin}${sidecar_suffix} ${app_bundle}${sidecar_suffix}
   done
   codesign --verify --strict --verbose=2 ${app_bundle}
   print "scanner_dual_signature=${app_bundle}.khsig"
@@ -457,12 +600,117 @@ else
   exit 1
 fi
 
+# Validate the staged companion with the same independent gate that Keep Vault
+# and the installer use. A successful codesign check alone says nothing about
+# the detached RSA-PSS/ML-DSA pair or its SHA3/Skein manifests.
+${repo_root}/tools/Verify-QR-Scanner-macOS.sh \
+  --app ${app_bundle} \
+  --allow-development \
+  --mldsa-public-key ${mldsa_public_key}
+
+# The former build archived the app before the detached sidecars existed, so
+# its advertised ZIP could never pass Verify-QR-Scanner after extraction.
+# Assemble the real release payload only now and verify the extracted copy.
+archive_payload=${publish_helper_root}/archive-payload
+archive_check=${publish_helper_root}/archive-check
+mkdir -p -- ${archive_payload} ${archive_check}
+ditto ${app_bundle} ${archive_payload}/${app_name}.app
+for sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+  ditto ${app_bundle}${sidecar_suffix} ${archive_payload}/${app_name}.app${sidecar_suffix}
+done
+ditto -c -k --sequesterRsrc ${archive_payload} ${release_zip}
+ditto -x -k ${release_zip} ${archive_check}
+${repo_root}/tools/Verify-QR-Scanner-macOS.sh \
+  --app ${archive_check}/${app_name}.app \
+  --allow-development \
+  --mldsa-public-key ${mldsa_public_key}
+
+# The archive is a release artifact in its own right. Bind it and both hash
+# manifests to the same RSA-PSS plus ML-DSA-87 policy as the scanner binary.
+archive_hybrid_arguments=(
+  ${signer_dll}
+  sign
+  --pfx ${pfx_path}
+  ${pfx_password_arguments[@]}
+  ${mldsa_key_arguments[@]}
+  --mldsa-public-key ${mldsa_public_key}
+  --reference-library ${repo_root}/KeepVaultMac/Native/osx-arm64/libmldsa87_ref.dylib
+  --policy ${repo_root}/KeepVaultMac/Directory.Build.props
+  --launcher-pins ${publish_helper_root}/ScannerArchivePins.swift
+  --target ${release_zip}
+)
+if [[ ${#pfx_password_arguments[@]} -eq 0 ]]; then
+  if [[ -n ${pfx_password_service} ]]; then
+    archive_hybrid_arguments+=(--pfx-password-keychain-service ${pfx_password_service})
+    [[ -n ${pfx_password_account} ]] && archive_hybrid_arguments+=(--pfx-keychain-account ${pfx_password_account})
+  else
+    archive_hybrid_arguments+=(--pfx-password-env ${pfx_password_environment})
+  fi
+fi
+archive_keychain_tmp=${publish_helper_root}/hybrid-keychain-archive
+mkdir -p -m 0700 ${archive_keychain_tmp}
+(
+  cd ${repo_root}/KeepVaultMac
+  TMPDIR=${archive_keychain_tmp} \
+    KEEPVAULT_KEYCHAIN_TEMP_ROOT=${archive_keychain_tmp} \
+    DOTNET_EnableDiagnostics=0 \
+    ${dotnet_command} ${archive_hybrid_arguments[@]}
+)
+(
+  cd ${repo_root}/KeepVaultMac
+  DOTNET_EnableDiagnostics=0 \
+    ${dotnet_command} ${signer_dll} verify \
+      --mldsa-public-key ${mldsa_public_key} \
+      --policy ${repo_root}/KeepVaultMac/Directory.Build.props \
+      --target ${release_zip}
+)
+
+expected_outputs=(
+  ${app_bundle}
+  ${app_bundle}.sha3
+  ${app_bundle}.skein
+  ${app_bundle}.khsig
+  ${app_bundle}.sha3.khsig
+  ${app_bundle}.skein.khsig
+  ${release_zip}
+  ${release_zip}.sha3
+  ${release_zip}.skein
+  ${release_zip}.khsig
+  ${release_zip}.sha3.khsig
+  ${release_zip}.skein.khsig
+)
+actual_outputs=(${build_root}/*(N))
+if (( ${#actual_outputs[@]} != ${#expected_outputs[@]} )); then
+  print -u2 "The staged QR distribution contains ${#actual_outputs[@]} top-level objects instead of the exact signed set."
+  exit 1
+fi
+for expected_output in ${expected_outputs[@]}; do
+  if [[ -L ${expected_output} || ( ! -f ${expected_output} && ! -d ${expected_output} ) ]]; then
+    print -u2 "The staged QR distribution is missing a regular expected object: ${expected_output}"
+    exit 1
+  fi
+done
+if find ${build_root} -type l -print -quit | grep -q . \
+    || find ${build_root} -type f -links +1 -print -quit | grep -q .; then
+  print -u2 'The staged QR distribution contains a symbolic link or hard-linked file.'
+  exit 1
+fi
+
+publish_distribution ${staging_root} ${final_build_root} 0
+app_bundle=${final_build_root}/${app_name}.app
+release_zip=${final_build_root}/${app_name}-macOS.zip
+print "distribution_publish=atomic (${final_build_root})"
+
 if (( install_app )); then
   destination=/Applications/${app_name}.app
   backup_dir=$(mktemp -d "${TMPDIR:-/tmp}/qr-scanner-backup.XXXXXXXX")
-  cleanup_backup() { rm -rf -- ${backup_dir}; }
-  trap cleanup_backup EXIT INT TERM
-
+  install_stage=${publish_helper_root}/install-stage
+  install_app_bundle=${install_stage}/${app_name}.app
+  mkdir -p -- ${install_stage}
+  ditto ${app_bundle} ${install_app_bundle}
+  for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+    ditto ${app_bundle}${suffix} ${install_app_bundle}${suffix}
+  done
   has_existing=0
   if [[ -e ${destination} || -L ${destination} ]]; then
     if [[ ! -d ${destination} || -L ${destination} ]]; then
@@ -486,7 +734,7 @@ if (( install_app )); then
   # Atomic replace
   if (( has_existing )); then
     backup_name=.QR-Scanner.previous.$RANDOM.$$.app
-    DESTINATION_PATH=${destination} NEW_ITEM_PATH=${app_bundle} BACKUP_ITEM_NAME=${backup_name} \
+    DESTINATION_PATH=${destination} NEW_ITEM_PATH=${install_app_bundle} BACKUP_ITEM_NAME=${backup_name} \
       osascript -l JavaScript <<'JAVASCRIPT'
 ObjC.import('Foundation')
 const env = $.NSProcessInfo.processInfo.environment
@@ -499,13 +747,13 @@ const replaced = $.NSFileManager.defaultManager.replaceItemAtURLWithItemAtURLBac
 if (!replaced) throw new Error(err[0] ? ObjC.unwrap(err[0].localizedDescription) : 'replace failed')
 JAVASCRIPT
   else
-    ditto ${app_bundle} ${destination}
+    ditto ${install_app_bundle} ${destination}
   fi
 
   # Copy sidecars
   for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-    if [[ -f ${app_bundle}${suffix} ]]; then
-      ditto ${app_bundle}${suffix} ${destination}${suffix}
+    if [[ -f ${install_app_bundle}${suffix} ]]; then
+      ditto ${install_app_bundle}${suffix} ${destination}${suffix}
     fi
   done
 

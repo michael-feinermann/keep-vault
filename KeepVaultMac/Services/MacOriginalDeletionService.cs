@@ -24,6 +24,10 @@ internal sealed class MacOriginalDeletionService
 {
     private const int CompareBufferBytes = 1024 * 1024;
 
+    internal static Action<string>? TestHookBeforeQuarantineRename { get; set; }
+    internal static Action<string>? TestHookBeforeFinalUnlink { get; set; }
+    internal static Action? TestHookBeforeQuarantineDirectoryRemoval { get; set; }
+
     internal sealed record VerificationResult(
         bool Verified,
         int FilesCompared,
@@ -92,10 +96,23 @@ internal sealed class MacOriginalDeletionService
         var states = new Dictionary<string, OriginalFileState>(StringComparer.Ordinal);
         int compared = 0;
         long bytes = 0;
-        foreach (string extracted in Directory.EnumerateFiles(extractedRoot, "*", SearchOption.AllDirectories))
+        List<(string FullPath, string RelativePath)> extractedFiles;
+        try
+        {
+            extractedFiles = MacSafeFileSystem.EnumerateDirectoryTreeNoFollow(extractedRoot);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Win32Exception)
+        {
+            return new VerificationResult(
+                false,
+                0,
+                0,
+                $"Fehler beim sicheren Prüfen des entpackten Baums: {ex.Message}");
+        }
+
+        foreach ((string extracted, string relative) in extractedFiles)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            string relative = Path.GetRelativePath(extractedRoot, extracted);
             if (!expected.TryGetValue(relative, out string? original))
             {
                 return new VerificationResult(false, compared, bytes,
@@ -414,7 +431,8 @@ internal sealed class MacOriginalDeletionService
 
         try
         {
-            // Stage 1: Atomic move to private quarantine directories per canonical parent directory
+            // Stage 1: bind and re-hash each verified source immediately before
+            // moving exactly that inode into its private quarantine directory.
             foreach (string path in verified.Files.Keys)
             {
                 string? parentDir = Path.GetDirectoryName(path);
@@ -423,10 +441,12 @@ internal sealed class MacOriginalDeletionService
                     throw new DirectoryNotFoundException($"Elternverzeichnis nicht gefunden für {path}");
                 }
 
+                using SafeFileHandle inspectedParent = MacSafeFileSystem.OpenDirectoryHandle(parentDir);
                 string canonicalParent = MacSafeFileSystem.ResolveExistingRealPath(parentDir);
+                MacSafeFileSystem.RequirePathStillNamesHandle(inspectedParent, canonicalParent);
                 if (!parentContexts.TryGetValue(canonicalParent, out QuarantineParentContext? context))
                 {
-                    using SafeFileHandle parentHandle = MacSafeFileSystem.OpenDirectoryHandle(canonicalParent);
+                    SafeFileHandle? parentHandle = MacSafeFileSystem.OpenDirectoryHandle(canonicalParent);
                     MacFileIdentity parentIdentity = MacSafeFileSystem.GetIdentity(parentHandle);
                     string qDirName = ".keepvault_quarantine_" + Guid.NewGuid().ToString("N");
                     string qDirPath = Path.Combine(canonicalParent, qDirName);
@@ -438,15 +458,30 @@ internal sealed class MacOriginalDeletionService
                         qDirCreated = true;
 
                         qDirHandle = MacSafeFileSystem.OpenDirectoryHandleAt(parentHandle, qDirName);
-                        context = new QuarantineParentContext(canonicalParent, qDirPath, qDirName, qDirHandle, parentIdentity);
+                        MacFileIdentity quarantineIdentity = MacSafeFileSystem.GetIdentity(qDirHandle);
+                        MacFileIdentity quarantineEntryIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, qDirName);
+                        if (!quarantineEntryIdentity.SameObject(quarantineIdentity))
+                        {
+                            throw new IOException("Das neue Quarantäneverzeichnis wurde vor der Bindung ausgetauscht.");
+                        }
+
+                        context = new QuarantineParentContext(
+                            canonicalParent,
+                            qDirPath,
+                            qDirName,
+                            parentHandle,
+                            qDirHandle,
+                            parentIdentity,
+                            quarantineIdentity);
                         parentContexts.Add(canonicalParent, context);
+                        parentHandle = null; // Ownership transferred to context
                         qDirHandle = null;   // Ownership transferred to context
                         qDirCreated = false; // Context now owns directory
                     }
                     finally
                     {
                         qDirHandle?.Dispose();
-                        if (qDirCreated)
+                        if (qDirCreated && parentHandle is not null)
                         {
                             try
                             {
@@ -457,69 +492,85 @@ internal sealed class MacOriginalDeletionService
                                 // best-effort removal of newly created unreferenced directory
                             }
                         }
+
+                        parentHandle?.Dispose();
                     }
+                }
+                else
+                {
+                    context.VerifyParentIdentity();
                 }
 
                 string fileName = Path.GetFileName(path);
-                MacFileIdentity sourceIdentity;
-                using (SafeFileHandle parentHandle = MacSafeFileSystem.OpenDirectoryHandle(canonicalParent))
+                FileStream? sourceStream = null;
+                try
                 {
-                    MacFileIdentity currentParentIdentity = MacSafeFileSystem.GetIdentity(parentHandle);
-                    if (!currentParentIdentity.SameObject(context.ParentIdentity))
+                    OriginalFileState expected = verified.Files[path];
+                    sourceStream = MacSafeFileSystem.OpenReadNoSymlinks(path, requireSingleLink: true);
+                    MacFileIdentity sourceIdentity = MacSafeFileSystem.GetIdentity(sourceStream.SafeFileHandle);
+                    RequireBoundOriginalMatches(sourceStream, path, expected, sourceIdentity);
+
+                    context.VerifyParentIdentity();
+                    MacFileIdentity sourceEntryIdentity = MacSafeFileSystem.GetIdentityAt(context.ParentHandle, fileName);
+                    if (!sourceEntryIdentity.SameObject(sourceIdentity)
+                        || sourceEntryIdentity.LinkCount != 1)
                     {
-                        throw new InvalidOperationException($"Elternverzeichnis wurde vor Quarantänisierung ausgetauscht: {path}");
+                        throw new InvalidOperationException($"Originaldatei wurde vor Quarantänisierung ausgetauscht: {path}");
                     }
 
-                    sourceIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, fileName);
-                    // Atomically move from parent directory to quarantine directory
-                    MacSafeFileSystem.RenameAt(parentHandle, fileName, context.QuarantineDirHandle, fileName);
+                    TestHookBeforeQuarantineRename?.Invoke(path);
+                    context.VerifyParentIdentity();
+                    MacFileIdentity finalHandleIdentity = MacSafeFileSystem.GetIdentity(sourceStream.SafeFileHandle);
+                    MacFileIdentity finalSourceEntryIdentity = MacSafeFileSystem.GetIdentityAt(context.ParentHandle, fileName);
+                    if (!finalHandleIdentity.SameObject(sourceIdentity)
+                        || !finalSourceEntryIdentity.SameObject(sourceIdentity)
+                        || finalHandleIdentity.LinkCount != 1
+                        || finalSourceEntryIdentity.LinkCount != 1)
+                    {
+                        throw new InvalidOperationException($"Originaldatei wurde im letzten Quarantänefenster ausgetauscht: {path}");
+                    }
+
+                    MacSafeFileSystem.RenameAtExclusive(
+                        context.ParentHandle,
+                        fileName,
+                        context.QuarantineDirHandle,
+                        fileName);
+
+                    // Register rollback ownership immediately after the rename.
+                    var item = new QuarantinedItem(path, fileName, context, sourceIdentity, sourceStream);
+                    quarantined.Add(item);
+                    sourceStream = null;
+
+                    MacFileIdentity qIdentity = MacSafeFileSystem.GetIdentityAt(context.QuarantineDirHandle, fileName);
+                    if (!qIdentity.SameObject(sourceIdentity) || qIdentity.LinkCount != 1)
+                    {
+                        throw new InvalidOperationException($"Quarantänisierte Datei weicht vom Original ab für {path}");
+                    }
+
+                    item.Identity = qIdentity;
                 }
-
-                // Register rollback entry immediately following successful rename
-                var item = new QuarantinedItem(path, fileName, context, sourceIdentity);
-                quarantined.Add(item);
-
-                // Verify identity after move immediately
-                MacFileIdentity qIdentity = MacSafeFileSystem.GetIdentityAt(context.QuarantineDirHandle, fileName);
-                if (!qIdentity.SameObject(sourceIdentity))
+                finally
                 {
-                    throw new InvalidOperationException($"Quarantänisierte Datei weicht vom Original ab für {path}");
+                    sourceStream?.Dispose();
                 }
-
-                item.Identity = qIdentity;
             }
 
-            // Stage 2: Descriptor-bound verification of quarantined files before committing to unlink
+            // Stage 2: verify through the same descriptors that crossed the
+            // rename. They stay open until commit or rollback is complete.
             foreach (var item in quarantined)
             {
                 OriginalFileState expected = verified.Files[item.OriginalPath];
-                string quarPath = Path.Combine(item.ParentContext.QuarantineDirectoryPath, item.FileName);
-
-                using (FileStream fs = MacSafeFileSystem.OpenReadNoSymlinks(quarPath))
+                FileStream stream = item.Stream;
+                MacFileIdentity streamIdentity = MacSafeFileSystem.GetIdentity(stream.SafeFileHandle);
+                if (!streamIdentity.SameObject(item.Identity) || streamIdentity.LinkCount != 1)
                 {
-                    MacFileIdentity streamIdentity = MacSafeFileSystem.GetIdentity(fs.SafeFileHandle);
-                    if (!streamIdentity.SameObject(item.Identity))
-                    {
-                        throw new InvalidDataException($"Identität in Quarantäne weicht ab für {item.OriginalPath}");
-                    }
-
-                    if (fs.Length != expected.Length)
-                    {
-                        throw new InvalidDataException($"Dateigröße in Quarantäne weicht ab für {item.OriginalPath}");
-                    }
-
-                    string digest = Convert.ToHexString(SHA512.HashData(fs));
-                    if (!CryptographicOperations.FixedTimeEquals(
-                            Convert.FromHexString(digest),
-                            Convert.FromHexString(expected.Digest)))
-                    {
-                        throw new InvalidDataException($"Prüfsumme in Quarantäne weicht ab für {item.OriginalPath}");
-                    }
+                    throw new InvalidDataException($"Identität in Quarantäne weicht ab für {item.OriginalPath}");
                 }
 
-                // Verify entry identity under directory handle
+                RequireBoundOriginalMatches(stream, item.OriginalPath, expected, streamIdentity);
+
                 MacFileIdentity dirEntryIdentity = MacSafeFileSystem.GetIdentityAt(item.ParentContext.QuarantineDirHandle, item.FileName);
-                if (!dirEntryIdentity.SameObject(item.Identity))
+                if (!dirEntryIdentity.SameObject(item.Identity) || dirEntryIdentity.LinkCount != 1)
                 {
                     throw new InvalidDataException($"Verzeichniseintrag in Quarantäne wurde modifiziert für {item.OriginalPath}");
                 }
@@ -551,20 +602,16 @@ internal sealed class MacOriginalDeletionService
             {
                 try
                 {
-                    using SafeFileHandle parentHandle = MacSafeFileSystem.OpenDirectoryHandle(item.ParentContext.CanonicalParentDir);
-                    MacFileIdentity reopenedParent = MacSafeFileSystem.GetIdentity(parentHandle);
-                    if (!reopenedParent.SameObject(item.ParentContext.ParentIdentity))
-                    {
-                        rollbackErrors.Add(
-                            $"Elternverzeichnis wurde vor Rollback ausgetauscht für {item.OriginalPath}. " +
-                            $"Originaldatei verbleibt geschützt in Quarantäne: {Path.Combine(item.ParentContext.QuarantineDirectoryPath, item.FileName)}");
-                        continue;
-                    }
+                    item.ParentContext.VerifyParentIdentity();
 
                     MacFileIdentity currentEntry = MacSafeFileSystem.GetIdentityAt(
                         item.ParentContext.QuarantineDirHandle,
                         item.FileName);
-                    if (!currentEntry.SameObject(item.Identity))
+                    MacFileIdentity currentHandle = MacSafeFileSystem.GetIdentity(item.Stream.SafeFileHandle);
+                    if (!currentEntry.SameObject(item.Identity)
+                        || !currentHandle.SameObject(item.Identity)
+                        || currentEntry.LinkCount != 1
+                        || currentHandle.LinkCount != 1)
                     {
                         rollbackErrors.Add(
                             $"Quarantäneeintrag wurde vor Rollback modifiziert für {item.OriginalPath}. " +
@@ -575,7 +622,11 @@ internal sealed class MacOriginalDeletionService
                     bool restored = false;
                     try
                     {
-                        MacSafeFileSystem.RenameAtExclusive(item.ParentContext.QuarantineDirHandle, item.FileName, parentHandle, item.FileName);
+                        MacSafeFileSystem.RenameAtExclusive(
+                            item.ParentContext.QuarantineDirHandle,
+                            item.FileName,
+                            item.ParentContext.ParentHandle,
+                            item.FileName);
                         restored = true;
                     }
                     catch (Win32Exception wEx) when (wEx.NativeErrorCode == 17 /* EEXIST */)
@@ -588,6 +639,10 @@ internal sealed class MacOriginalDeletionService
                         rollbackErrors.Add(
                             $"Originalpfad belegt für {item.OriginalPath}. " +
                             $"Originaldatei verbleibt geschützt in Quarantäne: {Path.Combine(item.ParentContext.QuarantineDirectoryPath, item.FileName)}");
+                    }
+                    else
+                    {
+                        item.Quarantined = false;
                     }
                 }
                 catch (Exception moveEx)
@@ -604,8 +659,9 @@ internal sealed class MacOriginalDeletionService
                 failures.AddRange(rollbackErrors);
             }
 
+            foreach (var item in quarantined) item.Dispose();
+            CleanupQuarantineDirectories(parentContexts.Values);
             foreach (var ctx in parentContexts.Values) ctx.Dispose();
-            CleanupQuarantineDirectories(parentContexts.Values.Select(c => c.QuarantineDirectoryPath));
             return failures;
         }
 
@@ -614,14 +670,21 @@ internal sealed class MacOriginalDeletionService
         {
             try
             {
+                TestHookBeforeFinalUnlink?.Invoke(item.OriginalPath);
+                item.ParentContext.VerifyParentIdentity();
+                MacFileIdentity handleIdentity = MacSafeFileSystem.GetIdentity(item.Stream.SafeFileHandle);
                 MacFileIdentity commitIdentity = MacSafeFileSystem.GetIdentityAt(item.ParentContext.QuarantineDirHandle, item.FileName);
-                if (!commitIdentity.SameObject(item.Identity))
+                if (!handleIdentity.SameObject(item.Identity)
+                    || !commitIdentity.SameObject(item.Identity)
+                    || handleIdentity.LinkCount != 1
+                    || commitIdentity.LinkCount != 1)
                 {
                     failures.Add($"Commit-Fehler: Quarantäneeintrag wurde vor dem Löschen ausgetauscht ({item.OriginalPath}). Löschen verweigert.");
                     continue;
                 }
 
                 MacSafeFileSystem.UnlinkAt(item.ParentContext.QuarantineDirHandle, item.FileName);
+                item.Quarantined = false;
             }
             catch (Exception ex)
             {
@@ -629,26 +692,84 @@ internal sealed class MacOriginalDeletionService
             }
         }
 
+        foreach (var item in quarantined) item.Dispose();
+        CleanupQuarantineDirectories(parentContexts.Values);
         foreach (var ctx in parentContexts.Values) ctx.Dispose();
-        CleanupQuarantineDirectories(parentContexts.Values.Select(c => c.QuarantineDirectoryPath));
 
         return failures;
     }
 
-    private static void CleanupQuarantineDirectories(IEnumerable<string> quarantineDirs)
+    private static void RequireBoundOriginalMatches(
+        FileStream stream,
+        string path,
+        OriginalFileState expected,
+        MacFileIdentity expectedIdentity)
     {
-        foreach (string qDir in quarantineDirs)
+        MacFileIdentity before = MacSafeFileSystem.GetIdentity(stream.SafeFileHandle);
+        if (!before.SameObject(expectedIdentity)
+            || before.LinkCount != 1
+            || stream.Length != expected.Length)
+        {
+            throw new InvalidDataException($"Originaldatei hat vor dem Löschen ihre Identität oder Größe geändert: {path}");
+        }
+
+        stream.Position = 0;
+        byte[] actualDigest = SHA512.HashData(stream);
+        byte[] expectedDigest = Convert.FromHexString(expected.Digest);
+        try
+        {
+            MacFileIdentity after = MacSafeFileSystem.GetIdentity(stream.SafeFileHandle);
+            if (!after.SameObjectAndMetadata(before)
+                || !CryptographicOperations.FixedTimeEquals(actualDigest, expectedDigest))
+            {
+                throw new InvalidDataException($"Originaldatei hat sich vor dem Löschen geändert: {path}");
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(actualDigest);
+            CryptographicOperations.ZeroMemory(expectedDigest);
+        }
+    }
+
+    private static void CleanupQuarantineDirectories(IEnumerable<QuarantineParentContext> contexts)
+    {
+        foreach (QuarantineParentContext context in contexts)
         {
             try
             {
-                if (Directory.Exists(qDir) && !Directory.EnumerateFileSystemEntries(qDir).Any())
+                context.VerifyParentIdentity();
+                MacFileIdentity handleIdentity = MacSafeFileSystem.GetIdentity(context.QuarantineDirHandle);
+                MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(
+                    context.ParentHandle,
+                    context.QuarantineDirectoryName);
+                if (!handleIdentity.SameObject(context.QuarantineIdentity)
+                    || !entryIdentity.SameObject(context.QuarantineIdentity)
+                    || !MacSafeFileSystem.IsDirectoryEmptyDescriptor(context.QuarantineDirHandle))
                 {
-                    Directory.Delete(qDir, recursive: false);
+                    continue;
+                }
+
+                TestHookBeforeQuarantineDirectoryRemoval?.Invoke();
+                context.VerifyParentIdentity();
+                handleIdentity = MacSafeFileSystem.GetIdentity(context.QuarantineDirHandle);
+                entryIdentity = MacSafeFileSystem.GetIdentityAt(
+                    context.ParentHandle,
+                    context.QuarantineDirectoryName);
+                if (handleIdentity.SameObject(context.QuarantineIdentity)
+                    && entryIdentity.SameObject(context.QuarantineIdentity)
+                    && MacSafeFileSystem.IsDirectoryEmptyDescriptor(context.QuarantineDirHandle))
+                {
+                    MacSafeFileSystem.UnlinkAt(
+                        context.ParentHandle,
+                        context.QuarantineDirectoryName,
+                        0x0080 /* AT_REMOVEDIR */);
                 }
             }
             catch
             {
-                // best effort non-recursive cleanup
+                // Best effort and non-destructive: a mismatch leaves the
+                // unknown directory entry untouched.
             }
         }
     }
@@ -658,26 +779,44 @@ internal sealed class MacOriginalDeletionService
         public string CanonicalParentDir { get; }
         public string QuarantineDirectoryPath { get; }
         public string QuarantineDirectoryName { get; }
+        public SafeFileHandle ParentHandle { get; }
         public SafeFileHandle QuarantineDirHandle { get; }
         public MacFileIdentity ParentIdentity { get; }
+        public MacFileIdentity QuarantineIdentity { get; }
 
         public QuarantineParentContext(
             string canonicalParentDir,
             string quarantineDirectoryPath,
             string quarantineDirectoryName,
+            SafeFileHandle parentHandle,
             SafeFileHandle quarantineDirHandle,
-            MacFileIdentity parentIdentity)
+            MacFileIdentity parentIdentity,
+            MacFileIdentity quarantineIdentity)
         {
             CanonicalParentDir = canonicalParentDir;
             QuarantineDirectoryPath = quarantineDirectoryPath;
             QuarantineDirectoryName = quarantineDirectoryName;
+            ParentHandle = parentHandle;
             QuarantineDirHandle = quarantineDirHandle;
             ParentIdentity = parentIdentity;
+            QuarantineIdentity = quarantineIdentity;
+        }
+
+        public void VerifyParentIdentity()
+        {
+            MacFileIdentity current = MacSafeFileSystem.GetIdentity(ParentHandle);
+            if (!current.SameObject(ParentIdentity))
+            {
+                throw new IOException("Elternverzeichnis der Löschquarantäne wurde ausgetauscht.");
+            }
+
+            MacSafeFileSystem.RequirePathStillNamesHandle(ParentHandle, CanonicalParentDir);
         }
 
         public void Dispose()
         {
             QuarantineDirHandle?.Dispose();
+            ParentHandle?.Dispose();
         }
     }
 
@@ -687,18 +826,26 @@ internal sealed class MacOriginalDeletionService
         public string FileName { get; }
         public QuarantineParentContext ParentContext { get; }
         public MacFileIdentity Identity { get; set; }
+        public FileStream Stream { get; }
+        public bool Quarantined { get; set; } = true;
 
         public QuarantinedItem(
             string originalPath,
             string fileName,
             QuarantineParentContext parentContext,
-            MacFileIdentity identity)
+            MacFileIdentity identity,
+            FileStream stream)
         {
             OriginalPath = originalPath;
             FileName = fileName;
             ParentContext = parentContext;
             Identity = identity;
+            Stream = stream;
+        }
+
+        public void Dispose()
+        {
+            Stream.Dispose();
         }
     }
 }
-

@@ -112,6 +112,7 @@ var comprehensiveTests = new List<TestCase>
             RunSettingsPersistenceTests();
             RunDropTests();
             RunKeySheetTests();
+            RunFailedArchivePreservationPolicyTests();
         }), TestResource.Gui, "Gui"),
 
     new("entropy.generated-factors-pools-locks", "generated factors, entropy pools and locked-page accounting",
@@ -433,6 +434,48 @@ static void RunSettingsPersistenceTests()
     finally
     {
         fallbackWindow.Close();
+    }
+}
+
+static void RunFailedArchivePreservationPolicyTests()
+{
+    string root = Directory.CreateTempSubdirectory("keep-vault-windows-gui-preserve-").FullName;
+    string archivePath = Path.Combine(root, "failed.kzpaq");
+    string[] paths =
+    [
+        archivePath,
+        RecoveryService.GetRecoveryPath(archivePath),
+        ArchiveIntegrityService.GetSha3ManifestPath(archivePath),
+        ArchiveIntegrityService.GetSkeinManifestPath(archivePath),
+    ];
+    byte[][] canaries =
+    [
+        [0x11, 0x22, 0x33],
+        [0x44, 0x55, 0x66],
+        [0x77, 0x88, 0x99],
+        [0xAA, 0xBB, 0xCC],
+    ];
+    try
+    {
+        for (int index = 0; index < paths.Length; index++)
+        {
+            File.WriteAllBytes(paths[index], canaries[index]);
+        }
+
+        string warning = MainWindow.BuildPreservedArtifactWarning(archivePath);
+        for (int index = 0; index < paths.Length; index++)
+        {
+            Assert(
+                warning.Contains(paths[index], StringComparison.Ordinal),
+                $"GUI preservation warning names possible committed output {paths[index]}");
+            Assert(
+                File.ReadAllBytes(paths[index]).AsSpan().SequenceEqual(canaries[index]),
+                $"GUI downstream-failure policy preserves replacement canary {paths[index]}");
+        }
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
     }
 }
 
@@ -4485,6 +4528,48 @@ static async Task RunRecoveryTestsAsync()
                 && !Directory.EnumerateFiles(root, "*.failed-new", SearchOption.TopDirectoryOnly).Any(),
             "KPAR2 install rollback removes only its bound failed-new object");
 
+        RecoveryService.SidecarHookBeforeBackupDestruction = generated =>
+        {
+            long[] locatorOffsets =
+            [
+                0,
+                4096,
+                2L * 4096,
+                3L * 4096,
+                generated.Length - (4L * 4096),
+            ];
+            foreach (long offset in locatorOffsets)
+            {
+                generated.Position = offset;
+                int originalByte = generated.ReadByte();
+                Assert(originalByte >= 0, "final KPAR2 mutation fixture is long enough");
+                generated.Position = offset;
+                generated.WriteByte((byte)(originalByte ^ 0x80));
+            }
+
+            generated.Flush(flushToDisk: true);
+        };
+        try
+        {
+            await AssertThrowsAsync<InvalidDataException>(
+                () => recovery.CreateAsync(archive, null, CancellationToken.None),
+                "final KPAR2 commit gate rejects an in-place mutation after the first installed-object validation");
+        }
+        finally
+        {
+            RecoveryService.SidecarHookBeforeBackupDestruction = null;
+        }
+
+        byte[] afterFinalCommitValidationRollback = await File.ReadAllBytesAsync(recoveryPath);
+        Assert(
+            CryptographicOperations.FixedTimeEquals(transactionBaseline, afterFinalCommitValidationRollback),
+            "final KPAR2 commit-validation failure restores the exact previous sidecar");
+        Assert(
+            !Directory.EnumerateFiles(root, "*.previous", SearchOption.TopDirectoryOnly).Any()
+                && !Directory.EnumerateFiles(root, "*.failed-new", SearchOption.TopDirectoryOnly).Any()
+                && !Directory.EnumerateFiles(root, "*.recovery-part", SearchOption.TopDirectoryOnly).Any(),
+            "final KPAR2 commit-validation rollback leaves no transaction objects");
+
         RecoveryService.SidecarHookAfterQuarantine =
             () => File.WriteAllBytes(recoveryPath, [0xD1]);
         try
@@ -4513,8 +4598,8 @@ static async Task RunRecoveryTestsAsync()
         File.Delete(recoveryPath);
         File.Move(collisionBackups[0], recoveryPath);
 
-        RecoveryService.SidecarHookBeforeBackupDestruction =
-            () => throw new IOException("injected: before KPAR2 backup destruction");
+        RecoveryService.SidecarHookBeforePostCommitBackupCleanup =
+            () => throw new IOException("injected: during KPAR2 backup cleanup");
         try
         {
             await AssertThrowsAsync<IOException>(
@@ -4523,7 +4608,7 @@ static async Task RunRecoveryTestsAsync()
         }
         finally
         {
-            RecoveryService.SidecarHookBeforeBackupDestruction = null;
+            RecoveryService.SidecarHookBeforePostCommitBackupCleanup = null;
         }
 
         byte[] postCommitSidecar = await File.ReadAllBytesAsync(recoveryPath);
@@ -4544,6 +4629,7 @@ static async Task RunRecoveryTestsAsync()
         CryptographicOperations.ZeroMemory(transactionBaseline);
         CryptographicOperations.ZeroMemory(afterQuarantineRollback);
         CryptographicOperations.ZeroMemory(afterInstallRollback);
+        CryptographicOperations.ZeroMemory(afterFinalCommitValidationRollback);
         CryptographicOperations.ZeroMemory(collisionBackupBytes);
         CryptographicOperations.ZeroMemory(postCommitSidecar);
         CryptographicOperations.ZeroMemory(postCommitBackupBytes);

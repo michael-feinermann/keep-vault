@@ -21,6 +21,25 @@ typedef int (*threefish_block_fn)(
     const uint8_t[128],
     uint8_t[128]);
 typedef int (*skein_hash_fn)(const uint8_t*, size_t, uint8_t[128]);
+typedef int (*block_cipher_fn)(const uint8_t*, size_t, const uint8_t*, uint8_t*);
+typedef int (*ctr_cipher_fn)(const uint8_t*, const uint8_t*, const uint8_t*, uint8_t*, size_t);
+typedef int (*aes_provider_fn)(void);
+typedef int (*chacha20_fn)(
+    const uint8_t[32],
+    const uint8_t[12],
+    uint32_t,
+    const uint8_t*,
+    uint8_t*,
+    size_t);
+typedef int (*chachapoly_encrypt_fn)(
+    const uint8_t[32],
+    const uint8_t[12],
+    const uint8_t*,
+    size_t,
+    const uint8_t*,
+    uint8_t*,
+    size_t,
+    uint8_t[16]);
 typedef int (*mldsa_keypair_fn)(uint8_t*, size_t, uint8_t*, size_t);
 typedef int (*mldsa_sign_fn)(
     uint8_t*,
@@ -223,6 +242,289 @@ static void run_threefish_and_skein_kats(const char* directory)
     }
 }
 
+static void run_ctr_exhaustion_kat(
+    ctr_cipher_fn xcrypt,
+    const uint8_t* key,
+    size_t key_length,
+    size_t block_length,
+    const char* final_block_message,
+    const char* wrap_message,
+    const char* sentinel_message)
+{
+    uint8_t* maximum_counter = malloc(block_length);
+    uint8_t* input = malloc(block_length * 2U);
+    uint8_t* output = malloc(block_length * 2U);
+    if (maximum_counter == NULL || input == NULL || output == NULL) {
+        fail("CTR exhaustion KAT allocation failed");
+    }
+    (void)key_length;
+    memset(maximum_counter, 0xFF, block_length);
+    memset(input, 0x3C, block_length * 2U);
+    memset(output, 0, block_length * 2U);
+    if (xcrypt(key, maximum_counter, input, output, block_length) != 0) {
+        fail(final_block_message);
+    }
+
+    memset(output, 0xA5, block_length * 2U);
+    if (xcrypt(key, maximum_counter, input, output, block_length * 2U) == 0) {
+        fail(wrap_message);
+    }
+    for (size_t index = 0; index < block_length * 2U; ++index) {
+        if (output[index] != 0xA5U) {
+            fail(sentinel_message);
+        }
+    }
+
+    secure_zero(maximum_counter, block_length);
+    secure_zero(input, block_length * 2U);
+    secure_zero(output, block_length * 2U);
+    free(maximum_counter);
+    free(input);
+    free(output);
+}
+
+static void run_cryptopp_cipher_kats(const char* directory)
+{
+    static const char aes_key_hex[] =
+        "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F";
+    static const char aes_plain_hex[] = "00112233445566778899AABBCCDDEEFF";
+    static const char aes_expected_hex[] = "8EA2B7CA516745BFEAFC49904B496089";
+    static const char mars_key_hex[] =
+        "B55CAC37410991F8B1EC8376E8634B3B275173B72CA8B5A44F71F70286E1722A"
+        "B6A1D2AFCCBB50C2639D5A52FE6B75B17E022E4CC4A9785A";
+    static const char mars_plain_hex[] = "7C4614E4A3846DE5F48BFAA5B87B196F";
+    static const char mars_expected_hex[] = "27574F61D5384B8F283A102CCEAC7197";
+    static const char shacal_key_hex[] =
+        "8000000000000000000000000000000000000000000000000000000000000000"
+        "0000000000000000000000000000000000000000000000000000000000000000";
+    static const char shacal_expected_hex[] =
+        "361AB6322FA9E7A7BB23818D839E01BDDAFDF47305426EDD297AEDB9F6202BAE";
+
+    uint8_t aes_key[32];
+    uint8_t aes_plain[16];
+    uint8_t aes_expected[16];
+    uint8_t aes_actual[16] = {0};
+    uint8_t mars_key[56];
+    uint8_t mars_plain[16];
+    uint8_t mars_expected[16];
+    uint8_t mars_actual[16] = {0};
+    uint8_t shacal_key[64];
+    uint8_t shacal_plain[32] = {0};
+    uint8_t shacal_expected[32];
+    uint8_t shacal_actual[32] = {0};
+    decode_hex(aes_key_hex, aes_key, sizeof(aes_key));
+    decode_hex(aes_plain_hex, aes_plain, sizeof(aes_plain));
+    decode_hex(aes_expected_hex, aes_expected, sizeof(aes_expected));
+    decode_hex(mars_key_hex, mars_key, sizeof(mars_key));
+    decode_hex(mars_plain_hex, mars_plain, sizeof(mars_plain));
+    decode_hex(mars_expected_hex, mars_expected, sizeof(mars_expected));
+    decode_hex(shacal_key_hex, shacal_key, sizeof(shacal_key));
+    decode_hex(shacal_expected_hex, shacal_expected, sizeof(shacal_expected));
+
+    void* aes_handle = open_library(directory, "libaes_ref.dylib");
+    block_cipher_fn aes_block = NULL;
+    ctr_cipher_fn aes_ctr = NULL;
+    aes_provider_fn aes_provider = NULL;
+    load_symbol(aes_handle, "aes_encrypt_block", &aes_block, sizeof(aes_block));
+    load_symbol(aes_handle, "aes_256_ctr_xcrypt", &aes_ctr, sizeof(aes_ctr));
+    load_symbol(aes_handle, "aes_get_runtime_provider", &aes_provider, sizeof(aes_provider));
+    if (aes_block(aes_key, sizeof(aes_key), aes_plain, aes_actual) != 0) {
+        fail("AES-256 FIPS-197 block KAT returned an error");
+    }
+    require_equal(aes_expected, aes_actual, sizeof(aes_actual), "AES-256 FIPS-197 block KAT mismatch");
+#if defined(__aarch64__) || defined(__arm64__)
+    if (aes_provider() != 2) {
+        fail("Apple-silicon AES did not select Crypto++'s ARMv8 provider");
+    }
+#else
+    if (aes_provider() <= 0) {
+        fail("AES runtime-provider export returned an invalid value");
+    }
+#endif
+    run_ctr_exhaustion_kat(
+        aes_ctr, aes_key, sizeof(aes_key), sizeof(aes_plain),
+        "AES refused the final full-width CTR block",
+        "AES accepted a full-width CTR wrap",
+        "AES wrote output before refusing a full-width CTR wrap");
+    if (dlclose(aes_handle) != 0) {
+        fail("AES KAT library could not be closed");
+    }
+
+    void* mars_handle = open_library(directory, "libmars_ref.dylib");
+    block_cipher_fn mars_block = NULL;
+    ctr_cipher_fn mars_ctr = NULL;
+    load_symbol(mars_handle, "mars_encrypt_block", &mars_block, sizeof(mars_block));
+    load_symbol(mars_handle, "mars_448_ctr_xcrypt", &mars_ctr, sizeof(mars_ctr));
+    if (mars_block(mars_key, sizeof(mars_key), mars_plain, mars_actual) != 0) {
+        fail("MARS-448 independent block KAT returned an error");
+    }
+    require_equal(mars_expected, mars_actual, sizeof(mars_actual), "MARS-448 Botan-derived block KAT mismatch");
+    run_ctr_exhaustion_kat(
+        mars_ctr, mars_key, sizeof(mars_key), sizeof(mars_plain),
+        "MARS-448 refused the final full-width CTR block",
+        "MARS-448 accepted a full-width CTR wrap",
+        "MARS-448 wrote output before refusing a full-width CTR wrap");
+    if (dlclose(mars_handle) != 0) {
+        fail("MARS KAT library could not be closed");
+    }
+
+    void* shacal_handle = open_library(directory, "libshacal2_ref.dylib");
+    block_cipher_fn shacal_block = NULL;
+    ctr_cipher_fn shacal_ctr = NULL;
+    load_symbol(shacal_handle, "shacal2_encrypt_block", &shacal_block, sizeof(shacal_block));
+    load_symbol(shacal_handle, "shacal2_512_ctr_xcrypt", &shacal_ctr, sizeof(shacal_ctr));
+    if (shacal_block(shacal_key, sizeof(shacal_key), shacal_plain, shacal_actual) != 0) {
+        fail("SHACAL-2-512 NESSIE block KAT returned an error");
+    }
+    require_equal(
+        shacal_expected, shacal_actual, sizeof(shacal_actual), "SHACAL-2-512 NESSIE block KAT mismatch");
+    run_ctr_exhaustion_kat(
+        shacal_ctr, shacal_key, sizeof(shacal_key), sizeof(shacal_plain),
+        "SHACAL-2-512 refused the final full-width CTR block",
+        "SHACAL-2-512 accepted a full-width CTR wrap",
+        "SHACAL-2-512 wrote output before refusing a full-width CTR wrap");
+    if (dlclose(shacal_handle) != 0) {
+        fail("SHACAL-2 KAT library could not be closed");
+    }
+
+    secure_zero(aes_key, sizeof(aes_key));
+    secure_zero(aes_plain, sizeof(aes_plain));
+    secure_zero(aes_expected, sizeof(aes_expected));
+    secure_zero(aes_actual, sizeof(aes_actual));
+    secure_zero(mars_key, sizeof(mars_key));
+    secure_zero(mars_plain, sizeof(mars_plain));
+    secure_zero(mars_expected, sizeof(mars_expected));
+    secure_zero(mars_actual, sizeof(mars_actual));
+    secure_zero(shacal_key, sizeof(shacal_key));
+    secure_zero(shacal_expected, sizeof(shacal_expected));
+    secure_zero(shacal_actual, sizeof(shacal_actual));
+}
+
+static void run_chacha_kats(const char* directory)
+{
+    static const char key_hex[] =
+        "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F";
+    static const char nonce_hex[] = "000000090000004A00000000";
+    static const char expected_stream_hex[] =
+        "10F1E7E4D13B5915500FDD1FA32071C4C7D1F4C733C068030422AA9AC3D46C4E"
+        "D2826446079FAA0914C2D705D98B02A2B5129CD1DE164EB9CBD083E8A2503C4E";
+    static const char aead_key_hex[] =
+        "808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9F";
+    static const char aead_nonce_hex[] = "070000004041424344454647";
+    static const char aad_hex[] = "50515253C0C1C2C3C4C5C6C7";
+    static const char expected_ciphertext_hex[] =
+        "D31A8D34648E60DB7B86AFBC53EF7EC2A4ADED51296E08FEA9E2B5A736EE62D6"
+        "3DBEA45E8CA9671282FAFB69DA92728B1A71DE0A9E060B2905D6A5B67ECD3B36"
+        "92DDBD7F2D778B8C9803AEE328091B58FAB324E4FAD675945585808B4831D7BC"
+        "3FF4DEF08E4B7A9DE576D26586CEC64B6116";
+    static const char expected_tag_hex[] = "1AE10B594F09E26A7E902ECBD0600691";
+    static const char plaintext[] =
+        "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it.";
+
+    uint8_t key[32];
+    uint8_t nonce[12];
+    uint8_t zeros[64] = {0};
+    uint8_t expected_stream[64];
+    uint8_t parallel_stream[64] = {0};
+    uint8_t serial_stream[64] = {0};
+    uint8_t aead_key[32];
+    uint8_t aead_nonce[12];
+    uint8_t aad[12];
+    uint8_t expected_ciphertext[sizeof(plaintext) - 1U];
+    uint8_t expected_tag[16];
+    uint8_t ciphertext[sizeof(plaintext) - 1U];
+    uint8_t tag[16] = {0};
+    decode_hex(key_hex, key, sizeof(key));
+    decode_hex(nonce_hex, nonce, sizeof(nonce));
+    decode_hex(expected_stream_hex, expected_stream, sizeof(expected_stream));
+    decode_hex(aead_key_hex, aead_key, sizeof(aead_key));
+    decode_hex(aead_nonce_hex, aead_nonce, sizeof(aead_nonce));
+    decode_hex(aad_hex, aad, sizeof(aad));
+    decode_hex(expected_ciphertext_hex, expected_ciphertext, sizeof(expected_ciphertext));
+    decode_hex(expected_tag_hex, expected_tag, sizeof(expected_tag));
+
+    void* handle = open_library(directory, "libchachapoly_ref.dylib");
+    chacha20_fn parallel = NULL;
+    chacha20_fn serial = NULL;
+    chachapoly_encrypt_fn encrypt = NULL;
+    load_symbol(handle, "chacha20_xcrypt", &parallel, sizeof(parallel));
+    load_symbol(handle, "chacha20_xcrypt_serial", &serial, sizeof(serial));
+    load_symbol(handle, "chacha20poly1305_encrypt", &encrypt, sizeof(encrypt));
+    if (parallel(key, nonce, 1U, zeros, parallel_stream, sizeof(parallel_stream)) != 0
+        || serial(key, nonce, 1U, zeros, serial_stream, sizeof(serial_stream)) != 0) {
+        fail("ChaCha20 RFC 8439 raw-keystream KAT returned an error");
+    }
+    require_equal(expected_stream, parallel_stream, sizeof(parallel_stream), "ChaCha20 RFC 8439 stream mismatch");
+    require_equal(expected_stream, serial_stream, sizeof(serial_stream), "ChaCha20 serial stream mismatch");
+
+    uint8_t wrap_input[192];
+    uint8_t wrap_output[192];
+    memset(wrap_input, 0x3C, sizeof(wrap_input));
+    memset(wrap_output, 0, sizeof(wrap_output));
+    if (parallel(key, nonce, UINT32_MAX, wrap_input, wrap_output, 64U) != 0) {
+        fail("ChaCha20 split refused the final counter block");
+    }
+    memset(wrap_output, 0, sizeof(wrap_output));
+    if (serial(key, nonce, UINT32_MAX, wrap_input, wrap_output, 64U) != 0) {
+        fail("ChaCha20 serial refused the final counter block");
+    }
+
+    memset(wrap_output, 0xA5, sizeof(wrap_output));
+    if (parallel(key, nonce, UINT32_MAX - 1U, wrap_input, wrap_output, sizeof(wrap_input)) != 4) {
+        fail("ChaCha20 split did not reject counter exhaustion");
+    }
+    for (size_t index = 0; index < sizeof(wrap_output); ++index) {
+        if (wrap_output[index] != 0xA5U) {
+            fail("ChaCha20 split wrote output before rejecting counter exhaustion");
+        }
+    }
+    memset(wrap_output, 0x5A, sizeof(wrap_output));
+    if (serial(key, nonce, UINT32_MAX - 1U, wrap_input, wrap_output, sizeof(wrap_input)) != 4) {
+        fail("ChaCha20 serial did not reject counter exhaustion");
+    }
+    for (size_t index = 0; index < sizeof(wrap_output); ++index) {
+        if (wrap_output[index] != 0x5AU) {
+            fail("ChaCha20 serial wrote output before rejecting counter exhaustion");
+        }
+    }
+
+    if (encrypt(
+            aead_key,
+            aead_nonce,
+            aad,
+            sizeof(aad),
+            (const uint8_t*)plaintext,
+            ciphertext,
+            sizeof(ciphertext),
+            tag) != 0) {
+        fail("ChaCha20-Poly1305 RFC 8439 AEAD KAT returned an error");
+    }
+    require_equal(
+        expected_ciphertext,
+        ciphertext,
+        sizeof(ciphertext),
+        "ChaCha20-Poly1305 RFC 8439 ciphertext mismatch");
+    require_equal(expected_tag, tag, sizeof(tag), "ChaCha20-Poly1305 RFC 8439 tag mismatch");
+
+    secure_zero(key, sizeof(key));
+    secure_zero(nonce, sizeof(nonce));
+    secure_zero(expected_stream, sizeof(expected_stream));
+    secure_zero(parallel_stream, sizeof(parallel_stream));
+    secure_zero(serial_stream, sizeof(serial_stream));
+    secure_zero(aead_key, sizeof(aead_key));
+    secure_zero(aead_nonce, sizeof(aead_nonce));
+    secure_zero(aad, sizeof(aad));
+    secure_zero(expected_ciphertext, sizeof(expected_ciphertext));
+    secure_zero(expected_tag, sizeof(expected_tag));
+    secure_zero(ciphertext, sizeof(ciphertext));
+    secure_zero(tag, sizeof(tag));
+    secure_zero(wrap_input, sizeof(wrap_input));
+    secure_zero(wrap_output, sizeof(wrap_output));
+    if (dlclose(handle) != 0) {
+        fail("ChaCha20-Poly1305 KAT library could not be closed");
+    }
+}
+
 static void run_mldsa_self_test(const char* directory)
 {
     static const char expected_commit[] =
@@ -399,6 +701,8 @@ int main(int argument_count, char** arguments)
     }
     run_kalyna_kat(arguments[1]);
     run_threefish_and_skein_kats(arguments[1]);
+    run_cryptopp_cipher_kats(arguments[1]);
+    run_chacha_kats(arguments[1]);
     run_mldsa_self_test(arguments[1]);
     run_argon2_policy_kat(arguments[1]);
     puts("Native per-slice cryptographic KATs passed.");

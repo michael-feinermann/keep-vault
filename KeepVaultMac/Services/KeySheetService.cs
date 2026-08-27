@@ -21,6 +21,10 @@ namespace KalynaArchiver.Services;
 /// </summary>
 public sealed class KeySheetService
 {
+    internal static Action<FileStream, string>? TestHookBeforeSecondTestPdf { get; set; }
+    internal static Action<FileStream, string, FileStream, string>? TestHookBeforeTestPdfPairCommit { get; set; }
+    internal static Action<FileStream, string>? TestHookBeforePartialTestPdfDestroy { get; set; }
+
     private const string ProductName = "Keep Vault";
     private static readonly object FontResolverGate = new();
 
@@ -55,36 +59,78 @@ public sealed class KeySheetService
         }
 
         EnsurePdfFontResolver();
-        WriteSheet(validated, KeySheetFactor.First, firstPdfPath);
+        string firstTargetPath = MacCanonicalPath.CanonicalizeCreatableFile(firstPdfPath);
+        string secondTargetPath = MacCanonicalPath.CanonicalizeCreatableFile(secondPdfPath);
+        FileStream? firstOutput = null;
+        FileStream? secondOutput = null;
         try
         {
-            WriteSheet(validated, KeySheetFactor.Second, secondPdfPath);
+            // Keep both output objects open until the pair is complete. If the
+            // second export fails, cleanup must act on the exact first object,
+            // never on a later replacement at the same pathname.
+            firstOutput = WriteSheet(validated, KeySheetFactor.First, firstTargetPath);
+            TestHookBeforeSecondTestPdf?.Invoke(firstOutput, firstTargetPath);
+            secondOutput = WriteSheet(validated, KeySheetFactor.Second, secondTargetPath);
+            TestHookBeforeTestPdfPairCommit?.Invoke(
+                firstOutput,
+                firstTargetPath,
+                secondOutput,
+                secondTargetPath);
+
+            // Treat the two independent files as one logical export. Both
+            // names must still identify the exact open objects immediately
+            // before the pair is allowed to survive this method.
+            MacSafeFileSystem.RequirePathStillNamesHandle(firstOutput.SafeFileHandle, firstTargetPath);
+            MacSafeFileSystem.RequirePathStillNamesHandle(secondOutput.SafeFileHandle, secondTargetPath);
         }
-        catch
+        catch (Exception exportError)
         {
-            // Never leave factor A behind on its own without the caller knowing
-            // the export failed halfway.
-            TryDelete(firstPdfPath);
+            var errors = new List<Exception> { exportError };
+            if (secondOutput is not null)
+            {
+                FileStream partialOutput = secondOutput;
+                secondOutput = null;
+                try
+                {
+                    DestroyOpenPartialTestExport(partialOutput, secondTargetPath);
+                }
+                catch (Exception cleanupError)
+                {
+                    errors.Add(cleanupError);
+                }
+            }
+
+            if (firstOutput is not null)
+            {
+                FileStream partialOutput = firstOutput;
+                firstOutput = null;
+                try
+                {
+                    DestroyOpenPartialTestExport(partialOutput, firstTargetPath);
+                }
+                catch (Exception cleanupError)
+                {
+                    errors.Add(cleanupError);
+                }
+            }
+
+            if (errors.Count > 1)
+            {
+                throw new AggregateException(
+                    "Key-sheet export failed and one or more partial files could not be destroyed.",
+                    errors);
+            }
+
             throw;
         }
-    }
-
-    private static void TryDelete(string path)
-    {
-        try
+        finally
         {
-            string full = MacCanonicalPath.CanonicalizeCreatableFile(path);
-            if (File.Exists(full))
-            {
-                File.Delete(full);
-            }
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
+            secondOutput?.Dispose();
+            firstOutput?.Dispose();
         }
     }
 
-    private static void WriteSheet(ValidatedKeySheetData validated, KeySheetFactor factor, string pdfPath)
+    private static FileStream WriteSheet(ValidatedKeySheetData validated, KeySheetFactor factor, string pdfPath)
     {
         string targetPath = MacCanonicalPath.CanonicalizeCreatableFile(pdfPath);
         FileStream? output = null;
@@ -96,13 +142,27 @@ public sealed class KeySheetService
             output.Flush(flushToDisk: true);
             MacSafeFileSystem.FullSync(output.SafeFileHandle);
             MacSafeFileSystem.RequirePathStillNamesHandle(output.SafeFileHandle, targetPath);
+            FileStream completed = output;
+            output = null;
+            return completed;
         }
-        catch
+        catch (Exception writeError)
         {
             if (output is not null)
             {
-                TryDestroyOpenPartialTestExport(output, targetPath);
+                FileStream partialOutput = output;
                 output = null;
+                try
+                {
+                    DestroyOpenPartialTestExport(partialOutput, targetPath);
+                }
+                catch (Exception cleanupError)
+                {
+                    throw new AggregateException(
+                        "Key-sheet write failed and its partial file could not be destroyed.",
+                        writeError,
+                        cleanupError);
+                }
             }
 
             throw;
@@ -1049,7 +1109,7 @@ public sealed class KeySheetService
         }
     }
 
-    private static void TryDestroyOpenPartialTestExport(FileStream output, string expectedPath)
+    private static void DestroyOpenPartialTestExport(FileStream output, string expectedPath)
     {
         byte[] buffer = new byte[1024 * 1024];
         IDisposable? memoryLock = null;
@@ -1074,17 +1134,38 @@ public sealed class KeySheetService
 
             output.Flush(flushToDisk: true);
             MacSafeFileSystem.FullSync(output.SafeFileHandle);
-            MacSecretFile.UnlinkVerified(output.SafeFileHandle, expectedPath);
-        }
-        catch
-        {
-            // Preserve the exception that interrupted the explicit export.
+            TestHookBeforePartialTestPdfDestroy?.Invoke(output, expectedPath);
+
+            // The partial sheet's own bytes are gone at this point, so the
+            // sensitive part of the rollback is already complete. Removing the
+            // directory entry is only the tidy-up, and it is allowed exactly
+            // while that entry still names this object. A replacement occupying
+            // the pathname must never be unlinked, and it is not a cleanup
+            // failure either: reporting it as one would wrap the reason the
+            // export failed in an AggregateException and point the caller at a
+            // partial file that no longer holds anything.
+            if (MacSafeFileSystem.PathStillNamesHandle(output.SafeFileHandle, expectedPath))
+            {
+                SecureFile.MarkForDeletion(output, expectedPath);
+            }
         }
         finally
         {
-            CryptographicOperations.ZeroMemory(buffer);
-            memoryLock?.Dispose();
-            output.Dispose();
+            try
+            {
+                CryptographicOperations.ZeroMemory(buffer);
+            }
+            finally
+            {
+                try
+                {
+                    memoryLock?.Dispose();
+                }
+                finally
+                {
+                    output.Dispose();
+                }
+            }
         }
     }
 
@@ -1755,14 +1836,6 @@ internal static partial class MacCanonicalPath
 
 internal static partial class MacSecretFile
 {
-    private const int OpenReadOnly = 0x0000;
-    private const int OpenReadWrite = 0x0002;
-    private const int OpenCreate = 0x0200;
-    private const int OpenExclusive = 0x0800;
-    private const int OpenNoFollow = 0x0100;
-    private const int OpenDirectory = 0x00100000;
-    private const int OpenCloseOnExec = 0x01000000;
-    private const int OpenNoFollowAny = 0x20000000;
     private const ushort OwnerReadWrite = 0x0180; // 0600
 
     internal static FileStream CreateExclusive(string path)
@@ -1770,106 +1843,57 @@ internal static partial class MacSecretFile
         string parentPath = Path.GetDirectoryName(path)
             ?? throw new ArgumentException("Der Test-PDF-Pfad besitzt keinen Zielordner.", nameof(path));
         string fileName = Path.GetFileName(path);
-        int parentDescriptor = OpenDirectoryHandle(
-            parentPath,
-            OpenReadOnly | OpenDirectory | OpenCloseOnExec | OpenNoFollowAny);
-        if (parentDescriptor < 0)
-        {
-            throw new Win32Exception(Marshal.GetLastPInvokeError(), $"Der Test-PDF-Zielordner konnte nicht symlink-sicher geöffnet werden: {parentPath}");
-        }
-
-        using var parentHandle = new SafeFileHandle(parentDescriptor, ownsHandle: true);
-        bool parentAdded = false;
-        int descriptor = -1;
+        using SafeFileHandle parentHandle = MacSafeFileSystem.OpenDirectoryHandle(parentPath);
+        SafeFileHandle? handle = null;
         try
         {
-            parentHandle.DangerousAddRef(ref parentAdded);
-            descriptor = OpenAt(
-                checked((int)parentHandle.DangerousGetHandle()),
+            // openat(2) is variadic, and a conventional fixed four-argument
+            // P/Invoke passes its mode in the wrong ABI location on arm64.
+            // The shared helper uses Apple's fixed-arity mkostempsat_np,
+            // installs the exact descriptor with RENAME_EXCL, and proves 0600.
+            handle = MacSafeFileSystem.CreateFileAtExclusive(
+                parentHandle,
                 fileName,
-                OpenReadWrite | OpenCreate | OpenExclusive | OpenNoFollow | OpenCloseOnExec,
                 OwnerReadWrite);
-            if (descriptor < 0)
+            MacSafeFileSystem.ValidateRegularFile(handle, requireSingleLink: true, path);
+            MacFileIdentity identity = MacSafeFileSystem.GetIdentity(handle);
+            if ((identity.Mode & 0x01FF) != OwnerReadWrite)
             {
-                throw new Win32Exception(Marshal.GetLastPInvokeError(), $"Die Test-PDF konnte nicht exklusiv und symlink-sicher angelegt werden: {path}");
+                throw new IOException("Die Test-PDF besitzt nicht ausschließlich 0600-Rechte.");
             }
 
-            var handle = new SafeFileHandle(descriptor, ownsHandle: true);
-            descriptor = -1;
-            try
+            MacSafeFileSystem.RequirePathStillNamesHandle(handle, path);
+            var stream = new FileStream(handle, FileAccess.ReadWrite, 64 * 1024, isAsync: false);
+            handle = null;
+            return stream;
+        }
+        catch
+        {
+            if (handle is not null)
             {
-                bool handleAdded = false;
                 try
                 {
-                    handle.DangerousAddRef(ref handleAdded);
-                    int fileDescriptor = checked((int)handle.DangerousGetHandle());
-                    if (Fchmod(fileDescriptor, OwnerReadWrite) != 0)
+                    MacFileIdentity handleIdentity = MacSafeFileSystem.GetIdentity(handle);
+                    MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(parentHandle, fileName);
+                    if (handleIdentity.SameObject(entryIdentity))
                     {
-                        throw new Win32Exception(Marshal.GetLastPInvokeError(), "Die Test-PDF konnte nicht auf exklusive 0600-Rechte gesetzt werden.");
+                        MacSafeFileSystem.UnlinkAt(parentHandle, fileName);
                     }
                 }
-                finally
+                catch
                 {
-                    if (handleAdded) handle.DangerousRelease();
+                    // Preserve the construction failure and never unlink a
+                    // name whose identity cannot be proved.
                 }
-
-                MacSafeFileSystem.ValidateRegularFile(handle, requireSingleLink: true, path);
-                MacFileIdentity identity = MacSafeFileSystem.GetIdentity(handle);
-                if ((identity.Mode & 0x01FF) != OwnerReadWrite)
-                {
-                    throw new IOException("Die Test-PDF besitzt nach fchmod nicht ausschließlich 0600-Rechte.");
-                }
-
-                MacSafeFileSystem.RequirePathStillNamesHandle(handle, path);
-                return new FileStream(handle, FileAccess.ReadWrite, 64 * 1024, isAsync: false);
             }
-            catch
-            {
-                handle.Dispose();
-                _ = UnlinkAt(checked((int)parentHandle.DangerousGetHandle()), fileName, 0);
-                throw;
-            }
+
+            throw;
         }
         finally
         {
-            if (descriptor >= 0)
-            {
-                _ = Close(descriptor);
-            }
-
-            if (parentAdded)
-            {
-                parentHandle.DangerousRelease();
-            }
+            handle?.Dispose();
         }
     }
-
-    internal static void UnlinkVerified(SafeFileHandle handle, string expectedPath)
-    {
-        MacSafeFileSystem.RequirePathStillNamesHandle(handle, expectedPath);
-        if (Unlink(expectedPath) != 0)
-        {
-            throw new Win32Exception(Marshal.GetLastPInvokeError(), "Die beschädigte Test-PDF konnte nicht entfernt werden.");
-        }
-    }
-
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "open", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
-    private static partial int OpenDirectoryHandle(string path, int flags);
-
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "openat", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
-    private static partial int OpenAt(int directoryDescriptor, string path, int flags, uint mode);
-
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "unlinkat", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
-    private static partial int UnlinkAt(int directoryDescriptor, string path, int flags);
-
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "unlink", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
-    private static partial int Unlink(string path);
-
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "fchmod", SetLastError = true)]
-    private static partial int Fchmod(int descriptor, ushort mode);
-
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "close", SetLastError = true)]
-    private static partial int Close(int descriptor);
 }
 
 internal sealed class SensitiveBufferStream : Stream

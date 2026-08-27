@@ -26,6 +26,8 @@
     <string>14.0</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.utilities</string>
+    <key>LSMultipleInstancesProhibited</key>
+    <true/>
     <key>NSCameraUsageDescription</key>
     <string>QR-Scanner liest QR-Codes über die Kamera. Der erkannte Inhalt wird nur angezeigt und niemals gespeichert.</string>
     <key>NSHighResolutionCapable</key>

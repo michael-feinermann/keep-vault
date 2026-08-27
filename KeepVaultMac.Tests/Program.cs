@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using KalynaArchiver.Services;
@@ -14,14 +15,20 @@ var smokeTests = new List<TestCase>
     new("smoke.symlink-rejection", "symlink rejection", TestSymlinkRejectionAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.archive-input-symlink", "archive-input symlink rejection", TestArchiveInputSymlinkRejectionAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.archive-input-snapshot-location", "container-private archive-input snapshot", TestArchiveInputSnapshotLocationAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.archive-input-snapshot-races", "archive-input snapshot root and entry substitution rejection", TestArchiveInputSnapshotRacesAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.archive-input-hardlink", "archive-input hard-link alias rejection", TestArchiveInputHardLinkAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.overlapping-input-normalization", "overlapping archive-input normalization", TestOverlappingArchiveInputsAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.trailing-separator-folder", "folder input with a trailing separator", TestTrailingSeparatorFolderInputAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.descriptor-bound-snapshot", "descriptor-bound private snapshot", TestDescriptorBoundPrivateSnapshotAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.private-snapshot-cleanup-identity", "private snapshot cleanup preserves a replacement directory", TestPrivateSnapshotCleanupIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.private-authenticated-snapshot", "private authenticated-input snapshot", TestPrivateSnapshotAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.apple-signature-binding", "Apple signature framework binding", TestAppleSignatureBindingAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.locked-secret-lifecycle", "locked secret buffer lifecycle", TestLockedSecretBufferAsync, TestResource.ProcessGlobal, "Smoke", IsSmoke: true),
     new("smoke.password-policy", "password policy", TestPasswordPolicyAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.release-companion-version", "release companion version plumbing", TestReleaseCompanionVersionPlumbingAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.native-atomic-publish", "native build atomic publish and hard-link isolation", TestNativeAtomicPublishAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.qr-atomic-publish", "QR distribution atomic publish and hard-link isolation", TestQrAtomicPublishAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.native-snapshot-cleanup-identity", "native snapshot cleanup preserves a replacement directory", TestNativeSnapshotCleanupIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
 };
 
 return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests).ConfigureAwait(false);
@@ -68,9 +75,17 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
 {
     string repositoryRoot = FindRepositoryRoot();
     string scannerBuilder = Path.Combine(repositoryRoot, "QrCodeScanner", "tools", "Build-QrScanner-macOS.sh");
+    string keepVaultBuilder = Path.Combine(repositoryRoot, "tools", "Build-KeepVault-macOS.sh");
     string pairVerifier = Path.Combine(repositoryRoot, "tools", "Verify-ReleasePairMetadata-macOS.sh");
+    string installer = Path.Combine(repositoryRoot, "tools", "Install-KeepVault-macOS.sh");
+    string installerSelfTest = Path.Combine(repositoryRoot, "tools", "Test-Installer-FailureInjection-macOS.sh");
+    string portableBuilder = Path.Combine(repositoryRoot, "tools", "Build-Portable-macOS.sh");
     Require(File.Exists(scannerBuilder), "The QR-Scanner build script is missing.");
+    Require(File.Exists(keepVaultBuilder), "The Keep Vault release build script is missing.");
     Require(File.Exists(pairVerifier), "The release-pair metadata verifier is missing.");
+    Require(File.Exists(installer), "The transactional macOS installer is missing.");
+    Require(File.Exists(installerSelfTest), "The installer failure-injection self-test is missing.");
+    Require(File.Exists(portableBuilder), "The portable macOS build script is missing.");
 
     (int scannerExit, string scannerOutput, _) = await RunProcessAsync(
         scannerBuilder,
@@ -80,8 +95,115 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     Require(scannerExit == 0, "QR-Scanner rejected valid release version/build arguments.");
     Require(
         scannerOutput.Contains("preflight_version=4.0.2", StringComparison.Ordinal)
-            && scannerOutput.Contains("preflight_build=6", StringComparison.Ordinal),
-        "QR-Scanner did not render the requested release metadata in preflight.");
+            && scannerOutput.Contains("preflight_build=6", StringComparison.Ordinal)
+            && scannerOutput.Contains("preflight_single_instance=true", StringComparison.Ordinal),
+        "QR-Scanner did not render the requested release metadata and single-instance policy in preflight.");
+
+    string installerSource = await File.ReadAllTextAsync(installer).ConfigureAwait(false);
+    string installerSelfTestSource = await File.ReadAllTextAsync(installerSelfTest).ConfigureAwait(false);
+    string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
+    string portableBuilderSource = await File.ReadAllTextAsync(portableBuilder).ConfigureAwait(false);
+    string[] installerFailurePoints =
+    [
+        "main-app-replace",
+        "launcher-replace",
+        "scanner-replace",
+        "native-verify",
+        "main-verify",
+        "anchor-create",
+        "anchor-replace",
+        "anchor-post-check",
+        "rollback-anchor",
+        "rollback-app",
+        "recovery-dir-create",
+        "backup-move-main-app",
+        "backup-move-launcher-sha3",
+        "backup-move-launcher-skein",
+        "backup-move-launcher-khsig",
+        "backup-move-launcher-sha3-khsig",
+        "backup-move-launcher-skein-khsig",
+        "backup-move-scanner-app",
+        "backup-move-scanner-sha3",
+        "backup-move-scanner-skein",
+        "backup-move-scanner-khsig",
+        "backup-move-scanner-sha3-khsig",
+        "backup-move-scanner-skein-khsig",
+        "launch-services",
+        "finder-alias",
+        "exit-trap",
+    ];
+    string installerFailurePointBody = string.Join(
+        '\n',
+        installerFailurePoints.Select(static point => $"  {point}"));
+    Require(installerFailurePoints.Length == 26, "The installer regression inventory must cover exactly 26 failure points.");
+    Require(
+        installerSource.Contains(
+            $"allowed_injected_failures=(\n{installerFailurePointBody}\n)",
+            StringComparison.Ordinal)
+        && installerSelfTestSource.Contains(
+            $"failure_points=(\n{installerFailurePointBody}\n)",
+            StringComparison.Ordinal),
+        "The installer and its adversarial self-test no longer share the exact 26-point failure inventory.");
+    Require(
+        installerSource.Contains("if [[ -n ${test_root} ]]; then", StringComparison.Ordinal)
+        && installerSource.Contains(
+            "--inject-failure is accepted only inside the validated installer test mode.",
+            StringComparison.Ordinal)
+        && installerSource.Contains(
+            "if (( ! test_mode )) && [[ -x ${launch_services} ]]; then",
+            StringComparison.Ordinal)
+        && installerSource.Contains(
+            "if (( ! test_mode )) && [[ -x ${launch_services_cleanup}",
+            StringComparison.Ordinal),
+        "Installer failure injection or LaunchServices mutation is no longer confined to validated test/production boundaries.");
+    Require(
+        installerSelfTestSource.Contains("assert_test_root_not_registered before-baseline", StringComparison.Ordinal)
+        && installerSelfTestSource.Contains("assert_test_root_not_registered after-baseline", StringComparison.Ordinal)
+        && installerSelfTestSource.Contains("assert_test_root_not_registered ${case_index}-${failure_point}", StringComparison.Ordinal)
+        && installerSelfTestSource.Contains("assert_test_root_not_registered final", StringComparison.Ordinal)
+        && !installerSelfTestSource.Contains("-dump 2>/dev/null | shasum", StringComparison.Ordinal)
+        && installerSelfTestSource.Contains("installer_failure_injection_audit_points=15", StringComparison.Ordinal),
+        "The installer self-test no longer proves test-root-specific LaunchServices isolation across all 15 audit categories.");
+    Require(
+        keepVaultBuilderSource.Contains("KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage}", StringComparison.Ordinal),
+        "The release gate no longer binds the companion test to its signed private staging tree.");
+    Require(
+        installerSource.Contains(
+            "--app ${staged_app} \\",
+            StringComparison.Ordinal)
+        && installerSource.Contains(
+            "--scanner ${install_root}/QR-Scanner.app",
+            StringComparison.Ordinal)
+        && installerSource.Contains(
+            "--app ${destination} \\",
+            StringComparison.Ordinal)
+        && installerSource.Contains(
+            "--scanner ${scanner_destination}",
+            StringComparison.Ordinal),
+        "The installer no longer checks companion metadata both before mutation and after installation.");
+    Require(
+        portableBuilderSource.Contains(
+            "${dotnet_command} restore ${verifier_project} \\",
+            StringComparison.Ordinal)
+        && portableBuilderSource.Contains(
+            "--locked-mode \\\n      --runtime ${runtime}",
+            StringComparison.Ordinal)
+        && portableBuilderSource.Contains(
+            "${dotnet_command} publish ${verifier_project} \\",
+            StringComparison.Ordinal)
+        && portableBuilderSource.Contains(
+            "-r ${runtime} \\\n      --no-restore \\",
+            StringComparison.Ordinal)
+        && portableBuilderSource.Contains(
+            "${dotnet_command} restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \\",
+            StringComparison.Ordinal)
+        && portableBuilderSource.Contains(
+            "${dotnet_command} build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \\",
+            StringComparison.Ordinal)
+        && portableBuilderSource.Contains(
+            "-c Release \\\n    --no-restore \\",
+            StringComparison.Ordinal),
+        "The portable pipeline can restore or build outside the audited locked dependency graph.");
 
     (int invalidExit, _, _) = await RunProcessAsync(
         scannerBuilder,
@@ -106,6 +228,9 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
             matchedOutput.Contains("release_pair_version=4.0.2", StringComparison.Ordinal)
                 && matchedOutput.Contains("release_pair_build=6", StringComparison.Ordinal),
             "The release-pair gate did not report the matched metadata.");
+        Require(
+            MacCompanionVerification.VerifyMatchingReleaseMetadataForTests(app, scanner) is null,
+            "The runtime companion classifier rejected matching release metadata.");
 
         WriteTestInfoPlist(scanner, "de.michael-feinermann.qr-scanner", "4.0.1", "5");
         (int mismatchExit, _, _) = await RunProcessAsync(
@@ -113,11 +238,115 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
             "--app", app,
             "--scanner", scanner).ConfigureAwait(false);
         Require(mismatchExit != 0, "The release-pair gate accepted a stale QR-Scanner version.");
+        Require(
+            MacCompanionVerification.VerifyMatchingReleaseMetadataForTests(app, scanner) is not null,
+            "The runtime companion classifier accepted a stale QR-Scanner version.");
+
+        WriteTestInfoPlist(scanner, "example.invalid.foreign-scanner", "4.0.2", "6");
+        Require(
+            MacCompanionVerification.VerifyMatchingReleaseMetadataForTests(app, scanner) is not null,
+            "The runtime companion classifier accepted a foreign scanner bundle identifier.");
     }
     finally
     {
         Directory.Delete(root, recursive: true);
     }
+}
+
+static async Task TestNativeAtomicPublishAsync()
+{
+    string nativeBuilder = Path.Combine(FindRepositoryRoot(), "tools", "Build-Native-macOS.sh");
+    Require(File.Exists(nativeBuilder), "The native macOS build script is missing.");
+
+    (int exitCode, string standardOutput, string standardError) = await RunProcessAsync(
+        nativeBuilder,
+        "--self-test-atomic-publish").ConfigureAwait(false);
+    Require(exitCode == 0, $"Atomic native publish self-test failed: {standardError}");
+    Require(
+        standardOutput.Contains("atomic_publish_pre_publish_failure_preserved_old_tree=true", StringComparison.Ordinal)
+            && standardOutput.Contains("atomic_publish_hard_link_not_followed=true", StringComparison.Ordinal)
+            && standardOutput.Contains("atomic_publish_exchange_complete=true", StringComparison.Ordinal),
+        "Atomic native publish self-test did not prove failure isolation, hard-link isolation and complete exchange.");
+}
+
+static async Task TestQrAtomicPublishAsync()
+{
+    string scannerBuilder = Path.Combine(
+        FindRepositoryRoot(),
+        "QrCodeScanner",
+        "tools",
+        "Build-QrScanner-macOS.sh");
+    Require(File.Exists(scannerBuilder), "The QR-Scanner macOS build script is missing.");
+
+    (int exitCode, string standardOutput, string standardError) = await RunProcessAsync(
+        scannerBuilder,
+        "--self-test-atomic-publish").ConfigureAwait(false);
+    Require(exitCode == 0, $"Atomic QR distribution publish self-test failed: {standardError}");
+    Require(
+        standardOutput.Contains(
+            "qr_atomic_publish_pre_publish_failure_preserved_old_tree=true",
+            StringComparison.Ordinal)
+            && standardOutput.Contains("qr_atomic_publish_hard_link_not_followed=true", StringComparison.Ordinal)
+            && standardOutput.Contains("qr_atomic_publish_exchange_complete=true", StringComparison.Ordinal)
+            && standardOutput.Contains("qr_atomic_publish_first_release_exclusive=true", StringComparison.Ordinal),
+        "Atomic QR publish self-test did not prove failure isolation, hard-link isolation and complete exchange.");
+}
+
+static Task TestNativeSnapshotCleanupIdentityAsync()
+{
+    string native = NativeToolIntegrity.ResolveKnownTool("zpaq.exe")
+        ?? throw new FileNotFoundException("The staged ZPAQ component is unavailable.");
+    TrustedNativeFileLease? lease = null;
+    string? snapshotDirectory = null;
+    string? displacedDirectory = null;
+    byte[] canary = "foreign native-directory replacement"u8.ToArray();
+    try
+    {
+        lease = NativeToolIntegrity.AcquireTrustedFile(native);
+        snapshotDirectory = Path.GetDirectoryName(lease.Path)
+            ?? throw new InvalidOperationException("The trusted native lease has no parent directory.");
+        Require(
+            Path.GetFileName(snapshotDirectory).StartsWith("keep-vault-native-", StringComparison.Ordinal),
+            "The native cleanup regression did not receive a private authenticated snapshot.");
+        displacedDirectory = snapshotDirectory + ".displaced";
+        Directory.Move(snapshotDirectory, displacedDirectory);
+        Directory.CreateDirectory(snapshotDirectory);
+        string canaryPath = Path.Combine(snapshotDirectory, "valuable.bin");
+        File.WriteAllBytes(canaryPath, canary);
+
+        bool rejectedReplacement = false;
+        try
+        {
+            lease.Dispose();
+        }
+        catch (IOException)
+        {
+            rejectedReplacement = true;
+        }
+
+        Require(rejectedReplacement, "Native snapshot cleanup accepted a replacement root pathname.");
+        Require(
+            File.ReadAllBytes(canaryPath).AsSpan().SequenceEqual(canary),
+            "Native snapshot cleanup removed or modified a replacement-directory canary.");
+        Require(
+            Directory.GetFileSystemEntries(displacedDirectory).Length == 0,
+            "Native snapshot cleanup did not descriptor-delete the exact displaced executable and sidecars.");
+    }
+    finally
+    {
+        lease?.Dispose();
+        CryptographicOperations.ZeroMemory(canary);
+        if (snapshotDirectory is not null && Directory.Exists(snapshotDirectory))
+        {
+            Directory.Delete(snapshotDirectory, recursive: true);
+        }
+        if (displacedDirectory is not null && Directory.Exists(displacedDirectory))
+        {
+            Directory.Delete(displacedDirectory, recursive: true);
+        }
+    }
+
+    return Task.CompletedTask;
 }
 
 static string FindRepositoryRoot() => RepositoryLayout.FindRepositoryRoot();
@@ -271,6 +500,158 @@ static Task TestArchiveInputSnapshotLocationAsync()
     return Task.CompletedTask;
 }
 
+static Task TestArchiveInputSnapshotRacesAsync()
+{
+    string sourceRoot = MacSafeFileSystem.ResolveExistingRealPath(
+        Directory.CreateTempSubdirectory("keep-vault-input-race-source-").FullName);
+    string nested = Path.Combine(sourceRoot, "folder", "nested");
+    Directory.CreateDirectory(nested);
+    string source = Path.Combine(nested, "input.txt");
+    string displacedSource = Path.Combine(nested, "input-displaced.txt");
+    string foreignTarget = Path.Combine(sourceRoot, "foreign.txt");
+    File.WriteAllText(source, "selected source bytes");
+    File.WriteAllText(foreignTarget, "foreign target bytes");
+    string? snapshotRoot = null;
+    string? displacedSnapshotRoot = null;
+    byte[] canary = "foreign snapshot replacement"u8.ToArray();
+    try
+    {
+        ZpaqService.InputSnapshotHookBeforeSourceEntryOpenForTests = relativePath =>
+        {
+            if (!relativePath.EndsWith("input.txt", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            File.Move(source, displacedSource);
+            File.CreateSymbolicLink(source, foreignTarget);
+        };
+
+        bool rejectedEntrySwap = false;
+        try
+        {
+            using IDisposable unexpected = ZpaqService.CaptureInputSnapshotForTests(
+                sourceRoot,
+                new[] { Path.Combine(sourceRoot, "folder") },
+                out _,
+                out _);
+        }
+        catch (IOException)
+        {
+            rejectedEntrySwap = true;
+        }
+
+        Require(rejectedEntrySwap, "The archive-input snapshot followed a nested symlink substitution.");
+        Require(File.ReadAllText(foreignTarget) == "foreign target bytes", "Snapshot rejection modified the symlink target.");
+        File.Delete(source);
+        File.Move(displacedSource, source);
+        ZpaqService.InputSnapshotHookBeforeSourceEntryOpenForTests = null;
+
+        ZpaqService.InputSnapshotHookAfterReadyForTests = path =>
+        {
+            snapshotRoot = path;
+            displacedSnapshotRoot = path + ".displaced";
+            Directory.Move(path, displacedSnapshotRoot);
+            Directory.CreateDirectory(path);
+            File.WriteAllBytes(Path.Combine(path, "valuable.bin"), canary);
+        };
+
+        bool rejectedRootSwap = false;
+        try
+        {
+            using IDisposable unexpected = ZpaqService.CaptureInputSnapshotForTests(
+                sourceRoot,
+                new[] { source },
+                out _,
+                out _);
+        }
+        catch (IOException)
+        {
+            rejectedRootSwap = true;
+        }
+
+        Require(rejectedRootSwap, "The archive-input snapshot accepted a replacement private-root pathname.");
+        Require(snapshotRoot is not null && displacedSnapshotRoot is not null, "The root-swap hook did not execute.");
+        Require(
+            File.ReadAllBytes(Path.Combine(snapshotRoot!, "valuable.bin")).AsSpan().SequenceEqual(canary),
+            "Snapshot cleanup deleted or modified the replacement-root canary.");
+        Require(
+            !Directory.EnumerateFileSystemEntries(displacedSnapshotRoot!).Any(),
+            "Snapshot cleanup left selected bytes in the displaced bound private root.");
+    }
+    finally
+    {
+        ZpaqService.InputSnapshotHookBeforeSourceEntryOpenForTests = null;
+        ZpaqService.InputSnapshotHookAfterReadyForTests = null;
+        CryptographicOperations.ZeroMemory(canary);
+        File.Delete(source);
+        if (File.Exists(displacedSource))
+        {
+            File.Delete(displacedSource);
+        }
+        if (snapshotRoot is not null && Directory.Exists(snapshotRoot))
+        {
+            Directory.Delete(snapshotRoot, recursive: true);
+        }
+        if (displacedSnapshotRoot is not null && Directory.Exists(displacedSnapshotRoot))
+        {
+            Directory.Delete(displacedSnapshotRoot, recursive: true);
+        }
+        File.Delete(foreignTarget);
+        Directory.Delete(sourceRoot, recursive: true);
+    }
+
+    return Task.CompletedTask;
+}
+
+static async Task TestArchiveInputHardLinkAsync()
+{
+    string sourceRoot = MacSafeFileSystem.ResolveExistingRealPath(
+        Directory.CreateTempSubdirectory("keep-vault-input-hardlink-").FullName);
+    string source = Path.Combine(sourceRoot, "input.txt");
+    string alias = Path.Combine(sourceRoot, "input-alias.txt");
+    await File.WriteAllTextAsync(source, "hard-linked archive input").ConfigureAwait(false);
+    try
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "/bin/ln",
+                UseShellExecute = false,
+            },
+        };
+        process.StartInfo.ArgumentList.Add(source);
+        process.StartInfo.ArgumentList.Add(alias);
+        Require(process.Start(), "Could not start the hard-link fixture helper.");
+        await process.WaitForExitAsync().ConfigureAwait(false);
+        Require(process.ExitCode == 0, "Could not create the archive-input hard-link fixture.");
+
+        bool rejected = false;
+        try
+        {
+            using IDisposable unexpected = ZpaqService.CaptureInputSnapshotForTests(
+                sourceRoot,
+                new[] { source },
+                out _,
+                out _);
+        }
+        catch (IOException)
+        {
+            rejected = true;
+        }
+
+        Require(rejected, "The archive-input snapshot accepted a multiply linked source file.");
+        Require(File.ReadAllText(alias) == "hard-linked archive input", "Hard-link rejection modified the source inode.");
+    }
+    finally
+    {
+        File.Delete(alias);
+        File.Delete(source);
+        Directory.Delete(sourceRoot);
+    }
+}
+
 static Task TestOverlappingArchiveInputsAsync()
 {
     string sourceRoot = MacSafeFileSystem.ResolveExistingRealPath(
@@ -366,6 +747,64 @@ static Task TestDescriptorBoundPrivateSnapshotAsync()
     {
         File.Delete(source);
         File.Delete(moved);
+        Directory.Delete(root);
+    }
+
+    return Task.CompletedTask;
+}
+
+static Task TestPrivateSnapshotCleanupIdentityAsync()
+{
+    string root = MacSafeFileSystem.ResolveExistingRealPath(
+        Directory.CreateTempSubdirectory("keep-vault-snapshot-cleanup-").FullName);
+    string source = Path.Combine(root, "source.bin");
+    File.WriteAllText(source, "sensitive snapshot bytes");
+    MacPrivateFileSnapshot? snapshot = null;
+    string? snapshotDirectory = null;
+    string? displacedDirectory = null;
+    byte[] canary = "foreign replacement directory"u8.ToArray();
+    try
+    {
+        snapshot = MacPrivateFileSnapshot.Capture(source);
+        snapshotDirectory = Path.GetDirectoryName(snapshot.SnapshotPath)
+            ?? throw new InvalidOperationException("The private snapshot has no parent directory.");
+        displacedDirectory = snapshotDirectory + ".displaced";
+        Directory.Move(snapshotDirectory, displacedDirectory);
+        Directory.CreateDirectory(snapshotDirectory);
+        string canaryPath = Path.Combine(snapshotDirectory, "valuable.bin");
+        File.WriteAllBytes(canaryPath, canary);
+
+        bool rejectedReplacement = false;
+        try
+        {
+            snapshot.Dispose();
+        }
+        catch (IOException)
+        {
+            rejectedReplacement = true;
+        }
+
+        Require(rejectedReplacement, "Private snapshot cleanup accepted a replacement root pathname.");
+        Require(
+            File.ReadAllBytes(canaryPath).AsSpan().SequenceEqual(canary),
+            "Private snapshot cleanup removed or modified a replacement-directory canary.");
+        Require(
+            Directory.GetFileSystemEntries(displacedDirectory).Length == 0,
+            "Private snapshot cleanup did not descriptor-delete the exact displaced sensitive contents.");
+    }
+    finally
+    {
+        snapshot?.Dispose();
+        CryptographicOperations.ZeroMemory(canary);
+        if (snapshotDirectory is not null && Directory.Exists(snapshotDirectory))
+        {
+            Directory.Delete(snapshotDirectory, recursive: true);
+        }
+        if (displacedDirectory is not null && Directory.Exists(displacedDirectory))
+        {
+            Directory.Delete(displacedDirectory, recursive: true);
+        }
+        File.Delete(source);
         Directory.Delete(root);
     }
 

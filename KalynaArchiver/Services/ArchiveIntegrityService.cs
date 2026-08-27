@@ -316,12 +316,6 @@ public sealed class ArchiveIntegrityService
         }
     }
 
-    public static void DeleteManifests(string archivePath)
-    {
-        File.Delete(GetSha3ManifestPath(archivePath));
-        File.Delete(GetSkeinManifestPath(archivePath));
-    }
-
     private static byte[] ParseManifest(string text, int expectedBytes, string algorithm)
     {
         string normalized = new(text.Where(c => !char.IsWhiteSpace(c)).ToArray());
