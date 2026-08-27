@@ -79,12 +79,16 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string pairVerifier = Path.Combine(repositoryRoot, "tools", "Verify-ReleasePairMetadata-macOS.sh");
     string installer = Path.Combine(repositoryRoot, "tools", "Install-KeepVault-macOS.sh");
     string installerSelfTest = Path.Combine(repositoryRoot, "tools", "Test-Installer-FailureInjection-macOS.sh");
+    string installerBoundDeleteSource = Path.Combine(repositoryRoot, "tools", "InstallerBoundDelete.c");
+    string installerBoundDeleteSelfTest = Path.Combine(repositoryRoot, "tools", "Test-InstallerBoundDelete-macOS.sh");
     string portableBuilder = Path.Combine(repositoryRoot, "tools", "Build-Portable-macOS.sh");
     Require(File.Exists(scannerBuilder), "The QR-Scanner build script is missing.");
     Require(File.Exists(keepVaultBuilder), "The Keep Vault release build script is missing.");
     Require(File.Exists(pairVerifier), "The release-pair metadata verifier is missing.");
     Require(File.Exists(installer), "The transactional macOS installer is missing.");
     Require(File.Exists(installerSelfTest), "The installer failure-injection self-test is missing.");
+    Require(File.Exists(installerBoundDeleteSource), "The descriptor-bound installer rollback helper is missing.");
+    Require(File.Exists(installerBoundDeleteSelfTest), "The descriptor-bound installer rollback self-test is missing.");
     Require(File.Exists(portableBuilder), "The portable macOS build script is missing.");
 
     (int scannerExit, string scannerOutput, _) = await RunProcessAsync(
@@ -101,6 +105,8 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
 
     string installerSource = await File.ReadAllTextAsync(installer).ConfigureAwait(false);
     string installerSelfTestSource = await File.ReadAllTextAsync(installerSelfTest).ConfigureAwait(false);
+    string installerBoundDeleteSourceText = await File.ReadAllTextAsync(installerBoundDeleteSource).ConfigureAwait(false);
+    string installerBoundDeleteSelfTestSource = await File.ReadAllTextAsync(installerBoundDeleteSelfTest).ConfigureAwait(false);
     string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
     string portableBuilderSource = await File.ReadAllTextAsync(portableBuilder).ConfigureAwait(false);
     string[] installerFailurePoints =
@@ -164,6 +170,34 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
         && !installerSelfTestSource.Contains("-dump 2>/dev/null | shasum", StringComparison.Ordinal)
         && installerSelfTestSource.Contains("installer_failure_injection_audit_points=15", StringComparison.Ordinal),
         "The installer self-test no longer proves test-root-specific LaunchServices isolation across all 15 audit categories.");
+    Require(
+        installerSource.Contains("bound_delete_expected ${failed_path} ${staged_app_identity:-}", StringComparison.Ordinal)
+            && installerSource.Contains("bound_delete_expected ${destination} ${staged_app_identity:-}", StringComparison.Ordinal)
+            && installerSource.Contains("bound_delete_expected ${scanner_failed_path} ${staged_scanner_identity:-}", StringComparison.Ordinal)
+            && installerSource.Contains("bound_delete_expected ${scanner_destination} ${staged_scanner_identity:-}", StringComparison.Ordinal)
+            && installerSource.Contains("expected_launcher_identity=${staged_launcher_sidecar_identities", StringComparison.Ordinal)
+            && installerSource.Contains("expected_scanner_sidecar_identity=${staged_scanner_sidecar_identities", StringComparison.Ordinal)
+            && installerSource.Contains("-std=c17 -Wall -Wextra -Werror -O2", StringComparison.Ordinal)
+            && !installerSource.Contains("rm -rf -- ${failed_path}", StringComparison.Ordinal)
+            && !installerSource.Contains("rm -rf -- ${destination}", StringComparison.Ordinal)
+            && !installerSource.Contains("rm -rf -- ${scanner_failed_path}", StringComparison.Ordinal)
+            && !installerSource.Contains("rm -rf -- ${scanner_destination}", StringComparison.Ordinal),
+        "Installer rollback deletion is no longer routed exclusively through the expected-inode helper.");
+    Require(
+        installerBoundDeleteSourceText.Contains("renameatx_np(parent_descriptor", StringComparison.Ordinal)
+            && installerBoundDeleteSourceText.Contains("RENAME_EXCL", StringComparison.Ordinal)
+            && installerBoundDeleteSourceText.Contains("AT_SYMLINK_NOFOLLOW", StringComparison.Ordinal)
+            && installerBoundDeleteSourceText.Contains("openat(parent_descriptor", StringComparison.Ordinal)
+            && installerBoundDeleteSourceText.Contains("fdopendir(stream_descriptor)", StringComparison.Ordinal)
+            && installerBoundDeleteSourceText.Contains("unlinkat(parent_descriptor", StringComparison.Ordinal)
+            && installerBoundDeleteSourceText.Contains("ExitIdentityMismatch", StringComparison.Ordinal),
+        "The installer rollback helper lost its no-follow, descriptor-relative quarantine/delete primitives.");
+    Require(
+        installerBoundDeleteSelfTestSource.Contains("mismatch_status == 68", StringComparison.Ordinal)
+            && installerBoundDeleteSelfTestSource.Contains("foreign-object-must-survive", StringComparison.Ordinal)
+            && installerBoundDeleteSelfTestSource.Contains("external-link", StringComparison.Ordinal)
+            && installerSelfTestSource.Contains("installer_bound_delete_adversarial=pass", StringComparison.Ordinal),
+        "The installer suite no longer proves that a substituted rollback object and symlink target survive.");
     Require(
         keepVaultBuilderSource.Contains("KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage}", StringComparison.Ordinal),
         "The release gate no longer binds the companion test to its signed private staging tree.");

@@ -241,9 +241,11 @@ ARGON2_REF_EXPORT int phc_argon2id_hash_raw(
         return ARGON2_INCORRECT_PARAMETER;
     }
 
-    if (m_cost > SIZE_MAX / 1024) {
+#if UINT32_MAX > SIZE_MAX / 1024U
+    if (m_cost > (uint32_t)(SIZE_MAX / 1024U)) {
         return ARGON2_MEMORY_TOO_MUCH;
     }
+#endif
 
     argon2_bytes = (size_t)m_cost * 1024;
 #if defined(_WIN32)
@@ -366,9 +368,11 @@ ARGON2_REF_EXPORT int keepvault_argon2id_v11(
         return ARGON2_INCORRECT_PARAMETER;
     }
 
-    if (m_cost > SIZE_MAX / 1024) {
+#if UINT32_MAX > SIZE_MAX / 1024U
+    if (m_cost > (uint32_t)(SIZE_MAX / 1024U)) {
         return ARGON2_MEMORY_TOO_MUCH;
     }
+#endif
 
     argon2_bytes = (size_t)m_cost * 1024;
 #if defined(_WIN32)
