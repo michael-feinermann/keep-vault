@@ -2056,15 +2056,16 @@ public sealed partial class MainWindow : Window, IDisposable
     }
 
     /// <summary>
-    /// Avoids configuring the shared native NSOpenPanel with file-type filters.
-    /// Avalonia can reuse that panel for a later folder selection on macOS, where
-    /// a retained archive filter disables every directory. The caller validates
+    /// Actively resets the shared native NSOpenPanel to Avalonia's all-files
+    /// type on macOS. Omitting the filter is insufficient because AppKit can
+    /// retain the previous save/open-panel content types, which can disable a
+    /// valid archive or every directory in the next picker. The caller validates
     /// the selected archive extension after the native picker returns instead.
     /// </summary>
     internal static IReadOnlyList<FilePickerFileType>? BuildArchivePickerFilter(FilePickerFileType type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        return OperatingSystem.IsMacOS() ? null : [type];
+        return OperatingSystem.IsMacOS() ? [FilePickerFileTypes.All] : [type];
     }
 
     private static readonly FilePickerFileType EncryptedArchiveType = new("Keep Vault encrypted archive")

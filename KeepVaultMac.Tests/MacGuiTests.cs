@@ -347,8 +347,9 @@ internal static class MacGuiTests
     /// <summary>
     /// Avalonia reuses the native NSOpenPanel. Leaving an archive type filter
     /// on that panel makes the following folder picker reject every directory.
-    /// macOS therefore has to clear the native filter and validate the returned
-    /// archive path itself.
+    /// macOS therefore has to replace the retained native filter explicitly and
+    /// validate the returned archive path itself. A null filter is not a reset:
+    /// AppKit may retain the previous panel's content types.
     /// </summary>
     private static void TestArchivePickerFilterReset(MainWindow window)
     {
@@ -358,9 +359,11 @@ internal static class MacGuiTests
             Patterns = ["*.kzpaq", "*.zpaq"],
         };
 
+        IReadOnlyList<FilePickerFileType>? pickerFilter = MainWindow.BuildArchivePickerFilter(archiveType);
         MacComprehensiveTests.Require(
-            MainWindow.BuildArchivePickerFilter(archiveType) is null,
-            "The macOS archive picker retained a file-type filter that can poison the shared folder panel.");
+            pickerFilter is { Count: 1 }
+                && ReferenceEquals(pickerFilter[0], FilePickerFileTypes.All),
+            "The macOS archive picker did not actively reset the shared native panel to all files.");
         MacComprehensiveTests.Require(
             MainWindow.HasArchiveExtension("test.KZPAQ")
                 && MainWindow.HasArchiveExtension("test.ZpAq")
