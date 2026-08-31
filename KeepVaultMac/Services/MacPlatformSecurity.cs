@@ -1561,14 +1561,33 @@ internal static partial class MacSafeFileSystem
         UnlinkAt(parentHandle, directoryName, 0x0080 /* AT_REMOVEDIR */);
     }
 
-    internal static long GetFreeDiskSpaceBytes(string path)
+    internal static Action<MacFileIdentity>? TestHookAfterFreeSpaceDescriptorQuery { get; set; }
+
+    internal static long GetFreeDiskSpaceBytes(SafeFileHandle directoryHandle)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        if (StatVfs(path, out DarwinStatVfs stat) != 0)
+        ArgumentNullException.ThrowIfNull(directoryHandle);
+        bool added = false;
+        try
         {
-            throw new Win32Exception(Marshal.GetLastPInvokeError(), $"macOS could not stat filesystem at '{path}'.");
+            directoryHandle.DangerousAddRef(ref added);
+            int descriptor = checked((int)directoryHandle.DangerousGetHandle());
+            MacFileIdentity identity = GetIdentity(directoryHandle);
+            if (FStatVfs(descriptor, out DarwinStatVfs stat) != 0)
+            {
+                throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS could not fstatvfs the bound directory descriptor.");
+            }
+
+            TestHookAfterFreeSpaceDescriptorQuery?.Invoke(identity);
+            ulong availableBytes = checked((ulong)stat.f_bavail * stat.f_frsize);
+            return checked((long)availableBytes);
         }
-        return checked((long)(stat.f_bavail * stat.f_frsize));
+        finally
+        {
+            if (added)
+            {
+                directoryHandle.DangerousRelease();
+            }
+        }
     }
 
     internal static MacFileIdentity GetIdentityAt(SafeFileHandle parentHandle, string relativePath)
@@ -1731,8 +1750,8 @@ internal static partial class MacSafeFileSystem
     [LibraryImport("libSystem.B.dylib", EntryPoint = "unlinkat", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
     internal static partial int PInvokeUnlinkAt(int dirfd, string path, int flags);
 
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "statvfs", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
-    private static partial int StatVfs(string path, out DarwinStatVfs buf);
+    [LibraryImport("libSystem.B.dylib", EntryPoint = "fstatvfs", SetLastError = true)]
+    private static partial int FStatVfs(int descriptor, out DarwinStatVfs buf);
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -1914,6 +1933,7 @@ internal sealed class MacExtractionStaging : IDisposable
 
     internal static Action? TestHookBeforeInstallRename { get; set; }
     internal static Action? TestHookAfterEmptyDestinationCheck { get; set; }
+    internal static Action? TestHookBeforeFreeSpaceQuery { get; set; }
 
     public MacExtractionStaging(string destinationPath)
     {
@@ -2033,6 +2053,15 @@ internal sealed class MacExtractionStaging : IDisposable
         }
 
         return measurement;
+    }
+
+    internal long GetFreeDiskSpaceBytes()
+    {
+        VerifyIdentity();
+        TestHookBeforeFreeSpaceQuery?.Invoke();
+        long available = MacSafeFileSystem.GetFreeDiskSpaceBytes(_stagingHandle);
+        VerifyIdentity();
+        return available;
     }
 
     public void Install(Action<DirectoryTreeMeasurement>? validateFinalTree = null)

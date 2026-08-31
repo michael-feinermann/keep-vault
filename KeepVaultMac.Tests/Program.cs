@@ -28,6 +28,8 @@ var smokeTests = new List<TestCase>
     new("smoke.release-companion-version", "release companion version plumbing", TestReleaseCompanionVersionPlumbingAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.native-atomic-publish", "native build atomic publish and hard-link isolation", TestNativeAtomicPublishAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.qr-atomic-publish", "QR distribution atomic publish and hard-link isolation", TestQrAtomicPublishAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.release-atomic-publish", "release publish atomic exchange, exclusive create and identity binding", TestReleaseAtomicPublishAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.portable-rollback-binding", "portable publish rollback preserves substituted and linked objects", TestPortableRollbackBindingAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.native-snapshot-cleanup-identity", "native snapshot cleanup preserves a replacement directory", TestNativeSnapshotCleanupIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
 };
 
@@ -82,6 +84,9 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string installerBoundDeleteSource = Path.Combine(repositoryRoot, "tools", "InstallerBoundDelete.c");
     string installerBoundDeleteSelfTest = Path.Combine(repositoryRoot, "tools", "Test-InstallerBoundDelete-macOS.sh");
     string portableBuilder = Path.Combine(repositoryRoot, "tools", "Build-Portable-macOS.sh");
+    string releasePublishRename = Path.Combine(repositoryRoot, "tools", "ReleasePublishRename.c");
+    string releasePublishSelfTest = Path.Combine(repositoryRoot, "tools", "Test-ReleasePublish-macOS.sh");
+    string portableRollbackSelfTest = Path.Combine(repositoryRoot, "tools", "Test-PortablePublishRollback-macOS.sh");
     Require(File.Exists(scannerBuilder), "The QR-Scanner build script is missing.");
     Require(File.Exists(keepVaultBuilder), "The Keep Vault release build script is missing.");
     Require(File.Exists(pairVerifier), "The release-pair metadata verifier is missing.");
@@ -90,6 +95,9 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     Require(File.Exists(installerBoundDeleteSource), "The descriptor-bound installer rollback helper is missing.");
     Require(File.Exists(installerBoundDeleteSelfTest), "The descriptor-bound installer rollback self-test is missing.");
     Require(File.Exists(portableBuilder), "The portable macOS build script is missing.");
+    Require(File.Exists(releasePublishRename), "The descriptor-relative release rename helper is missing.");
+    Require(File.Exists(releasePublishSelfTest), "The release-publish adversarial self-test is missing.");
+    Require(File.Exists(portableRollbackSelfTest), "The portable rollback adversarial self-test is missing.");
 
     (int scannerExit, string scannerOutput, _) = await RunProcessAsync(
         scannerBuilder,
@@ -109,6 +117,7 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string installerBoundDeleteSelfTestSource = await File.ReadAllTextAsync(installerBoundDeleteSelfTest).ConfigureAwait(false);
     string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
     string portableBuilderSource = await File.ReadAllTextAsync(portableBuilder).ConfigureAwait(false);
+    string releasePublishRenameSource = await File.ReadAllTextAsync(releasePublishRename).ConfigureAwait(false);
     string[] installerFailurePoints =
     [
         "main-app-replace",
@@ -220,8 +229,9 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
             "${dotnet_command} restore ${verifier_project} \\",
             StringComparison.Ordinal)
         && portableBuilderSource.Contains(
-            "--locked-mode \\\n      --runtime ${runtime}",
+            "--locked-mode \\\n    --nologo",
             StringComparison.Ordinal)
+        && !portableBuilderSource.Contains("--runtime ${runtime}", StringComparison.Ordinal)
         && portableBuilderSource.Contains(
             "${dotnet_command} publish ${verifier_project} \\",
             StringComparison.Ordinal)
@@ -238,6 +248,38 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
             "-c Release \\\n    --no-restore \\",
             StringComparison.Ordinal),
         "The portable pipeline can restore or build outside the audited locked dependency graph.");
+    Require(
+        keepVaultBuilderSource.Contains("ReleasePublishRename.c", StringComparison.Ordinal)
+            && keepVaultBuilderSource.Contains("InstallerBoundDelete.c", StringComparison.Ordinal)
+            && keepVaultBuilderSource.Contains("${publish_rename_helper} swap", StringComparison.Ordinal)
+            && keepVaultBuilderSource.Contains("${publish_rename_helper} exclusive", StringComparison.Ordinal)
+            && !keepVaultBuilderSource.Contains("falling back to transactional rename", StringComparison.OrdinalIgnoreCase)
+            && !keepVaultBuilderSource.Contains("mv ${publish_target_dir} ${publish_old}", StringComparison.Ordinal),
+        "The Keep Vault release publisher regained a path-only replacement fallback.");
+    Require(
+        releasePublishRenameSource.Contains("renameatx_np(source_parent_descriptor", StringComparison.Ordinal)
+            && releasePublishRenameSource.Contains("RENAME_SWAP", StringComparison.Ordinal)
+            && releasePublishRenameSource.Contains("RENAME_EXCL", StringComparison.Ordinal)
+            && releasePublishRenameSource.Contains("AT_SYMLINK_NOFOLLOW", StringComparison.Ordinal),
+        "The release rename helper lost descriptor-relative exchange, exclusive-create, or no-follow identity checks.");
+    Require(
+        portableBuilderSource.Contains("portable_output_root=${repo_root}/build/dev", StringComparison.Ordinal)
+            && portableBuilderSource.Contains("portable_output_root=${repo_root}/dist", StringComparison.Ordinal)
+            && portableBuilderSource.Contains("xcrun notarytool submit ${portable_zip}", StringComparison.Ordinal)
+            && portableBuilderSource.Contains("xcrun stapler validate ${portable_dir}/Keep\\ Vault.app", StringComparison.Ordinal)
+            && portableBuilderSource.Contains("delete_published_expected", StringComparison.Ordinal)
+            && portableBuilderSource.Contains("--require-notarization", StringComparison.Ordinal)
+            && !portableBuilderSource.Contains("rm -rf -- ${published_path}", StringComparison.Ordinal)
+            && !portableBuilderSource.Contains("rm -f -- ${published_path}", StringComparison.Ordinal)
+            && !portableBuilderSource.Contains("local staged_identity=$(stat", StringComparison.Ordinal),
+        "Portable publication no longer separates development output, notarizes release output, or rolls back by expected inode.");
+    Require(
+        installerSource.Contains("installation_requires_notarization=1", StringComparison.Ordinal)
+            && installerSource.Contains("kv_verify_flags+=(--require-notarization)", StringComparison.Ordinal)
+            && installerSource.Contains("scanner_verify_flags+=(--require-notarization)", StringComparison.Ordinal)
+            && installerSource.Contains("final_kv_verify_flags+=(--require-notarization)", StringComparison.Ordinal)
+            && installerSource.Contains("final_scanner_flags+=(--require-notarization)", StringComparison.Ordinal),
+        "The production installer can install Developer-ID bundles without enforcing stapled notarization before and after mutation.");
 
     (int invalidExit, _, _) = await RunProcessAsync(
         scannerBuilder,
@@ -324,6 +366,39 @@ static async Task TestQrAtomicPublishAsync()
             && standardOutput.Contains("qr_atomic_publish_exchange_complete=true", StringComparison.Ordinal)
             && standardOutput.Contains("qr_atomic_publish_first_release_exclusive=true", StringComparison.Ordinal),
         "Atomic QR publish self-test did not prove failure isolation, hard-link isolation and complete exchange.");
+}
+
+static async Task TestReleaseAtomicPublishAsync()
+{
+    string selfTest = Path.Combine(FindRepositoryRoot(), "tools", "Test-ReleasePublish-macOS.sh");
+    Require(File.Exists(selfTest), "The release-publish adversarial self-test is missing.");
+
+    (int exitCode, string standardOutput, string standardError) = await RunProcessAsync(selfTest).ConfigureAwait(false);
+    Require(exitCode == 0, $"Release-publish adversarial self-test failed: {standardError}");
+    Require(
+        standardOutput.Contains("release_publish_atomic_swap=true", StringComparison.Ordinal)
+            && standardOutput.Contains("release_publish_stage_substitution_rejected=true", StringComparison.Ordinal)
+            && standardOutput.Contains("release_publish_mid_rename_substitution_rolled_back=true", StringComparison.Ordinal)
+            && standardOutput.Contains("release_publish_first_release_exclusive=true", StringComparison.Ordinal)
+            && standardOutput.Contains("release_publish_cross_directory_file=true", StringComparison.Ordinal)
+            && standardOutput.Contains("release_publish_old_hard_link_preserved=true", StringComparison.Ordinal),
+        "Release publish did not prove atomic swap, exclusive create, path-substitution rejection and hard-link isolation.");
+}
+
+static async Task TestPortableRollbackBindingAsync()
+{
+    string portableBuilder = Path.Combine(FindRepositoryRoot(), "tools", "Build-Portable-macOS.sh");
+    Require(File.Exists(portableBuilder), "The portable macOS builder is missing.");
+
+    (int exitCode, string standardOutput, string standardError) = await RunProcessAsync(
+        portableBuilder,
+        "--self-test-rollback").ConfigureAwait(false);
+    Require(exitCode == 0, $"Portable rollback adversarial self-test failed: {standardError}");
+    Require(
+        standardOutput.Contains("portable_rollback_recursive_nofollow=true", StringComparison.Ordinal)
+            && standardOutput.Contains("portable_rollback_hard_link_target_preserved=true", StringComparison.Ordinal)
+            && standardOutput.Contains("portable_rollback_substitution_preserved=true", StringComparison.Ordinal),
+        "Portable rollback did not prove no-follow recursion, hard-link preservation and substitution survival.");
 }
 
 static Task TestNativeSnapshotCleanupIdentityAsync()

@@ -82,6 +82,19 @@ internal static class SpecLintTests
             requiredBuildSources.All(path => swept.Contains(Path.GetFullPath(path))),
             "The production source sweep misses a native build script or MSBuild properties file.");
 
+        string[] requiredTrustAndVendorSources =
+        [
+            Path.Combine(root, "external", "Kalyna-reference", "tables.c"),
+            Path.Combine(root, "external", "cryptopp", "rijndael_simd.cpp"),
+            Path.Combine(root, "KeepVaultMac", "Packaging", "KeepVault.entitlements"),
+            Path.Combine(root, "QrCodeScanner", "Packaging", "QrScanner.entitlements"),
+            Path.Combine(root, "KeepVaultMac", "packages.lock.json"),
+            Path.Combine(root, "QrCodeScannerWindows", "packages.lock.json"),
+        ];
+        Require(
+            requiredTrustAndVendorSources.All(path => swept.Contains(Path.GetFullPath(path))),
+            "The production sweep misses a vendored cryptographic source, entitlement, or lock file.");
+
         var violations = new List<string>();
         foreach (string file in sources)
         {

@@ -790,23 +790,24 @@ public sealed partial class ZpaqService
     )
     {
 #if KEEPVAULT_MACOS
-        if (!Directory.Exists(stagingDirectory) && macStaging is null)
+        if (macStaging is null)
+        {
+            throw new ArgumentNullException(nameof(macStaging), "macOS extraction limits require the descriptor-bound staging object.");
+        }
 #else
         if (!Directory.Exists(stagingDirectory) && windowsStaging is null)
-#endif
         {
             return;
         }
+#endif
 
         long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
 
 #if KEEPVAULT_MACOS
-        DirectoryTreeMeasurement measurement = macStaging?.MeasureTree(allowWriters: false)
-            ?? MeasureMacDirectoryTreeNoFollow(stagingDirectory, allowWriters: false);
+        DirectoryTreeMeasurement measurement = macStaging.MeasureTree(allowWriters: false);
         ValidateExtractedTreeMeasurement(measurement);
 
-        macStaging?.VerifyIdentity();
-        long freeSpace = MacSafeFileSystem.GetFreeDiskSpaceBytes(stagingDirectory);
+        long freeSpace = macStaging.GetFreeDiskSpaceBytes();
         if (freeSpace < 0 || freeSpace < minFreeSpace)
         {
             throw new IOException($"ZPAQ-Extraktion abgebrochen: Unzureichender freier Speicherplatz auf dem Ziellaufwerk ({freeSpace} Bytes verbleibend).");
@@ -818,23 +819,7 @@ public sealed partial class ZpaqService
 #endif
     }
 
-#if KEEPVAULT_MACOS
-    private static DirectoryTreeMeasurement MeasureMacDirectoryTreeNoFollow(
-        string stagingDirectory,
-        bool allowWriters)
-    {
-        string fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(stagingDirectory));
-        using SafeFileHandle rootHandle = MacSafeFileSystem.OpenDirectoryHandle(fullPath);
-        MacSafeFileSystem.RequirePathStillNamesHandle(rootHandle, fullPath);
-        MacFileIdentity identity = MacSafeFileSystem.GetIdentity(rootHandle);
-        DirectoryTreeMeasurement measurement = MacSafeFileSystem.MeasureDirectoryTreeNoFollow(
-            rootHandle,
-            identity,
-            allowWriters);
-        MacSafeFileSystem.RequirePathStillNamesHandle(rootHandle, fullPath);
-        return measurement;
-    }
-#else
+#if !KEEPVAULT_MACOS
     /// <summary>
     /// Walks the staged extraction tree one level at a time and refuses any
     /// reparse point, without ever descending through one.
@@ -876,6 +861,9 @@ public sealed partial class ZpaqService
 #endif
     )
     {
+#if KEEPVAULT_MACOS
+        ArgumentNullException.ThrowIfNull(macStaging);
+#endif
         long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
 
         Exception? limitViolation = null;
@@ -901,13 +889,19 @@ public sealed partial class ZpaqService
             }
 
 #if KEEPVAULT_MACOS
-            if (!Directory.Exists(stagingDirectory) && macStaging is null)
+            if (macStaging is null)
+            {
+                limitViolation ??= new IOException("The descriptor-bound macOS extraction staging object is unavailable.");
+                linkedCts.Cancel();
+                try { process.Kill(entireProcessTree: true); } catch { }
+                return;
+            }
 #else
             if (!Directory.Exists(stagingDirectory) && windowsStaging is null)
-#endif
             {
                 return;
             }
+#endif
 
             if (!Monitor.TryEnter(checkLock))
             {
@@ -917,12 +911,10 @@ public sealed partial class ZpaqService
             try
             {
 #if KEEPVAULT_MACOS
-                DirectoryTreeMeasurement measurement = macStaging?.MeasureTree(allowWriters: true)
-                    ?? MeasureMacDirectoryTreeNoFollow(stagingDirectory, allowWriters: true);
+                DirectoryTreeMeasurement measurement = macStaging.MeasureTree(allowWriters: true);
                 ValidateExtractedTreeMeasurement(measurement);
 
-                macStaging?.VerifyIdentity();
-                long freeSpace = MacSafeFileSystem.GetFreeDiskSpaceBytes(stagingDirectory);
+                long freeSpace = macStaging.GetFreeDiskSpaceBytes();
                 if (freeSpace < 0 || freeSpace < minFreeSpace)
                 {
                     linkedCts.Cancel();

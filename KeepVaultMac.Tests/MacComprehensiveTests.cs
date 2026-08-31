@@ -95,6 +95,7 @@ internal static partial class MacComprehensiveTests
         },
         new("kdf.argon2-equivalence", "Argon2id fixed 1 GiB profile and independent equivalence", TestArgon2Async, TestResource.ArgonHeavy, "KDF"),
         new("zpaq.full-matrix", "ZPAQ levels, streaming, traversal and malformed corpus", TestZpaqAsync, TestResource.ZpaqGlobal, "ZPAQ"),
+        new("zpaq.free-space-descriptor", "ZPAQ free-space gate stays bound to the extraction descriptor", TestFreeSpaceDescriptorBindingAsync, TestResource.Light, "ZPAQ"),
         new("kdf.v11-master-factor-split", "v11 master KDF and 512/512 factor split mutation isolation", TestV11MasterKdfAsync, TestResource.ArgonHeavy, "KDF"),
         new("containers.v11-kpar2-roundtrip", "v11 container header, decryption and KPAR2 round trip", TestV11ContainersAsync, TestResource.EntropyGlobal, "Containers"),
         new("deletion.quarantine-symlink", "quarantine rollback object binding and symlink-safe directory traversal", TestQuarantineAndSymlinkSafetyAsync, TestResource.Light, "Deletion"),
@@ -141,6 +142,66 @@ internal static partial class MacComprehensiveTests
         Require(status.DebuggerDenied, "Debugger attachment was not denied.");
         Require(status.RestrictiveUmaskApplied, "Private umask was not applied.");
         Require(status.DynamicLoaderEnvironmentCleared, "Dynamic-loader environment was not cleared.");
+        return Task.CompletedTask;
+    }
+
+    private static Task TestFreeSpaceDescriptorBindingAsync()
+    {
+        string root = MacSafeFileSystem.ResolveExistingRealPath(
+            Directory.CreateTempSubdirectory("keep-vault-free-space-binding-").FullName);
+        string destination = Path.Combine(root, "output");
+        string? displaced = null;
+        MacExtractionStaging? staging = null;
+        bool descriptorQueryObserved = false;
+        try
+        {
+            staging = new MacExtractionStaging(destination);
+            MacExtractionStaging activeStaging = staging;
+            string displacedPath = staging.StagingPath + ".displaced";
+            displaced = displacedPath;
+            MacFileIdentity expectedIdentity = staging.StagingIdentity;
+            MacSafeFileSystem.TestHookAfterFreeSpaceDescriptorQuery = observed =>
+            {
+                descriptorQueryObserved = true;
+                Require(
+                    observed.SameObject(expectedIdentity),
+                    "fstatvfs ran against a descriptor other than the held extraction staging directory.");
+            };
+            MacExtractionStaging.TestHookBeforeFreeSpaceQuery = () =>
+            {
+                Directory.Move(activeStaging.StagingPath, displacedPath);
+                Directory.CreateDirectory(activeStaging.StagingPath);
+                File.WriteAllText(Path.Combine(activeStaging.StagingPath, "foreign-canary"), "must survive");
+            };
+
+            RequireThrows<IOException>(
+                () => activeStaging.GetFreeDiskSpaceBytes(),
+                "The free-space gate accepted a replacement staging pathname after its descriptor query.");
+            Require(descriptorQueryObserved, "The free-space gate did not execute fstatvfs on the held descriptor.");
+            string canary = Path.Combine(activeStaging.StagingPath, "foreign-canary");
+            Require(
+                File.Exists(canary) && File.ReadAllText(canary) == "must survive",
+                "The descriptor-bound free-space gate modified the replacement-path canary.");
+        }
+        finally
+        {
+            MacExtractionStaging.TestHookBeforeFreeSpaceQuery = null;
+            MacSafeFileSystem.TestHookAfterFreeSpaceDescriptorQuery = null;
+            if (staging is not null && displaced is not null && Directory.Exists(displaced))
+            {
+                if (Directory.Exists(staging.StagingPath))
+                {
+                    Directory.Delete(staging.StagingPath, recursive: true);
+                }
+                Directory.Move(displaced, staging.StagingPath);
+            }
+            staging?.Dispose();
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
         return Task.CompletedTask;
     }
 

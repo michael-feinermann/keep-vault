@@ -47,8 +47,10 @@ internal static class RepositoryLayout
             Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier"),
             Path.Combine(repositoryRoot, "QrCodeScanner", "Sources"),
             Path.Combine(repositoryRoot, "QrCodeScanner", "tools"),
+            Path.Combine(repositoryRoot, "QrCodeScanner", "Packaging"),
             Path.Combine(repositoryRoot, "QrCodeScannerWindows", "Sources"),
             Path.Combine(repositoryRoot, "QrCodeScannerWindows", "tools"),
+            Path.Combine(repositoryRoot, "external"),
             Path.Combine(repositoryRoot, "native"),
             Path.Combine(repositoryRoot, "tools"),
         ];
@@ -57,7 +59,7 @@ internal static class RepositoryLayout
         [
             ".cs", ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx",
             ".m", ".mm", ".swift", ".xaml", ".axaml", ".ps1", ".fsx", ".sh",
-            ".cmd", ".bat", ".props", ".targets", ".csproj",
+            ".cmd", ".bat", ".props", ".targets", ".csproj", ".plist", ".entitlements", ".json",
         ];
         var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (string root in roots)
@@ -81,6 +83,7 @@ internal static class RepositoryLayout
                     $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
                     $"{Path.DirectorySeparatorChar}build-obj{Path.DirectorySeparatorChar}",
                     $"{Path.DirectorySeparatorChar}Native{Path.DirectorySeparatorChar}",
+                    $"{Path.DirectorySeparatorChar}.git{Path.DirectorySeparatorChar}",
                 ];
                 if (generated.Any(fragment => relative.Contains(fragment, StringComparison.Ordinal)))
                 {
@@ -99,6 +102,16 @@ internal static class RepositoryLayout
             Path.Combine(repositoryRoot, "Directory.Build.props"),
             Path.Combine(repositoryRoot, "QrCodeScannerWindows", "Directory.Build.props"),
             Path.Combine(repositoryRoot, "QrCodeScannerWindows", "QrScanner.csproj"),
+            Path.Combine(repositoryRoot, "KalynaArchiver.Signing", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "KalynaArchiver.Tests", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "KalynaArchiver", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "KalynaReleaseVerifier", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "KalynaSigningTool", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "KeepVaultMac.Tests", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "KeepVaultMac", "Packaging", "HybridSigner", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "KeepVaultMac", "packages.lock.json"),
+            Path.Combine(repositoryRoot, "QrCodeScannerWindows", "packages.lock.json"),
         ];
         foreach (string buildSource in additionalBuildSources)
         {

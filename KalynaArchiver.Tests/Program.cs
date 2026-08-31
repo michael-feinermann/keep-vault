@@ -611,6 +611,7 @@ static void RunDropTests()
             Assert(string.IsNullOrEmpty(window.ExtractPinBox.Password), "clear-secrets button removes extraction PIN");
             Assert(string.IsNullOrEmpty(window.ExtractGeneratedPasswordFirstBox.Text), "clear-secrets button removes extraction factor A");
             Assert(string.IsNullOrEmpty(window.ExtractGeneratedPasswordSecondBox.Text), "clear-secrets button removes extraction factor B");
+            RunCredentialFailureSecretClearingTests(window);
 
             Assert(window.ResolveDropTargetFromElement(window.InputList, [file]) == DropTarget.Inputs, "input list target resolution");
             Assert(window.ResolveDropTargetFromElement(window.ArchivePathBox, [output]) == DropTarget.TargetArchive, "target archive field target resolution");
@@ -689,6 +690,70 @@ static void RunDropTests()
     finally
     {
         DeleteTestDirectory(root);
+    }
+}
+
+static void RunCredentialFailureSecretClearingTests(MainWindow window)
+{
+    FieldInfo integrityField = typeof(MainWindow).GetField(
+        "_integrityTrusted",
+        BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException("MainWindow integrity field was not found.");
+    MethodInfo updateGate = typeof(MainWindow).GetMethod(
+        "UpdateProtectedOperationButtons",
+        BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException("MainWindow protected-operation update method was not found.");
+    integrityField.SetValue(window, true);
+    updateGate.Invoke(window, null);
+
+    int dialogs = 0;
+    MainWindow.TestHookShowCredentialMessage = (_, _, _, image) =>
+    {
+        Assert(image == MessageBoxImage.Error, "credential-operation failure opened a non-error message");
+        dialogs++;
+        return MessageBoxResult.OK;
+    };
+
+    try
+    {
+        Exercise("extract", window.ExtractArchiveButton);
+        Exercise("list", window.ListArchiveButton);
+        Exercise("recovery", window.EmergencyRecoveryButton);
+        Assert(dialogs == 3, $"credential failure handlers opened {dialogs} messages instead of three");
+    }
+    finally
+    {
+        MainWindow.TestHookBeforeCredentialOperation = null;
+        MainWindow.TestHookShowCredentialMessage = null;
+    }
+
+    void Exercise(string expectedOperation, System.Windows.Controls.Button button)
+    {
+        window.ExtractPasswordBox.Password = "synthetic-password";
+        window.ExtractPinBox.Password = "123456";
+        window.ExtractGeneratedPasswordFirstBox.Text = "synthetic-factor-a";
+        window.ExtractGeneratedPasswordSecondBox.Text = "synthetic-factor-b";
+        window.LogBox.Clear();
+        const string Diagnostic = "injected credential-operation failure";
+        MainWindow.TestHookBeforeCredentialOperation = actualOperation =>
+        {
+            Assert(actualOperation == expectedOperation, $"{button.Name} reached {actualOperation} instead of {expectedOperation}");
+            throw new InvalidDataException(Diagnostic);
+        };
+        try
+        {
+            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        }
+        finally
+        {
+            MainWindow.TestHookBeforeCredentialOperation = null;
+        }
+
+        Assert(string.IsNullOrEmpty(window.ExtractPasswordBox.Password), $"{expectedOperation} failure retained the password");
+        Assert(string.IsNullOrEmpty(window.ExtractPinBox.Password), $"{expectedOperation} failure retained the PIN");
+        Assert(string.IsNullOrEmpty(window.ExtractGeneratedPasswordFirstBox.Text), $"{expectedOperation} failure retained factor A");
+        Assert(string.IsNullOrEmpty(window.ExtractGeneratedPasswordSecondBox.Text), $"{expectedOperation} failure retained factor B");
+        Assert(window.LogBox.Text.Contains(Diagnostic, StringComparison.Ordinal), $"{expectedOperation} failure dropped its diagnostic");
     }
 }
 

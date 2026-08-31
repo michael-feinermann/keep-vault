@@ -22,6 +22,9 @@ namespace KalynaArchiver;
 
 public sealed partial class MainWindow : Window, IDisposable
 {
+    internal static Action<string>? TestHookBeforeCredentialOperation { get; set; }
+    internal static Func<string, string, MessageBoxButton, MessageBoxImage, MessageBoxResult>? TestHookShowCredentialMessage { get; set; }
+
     private readonly ZpaqService _zpaq = new();
     private readonly KalynaContainerService _kalyna = new();
     private readonly IntegrityService _integrity = new();
@@ -600,6 +603,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            TestHookBeforeCredentialOperation?.Invoke("extract");
             string archive = ExtractArchiveBox.Text.Trim();
             string output = OutputFolderBox.Text.Trim();
             if (File.Exists(archive) && string.IsNullOrWhiteSpace(output))
@@ -654,8 +658,8 @@ public sealed partial class MainWindow : Window, IDisposable
 
             if (!result.Succeeded)
             {
-                Log(result.StandardError);
-                MessageBox.Show(this, T("zpaqExtractFailed"), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+                ReportExtractFailure(result.StandardError);
+                ShowCredentialMessage(T("zpaqExtractFailed"), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -665,11 +669,12 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         catch (Exception ex)
         {
-            Log(ex.ToString());
-            MessageBox.Show(this, ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+            ReportExtractFailure(ex.ToString());
+            ShowCredentialMessage(ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
+            ClearExtractSecrets();
             EndProtectedOperation();
         }
     }
@@ -683,6 +688,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            TestHookBeforeCredentialOperation?.Invoke("list");
             string archive = ExtractArchiveBox.Text.Trim();
             if (!File.Exists(archive))
             {
@@ -726,23 +732,24 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             Log(result.StandardOutput);
-            Log(result.StandardError);
             if (!result.Succeeded)
             {
-                Log(result.StandardError);
+                ReportExtractFailure(result.StandardError);
             }
             else
             {
+                Log(result.StandardError);
                 ClearExtractSecrets();
             }
         }
         catch (Exception ex)
         {
-            Log(ex.ToString());
-            MessageBox.Show(this, ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+            ReportExtractFailure(ex.ToString());
+            ShowCredentialMessage(ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
+            ClearExtractSecrets();
             EndProtectedOperation();
         }
     }
@@ -756,6 +763,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            TestHookBeforeCredentialOperation?.Invoke("recovery");
             string archive = ExtractArchiveBox.Text.Trim();
             if (!File.Exists(archive))
             {
@@ -812,17 +820,19 @@ public sealed partial class MainWindow : Window, IDisposable
             string effectivePath = recovery.OutputPath ?? archive;
             ExtractArchiveBox.Text = effectivePath;
             OutputFolderBox.Text = SuggestOutputFolderPath(effectivePath);
+            ClearExtractSecrets();
             Log(recovery.Message);
             Log(string.Format(T("recoveryNewFile"), effectivePath));
-            MessageBox.Show(this, recovery.Message, T("doneTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            ShowCredentialMessage(recovery.Message, T("doneTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            Log(ex.ToString());
-            MessageBox.Show(this, ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+            ReportExtractFailure(ex.ToString());
+            ShowCredentialMessage(ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
+            ClearExtractSecrets();
             EndProtectedOperation();
         }
     }
@@ -865,6 +875,23 @@ public sealed partial class MainWindow : Window, IDisposable
         ExtractPinBox.Clear();
         ExtractGeneratedPasswordFirstBox.Clear();
         ExtractGeneratedPasswordSecondBox.Clear();
+    }
+
+    private void ReportExtractFailure(string? diagnostic)
+    {
+        ClearExtractSecrets();
+        Log(diagnostic);
+    }
+
+    private MessageBoxResult ShowCredentialMessage(
+        string message,
+        string title,
+        MessageBoxButton button,
+        MessageBoxImage image)
+    {
+        return TestHookShowCredentialMessage is { } testHook
+            ? testHook(message, title, button, image)
+            : MessageBox.Show(this, message, title, button, image);
     }
 
     /// <summary>

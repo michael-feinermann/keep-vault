@@ -654,7 +654,9 @@ cleanup() {
     exit 86
   fi
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # 1. STAGE KEEP VAULT
 ditto ${source_app} ${staged_app}
@@ -673,16 +675,24 @@ done
 
 # Check if staged app is signed with Apple Development or Developer ID
 staged_sig=$(codesign -dvvv ${staged_app} 2>&1 || true)
+installation_requires_notarization=0
 if [[ ${staged_sig} == *'Authority=Apple Development:'* ]]; then
   if (( ! allow_development )); then
     release_lock
     print -u2 'The staged Keep Vault app is signed with Apple Development, but --development was not specified.'
     exit 1
   fi
+elif [[ ${staged_sig} == *'Authority=Developer ID Application:'* ]]; then
+  installation_requires_notarization=1
+else
+  release_lock
+  print -u2 'The staged Keep Vault app is not signed with Apple Development or Developer ID Application.'
+  exit 1
 fi
 
 kv_verify_flags=(--app ${staged_app} --require-launcher-signature)
 (( allow_development )) && kv_verify_flags+=(--allow-development)
+(( installation_requires_notarization )) && kv_verify_flags+=(--require-notarization)
 ${script_dir}/Verify-KeepVault-macOS.sh ${kv_verify_flags[@]}
 inject_failure_now native-verify
 
@@ -718,8 +728,20 @@ if [[ -d ${scanner_source} && ! -L ${scanner_source} ]]; then
         stat -f '%d:%i' ${install_root}/QR-Scanner.app${scanner_sidecar_suffix})
     done
 
+    staged_scanner_sig=$(codesign -dvvv ${install_root}/QR-Scanner.app 2>&1 || true)
+    if (( installation_requires_notarization )); then
+      if [[ ${staged_scanner_sig} != *'Authority=Developer ID Application:'* ]]; then
+        print -u2 'A Developer-ID Keep Vault installation requires a Developer-ID QR-Scanner companion.'
+        exit 1
+      fi
+    elif [[ ${staged_scanner_sig} != *'Authority=Apple Development:'* ]]; then
+      print -u2 'An Apple-Development Keep Vault installation requires an Apple-Development QR-Scanner companion.'
+      exit 1
+    fi
+
     scanner_verify_flags=(--app ${install_root}/QR-Scanner.app)
     (( allow_development )) && scanner_verify_flags+=(--allow-development)
+    (( installation_requires_notarization )) && scanner_verify_flags+=(--require-notarization)
     ${script_dir}/Verify-QR-Scanner-macOS.sh ${scanner_verify_flags[@]}
     ${script_dir}/Verify-ReleasePairMetadata-macOS.sh \
       --app ${staged_app} \
@@ -837,6 +859,7 @@ fi
 main_verification_passed=0
 final_kv_verify_flags=(--app ${destination} --require-launcher-signature)
 (( allow_development )) && final_kv_verify_flags+=(--allow-development)
+(( installation_requires_notarization )) && final_kv_verify_flags+=(--require-notarization)
 if ${script_dir}/Verify-KeepVault-macOS.sh ${final_kv_verify_flags[@]}; then
   main_verification_passed=1
   inject_failure_now main-verify
@@ -846,6 +869,7 @@ scanner_verification_passed=1
 if (( install_scanner )); then
   final_scanner_flags=(--app ${scanner_destination})
   (( allow_development )) && final_scanner_flags+=(--allow-development)
+  (( installation_requires_notarization )) && final_scanner_flags+=(--require-notarization)
   if ! ${script_dir}/Verify-QR-Scanner-macOS.sh ${final_scanner_flags[@]}; then
     scanner_verification_passed=0
   fi

@@ -21,6 +21,8 @@ namespace KalynaArchiver;
 public sealed partial class MainWindow : Window, IDisposable
 {
     internal static Action? TestHookBeforeVerificationRootCleanup { get; set; }
+    internal static Action<string>? TestHookBeforeCredentialOperation { get; set; }
+    internal static Func<SecurityDialogKind, string, Task>? TestHookShowDialogAsync { get; set; }
 
     private const int DefaultCompressionLevel = 1;
     private const int MaxCompressionLevel = 5;
@@ -688,6 +690,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            TestHookBeforeCredentialOperation?.Invoke("extract");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
             string output = OutputFolderBox.Text?.Trim() ?? string.Empty;
             if (archive.Length > 0 && output.Length == 0)
@@ -755,7 +758,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
             if (!result.Succeeded)
             {
-                Log(result.StandardError);
+                ReportExtractFailure(result.StandardError);
                 await ErrorAsync(T("zpaqExtractFailed"));
                 return;
             }
@@ -766,11 +769,12 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         catch (Exception exception)
         {
-            Log(exception.ToString());
+            ReportExtractFailure(exception.ToString());
             await ErrorAsync(exception.Message);
         }
         finally
         {
+            ClearExtractSecrets();
             EndProtectedOperation();
         }
     }
@@ -785,6 +789,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            TestHookBeforeCredentialOperation?.Invoke("list");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
             if (archive.Length == 0)
             {
@@ -834,23 +839,25 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             Log(result.StandardOutput);
-            Log(result.StandardError);
             if (result.Succeeded)
             {
+                Log(result.StandardError);
                 ClearExtractSecrets();
             }
             else
             {
+                ReportExtractFailure(result.StandardError);
                 await ErrorAsync(T("zpaqListFailed"));
             }
         }
         catch (Exception exception)
         {
-            Log(exception.ToString());
+            ReportExtractFailure(exception.ToString());
             await ErrorAsync(exception.Message);
         }
         finally
         {
+            ClearExtractSecrets();
             EndProtectedOperation();
         }
     }
@@ -865,6 +872,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            TestHookBeforeCredentialOperation?.Invoke("recovery");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
             if (archive.Length == 0)
             {
@@ -918,17 +926,19 @@ public sealed partial class MainWindow : Window, IDisposable
 
             string effective = result.OutputPath ?? archive;
             SetExtractArchivePath(effective);
+            ClearExtractSecrets();
             Log(result.Message);
             Log(string.Format(CultureInfo.CurrentCulture, T("recoveryNewFile"), effective));
             await InfoAsync(result.Message);
         }
         catch (Exception exception)
         {
-            Log(exception.ToString());
+            ReportExtractFailure(exception.ToString());
             await ErrorAsync(exception.Message);
         }
         finally
         {
+            ClearExtractSecrets();
             EndProtectedOperation();
         }
     }
@@ -1403,6 +1413,16 @@ public sealed partial class MainWindow : Window, IDisposable
         ExtractPinBox.Text = string.Empty;
         ExtractGeneratedPasswordFirstBox.Text = string.Empty;
         ExtractGeneratedPasswordSecondBox.Text = string.Empty;
+    }
+
+    /// <summary>
+    /// Clears every extraction credential before a failed decrypt/list
+    /// diagnostic is retained in the security log.
+    /// </summary>
+    internal void ReportExtractFailure(string diagnostic)
+    {
+        ClearExtractSecrets();
+        Log(diagnostic);
     }
 
     private void EnsureCreationFactors()
@@ -2027,6 +2047,12 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async Task ShowAsync(string message, SecurityDialogKind kind)
     {
+        if (TestHookShowDialogAsync is { } testHook)
+        {
+            await testHook(kind, message);
+            return;
+        }
+
         _ = await SecurityDialog.ShowAsync(this, T(kind == SecurityDialogKind.Error ? "errorTitle" : "noticeTitle"), message, T("ok"), T("cancel"), kind);
     }
 
@@ -2056,17 +2082,23 @@ public sealed partial class MainWindow : Window, IDisposable
     }
 
     /// <summary>
-    /// Actively resets the shared native NSOpenPanel to Avalonia's all-files
-    /// type on macOS. Omitting the filter is insufficient because AppKit can
-    /// retain the previous save/open-panel content types, which can disable a
-    /// valid archive or every directory in the next picker. The caller validates
-    /// the selected archive extension after the native picker returns instead.
+    /// Actively resets the shared native NSOpenPanel to concrete file and folder
+    /// UTIs on macOS. Omitting the filter is insufficient because AppKit can
+    /// retain the previous save/open-panel content types. Avalonia's abstract
+    /// public.item all-files type can still leave an extensionless custom archive
+    /// type disabled, while retaining public.data alone disables the next folder
+    /// picker. The caller validates the selected archive extension after return.
     /// </summary>
     internal static IReadOnlyList<FilePickerFileType>? BuildArchivePickerFilter(FilePickerFileType type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        return OperatingSystem.IsMacOS() ? [FilePickerFileTypes.All] : [type];
+        return OperatingSystem.IsMacOS() ? [MacOsArchivePickerResetType] : [type];
     }
+
+    private static readonly FilePickerFileType MacOsArchivePickerResetType = new("All files and folders")
+    {
+        AppleUniformTypeIdentifiers = ["public.data", "public.folder"],
+    };
 
     private static readonly FilePickerFileType EncryptedArchiveType = new("Keep Vault encrypted archive")
     {

@@ -1,11 +1,13 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using KalynaArchiver;
+using KalynaArchiver.Gui;
 using KalynaArchiver.Services;
 using Microsoft.Win32.SafeHandles;
 
@@ -47,6 +49,8 @@ internal static class MacGuiTests
         new("gui.control-inventory", "GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
         new("gui.factor-normalization", "GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
         new("gui.secret-clearing", "GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
+        new("gui.extract-list-failure-secret-clearing", "GUI extract/list handlers wipe credentials after adversarial failures", () => RunOnUiThread(TestExtractListFailureSecretClearing), TestResource.Gui, "GUI"),
+        new("gui.recovery-failure-secret-clearing", "GUI recovery handler wipes credentials after an adversarial failure", () => RunOnUiThread(TestRecoveryFailureSecretClearing), TestResource.Gui, "GUI"),
         new("gui.kdf-entropy-localization", "GUI KDF and entropy profile description localization", () => RunOnUiThread(TestKdfAndEntropyLocalization), TestResource.Gui, "GUI"),
         new("gui.failed-archive-preservation", "GUI downstream failure preserves committed path replacements", () => RunOnUiThread(TestFailedArchivePreservation), TestResource.Gui, "GUI"),
         new("gui.verification-root-cleanup-identity", "GUI verification plaintext cleanup stays descriptor-bound", () => RunOnUiThread(TestVerificationRootCleanupIdentity), TestResource.Gui, "GUI"),
@@ -362,8 +366,9 @@ internal static class MacGuiTests
         IReadOnlyList<FilePickerFileType>? pickerFilter = MainWindow.BuildArchivePickerFilter(archiveType);
         MacComprehensiveTests.Require(
             pickerFilter is { Count: 1 }
-                && ReferenceEquals(pickerFilter[0], FilePickerFileTypes.All),
-            "The macOS archive picker did not actively reset the shared native panel to all files.");
+                && pickerFilter[0].Patterns is null
+                && pickerFilter[0].AppleUniformTypeIdentifiers?.SequenceEqual(["public.data", "public.folder"]) == true,
+            "The macOS archive picker did not expose concrete file/folder UTIs without an overriding wildcard pattern.");
         MacComprehensiveTests.Require(
             MainWindow.HasArchiveExtension("test.KZPAQ")
                 && MainWindow.HasArchiveExtension("test.ZpAq")
@@ -657,6 +662,124 @@ internal static class MacGuiTests
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractPin.Text), "ExtractPinBox was not cleared.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractFactorA.Text), "ExtractGeneratedPasswordFirstBox was not cleared.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractFactorB.Text), "ExtractGeneratedPasswordSecondBox was not cleared.");
+    }
+
+    /// <summary>
+    /// The real Extract and List button routes must clear all four credentials
+    /// when an adversarial failure reaches their exception boundary.
+    /// </summary>
+    private static void TestExtractListFailureSecretClearing(MainWindow window)
+    {
+        EnableProtectedOperationsForFailureTest(window);
+        int errorDialogs = 0;
+        MainWindow.TestHookShowDialogAsync = (kind, _) =>
+        {
+            MacComprehensiveTests.Require(
+                kind == SecurityDialogKind.Error,
+                $"Credential failure opened a non-error dialog: {kind}.");
+            errorDialogs++;
+            return Task.CompletedTask;
+        };
+
+        try
+        {
+            ExerciseCredentialFailureHandler(window, "extract", "ExtractArchiveButton");
+            ExerciseCredentialFailureHandler(window, "list", "ListArchiveButton");
+            MacComprehensiveTests.Require(errorDialogs == 2, $"Expected two credential failure dialogs, got {errorDialogs}.");
+        }
+        finally
+        {
+            MainWindow.TestHookBeforeCredentialOperation = null;
+            MainWindow.TestHookShowDialogAsync = null;
+        }
+    }
+
+    /// <summary>
+    /// Authenticated emergency recovery shares the extraction credentials, so
+    /// its real button route must enforce the same failure cleanup boundary.
+    /// </summary>
+    private static void TestRecoveryFailureSecretClearing(MainWindow window)
+    {
+        EnableProtectedOperationsForFailureTest(window);
+        int errorDialogs = 0;
+        MainWindow.TestHookShowDialogAsync = (kind, _) =>
+        {
+            MacComprehensiveTests.Require(
+                kind == SecurityDialogKind.Error,
+                $"Recovery failure opened a non-error dialog: {kind}.");
+            errorDialogs++;
+            return Task.CompletedTask;
+        };
+
+        try
+        {
+            ExerciseCredentialFailureHandler(window, "recovery", "EmergencyRecoveryButton");
+            MacComprehensiveTests.Require(errorDialogs == 1, $"Expected one recovery failure dialog, got {errorDialogs}.");
+        }
+        finally
+        {
+            MainWindow.TestHookBeforeCredentialOperation = null;
+            MainWindow.TestHookShowDialogAsync = null;
+        }
+    }
+
+    private static void ExerciseCredentialFailureHandler(
+        MainWindow window,
+        string operation,
+        string buttonName)
+    {
+        TextBox extractPassword = Control<TextBox>(window, "ExtractPasswordBox");
+        TextBox extractPin = Control<TextBox>(window, "ExtractPinBox");
+        TextBox extractFactorA = Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox");
+        TextBox extractFactorB = Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox");
+        TextBox log = Control<TextBox>(window, "LogBox");
+
+        extractPassword.Text = "synthetic-password";
+        extractPin.Text = "123456";
+        extractFactorA.Text = "synthetic-factor-a";
+        extractFactorB.Text = "synthetic-factor-b";
+        log.Text = string.Empty;
+        const string Diagnostic = "injected credential-operation failure";
+        MainWindow.TestHookBeforeCredentialOperation = actualOperation =>
+        {
+            MacComprehensiveTests.Require(
+                string.Equals(actualOperation, operation, StringComparison.Ordinal),
+                $"{buttonName} reached the wrong operation handler: {actualOperation}.");
+            throw new InvalidDataException(Diagnostic);
+        };
+
+        try
+        {
+            Control<Button>(window, buttonName).RaiseEvent(
+                new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+        finally
+        {
+            MainWindow.TestHookBeforeCredentialOperation = null;
+        }
+
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(extractPassword.Text), $"{operation} failure retained the password.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(extractPin.Text), $"{operation} failure retained the PIN.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(extractFactorA.Text), $"{operation} failure retained factor A.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(extractFactorB.Text), $"{operation} failure retained factor B.");
+        MacComprehensiveTests.Require(
+            (log.Text ?? string.Empty).Contains(Diagnostic, StringComparison.Ordinal),
+            $"{operation} failure cleared credentials but dropped its diagnostic.");
+    }
+
+    private static void EnableProtectedOperationsForFailureTest(MainWindow window)
+    {
+        FieldInfo integrity = typeof(MainWindow).GetField(
+            "_integrityTrusted",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("MainWindow integrity field was not found.");
+        MethodInfo update = typeof(MainWindow).GetMethod(
+            "UpdateProtectedOperationControls",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("MainWindow protected-operation update method was not found.");
+        integrity.SetValue(window, true);
+        update.Invoke(window, null);
     }
 
     /// <summary>

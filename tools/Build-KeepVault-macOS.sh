@@ -316,7 +316,9 @@ cleanup() {
     rm -rf -- ${build_root}
   fi
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 hybrid_keychain_tmp=${build_root}/hybrid-keychain-tmp
 mkdir -m 0700 ${hybrid_keychain_tmp}
@@ -1050,43 +1052,149 @@ fi
 publish_parent=${publish_target_dir:h}
 mkdir -p ${publish_parent}
 
-publish_stage=${publish_parent}/.publish_stage.$$.$RANDOM
-rm -rf -- ${publish_stage}
-ditto ${dist_stage} ${publish_stage}
+if [[ -L ${publish_parent} || ! -d ${publish_parent} ]]; then
+  print -u2 "Release publish parent is not a physical directory: ${publish_parent}"
+  exit 1
+fi
+publish_parent_identity=$(stat -f '%d:%i' ${publish_parent} 2>/dev/null || true)
+if [[ ! ${publish_parent_identity} =~ '^[0-9]+:[0-9]+$' ]]; then
+  print -u2 "Release publish parent has no stable device/inode identity: ${publish_parent}"
+  exit 1
+fi
 
-if [[ -e ${publish_target_dir} ]]; then
-  swap_bin=${build_root}/rename_swap
-  if [[ ! -x ${swap_bin} ]]; then
-    xcrun clang -O2 -x c - -o ${swap_bin} <<'EOF' 2>/dev/null || true
-#include <unistd.h>
-#include <stdio.h>
-#include <fcntl.h>
-int main(int argc, char** argv) {
-  if (argc < 3) return 1;
-  return renameatx_np(AT_FDCWD, argv[1], AT_FDCWD, argv[2], 0x00000002);
+# Both first publication and replacement are one descriptor-relative Darwin
+# rename. There is deliberately no path-only two-move fallback: if the kernel
+# primitive or its reviewed helper is unavailable, the previous public tree is
+# left intact and the build fails closed.
+publish_stage=$(mktemp -d "${publish_parent}/.publish_stage.XXXXXXXX")
+chmod 0700 ${publish_stage}
+ditto ${dist_stage} ${publish_stage}
+publish_stage_identity=$(stat -f '%d:%i' ${publish_stage} 2>/dev/null || true)
+
+publish_quarantine=$(mktemp -d "${publish_parent}/.publish_cleanup.XXXXXXXX")
+chmod 0700 ${publish_quarantine}
+publish_quarantine_identity=$(stat -f '%d:%i' ${publish_quarantine} 2>/dev/null || true)
+
+publish_rename_source=${script_dir}/ReleasePublishRename.c
+publish_delete_source=${script_dir}/InstallerBoundDelete.c
+publish_rename_helper=${build_root}/release-publish-rename
+publish_delete_helper=${build_root}/release-publish-delete
+if [[ ! -f ${publish_rename_source} || -L ${publish_rename_source} \
+    || ! -f ${publish_delete_source} || -L ${publish_delete_source} \
+    || ! ${publish_stage_identity} =~ '^[0-9]+:[0-9]+$' \
+    || ! ${publish_quarantine_identity} =~ '^[0-9]+:[0-9]+$' ]]; then
+  print -u2 'Release publish helpers or private staging identities are invalid; staged objects were preserved.'
+  exit 1
+fi
+xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
+  ${publish_rename_source} -o ${publish_rename_helper}
+xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
+  ${publish_delete_source} -o ${publish_delete_helper}
+
+delete_old_publish_tree() {
+  local object_name=$1
+  local expected_identity=$2
+  ${publish_delete_helper} \
+    ${publish_parent} ${object_name} \
+    ${publish_parent_identity%%:*} ${publish_parent_identity#*:} \
+    ${publish_quarantine} \
+    ${publish_quarantine_identity%%:*} ${publish_quarantine_identity#*:} \
+    ${expected_identity}
 }
-EOF
+
+quarantine_uncertain_publish_target() {
+  local expected_identity=$1
+  local cleanup_status=0
+  if [[ ! -e ${publish_target_dir} && ! -L ${publish_target_dir} ]]; then
+    return 0
   fi
-  swap_status=1
-  if [[ -x ${swap_bin} ]]; then
-    "${swap_bin}" "${publish_stage}" "${publish_target_dir}" 2>/dev/null && swap_status=0 || swap_status=$?
+  delete_old_publish_tree ${publish_target_dir:t} ${expected_identity} \
+    || cleanup_status=$?
+  # Exit 68 means a foreign inode was removed from the public name and retained
+  # in the private quarantine for inspection. That is a safe failed publish.
+  (( cleanup_status == 0 || cleanup_status == 68 ))
+}
+
+if [[ -e ${publish_target_dir} || -L ${publish_target_dir} ]]; then
+  if [[ -L ${publish_target_dir} || ! -d ${publish_target_dir} ]]; then
+    print -u2 "Refusing to replace a non-directory or symbolic-link release target: ${publish_target_dir}"
+    exit 1
   fi
-  if (( swap_status != 0 )); then
-    print -u2 "Crash-atomic directory swap unavailable; falling back to transactional rename..."
-    publish_old=${publish_parent}/.publish_old.$$.$RANDOM
-    mv ${publish_target_dir} ${publish_old}
-    if ! mv ${publish_stage} ${publish_target_dir}; then
-      print -u2 "Publish stage move failed; restoring previous target from ${publish_old}..."
-      mv ${publish_old} ${publish_target_dir} || true
-      exit 1
-    fi
-    rm -rf -- ${publish_old}
+  previous_publish_identity=$(stat -f '%d:%i' ${publish_target_dir} 2>/dev/null || true)
+  if [[ ! ${previous_publish_identity} =~ '^[0-9]+:[0-9]+$' ]]; then
+    print -u2 'The previous release target has no stable device/inode identity.'
+    exit 1
+  fi
+  publish_swap_status=0
+  if ${publish_rename_helper} swap \
+      ${publish_parent} ${publish_stage:t} ${publish_parent} ${publish_target_dir:t} \
+      ${publish_parent_identity} ${publish_parent_identity} \
+      ${publish_stage_identity} ${previous_publish_identity}; then
+    publish_swap_status=0
   else
-    rm -rf -- ${publish_stage}
+    publish_swap_status=$?
+  fi
+  if (( publish_swap_status == 70 )); then
+    current_publish_identity=$(stat -f '%d:%i' ${publish_target_dir} 2>/dev/null || true)
+    current_stage_identity=$(stat -f '%d:%i' ${publish_stage} 2>/dev/null || true)
+    if [[ ${current_publish_identity} == ${publish_stage_identity} \
+        && ${current_stage_identity} == ${previous_publish_identity} ]]; then
+      # The exchange itself and both identities are complete. A descriptor-close
+      # error cannot invalidate that persistent state, so finish normal cleanup.
+      publish_swap_status=0
+    elif [[ ${current_publish_identity} == ${previous_publish_identity} ]]; then
+      print -u2 'RELEASE GATE: the previous public tree was restored after an uncertain exchange.'
+    elif [[ ${current_stage_identity} == ${previous_publish_identity} ]]; then
+      if quarantine_uncertain_publish_target ${publish_stage_identity} \
+          && ${publish_rename_helper} exclusive \
+            ${publish_parent} ${publish_stage:t} ${publish_parent} ${publish_target_dir:t} \
+            ${publish_parent_identity} ${publish_parent_identity} \
+            ${previous_publish_identity} -; then
+        print -u2 'RELEASE GATE: the previous public tree was restored after quarantining an uncertain replacement.'
+      else
+        print -u2 'RELEASE GATE: an uncertain exchange could not restore the previous public tree.'
+      fi
+    else
+      quarantine_uncertain_publish_target ${publish_stage_identity} || true
+      print -u2 'RELEASE GATE: an uncertain exchange was quarantined, but the previous tree identity was unavailable.'
+    fi
+  fi
+  if (( publish_swap_status != 0 )); then
+    print -u2 'RELEASE GATE: crash-atomic verified directory exchange failed; no path-only fallback was attempted.'
+    print -u2 "Staged objects were preserved for inspection at: ${publish_stage}"
+    exit 1
+  fi
+  if ! delete_old_publish_tree ${publish_stage:t} ${previous_publish_identity}; then
+    print -u2 'RELEASE GATE: the exact previous publish tree could not be deleted through the inode-bound helper.'
+    print -u2 "Any quarantined object was preserved at: ${publish_quarantine}"
+    exit 1
   fi
 else
-  mv ${publish_stage} ${publish_target_dir}
+  first_publish_status=0
+  if ${publish_rename_helper} exclusive \
+      ${publish_parent} ${publish_stage:t} ${publish_parent} ${publish_target_dir:t} \
+      ${publish_parent_identity} ${publish_parent_identity} \
+      ${publish_stage_identity} -; then
+    first_publish_status=0
+  else
+    first_publish_status=$?
+  fi
+  if (( first_publish_status == 70 )); then
+    quarantine_uncertain_publish_target ${publish_stage_identity} || true
+  fi
+  if (( first_publish_status != 0 )); then
+    print -u2 'RELEASE GATE: exclusive first publication failed; no existing destination was overwritten.'
+    print -u2 "Staged objects were preserved for inspection at: ${publish_stage}"
+    exit 1
+  fi
 fi
+
+if [[ $(stat -f '%d:%i' ${publish_quarantine} 2>/dev/null || true) != ${publish_quarantine_identity} \
+    || -n $(find ${publish_quarantine} -mindepth 1 -print -quit 2>/dev/null) ]]; then
+  print -u2 "Release cleanup quarantine changed or is not empty and was preserved: ${publish_quarantine}"
+  exit 1
+fi
+rmdir -- ${publish_quarantine}
 
 touch ${publish_parent}/.metadata_never_index
 
