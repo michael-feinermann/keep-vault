@@ -4,6 +4,93 @@ Dieses Dokument ist die Arbeitsanleitung für den späteren Windows-Port. Die
 macOS-Umsetzung ist der normative v12-Stand. Die Windows-Version wird separat
 gebaut und getestet; ein erfolgreicher macOS-Lauf ist kein Windows-Nachweis.
 
+## Direktauftrag für Codex unter Windows
+
+Der folgende Auftrag kann unverändert an Codex auf dem Windows-Rechner
+übergeben werden:
+
+```text
+Arbeite im Repository keep-vault an der Windows-Version von Keep Vault v12.
+Starte ausschließlich vom aktuellen origin/master. Prüfe vor Beginn den
+Commit- und Tree-Hash und arbeite auf einem neuen Branch
+codex/windows-v12. Der bei Erstellung dieser Anweisung bekannte Stand ist
+8761e13bd07c01ba3ed5fb20a096b0ef32daaa69, muss aber vor der Arbeit erneut
+verifiziert werden.
+
+Lies zuerst den vollständigen aktiven Quellbaum einschließlich
+KalynaArchiver, KeepVaultMac als normative Referenz, nativer Quellen,
+Packaging, QR-Scanner, Tests, Build-Skripten und Dokumentation. Suche danach
+gezielt nach v11, V11, alten Magic-Werten, alten KDF-/KPAR2-Pfaden und
+Fallbacks. Abwärtskompatibilität ist ausdrücklich verboten. Entferne jeden
+Legacy-Produktionspfad, statt ihn zu überbrücken.
+
+Portiere die Windows-App ausschließlich auf das v12-Protokoll. Implementiere
+und prüfe die nativen Windows-x64-DLLs, insbesondere kalyna_v12.dll,
+threefish_ref.dll, aes_ref.dll, mars_ref.dll, shacal2_ref.dll,
+chachapoly_ref.dll, argon2_ref.dll und zpaq.exe. Der bisherige Hinweis
+„Windows Kalyna port is intentionally deferred“ ist ein Blocker und darf
+nicht als erfolgreicher Build gelten. Verwende nur nachweislich kompatible,
+lizenzierte Quellen und aktualisiere das Provenienz- und Hash-Manifest.
+
+Übernehme den Parallelisierungsvertrag des macOS-v12-Standes:
+
+* Archivieren, Kompression, Verschlüsselung, Entschlüsselung, Entpacken,
+  Integritätsblätter und KPAR2-Recovery arbeiten mit begrenzten Worker-Pools.
+* Poly1305 muss ab der festgelegten Mindestgröße parallel laufen und durch
+  RFC-8439-KATs, Parallel-vs.-Skalar-Vergleich, Tail-, Overflow- und
+  Join-Fehler-Tests abgesichert sein.
+* CTR-Counterbereiche müssen disjunkt sein. Counter-Überlauf wird vor jeder
+  Ausgabemutation abgewiesen.
+* Nach Create-, Cancel-, Wait- oder Join-Fehlern werden alle Worker sicher
+  beendet, bevor Schlüssel, Jobtabellen oder Caller-Puffer freigegeben werden.
+* Argon2id bleibt die einzige absichtliche Ausnahme: t=4 und p=4 sind fest,
+  die Branches und Paranoia-Runde bleiben sequentiell. Diese Werte dürfen
+  nicht aus untrusted Headerdaten kommen.
+
+Führe Locked Restore und Release-Build mit dem im Repository gepinnten
+.NET-10-SDK sowie Visual Studio 2022, MSVC, Windows SDK, MASM und PowerShell 7
+aus. Protokolliere Host, SDK, Compiler, Commit, Tree-Hash, Worker-Limits,
+Dauer und Exit-Code. Verwende für Build und Packaging einen unveränderlichen
+Snapshot desselben Commits. Nie aus einem nachträglich veränderten Live-
+Arbeitsbaum signieren.
+
+Führe in dieser Reihenfolge aus und stoppe bei einem Fehler mit einem
+reproduzierbaren Befund:
+
+1. Locked Restore, native Build- und PE-/Exportprüfung.
+2. Unabhängige KATs für Kalyna, Threefish, AES, MARS, SHACAL-2,
+   ChaCha20-Poly1305, SHA3, Skein und Argon2id.
+3. Smoke-Suite, danach die vollständige Windows-Suite.
+4. Alle Cipher- und Kaskaden-Benchmarks mit Warm-up und Medianregeln.
+5. Exakter 256-MiB-Durchlauf mit Kompressionsstufe 5, Paranoia und komplettem
+   Argon2id.
+6. Als letzten funktionalen Lauf ein komplexer Ordnerbaum mit leeren,
+   kleinen, großen, zufälligen, stark komprimierbaren Dateien, Unicode-Namen,
+   tiefen Verzeichnissen und ähnlichen Dateinamen. Archivieren, verschlüsseln,
+   entschlüsseln, entpacken und alle Daten, Hashes und Metadaten vergleichen.
+7. Release-Verifier, Authenticode-/Manifestprüfung, Mutationstests und
+   ZIP-Inhaltsprüfung.
+
+USB- oder Hardware-Schlüssel dürfen nur direkt und speicherintern verwendet
+werden. Private Schlüssel, PFX-Passwörter und Zertifikatsinhalte dürfen nie
+in Argumenten, Umgebungsvariablen, Logs, temporären Dateien, Artefakten oder
+Git erscheinen. Fehlt eine sichere Signaturquelle, signiere nicht ersatzweise
+mit einem Testschlüssel und dokumentiere den Blocker.
+
+Führe einen vollständigen Code- und Sicherheitsreview durch. Melde offene
+TOCTOU-, Reparse-Point-, Hardlink-, ADS-, Pfad-, Ressourcen-, Thread-Lifecycle-
+und Geheimnisbefunde mit Datei, Zeile und Kommando. Behaupte niemals
+„ohne Sicherheitslücken“, solange ein Gate offen ist. Erzeuge kein öffentliches
+Release, keinen Store-Upload und keine Veröffentlichung, bevor alle Windows-
+Gates separat bestätigt und ausdrücklich freigegeben wurden.
+
+Wenn alle nichtöffentlichen Gates bestanden sind, prüfe git diff --check,
+stage nur geprüfte v12-Dateien, committe mit
+„Implement Keep Vault v12 Windows parallel pipeline“ und pushe den Branch
+codex/windows-v12. Führe danach einen Remote-Hash-Abgleich durch und schreibe
+das vollständige Protokoll in die Windows-Dokumentation.
+```
+
 ## Ziel und harte Grenzen
 
 * Ziel ist ein neuer Windows-v12-Stand mit `ContainerVersion = 12` und
