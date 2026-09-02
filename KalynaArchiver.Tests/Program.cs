@@ -172,6 +172,9 @@ var comprehensiveTests = new List<TestCase>
     new("crypto.aes-runtime-provider", "AES runtime dispatch exposes the hardware provider",
         Sync(RunAesRuntimeProviderTests), TestResource.Light, "Crypto"),
 
+    new("crypto.skein-mac-cross-implementation", "Skein-MAC-1024-1024: Bouncy Castle against the Skein 1.3 reference adapter",
+        Sync(RunSkeinMacCrossImplementationTests), TestResource.Light, "Crypto"),
+
     // Manual release gate: deliberately absent from bare/full/quick/changed
     // selection. Use --performance (or its exact stable id) on an otherwise
     // idle host so the medians are meaningful.
@@ -1843,6 +1846,156 @@ static void RunNativeIntegrityTests()
     Assert(NativeArgon2id.IsAvailable(), "native PHC Argon2id DLL is available and manifest-verified");
 }
 
+static void RunSkeinMacCrossImplementationTests()
+{
+    // v12 derives every role key from, among other things,
+    // Skein-MAC-1024-1024, and the two platforms compute it with two different
+    // implementations: macOS calls the Skein 1.3 reference adapter through
+    // NativeThreefish.MacSkein1024Personalized, Windows uses Bouncy Castle's
+    // SkeinMac. Each side is checked against published vectors by its own
+    // suite, which proves neither is wrong but not that the two agree, and a
+    // single differing bit would mean an archive written on one platform
+    // cannot be opened on the other while both suites stay green.
+    //
+    // The reference adapter ships in the Windows build as well, so the
+    // comparison runs here on the same inputs, with the same key and the same
+    // personalisation, and compares all 128 output bytes.
+    const int OutputBytes = Skein1024Digest.DigestSize;
+
+    // The one place the two implementations genuinely disagree, checked below
+    // rather than papered over: Bouncy Castle refuses a Skein key shorter than
+    // 128 bits, the Skein 1.3 reference adapter accepts one byte upwards. v12
+    // never derives such a key - the credential MAC is keyed with the full
+    // 256-byte A || B and every role key is at least 64 bytes - so the
+    // divergence sits outside the range the format uses. It is asserted here so
+    // that a future construction which strays below the floor fails loudly
+    // instead of silently working on macOS and throwing on Windows.
+    const int MinimumSharedKeyBytes = 16;
+
+    static byte[] Native(byte[] key, byte[] personalisation, byte[] message)
+    {
+        byte[] output = new byte[OutputBytes];
+        NativeThreefish.MacSkein1024Personalized(key, personalisation, message, output);
+        return output;
+    }
+
+    static byte[] BouncyCastle(byte[] key, byte[] personalisation, byte[] message)
+    {
+        var mac = new SkeinMac(Org.BouncyCastle.Crypto.Digests.SkeinEngine.SKEIN_1024, OutputBytes * 8);
+        SkeinParameters parameters = new SkeinParameters.Builder()
+            .SetKey(key)
+            .SetPersonalisation(personalisation)
+            .Build();
+        mac.Init(parameters);
+        mac.BlockUpdate(message);
+        byte[] output = new byte[OutputBytes];
+        int written = mac.DoFinal(output);
+        Assert(written == OutputBytes, "Bouncy Castle SkeinMac returns 128 bytes");
+        return output;
+    }
+
+    int compared = 0;
+    void Compare(byte[] key, byte[] personalisation, byte[] message, string label)
+    {
+        byte[] native = Native(key, personalisation, message);
+        byte[] managed = BouncyCastle(key, personalisation, message);
+        Assert(
+            CryptographicOperations.FixedTimeEquals(native, managed),
+            $"Skein-MAC agrees between the reference adapter and Bouncy Castle: {label} "
+                + $"(key={key.Length}, pers={personalisation.Length}, msg={message.Length}, "
+                + $"native={Convert.ToHexString(native)[..32]}, managed={Convert.ToHexString(managed)[..32]})");
+        compared++;
+    }
+
+    // The domains the v12 key schedule actually uses, taken from the shared
+    // derivation rather than invented for the test.
+    string[] productionDomains =
+    [
+        "Kalyna-ZPAQ/v12/Standard/Skein-MAC-1024-1024/User+PIN+Factors",
+        "Kalyna-ZPAQ/v12/Paranoia/Skein-MAC-1024-1024/User+PIN+Factors",
+        V12MasterKdf.KdfMode,
+        V12MasterKdf.KdfInputMode,
+        V12MasterKdf.PasswordMode,
+    ];
+
+    byte[] masterWidthKey = RandomNumberGenerator.GetBytes(V12MasterKdf.FactorBytes * 2);
+    foreach (string domain in productionDomains)
+    {
+        byte[] personalisation = Encoding.UTF8.GetBytes(domain);
+        Compare(masterWidthKey, personalisation, [], $"production domain, empty message: {domain}");
+        Compare(masterWidthKey, personalisation, RandomNumberGenerator.GetBytes(1), $"production domain, one byte: {domain}");
+        Compare(masterWidthKey, personalisation, RandomNumberGenerator.GetBytes(4096), $"production domain, 4 KiB: {domain}");
+    }
+
+    // Boundaries: the smallest and largest key the adapter accepts, a
+    // single-byte personalisation, non-ASCII UTF-8, and messages either side of
+    // Skein's 128-byte block.
+    (int Key, int Pers, int Message)[] boundaries =
+    [
+        (MinimumSharedKeyBytes, 1, 0),
+        (MinimumSharedKeyBytes, 1, 1),
+        (128, 16, 127),
+        (128, 16, 128),
+        (128, 16, 129),
+        (256, 128, 1024),
+        (4096, 1, 0),
+        (4096, 256, 1024 * 1024),
+    ];
+    foreach ((int keyBytes, int persBytes, int messageBytes) in boundaries)
+    {
+        Compare(
+            RandomNumberGenerator.GetBytes(keyBytes),
+            RandomNumberGenerator.GetBytes(persBytes),
+            RandomNumberGenerator.GetBytes(messageBytes),
+            $"boundary {keyBytes}/{persBytes}/{messageBytes}");
+    }
+
+    byte[] umlautPersonalisation = Encoding.UTF8.GetBytes("Schlüsselblatt/Faktor-A ‖ Faktor-B/v12");
+    Compare(masterWidthKey, umlautPersonalisation, RandomNumberGenerator.GetBytes(512), "non-ASCII personalisation");
+
+    // Randomised differential run. Every dimension varies independently so a
+    // difference that only shows up at some length combination is not missed.
+    for (int round = 0; round < 256; round++)
+    {
+        Compare(
+            RandomNumberGenerator.GetBytes(RandomNumberGenerator.GetInt32(MinimumSharedKeyBytes, 513)),
+            RandomNumberGenerator.GetBytes(RandomNumberGenerator.GetInt32(1, 129)),
+            RandomNumberGenerator.GetBytes(RandomNumberGenerator.GetInt32(0, 8193)),
+            $"randomised round {round}");
+    }
+
+    // A negative control: the comparison would be worthless if both sides
+    // ignored the personalisation, so a changed personalisation must change the
+    // output on both sides in the same way.
+    byte[] personalisationA = Encoding.UTF8.GetBytes("keep-vault/personalisation/A");
+    byte[] personalisationB = Encoding.UTF8.GetBytes("keep-vault/personalisation/B");
+    byte[] probe = RandomNumberGenerator.GetBytes(333);
+    Assert(
+        !CryptographicOperations.FixedTimeEquals(
+            Native(masterWidthKey, personalisationA, probe),
+            Native(masterWidthKey, personalisationB, probe)),
+        "the reference adapter binds the personalisation");
+    Assert(
+        !CryptographicOperations.FixedTimeEquals(
+            BouncyCastle(masterWidthKey, personalisationA, probe),
+            BouncyCastle(masterWidthKey, personalisationB, probe)),
+        "Bouncy Castle binds the personalisation");
+
+    byte[] shortKey = RandomNumberGenerator.GetBytes(MinimumSharedKeyBytes - 1);
+    byte[] shortKeyPersonalisation = Encoding.UTF8.GetBytes("keep-vault/short-key-floor");
+    byte[] nativeShortKeyTag = Native(shortKey, shortKeyPersonalisation, probe);
+    Assert(nativeShortKeyTag.Length == OutputBytes, "the reference adapter accepts a key below the Bouncy Castle floor");
+    AssertThrows<ArgumentException>(
+        () => BouncyCastle(shortKey, shortKeyPersonalisation, probe),
+        "Bouncy Castle refuses a Skein key below 128 bits, which is why v12 stays above that floor");
+    Assert(
+        V12MasterKdf.FactorBytes * 2 >= MinimumSharedKeyBytes
+            && V12MasterKdf.BranchOutputBytes >= MinimumSharedKeyBytes
+            && KdfSalts.SaltBytes >= MinimumSharedKeyBytes,
+        "every v12 key width stays above the shared Skein key floor");
+
+    Assert(compared >= 280, $"the cross-implementation comparison covered enough cases: {compared}");
+}
 static void RunProcessHardeningTests()
 {
     // The macOS counterpart, security.process-hardening, requires every
@@ -4064,7 +4217,13 @@ static async Task RunPdfRoundTripTestsAsync()
             null,
             CancellationToken.None);
         Assert(listResult.Succeeded, "encrypted streaming container lists");
-        Assert(listResult.StandardError.Contains("versions", StringComparison.OrdinalIgnoreCase), "encrypted list scans the streaming pipe without a temporary archive");
+        // The v12 pipe listing reports "N v12 parallel streaming segments in M
+        // files listed" and no version summary, because a framed pipe carries no
+        // version history to summarise. The stale expectation of the word
+        // "versions" was inherited from the file-based list and never held for
+        // this path; the streaming marker is what proves no temporary archive was
+        // written, and it is the same marker the extraction assertion below uses.
+        Assert(listResult.StandardError.Contains("streaming segments", StringComparison.OrdinalIgnoreCase), "encrypted list scans the streaming pipe without a temporary archive");
 
         ProcessResult encryptedExtractResult = await zpaq.ExtractStreamingAsync(
             (zpaqInput, ct) => kalyna.DecryptToStreamAsync(encryptedArchive, password, pin, firstGeneratedPassword, secondGeneratedPassword, zpaqInput, null, ct),
@@ -4107,7 +4266,7 @@ static async Task RunPdfRoundTripTestsAsync()
             null,
             CancellationToken.None);
         Assert(threefishList.Succeeded, "Threefish encrypted streaming container lists");
-        Assert(threefishList.StandardError.Contains("versions", StringComparison.OrdinalIgnoreCase), "Threefish list scans the streaming pipe directly");
+        Assert(threefishList.StandardError.Contains("streaming segments", StringComparison.OrdinalIgnoreCase), "Threefish list scans the streaming pipe directly");
         ProcessResult threefishExtract = await zpaq.ExtractStreamingAsync(
             (zpaqInput, ct) => kalyna.DecryptToStreamAsync(threefishArchive, password, pin, firstGeneratedPassword, secondGeneratedPassword, zpaqInput, null, ct),
             threefishExtractDir,
