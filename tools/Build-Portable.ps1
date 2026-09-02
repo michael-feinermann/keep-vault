@@ -62,6 +62,63 @@ if ($ReleaseKeyDirectory) {
     if (-not $MldsaPublicKeyPath) {
         $MldsaPublicKeyPath = Join-Path $root "KeepVaultMac\Packaging\Keys\mldsa87-public.key"
     }
+    if (-not $PfxPassword) {
+        $encryptedPfxPasswordPath = Join-Path $releaseKeyRoot "hybrid-rsa4096.pfx.password.enc"
+        if ((Test-Path -LiteralPath $encryptedPfxPasswordPath -PathType Leaf) -and (Test-Path -LiteralPath $WrappingKeyPath -PathType Leaf)) {
+            $wrappingKeyBase64 = (Get-Content -LiteralPath $WrappingKeyPath -Raw).Trim()
+            $wrappingKeyBytes = [Convert]::FromBase64String($wrappingKeyBase64)
+            $encBytes = [System.IO.File]::ReadAllBytes($encryptedPfxPasswordPath)
+
+            $magicBytes = New-Object byte[] 8
+            [Array]::Copy($encBytes, 0, $magicBytes, 0, 8)
+            $magicStr = [System.Text.Encoding]::ASCII.GetString($magicBytes)
+
+            if ($magicStr -eq "KVSECRT1") {
+                $nonce = New-Object byte[] 12
+                [Array]::Copy($encBytes, 8, $nonce, 0, 12)
+                $cipherLen = $encBytes.Length - 8 - 12 - 16
+                $ciphertext = New-Object byte[] $cipherLen
+                [Array]::Copy($encBytes, 20, $ciphertext, 0, $cipherLen)
+                $tag = New-Object byte[] 16
+                [Array]::Copy($encBytes, (20 + $cipherLen), $tag, 0, 16)
+
+                $plain = New-Object byte[] $cipherLen
+                $aes = [System.Security.Cryptography.AesGcm]::new($wrappingKeyBytes, 16)
+                try {
+                    $aes.Decrypt($nonce, $ciphertext, $tag, $plain, $magicBytes)
+                    $PfxPassword = [System.Text.Encoding]::UTF8.GetString($plain).TrimEnd("`0")
+                }
+                finally {
+                    [Array]::Clear($plain, 0, $plain.Length)
+                    [Array]::Clear($wrappingKeyBytes, 0, $wrappingKeyBytes.Length)
+                    $aes.Dispose()
+                }
+            }
+            elseif ($magicStr -eq "KVPFXP12") {
+                $len = [BitConverter]::ToUInt32($encBytes, 8)
+                $nonce = New-Object byte[] 12
+                [Array]::Copy($encBytes, 12, $nonce, 0, 12)
+                $ciphertext = New-Object byte[] $len
+                [Array]::Copy($encBytes, 24, $ciphertext, 0, $len)
+                $tag = New-Object byte[] 16
+                [Array]::Copy($encBytes, (24 + $len), $tag, 0, 16)
+                $ad = New-Object byte[] 12
+                [Array]::Copy($encBytes, 0, $ad, 0, 12)
+
+                $plain = New-Object byte[] $len
+                $aes = [System.Security.Cryptography.AesGcm]::new($wrappingKeyBytes, 16)
+                try {
+                    $aes.Decrypt($nonce, $ciphertext, $tag, $plain, $ad)
+                    $PfxPassword = [System.Text.Encoding]::UTF8.GetString($plain).TrimEnd("`0")
+                }
+                finally {
+                    [Array]::Clear($plain, 0, $plain.Length)
+                    [Array]::Clear($wrappingKeyBytes, 0, $wrappingKeyBytes.Length)
+                    $aes.Dispose()
+                }
+            }
+        }
+    }
 }
 
 if ($TrustDevelopmentCertificate) {
