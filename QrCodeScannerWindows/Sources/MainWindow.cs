@@ -32,6 +32,12 @@ internal sealed class MainWindow : Window
     private static readonly Brush Bad = Brush("#FCA5A5");
 
     private readonly ComboBox _languageBox = new() { Width = 130 };
+    private readonly TextBlock _languageLabel = new()
+    {
+        Foreground = Muted,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(0, 0, 8, 0),
+    };
     private readonly Image _preview = new() { Stretch = Stretch.Uniform, MinHeight = 240 };
     private readonly TextBlock _statusText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Muted };
     private readonly TextBlock _captureProtectionText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Bad };
@@ -116,18 +122,10 @@ internal sealed class MainWindow : Window
     private UIElement BuildLayout()
     {
         var languageRow = new DockPanel { LastChildFill = false, Margin = new Thickness(0, 0, 0, 12) };
-        var languageLabel = new TextBlock
-        {
-            Name = "LanguageLabel",
-            Foreground = Muted,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 8, 0),
-        };
-        DockPanel.SetDock(languageLabel, Dock.Left);
+        DockPanel.SetDock(_languageLabel, Dock.Left);
         DockPanel.SetDock(_languageBox, Dock.Left);
-        languageRow.Children.Add(languageLabel);
+        languageRow.Children.Add(_languageLabel);
         languageRow.Children.Add(_languageBox);
-        RegisterName("LanguageLabel", languageLabel);
 
         var buttons = new StackPanel
         {
@@ -317,7 +315,7 @@ internal sealed class MainWindow : Window
     {
         Strings strings = Strings.For(_language);
         Title = strings.WindowTitle;
-        ((TextBlock)FindName("LanguageLabel")).Text = strings.LanguageLabel;
+        _languageLabel.Text = strings.LanguageLabel;
         _copyButton.Content = strings.CopyButton;
         _rescanButton.Content = strings.RescanButton;
         _valueLabel.Text = strings.ScannedValueLabel;
