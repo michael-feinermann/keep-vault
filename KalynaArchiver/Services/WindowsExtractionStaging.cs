@@ -1,5 +1,7 @@
 using System.Collections;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Win32.SafeHandles;
 
 namespace KalynaArchiver.Services;
@@ -18,6 +20,7 @@ internal sealed class WindowsExtractionStaging : IDisposable
     private string _currentStagingPath;
     private bool _committed;
     private bool _disposed;
+    private string? _validatedTreeFingerprint;
 
     internal static Action? TestHookBeforeInstallRename { get; set; }
 
@@ -108,14 +111,32 @@ internal sealed class WindowsExtractionStaging : IDisposable
             _stagingIdentity,
             _currentStagingPath,
             directory: true);
-        return MeasureTreeNoFollow(
+        DirectoryTreeMeasurement measurement = MeasureTreeNoFollow(
             _currentStagingPath,
             _stagingIdentity,
             allowWriters,
             stagingHandle);
+        if (!allowWriters)
+        {
+            _validatedTreeFingerprint = measurement.TreeFingerprint;
+        }
+
+        return measurement;
     }
 
-    internal void Install()
+    /// <summary>
+    /// Renames the validated staging tree onto its destination.
+    /// </summary>
+    /// <remarks>
+    /// The macOS counterpart re-measures the tree at this gate and refuses to
+    /// install if its fingerprint moved since validation. Windows used to check
+    /// only that the staging directory was still the same object, which says
+    /// nothing about the files inside it: another process running as this user
+    /// could add, replace or truncate an extracted file between the limit
+    /// validation and this rename, and the changed tree would be installed as
+    /// though it had been checked. The same final gate now runs here.
+    /// </remarks>
+    internal void Install(Action<DirectoryTreeMeasurement>? validateFinalTree = null)
     {
         ThrowIfDisposed();
         if (_committed)
@@ -130,6 +151,9 @@ internal sealed class WindowsExtractionStaging : IDisposable
             _stagingIdentity,
             _currentStagingPath,
             directory: true);
+
+        string expectedTreeFingerprint = _validatedTreeFingerprint
+            ?? MeasureTree(allowWriters: false).TreeFingerprint;
 
         if (_emptyDestinationHandle is not null)
         {
@@ -152,7 +176,30 @@ internal sealed class WindowsExtractionStaging : IDisposable
             }
         }
 
+        // The hook sits before the last complete bound-tree gate, so a
+        // deterministic substitution is caught here rather than merely making
+        // the rename below fail by chance.
         TestHookBeforeInstallRename?.Invoke();
+
+        DirectoryTreeMeasurement finalTree = MeasureTreeNoFollow(
+            _currentStagingPath,
+            _stagingIdentity,
+            allowWriters: false,
+            stagingHandle);
+        validateFinalTree?.Invoke(finalTree);
+        if (!string.Equals(finalTree.TreeFingerprint, expectedTreeFingerprint, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                "The extracted tree changed after its final validation and before installation.");
+        }
+
+        _validatedTreeFingerprint = finalTree.TreeFingerprint;
+        WindowsSafeFileSystem.RequireSameObject(
+            stagingHandle,
+            _stagingIdentity,
+            _currentStagingPath,
+            directory: true);
+
         WindowsSafeFileSystem.RenameBoundObject(
             stagingHandle,
             _parentHandle,
@@ -236,6 +283,10 @@ internal sealed class WindowsExtractionStaging : IDisposable
         long totalBytes = 0;
         long maxFileBytes = 0;
         int fileCount = 0;
+        var fingerprintEntries = new List<TreeFingerprintEntry>
+        {
+            new(string.Empty, IsDirectory: true, expectedRootIdentity, Length: 0, LastWriteUtcTicks: 0),
+        };
         try
         {
             rootHandle = boundRootHandle
@@ -274,6 +325,12 @@ internal sealed class WindowsExtractionStaging : IDisposable
                     // deliberately includes directories.
                     fileCount = checked(fileCount + 1);
                     SafeFileHandle directory = WindowsSafeFileSystem.OpenDirectoryBound(entry, denyRename: true);
+                    fingerprintEntries.Add(new TreeFingerprintEntry(
+                        Path.GetRelativePath(rootPath, entry),
+                        IsDirectory: true,
+                        WindowsSafeFileSystem.GetIdentity(directory),
+                        Length: 0,
+                        Directory.GetLastWriteTimeUtc(entry).Ticks));
                     frames.Push(new DirectoryFrame(entry, directory, ownsHandle: true));
                     continue;
                 }
@@ -286,9 +343,31 @@ internal sealed class WindowsExtractionStaging : IDisposable
                 totalBytes = checked(totalBytes + length);
                 maxFileBytes = Math.Max(maxFileBytes, length);
                 fileCount = checked(fileCount + 1);
+                fingerprintEntries.Add(new TreeFingerprintEntry(
+                    Path.GetRelativePath(rootPath, entry),
+                    IsDirectory: false,
+                    WindowsSafeFileSystem.GetIdentity(file),
+                    length,
+                    File.GetLastWriteTimeUtc(entry).Ticks));
             }
 
-            return new DirectoryTreeMeasurement(fileCount, totalBytes, maxFileBytes);
+            // macOS re-reads the root after the walk so a root replaced during
+            // measurement is caught. The bound path is the one that matters
+            // here; the unbound overload opens and closes its own root handle.
+            if (boundRootHandle is not null)
+            {
+                WindowsSafeFileSystem.RequireSameObject(
+                    boundRootHandle,
+                    expectedRootIdentity,
+                    rootPath,
+                    directory: true);
+            }
+
+            return new DirectoryTreeMeasurement(
+                fileCount,
+                totalBytes,
+                maxFileBytes,
+                ComputeTreeFingerprint(fingerprintEntries));
         }
         finally
         {
@@ -393,6 +472,56 @@ internal sealed class WindowsExtractionStaging : IDisposable
         }
     }
 
+    /// <summary>
+    /// Hashes the whole measured tree into one value, so a later measurement
+    /// can be compared against it in constant space.
+    /// </summary>
+    /// <remarks>
+    /// Mirrors <c>MacPlatformSecurity.ComputeTreeFingerprint</c>: entries are
+    /// sorted by their relative path so enumeration order cannot influence the
+    /// result, and each entry contributes its kind, its object identity, its
+    /// length and its modification time. The Windows identity is the volume
+    /// serial number and the 64-bit file index, which is what
+    /// <c>RequireSameObject</c> compares elsewhere; macOS uses device and
+    /// inode for the same purpose.
+    ///
+    /// This is an integrity check against concurrent modification, not an
+    /// authenticator: nothing here is keyed, and an attacker who can write into
+    /// the staging tree can also produce a file with the same length and
+    /// timestamp. The point is that the object identity has to match too, and
+    /// a replaced file gets a new file index.
+    /// </remarks>
+    private static string ComputeTreeFingerprint(List<TreeFingerprintEntry> entries)
+    {
+        entries.Sort(static (left, right) => string.CompareOrdinal(left.RelativePath, right.RelativePath));
+        using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA512);
+        Span<byte> numbers = stackalloc byte[40];
+        foreach (TreeFingerprintEntry entry in entries)
+        {
+            byte[] relativePath = Encoding.UTF8.GetBytes(entry.RelativePath);
+            numbers.Clear();
+            numbers[0] = entry.IsDirectory ? (byte)1 : (byte)0;
+            BitConverter.TryWriteBytes(numbers[1..5], relativePath.Length);
+            BitConverter.TryWriteBytes(numbers[5..9], entry.Identity.VolumeSerialNumber);
+            BitConverter.TryWriteBytes(numbers[9..13], entry.Identity.FileIndexHigh);
+            BitConverter.TryWriteBytes(numbers[13..17], entry.Identity.FileIndexLow);
+            BitConverter.TryWriteBytes(numbers[17..25], entry.Length);
+            BitConverter.TryWriteBytes(numbers[25..33], entry.LastWriteUtcTicks);
+            hash.AppendData(numbers);
+            hash.AppendData(relativePath);
+        }
+
+        numbers.Clear();
+        return Convert.ToHexString(hash.GetHashAndReset());
+    }
+
+    private readonly record struct TreeFingerprintEntry(
+        string RelativePath,
+        bool IsDirectory,
+        WindowsFileIdentity Identity,
+        long Length,
+        long LastWriteUtcTicks);
+
     private sealed class DirectoryFrame : IDisposable
     {
         internal DirectoryFrame(string path, SafeFileHandle handle, bool ownsHandle)
@@ -438,8 +567,11 @@ internal sealed class WindowsExtractionStaging : IDisposable
     }
 }
 
+// Same shape and member order as the macOS DirectoryTreeMeasurement, so the
+// shared validators in ZpaqService read the same fields on both platforms.
 internal readonly record struct DirectoryTreeMeasurement(
     // Counts regular files and directories below the held root.
     int FileCount,
     long TotalBytes,
-    long MaxFileBytes);
+    long MaxFileBytes,
+    string TreeFingerprint);

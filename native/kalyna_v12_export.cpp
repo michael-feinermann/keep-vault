@@ -18,17 +18,26 @@
 #include <memory>
 #include <mutex>
 #include <new>
+#include <thread>
+#include <vector>
 
+#if defined(_WIN32)
+#else
 #include <pthread.h>
 #include <sched.h>
 #include <unistd.h>
+#endif
 #if defined(__APPLE__)
 #include <pthread/qos.h>
 #endif
 
 #include "kalyna.h"
 
+#if defined(_WIN32)
+#define KEEPVAULT_EXPORT __declspec(dllexport)
+#else
 #define KEEPVAULT_EXPORT __attribute__((visibility("default")))
+#endif
 
 namespace {
 
@@ -277,9 +286,17 @@ private:
     shared_state& shared_;
 };
 
-void* worker_entry(void* parameter) noexcept
+void yield_worker() noexcept
 {
-    auto& job = *static_cast<worker_job*>(parameter);
+#if defined(_WIN32)
+    std::this_thread::yield();
+#else
+    (void)sched_yield();
+#endif
+}
+
+void worker_entry_core(worker_job& job) noexcept
+{
     shared_state& shared = *job.shared;
     worker_completion completion(shared);
 #if defined(__APPLE__)
@@ -295,10 +312,10 @@ void* worker_entry(void* parameter) noexcept
 
         while (!shared.start.load(std::memory_order_acquire)
             && !shared.cancel.load(std::memory_order_acquire)) {
-            (void)sched_yield();
+            yield_worker();
         }
         if (shared.cancel.load(std::memory_order_acquire)) {
-            return nullptr;
+            return;
         }
 
         for (;;) {
@@ -339,8 +356,73 @@ void* worker_entry(void* parameter) noexcept
         }
     }
 
+}
+
+#if defined(_WIN32)
+void worker_entry(worker_job* parameter) noexcept
+{
+    worker_entry_core(*parameter);
+}
+
+class thread_group final {
+public:
+    thread_group() = default;
+
+    ~thread_group() noexcept
+    {
+        join_all();
+    }
+
+    thread_group(const thread_group&) = delete;
+    thread_group& operator=(const thread_group&) = delete;
+
+    bool start(worker_job* job) noexcept
+    {
+        try {
+            threads_.emplace_back(worker_entry, job);
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }
+
+    bool join(std::size_t index) noexcept
+    {
+        try {
+            if (threads_[index].joinable()) {
+                threads_[index].join();
+            }
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }
+
+private:
+    void join_all() noexcept
+    {
+        for (std::thread& thread : threads_) {
+            try {
+                if (thread.joinable()) {
+                    thread.join();
+                }
+            }
+            catch (...) {
+            }
+        }
+    }
+
+    std::vector<std::thread> threads_;
+};
+#else
+void* worker_entry(void* parameter) noexcept
+{
+    worker_entry_core(*static_cast<worker_job*>(parameter));
     return nullptr;
 }
+#endif
 
 std::size_t configured_thread_limit() noexcept
 {
@@ -354,13 +436,19 @@ std::size_t configured_thread_limit() noexcept
         }
     }
 
+#if defined(_WIN32)
+    const unsigned int processors = std::thread::hardware_concurrency();
+    const std::size_t available = processors == 0 ? 1 : processors;
+#else
     long processors = sysconf(_SC_NPROCESSORS_ONLN);
     if (processors <= 0) {
         processors = 1;
     }
-    return static_cast<unsigned long>(processors) > MaximumThreads
+    const std::size_t available = static_cast<std::size_t>(processors);
+#endif
+    return available > MaximumThreads
         ? MaximumThreads
-        : static_cast<std::size_t>(processors);
+        : available;
 }
 
 std::size_t choose_thread_count(
@@ -433,29 +521,42 @@ int xcrypt(
             return process_range(cipher, material.nonce, input, output, length, 0, total_blocks);
         }
 
-        std::array<pthread_t, MaximumThreads> handles{};
-        std::array<bool, MaximumThreads> started{};
         std::array<worker_job, MaximumThreads> jobs{};
-        scoped_wipe wipe_handles(handles.data(), sizeof(handles));
-        scoped_wipe wipe_started(started.data(), sizeof(started));
         scoped_wipe wipe_jobs(jobs.data(), sizeof(jobs));
         shared_state shared{material, input, output, length, total_blocks};
+
+#if defined(_WIN32)
+        thread_group threads;
+#else
+        std::array<pthread_t, MaximumThreads> handles{};
+        std::array<bool, MaximumThreads> started{};
+        scoped_wipe wipe_handles(handles.data(), sizeof(handles));
+        scoped_wipe wipe_started(started.data(), sizeof(started));
+#endif
 
         std::size_t created = 0;
         for (; created < thread_count; ++created) {
             jobs[created].shared = &shared;
+#if defined(_WIN32)
+            if (!threads.start(&jobs[created])) {
+                shared.cancel.store(true, std::memory_order_release);
+                shared.start.store(true, std::memory_order_release);
+                break;
+            }
+#else
             if (pthread_create(&handles[created], nullptr, worker_entry, &jobs[created]) != 0) {
                 shared.cancel.store(true, std::memory_order_release);
                 shared.start.store(true, std::memory_order_release);
                 break;
             }
             started[created] = true;
+#endif
         }
 
         if (created == thread_count) {
             while (shared.ready.load(std::memory_order_acquire) < thread_count
                 && !shared.cancel.load(std::memory_order_acquire)) {
-                (void)sched_yield();
+                yield_worker();
             }
             shared.start.store(true, std::memory_order_release);
         }
@@ -465,12 +566,20 @@ int xcrypt(
         // path memory-safe: no worker can still reference shared, jobs,
         // material or the caller's buffers when this function returns.
         while (shared.finished.load(std::memory_order_acquire) < created) {
-            (void)sched_yield();
+            yield_worker();
         }
 
         int result = created == thread_count ? 0 : 3;
         for (std::size_t index = 0; index < created; ++index) {
             int join_result = 0;
+#if defined(_WIN32)
+            if (force_join_failure && index == 0) {
+                join_result = EINVAL;
+            }
+            if (!threads.join(index) && join_result == 0) {
+                join_result = EINVAL;
+            }
+#else
             if (started[index]) {
                 if (force_join_failure && index == 0) {
                     join_result = EINVAL;
@@ -487,6 +596,7 @@ int xcrypt(
                     }
                 }
             }
+#endif
             if (join_result != 0 && result == 0) {
                 result = 3;
             }

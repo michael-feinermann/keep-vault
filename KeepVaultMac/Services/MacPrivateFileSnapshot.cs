@@ -596,14 +596,6 @@ internal sealed class MacPrivateFileSnapshot : IDisposable
     }
 }
 
-internal interface IPrivateSnapshotRandomAccess
-{
-    ValueTask<int> ReadAtAsync(
-        Memory<byte> destination,
-        long offset,
-        CancellationToken cancellationToken);
-}
-
 /// <summary>
 /// Holds the exact macOS source descriptor used by physical-error KPAR2 repair.
 /// Unlike <see cref="MacPrivateFileSnapshot"/>, this lease deliberately does not

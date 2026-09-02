@@ -28,11 +28,35 @@ internal static partial class ProcessHardening
 
     public static ProcessHardeningStatus LastStatus { get; private set; } = new(false, false, false, false, false, false);
 
+    /// <summary>
+    /// Applies the Windows process hardening and refuses to continue if any
+    /// required part of it did not take effect.
+    /// </summary>
+    /// <remarks>
+    /// This mirrors <c>MacProcessHardening.Apply</c>. The macOS side treats its
+    /// four measures as a precondition and throws when one of them fails, so
+    /// the launcher can stop before the user interface or any key material is
+    /// loaded. The Windows side used to record the same information in six
+    /// booleans and then continue regardless; the result was written to the log
+    /// where nobody reads it during an attack. A process without the System32
+    /// DLL search path or without the image-load policy is exactly the process
+    /// this application is built not to be, so it now fails closed as well.
+    ///
+    /// Every measure below is available on Windows 10 1809 and newer, which is
+    /// the floor this method enforces explicitly rather than discovering it
+    /// through a failed policy call.
+    /// </remarks>
     public static ProcessHardeningStatus Apply()
     {
         if (Interlocked.Exchange(ref _applied, 1) != 0)
         {
             return LastStatus;
+        }
+
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
+        {
+            throw new PlatformNotSupportedException(
+                "Keep Vault requires Windows 10 version 1809 or newer.");
         }
 
         bool errorModeSet = TrySetErrorModes();
@@ -48,6 +72,15 @@ internal static partial class ProcessHardening
             extensionPointsDisabled,
             imageLoadPolicySet,
             dllSearchRestricted);
+
+        if (!LastStatus.AllRequiredApplied)
+        {
+            throw new InvalidOperationException(
+                "The required Windows process hardening could not be applied: "
+                + string.Join(", ", LastStatus.MissingMeasures)
+                + ". Keep Vault stopped before loading its user interface.");
+        }
+
         return LastStatus;
     }
 
@@ -109,7 +142,14 @@ internal static partial class ProcessHardening
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetThreadErrorMode(uint dwNewMode, out uint lpOldMode);
 
-    [LibraryImport("wer.dll")]
+    // WerSetFlags is declared in werapi.h but exported by kernel32.dll, not by
+    // wer.dll. The import used to name wer.dll, the resulting
+    // EntryPointNotFoundException was swallowed by the try/catch in
+    // TrySetWerFlags, and the measure reported false on every start while the
+    // status line said "WER=False" to nobody in particular. Verified against
+    // the export tables: kernel32.dll exports WerSetFlags at ordinal 1600,
+    // wer.dll exports no such name.
+    [LibraryImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int WerSetFlags(uint dwFlags);
 
@@ -145,4 +185,38 @@ internal sealed record ProcessHardeningStatus(
     bool StrictHandlePolicySet,
     bool ExtensionPointsDisabled,
     bool ImageLoadPolicySet,
-    bool DllSearchRestricted);
+    bool DllSearchRestricted)
+{
+    /// <summary>
+    /// All six measures are required, the way all four macOS measures are.
+    /// </summary>
+    /// <remarks>
+    /// A partial application is not a degraded mode worth running. Error mode
+    /// and the WER flags keep the process out of crash dumps that would carry
+    /// key material to disk, which is what the macOS core-dump limit does. The
+    /// System32-only DLL search is the counterpart of clearing the dynamic
+    /// loader environment. Strict handles, extension-point blocking and the
+    /// image-load policy have no macOS counterpart because macOS gets the same
+    /// property from library validation under the hardened runtime.
+    /// </remarks>
+    internal bool AllRequiredApplied => MissingMeasures.Count == 0;
+
+    /// <summary>
+    /// Names the measures that did not take effect, so a refusal to start says
+    /// what is missing instead of only that something is.
+    /// </summary>
+    internal IReadOnlyList<string> MissingMeasures
+    {
+        get
+        {
+            var missing = new List<string>(6);
+            if (!ErrorModeSet) { missing.Add("hardened error mode"); }
+            if (!WerFlagsSet) { missing.Add("Windows Error Reporting flags"); }
+            if (!StrictHandlePolicySet) { missing.Add("strict handle checks"); }
+            if (!ExtensionPointsDisabled) { missing.Add("extension-point blocking"); }
+            if (!ImageLoadPolicySet) { missing.Add("image-load policy"); }
+            if (!DllSearchRestricted) { missing.Add("System32-only DLL search"); }
+            return missing;
+        }
+    }
+}

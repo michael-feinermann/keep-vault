@@ -2523,9 +2523,11 @@ int Jidac::doCommand(int argc, const char** argv) {
     error("--verified-stdin is available only in the macOS v12 native build");
 #endif
   }
+#ifdef unix
   else if (!g_keepvault_verified_shm_name.empty()) {
     error("bound verified archive staging is accepted only with --verified-stdin");
   }
+#endif
 
   // Adjust negative version
   if (version<0) {

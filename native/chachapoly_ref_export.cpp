@@ -1002,7 +1002,16 @@ constexpr std::size_t kPoly1305MaxThreads = 64;
 constexpr std::size_t kPoly1305ParallelThresholdBytes = 1024u * 1024u;
 constexpr std::uint64_t kPoly1305LimbMask = (std::uint64_t{1} << 26) - 1;
 
-using poly1305_wide = unsigned __int128;
+// The 5x5 limb product yields 25 partial products in total, five per
+// accumulator. Every limb entering a multiplication is below 2^26, so a single
+// product stays below 2^52 and the four that carry the reduction factor 5 stay
+// below 5*2^52 each. The widest accumulator, d0, therefore stays below
+// 21*2^52 < 2^57, and the worst case with all five limbs at 2^26-1 was measured
+// at exactly 57 bits. uint64_t leaves seven bits of headroom, which is the same
+// bound poly1305-donna-32 relies on. Keeping the adapter free of the
+// compiler-specific __int128 also makes the Windows native build take the same
+// arithmetic path as the macOS one, bit for bit.
+using poly1305_wide = std::uint64_t;
 
 struct poly1305_field {
     std::uint64_t limb[5];

@@ -115,7 +115,7 @@ set "CRYPTOPP=external\cryptopp"
 set "CPPOBJ=work\cryptopp-objects"
 if not exist "%CPPOBJ%" mkdir "%CPPOBJ%"
 if not exist "%CPPOBJ%\adapters" mkdir "%CPPOBJ%\adapters"
-set "CPPFLAGS=/nologo /c /MT /GS /guard:cf /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /W0"
+set "CPPFLAGS=/nologo /c /MT /GS /guard:cf /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /W0 /MP4"
 
 REM The library, its test drivers and its validation suites live in one
 REM directory; the drivers carry a main() and the suites are not shipped.
@@ -166,5 +166,14 @@ for %%A in (aes mars shacal2 chachapoly) do (
   if errorlevel 1 exit /b 1
 )
 
-echo Keep Vault v12 Windows Kalyna port is intentionally deferred; no Windows release artifact was produced.
-exit /b 2
+cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
+  /I"%CRYPTOPP%" ^
+  /Fo"%CPPOBJ%\adapters\\" ^
+  /Fetools\kalyna_v12.dll ^
+  native\kalyna_v12_export.cpp ^
+  "%CPPOBJ%\cryptopp.lib" ^
+  %HARDEN_LINK%
+if errorlevel 1 exit /b 1
+
+echo Keep Vault v12 Windows native toolset built.
+exit /b 0

@@ -468,7 +468,7 @@ public sealed partial class ZpaqService
             if (result.Succeeded)
             {
                 ValidateExtractedDirectoryLimits(target.StagingPath, target);
-                target.Install();
+                target.Install(ValidateExtractedTreeMeasurement);
             }
             else
             {
@@ -636,7 +636,7 @@ public sealed partial class ZpaqService
             if (result.Succeeded)
             {
                 ValidateExtractedDirectoryLimits(target.StagingPath, target);
-                target.Install();
+                target.Install(ValidateExtractedTreeMeasurement);
             }
             else
             {

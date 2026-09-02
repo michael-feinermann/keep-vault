@@ -82,6 +82,7 @@
     <Compile Include="../KalynaArchiver/Services/NativeCascadeCiphers.cs" Link="Services/NativeCascadeCiphers.cs" />
     <Compile Include="../KalynaArchiver/Services/NativeArgon2id.cs" Link="Services/NativeArgon2id.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordKeyService.cs" Link="Services/PasswordKeyService.cs" />
+    <Compile Include="../KalynaArchiver/Services/PrivateSnapshotRandomAccess.cs" Link="Services/PrivateSnapshotRandomAccess.cs" />
     <Compile Include="../KalynaArchiver/Services/ProcessResult.cs" Link="Services/ProcessResult.cs" />
     <Compile Include="../KalynaArchiver/Services/RecoveryService.cs" Link="Services/RecoveryService.cs" />
     <Compile Include="../KalynaArchiver/Services/SecureMemory.cs" Link="Services/SecureMemory.cs" />

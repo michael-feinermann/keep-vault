@@ -499,7 +499,11 @@ public sealed partial class KalynaContainerService
             .ConfigureAwait(false);
         FileStream input = inputSnapshot.Stream;
 #else
-        await using var input = File.OpenRead(encryptedPath);
+        // Windows has no unlinked private snapshot, but the open itself must
+        // match the macOS one: no reparse point is followed, the object is
+        // proven to be a regular file, and no other writer is admitted for as
+        // long as the container is being authenticated and decrypted.
+        await using var input = SecureFile.OpenReadNoReparse(encryptedPath, FileShare.Read);
 #endif
         byte[] magic = new byte[Magic.Length];
         byte[] headerLengthBytes = new byte[sizeof(int)];
@@ -663,7 +667,7 @@ public sealed partial class KalynaContainerService
 #if KEEPVAULT_MACOS
         await using FileStream input = MacSafeFileSystem.OpenReadNoSymlinks(path);
 #else
-        await using FileStream input = File.OpenRead(path);
+        await using FileStream input = SecureFile.OpenReadNoReparse(path, FileShare.Read);
 #endif
         try
         {
@@ -812,7 +816,7 @@ public sealed partial class KalynaContainerService
 #if KEEPVAULT_MACOS
         await using FileStream input = MacSafeFileSystem.OpenReadNoSymlinks(encryptedPath);
 #else
-        await using var input = File.OpenRead(encryptedPath);
+        await using var input = SecureFile.OpenReadNoReparse(encryptedPath, FileShare.Read);
 #endif
         return await ReadContainerInfoAsync(input, cancellationToken).ConfigureAwait(false);
     }

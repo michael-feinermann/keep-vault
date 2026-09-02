@@ -1845,15 +1845,21 @@ static void RunNativeIntegrityTests()
 
 static void RunProcessHardeningTests()
 {
-    ProcessHardeningStatus status = ProcessHardening.Apply();
+    // The macOS counterpart, security.process-hardening, requires every
+    // measure and the EX_CONFIG exit code. Asserting that at least one of six
+    // measures was accepted, as this test did, passed for years while the WER
+    // import named the wrong DLL and that measure was never applied at all.
     Assert(
-        status.ErrorModeSet
-        || status.WerFlagsSet
-        || status.StrictHandlePolicySet
-        || status.ExtensionPointsDisabled
-        || status.ImageLoadPolicySet
-        || status.DllSearchRestricted,
-        "at least one process hardening measure was accepted");
+        App.StartupConfigurationErrorExitCode == 78,
+        "a startup-hardening failure is mapped to EX_CONFIG (78)");
+    ProcessHardeningStatus status = ProcessHardening.Apply();
+    Assert(status.AllRequiredApplied, "required Windows process hardening was applied");
+    Assert(status.ErrorModeSet, "the hardened error mode is set");
+    Assert(status.WerFlagsSet, "the Windows Error Reporting flags are set");
+    Assert(status.StrictHandlePolicySet, "strict handle checking is enabled");
+    Assert(status.ExtensionPointsDisabled, "extension points are blocked");
+    Assert(status.ImageLoadPolicySet, "the image-load policy is set");
+    Assert(status.DllSearchRestricted, "the DLL search path is restricted to System32");
 }
 
 static async Task RunZpaqTraversalTestsAsync()
@@ -2283,11 +2289,15 @@ static void RunObjectBoundReadTests()
             Directory.CreateDirectory(nested);
             File.WriteAllBytes(Path.Combine(nested, "payload.bin"), payload);
             DirectoryTreeMeasurement measurement = staging.MeasureTree(allowWriters: false);
+            // FileCount is the shared extraction entry budget and deliberately
+            // counts directories as well, so the nested directory and the file
+            // inside it are two entries.
             Assert(
-                measurement.FileCount == 1
+                measurement.FileCount == 2
                     && measurement.TotalBytes == payload.Length
-                    && measurement.MaxFileBytes == payload.Length,
-                "the Windows extraction walker measures the bound no-follow tree in one pass");
+                    && measurement.MaxFileBytes == payload.Length
+                    && measurement.TreeFingerprint.Length == 128,
+                "the Windows extraction walker measures and fingerprints the bound no-follow tree in one pass");
             staging.Install();
         }
         Assert(
@@ -2341,7 +2351,7 @@ static void RunObjectBoundReadTests()
             try
             {
                 AssertThrows<IOException>(
-                    staging.Install,
+                    () => staging.Install(),
                     "the bound extraction install refuses a destination inserted at the final rename boundary");
             }
             finally

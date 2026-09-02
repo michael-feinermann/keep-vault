@@ -1,5 +1,7 @@
 using System.IO;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
 
 namespace KalynaArchiver.Services;
@@ -373,6 +375,20 @@ internal sealed class WindowsOriginalDeletionService
                         requestDeleteAccess: true,
                         requestReadAccess: true);
                     WindowsFileIdentity sourceIdentity = WindowsSafeFileSystem.GetIdentity(sourceHandle);
+
+                    // The macOS side re-reads the source through the bound
+                    // descriptor before it moves anything, and only then
+                    // renames. Doing it in that order means a file that no
+                    // longer matches what was verified is never moved out of
+                    // its directory in the first place, so there is nothing to
+                    // roll back for it. Windows now does the same; the handle
+                    // above already denies writers and renames, so this reads
+                    // exactly the object that is about to be quarantined.
+                    RequireBoundOriginalMatches(
+                        sourceHandle,
+                        fullPath,
+                        verified.Files[fullPath]);
+
                     WindowsSafeFileSystem.RenameBoundObject(
                         sourceHandle,
                         context.QuarantineDirectoryHandle,
@@ -409,19 +425,7 @@ internal sealed class WindowsOriginalDeletionService
                     item.Identity,
                     item.QuarantinePath,
                     directory: false);
-                (long length, string digest) = HashBoundFile(item.ObjectHandle);
-                if (length != expected.Length)
-                {
-                    throw new InvalidDataException($"The quarantined file differs from the verified original: {item.OriginalPath}");
-                }
-
-                if (!CryptographicOperations.FixedTimeEquals(
-                        Convert.FromHexString(digest),
-                        Convert.FromHexString(expected.Digest)))
-                {
-                    throw new InvalidDataException($"The quarantined file digest differs from the verified original: {item.OriginalPath}");
-                }
-
+                RequireBoundOriginalMatches(item.ObjectHandle, item.OriginalPath, expected);
                 item.ParentContext.RequireQuarantineEntry(item);
             }
 
@@ -533,7 +537,7 @@ internal sealed class WindowsOriginalDeletionService
                 throw new IOException("The random quarantine directory name already exists.");
             }
 
-            Directory.CreateDirectory(path);
+            CreatePrivateDirectory(path);
             quarantineHandle = WindowsSafeFileSystem.OpenDirectoryBound(
                 path,
                 denyRename: true,
@@ -557,10 +561,83 @@ internal sealed class WindowsOriginalDeletionService
         }
     }
 
+    /// <summary>
+    /// Creates the quarantine directory readable and writable by this user
+    /// only.
+    /// </summary>
+    /// <remarks>
+    /// macOS creates the same directory with <c>mkdirat</c> and mode 0700, so
+    /// the verified originals are never briefly parked somewhere the parent
+    /// folder's permissions would have opened up. A plain
+    /// <c>Directory.CreateDirectory</c> inherits whatever the parent grants,
+    /// which for a shared or published folder is not the same thing. The
+    /// discretionary list below is protected, so no inherited entry survives,
+    /// and it names the current user, SYSTEM and the local administrators, who
+    /// can take ownership of any file on the volume regardless.
+    /// </remarks>
+    private static void CreatePrivateDirectory(string path)
+    {
+        using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+        SecurityIdentifier owner = identity.User
+            ?? throw new IOException("The current Windows identity has no user SID.");
+
+        var security = new DirectorySecurity();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.SetOwner(owner);
+        foreach (SecurityIdentifier trustee in new[]
+        {
+            owner,
+            new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+            new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+        })
+        {
+            security.AddAccessRule(new FileSystemAccessRule(
+                trustee,
+                FileSystemRights.FullControl,
+                InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit,
+                PropagationFlags.None,
+                AccessControlType.Allow));
+        }
+
+        new DirectoryInfo(path).Create(security);
+    }
+
     private static string DescribeException(Exception exception) =>
         exception.InnerException is null
             ? exception.Message
             : $"{exception.Message} ({exception.InnerException.Message})";
+
+    /// <summary>
+    /// Re-reads a handle-bound original and requires it to be exactly what the
+    /// verification pass recorded.
+    /// </summary>
+    /// <remarks>
+    /// The counterpart of <c>MacOriginalDeletionService.RequireBoundOriginalMatches</c>.
+    /// Length and digest are compared, and the digest comparison runs in
+    /// constant time even though nothing secret is involved, because the same
+    /// helper is used on the pre-move and the post-move check and only one of
+    /// them should ever differ in cost from the other.
+    /// </remarks>
+    private static void RequireBoundOriginalMatches(
+        SafeFileHandle handle,
+        string originalPath,
+        OriginalFileState expected)
+    {
+        (long length, string digest) = HashBoundFile(handle);
+        if (length != expected.Length)
+        {
+            throw new InvalidDataException(
+                $"The bound original differs in length from the verified original: {originalPath}");
+        }
+
+        if (!CryptographicOperations.FixedTimeEquals(
+                Convert.FromHexString(digest),
+                Convert.FromHexString(expected.Digest)))
+        {
+            throw new InvalidDataException(
+                $"The bound original differs in content from the verified original: {originalPath}");
+        }
+    }
 
     private static (long Length, string Digest) HashBoundFile(SafeFileHandle handle)
     {
