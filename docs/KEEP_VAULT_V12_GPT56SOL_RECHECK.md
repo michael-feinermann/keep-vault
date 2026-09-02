@@ -38,6 +38,10 @@ Clang `21.0.0`, zehn logische Prozessoren. Der geprüfte Ausgangsstand war
 `master` bei Commit `26cd3fba4bcb0b233d65009377a9e350c50663f6`; die Änderungen
 dieses Laufs waren zu diesem Zeitpunkt noch nicht committed.
 
+Nach Abschluss der Prüfungen wurde der geprüfte v12-Stand als Commit
+`0dd3acc0e8e4254d345bfd9d9a6b487f8a0dbc19` mit Tree-Hash
+`404c2fa03983db73b69ccecc8bf534befa84ee6d` auf `origin/master` gepusht.
+
 Ausgeführte Gates und Ergebnisse:
 
 | Kommando bzw. Test-ID | Ergebnis | Artefakt oder Hinweis |
