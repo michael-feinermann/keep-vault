@@ -60,6 +60,11 @@ Ausgeführte Gates und Ergebnisse:
 | `zpaq.process-resource-limits` | PASS | CPU-, RSS-, Wall-Time-, Prozesszahl- und Stall-Gates bestanden |
 | `./tools/Test-KeepVault.sh --full --no-smoke --parallel 2` | 51 PASS, 50 FAIL | Ergebnisbaum `/private/tmp/keep-vault-test-runner.Etk0mTNo/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json`; die 50 Fehler sind fehlende signierte Sidecars, fehlender finaler `dist`-Stand oder der absichtlich erforderliche root-eigene ZPAQ-v12-Anker, nicht stillschweigend übersprungene Tests |
 
+Der vollständige Ergebnisbaum des letzten Laufs wurde nach der Auswertung
+recoverbar unter
+`/Users/michael/.Trash/keepvault-full-run.LCaUD8/keep-vault-test-runner.Etk0mTNo`
+archiviert. Es wurde nichts endgültig gelöscht.
+
 Der USB-Stick wurde ausschließlich für die direkte, speicherinterne
 Authentifizierung verwendet. Der ML-DSA-Public-Key-Abgleich war erfolgreich
 (`usb_mldsa_public_match=true`), die PFX-Datei war eine reguläre geschützte
