@@ -57,3 +57,18 @@ final class ScanSessionTerminationGate: @unchecked Sendable {
         lock.unlock()
     }
 }
+
+/// Main-actor gate shared by the window-close and application-termination
+/// paths. AppKit may deliver both for the same user action (closing the last
+/// window calls terminate, which then emits applicationWillTerminate), so the
+/// cleanup body must run exactly once.
+@MainActor
+final class IdempotentTerminationCleanup {
+    private var completed = false
+
+    func run(_ cleanup: () -> Void) {
+        guard !completed else { return }
+        completed = true
+        cleanup()
+    }
+}

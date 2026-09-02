@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>KeepVaultMac.HybridSigner</AssemblyName>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
@@ -14,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="../../../KalynaArchiver/Services/SecureMemory.cs" Link="Services/SecureMemory.cs" />
     <Compile Include="../../../KalynaArchiver.Signing/HybridSignatureService.cs" Link="Signing/HybridSignatureService.cs" />
     <Compile Include="../../../KalynaArchiver.Signing/Mldsa87.cs" Link="Signing/Mldsa87.cs" />
     <Compile Include="../../../KalynaArchiver.Signing/Mldsa87Reference.cs" Link="Signing/Mldsa87Reference.cs" />

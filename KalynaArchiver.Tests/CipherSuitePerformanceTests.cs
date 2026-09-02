@@ -21,6 +21,10 @@ internal static class CipherSuitePerformanceTests
     private const int MeasurementRuns = 3;
     private const double AllowedBaselineRegression = 0.25;
     private const string BaselineEnvironment = "KEEPVAULT_PERF_BASELINE";
+    private const string ContainerPassword = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
+    private const string ContainerPin = "428317";
+    private static readonly string ContainerFactorA = CreateFactor(7, 3);
+    private static readonly string ContainerFactorB = CreateFactor(13, 11);
     private static readonly EncryptionSuite[] ExpectedSuites =
     [
         EncryptionSuite.Kalyna512_512,
@@ -160,7 +164,7 @@ internal static class CipherSuitePerformanceTests
             }
 
             ValidateSuiteRates(rates, "current performance result");
-            VerifyKalynaTableSpeedup(input, output);
+            VerifyKalynaParallelSpeedup(input, output);
             VerifyChaChaParallelSpeedup(input, output);
             CompareWithMachineBaseline(host, rates);
 
@@ -172,41 +176,254 @@ internal static class CipherSuitePerformanceTests
             CryptographicOperations.ZeroMemory(input);
             CryptographicOperations.ZeroMemory(output);
         }
+
+        RunContainerMeasurementsAsync(host).GetAwaiter().GetResult();
     }
 
-    private static void VerifyKalynaTableSpeedup(byte[] input, byte[] output)
+    /// <summary>
+    /// Measures the complete v12 encrypted-container path for every production
+    /// suite. Unlike the primitive matrix above, this includes the production
+    /// Argon2id profile, the bounded chunk pipeline, per-chunk AEAD where
+    /// applicable, both parallel tree MACs, authenticated verification before
+    /// plaintext, the immutable macOS input snapshot, and ordered decryption.
+    /// The input models an already compressed ZPAQ stream; compression itself
+    /// is measured by the separate level-5 release E2E gates.
+    /// </summary>
+    private static async Task RunContainerMeasurementsAsync(PerformanceHostIdentity host)
     {
-        byte[] key = CreateDeterministicBytes(64, 0x4B414C594E41UL);
-        byte[] counter = CreateDeterministicBytes(64, 0x5441424C4553UL);
-        byte[]? referenceDigest = null;
+        string root = Directory.CreateTempSubdirectory("keep-vault-container-performance-").FullName;
+#if KEEPVAULT_MACOS
+        root = MacSafeFileSystem.ResolveExistingRealPath(root);
+#endif
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(
+                root,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        byte[] payload = CreateDeterministicBytes(MeasurementBytes, 0x4B56503132434F4EUL);
+        byte[] expectedHash = SHA256.HashData(payload);
+        var encryptRates = new Dictionary<string, double>(StringComparer.Ordinal);
+        var decryptRates = new Dictionary<string, double>(StringComparer.Ordinal);
+        Exception? operationFailure = null;
         try
         {
-            NativeKalyna.XCryptCtr512Reference(key, counter, input, output, WarmupBytes);
+            Console.WriteLine(
+                $"    full v12 container method: {MeasurementBytes / (1024 * 1024)} MiB pre-compressed payload, "
+                + $"{MeasurementRuns} runs, production Argon2id t={V12MasterKdf.Iterations}/p={V12MasterKdf.Parallelism}, median");
+            var containers = new KalynaContainerService();
+            foreach (EncryptionSuite suite in ExpectedSuites)
+            {
+                var encryptionSamples = new double[MeasurementRuns];
+                var decryptionSamples = new double[MeasurementRuns];
+                for (int run = 0; run < MeasurementRuns; run++)
+                {
+                    string containerPath = Path.Combine(root, $"{suite}-{run}.kzpaq");
+                    using GeneratedArchiveEntropy entropy = CreateContainerEntropy(suite, run);
+                    await using var input = new MemoryStream(payload, writable: false);
+
+                    Stopwatch timer = Stopwatch.StartNew();
+                    await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
+                        input,
+                        containerPath,
+                        ContainerPassword,
+                        ContainerPin,
+                        ContainerFactorA,
+                        ContainerFactorB,
+                        suite,
+                        entropy,
+                        "v12 container performance",
+                        null,
+                        CancellationToken.None).ConfigureAwait(false);
+                    timer.Stop();
+                    encryptionSamples[run] = RateMiBPerSecond(MeasurementBytes, timer.Elapsed);
+
+                    using var sink = new HashingWriteStream();
+                    timer.Restart();
+                    await containers.DecryptToStreamAsync(
+                        containerPath,
+                        ContainerPassword,
+                        ContainerPin,
+                        ContainerFactorA,
+                        ContainerFactorB,
+                        sink,
+                        null,
+                        CancellationToken.None).ConfigureAwait(false);
+                    timer.Stop();
+                    decryptionSamples[run] = RateMiBPerSecond(MeasurementBytes, timer.Elapsed);
+                    byte[] actualHash = sink.GetHashAndReset();
+                    try
+                    {
+                        Require(
+                            sink.BytesWritten == MeasurementBytes
+                                && CryptographicOperations.FixedTimeEquals(expectedHash, actualHash),
+                            $"{suite} full-container performance run did not reproduce the input payload.");
+                    }
+                    finally
+                    {
+                        CryptographicOperations.ZeroMemory(actualHash);
+                    }
+
+                    File.Delete(containerPath);
+                }
+
+                double encryptMedian = Median(encryptionSamples);
+                double decryptMedian = Median(decryptionSamples);
+                encryptRates[suite.ToString()] = encryptMedian;
+                decryptRates[suite.ToString()] = decryptMedian;
+                Console.WriteLine(
+                    $"    {EncryptionSuiteCatalog.Get(suite).DisplayName,-72} "
+                    + $"container encrypt {encryptMedian,8:F2} MiB/s; "
+                    + $"verify+decrypt {decryptMedian,8:F2} MiB/s");
+            }
+
+            ValidateSuiteRates(encryptRates, "full-container encryption result");
+            ValidateSuiteRates(decryptRates, "full-container decryption result");
+            var result = new ContainerPerformanceResult(1, host, encryptRates, decryptRates);
+            Console.WriteLine("    CONTAINER_PERF_RESULT_JSON=" + JsonSerializer.Serialize(result, JsonOptions));
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(expectedHash);
+            CryptographicOperations.ZeroMemory(payload);
+            try
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+            }
+            catch (Exception cleanupFailure)
+            {
+                if (operationFailure is null)
+                {
+                    throw;
+                }
+
+                throw new IOException(
+                    "The container-performance run failed and its private workspace could not be removed.",
+                    new AggregateException(operationFailure, cleanupFailure));
+            }
+        }
+    }
+
+    private static GeneratedArchiveEntropy CreateContainerEntropy(EncryptionSuite suite, int run)
+    {
+        LockedSensitiveBuffer? firstSalt = null;
+        LockedSensitiveBuffer? firstNonce = null;
+        LockedSensitiveBuffer? secondSalt = null;
+        LockedSensitiveBuffer? secondNonce = null;
+        Exception? operationFailure = null;
+        try
+        {
+            firstSalt = LockedSensitiveBuffer.Create(EntropyMixer.SaltPairBytes);
+            firstNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+            secondSalt = LockedSensitiveBuffer.Create(EntropyMixer.SaltPairBytes);
+            secondNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+
+            // Keep a suite's KDF salts fixed across its measured runs so the
+            // secret PMI memory cost is identical and the median is not a
+            // median of three different Argon2 workloads. Nonces remain unique
+            // per run, so the repeated benchmark never reuses a keystream.
+            FillEntropy(firstSalt.Bytes, 17 + (int)suite, 29);
+            FillEntropy(firstNonce.Bytes, 43 + (int)suite, 37 + run);
+            FillEntropy(secondSalt.Bytes, 101 + (int)suite, 41);
+            FillEntropy(secondNonce.Bytes, 151 + (int)suite, 47 + run);
+            var result = new GeneratedArchiveEntropy(
+                ContainerFactorA,
+                ContainerFactorB,
+                firstSalt,
+                firstNonce,
+                secondSalt,
+                secondNonce);
+            firstSalt = null;
+            firstNonce = null;
+            secondSalt = null;
+            secondNonce = null;
+            return result;
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                operationFailure,
+                "Container-performance entropy creation failed and one or more sensitive buffers could not be released.",
+                secondNonce,
+                secondSalt,
+                firstNonce,
+                firstSalt);
+        }
+    }
+
+    private static void FillEntropy(Span<byte> destination, int seed, int multiplier)
+    {
+        for (int index = 0; index < destination.Length; index++)
+        {
+            destination[index] = unchecked((byte)(seed + (index * multiplier)));
+        }
+    }
+
+    private static string CreateFactor(int multiplier, int offset)
+    {
+        byte[] bytes = new byte[V12MasterKdf.FactorBytes];
+        try
+        {
+            for (int index = 0; index < bytes.Length; index++)
+            {
+                bytes[index] = unchecked((byte)((index * multiplier) + offset));
+            }
+
+            return Convert.ToHexString(bytes);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(bytes);
+        }
+    }
+
+    private static void VerifyKalynaParallelSpeedup(byte[] input, byte[] output)
+    {
+        byte[] key = CreateDeterministicBytes(64, 0x4B414C594E41UL);
+        byte[] counter = CreateDeterministicBytes(64, 0x563132504152UL);
+        byte[]? scalarDigest = null;
+        try
+        {
+            NativeKalyna.XCryptCtr512Scalar(key, counter, input, output, WarmupBytes);
             NativeKalyna.XCryptCtr512(key, counter, input, output, WarmupBytes);
 
-            var referenceSamples = new double[MeasurementRuns];
-            var tableSamples = new double[MeasurementRuns];
+            var scalarSamples = new double[MeasurementRuns];
+            var parallelSamples = new double[MeasurementRuns];
             for (int run = 0; run < MeasurementRuns; run++)
             {
                 Stopwatch timer = Stopwatch.StartNew();
-                NativeKalyna.XCryptCtr512Reference(
+                NativeKalyna.XCryptCtr512Scalar(
                     key,
                     counter,
                     input,
                     output,
                     DifferentialBytes);
                 timer.Stop();
-                referenceSamples[run] = RateMiBPerSecond(DifferentialBytes, timer.Elapsed);
+                scalarSamples[run] = RateMiBPerSecond(DifferentialBytes, timer.Elapsed);
                 byte[] digest = SHA256.HashData(output.AsSpan(0, DifferentialBytes));
-                if (referenceDigest is null)
+                if (scalarDigest is null)
                 {
-                    referenceDigest = digest;
+                    scalarDigest = digest;
                 }
                 else
                 {
                     Require(
-                        CryptographicOperations.FixedTimeEquals(referenceDigest, digest),
-                        "Kalyna reference output changed across identical performance runs.");
+                        CryptographicOperations.FixedTimeEquals(scalarDigest, digest),
+                        "Kalyna scalar output changed across identical performance runs.");
                     CryptographicOperations.ZeroMemory(digest);
                 }
 
@@ -218,36 +435,36 @@ internal static class CipherSuitePerformanceTests
                     output,
                     DifferentialBytes);
                 timer.Stop();
-                tableSamples[run] = RateMiBPerSecond(DifferentialBytes, timer.Elapsed);
-                byte[] tableDigest = SHA256.HashData(output.AsSpan(0, DifferentialBytes));
+                parallelSamples[run] = RateMiBPerSecond(DifferentialBytes, timer.Elapsed);
+                byte[] parallelDigest = SHA256.HashData(output.AsSpan(0, DifferentialBytes));
                 try
                 {
                     Require(
-                        CryptographicOperations.FixedTimeEquals(referenceDigest, tableDigest),
-                        "Kalyna table path differs from the reference during the performance gate.");
+                        CryptographicOperations.FixedTimeEquals(scalarDigest, parallelDigest),
+                        "Kalyna parallel path differs from its scalar v12 path during the performance gate.");
                 }
                 finally
                 {
-                    CryptographicOperations.ZeroMemory(tableDigest);
+                    CryptographicOperations.ZeroMemory(parallelDigest);
                 }
             }
 
-            double referenceMedian = Median(referenceSamples);
-            double tableMedian = Median(tableSamples);
+            double scalarMedian = Median(scalarSamples);
+            double parallelMedian = Median(parallelSamples);
             Require(
-                tableMedian >= referenceMedian * 2.0,
-                $"Kalyna table path speedup disappeared: {tableMedian:F1} MiB/s tables vs {referenceMedian:F1} MiB/s reference.");
+                parallelMedian >= scalarMedian * 1.20,
+                $"Kalyna parallel speedup disappeared: {parallelMedian:F1} MiB/s parallel vs {scalarMedian:F1} MiB/s scalar.");
             Console.WriteLine(
-                $"    Kalyna table invariant: {tableMedian:F1} MiB/s vs "
-                + $"{referenceMedian:F1} MiB/s reference ({tableMedian / referenceMedian:F2}x)");
+                $"    Kalyna v12 parallel invariant: {parallelMedian:F1} MiB/s vs "
+                + $"{scalarMedian:F1} MiB/s scalar ({parallelMedian / scalarMedian:F2}x)");
         }
         finally
         {
             CryptographicOperations.ZeroMemory(key);
             CryptographicOperations.ZeroMemory(counter);
-            if (referenceDigest is not null)
+            if (scalarDigest is not null)
             {
-                CryptographicOperations.ZeroMemory(referenceDigest);
+                CryptographicOperations.ZeroMemory(scalarDigest);
             }
         }
     }
@@ -808,6 +1025,12 @@ internal static class CipherSuitePerformanceTests
         PerformanceHostIdentity? Host,
         Dictionary<string, double>? RatesMiBPerSecond);
 
+    private sealed record ContainerPerformanceResult(
+        int SchemaVersion,
+        PerformanceHostIdentity Host,
+        Dictionary<string, double> EncryptMiBPerSecond,
+        Dictionary<string, double> VerifyAndDecryptMiBPerSecond);
+
     private sealed record PerformanceHostIdentity(
         string OperatingSystem,
         string OperatingSystemVersion,
@@ -817,4 +1040,105 @@ internal static class CipherSuitePerformanceTests
         int LogicalProcessors,
         string CpuDescriptor,
         string MachineIdentitySha256);
+
+    private sealed class HashingWriteStream : Stream
+    {
+        private readonly IncrementalHash _hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        private bool _disposed;
+
+        internal long BytesWritten { get; private set; }
+
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => !_disposed;
+        public override long Length => BytesWritten;
+
+        public override long Position
+        {
+            get => BytesWritten;
+            set => throw new NotSupportedException();
+        }
+
+        internal byte[] GetHashAndReset()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _hash.GetHashAndReset();
+        }
+
+        public override void Flush()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+        }
+
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return cancellationToken.IsCancellationRequested
+                ? Task.FromCanceled(cancellationToken)
+                : Task.CompletedTask;
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+            Write(buffer.AsSpan(offset, count));
+        }
+
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _hash.AppendData(buffer);
+            BytesWritten = checked(BytesWritten + buffer.Length);
+        }
+
+        public override ValueTask WriteAsync(
+            ReadOnlyMemory<byte> buffer,
+            CancellationToken cancellationToken = default)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ValueTask.FromCanceled(cancellationToken);
+            }
+
+            Write(buffer.Span);
+            return ValueTask.CompletedTask;
+        }
+
+        public override Task WriteAsync(
+            byte[] buffer,
+            int offset,
+            int count,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromCanceled(cancellationToken);
+            }
+
+            Write(buffer.AsSpan(offset, count));
+            return Task.CompletedTask;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && !_disposed)
+            {
+                _hash.Dispose();
+                _disposed = true;
+            }
+
+            base.Dispose(disposing);
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
+
+        public override long Seek(long offset, SeekOrigin origin) =>
+            throw new NotSupportedException();
+
+        public override void SetLength(long value) =>
+            throw new NotSupportedException();
+    }
 }

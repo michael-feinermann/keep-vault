@@ -74,7 +74,7 @@ internal sealed record TestCost(int CpuTokens, int MemoryMiB, bool UsesArgon, Te
 {
     /// <remarks>
     /// The reservations are deliberately static minimums rather than measured
-    /// values: a full-cost v11 Argon2id call can allocate just under 2 GiB, and
+    /// values: a full-cost v12 Argon2id call can allocate just under 2 GiB, and
     /// a scheduler that trusted a small historical measurement would happily
     /// start three of them.
     /// </remarks>

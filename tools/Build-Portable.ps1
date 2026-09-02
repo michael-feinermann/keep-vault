@@ -417,7 +417,7 @@ Windows root. Explorer can therefore report an untrusted development chain while
 accepts only its exact compiled pins. Public distribution requires a protected production
 code-signing key and an appropriate Windows trust chain.
 
-Encrypted containers use format v11 only and offer ten production suites: four cascades
+Encrypted containers use format v12 only and offer ten production suites: four cascades
 and six individual ciphers. Every suite requires the same four credentials: a 24-256
 character passphrase, a 6-16 digit PIN, and two independent generated 1024-bit hexadecimal
 factors. Print key sheet A and key sheet B separately and store them separately. The blank
@@ -429,7 +429,7 @@ counters restart at zero after that epoch is consumed. Every output also include
 operating-system CSPRNG. The matching salt and nonce remain available exactly once in
 locked RAM and stay bound to the displayed factors A and B.
 
-The v11 KDF length-prefixes and domain-separates the passphrase, PIN and both factors in
+The v12 KDF length-prefixes and domain-separates the passphrase, PIN and both factors in
 independent SHA3 and Skein branches. PMI16 is derived from the credentials and selects an
 Argon2id memory cost from 1 GiB to just under 2 GiB with t=4 and p=4; it is not stored in
 the header. The Paranoia cascade performs the complete second KDF round.
@@ -448,10 +448,10 @@ NTFS alternate data streams are intentionally omitted during archive creation an
 during extraction. OneDrive/cloud versions, backups, shadow copies and print spooling can
 retain data outside this app's control.
 
-Cryptographic erase only applies to encrypted v11 ZPAQ containers. True SSD hardware secure
+Cryptographic erase only applies to encrypted v12 ZPAQ containers. True SSD hardware secure
 erase is a whole-drive firmware/vendor operation, not a reliable per-file app operation.
 
-KPAR2 v4 with ContainerVersion 11 is this app's custom RS(20,3) recovery format, not
+KPAR2 v4 with ContainerVersion 12 is this app's custom RS(20,3) recovery format, not
 standard PAR2. At 1 TB, 15 percent
 recovery redundancy requires about 150 GiB of additional storage and several full I/O passes.
 Encrypted archives always use dual-authenticated KPAR2 metadata (HMAC-SHA3-512 and keyed

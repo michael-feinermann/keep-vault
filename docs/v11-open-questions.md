@@ -1,10 +1,15 @@
-# Open questions
+# Historical v11 review notes
+
+Status: historical and non-normative. This file records the state of the
+superseded v11 development branch. Keep Vault v12 neither implements nor reads
+v11 and no release decision may be based on this document. Current macOS v12
+requirements live in `KEEP_VAULT_V12_MACOS_RELEASE.md`.
 
 Everything here was found or raised while v11 was being built and deliberately
 not fixed. Each entry says what is wrong, why it was left, and what would close
 it.
 
-## 1. The two signing keys share one wrapping key
+## 1. The two signing keys shared one wrapping key
 
 RSA-PSS/SHA-512 and ML-DSA-87 are algorithmically independent, and a release is
 only trusted when both verify. Operationally they are not independent: both
@@ -12,17 +17,17 @@ private halves are protected by the same 32-byte AES key held in one Keychain
 item. Whoever obtains that key obtains both halves, and the hybrid signature
 stops being a hybrid at exactly the moment it would matter.
 
-Not fixed because re-wrapping requires the plaintext ML-DSA key, which
+This was not fixed in v11 because re-wrapping requires the plaintext ML-DSA key, which
 exists only on the offline backup medium — the migration cannot be done from a
 build machine that only has the envelopes.
 
-**To close it:** two Keychain items with independent random keys, one per
+The v12 release gate requires two Keychain items with independent random keys, one per
 algorithm; `Protect-HybridKeys-macOS.sh` creates both; the signer reads each
 half through its own item. Two prompts per release, which is already the
 accepted behaviour. Better still, two different holders — a smartcard or HSM
 for at least the RSA half — so that no single machine ever has both.
 
-## 2. The ZPAQ child process is not separately sandboxed
+## 2. The v11 ZPAQ child process was not separately sandboxed
 
 ZPAQ already runs as an external process, not in-process: `ZpaqService` starts a
 trust-verified executable and talks to it over pipes. What it does not have is a
@@ -33,20 +38,20 @@ corpus, bounded output, cancellation that kills the whole process tree — but a
 memory-safety bug in it would still execute with the same rights as the app that
 launched it, which include the user's files and the Keychain items above.
 
-**To close it:** launch the child under a restrictive sandbox profile, with file
+The recorded remediation was to launch the child under a restrictive sandbox profile, with file
 access limited to the private snapshot and one output directory, and no network.
 The interface is already a pipe, so this is a launch change rather than a
 rewrite.
 
-## 3. Not notarized, signed with an Apple Development identity
+## 3. v11 was not notarized and used an Apple Development identity
 
 Gatekeeper refuses the app on any Mac other than the one that built it. This is
 a distribution problem, not a cryptographic one — the hybrid signature and the
 dual manifests are what actually establish what the package is — but it makes
 the published build awkward to install.
 
-**To close it:** a Developer ID Application certificate and a notarization
-submission in `Build-Portable-macOS.sh`. Needs a paid Apple Developer account;
+The recorded remediation was a Developer ID Application certificate and a notarization
+submission in the release build. It needs a paid Apple Developer account;
 nothing in the code has to change.
 
 ## 4. The PMI is observable locally even though it is not stored

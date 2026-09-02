@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/zsh -f
 set -euo pipefail
 
 script_dir=${0:A:h}

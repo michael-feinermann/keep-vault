@@ -1,7 +1,7 @@
 /*
  * Native adapter for MARS-448 in CTR mode.
  *
- * MARS is used by the current v11 mixed and paranoia production cascades. It
+ * MARS is used by the current v12 mixed and paranoia production cascades. It
  * has no separate in-repository reference implementation, so both its verified
  * production adapter and differential tests use the vendored Crypto++ release;
  * see external/VENDOR-PROVENANCE.md.

@@ -97,6 +97,11 @@ typedef struct Argon2_position_t {
 typedef struct Argon2_thread_data {
     argon2_instance_t *instance_ptr;
     argon2_position_t pos;
+    /* Release/acquire completion proof used by the v12 adapter. The parent
+     * cannot destroy this stack-backed table until every started worker has
+     * published its completion, even if an OS join primitive reports an
+     * error. */
+    uint32_t *completed;
 } argon2_thread_data;
 
 /*************************Argon2 core functions********************************/

@@ -1,4 +1,6 @@
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using KalynaArchiver.Services;
@@ -20,7 +22,9 @@ var smokeTests = new List<TestCase>
     new("smoke.overlapping-input-normalization", "overlapping archive-input normalization", TestOverlappingArchiveInputsAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.trailing-separator-folder", "folder input with a trailing separator", TestTrailingSeparatorFolderInputAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.descriptor-bound-snapshot", "descriptor-bound private snapshot", TestDescriptorBoundPrivateSnapshotAsync, TestResource.Light, "Smoke", IsSmoke: true),
-    new("smoke.private-snapshot-cleanup-identity", "private snapshot cleanup preserves a replacement directory", TestPrivateSnapshotCleanupIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.private-snapshot-cleanup-identity", "private snapshot is anonymous and read-only", TestPrivateSnapshotDescriptorOnlyAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.private-snapshot-race-failclosed", "private snapshot rejects source mutation during copy", TestPrivateSnapshotSourceRaceAsync, TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.private-snapshot-resource-failures", "private snapshot serial/parallel equivalence, size and ENOSPC failures", TestPrivateSnapshotResourceFailuresAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.private-authenticated-snapshot", "private authenticated-input snapshot", TestPrivateSnapshotAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.apple-signature-binding", "Apple signature framework binding", TestAppleSignatureBindingAsync, TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.locked-secret-lifecycle", "locked secret buffer lifecycle", TestLockedSecretBufferAsync, TestResource.ProcessGlobal, "Smoke", IsSmoke: true),
@@ -862,57 +866,193 @@ static Task TestDescriptorBoundPrivateSnapshotAsync()
     return Task.CompletedTask;
 }
 
-static Task TestPrivateSnapshotCleanupIdentityAsync()
+static Task TestPrivateSnapshotDescriptorOnlyAsync()
 {
     string root = MacSafeFileSystem.ResolveExistingRealPath(
-        Directory.CreateTempSubdirectory("keep-vault-snapshot-cleanup-").FullName);
+        Directory.CreateTempSubdirectory("keep-vault-snapshot-anonymous-").FullName);
     string source = Path.Combine(root, "source.bin");
     File.WriteAllText(source, "sensitive snapshot bytes");
-    MacPrivateFileSnapshot? snapshot = null;
-    string? snapshotDirectory = null;
-    string? displacedDirectory = null;
-    byte[] canary = "foreign replacement directory"u8.ToArray();
     try
     {
-        snapshot = MacPrivateFileSnapshot.Capture(source);
-        snapshotDirectory = Path.GetDirectoryName(snapshot.SnapshotPath)
-            ?? throw new InvalidOperationException("The private snapshot has no parent directory.");
-        displacedDirectory = snapshotDirectory + ".displaced";
-        Directory.Move(snapshotDirectory, displacedDirectory);
-        Directory.CreateDirectory(snapshotDirectory);
-        string canaryPath = Path.Combine(snapshotDirectory, "valuable.bin");
-        File.WriteAllBytes(canaryPath, canary);
-
-        bool rejectedReplacement = false;
+        using MacPrivateFileSnapshot snapshot = MacPrivateFileSnapshot.Capture(source);
+        MacFileIdentity identity = MacSafeFileSystem.GetIdentity(snapshot.Stream.SafeFileHandle);
+        Require(
+            identity.LinkCount == 0,
+            "The private snapshot retained a pathname that another same-UID process could mutate after authentication.");
+        int descriptor = checked((int)snapshot.Stream.SafeFileHandle.DangerousGetHandle());
+        int descriptorFlags = SnapshotNativeAssertions.Fcntl(descriptor, SnapshotNativeAssertions.GetFileStatusFlags);
+        int closeOnExecFlags = SnapshotNativeAssertions.Fcntl(descriptor, SnapshotNativeAssertions.GetDescriptorFlags);
+        Require(
+            descriptorFlags >= 0
+                && (descriptorFlags & SnapshotNativeAssertions.AccessModeMask) == SnapshotNativeAssertions.ReadOnly,
+            "The private snapshot did not retain an O_RDONLY descriptor.");
+        Require(
+            closeOnExecFlags >= 0
+                && (closeOnExecFlags & SnapshotNativeAssertions.CloseOnExec) != 0,
+            "The private snapshot descriptor did not retain FD_CLOEXEC.");
+        Require(!snapshot.Stream.CanWrite, "The private snapshot stream unexpectedly advertises write access.");
+        Require(
+            snapshot.Stream.Length == "sensitive snapshot bytes"u8.Length,
+            "The private snapshot exposed the page-rounded SHM tail past its logical EOF.");
+        bool descriptorRejectedWrite = false;
         try
         {
-            snapshot.Dispose();
+            RandomAccess.Write(snapshot.Stream.SafeFileHandle, new byte[] { 0x00 }, 0);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            descriptorRejectedWrite = true;
         }
         catch (IOException)
         {
-            rejectedReplacement = true;
+            descriptorRejectedWrite = true;
         }
-
-        Require(rejectedReplacement, "Private snapshot cleanup accepted a replacement root pathname.");
+        catch (NotSupportedException)
+        {
+            // Anonymous macOS SHM descriptors are intentionally unseekable;
+            // RandomAccess.Write rejects them before reaching the read-only
+            // kernel check. That is still a successful write refusal.
+            descriptorRejectedWrite = true;
+        }
+        Require(descriptorRejectedWrite, "The supposedly read-only native snapshot descriptor accepted pwrite.");
+        using var reader = new StreamReader(snapshot.Stream, leaveOpen: true);
         Require(
-            File.ReadAllBytes(canaryPath).AsSpan().SequenceEqual(canary),
-            "Private snapshot cleanup removed or modified a replacement-directory canary.");
-        Require(
-            Directory.GetFileSystemEntries(displacedDirectory).Length == 0,
-            "Private snapshot cleanup did not descriptor-delete the exact displaced sensitive contents.");
+            reader.ReadToEnd() == "sensitive snapshot bytes",
+            "Making the snapshot anonymous and read-only changed its contents.");
     }
     finally
     {
-        snapshot?.Dispose();
-        CryptographicOperations.ZeroMemory(canary);
-        if (snapshotDirectory is not null && Directory.Exists(snapshotDirectory))
+        File.Delete(source);
+        Directory.Delete(root);
+    }
+
+    return Task.CompletedTask;
+}
+
+static Task TestPrivateSnapshotSourceRaceAsync()
+{
+    string root = MacSafeFileSystem.ResolveExistingRealPath(
+        Directory.CreateTempSubdirectory("keep-vault-snapshot-race-").FullName);
+    string source = Path.Combine(root, "source.bin");
+    byte[] original = RandomNumberGenerator.GetBytes((512 * 1024) + 37);
+    byte[] replacement = RandomNumberGenerator.GetBytes(original.Length);
+    File.WriteAllBytes(source, original);
+    try
+    {
+        using FileStream sourceHandle = MacSafeFileSystem.OpenReadNoSymlinks(source);
+        bool rejected = false;
+        try
         {
-            Directory.Delete(snapshotDirectory, recursive: true);
+            using MacPrivateFileSnapshot unexpected = MacPrivateFileSnapshot.CaptureForTests(
+                sourceHandle,
+                (ulong)original.Length,
+                afterCopyBeforeSourceValidation: () =>
+                {
+                    using var writer = new FileStream(
+                        source,
+                        FileMode.Open,
+                        FileAccess.Write,
+                        FileShare.ReadWrite | FileShare.Delete);
+                    writer.Write(replacement);
+                    writer.Flush(flushToDisk: true);
+                });
         }
-        if (displacedDirectory is not null && Directory.Exists(displacedDirectory))
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("changed", StringComparison.OrdinalIgnoreCase))
         {
-            Directory.Delete(displacedDirectory, recursive: true);
+            rejected = true;
         }
+
+        Require(rejected, "A source mutation at the native post-copy boundary was not rejected fail-closed.");
+        Require(
+            File.ReadAllBytes(source).AsSpan().SequenceEqual(replacement),
+            "The deterministic race hook did not mutate the held source inode.");
+    }
+    finally
+    {
+        CryptographicOperations.ZeroMemory(original);
+        CryptographicOperations.ZeroMemory(replacement);
+        File.Delete(source);
+        Directory.Delete(root);
+    }
+
+    return Task.CompletedTask;
+}
+
+static Task TestPrivateSnapshotResourceFailuresAsync()
+{
+    string root = MacSafeFileSystem.ResolveExistingRealPath(
+        Directory.CreateTempSubdirectory("keep-vault-snapshot-errors-").FullName);
+    string source = Path.Combine(root, "source.bin");
+    byte[] contents = RandomNumberGenerator.GetBytes((512 * 1024) + 37);
+    File.WriteAllBytes(source, contents);
+    try
+    {
+        using FileStream sourceHandle = MacSafeFileSystem.OpenReadNoSymlinks(source);
+
+        bool sizeRejected = false;
+        try
+        {
+            using MacPrivateFileSnapshot unexpected = MacPrivateFileSnapshot.CaptureForTests(
+                sourceHandle,
+                (ulong)contents.Length - 1);
+        }
+        catch (IOException ex) when (
+            ex.Message.Contains("limit", StringComparison.OrdinalIgnoreCase))
+        {
+            sizeRejected = true;
+        }
+        Require(sizeRejected, "The native snapshot copied an input above its caller-supplied hard limit.");
+
+        bool enospcPreserved = false;
+        try
+        {
+            using MacPrivateFileSnapshot unexpected = MacPrivateFileSnapshot.CaptureForTests(
+                sourceHandle,
+                (ulong)contents.Length,
+                injectEnospcAfterFirstBlock: true);
+        }
+        catch (IOException ex) when (
+            ex.InnerException is Win32Exception nativeError
+            && nativeError.NativeErrorCode == 28)
+        {
+            enospcPreserved = true;
+        }
+        Require(enospcPreserved, "A native ENOSPC did not propagate with Darwin errno 28.");
+
+        byte[] serialBytes = new byte[contents.Length];
+        byte[] parallelBytes = new byte[contents.Length];
+        try
+        {
+            using MacPrivateFileSnapshot serialSnapshot = MacPrivateFileSnapshot.CaptureForTests(
+                sourceHandle,
+                (ulong)contents.Length,
+                forceSingleWorker: true);
+            using MacPrivateFileSnapshot parallelSnapshot = MacPrivateFileSnapshot.CaptureForTests(
+                sourceHandle,
+                (ulong)contents.Length,
+                requireParallelWorkers: true);
+            serialSnapshot.Stream.ReadExactly(serialBytes);
+            parallelSnapshot.Stream.ReadExactly(parallelBytes);
+            Require(
+                CryptographicOperations.FixedTimeEquals(serialBytes, contents),
+                "The forced one-worker native snapshot changed source bytes.");
+            Require(
+                CryptographicOperations.FixedTimeEquals(parallelBytes, contents),
+                "The required parallel native snapshot changed source bytes.");
+            Require(
+                CryptographicOperations.FixedTimeEquals(serialBytes, parallelBytes),
+                "Parallel native snapshot output differs from the one-worker reference.");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(serialBytes);
+            CryptographicOperations.ZeroMemory(parallelBytes);
+        }
+    }
+    finally
+    {
+        CryptographicOperations.ZeroMemory(contents);
         File.Delete(source);
         Directory.Delete(root);
     }
@@ -993,4 +1133,16 @@ static void Require(bool condition, string message)
     {
         throw new InvalidOperationException(message);
     }
+}
+
+internal static class SnapshotNativeAssertions
+{
+    internal const int GetDescriptorFlags = 1;
+    internal const int GetFileStatusFlags = 3;
+    internal const int CloseOnExec = 1;
+    internal const int AccessModeMask = 3;
+    internal const int ReadOnly = 0;
+
+    [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "fcntl", SetLastError = true)]
+    internal static extern int Fcntl(int descriptor, int command);
 }

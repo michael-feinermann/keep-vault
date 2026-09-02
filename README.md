@@ -1,7 +1,7 @@
 # Keep Vault
 
-Archiving, extraction and cryptographic erasure of ZPAQ archives for **macOS and Windows**.
-Encrypted archives use container format **v11**: a chosen cascade of up to six
+Archiving, extraction and cryptographic erasure of ZPAQ archives. The current
+release target is **macOS** and uses container format **v12**: a chosen cascade of up to six
 independent ciphers over the compressed stream, keys from two Argon2id branches
 whose memory cost is itself derived from your credentials, two separate MACs,
 and a four-part credential made of a passphrase, a PIN, and two 1024-bit factors
@@ -12,8 +12,9 @@ cryptographic audit, an HSM, or operating-system hardening.
 
 > **Platform verification is separate.** macOS releases are built and tested on
 > real Apple hardware. The Windows WPF application and its separate QR scanner
-> have their own Windows build, native-trust and full regression gates; passing
-> one platform's suite is never treated as evidence for the other.
+> will be ported to v12 and released in a later, separate step. The current
+> Windows development tree is not part of this v12 release; passing the macOS
+> suite is never treated as Windows evidence.
 
 ---
 
@@ -23,8 +24,12 @@ Prebuilt packages are on the
 [Releases](https://github.com/michael-feinermann/keep-vault/releases) page.
 Requires macOS 14 or newer, Apple silicon or Intel (universal binary).
 
-For the locally built Windows x64 portable version, run
+The following commands concern the separate, unreleased Windows development
+tree and are not part of the macOS v12 release. For a local Windows x64 build, run
 `tools/Build-Portable.ps1` and then `tools/Install-KeepVaultShortcuts.ps1`.
+The normative port checklist is in
+[`docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md`](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md);
+it must be completed on real Windows hardware before any Windows release claim.
 The shortcuts point at the verified portable tree inside this workspace, so a
 new successful portable build becomes the locally installed version without a
 second mutable copy. The same tree contains the separately built and signed
@@ -79,9 +84,9 @@ attacker, obtain the verifier and its pins through a separate, trusted channel.
 
 ## Format policy
 
-The app writes and reads container format **version 11 only**. Every other
-version is refused, including version 10; there is no legacy decryption path and
-none is planned. Archives written with v10 or earlier cannot be opened with this
+The app writes and reads container format **version 12 only**. Every other
+version is refused, including version 11; there is no legacy decryption path and
+none is planned. Archives written with v11 or earlier cannot be opened with this
 release, and the reader says so by name rather than failing as a wrong password.
 
 That is a deliberate choice, not an oversight. A second, older derivation kept
@@ -90,7 +95,7 @@ domains to get wrong, and a permanent argument for whichever of the two is
 weaker. The application is still in development and there are no archives worth
 carrying forward, so there is nothing to weigh against removing it.
 
-The key-derivation domain separators carry `v11`, and the header carries an
+The key-derivation domain separators carry `v12`, and the header carries an
 explicit `KdfMode` string naming the construction. A version number alone turned
 out not to be enough: 4.0.0/4.0.1 and 4.0.2 both wrote `"Version": 9` while
 deriving different Paranoia keys. `KdfMode` exists so that a future correction
@@ -131,7 +136,7 @@ layer, 128 and 128 for the outer Threefish layer.
 
 An earlier design cut those keys out of one flat Argon2id output, so a layer's key was a
 function of where it happened to sit in that buffer, and the same cipher in two
-positions could share structure. v11 derives each key separately from a
+positions could share structure. v12 derives each key separately from a
 canonical context — algorithm, stage index, cipher, purpose and key width — run
 through two PRF families and combined:
 
@@ -166,7 +171,7 @@ one key leaks the XOR of two plaintexts.
 
 ### The master key derivation
 
-v11 asks for four credentials, and all four are mandatory: a passphrase of 24 to
+v12 asks for four credentials, and all four are mandatory: a passphrase of 24 to
 256 characters, a PIN of 6 to 16 digits, and the two 1024-bit factors from the
 printed key sheets. There is no reduced mode and no suite that skips one.
 
@@ -247,7 +252,7 @@ secret and the salts change.
 
 This replaces an earlier arrangement, where both rounds shared one 128-byte
 credential prehash. Because the PHC adapter clears the password it is given,
-4.0.0 and 4.0.1 ran their second round over 128 zero bytes. v11 does not share a
+4.0.0 and 4.0.1 ran their second round over 128 zero bytes. v12 does not share a
 buffer between rounds at all, and the regression is checked by changing one bit
 of round one and observing round two change with it — not by a round-trip, which
 would pass while both sides were equally wrong.
@@ -258,10 +263,10 @@ the machine that wrote it.
 
 ### The container
 
-- Magic `KZPAQ1\0`, UTF-8 JSON header, 64-byte HMAC-SHA3-512 tag, 128-byte
+- Magic `KZPAQ2\0`, UTF-8 JSON header, 64-byte HMAC-SHA3-512 tree tag, 128-byte
   Skein-1024 MAC tag, then ciphertext
 - Password mode `UserPassword24to256+PIN6to16+GeneratedHex1024x2`
-- KDF input mode `DualBranch-v11: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024`
+- KDF input mode `DualBranch-v12: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024`
 - KDF mode `DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024`
 - One 1024-bit salt pair per round; Argon2id 0x13 with `t=4`, `p=4` and a memory
   cost derived from the credentials — `Argon2MemoryKiB` is stored as `0`
@@ -274,7 +279,7 @@ MACs cover the same magic, header length, header and the entire ciphertext, and
 both tags are compared in full and without short-circuiting before any plaintext
 reaches the ZPAQ pipe.
 
-The v11 reader accepts only `t=4`, `p=4` and a zero memory field. Deviating
+The v12 reader accepts only `t=4`, `p=4` and a zero memory field. Deviating
 header values are rejected before the KDF, so a manipulated archive can force
 neither weaker nor higher Argon2 cost — and because the cost is not in the header
 at all, there is no field to manipulate. The native adapter enforces its own
@@ -315,7 +320,7 @@ plaintext is written. Extraction only ever goes into a new or empty folder. A
 `.kzpaq` with neither a valid container header nor usable KPAR2 data is refused
 outright and never handed to the native parser as plain ZPAQ.
 
-**Cryptographic erase** — analyse a valid encrypted v11 container, then destroy
+**Cryptographic erase** — analyse a valid encrypted v12 container, then destroy
 the reconstructable recovery sidecar first and afterwards corrupt and delete the
 container itself, through the same exclusive file handle. The button refuses
 until the SSD/APFS limitation is explicitly acknowledged.
@@ -376,7 +381,7 @@ different shapes. Neither branch can be computed from the other's output.
 
 `Q_S` and `Q_K` go into their own Argon2id branch untruncated, each with its own
 512-bit salt. The app compiles the unmodified PHC Argon2 reference sources; tests
-compare the native adapter against the PHC CLI, and the v11 branch additionally
+compare the native adapter against the PHC CLI, and the v12 branch additionally
 against Bouncy Castle's independent Argon2id implementation.
 
 Every intermediate buffer — the encoding targets, the length frames, both
@@ -460,9 +465,11 @@ drivers and printers can create their own temporary data outside the app.
 
 ## Streaming and parallelism
 
-ZPAQ lives under `external/zpaq`, Kalyna under `external/Kalyna-reference`, the
-official Skein 1.3 / Threefish source under `external/Skein-reference`, and
-Crypto++ 8.9.0 under `external/cryptopp`.
+ZPAQ lives under `external/zpaq`, the licensed v12 Kalyna implementation in
+Crypto++ 8.9.0 under `external/cryptopp`, and the official Skein 1.3 /
+Threefish source under `external/Skein-reference`. The earlier unlicensed
+Kalyna reference snapshot and every derived table adapter were removed before
+this release and are neither built nor distributed.
 
 The adapted ZPAQ `--pipe` interface carries the unencrypted ZPAQ archive
 directly in RAM between ZPAQ and the container service; no unencrypted
@@ -480,16 +487,52 @@ be renamed or deleted from under them; symlink aliases are refused. Archive
 targets may neither equal an input nor lie inside a directory tree being read.
 The native ZPAQ JIT is disabled, and model and index sizes have hard limits.
 
-The extractor works in a single forward pass and does not buffer the whole
-decrypted archive. Its memory needs are set by one ZPAQ block, the 16 MiB
-container buffers and process metadata — not by archive size.
+The encrypted streaming format is v12-only (`KVP12ZP1`). Every independently
+compressed ZPAQ block is carried in a canonical frame with its exact compressed
+and uncompressed lengths and checksum. Frames are produced and consumed in
+index order, while bounded worker sets compress or decompress independent
+blocks concurrently. A frame is limited to 24 MiB compressed data, 32 MiB
+uncompressed data and a 128 MiB model. At most 512 MiB of compressed pipe data
+may wait for an ordered consumer. Regular archives use a 64 MiB output and
+512 MiB model limit per job. A shared 6 GiB processing budget admits only as
+many 384 MiB compression or 592 MiB regular jobs as fit; the requested worker
+count is additionally capped at 64. Truncated, reordered, non-canonical or
+checksum-invalid frames are rejected without resynchronising past damage.
 
-`native/kalyna_ref_export.c` and `native/threefish_ref_export.c` split large CTR
-calls into disjoint block and counter ranges across workers that claim chunks
-from a shared atomic counter. Workers write into disjoint output ranges, so the
-output stays bit-identical to the serial CTR path. Both MACs are logically
-sequential over the resulting ciphertext and are updated in one shared streaming
-pass.
+An already authenticated regular `.zpaq` supplied on standard input is copied
+to a randomly named POSIX shared-memory object opened with mode 0600. A separate
+read-only descriptor is acquired and the name is unlinked before any archive
+bytes are copied; after the copy, workers receive only a read-only mapping. This
+allows position-independent parallel reads without leaving a pathname another
+same-UID process could reopen for writing. The verified-input limit is 512 GiB.
+Extraction is also bounded to 500 GiB total, 500 GiB per file, 500,000 entries,
+a 512 MiB index and 2^26 fragments. Encrypted container extraction does not use
+this whole-archive staging route: its decrypted `KVP12ZP1` frames remain in the
+bounded forward pipe.
+
+The container layer keeps exactly two 16 MiB slots. Reading, cascade encryption
+or decryption, and ordered output overlap, but every slot owns its counters,
+nonces, tag and locked scratch memory. Cascade layers stay sequential because
+each consumes the preceding layer's output; inside a layer, the native CTR and
+ChaCha20 drivers split disjoint counter ranges across cores. Reordering is
+rejected, all workers are joined on every exit path, and a failed operation
+publishes no partial container.
+
+Poly1305 is parallel too. For requests of at least 1 MiB, up to 64 workers
+evaluate contiguous 16-byte-aligned portions of the exact RFC 8439 transcript.
+Their field elements are recombined in message order with the appropriate
+power of the clamped one-time key. A retained scalar implementation, exhaustive
+padding-boundary comparisons, the RFC vector and a 256 MiB differential test
+hold the result byte-for-byte against the serial authenticator. Decryption
+checks the tag before writing plaintext into the caller's output buffer.
+
+The two global container authenticators use a v12 domain-separated tree over
+1 MiB leaves. Every leaf binds its index and exact length; the ordered root binds
+the total logical length, leaf count, leaf size and both complete leaf tags.
+HMAC-SHA3-512 and Skein-MAC-1024 use separate derived leaf and root keys. Leaves
+run across the hardware-bounded worker set, while only the small canonical root
+transcript remains serial. Authentication of the complete container still
+finishes before any decrypted archive bytes are released to ZPAQ.
 
 The Threefish adapter uses the 80 rounds, rotations and key schedule of the
 official `Skein1024_Process_Block` reference unchanged, removing only the Skein
@@ -526,6 +569,12 @@ Single bits and entirely unreadable 4 KiB blocks are repairable as long as they
 affect at most three data shards per stripe. Block-oriented reads treat I/O
 errors reported by the file system as erasures.
 
+Parity generation, shard hashing, verification and reconstruction distribute
+independent stripes and shards over a hardware-bounded worker set capped at 64.
+Each worker writes disjoint result ranges; manifest, locator and output ordering
+remain canonical. The one-worker and production-worker paths are compared for
+byte identity in a dedicated recovery gate.
+
 For **encrypted archives** the KPAR2 manifest is always dual-authenticated:
 HMAC-SHA3-512 and Skein-1024 keyed mode use their own recovery keys, derived
 domain-separated from the archive MAC keys and a random archive ID. Wrong
@@ -548,7 +597,7 @@ same schedule. They simply cost the same to attack.
 v4 additionally binds the container version into the authenticated recovery
 context — both into the recovery-key derivation and into the certification
 prefix — so the unkeyed version field in the locator cannot select a different
-key derivation. Since only container version 11 exists, any other value is
+key derivation. Since only container version 12 exists, any other value is
 refused outright.
 
 The Argon2id cost fields are gone from the locator and manifest, and are
@@ -576,7 +625,7 @@ covered:
 
 - `Keep Vault`, `Keep Vault Launcher`, `Keep Vault Supervisor`
 - `zpaq`, `argon2`
-- `libargon2_ref`, `libkalyna_ref`, `libthreefish_ref`, `libaes_ref`,
+- `libargon2_ref`, `libkalyna_v12`, `libthreefish_ref`, `libaes_ref`,
   `libmars_ref`, `libshacal2_ref`, `libchachapoly_ref`
 - `libAvaloniaNative`, `libHarfBuzzSharp`, `libSkiaSharp`
 - `Keep Vault Release Verifier`
@@ -626,22 +675,44 @@ included reference files.
 ### Protecting the signing keys
 
 A hybrid signature is one decision: it counts only when RSA-PSS and ML-DSA-87
-both verify. Both halves therefore sit under the same 32-byte wrapping key, and
-one confirmation covers the certificate as a whole rather than two covering
-halves of it.
+both verify. Their at-rest protection is nevertheless independent: the
+ML-DSA-87 private key and the RSA PFX password use two separately generated
+32-byte wrapping keys, two different Keychain services, two different accounts
+and two separately created access lists. The signer also rejects two differently
+named items if their key bytes are equal.
 
-Both are AES-256-GCM envelopes; the wrapping key lives in the login Keychain in
-an item created with no trusted application, so **every read prompts**. Four
-prompts for an app build, two for the portable one — and a fifth or a third is a
-use nobody started. Answer *Allow*, never *Always Allow*: the latter writes the
-asking binary into the item's access list and the prompt stops, which is the
-whole property this provides.
+The two AES-256-GCM formats are deliberately incompatible. `KVMDSA12` accepts
+only an exact ML-DSA-87 private key; `KVPFXP12` accepts only a bounded UTF-8 PFX
+password. The type, version and canonical payload length are authenticated as
+associated data, and each type has its own read and write path. Neither a legacy
+envelope nor a role-swapped envelope is accepted.
 
-`tools/Protect-HybridKeys-macOS.sh` performs the migration. It wraps and unwraps
-through the signer's own code, so the two directions cannot drift apart, and it
-verifies the round trip before keeping anything — an envelope only the writer
-can open is worth nothing, and that failure surfaces after the original has been
-deleted. It deletes nothing itself.
+Each wrapping key lives in the login Keychain in its own item created with no
+trusted application, so every signing invocation causes two independent
+confirmation prompts. An extra prompt is a use nobody started. Answer *Allow*,
+never *Always Allow*: the latter writes the asking binary into that item's
+access list and removes the prompt. The release preflight inspects both access
+lists without reading either secret and rejects a trusted application, a role
+mismatch, a shared identity or a missing item.
+
+`tools/Protect-HybridKeys-macOS.sh` provisions or verifies this v12-only state.
+Security.framework generates each wrapping key independently; no wrapping key
+is accepted from an environment variable, command line, removable file or
+shared fallback. The script wraps and unwraps through the signer's own
+role-specific code and proves each round trip from the same exclusively created
+mode-0600 file descriptor before a no-replace publish.
+
+Secret inputs are opened with `O_NOFOLLOW_ANY`, bounded from `fstat`, read from
+the held descriptor and revalidated by device, inode, owner, mode, link count,
+size and change metadata. Signer-owned wrapping keys, the decrypted ML-DSA
+source and the decoded PFX password remain in pinned, `mlock`-protected buffers
+that are zeroed before unlock. Secret Keychain stdout is read as bounded bytes
+rather than a managed string, and the PFX password is decoded into locked
+UTF-16 storage. The ML-DSA providers create short-lived parameter objects while
+signing; every exposed private-key encoding copy is zeroed, but provider-private
+copies are outside the caller's control. Apple's external `security` process
+and native PKCS#12 importer are likewise unavoidable opaque platform
+boundaries whose internal native copies the signer cannot erase.
 
 Encryption at rest stops the files from being useful once they leave the
 machine: a Time Machine backup, a cloned disk, a tar of the home directory. It
@@ -658,18 +729,25 @@ weaker release.
 ## Build from source
 
 Requires Xcode command-line tools and the pinned .NET 10 SDK. Release signing
-needs your own RSA-4096 code-signing key and an ML-DSA-87 key pair; the paths are
-configurable through `KEEPVAULT_HYBRID_PFX` and `KEEPVAULT_MLDSA_PRIVATE_KEY`.
+needs your own RSA-4096 code-signing key and an ML-DSA-87 key pair. Release
+builds accept only the external PFX plus the two v12 envelopes configured
+through `KEEPVAULT_HYBRID_PFX`,
+`KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED` and
+`KEEPVAULT_PFX_PASSWORD_ENCRYPTED`.
 
 ```sh
 ./tools/Build-Native-macOS.sh          # reference ciphers, Argon2, ZPAQ
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 4.0.2 --build-number 6
-./tools/Build-KeepVault-macOS.sh --version 4.0.2 --build-number 6
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.0 --build-number 12
+./tools/Build-KeepVault-macOS.sh --version 5.0.0 --build-number 12
 ./tools/Build-Portable-macOS.sh        # portable folder and ZIP
 ./tools/Install-KeepVault-macOS.sh     # verify and install to /Applications
 ./tools/Verify-KeepVault-macOS.sh      # check an installed or built bundle
-./tools/Protect-HybridKeys-macOS.sh    # put both signing keys behind one prompt
+./tools/Protect-HybridKeys-macOS.sh    # create the two independent v12 envelopes
 ```
+
+A publicly distributable build additionally requires an explicit Developer-ID
+identity, the stored `Keep Vault v12` notary profile and `--release`; an Apple
+Development build is local test evidence only.
 
 The QR scanner and Keep Vault must be built with the same marketing version and
 build number. The portable release gate requires the scanner, checks both
@@ -692,8 +770,9 @@ cd KeepVaultMac.Tests
 dotnet run -c Release -- --full
 ```
 
-Twenty-five comprehensive groups, on top of thirteen smoke tests. `--only <text>`
-narrows a run to one group while fixing it.
+`--list` prints the authoritative inventory of smoke, comprehensive and manual
+performance gates. `--only <stable-id>` narrows a run to one exact group; manual
+performance gates additionally require `--performance`.
 
 The suite covers macOS process hardening; signed native trust and tamper
 rejection; hybrid-signature coverage of every Mach-O in the built bundle; the
@@ -702,7 +781,7 @@ SHA3, Skein, Kalyna and Threefish reference vectors; ML-DSA-87 interoperability
 against the compiled reference adapter in both directions; randomised
 differential testing against every reference library; the fixed Argon2id profile
 against PHC and Bouncy Castle; ZPAQ levels, streaming, traversal and a malformed
-corpus; v11 round-trips and manipulation rejection; that the outer cascade layer
+corpus; v12 round-trips and manipulation rejection; that the outer cascade layer
 alone reveals nothing; two-round derivation from one pool consumption; per-chunk
 nonces across a multi-chunk archive; salt and nonce for every single-round suite;
 MARS and SHACAL-2 published vectors; KPAR2 repair, authentication,
@@ -719,9 +798,10 @@ driven through Avalonia's headless backend.
   aborts the operation. The same applies to the entire native 1 GiB Argon2
   matrix.
 - The app runs with the hardened runtime and no entitlements, so library
-  validation is active. It is signed with a local Apple Development identity and
-  is **not notarized**; Gatekeeper will refuse it on another Mac until it is
-  signed with a Developer ID certificate and notarized.
+  validation is active. A public macOS release is accepted only after every
+  Mach-O has been signed with Developer ID Application, Apple has notarized the
+  distribution archive, and the ticket has been stapled and validated. Local
+  Apple Development builds remain development artifacts and are not published.
 - Capture protection is best effort. It cannot block every screen-recording
   tool, remote-desktop configuration or hardware camera.
 - Passwords exist temporarily as managed strings. Pagefile, hibernation,
@@ -730,9 +810,11 @@ driven through Avalonia's headless backend.
 - Memory locking covers only the buffers explicitly locked. CPU registers,
   native worker stacks and the internal state of operating-system crypto
   providers cannot be reliably locked or zeroed from application level.
-- Threefish and ChaCha20 use ARX operations without secret tables. The Kalyna,
-  AES, MARS and SHACAL-2 references are table-based and offer no provable
-  protection against cache side channels on a compromised shared system.
+- Threefish and ChaCha20 use ARX operations without secret tables. On Apple
+  Silicon the production AES adapter refuses every provider except Crypto++'s
+  ArmV8 hardware path. Kalyna, MARS and SHACAL-2 remain table-based and offer no
+  provable protection against cache side channels on a compromised shared
+  system.
 - A 1024-bit Threefish key and a 1024-bit Skein tag do not mean the whole
   construction has 1024 bits of security. KDF, password material, ciphers, both
   MACs and the implementation jointly bound the real strength; security bits do
@@ -774,7 +856,7 @@ driven through Avalonia's headless backend.
 
 ---
 
-Sources: [Kalyna reference](https://github.com/Roman-Oliynykov/Kalyna-reference),
+Sources: [Crypto++ Kalyna](https://github.com/weidai11/cryptopp),
 [PHC Argon2](https://github.com/P-H-C/phc-winner-argon2),
 [ZPAQ](https://github.com/zpaq/zpaq),
 [Crypto++](https://github.com/weidai11/cryptopp),

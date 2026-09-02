@@ -274,49 +274,68 @@ public sealed class KeySheetService
             await EnsurePhysicalPrinterAsync(printerName, cancellationToken).ConfigureAwait(false);
 
         EnsurePdfFontResolver();
-        using var pdfA = new SensitiveBufferStream(initialCapacity: 256 * 1024);
-        using (PdfDocument documentA = CreateSingleSheetDocument(validated, KeySheetFactor.First))
+        SensitiveBufferStream? pdfA = null;
+        SensitiveBufferStream? pdfB = null;
+        Exception? operationFailure = null;
+        try
         {
-            documentA.Save(pdfA, closeStream: false);
-        }
+            pdfA = new SensitiveBufferStream(initialCapacity: 256 * 1024);
+            using (PdfDocument documentA = CreateSingleSheetDocument(validated, KeySheetFactor.First))
+            {
+                documentA.Save(pdfA, closeStream: false);
+            }
 
-        using var pdfB = new SensitiveBufferStream(initialCapacity: 256 * 1024);
-        using (PdfDocument documentB = CreateSingleSheetDocument(validated, KeySheetFactor.Second))
+            pdfB = new SensitiveBufferStream(initialCapacity: 256 * 1024);
+            using (PdfDocument documentB = CreateSingleSheetDocument(validated, KeySheetFactor.Second))
+            {
+                documentB.Save(pdfB, closeStream: false);
+            }
+
+            PhysicalPrinterDescriptor immediatePrinter =
+                await EnsurePhysicalPrinterAsync(printerName, cancellationToken).ConfigureAwait(false);
+            if (printer.Evidence != immediatePrinter.Evidence
+                || !string.Equals(printer.DeviceUri, immediatePrinter.DeviceUri, StringComparison.Ordinal)
+                || !string.Equals(printer.MakeAndModel, immediatePrinter.MakeAndModel, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Das physische CUPS-Druckziel wurde während der Auftragsvorbereitung verändert.");
+            }
+
+            pdfA.Position = 0;
+            string receiptA = await MacCupsPrinter.SubmitPdfAsync(
+                immediatePrinter.Name,
+                pdfA.GetWrittenMemory(),
+                cancellationToken).ConfigureAwait(false);
+
+            PhysicalPrinterDescriptor immediatePrinterB =
+                await EnsurePhysicalPrinterAsync(printerName, cancellationToken).ConfigureAwait(false);
+            if (printer.Evidence != immediatePrinterB.Evidence
+                || !string.Equals(printer.DeviceUri, immediatePrinterB.DeviceUri, StringComparison.Ordinal)
+                || !string.Equals(printer.MakeAndModel, immediatePrinterB.MakeAndModel, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Das physische CUPS-Druckziel wurde vor Übermittlung von Faktor B verändert.");
+            }
+
+            pdfB.Position = 0;
+            string receiptB = await MacCupsPrinter.SubmitPdfAsync(
+                immediatePrinterB.Name,
+                pdfB.GetWrittenMemory(),
+                cancellationToken).ConfigureAwait(false);
+
+            return new KeySheetPrintResult(immediatePrinterB, $"{receiptA}; {receiptB}", DateTimeOffset.Now);
+        }
+        catch (Exception failure)
         {
-            documentB.Save(pdfB, closeStream: false);
+            operationFailure = failure;
+            throw;
         }
-
-        PhysicalPrinterDescriptor immediatePrinter =
-            await EnsurePhysicalPrinterAsync(printerName, cancellationToken).ConfigureAwait(false);
-        if (printer.Evidence != immediatePrinter.Evidence
-            || !string.Equals(printer.DeviceUri, immediatePrinter.DeviceUri, StringComparison.Ordinal)
-            || !string.Equals(printer.MakeAndModel, immediatePrinter.MakeAndModel, StringComparison.Ordinal))
+        finally
         {
-            throw new InvalidOperationException("Das physische CUPS-Druckziel wurde während der Auftragsvorbereitung verändert.");
+            ZeroAndDisposeSensitiveStreams(
+                operationFailure,
+                "Key-sheet printing failed and one or more locked PDF buffers could not be released.",
+                pdfB,
+                pdfA);
         }
-
-        pdfA.Position = 0;
-        string receiptA = await MacCupsPrinter.SubmitPdfAsync(
-            immediatePrinter.Name,
-            pdfA.GetWrittenMemory(),
-            cancellationToken).ConfigureAwait(false);
-
-        PhysicalPrinterDescriptor immediatePrinterB =
-            await EnsurePhysicalPrinterAsync(printerName, cancellationToken).ConfigureAwait(false);
-        if (printer.Evidence != immediatePrinterB.Evidence
-            || !string.Equals(printer.DeviceUri, immediatePrinterB.DeviceUri, StringComparison.Ordinal)
-            || !string.Equals(printer.MakeAndModel, immediatePrinterB.MakeAndModel, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("Das physische CUPS-Druckziel wurde vor Übermittlung von Faktor B verändert.");
-        }
-
-        pdfB.Position = 0;
-        string receiptB = await MacCupsPrinter.SubmitPdfAsync(
-            immediatePrinterB.Name,
-            pdfB.GetWrittenMemory(),
-            cancellationToken).ConfigureAwait(false);
-
-        return new KeySheetPrintResult(immediatePrinterB, $"{receiptA}; {receiptB}", DateTimeOffset.Now);
     }
 
     public KeySheetPrintResult PrintKeySheets(string printerName, KeySheetData data)
@@ -332,28 +351,55 @@ public sealed class KeySheetService
     public static string BuildBindingFingerprint(KeySheetData data)
     {
         ValidatedKeySheetData validated = Validate(data);
-        using LockedSensitiveBuffer pathBytes = LockedSensitiveBuffer.Encode(validated.CanonicalArchivePath, Encoding.UTF8);
-        using LockedSensitiveBuffer suiteBytes = LockedSensitiveBuffer.Encode(validated.Suite.ToString(), Encoding.ASCII);
-        using LockedSensitiveBuffer firstBytes = LockedSensitiveBuffer.Encode(validated.FirstGeneratedPassword, Encoding.ASCII);
-        using LockedSensitiveBuffer secondBytes = LockedSensitiveBuffer.Encode(validated.SecondGeneratedPassword, Encoding.ASCII);
-        using LockedSensitiveBuffer sha3Fingerprint = LockedSensitiveBuffer.Create(Sha3_512Compat.HashSizeInBytes);
-        using LockedSensitiveBuffer skeinFingerprint = LockedSensitiveBuffer.Create(Skein1024Digest.DigestSize);
-        using var sha3 = new Sha3_512Incremental();
-        using var skein = new Skein1024Digest();
-
-        AppendFingerprintPart(sha3, skein, "Kalyna-ZPAQ/v11/key-sheet-fingerprint"u8);
-        AppendFingerprintPart(sha3, skein, pathBytes.Bytes);
-        AppendFingerprintPart(sha3, skein, suiteBytes.Bytes);
-        AppendFingerprintPart(sha3, skein, firstBytes.Bytes);
-        AppendFingerprintPart(sha3, skein, secondBytes.Bytes);
-        int sha3Written = sha3.GetHashAndReset(sha3Fingerprint.Bytes);
-        if (sha3Written != Sha3_512Compat.HashSizeInBytes)
+        LockedSensitiveBuffer? pathBytes = null;
+        LockedSensitiveBuffer? suiteBytes = null;
+        LockedSensitiveBuffer? firstBytes = null;
+        LockedSensitiveBuffer? secondBytes = null;
+        LockedSensitiveBuffer? sha3Fingerprint = null;
+        LockedSensitiveBuffer? skeinFingerprint = null;
+        Exception? operationFailure = null;
+        try
         {
-            throw new CryptographicException("SHA3-512 returned an invalid key-sheet fingerprint length.");
-        }
+            pathBytes = LockedSensitiveBuffer.Encode(validated.CanonicalArchivePath, Encoding.UTF8);
+            suiteBytes = LockedSensitiveBuffer.Encode(validated.Suite.ToString(), Encoding.ASCII);
+            firstBytes = LockedSensitiveBuffer.Encode(validated.FirstGeneratedPassword, Encoding.ASCII);
+            secondBytes = LockedSensitiveBuffer.Encode(validated.SecondGeneratedPassword, Encoding.ASCII);
+            sha3Fingerprint = LockedSensitiveBuffer.Create(Sha3_512Compat.HashSizeInBytes);
+            skeinFingerprint = LockedSensitiveBuffer.Create(Skein1024Digest.DigestSize);
+            using var sha3 = new Sha3_512Incremental();
+            using var skein = new Skein1024Digest();
 
-        skein.GetHashAndReset(skeinFingerprint.Bytes);
-        return $"{Convert.ToHexString(sha3Fingerprint.Bytes)}:{Convert.ToHexString(skeinFingerprint.Bytes)}";
+            AppendFingerprintPart(sha3, skein, "Kalyna-ZPAQ/v12/key-sheet-fingerprint"u8);
+            AppendFingerprintPart(sha3, skein, pathBytes.Bytes);
+            AppendFingerprintPart(sha3, skein, suiteBytes.Bytes);
+            AppendFingerprintPart(sha3, skein, firstBytes.Bytes);
+            AppendFingerprintPart(sha3, skein, secondBytes.Bytes);
+            int sha3Written = sha3.GetHashAndReset(sha3Fingerprint.Bytes);
+            if (sha3Written != Sha3_512Compat.HashSizeInBytes)
+            {
+                throw new CryptographicException("SHA3-512 returned an invalid key-sheet fingerprint length.");
+            }
+
+            skein.GetHashAndReset(skeinFingerprint.Bytes);
+            return $"{Convert.ToHexString(sha3Fingerprint.Bytes)}:{Convert.ToHexString(skeinFingerprint.Bytes)}";
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                operationFailure,
+                "Key-sheet fingerprinting failed and one or more sensitive buffers could not be released.",
+                skeinFingerprint,
+                sha3Fingerprint,
+                secondBytes,
+                firstBytes,
+                suiteBytes,
+                pathBytes);
+        }
     }
 
     public static string BuildKeySheetFingerprint(
@@ -1087,6 +1133,31 @@ public sealed class KeySheetService
         skein.AppendData(length);
         skein.AppendData(value);
         CryptographicOperations.ZeroMemory(length);
+    }
+
+    private static void ZeroAndDisposeSensitiveStreams(
+        Exception? operationFailure,
+        string message,
+        params SensitiveBufferStream?[] streams)
+    {
+        foreach (SensitiveBufferStream? stream in streams)
+        {
+            stream?.ZeroForDisposal();
+        }
+
+        try
+        {
+            SecureMemory.DisposeAll(streams);
+        }
+        catch (Exception cleanupFailure)
+        {
+            if (operationFailure is null)
+            {
+                throw;
+            }
+
+            throw new AggregateException(message, operationFailure, cleanupFailure);
+        }
     }
 
     /// <summary>
@@ -2015,11 +2086,19 @@ internal sealed class SensitiveBufferStream : Stream
         _length = Math.Max(_length, _position);
     }
 
+    internal void ZeroForDisposal()
+    {
+        if (_buffer is not null)
+        {
+            CryptographicOperations.ZeroMemory(_buffer);
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing && _buffer is not null)
         {
-            CryptographicOperations.ZeroMemory(_buffer);
+            ZeroForDisposal();
             _memoryLock?.Dispose();
             _memoryLock = null;
             _buffer = null;
@@ -2046,22 +2125,36 @@ internal sealed class SensitiveBufferStream : Stream
 
         byte[] replacement = new byte[capacity];
         IDisposable? replacementLock = null;
+        Exception? operationFailure = null;
         try
         {
             replacementLock = SecureMemory.TryLock(replacement);
             current.AsSpan(0, _length).CopyTo(replacement);
+
+            CryptographicOperations.ZeroMemory(current);
+            _memoryLock?.Dispose();
+            _buffer = replacement;
+            _memoryLock = replacementLock;
+            replacementLock = null;
         }
-        catch
+        catch (Exception failure)
         {
+            operationFailure = failure;
             CryptographicOperations.ZeroMemory(replacement);
-            replacementLock?.Dispose();
+            try
+            {
+                SecureMemory.DisposeAll(replacementLock);
+            }
+            catch (Exception cleanupFailure)
+            {
+                throw new AggregateException(
+                    "Sensitive PDF-buffer growth failed and the replacement memory lock could not be released.",
+                    operationFailure,
+                    cleanupFailure);
+            }
+
             throw;
         }
-
-        CryptographicOperations.ZeroMemory(current);
-        _memoryLock?.Dispose();
-        _buffer = replacement;
-        _memoryLock = replacementLock;
     }
 }
 

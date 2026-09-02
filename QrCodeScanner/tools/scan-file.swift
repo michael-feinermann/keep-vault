@@ -4,17 +4,20 @@ import Foundation
 import Vision
 
 // Runs a PDF or image through the same decoding and arbitration path the app
-// uses on camera frames, and reports what it decided.
+// uses on camera frames, and reports what it decided without ever printing a
+// decoded payload or any substring derived from one.
 //
 // The camera cannot be pointed at a file, so this is how the pipeline is
 // checked against a real Schlüsselzettel: same Vision request, same symbology,
-// same Detection values, same CodeArbiter. What it prints is what the app
-// would do with that sheet held in front of the lens.
+// same Detection values, same CodeArbiter. The diagnostic output is restricted
+// to dimensions, positions, counts and decision metadata so that a real key
+// sheet can be tested without leaking secret characters to a terminal or log.
 //
 //   xcrun swiftc -parse-as-library -O \
 //     QrCodeScanner/Sources/CodeArbiter.swift \
 //     QrCodeScanner/Sources/PayloadInspector.swift \
-//     QrCodeScanner/tools/scan-file.swift -o /tmp/scan-file
+//     QrCodeScanner/Sources/Localization.swift \
+//     QrCodeScanner/tools/scan-file.swift -framework AppKit -o /tmp/scan-file
 //   /tmp/scan-file sheet.pdf
 
 private func renderFirstPage(of url: URL) -> CGImage? {
@@ -80,10 +83,6 @@ private func detections(in image: CGImage) -> [Detection] {
     }
 }
 
-private func abbreviate(_ payload: String) -> String {
-    payload.count <= 24 ? payload : "\(payload.prefix(12))…\(payload.suffix(8)) (\(payload.count) Zeichen)"
-}
-
 private func describe(_ outcome: ScanOutcome) -> String {
     switch outcome {
     case .searching:
@@ -93,9 +92,9 @@ private func describe(_ outcome: ScanOutcome) -> String {
     case .conflict(let payloads):
         return "conflict between \(payloads.count) different payloads"
     case .accepted(let payload, .matchingCodes(let count)):
-        return "accepted \(abbreviate(payload)) — confirmed by \(count) matching codes"
+        return "accepted payload of \(payload.count) characters — confirmed by \(count) matching codes"
     case .accepted(let payload, .repeatedReads(let count)):
-        return "accepted \(abbreviate(payload)) — single code, \(count) identical reads"
+        return "accepted payload of \(payload.count) characters — single code, \(count) identical reads"
     }
 }
 
@@ -119,7 +118,7 @@ private enum ScanFile {
         for detection in found {
             let x = String(format: "%.3f", detection.center.x)
             let y = String(format: "%.3f", detection.center.y)
-            print("  at (\(x), \(y)): \(abbreviate(detection.payload))")
+            print("  at (\(x), \(y)): payload length \(detection.payload.count) characters")
         }
 
         let distinct = Set(found.map(\.payload))

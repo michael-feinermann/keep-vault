@@ -1,7 +1,7 @@
 /*
  * Native adapter for AES-256 in CTR mode.
  *
- * This adapter is the v11 production path used directly by
+ * This adapter is the v12 production path used directly by
  * NativeAes.XCryptCtr256: by itself for the AES suite and as the innermost
  * stage of the paranoia, ChaCha-over-AES and mixed cascades. It is not a slow
  * fallback behind a separate platform implementation.

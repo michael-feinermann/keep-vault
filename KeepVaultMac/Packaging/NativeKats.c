@@ -15,6 +15,7 @@ typedef int (*kalyna_ctr_fn)(
     const uint8_t*,
     uint8_t*,
     size_t);
+typedef int (*no_argument_kat_fn)(void);
 typedef int (*threefish_block_fn)(
     const uint8_t[128],
     const uint8_t[16],
@@ -172,9 +173,15 @@ static void run_kalyna_kat(const char* directory)
         nonce[index] = (uint8_t)(index + 0x40U);
     }
 
-    void* handle = open_library(directory, "libkalyna_ref.dylib");
+    void* handle = open_library(directory, "libkalyna_v12.dylib");
     kalyna_ctr_fn xcrypt = NULL;
-    load_symbol(handle, "kalyna_512_512_ctr_xcrypt", &xcrypt, sizeof(xcrypt));
+    no_argument_kat_fn join_failure_kat = NULL;
+    load_symbol(handle, "keepvault_v12_kalyna_512_512_ctr_xcrypt", &xcrypt, sizeof(xcrypt));
+    load_symbol(
+        handle,
+        "keepvault_v12_kalyna_join_failure_kat",
+        &join_failure_kat,
+        sizeof(join_failure_kat));
     if (xcrypt(key, nonce, input, output, sizeof(output)) != 0) {
         fail("Kalyna-512/512 CTR adapter returned an error");
     }
@@ -183,6 +190,9 @@ static void run_kalyna_kat(const char* directory)
         output,
         sizeof(output),
         "Kalyna-512/512 official CTR vector mismatch");
+    if (join_failure_kat() != 0) {
+        fail("Kalyna worker join-failure handling KAT failed");
+    }
     secure_zero(key, sizeof(key));
     secure_zero(nonce, sizeof(nonce));
     secure_zero(output, sizeof(output));
@@ -220,8 +230,14 @@ static void run_threefish_and_skein_kats(const char* directory)
     void* handle = open_library(directory, "libthreefish_ref.dylib");
     threefish_block_fn encrypt_block = NULL;
     skein_hash_fn hash = NULL;
+    no_argument_kat_fn join_failure_kat = NULL;
     load_symbol(handle, "threefish_1024_encrypt_block", &encrypt_block, sizeof(encrypt_block));
     load_symbol(handle, "skein_1024_hash", &hash, sizeof(hash));
+    load_symbol(
+        handle,
+        "keepvault_v12_threefish_join_failure_kat",
+        &join_failure_kat,
+        sizeof(join_failure_kat));
     if (encrypt_block(zero_key, zero_tweak, zero_input, block_output) != 0) {
         fail("Threefish-1024 adapter returned an error");
     }
@@ -234,6 +250,9 @@ static void run_threefish_and_skein_kats(const char* directory)
         fail("Skein-1024 adapter returned an error");
     }
     require_equal(expected_skein, skein_output, sizeof(skein_output), "Skein-1024 official 8-bit KAT mismatch");
+    if (join_failure_kat() != 0) {
+        fail("Threefish worker create/join-failure handling KAT failed");
+    }
     secure_zero(block_output, sizeof(block_output));
     secure_zero(skein_output, sizeof(skein_output));
     secure_zero(expected_skein, sizeof(expected_skein));

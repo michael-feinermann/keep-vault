@@ -1368,7 +1368,10 @@ internal static partial class MacSafeFileSystem
                                 IsDirectory: true,
                                 finalEntryIdentity));
 
-                            fileCount = checked(fileCount + child.FileCount);
+                            // FileCount is the extraction entry budget: count
+                            // the directory itself as well as its descendants
+                            // so a directory-only inode bomb cannot bypass it.
+                            fileCount = checked(fileCount + 1 + child.FileCount);
                             totalBytes = checked(totalBytes + child.TotalBytes);
                             maxFileBytes = Math.Max(maxFileBytes, child.MaxFileBytes);
                             continue;
@@ -1799,6 +1802,7 @@ internal readonly record struct MacDirectoryEntry(
     MacFileIdentity Identity);
 
 internal readonly record struct DirectoryTreeMeasurement(
+    // Counts regular files and directories below the held root.
     int FileCount,
     long TotalBytes,
     long MaxFileBytes,
@@ -1950,7 +1954,11 @@ internal sealed class MacExtractionStaging : IDisposable
         }
 
         string parentDir = Path.GetDirectoryName(requestedDestination) ?? Environment.CurrentDirectory;
-        Directory.CreateDirectory(parentDir);
+        if (!Directory.Exists(parentDir))
+        {
+            throw new DirectoryNotFoundException(
+                "The extraction target's parent directory must already exist and be selected explicitly.");
+        }
         // Open the caller-supplied parent before canonicalizing it. macOS
         // O_NOFOLLOW_ANY then rejects a symlink in any parent component.
         SafeFileHandle openedParent = MacSafeFileSystem.OpenDirectoryHandle(parentDir);

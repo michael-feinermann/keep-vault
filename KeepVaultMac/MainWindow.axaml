@@ -210,7 +210,7 @@
                     </ComboBox>
                     <TextBlock x:Name="Argon2ProfileText"
                                Grid.Row="2" Grid.ColumnSpan="4"
-                               Text="Argon2id: 1 GiB, 4 Iterationen, Parallelität 4, gesperrter RAM erforderlich"
+                               Text="Argon2id: 1 GiB bis knapp 2 GiB, 4 Iterationen, Parallelität 4, gesperrter RAM erforderlich"
                                Classes="muted" FontSize="12" TextWrapping="Wrap" />
                   </Grid>
                 </Border>

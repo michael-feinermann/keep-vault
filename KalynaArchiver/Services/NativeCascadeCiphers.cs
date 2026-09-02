@@ -441,6 +441,25 @@ internal static unsafe class NativeChaChaPoly
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int> _decrypt;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int> _xcrypt;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int> _xcryptSerial;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, uint, int> _encryptWithWorkers;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, uint, int> _decryptWithWorkers;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int> _encryptSerial;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int> _decryptSerial;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, nuint, byte*, uint, int> _authWithWorkers;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, nuint, byte*, int> _authSerial;
+    private static delegate* unmanaged[Cdecl]<int, ulong, int*, ulong*, ulong*, int*, int> _createMacSnapshot;
+    private static delegate* unmanaged[Cdecl]<
+        int,
+        ulong,
+        uint,
+        delegate* unmanaged[Cdecl]<nint, void>,
+        nint,
+        int*,
+        ulong*,
+        ulong*,
+        int*,
+        int> _createMacSnapshotForTests;
+    private static delegate* unmanaged[Cdecl]<ulong, ulong, int*, int> _releaseMacSnapshot;
 
     public static string? LastLoadError { get; private set; }
 
@@ -457,6 +476,92 @@ internal static unsafe class NativeChaChaPoly
             LastLoadError = $"{ex.GetType().Name}: {ex.Message}";
             return false;
         }
+    }
+
+    /// <summary>
+    /// Copies an opened macOS file into an anonymous POSIX-SHM object and
+    /// returns its distinct read-only descriptor and complete read-only mapping.
+    /// </summary>
+    /// <remarks>
+    /// The native ABI is intentionally fixed-width and returns both a stable
+    /// status and the original Darwin errno. The caller owns a non-negative
+    /// descriptor and mapping only when the status is zero. Darwin SHM file
+    /// descriptors are not byte-readable, so callers consume the mapping.
+    /// </remarks>
+    internal static int CreateMacAnonymousSnapshot(
+        int sourceDescriptor,
+        ulong maximumBytes,
+        out int snapshotReadDescriptor,
+        out ulong mappingAddress,
+        out ulong logicalSize,
+        out int osError)
+    {
+        EnsureMacSnapshotExportsLoaded(includeTestExport: false);
+        int output = -1;
+        ulong address = 0;
+        ulong size = 0;
+        int error = 0;
+        int status = _createMacSnapshot(
+            sourceDescriptor,
+            maximumBytes,
+            &output,
+            &address,
+            &size,
+            &error);
+        snapshotReadDescriptor = output;
+        mappingAddress = address;
+        logicalSize = size;
+        osError = error;
+        return status;
+    }
+
+    /// <summary>
+    /// Test seam for source mutation and a deterministic ENOSPC after the
+    /// first copied block. The callback is synchronous and never retained.
+    /// </summary>
+    internal static int CreateMacAnonymousSnapshotForTests(
+        int sourceDescriptor,
+        ulong maximumBytes,
+        uint testFlags,
+        delegate* unmanaged[Cdecl]<nint, void> afterCopyHook,
+        nint hookContext,
+        out int snapshotReadDescriptor,
+        out ulong mappingAddress,
+        out ulong logicalSize,
+        out int osError)
+    {
+        EnsureMacSnapshotExportsLoaded(includeTestExport: true);
+        int output = -1;
+        ulong address = 0;
+        ulong size = 0;
+        int error = 0;
+        int status = _createMacSnapshotForTests(
+            sourceDescriptor,
+            maximumBytes,
+            testFlags,
+            afterCopyHook,
+            hookContext,
+            &output,
+            &address,
+            &size,
+            &error);
+        snapshotReadDescriptor = output;
+        mappingAddress = address;
+        logicalSize = size;
+        osError = error;
+        return status;
+    }
+
+    internal static int ReleaseMacAnonymousSnapshot(
+        ulong mappingAddress,
+        ulong logicalSize,
+        out int osError)
+    {
+        EnsureMacSnapshotExportsLoaded(includeTestExport: false);
+        int error = 0;
+        int status = _releaseMacSnapshot(mappingAddress, logicalSize, &error);
+        osError = error;
+        return status;
     }
 
     public static void Encrypt(
@@ -530,6 +635,181 @@ internal static unsafe class NativeChaChaPoly
         ThrowOnError(result);
     }
 
+    /// <summary>Runs the fixed-limb Poly1305 path with an explicit worker count.</summary>
+    internal static void EncryptWithPoly1305Workers(
+        byte[] key,
+        byte[] nonce,
+        ReadOnlySpan<byte> associatedData,
+        byte[] plaintext,
+        byte[] ciphertext,
+        int length,
+        byte[] tag,
+        uint workerCount)
+    {
+        Validate(key, nonce, tag, plaintext, ciphertext, length);
+        EnsureAeadTestExportsLoaded();
+        int result;
+        fixed (byte* keyPointer = key)
+        fixed (byte* noncePointer = nonce)
+        fixed (byte* aadPointer = associatedData)
+        fixed (byte* inputPointer = plaintext)
+        fixed (byte* outputPointer = ciphertext)
+        fixed (byte* tagPointer = tag)
+        {
+            result = _encryptWithWorkers(
+                keyPointer, noncePointer, aadPointer, (nuint)associatedData.Length,
+                inputPointer, outputPointer, (nuint)length, tagPointer, workerCount);
+        }
+
+        ThrowOnError(result);
+    }
+
+    /// <summary>Runs the independent scalar Crypto++ AEAD reference export.</summary>
+    internal static void EncryptSerial(
+        byte[] key,
+        byte[] nonce,
+        ReadOnlySpan<byte> associatedData,
+        byte[] plaintext,
+        byte[] ciphertext,
+        int length,
+        byte[] tag)
+    {
+        Validate(key, nonce, tag, plaintext, ciphertext, length);
+        EnsureAeadTestExportsLoaded();
+        int result;
+        fixed (byte* keyPointer = key)
+        fixed (byte* noncePointer = nonce)
+        fixed (byte* aadPointer = associatedData)
+        fixed (byte* inputPointer = plaintext)
+        fixed (byte* outputPointer = ciphertext)
+        fixed (byte* tagPointer = tag)
+        {
+            result = _encryptSerial(
+                keyPointer, noncePointer, aadPointer, (nuint)associatedData.Length,
+                inputPointer, outputPointer, (nuint)length, tagPointer);
+        }
+
+        ThrowOnError(result);
+    }
+
+    /// <summary>Verifies with an explicit Poly1305 worker count before decrypting.</summary>
+    internal static void DecryptWithPoly1305Workers(
+        byte[] key,
+        byte[] nonce,
+        ReadOnlySpan<byte> associatedData,
+        byte[] ciphertext,
+        byte[] plaintext,
+        int length,
+        byte[] tag,
+        uint workerCount)
+    {
+        Validate(key, nonce, tag, ciphertext, plaintext, length);
+        EnsureAeadTestExportsLoaded();
+        int result;
+        fixed (byte* keyPointer = key)
+        fixed (byte* noncePointer = nonce)
+        fixed (byte* aadPointer = associatedData)
+        fixed (byte* inputPointer = ciphertext)
+        fixed (byte* outputPointer = plaintext)
+        fixed (byte* tagPointer = tag)
+        {
+            result = _decryptWithWorkers(
+                keyPointer, noncePointer, aadPointer, (nuint)associatedData.Length,
+                inputPointer, outputPointer, (nuint)length, tagPointer, workerCount);
+        }
+
+        if (result == 6)
+        {
+            throw new CryptographicException(
+                "The ChaCha20-Poly1305 authentication tag does not match; the ciphertext was altered.");
+        }
+        ThrowOnError(result);
+    }
+
+    /// <summary>Verifies and decrypts through the scalar Crypto++ oracle.</summary>
+    internal static void DecryptSerial(
+        byte[] key,
+        byte[] nonce,
+        ReadOnlySpan<byte> associatedData,
+        byte[] ciphertext,
+        byte[] plaintext,
+        int length,
+        byte[] tag)
+    {
+        Validate(key, nonce, tag, ciphertext, plaintext, length);
+        EnsureAeadTestExportsLoaded();
+        int result;
+        fixed (byte* keyPointer = key)
+        fixed (byte* noncePointer = nonce)
+        fixed (byte* aadPointer = associatedData)
+        fixed (byte* inputPointer = ciphertext)
+        fixed (byte* outputPointer = plaintext)
+        fixed (byte* tagPointer = tag)
+        {
+            result = _decryptSerial(
+                keyPointer, noncePointer, aadPointer, (nuint)associatedData.Length,
+                inputPointer, outputPointer, (nuint)length, tagPointer);
+        }
+
+        if (result == 6)
+        {
+            throw new CryptographicException(
+                "The ChaCha20-Poly1305 authentication tag does not match; the ciphertext was altered.");
+        }
+        ThrowOnError(result);
+    }
+
+    /// <summary>Computes only the RFC 8439 tag through the fixed-worker path.</summary>
+    internal static void AuthenticateWithPoly1305Workers(
+        byte[] key,
+        byte[] nonce,
+        ReadOnlySpan<byte> associatedData,
+        byte[] ciphertext,
+        int length,
+        byte[] tag,
+        uint workerCount)
+    {
+        ValidateAuthentication(key, nonce, tag, ciphertext, length);
+        EnsureAeadTestExportsLoaded();
+        int result;
+        fixed (byte* keyPointer = key)
+        fixed (byte* noncePointer = nonce)
+        fixed (byte* aadPointer = associatedData)
+        fixed (byte* inputPointer = ciphertext)
+        fixed (byte* tagPointer = tag)
+        {
+            result = _authWithWorkers(
+                keyPointer, noncePointer, aadPointer, (nuint)associatedData.Length,
+                inputPointer, (nuint)length, tagPointer, workerCount);
+        }
+        ThrowOnError(result);
+    }
+
+    /// <summary>Computes only the RFC 8439 tag through the scalar oracle.</summary>
+    internal static void AuthenticateSerial(
+        byte[] key,
+        byte[] nonce,
+        ReadOnlySpan<byte> associatedData,
+        byte[] ciphertext,
+        int length,
+        byte[] tag)
+    {
+        ValidateAuthentication(key, nonce, tag, ciphertext, length);
+        EnsureAeadTestExportsLoaded();
+        int result;
+        fixed (byte* keyPointer = key)
+        fixed (byte* noncePointer = nonce)
+        fixed (byte* aadPointer = associatedData)
+        fixed (byte* inputPointer = ciphertext)
+        fixed (byte* tagPointer = tag)
+        {
+            result = _authSerial(
+                keyPointer, noncePointer, aadPointer, (nuint)associatedData.Length,
+                inputPointer, (nuint)length, tagPointer);
+        }
+        ThrowOnError(result);
+    }
+
     /// <summary>
     /// Raw ChaCha20 keyed at an explicit block counter, split across workers.
     /// </summary>
@@ -585,6 +865,22 @@ internal static unsafe class NativeChaChaPoly
         }
     }
 
+    private static void ValidateAuthentication(
+        byte[] key,
+        byte[] nonce,
+        byte[] tag,
+        byte[] ciphertext,
+        int length)
+    {
+        if (key.Length != KeyBytes || nonce.Length != NonceBytes || tag.Length != TagBytes
+            || length < 0 || ciphertext.Length < length)
+        {
+            throw new ArgumentException(
+                $"ChaCha20-Poly1305 requires a {KeyBytes}-byte key, a {NonceBytes}-byte nonce, "
+                + $"a {TagBytes}-byte tag, and a sufficiently large ciphertext buffer.");
+        }
+    }
+
     private static void ThrowOnError(int result)
     {
         if (result == 0)
@@ -610,10 +906,9 @@ internal static unsafe class NativeChaChaPoly
     /// Resolves the raw keystream exports, which only the tests call.
     /// </summary>
     /// <remarks>
-    /// Kept out of <see cref="EnsureLoaded"/> for the same reason as Kalyna's
-    /// reference export: a library built before these existed must still be
-    /// able to encrypt, and a missing test-only symbol must not be able to
-    /// disable the application.
+    /// Kept out of <see cref="EnsureLoaded"/> because these v12-only symbols
+    /// are differential-test instrumentation rather than production entry
+    /// points. Their absence fails the relevant test immediately.
     /// </remarks>
     private static void EnsureRawKeystreamLoaded()
     {
@@ -630,6 +925,85 @@ internal static unsafe class NativeChaChaPoly
             {
                 _xcryptSerial = (delegate* unmanaged[Cdecl]<byte*, byte*, uint, byte*, byte*, nuint, int>)
                     NativeLibrary.GetExport(_libraryHandle, "chacha20_xcrypt_serial");
+            }
+        }
+    }
+
+    private static void EnsureAeadTestExportsLoaded()
+    {
+        EnsureLoaded();
+        lock (LoadGate)
+        {
+            if (_encryptWithWorkers == null)
+            {
+                _encryptWithWorkers = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, uint, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "chacha20poly1305_encrypt_with_workers");
+            }
+            if (_decryptWithWorkers == null)
+            {
+                _decryptWithWorkers = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, uint, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "chacha20poly1305_decrypt_with_workers");
+            }
+            if (_encryptSerial == null)
+            {
+                _encryptSerial = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "chacha20poly1305_encrypt_serial");
+            }
+            if (_decryptSerial == null)
+            {
+                _decryptSerial = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, byte*, nuint, byte*, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "chacha20poly1305_decrypt_serial");
+            }
+            if (_authWithWorkers == null)
+            {
+                _authWithWorkers = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, nuint, byte*, uint, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "chacha20poly1305_auth_with_workers");
+            }
+            if (_authSerial == null)
+            {
+                _authSerial = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, nuint, byte*, nuint, byte*, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "chacha20poly1305_auth_serial");
+            }
+        }
+    }
+
+    private static void EnsureMacSnapshotExportsLoaded(bool includeTestExport)
+    {
+        if (!OperatingSystem.IsMacOS())
+        {
+            throw new PlatformNotSupportedException(
+                "Anonymous POSIX-SHM snapshots are available only on macOS.");
+        }
+
+        EnsureLoaded();
+        lock (LoadGate)
+        {
+            if (_createMacSnapshot == null)
+            {
+                _createMacSnapshot = (delegate* unmanaged[Cdecl]<int, ulong, int*, ulong*, ulong*, int*, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "keepvault_macos_snapshot_create_v1");
+            }
+            if (_releaseMacSnapshot == null)
+            {
+                _releaseMacSnapshot = (delegate* unmanaged[Cdecl]<ulong, ulong, int*, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "keepvault_macos_snapshot_release_v1");
+            }
+
+            if (includeTestExport && _createMacSnapshotForTests == null)
+            {
+                _createMacSnapshotForTests = (delegate* unmanaged[Cdecl]<
+                    int,
+                    ulong,
+                    uint,
+                    delegate* unmanaged[Cdecl]<nint, void>,
+                    nint,
+                    int*,
+                    ulong*,
+                    ulong*,
+                    int*,
+                    int>)NativeLibrary.GetExport(
+                        _libraryHandle,
+                        "keepvault_macos_snapshot_create_test_v1");
             }
         }
     }
@@ -657,6 +1031,15 @@ internal static unsafe class NativeChaChaPoly
                 NativeLibrary.Free(handle);
                 _encrypt = null;
                 _decrypt = null;
+                _encryptWithWorkers = null;
+                _decryptWithWorkers = null;
+                _encryptSerial = null;
+                _decryptSerial = null;
+                _authWithWorkers = null;
+                _authSerial = null;
+                _createMacSnapshot = null;
+                _createMacSnapshotForTests = null;
+                _releaseMacSnapshot = null;
                 throw;
             }
         }

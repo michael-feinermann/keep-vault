@@ -270,6 +270,9 @@ internal sealed class WindowsExtractionStaging : IDisposable
 
                 if ((attributes & FileAttributes.Directory) != 0)
                 {
+                    // FileCount is the common extraction entry budget and
+                    // deliberately includes directories.
+                    fileCount = checked(fileCount + 1);
                     SafeFileHandle directory = WindowsSafeFileSystem.OpenDirectoryBound(entry, denyRename: true);
                     frames.Push(new DirectoryFrame(entry, directory, ownsHandle: true));
                     continue;
@@ -436,6 +439,7 @@ internal sealed class WindowsExtractionStaging : IDisposable
 }
 
 internal readonly record struct DirectoryTreeMeasurement(
+    // Counts regular files and directories below the held root.
     int FileCount,
     long TotalBytes,
     long MaxFileBytes);

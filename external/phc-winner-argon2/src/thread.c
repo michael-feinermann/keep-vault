@@ -46,6 +46,17 @@ int argon2_thread_join(argon2_thread_handle_t handle) {
 #endif
 }
 
+int argon2_thread_detach(argon2_thread_handle_t handle) {
+#if defined(_WIN32)
+    if (WaitForSingleObject((HANDLE)handle, INFINITE) == WAIT_OBJECT_0) {
+        return CloseHandle((HANDLE)handle) != 0 ? 0 : -1;
+    }
+    return -1;
+#else
+    return pthread_detach(handle);
+#endif
+}
+
 void argon2_thread_exit(void) {
 #if defined(_WIN32)
     _endthreadex(0);

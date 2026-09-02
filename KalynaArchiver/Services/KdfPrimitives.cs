@@ -65,7 +65,10 @@ internal static class LengthPrefix
 /// This is deliberately not <c>Skein1024Digest.HashData(key || message)</c>.
 /// Skein 1.3 defines a real key parameter for MAC and KDF use, and Bouncy
 /// Castle implements it; inventing a keyed construction on top of an unkeyed
-/// digest would be a new primitive nobody has analysed.
+/// digest would be a new primitive nobody has analysed. On macOS the Skein
+/// 1.3 reference code evaluates this in a locked native state that is erased
+/// on return; the independent Bouncy Castle implementation remains the KAT
+/// oracle.
 ///
 /// Both the state and the output are fixed at 1024 bits. A shorter output would
 /// silently cap the master and role material this is used for.
@@ -110,34 +113,78 @@ internal static class KeyedSkein1024
             throw new ArgumentException($"Destination must be at least {OutputBytes} bytes.", nameof(destination));
         }
 
+#if !KEEPVAULT_MACOS
         var mac = new SkeinMac(SkeinEngine.SKEIN_1024, OutputBytes * 8);
-        using var keyBuf = LockedSensitiveBuffer.Create(key.Length);
-        key.CopyTo(keyBuf.Bytes);
-        int persByteCount = Encoding.UTF8.GetByteCount(personalisation);
-        using var persBuf = LockedSensitiveBuffer.Create(persByteCount);
-        Encoding.UTF8.GetBytes(personalisation, persBuf.Bytes);
+#endif
+        LockedSensitiveBuffer? keyBuf = null;
+        LockedSensitiveBuffer? persBuf = null;
+        LockedSensitiveBuffer? outBuf = null;
+        Exception? operationFailure = null;
         try
         {
-            SkeinParameters parameters = new SkeinParameters.Builder()
-                .SetKey(keyBuf.Bytes)
-                .SetPersonalisation(persBuf.Bytes)
-                .Build();
-            mac.Init(parameters);
-            mac.BlockUpdate(message);
-
-            using var outBuf = LockedSensitiveBuffer.Create(OutputBytes);
-            int written = mac.DoFinal(outBuf.Bytes);
-            if (written != OutputBytes)
+#if !KEEPVAULT_MACOS
+            try
             {
-                throw new CryptographicException(
-                    $"Skein-MAC-1024-1024 returned {written} bytes instead of {OutputBytes}.");
-            }
+#endif
+                keyBuf = LockedSensitiveBuffer.Create(key.Length);
+                key.CopyTo(keyBuf.Bytes);
+                int persByteCount = Encoding.UTF8.GetByteCount(personalisation);
+                persBuf = LockedSensitiveBuffer.Create(persByteCount);
+                Encoding.UTF8.GetBytes(personalisation, persBuf.Bytes);
+                outBuf = LockedSensitiveBuffer.Create(OutputBytes);
+#if KEEPVAULT_MACOS
+                NativeThreefish.MacSkein1024Personalized(
+                    keyBuf.Bytes,
+                    persBuf.Bytes,
+                    message,
+                    outBuf.Bytes);
+                int written = OutputBytes;
+#else
+                SkeinParameters parameters = new SkeinParameters.Builder()
+                    .SetKey(keyBuf.Bytes)
+                    .SetPersonalisation(persBuf.Bytes)
+                    .Build();
+                mac.Init(parameters);
+                mac.BlockUpdate(message);
+                int written = mac.DoFinal(outBuf.Bytes);
+#endif
+                if (written != OutputBytes)
+                {
+                    throw new CryptographicException(
+                        $"Skein-MAC-1024-1024 returned {written} bytes instead of {OutputBytes}.");
+                }
 
-            outBuf.Bytes.CopyTo(destination);
+                outBuf.Bytes.CopyTo(destination);
+#if !KEEPVAULT_MACOS
+            }
+            finally
+            {
+                mac.Reset();
+            }
+#endif
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(destination[..OutputBytes]);
+            throw;
         }
         finally
         {
-            mac.Reset();
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "Keyed Skein computation failed and one or more sensitive buffers could not be released.",
+                    outBuf,
+                    persBuf,
+                    keyBuf);
+            }
+            catch
+            {
+                CryptographicOperations.ZeroMemory(destination[..OutputBytes]);
+                throw;
+            }
         }
     }
 }
@@ -187,31 +234,59 @@ internal static class Sha3HkdfExpand
 
         int n = (destination.Length + HashBytes - 1) / HashBytes;
 
-        using var prkBuf = LockedSensitiveBuffer.Create(pseudoRandomKey.Length);
-        pseudoRandomKey.CopyTo(prkBuf.Bytes);
-
-        using var hmac = new HmacSha3_512(prkBuf.Bytes);
-        using var tBuf = LockedSensitiveBuffer.Create(HashBytes);
-        int generated = 0;
-        Span<byte> counterBuf = stackalloc byte[1];
-
-        for (int block = 1; block <= n; block++)
+        LockedSensitiveBuffer? prkBuf = null;
+        LockedSensitiveBuffer? tBuf = null;
+        Exception? operationFailure = null;
+        try
         {
-            if (block > 1)
-            {
-                hmac.AppendData(tBuf.Bytes);
-            }
-            if (!info.IsEmpty)
-            {
-                hmac.AppendData(info);
-            }
-            counterBuf[0] = checked((byte)block);
-            hmac.AppendData(counterBuf);
+            prkBuf = LockedSensitiveBuffer.Create(pseudoRandomKey.Length);
+            pseudoRandomKey.CopyTo(prkBuf.Bytes);
 
-            hmac.GetHashAndReset(tBuf.Bytes);
-            int toCopy = Math.Min(HashBytes, destination.Length - generated);
-            tBuf.Bytes.AsSpan(0, toCopy).CopyTo(destination.Slice(generated, toCopy));
-            generated += toCopy;
+            using var hmac = new HmacSha3_512(prkBuf.Bytes);
+            tBuf = LockedSensitiveBuffer.Create(HashBytes);
+            int generated = 0;
+            Span<byte> counterBuf = stackalloc byte[1];
+
+            for (int block = 1; block <= n; block++)
+            {
+                if (block > 1)
+                {
+                    hmac.AppendData(tBuf.Bytes);
+                }
+                if (!info.IsEmpty)
+                {
+                    hmac.AppendData(info);
+                }
+                counterBuf[0] = checked((byte)block);
+                hmac.AppendData(counterBuf);
+
+                hmac.GetHashAndReset(tBuf.Bytes);
+                int toCopy = Math.Min(HashBytes, destination.Length - generated);
+                tBuf.Bytes.AsSpan(0, toCopy).CopyTo(destination.Slice(generated, toCopy));
+                generated += toCopy;
+            }
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(destination);
+            throw;
+        }
+        finally
+        {
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "HKDF expansion failed and one or more sensitive buffers could not be released.",
+                    tBuf,
+                    prkBuf);
+            }
+            catch
+            {
+                CryptographicOperations.ZeroMemory(destination);
+                throw;
+            }
         }
     }
 }

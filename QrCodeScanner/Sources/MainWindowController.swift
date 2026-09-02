@@ -119,6 +119,7 @@ final class MainWindowController: NSObject, NSWindowDelegate, ScanSessionDelegat
     private let window: NSWindow
     private let session = ScanSession()
     private let clipboard = VolatileClipboard()
+    private let terminationCleanup = IdempotentTerminationCleanup()
 
     private let previewView = NSView()
     private let statusLabel = NSTextField(labelWithString: "")
@@ -417,11 +418,26 @@ final class MainWindowController: NSObject, NSWindowDelegate, ScanSessionDelegat
 
     // MARK: - NSWindowDelegate
 
+    /// Synchronously removes process-owned sensitive state before either the
+    /// window-close path or AppKit's application-termination path completes.
+    /// The gate is needed because closing the window deliberately terminates
+    /// the app, so both paths normally run for the same action.
+    func prepareForTermination() {
+        terminationCleanup.run { [self] in
+            session.stop()
+            clipboard.clearIfStillOurs()
+            payload = nil
+            resultView.string = ""
+            notices = []
+            copyButton.isEnabled = false
+            rescanButton.isEnabled = false
+        }
+    }
+
     func windowWillClose(_ notification: Notification) {
         // Release the camera before the process goes, so the indicator light
         // going out matches the window disappearing.
-        session.stop()
-        clipboard.clearIfStillOurs()
+        prepareForTermination()
         NSApplication.shared.terminate(nil)
     }
 }

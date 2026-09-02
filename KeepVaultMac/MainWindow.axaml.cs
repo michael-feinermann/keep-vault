@@ -514,6 +514,7 @@ public sealed partial class MainWindow : Window, IDisposable
         GeneratedArchiveEntropy? prepared = null;
         try
         {
+            TestHookBeforeCredentialOperation?.Invoke("create");
             string[] inputs = InputList.Items.OfType<string>().ToArray();
             if (inputs.Length == 0)
             {
@@ -655,7 +656,6 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             createdArchive = null;
-            ClearCreateSecrets();
             Log($"{T("done")}: {archivePath}");
             await InfoAsync(deleteOriginals && originalsDeleted
                 ? T("archiveCreatedOriginalsDeleted")
@@ -676,7 +676,14 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            EndProtectedOperation();
+            try
+            {
+                ClearCreateSecrets();
+            }
+            finally
+            {
+                EndProtectedOperation();
+            }
         }
     }
 
@@ -1067,6 +1074,11 @@ public sealed partial class MainWindow : Window, IDisposable
                 ? printers[0]
                 : await PrinterSelectionDialog.ShowAsync(this, T("selectPrinter"), printers, T("print"), T("cancel"));
             if (selected is null)
+            {
+                return;
+            }
+
+            if (!await ConfirmAsync(T("cupsSpoolWarning")))
             {
                 return;
             }

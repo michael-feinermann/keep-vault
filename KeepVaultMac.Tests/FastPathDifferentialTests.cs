@@ -1,15 +1,17 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using KalynaArchiver.Services;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Parameters;
 
 /// <summary>
-/// The shipped fast cipher paths against the reference implementations that sit
-/// beside them in the same library, over buffers the size of a real archive.
+/// The shipped parallel cipher paths against independent implementations over
+/// buffers the size of a real archive.
 /// </summary>
 /// <remarks>
-/// Both libraries verify themselves at start-up — Kalyna's tables against the
-/// DSTU 7624:2014 vector and 64 derived key/block pairs — but a self-check runs
-/// on a few blocks under a handful of keys. What it cannot reach is the mode
+/// The v12 Kalyna adapter verifies an official DSTU 7624:2014 vector at
+/// start-up. Bouncy Castle supplies an independently implemented block cipher
+/// for this gate. A self-check on one block cannot reach the mode
 /// wrapped around the block function: the counter arithmetic across a quarter of
 /// a gigabyte, the carry out of a counter that starts near its own limit, the
 /// tail block of a length that is not a multiple of the block size, and the
@@ -17,12 +19,11 @@ using KalynaArchiver.Services;
 /// claimed chunk to the next. Those are where a fast path that passes every
 /// vector still writes a container that will not open.
 ///
-/// So both tests drive 256 MiB through the shipped export and through the
-/// reference export beside it, under several keys, nonces and starting block
-/// counters, and require the two to agree byte for byte. They are slow — the
-/// Kalyna reference computes each GF(2^8) product of the MDS multiply at run
-/// time — and that slowness is the point: it is the price of holding the fast
-/// path against something that was never optimised.
+/// This test therefore drives 256 MiB through the shipped Crypto++ export and
+/// through Bouncy Castle under several keys, nonces and starting counters, and
+/// requires byte-for-byte agreement. It also compares the native scalar and
+/// parallel entry points, so an independent algorithm check cannot hide a
+/// broken worker split.
 /// </remarks>
 internal static class FastPathDifferentialTests
 {
@@ -52,12 +53,15 @@ internal static class FastPathDifferentialTests
         {
             Cost = new TestCost(4, 1536, false, TestConstraint.None),
         },
-        new("crypto.kalyna-fast-path-differential", "Kalyna-512/512 table path against the reference over 256 MiB",
+        new("crypto.kalyna-fast-path-differential", "Kalyna-512/512 Crypto++ against independent Bouncy Castle over 256 MiB",
             KalynaAgainstReferenceAsync, TestResource.CpuHeavy, "Crypto"),
         new("crypto.chacha20-fast-path-differential", "ChaCha20 worker split against the serial keystream over 256 MiB",
             ChaChaAgainstSerialAsync, TestResource.CpuHeavy, "Crypto"),
-        new("crypto.chacha20-poly1305-rfc8439", "ChaCha20-Poly1305 RFC KAT and independent padding matrix",
-            AeadFramingAsync, TestResource.CpuHeavy, "Crypto"),
+        new("crypto.chacha20-poly1305-rfc8439", "ChaCha20-Poly1305 RFC KAT, worker differential and 256 MiB Poly1305",
+            AeadFramingAsync, TestResource.CpuHeavy, "Crypto")
+        {
+            Cost = new TestCost(4, 768, false, TestConstraint.None),
+        },
         new("keysheet.full-factor-print", "the key sheet prints every character of the factor",
             KeySheetFactorIsCompleteAsync, TestResource.Light, "Packaging"),
     ];
@@ -432,11 +436,12 @@ internal static class FastPathDifferentialTests
     {
         MacComprehensiveTests.Require(
             NativeKalyna.IsAvailable(),
-            $"Kalyna reference library unavailable: {NativeKalyna.LastLoadError}");
+            $"Kalyna v12 library unavailable: {NativeKalyna.LastLoadError}");
 
         byte[] plaintext = DerivedBytes(LargeBytes + 37, 0xABCDEF);
-        byte[] fromReference = new byte[plaintext.Length];
-        byte[] fromFast = new byte[plaintext.Length];
+        byte[] fromIndependent = new byte[plaintext.Length];
+        byte[] fromProduction = new byte[plaintext.Length];
+        byte[] fromScalar = new byte[plaintext.Length];
 
         // Four keys, four nonces, four places in the counter's range. The last
         // two start high enough that the 256 MiB run carries out of the low
@@ -457,16 +462,18 @@ internal static class FastPathDifferentialTests
             byte[] counter = BuildCounterBlock(nonceSeed, counterStart);
 
             var stopwatch = Stopwatch.StartNew();
-            NativeKalyna.XCryptCtr512Reference(key, counter, plaintext, fromReference, length);
-            TimeSpan referenceElapsed = stopwatch.Elapsed;
+            BouncyKalynaCtr(key, counter, plaintext, fromIndependent, length);
+            TimeSpan independentElapsed = stopwatch.Elapsed;
             stopwatch.Restart();
-            NativeKalyna.XCryptCtr512(key, counter, plaintext, fromFast, length);
-            TimeSpan fastElapsed = stopwatch.Elapsed;
+            NativeKalyna.XCryptCtr512(key, counter, plaintext, fromProduction, length);
+            TimeSpan productionElapsed = stopwatch.Elapsed;
+            NativeKalyna.XCryptCtr512Scalar(key, counter, plaintext, fromScalar, length);
 
-            RequireIdentical(fromReference, fromFast, length, $"Kalyna {name}");
+            RequireIdentical(fromIndependent, fromProduction, length, $"Kalyna independent {name}");
+            RequireIdentical(fromScalar, fromProduction, length, $"Kalyna scalar/parallel {name}");
             Console.WriteLine(
                 $"    Kalyna {name}: identical "
-                + $"({Rate(length, referenceElapsed)} reference, {Rate(length, fastElapsed)} tables)");
+                + $"({Rate(length, independentElapsed)} Bouncy Castle, {Rate(length, productionElapsed)} Crypto++)");
         }
 
         // The same comparison at every length where the driver changes gear.
@@ -476,15 +483,17 @@ internal static class FastPathDifferentialTests
         byte[] boundaryCounter = BuildCounterBlock(9009, 0xFFFFFFFEUL);
         foreach (int length in BoundaryLengths)
         {
-            NativeKalyna.XCryptCtr512Reference(boundaryKey, boundaryCounter, plaintext, fromReference, length);
-            NativeKalyna.XCryptCtr512(boundaryKey, boundaryCounter, plaintext, fromFast, length);
-            RequireIdentical(fromReference, fromFast, length, $"Kalyna boundary length {length}");
+            BouncyKalynaCtr(boundaryKey, boundaryCounter, plaintext, fromIndependent, length);
+            NativeKalyna.XCryptCtr512(boundaryKey, boundaryCounter, plaintext, fromProduction, length);
+            NativeKalyna.XCryptCtr512Scalar(boundaryKey, boundaryCounter, plaintext, fromScalar, length);
+            RequireIdentical(fromIndependent, fromProduction, length, $"Kalyna boundary length {length}");
+            RequireIdentical(fromScalar, fromProduction, length, $"Kalyna scalar boundary length {length}");
 
             byte[] inPlace = plaintext.AsSpan(0, length).ToArray();
             try
             {
                 NativeKalyna.XCryptCtr512(boundaryKey, boundaryCounter, inPlace, inPlace, length);
-                RequireIdentical(fromReference, inPlace, length, $"Kalyna in-place boundary length {length}");
+                RequireIdentical(fromIndependent, inPlace, length, $"Kalyna in-place boundary length {length}");
             }
             finally
             {
@@ -500,6 +509,41 @@ internal static class FastPathDifferentialTests
         Console.WriteLine($"    Kalyna boundary lengths identical: {string.Join(", ", BoundaryLengths)}");
         Console.WriteLine("    Kalyna in-place output agrees and counter exhaustion is rejected before output");
         return Task.CompletedTask;
+    }
+
+    private static void BouncyKalynaCtr(
+        byte[] key,
+        byte[] nonce,
+        byte[] input,
+        byte[] output,
+        int length)
+    {
+        var cipher = new Dstu7624Engine(512);
+        byte[] counter = nonce.ToArray();
+        byte[] stream = new byte[KalynaBlockBytes];
+        try
+        {
+            cipher.Init(true, new KeyParameter(key));
+            for (int offset = 0; offset < length; offset += KalynaBlockBytes)
+            {
+                cipher.ProcessBlock(counter, 0, stream, 0);
+                int blockLength = Math.Min(KalynaBlockBytes, length - offset);
+                for (int index = 0; index < blockLength; index++)
+                {
+                    output[offset + index] = (byte)(input[offset + index] ^ stream[index]);
+                }
+
+                if (offset + blockLength < length)
+                {
+                    IncrementBigEndianCounter(counter);
+                }
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(counter);
+            CryptographicOperations.ZeroMemory(stream);
+        }
     }
 
     private static Task ChaChaAgainstSerialAsync()
@@ -728,8 +772,317 @@ internal static class FastPathDifferentialTests
             "In-place ChaCha20-Poly1305 decryption did not recover the plaintext.");
         Console.WriteLine("    in-place encryption and decryption match the out-of-place result");
 
+        RunParallelPoly1305Matrix();
         RunAeadReferenceMatrix();
+        RunLargePoly1305Probe();
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Holds the fixed-limb worker implementation against both Crypto++'s
+    /// scalar Poly1305 and .NET's independent RFC 8439 implementation.
+    /// </summary>
+    private static void RunParallelPoly1305Matrix()
+    {
+        int[] criticalPayloadLengths =
+        [
+            0, 1, 15, 16, 17, 31, 32, 33,
+            63, 64, 65, 127, 128, 129, 255, 256, 257, 4095, 4096,
+        ];
+        int[] criticalAadLengths = [0, 1, 15, 16, 17, 31, 32, 33, 63, 64];
+        var cases = new HashSet<(int PayloadLength, int AadLength)>();
+
+        // Every payload length, with AAD cycling through every value 0..64.
+        for (int payloadLength = 0; payloadLength <= 4096; payloadLength++)
+        {
+            cases.Add((payloadLength, payloadLength % 65));
+        }
+
+        // Every AAD length gets a second, deliberately unrelated payload.
+        for (int aadLength = 0; aadLength <= 64; aadLength++)
+        {
+            cases.Add((criticalPayloadLengths[aadLength % criticalPayloadLengths.Length], aadLength));
+        }
+
+        // Full cross-product exactly where either RFC field crosses pad16 and
+        // common power-of-two boundaries.
+        foreach (int payloadLength in criticalPayloadLengths)
+        {
+            foreach (int aadLength in criticalAadLengths)
+            {
+                cases.Add((payloadLength, aadLength));
+            }
+        }
+
+        uint parallelWorkers = (uint)Math.Clamp(Environment.ProcessorCount, 2, 8);
+        byte[] key = DerivedBytes(NativeChaChaPoly.KeyBytes, 0x504F4C5931333035UL);
+        using var reference = new ChaCha20Poly1305(key);
+        int checkedCases = 0;
+        try
+        {
+            foreach ((int payloadLength, int aadLength) in cases)
+            {
+                byte[] nonce = DerivedBytes(
+                    NativeChaChaPoly.NonceBytes,
+                    0x4E4F4E43454D4154UL ^ ((ulong)(uint)payloadLength << 16) ^ (uint)aadLength);
+                byte[] plaintext = DerivedBytes(
+                    payloadLength,
+                    0x5041594C4F4144UL ^ ((ulong)(uint)payloadLength << 8) ^ (uint)aadLength);
+                byte[] associated = DerivedBytes(
+                    aadLength,
+                    0x414144UL ^ ((ulong)(uint)aadLength << 24) ^ (uint)payloadLength);
+                byte[] expectedCiphertext = new byte[payloadLength];
+                byte[] expectedTag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] serialCiphertext = new byte[payloadLength];
+                byte[] serialTag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] oneWorkerCiphertext = new byte[payloadLength];
+                byte[] oneWorkerTag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] manyWorkerCiphertext = new byte[payloadLength];
+                byte[] manyWorkerTag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] authenticatedOnlyTag = new byte[NativeChaChaPoly.TagBytes];
+                try
+                {
+                    reference.Encrypt(nonce, plaintext, expectedCiphertext, expectedTag, associated);
+                    NativeChaChaPoly.EncryptSerial(
+                        key, nonce, associated, plaintext, serialCiphertext, payloadLength, serialTag);
+                    NativeChaChaPoly.EncryptWithPoly1305Workers(
+                        key, nonce, associated, plaintext, oneWorkerCiphertext, payloadLength, oneWorkerTag, 1);
+                    NativeChaChaPoly.EncryptWithPoly1305Workers(
+                        key,
+                        nonce,
+                        associated,
+                        plaintext,
+                        manyWorkerCiphertext,
+                        payloadLength,
+                        manyWorkerTag,
+                        parallelWorkers);
+                    NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+                        key,
+                        nonce,
+                        associated,
+                        expectedCiphertext,
+                        payloadLength,
+                        authenticatedOnlyTag,
+                        parallelWorkers);
+
+                    RequireIdentical(
+                        expectedCiphertext,
+                        serialCiphertext,
+                        payloadLength,
+                        $"scalar AEAD payload {payloadLength}, AAD {aadLength}");
+                    RequireIdentical(
+                        expectedCiphertext,
+                        oneWorkerCiphertext,
+                        payloadLength,
+                        $"one-worker AEAD payload {payloadLength}, AAD {aadLength}");
+                    RequireIdentical(
+                        expectedCiphertext,
+                        manyWorkerCiphertext,
+                        payloadLength,
+                        $"many-worker AEAD payload {payloadLength}, AAD {aadLength}");
+                    MacComprehensiveTests.Require(
+                        CryptographicOperations.FixedTimeEquals(expectedTag, serialTag)
+                            && CryptographicOperations.FixedTimeEquals(expectedTag, oneWorkerTag)
+                            && CryptographicOperations.FixedTimeEquals(expectedTag, manyWorkerTag)
+                            && CryptographicOperations.FixedTimeEquals(expectedTag, authenticatedOnlyTag),
+                        $"Poly1305 scalar/1-worker/{parallelWorkers}-worker tags differ at payload "
+                        + $"{payloadLength}, AAD {aadLength}.");
+                    checkedCases++;
+                }
+                finally
+                {
+                    CryptographicOperations.ZeroMemory(nonce);
+                    CryptographicOperations.ZeroMemory(plaintext);
+                    CryptographicOperations.ZeroMemory(associated);
+                    CryptographicOperations.ZeroMemory(expectedCiphertext);
+                    CryptographicOperations.ZeroMemory(expectedTag);
+                    CryptographicOperations.ZeroMemory(serialCiphertext);
+                    CryptographicOperations.ZeroMemory(serialTag);
+                    CryptographicOperations.ZeroMemory(oneWorkerCiphertext);
+                    CryptographicOperations.ZeroMemory(oneWorkerTag);
+                    CryptographicOperations.ZeroMemory(manyWorkerCiphertext);
+                    CryptographicOperations.ZeroMemory(manyWorkerTag);
+                    CryptographicOperations.ZeroMemory(authenticatedOnlyTag);
+                }
+            }
+
+            RequirePoly1305WorkerPreflight(key, parallelWorkers);
+            RequirePoly1305WorkerInPlace(key, parallelWorkers);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
+
+        MacComprehensiveTests.Require(
+            checkedCases == cases.Count,
+            $"The exhaustive Poly1305 matrix ran {checkedCases} of {cases.Count} cases.");
+        Console.WriteLine(
+            $"    Poly1305 scalar/1-worker/{parallelWorkers}-worker matrix: {checkedCases} cases; "
+            + "all payload lengths 0..4096, all AAD lengths 0..64 and critical cross-boundaries");
+    }
+
+    private static void RequirePoly1305WorkerPreflight(byte[] key, uint parallelWorkers)
+    {
+        byte[] nonce = DerivedBytes(NativeChaChaPoly.NonceBytes, 0x505245464C494748UL);
+        byte[] associated = DerivedBytes(17, 0x505245414144UL);
+        byte[] ciphertext = DerivedBytes(33, 0x50524543495048UL);
+        byte[] tag = Enumerable.Repeat((byte)0xA7, NativeChaChaPoly.TagBytes).ToArray();
+        bool rejected = false;
+        try
+        {
+            NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+                key, nonce, associated, ciphertext, ciphertext.Length, tag, 65);
+        }
+        catch (CryptographicException)
+        {
+            rejected = true;
+        }
+
+        MacComprehensiveTests.Require(
+            rejected && tag.All(value => value == 0xA7),
+            "Poly1305 accepted more than 64 workers or modified its output before rejecting the argument.");
+
+        byte[] validTag = new byte[NativeChaChaPoly.TagBytes];
+        NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+            key, nonce, associated, ciphertext, ciphertext.Length, validTag, parallelWorkers);
+        byte[] manipulatedTag = validTag.ToArray();
+        manipulatedTag[0] ^= 0x80;
+        byte[] output = Enumerable.Repeat((byte)0x5C, ciphertext.Length).ToArray();
+        rejected = false;
+        try
+        {
+            NativeChaChaPoly.DecryptWithPoly1305Workers(
+                key,
+                nonce,
+                associated,
+                ciphertext,
+                output,
+                ciphertext.Length,
+                manipulatedTag,
+                parallelWorkers);
+        }
+        catch (CryptographicException)
+        {
+            rejected = true;
+        }
+
+        MacComprehensiveTests.Require(
+            rejected && output.All(value => value == 0x5C),
+            "Parallel Poly1305 decryption emitted plaintext before rejecting a manipulated tag.");
+        CryptographicOperations.ZeroMemory(nonce);
+        CryptographicOperations.ZeroMemory(associated);
+        CryptographicOperations.ZeroMemory(ciphertext);
+        CryptographicOperations.ZeroMemory(tag);
+        CryptographicOperations.ZeroMemory(validTag);
+        CryptographicOperations.ZeroMemory(manipulatedTag);
+        CryptographicOperations.ZeroMemory(output);
+    }
+
+    private static void RequirePoly1305WorkerInPlace(byte[] key, uint parallelWorkers)
+    {
+        byte[] nonce = DerivedBytes(NativeChaChaPoly.NonceBytes, 0x494E504C414345UL);
+        byte[] associated = DerivedBytes(64, 0x494E504C414144UL);
+        byte[] plaintext = DerivedBytes(4096, 0x494E504C504159UL);
+        byte[] scratch = plaintext.ToArray();
+        byte[] tag = new byte[NativeChaChaPoly.TagBytes];
+        byte[] serialRecovered = new byte[plaintext.Length];
+        try
+        {
+            NativeChaChaPoly.EncryptWithPoly1305Workers(
+                key,
+                nonce,
+                associated,
+                scratch,
+                scratch,
+                scratch.Length,
+                tag,
+                parallelWorkers);
+            NativeChaChaPoly.DecryptSerial(
+                key,
+                nonce,
+                associated,
+                scratch,
+                serialRecovered,
+                scratch.Length,
+                tag);
+            RequireIdentical(
+                plaintext,
+                serialRecovered,
+                plaintext.Length,
+                "scalar Crypto++ decrypt of parallel Poly1305 output");
+            NativeChaChaPoly.DecryptWithPoly1305Workers(
+                key,
+                nonce,
+                associated,
+                scratch,
+                scratch,
+                scratch.Length,
+                tag,
+                parallelWorkers);
+            RequireIdentical(plaintext, scratch, plaintext.Length, "parallel Poly1305 in-place roundtrip");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(nonce);
+            CryptographicOperations.ZeroMemory(associated);
+            CryptographicOperations.ZeroMemory(plaintext);
+            CryptographicOperations.ZeroMemory(scratch);
+            CryptographicOperations.ZeroMemory(tag);
+            CryptographicOperations.ZeroMemory(serialRecovered);
+        }
+    }
+
+    private static void RunLargePoly1305Probe()
+    {
+        uint parallelWorkers = (uint)Math.Clamp(Environment.ProcessorCount, 2, 8);
+        byte[] key = DerivedBytes(NativeChaChaPoly.KeyBytes, 0x4C41524745504F4CUL);
+        byte[] nonce = DerivedBytes(NativeChaChaPoly.NonceBytes, 0x4C415247454E4F4EUL);
+        byte[] associated = DerivedBytes(64, 0x4C41524745414144UL);
+        byte[] ciphertext = DerivedBytes(LargeBytes, 0x4C41524745434950UL);
+        byte[] scalarTag = new byte[NativeChaChaPoly.TagBytes];
+        byte[] oneWorkerTag = new byte[NativeChaChaPoly.TagBytes];
+        byte[] manyWorkerTag = new byte[NativeChaChaPoly.TagBytes];
+        byte[] automaticTag = new byte[NativeChaChaPoly.TagBytes];
+        try
+        {
+            var stopwatch = Stopwatch.StartNew();
+            NativeChaChaPoly.AuthenticateSerial(
+                key, nonce, associated, ciphertext, ciphertext.Length, scalarTag);
+            TimeSpan scalarElapsed = stopwatch.Elapsed;
+            stopwatch.Restart();
+            NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+                key, nonce, associated, ciphertext, ciphertext.Length, oneWorkerTag, 1);
+            TimeSpan oneWorkerElapsed = stopwatch.Elapsed;
+            stopwatch.Restart();
+            NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+                key, nonce, associated, ciphertext, ciphertext.Length, manyWorkerTag, parallelWorkers);
+            TimeSpan manyWorkerElapsed = stopwatch.Elapsed;
+            NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+                key, nonce, associated, ciphertext, ciphertext.Length, automaticTag, 0);
+
+            MacComprehensiveTests.Require(
+                CryptographicOperations.FixedTimeEquals(scalarTag, oneWorkerTag)
+                    && CryptographicOperations.FixedTimeEquals(scalarTag, manyWorkerTag)
+                    && CryptographicOperations.FixedTimeEquals(scalarTag, automaticTag),
+                "The 256 MiB Poly1305 scalar, fixed-worker and automatic tags differ.");
+            Console.WriteLine(
+                $"    Poly1305 256 MiB tags identical "
+                + $"({Rate(LargeBytes, scalarElapsed)} Crypto++, "
+                + $"{Rate(LargeBytes, oneWorkerElapsed)} fixed-limb 1-worker, "
+                + $"{Rate(LargeBytes, manyWorkerElapsed)} fixed-limb {parallelWorkers}-worker)");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+            CryptographicOperations.ZeroMemory(nonce);
+            CryptographicOperations.ZeroMemory(associated);
+            CryptographicOperations.ZeroMemory(ciphertext);
+            CryptographicOperations.ZeroMemory(scalarTag);
+            CryptographicOperations.ZeroMemory(oneWorkerTag);
+            CryptographicOperations.ZeroMemory(manyWorkerTag);
+            CryptographicOperations.ZeroMemory(automaticTag);
+        }
     }
 
     /// <summary>

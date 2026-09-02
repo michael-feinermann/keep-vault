@@ -17,13 +17,13 @@ internal enum KeyRolePurpose
 }
 
 /// <summary>
-/// Turns the 1024-bit v11 master into the individual cipher, MAC and recovery
+/// Turns the 1024-bit v12 master into the individual cipher, MAC and recovery
 /// keys.
 /// </summary>
 /// <remarks>
 /// An earlier design sliced one flat Argon2id output into cipher and MAC keys, so the same
 /// cipher in two positions could end up sharing structure and every role's key
-/// was a function of where it happened to sit in that buffer. v11 derives each
+/// was a function of where it happened to sit in that buffer. v12 derives each
 /// role separately from a canonical, domain-separated context instead.
 ///
 /// Each role runs through two independent PRF families and the results are
@@ -50,7 +50,7 @@ internal static class SuiteKeySchedule
 
     /// <summary>
     /// The role schedule belongs to the container generation it serves, so
-    /// every domain string and the context's own version field say v11.
+    /// every domain string and the context's own version field say v12.
     /// </summary>
     /// <remarks>
     /// There is one generation and no second set of domains to select between.
@@ -58,11 +58,11 @@ internal static class SuiteKeySchedule
     /// domains is a second derivation to attack and a second thing to get
     /// wrong, and nothing in this build can read an older container anyway.
     /// </remarks>
-    public const int ContextVersion = 11;
+    public const int ContextVersion = 12;
 
-    private const string RoleDomain = "Kalyna-ZPAQ/v11/RoleKey";
-    private const string Sha3RoleDomain = "Kalyna-ZPAQ/v11/RoleKey/HKDF-HMAC-SHA3-512";
-    private const string SkeinRoleDomain = "Kalyna-ZPAQ/v11/RoleKey/Skein-MAC-1024-1024";
+    private const string RoleDomain = "Kalyna-ZPAQ/v12/RoleKey";
+    private const string Sha3RoleDomain = "Kalyna-ZPAQ/v12/RoleKey/HKDF-HMAC-SHA3-512";
+    private const string SkeinRoleDomain = "Kalyna-ZPAQ/v12/RoleKey/Skein-MAC-1024-1024";
 
     /// <summary>
     /// The stage index reserved for keys that belong to the container as a
@@ -177,20 +177,52 @@ internal static class SuiteKeySchedule
         // Each half already carries 32 bytes from each Argon2id branch, because
         // the master was interleaved. Splitting here rather than de-interleaving
         // is what makes both HKDF halves depend on both branches.
-        using var sha3Side = LockedSensitiveBuffer.Create(RoleBytes);
-        using var skeinSide = LockedSensitiveBuffer.Create(RoleBytes);
-
-        DeriveSha3Side(master, roleContext, sha3Side.Bytes);
-        KeyedSkein1024.Compute(master, SkeinRoleDomain, roleContext, skeinSide.Bytes);
-
-        if (sha3Side.Bytes.Length != RoleBytes || skeinSide.Bytes.Length != RoleBytes)
+        LockedSensitiveBuffer? sha3Side = null;
+        LockedSensitiveBuffer? skeinSide = null;
+        Exception? operationFailure = null;
+        try
         {
-            throw new CryptographicException("A role key branch returned the wrong width.");
+            sha3Side = LockedSensitiveBuffer.Create(RoleBytes);
+            skeinSide = LockedSensitiveBuffer.Create(RoleBytes);
+
+            DeriveSha3Side(master, roleContext, sha3Side.Bytes);
+            KeyedSkein1024.Compute(master, SkeinRoleDomain, roleContext, skeinSide.Bytes);
+
+            if (sha3Side.Bytes.Length != RoleBytes || skeinSide.Bytes.Length != RoleBytes)
+            {
+                throw new CryptographicException("A role key branch returned the wrong width.");
+            }
+
+            for (int i = 0; i < RoleBytes; i++)
+            {
+                destination[i] = (byte)(sha3Side.Bytes[i] ^ skeinSide.Bytes[i]);
+            }
         }
-
-        for (int i = 0; i < RoleBytes; i++)
+        catch (Exception failure)
         {
-            destination[i] = (byte)(sha3Side.Bytes[i] ^ skeinSide.Bytes[i]);
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(destination[..RoleBytes]);
+            throw;
+        }
+        finally
+        {
+            try
+            {
+                SecureMemory.ZeroAndDisposeAll(sha3Side, skeinSide);
+            }
+            catch (Exception cleanupFailure)
+            {
+                CryptographicOperations.ZeroMemory(destination[..RoleBytes]);
+                if (operationFailure is null)
+                {
+                    throw;
+                }
+
+                throw new AggregateException(
+                    "Role-key derivation failed and one or more sensitive buffers could not be released.",
+                    operationFailure,
+                    cleanupFailure);
+            }
         }
     }
 
@@ -254,15 +286,35 @@ internal static class SuiteKeySchedule
         }
 
         byte[] context = RoleContext(algorithm, stageIndex, cipher, purpose, destination.Length * 8);
-        using var roleValue = LockedSensitiveBuffer.Create(RoleBytes);
+        LockedSensitiveBuffer? roleValue = null;
+        Exception? operationFailure = null;
         try
         {
+            roleValue = LockedSensitiveBuffer.Create(RoleBytes);
             DeriveRoleValue(master, context, roleValue.Bytes);
             roleValue.Bytes.AsSpan(0, destination.Length).CopyTo(destination);
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(destination);
+            throw;
         }
         finally
         {
             CryptographicOperations.ZeroMemory(context);
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "Role-key truncation failed and its full-width role buffer could not be released.",
+                    roleValue);
+            }
+            catch
+            {
+                CryptographicOperations.ZeroMemory(destination);
+                throw;
+            }
         }
     }
 
@@ -296,6 +348,7 @@ internal static class SuiteKeySchedule
         var encryptionKey = LockedSensitiveBuffer.Create(parameters.EncryptionKeyBytes);
         LockedSensitiveBuffer? sha3MacKey = null;
         LockedSensitiveBuffer? skeinMacKey = null;
+        Exception? operationFailure = null;
         try
         {
             int offset = 0;
@@ -336,11 +389,29 @@ internal static class SuiteKeySchedule
             skeinMacKey = null;
             return result;
         }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
         finally
         {
-            encryptionKey?.Dispose();
-            sha3MacKey?.Dispose();
-            skeinMacKey?.Dispose();
+            try
+            {
+                SecureMemory.ZeroAndDisposeAll(encryptionKey, sha3MacKey, skeinMacKey);
+            }
+            catch (Exception cleanupFailure)
+            {
+                if (operationFailure is null)
+                {
+                    throw;
+                }
+
+                throw new AggregateException(
+                    "Suite-key derivation failed and one or more sensitive buffers could not be released.",
+                    operationFailure,
+                    cleanupFailure);
+            }
         }
     }
 
@@ -396,15 +467,35 @@ internal static class SuiteKeySchedule
         }
 
         byte[] context = GlobalRoleContext(algorithm, cipher, purpose, destination.Length * 8);
-        using var roleValue = LockedSensitiveBuffer.Create(RoleBytes);
+        LockedSensitiveBuffer? roleValue = null;
+        Exception? operationFailure = null;
         try
         {
+            roleValue = LockedSensitiveBuffer.Create(RoleBytes);
             DeriveRoleValue(master, context, roleValue.Bytes);
             roleValue.Bytes.AsSpan(0, destination.Length).CopyTo(destination);
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(destination);
+            throw;
         }
         finally
         {
             CryptographicOperations.ZeroMemory(context);
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "Global role-key truncation failed and its full-width role buffer could not be released.",
+                    roleValue);
+            }
+            catch
+            {
+                CryptographicOperations.ZeroMemory(destination);
+                throw;
+            }
         }
     }
 
@@ -444,8 +535,6 @@ internal sealed class RoleKeyMaterial : IDisposable
 
     public void Dispose()
     {
-        SkeinMacKey.Dispose();
-        Sha3MacKey.Dispose();
-        EncryptionKey.Dispose();
+        SecureMemory.ZeroAndDisposeAll(SkeinMacKey, Sha3MacKey, EncryptionKey);
     }
 }

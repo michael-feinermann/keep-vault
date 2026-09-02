@@ -52,28 +52,24 @@ Private Schluessel duerfen nicht im Repository liegen. Der Build erwartet:
   als externes RSA-4096-Code-Signing-PFX mit SHA-512-
   Zertifikatssignatur, Digital-Signature-Key-Usage und Code-Signing-EKU,
 - standardmaessig
-  `~/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key`
-  als externe rohe ML-DSA-87-Private-Key-Datei mit
-  exakt 4896 Bytes und Modus `0600`,
+  `~/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key.v12.enc`
+  als rollenspezifischen v12-Umschlag des ML-DSA-87-Private-Keys,
+- standardmaessig
+  `~/Library/Application Support/Keep Vault/ReleaseKeys/hybrid-rsa4096.pfx.password.v12.enc`
+  als davon unabhaengigen v12-Umschlag des PFX-Passworts,
 - den zugehoerigen Public Key unter
   `KeepVaultMac/Packaging/Keys/mldsa87-public.key`.
 
-Die Variablen `KEEPVAULT_HYBRID_PFX`, `KEEPVAULT_MLDSA_PRIVATE_KEY` und
-`KEEPVAULT_MLDSA_PUBLIC_KEY` koennen diese Pfade fuer eine kontrollierte
-Releaseumgebung ersetzen. PFX und privater ML-DSA-Schluessel muessen dem
-aktuellen Benutzer gehoeren, duerfen weder Symlinks noch im Repository sein
-und muessen in einem privaten Verzeichnis ohne Gruppen- oder Fremdzugriff
-liegen.
-
-Das PFX-Passwort sollte im macOS-Schluesselbund liegen. Der folgende Befehl
-fragt den Wert interaktiv ab, wenn `-w` ohne Wert am Ende steht:
-
-```sh
-security add-generic-password \
-  -a "$USER" \
-  -s de.michael-feinermann.keep-vault.hybrid-pfx \
-  -w
-```
+Die Variablen `KEEPVAULT_HYBRID_PFX`,
+`KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED`,
+`KEEPVAULT_PFX_PASSWORD_ENCRYPTED` und `KEEPVAULT_MLDSA_PUBLIC_KEY` koennen
+diese Pfade fuer eine kontrollierte Releaseumgebung ersetzen. Das PFX und die
+beiden voneinander getrennten v12-Umschlaege muessen dem aktuellen Benutzer
+gehoeren, duerfen weder Symlinks noch im Repository sein und muessen in einem
+privaten Verzeichnis ohne Gruppen- oder Fremdzugriff liegen. Die beiden
+Wrapping-Keys bleiben in getrennten, promptpflichtigen Keychain-Eintraegen.
+`tools/Protect-HybridKeys-macOS.sh --verify-only` prueft diese Trennung, ohne
+Schluessel oder Passwoerter auszulesen.
 
 Da macOS private PFX-Schluessel nicht rein ephemer in `X509Certificate2`
 laden kann, verwendet der Signierer den von .NET vorgesehenen temporaeren
@@ -88,7 +84,6 @@ Danach kann der lokale arm64-Release-Build ohne weitere
 Schluesselpfadvariablen gestartet werden:
 
 ```sh
-export KEEPVAULT_DOTNET=/Users/michael/.dotnet-keepvault/dotnet
 tools/Build-KeepVault-macOS.sh --architecture arm64
 ```
 
@@ -96,18 +91,22 @@ Fuer ein Distributionsartefakt mit beiden Architekturen wird stattdessen
 `--architecture universal` verwendet. Dabei muessen beide NativeAOT-Publishes
 und alle nativen Komponenten als `arm64` und `x86_64` erfolgreich entstehen.
 
-Der Releasepfad verwendet bewusst das separat installierte offizielle .NET SDK
-10.0.400. Ein Homebrew-SDK oder eine automatische Aenderung von NativeAOT-
-Runtime-Packs wird nicht als Releasewerkzeug akzeptiert.
+Der Releasepfad fuehrt kein ambient installiertes .NET SDK aus. Er laedt bei
+Bedarf Microsofts offizielles macOS-arm64-Archiv fuer SDK 10.0.400, prueft es
+vor und nach dem Entpacken gegen den fest gepinnten SHA-512-Wert und verwendet
+fuer jeden Einstiegspunkt einen frischen privaten SDK-Baum. Der Host muss
+zusaetzlich Microsofts Developer-ID-Signatur tragen.
 
-Vor jedem Release werden Hauptprojekt und HybridSigner einmal mit
-`dotnet restore --locked-mode` gegen ihre eingecheckten `packages.lock.json`
-aufgeloest. Publish und Signer-Build laufen danach ausschliesslich mit
-`--no-restore`. Das Release- und Verifikationsskript pinnt zusaetzlich den
-SHA-256-Wert der auditierten Lockfiles und bricht bei jeder Abweichung vor dem
-Zugriff auf private Signierschluessel ab. Damit koennen insbesondere die sicherheitskritischen
-Bouncy-Castle-Abhaengigkeiten nicht waehrend des Signiervorgangs unbemerkt auf
-eine andere Paketaufloesung wechseln.
+Vor jedem Release werden Hauptprojekt und HybridSigner mit `--locked-mode`,
+`--force-evaluate` und deaktiviertem HTTP-Cache in einen neuen privaten
+NuGet-Cache restauriert. Alle .NET-Aufrufe erhalten per `env -i` nur eine feste
+Allowlist; Publish und Signer-Build laufen danach mit `--no-restore` und ohne
+persistente Buildserver. `obj`, `bin` und Publish-Ausgaben aller Projekte und
+ProjectReferences liegen dabei ausschließlich in projektgetrennten Unterbaeumen
+des frischen privaten Artefaktpfads; Repository-Zwischenergebnisse werden weder
+gelesen noch ausgefuehrt. Das Release- und Verifikationsskript pinnt zusaetzlich
+die SHA-256-Werte der auditierten Lockfiles und bricht bei jeder Abweichung vor
+dem Zugriff auf private Signierschluessel ab.
 
 Der Signierer lehnt Schluessel ab, die nicht zu den kompilierten dreifachen
 RSA- und ML-DSA-Pins passen. Ein neuer macOS-Schluesselsatz erfordert deshalb

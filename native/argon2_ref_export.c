@@ -28,18 +28,19 @@
 #define KZPAQ_ARGON2_ITERATIONS 4U
 #define KZPAQ_ARGON2_PARALLELISM 4U
 
-/* v11 derives the Argon2 memory cost from a secret-dependent 16-bit index, so
+/* v12 derives the Argon2 memory cost from a secret-dependent 16-bit index, so
  * m is not one fixed value but a bounded, quantised range:
  *     m = 1,048,576 + 16 * PMI KiB,  PMI in [0, 65535]
  * The wrapper validates the range and the 16 KiB step so a caller cannot ask
  * for an arbitrary or degenerate memory cost. */
-#define KZPAQ_ARGON2_V11_MEMORY_MIN_KIB 1048576U
-#define KZPAQ_ARGON2_V11_MEMORY_MAX_KIB 2097136U
-#define KZPAQ_ARGON2_V11_MEMORY_STEP_KIB 16U
-#define KZPAQ_ARGON2_V11_PASSWORD_LEN 128U
-#define KZPAQ_ARGON2_V11_SALT_LEN 64U
-#define KZPAQ_ARGON2_V11_OUTPUT_LEN 64U
-#define KZPAQ_ARGON2_V11_SECRET_LEN 128U
+#define KZPAQ_ARGON2_V12_MEMORY_MIN_KIB 1048576U
+#define KZPAQ_ARGON2_V12_MEMORY_MAX_KIB 2097136U
+#define KZPAQ_ARGON2_V12_MEMORY_STEP_KIB 16U
+#define KZPAQ_ARGON2_V12_KAT_MEMORY_KIB 8192U
+#define KZPAQ_ARGON2_V12_PASSWORD_LEN 128U
+#define KZPAQ_ARGON2_V12_SALT_LEN 64U
+#define KZPAQ_ARGON2_V12_OUTPUT_LEN 64U
+#define KZPAQ_ARGON2_V12_SECRET_LEN 128U
 
 #if defined(_WIN32)
 static SRWLOCK argon2_call_lock = SRWLOCK_INIT;
@@ -296,7 +297,7 @@ ARGON2_REF_EXPORT int phc_argon2id_hash_raw(
     return result;
 }
 
-/* The v11 entry point. It exposes Argon2's optional secret and associated-data
+/* The v12 entry point. It exposes Argon2's optional secret and associated-data
  * inputs, which the PHC structure has always supported, and accepts only the
  * bounded PMI-derived memory range.
  *
@@ -306,7 +307,7 @@ ARGON2_REF_EXPORT int phc_argon2id_hash_raw(
  * strings themselves are deliberately NOT duplicated here -- the managed side
  * builds and KAT-pins them, and a second copy in C is a second thing to drift.
  */
-ARGON2_REF_EXPORT int keepvault_argon2id_v11(
+static int keepvault_argon2id_v12_core(
     uint32_t t_cost,
     uint32_t m_cost,
     uint32_t parallelism,
@@ -319,7 +320,8 @@ ARGON2_REF_EXPORT int keepvault_argon2id_v11(
     uint8_t* associated_data,
     uint32_t associated_data_len,
     uint8_t* output,
-    uint32_t output_len)
+    uint32_t output_len,
+    int allow_kat_memory)
 {
 #if defined(_WIN32)
     SIZE_T previous_minimum = 0;
@@ -340,9 +342,9 @@ ARGON2_REF_EXPORT int keepvault_argon2id_v11(
         return ARGON2_INCORRECT_PARAMETER;
     }
 
-    if (password_len != KZPAQ_ARGON2_V11_PASSWORD_LEN ||
-        salt_len != KZPAQ_ARGON2_V11_SALT_LEN ||
-        output_len != KZPAQ_ARGON2_V11_OUTPUT_LEN ||
+    if (password_len != KZPAQ_ARGON2_V12_PASSWORD_LEN ||
+        salt_len != KZPAQ_ARGON2_V12_SALT_LEN ||
+        output_len != KZPAQ_ARGON2_V12_OUTPUT_LEN ||
         associated_data_len == 0U) {
         return ARGON2_INCORRECT_PARAMETER;
     }
@@ -353,7 +355,7 @@ ARGON2_REF_EXPORT int keepvault_argon2id_v11(
         if (secret != NULL) {
             return ARGON2_INCORRECT_PARAMETER;
         }
-    } else if (secret_len != KZPAQ_ARGON2_V11_SECRET_LEN || secret == NULL) {
+    } else if (secret_len != KZPAQ_ARGON2_V12_SECRET_LEN || secret == NULL) {
         return ARGON2_INCORRECT_PARAMETER;
     }
 
@@ -362,9 +364,10 @@ ARGON2_REF_EXPORT int keepvault_argon2id_v11(
         return ARGON2_INCORRECT_PARAMETER;
     }
 
-    if (m_cost < KZPAQ_ARGON2_V11_MEMORY_MIN_KIB ||
-        m_cost > KZPAQ_ARGON2_V11_MEMORY_MAX_KIB ||
-        ((m_cost - KZPAQ_ARGON2_V11_MEMORY_MIN_KIB) % KZPAQ_ARGON2_V11_MEMORY_STEP_KIB) != 0U) {
+    if ((m_cost < KZPAQ_ARGON2_V12_MEMORY_MIN_KIB ||
+         m_cost > KZPAQ_ARGON2_V12_MEMORY_MAX_KIB ||
+         ((m_cost - KZPAQ_ARGON2_V12_MEMORY_MIN_KIB) % KZPAQ_ARGON2_V12_MEMORY_STEP_KIB) != 0U) &&
+        !(allow_kat_memory != 0 && m_cost == KZPAQ_ARGON2_V12_KAT_MEMORY_KIB)) {
         return ARGON2_INCORRECT_PARAMETER;
     }
 
@@ -434,6 +437,52 @@ ARGON2_REF_EXPORT int keepvault_argon2id_v11(
     (void)pthread_mutex_unlock(&argon2_call_lock);
 #endif
     return result;
+}
+
+ARGON2_REF_EXPORT int keepvault_argon2id_v12(
+    uint32_t t_cost,
+    uint32_t m_cost,
+    uint32_t parallelism,
+    uint8_t* password,
+    uint32_t password_len,
+    uint8_t* salt,
+    uint32_t salt_len,
+    uint8_t* secret,
+    uint32_t secret_len,
+    uint8_t* associated_data,
+    uint32_t associated_data_len,
+    uint8_t* output,
+    uint32_t output_len)
+{
+    return keepvault_argon2id_v12_core(
+        t_cost, m_cost, parallelism,
+        password, password_len, salt, salt_len, secret, secret_len,
+        associated_data, associated_data_len, output, output_len, 0);
+}
+
+/* The release KAT traverses all ten real container pipelines twice. This
+ * separate export keeps that bounded test practical while the production
+ * export above continues to reject every non-PMI memory value. It fixes the
+ * same v12 inputs, t=4 and p=4; only the exact 8 MiB KAT matrix is admitted. */
+ARGON2_REF_EXPORT int keepvault_argon2id_v12_kat(
+    uint32_t t_cost,
+    uint32_t m_cost,
+    uint32_t parallelism,
+    uint8_t* password,
+    uint32_t password_len,
+    uint8_t* salt,
+    uint32_t salt_len,
+    uint8_t* secret,
+    uint32_t secret_len,
+    uint8_t* associated_data,
+    uint32_t associated_data_len,
+    uint8_t* output,
+    uint32_t output_len)
+{
+    return keepvault_argon2id_v12_core(
+        t_cost, m_cost, parallelism,
+        password, password_len, salt, salt_len, secret, secret_len,
+        associated_data, associated_data_len, output, output_len, 1);
 }
 
 ARGON2_REF_EXPORT const char* phc_argon2_error_message(int error_code)

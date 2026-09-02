@@ -48,7 +48,7 @@ internal sealed record TestCost(int CpuTokens, int MemoryMiB, bool UsesArgon, Te
     /// </summary>
     /// <remarks>
     /// The reservations are deliberately static minimums rather than measured
-    /// values: a full-cost v11 Argon2id call can allocate just under 2 GiB, and
+    /// values: a full-cost v12 Argon2id call can allocate just under 2 GiB, and
     /// a scheduler that trusted a small historical measurement would happily
     /// start three of them.
     /// </remarks>
@@ -1166,10 +1166,10 @@ internal static class TestCoordinator
     }
 
     internal static string BuildRerunCommand(TestCase test, uint seed) => test.IsPerformance
-        ? $"  dotnet run --no-build --no-restore --project KeepVaultMac.Tests -c Release -- --performance --only \"{test.Id}\" --parallel 1 --seed 0x{seed:X8}"
+        ? $"  ./tools/Test-KeepVault.sh --performance --only \"{test.Id}\" --parallel 1 --seed 0x{seed:X8}"
         : test.IsSmoke
-            ? $"  dotnet run --no-build --no-restore --project KeepVaultMac.Tests -c Release -- --smoke-only \"{test.Id}\" --seed 0x{seed:X8}"
-            : $"  dotnet run --no-build --no-restore --project KeepVaultMac.Tests -c Release -- --full --no-smoke --only \"{test.Id}\" --seed 0x{seed:X8}";
+            ? $"  ./tools/Test-KeepVault.sh --smoke-only \"{test.Id}\" --seed 0x{seed:X8}"
+            : $"  ./tools/Test-KeepVault.sh --full --no-smoke --only \"{test.Id}\" --seed 0x{seed:X8}";
 
     private static async Task<TestOutcome> RunInProcessAsync(TestCase test, uint seed)
     {

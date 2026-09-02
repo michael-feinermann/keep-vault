@@ -27,9 +27,6 @@ if errorlevel 1 exit /b 1
 cl %ANALYZE% /DNOJIT /EHsc /Fobuild-analysis\libzpaq.obj /analyze:log build-analysis\libzpaq.xml external\zpaq\libzpaq.cpp
 if errorlevel 1 exit /b 1
 
-cl %ANALYZE% /WX /Fobuild-analysis\kalyna_ref_export.obj /analyze:log build-analysis\kalyna_ref_export.xml native\kalyna_ref_export.c
-if errorlevel 1 exit /b 1
-
 cl %ANALYZE% /WX /D_CRT_SECURE_NO_WARNINGS ^
   /Iexternal\Skein-reference\NIST\CD\Reference_Implementation ^
   /Fobuild-analysis\threefish_ref_export.obj ^

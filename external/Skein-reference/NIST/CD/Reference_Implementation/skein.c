@@ -11,6 +11,16 @@
 #include <string.h>      /* get the memcpy/memset functions */
 #include "skein.h"       /* get the Skein API definitions   */
 
+/* Keep Vault hardening: finalization keeps a complete copy of the keyed
+   chaining state in a local X array.  Use a volatile loop so optimization
+   cannot leave that state on the caller's stack after the API returns. */
+static void Skein_Secure_Zero_Local(void *pointer,size_t length)
+    {
+    volatile u08b_t *bytes = (volatile u08b_t *)pointer;
+    while (length-- != 0)
+        *bytes++ = 0;
+    }
+
 /*****************************************************************/
 /* External function to process blkCnt (nonzero) full block(s) of data. */
 void    Skein_256_Process_Block(Skein_256_Ctxt_t *ctx,const u08b_t *blkPtr,size_t blkCnt,size_t byteCntAdd);
@@ -93,6 +103,7 @@ int Skein_256_Init(Skein_256_Ctxt_t *ctx, size_t hashBitLen)
     /* Set up to process the data message portion of the hash (default) */
     Skein_Start_New_Type(ctx,MSG);              /* T0=0, T1= MSG type, h.bCnt=0 */
 
+    Skein_Secure_Zero_Local(&cfg,sizeof(cfg));
     return SKEIN_SUCCESS;
     }
 
@@ -148,6 +159,7 @@ int Skein_256_InitExt(Skein_256_Ctxt_t *ctx,size_t hashBitLen,u64b_t treeInfo, c
     /* Set up to process the data message portion of the hash */
     Skein_Start_New_Type(ctx,MSG);              /* T0=0, T1= MSG type, h.bCnt=0 */
 
+    Skein_Secure_Zero_Local(&cfg,sizeof(cfg));
     return SKEIN_SUCCESS;
     }
 
@@ -230,6 +242,7 @@ int Skein_256_Final(Skein_256_Ctxt_t *ctx, u08b_t *hashVal)
         Skein_Show_Final(256,&ctx->h,n,hashVal+i*SKEIN_256_BLOCK_BYTES);
         memcpy(ctx->X,X,sizeof(X));   /* restore the counter mode key for next time */
         }
+    Skein_Secure_Zero_Local(X,sizeof(X));
     return SKEIN_SUCCESS;
     }
 
@@ -274,6 +287,7 @@ int Skein_512_Init(Skein_512_Ctxt_t *ctx, size_t hashBitLen)
     /* Set up to process the data message portion of the hash (default) */
     Skein_Start_New_Type(ctx,MSG);              /* T0=0, T1= MSG type, h.bCnt=0 */
 
+    Skein_Secure_Zero_Local(&cfg,sizeof(cfg));
     return SKEIN_SUCCESS;
     }
 
@@ -329,6 +343,7 @@ int Skein_512_InitExt(Skein_512_Ctxt_t *ctx,size_t hashBitLen,u64b_t treeInfo, c
     /* Set up to process the data message portion of the hash */
     Skein_Start_New_Type(ctx,MSG);              /* T0=0, T1= MSG type, h.bCnt=0 */
 
+    Skein_Secure_Zero_Local(&cfg,sizeof(cfg));
     return SKEIN_SUCCESS;
     }
 
@@ -413,6 +428,7 @@ int Skein_512_Final(Skein_512_Ctxt_t *ctx, u08b_t *hashVal)
         memcpy(ctx->X,X,sizeof(X));   /* restore the counter mode key for next time */
         }
 
+    Skein_Secure_Zero_Local(X,sizeof(X));
     return SKEIN_SUCCESS;
     }
 
@@ -457,6 +473,7 @@ int Skein1024_Init(Skein1024_Ctxt_t *ctx, size_t hashBitLen)
     /* Set up to process the data message portion of the hash (default) */
     Skein_Start_New_Type(ctx,MSG);              /* T0=0, T1= MSG type, h.bCnt=0 */
 
+    Skein_Secure_Zero_Local(&cfg,sizeof(cfg));
     return SKEIN_SUCCESS;
     }
 
@@ -512,6 +529,7 @@ int Skein1024_InitExt(Skein1024_Ctxt_t *ctx,size_t hashBitLen,u64b_t treeInfo, c
     /* Set up to process the data message portion of the hash */
     Skein_Start_New_Type(ctx,MSG);              /* T0=0, T1= MSG type, h.bCnt=0 */
 
+    Skein_Secure_Zero_Local(&cfg,sizeof(cfg));
     return SKEIN_SUCCESS;
     }
 
@@ -595,6 +613,7 @@ int Skein1024_Final(Skein1024_Ctxt_t *ctx, u08b_t *hashVal)
         Skein_Show_Final(1024,&ctx->h,n,hashVal+i*SKEIN1024_BLOCK_BYTES);
         memcpy(ctx->X,X,sizeof(X));   /* restore the counter mode key for next time */
         }
+    Skein_Secure_Zero_Local(X,sizeof(X));
     return SKEIN_SUCCESS;
     }
 
@@ -684,6 +703,7 @@ int Skein_256_Output(Skein_256_Ctxt_t *ctx, u08b_t *hashVal)
         Skein_Show_Final(256,&ctx->h,n,hashVal+i*SKEIN_256_BLOCK_BYTES);
         memcpy(ctx->X,X,sizeof(X));   /* restore the counter mode key for next time */
         }
+    Skein_Secure_Zero_Local(X,sizeof(X));
     return SKEIN_SUCCESS;
     }
 
@@ -713,6 +733,7 @@ int Skein_512_Output(Skein_512_Ctxt_t *ctx, u08b_t *hashVal)
         Skein_Show_Final(256,&ctx->h,n,hashVal+i*SKEIN_512_BLOCK_BYTES);
         memcpy(ctx->X,X,sizeof(X));   /* restore the counter mode key for next time */
         }
+    Skein_Secure_Zero_Local(X,sizeof(X));
     return SKEIN_SUCCESS;
     }
 
@@ -742,6 +763,7 @@ int Skein1024_Output(Skein1024_Ctxt_t *ctx, u08b_t *hashVal)
         Skein_Show_Final(256,&ctx->h,n,hashVal+i*SKEIN1024_BLOCK_BYTES);
         memcpy(ctx->X,X,sizeof(X));   /* restore the counter mode key for next time */
         }
+    Skein_Secure_Zero_Local(X,sizeof(X));
     return SKEIN_SUCCESS;
     }
 #endif

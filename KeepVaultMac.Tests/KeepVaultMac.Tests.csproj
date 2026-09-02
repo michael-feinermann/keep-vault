@@ -7,12 +7,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);KEEPVAULT_MACOS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="MarsKnownAnswers.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="ZpaqInheritedFdHarness.c" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../KeepVaultMac/KeepVaultMac.csproj" />
     <Compile Include="../KalynaArchiver.Tests/CipherSuitePerformanceTests.cs" Link="CipherSuitePerformanceTests.cs" />
     <Compile Include="../KalynaArchiver.Signing/Mldsa87Reference.cs" Link="Signing/Mldsa87Reference.cs" />
+    <Compile Include="../KeepVaultMac/Packaging/HybridSigner/HybridKeyEnvelope.cs" Link="Packaging/HybridKeyEnvelope.cs" />
+    <Compile Include="../KeepVaultMac/Packaging/HybridSigner/LockedBufferTransfer.cs" Link="Packaging/LockedBufferTransfer.cs" />
+    <Compile Include="../KeepVaultMac/Packaging/HybridSigner/MacBoundSecretFile.cs" Link="Packaging/MacBoundSecretFile.cs" />
     <!-- Test-only windowing backend so the real MainWindow can be driven without
          a display. It is referenced by this harness alone and never reaches the
          signed app, whose package set stays pinned by its own lockfile hash. -->

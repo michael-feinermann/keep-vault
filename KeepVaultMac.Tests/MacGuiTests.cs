@@ -49,9 +49,11 @@ internal static class MacGuiTests
         new("gui.control-inventory", "GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
         new("gui.factor-normalization", "GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
         new("gui.secret-clearing", "GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
+        new("gui.create-failure-secret-clearing", "GUI create handler wipes credentials after an adversarial failure", () => RunOnUiThread(TestCreateFailureSecretClearing), TestResource.Gui, "GUI"),
         new("gui.extract-list-failure-secret-clearing", "GUI extract/list handlers wipe credentials after adversarial failures", () => RunOnUiThread(TestExtractListFailureSecretClearing), TestResource.Gui, "GUI"),
         new("gui.recovery-failure-secret-clearing", "GUI recovery handler wipes credentials after an adversarial failure", () => RunOnUiThread(TestRecoveryFailureSecretClearing), TestResource.Gui, "GUI"),
         new("gui.kdf-entropy-localization", "GUI KDF and entropy profile description localization", () => RunOnUiThread(TestKdfAndEntropyLocalization), TestResource.Gui, "GUI"),
+        new("gui.cups-spool-warning-localization", "GUI warns about CUPS and printer spool persistence in both languages", () => RunOnUiThread(TestCupsSpoolWarningLocalization), TestResource.Gui, "GUI"),
         new("gui.failed-archive-preservation", "GUI downstream failure preserves committed path replacements", () => RunOnUiThread(TestFailedArchivePreservation), TestResource.Gui, "GUI"),
         new("gui.verification-root-cleanup-identity", "GUI verification plaintext cleanup stays descriptor-bound", () => RunOnUiThread(TestVerificationRootCleanupIdentity), TestResource.Gui, "GUI"),
         new("keysheet.pair-cleanup-identity", "key-sheet pair rollback preserves pathname replacements", () => RunOnUiThread(TestKeySheetPairCleanupIdentity), TestResource.Gui, "GUI"),
@@ -665,6 +667,70 @@ internal static class MacGuiTests
     }
 
     /// <summary>
+    /// The real Create button route must erase every creation credential from
+    /// its finally boundary, including failures before input validation.
+    /// </summary>
+    private static void TestCreateFailureSecretClearing(MainWindow window)
+    {
+        EnableProtectedOperationsForFailureTest(window);
+        TextBox password = Control<TextBox>(window, "CreatePasswordBox");
+        TextBox confirm = Control<TextBox>(window, "CreatePasswordConfirmBox");
+        TextBox pin = Control<TextBox>(window, "CreatePinBox");
+        TextBox pinConfirm = Control<TextBox>(window, "CreatePinConfirmBox");
+        TextBox factorA = Control<TextBox>(window, "GeneratedPasswordFirstBox");
+        TextBox factorB = Control<TextBox>(window, "GeneratedPasswordSecondBox");
+        TextBox log = Control<TextBox>(window, "LogBox");
+        password.Text = "synthetic-create-password";
+        confirm.Text = "synthetic-create-password";
+        pin.Text = "123456";
+        pinConfirm.Text = "123456";
+        factorA.Text = new string('A', 256);
+        factorB.Text = new string('B', 256);
+        log.Text = string.Empty;
+
+        const string Diagnostic = "injected create-credential failure";
+        int errorDialogs = 0;
+        MainWindow.TestHookBeforeCredentialOperation = operation =>
+        {
+            MacComprehensiveTests.Require(
+                string.Equals(operation, "create", StringComparison.Ordinal),
+                $"Create button reached the wrong operation handler: {operation}.");
+            throw new InvalidDataException(Diagnostic);
+        };
+        MainWindow.TestHookShowDialogAsync = (kind, _) =>
+        {
+            MacComprehensiveTests.Require(
+                kind == SecurityDialogKind.Error,
+                $"Create credential failure opened a non-error dialog: {kind}.");
+            errorDialogs++;
+            return Task.CompletedTask;
+        };
+
+        try
+        {
+            Control<Button>(window, "CreateArchiveButton").RaiseEvent(
+                new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+        finally
+        {
+            MainWindow.TestHookBeforeCredentialOperation = null;
+            MainWindow.TestHookShowDialogAsync = null;
+        }
+
+        MacComprehensiveTests.Require(errorDialogs == 1, $"Expected one create failure dialog, got {errorDialogs}.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(password.Text), "Create failure retained the password.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(confirm.Text), "Create failure retained the confirmation password.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(pin.Text), "Create failure retained the PIN.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(pinConfirm.Text), "Create failure retained the confirmation PIN.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(factorA.Text), "Create failure retained factor A.");
+        MacComprehensiveTests.Require(string.IsNullOrEmpty(factorB.Text), "Create failure retained factor B.");
+        MacComprehensiveTests.Require(
+            (log.Text ?? string.Empty).Contains(Diagnostic, StringComparison.Ordinal),
+            "Create failure cleared credentials but dropped its diagnostic.");
+    }
+
+    /// <summary>
     /// The real Extract and List button routes must clear all four credentials
     /// when an adversarial failure reaches their exception boundary.
     /// </summary>
@@ -801,6 +867,31 @@ internal static class MacGuiTests
         MacComprehensiveTests.Require(
             enKdf.Contains("1024-bit master", StringComparison.Ordinal) || enKdf.Contains("KDF paths", StringComparison.Ordinal),
             $"English KDF description is missing master details: {enKdf}");
+    }
+
+    private static void TestCupsSpoolWarningLocalization(MainWindow window)
+    {
+        MethodInfo translate = typeof(MainWindow).GetMethod(
+            "T",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("MainWindow localization method was not found.");
+        ComboBox language = Control<ComboBox>(window, "LanguageBox");
+
+        SelectLanguage(language, "de");
+        string german = (string?)translate.Invoke(window, ["cupsSpoolWarning"]) ?? string.Empty;
+        MacComprehensiveTests.Require(
+            german.Contains("CUPS", StringComparison.Ordinal)
+                && german.Contains("Warteschlange", StringComparison.Ordinal)
+                && german.Contains("außerhalb der App", StringComparison.Ordinal),
+            $"German CUPS spool warning is incomplete: {german}");
+
+        SelectLanguage(language, "en");
+        string english = (string?)translate.Invoke(window, ["cupsSpoolWarning"]) ?? string.Empty;
+        MacComprehensiveTests.Require(
+            english.Contains("CUPS", StringComparison.Ordinal)
+                && english.Contains("spool", StringComparison.OrdinalIgnoreCase)
+                && english.Contains("outside the app", StringComparison.Ordinal),
+            $"English CUPS spool warning is incomplete: {english}");
     }
 
     /// <summary>
@@ -1162,7 +1253,7 @@ internal static class MacGuiTests
         TextBox pin = Control<TextBox>(window, "CreatePinBox");
         TextBox pinConfirm = Control<TextBox>(window, "CreatePinConfirmBox");
 
-        const string validPass = "Valid#Master%Passphrase2026&v11!";
+        const string validPass = "Valid#Master%Passphrase2026&v12!";
         password.Text = validPass;
         confirm.Text = validPass;
         pin.Text = "84920153";

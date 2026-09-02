@@ -5,10 +5,31 @@ The upstream git metadata is intentionally not tracked; provenance is recorded h
 
 Generated: 2026-08-15T15:46:48Z
 
-## Kalyna-reference
-- Upstream: https://github.com/Roman-Oliynykov/Kalyna-reference
-- Base commit: `22eafbcaf6635dc5e1f8a734b1f7c5ab84b5a5ea`
-- Local changes (line-ending noise excluded): none, CRLF normalization only
+## Kalyna-512/512
+- Production implementation: Crypto++ `CRYPTOPP_8_9_0`, covered by the
+  Crypto++ provenance and Boost Software License section below.
+- The earlier `Roman-Oliynykov/Kalyna-reference` snapshot and Keep Vault's
+  derived table adapter were removed before v12: the pinned upstream tree did
+  not contain a licence grant, so neither its source nor a derived binary is
+  built, bundled or distributed.
+- The v12 adapter exports v12-specific symbols only. An official
+  DSTU 7624:2014 vector, an independent Bouncy Castle differential matrix,
+  scalar-versus-parallel equivalence and full container KATs gate the change.
+
+## Skein-reference
+- Upstream: the Skein 1.3 NIST submission CD reference implementation
+  documented by its bundled `NIST/CD/README/readme.txt`; specification:
+  https://www.schneier.com/wp-content/uploads/2015/01/skein.pdf
+- Local changes (line-ending noise excluded): two hardening changes in
+  `NIST/CD/Reference_Implementation/skein.c` and `skein_block.c`, marked with
+  Keep Vault comments. Each 256-, 512-, and 1024-bit initialization helper
+  erases its local configuration/key-derivation union, each final/output helper
+  erases its local chaining-state copy, and each block helper erases its
+  transient tweak schedule, key schedule, working state, and message words
+  through a volatile byte loop before returning. This does not alter Skein or
+  Threefish outputs; it prevents key-derived stack residues from surviving a
+  one-shot MAC/KDF operation. Official Skein KATs and the independent Bouncy
+  Castle differential gate cover output equivalence.
 
 ## cryptopp
 - Upstream: https://github.com/weidai11/cryptopp
@@ -67,12 +88,11 @@ Used for:
   reference implementation in this repository before.
 - **SHA-512** (`sha.cpp`) for the second Argon2id round, which needs a
   reference to check the platform implementation against; only SHA3-512 had one.
-- An **independent second implementation** of Kalyna-512/512 (`kalyna.cpp`) and
-  Threefish-1024 (`threefish.cpp`), used in tests only. Both ciphers keep
-  running on their original reference code — `Kalyna-reference` and
-  `Skein-reference` above — and Crypto++ is there to disagree with them if one
-  of the two is wrong. Two implementations that agree on the official test
-  vectors is worth more for an archive format than one that merely compiles.
+- The **production implementation** of Kalyna-512/512 (`kalyna.cpp`) and an
+  independent test implementation of Threefish-1024 (`threefish.cpp`). Kalyna
+  is held against official DSTU 7624:2014 vectors and Bouncy Castle's separate
+  managed implementation. Threefish continues to run on the Skein reference
+  source above and uses Crypto++ as its independent differential oracle.
 
 ## argon2id
 - Upstream: https://github.com/alexedwards/argon2id
@@ -87,5 +107,9 @@ Used for:
 ## zpaq
 - Upstream: https://github.com/zpaq/zpaq
 - Base commit: `9ab539f644e364f0d92e2918b90ce2534c75653f`
-- Local changes (line-ending noise excluded): 3 files changed, 604 insertions(+), 234 deletions(-)
+- Local changes (line-ending noise excluded): 3 files changed, 2213 insertions(+), 366 deletions(-)
+  (`zpaq.cpp` +2181/-350, `libzpaq.cpp` +8/-8, `libzpaq.h` +24/-8).
 
+Every first-party native build verifies the reviewed vendor-source inventory in
+`NATIVE_SOURCE_SHA256SUMS` before compiling. The manifest also prevents a newly
+dropped Crypto++ translation unit from entering the build through a wildcard.

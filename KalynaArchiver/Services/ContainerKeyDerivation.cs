@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// The whole v11 key derivation, from the four things the user holds to the
+/// The whole v12 key derivation, from the four things the user holds to the
 /// keys one suite needs.
 /// </summary>
 /// <remarks>
@@ -26,7 +26,7 @@ internal static class ContainerKeyDerivation
     /// <summary>
     /// The one container generation this build derives keys for.
     /// </summary>
-    public const int ContainerVersion = 11;
+    public const int ContainerVersion = 12;
 
     public const int MinPinLength = 6;
     public const int MaxPinSyntaxLength = 16;
@@ -363,9 +363,12 @@ internal static class ContainerKeyDerivation
 
             return buffer;
         }
-        catch
+        catch (Exception operationFailure)
         {
-            buffer.Dispose();
+            SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                operationFailure,
+                "Generated-factor parsing failed and its sensitive buffer could not be released.",
+                buffer);
             throw;
         }
     }
@@ -395,68 +398,98 @@ internal static class ContainerKeyDerivation
         bool paranoia = parameters.UsesTwoKdfRounds;
         salts.Validate(paranoia);
 
-        using LockedSensitiveBuffer factorA = ParseFactor(factorAHex, "Factor A");
-        using LockedSensitiveBuffer factorB = ParseFactor(factorBHex, "Factor B");
-        if (CryptographicOperations.FixedTimeEquals(factorA.Bytes, factorB.Bytes))
-        {
-            throw new CryptographicException("Both key-sheet factors are identical.");
-        }
-
-        string algorithm = parameters.Algorithm;
-        using LockedSensitiveBuffer sha3Credential = LockedSensitiveBuffer.Create(V11MasterKdf.CredentialHashBytes);
-        using LockedSensitiveBuffer skeinCredential = LockedSensitiveBuffer.Create(V11MasterKdf.CredentialHashBytes);
-
-        V11MasterKdf.DeriveSha3CredentialHash(
-            algorithm, userPassword, pin, factorA.Bytes, factorB.Bytes, sha3Credential.Bytes);
-        V11MasterKdf.DeriveSkeinCredentialHash(
-            algorithm, userPassword, pin, factorA.Bytes, factorB.Bytes, skeinCredential.Bytes);
-
-        cancellationToken.ThrowIfCancellationRequested();
-        (_, uint memory1) = V11MasterKdf.DerivePmi(
-            algorithm, 1, sha3Credential.Bytes, skeinCredential.Bytes,
-            ReadOnlySpan<byte>.Empty, salts.Sha3Round1, salts.SkeinRound1);
-        progress?.Report(paranoia ? "Key derivation, round 1 of 2" : "Key derivation");
-
-        LockedSensitiveBuffer? round1Master = LockedSensitiveBuffer.Create(V11MasterKdf.MasterBytes);
+        LockedSensitiveBuffer? factorA = null;
+        LockedSensitiveBuffer? factorB = null;
+        LockedSensitiveBuffer? sha3Credential = null;
+        LockedSensitiveBuffer? skeinCredential = null;
+        LockedSensitiveBuffer? round1Master = null;
+        LockedSensitiveBuffer? round2Master = null;
+        MasterResult? completed = null;
+        Exception? operationFailure = null;
         try
         {
-            V11MasterKdf.DeriveRoundMaster(
+            factorA = ParseFactor(factorAHex, "Factor A");
+            factorB = ParseFactor(factorBHex, "Factor B");
+            if (CryptographicOperations.FixedTimeEquals(factorA.Bytes, factorB.Bytes))
+            {
+                throw new CryptographicException("Both key-sheet factors are identical.");
+            }
+
+            string algorithm = parameters.Algorithm;
+            sha3Credential = LockedSensitiveBuffer.Create(V12MasterKdf.CredentialHashBytes);
+            skeinCredential = LockedSensitiveBuffer.Create(V12MasterKdf.CredentialHashBytes);
+
+            V12MasterKdf.DeriveSha3CredentialHash(
+                algorithm, userPassword, pin, factorA.Bytes, factorB.Bytes, sha3Credential.Bytes);
+            V12MasterKdf.DeriveSkeinCredentialHash(
+                algorithm, userPassword, pin, factorA.Bytes, factorB.Bytes, skeinCredential.Bytes);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            (_, uint memory1) = V12MasterKdf.DerivePmi(
+                algorithm, 1, sha3Credential.Bytes, skeinCredential.Bytes,
+                ReadOnlySpan<byte>.Empty, salts.Sha3Round1, salts.SkeinRound1);
+            progress?.Report(paranoia ? "Key derivation, round 1 of 2" : "Key derivation");
+
+            round1Master = LockedSensitiveBuffer.Create(V12MasterKdf.MasterBytes);
+            V12MasterKdf.DeriveRoundMaster(
                 algorithm, 1, sha3Credential.Bytes, skeinCredential.Bytes,
                 salts.Sha3Round1, salts.SkeinRound1, ReadOnlySpan<byte>.Empty, memory1, round1Master.Bytes);
 
             if (!paranoia)
             {
-                var result = new MasterResult(round1Master, memory1, null);
+                completed = new MasterResult(round1Master, memory1, null);
                 round1Master = null; // ownership transferred to result
-                return result;
+                return completed;
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            (_, uint memory2) = V11MasterKdf.DerivePmi(
+            (_, uint memory2) = V12MasterKdf.DerivePmi(
                 algorithm, 2, sha3Credential.Bytes, skeinCredential.Bytes,
                 round1Master.Bytes, salts.Sha3Round2!, salts.SkeinRound2!);
             progress?.Report("Key derivation, round 2 of 2");
             // The first master is the Argon2id secret here, not the password:
             // it makes round two unreachable without round one, and it keeps
             // the credentials themselves in the same position in both rounds.
-            LockedSensitiveBuffer? round2Master = LockedSensitiveBuffer.Create(V11MasterKdf.MasterBytes);
-            try
-            {
-                V11MasterKdf.DeriveRoundMaster(
-                    algorithm, 2, sha3Credential.Bytes, skeinCredential.Bytes,
-                    salts.Sha3Round2!, salts.SkeinRound2!, round1Master.Bytes, memory2, round2Master.Bytes);
-                var result = new MasterResult(round2Master, memory1, memory2);
-                round2Master = null; // ownership transferred to result
-                return result;
-            }
-            finally
-            {
-                round2Master?.Dispose();
-            }
+            round2Master = LockedSensitiveBuffer.Create(V12MasterKdf.MasterBytes);
+            V12MasterKdf.DeriveRoundMaster(
+                algorithm, 2, sha3Credential.Bytes, skeinCredential.Bytes,
+                salts.Sha3Round2!, salts.SkeinRound2!, round1Master.Bytes, memory2, round2Master.Bytes);
+            completed = new MasterResult(round2Master, memory1, memory2);
+            round2Master = null; // ownership transferred to result
+            return completed;
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
         }
         finally
         {
-            round1Master?.Dispose();
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "Container master derivation failed and one or more sensitive buffers could not be released.",
+                    round2Master,
+                    round1Master,
+                    skeinCredential,
+                    sha3Credential,
+                    factorB,
+                    factorA);
+            }
+            catch (Exception cleanupFailure)
+            {
+                if (completed is null)
+                {
+                    throw;
+                }
+
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    cleanupFailure,
+                    "Container-master temporary cleanup failed and the completed master could not be released.",
+                    completed.Master);
+                throw;
+            }
         }
     }
 
@@ -473,9 +506,52 @@ internal static class ContainerKeyDerivation
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
-        using MasterResult result = DeriveMaster(
-            parameters, userPassword, pin, factorAHex, factorBHex, salts, progress, cancellationToken);
-        return SuiteKeySchedule.DeriveSuiteKeys(result.Master.Bytes, parameters);
+        MasterResult? master = null;
+        RoleKeyMaterial? completed = null;
+        Exception? operationFailure = null;
+        try
+        {
+            master = DeriveMaster(
+                parameters, userPassword, pin, factorAHex, factorBHex, salts, progress, cancellationToken);
+            completed = SuiteKeySchedule.DeriveSuiteKeys(master.Master.Bytes, parameters);
+            return completed;
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "Suite-key derivation failed and its container master could not be released.",
+                    master?.Master);
+            }
+            catch (Exception cleanupFailure)
+            {
+                if (completed is null)
+                {
+                    throw;
+                }
+
+                try
+                {
+                    completed.Dispose();
+                }
+                catch (Exception resultCleanupFailure)
+                {
+                    throw new AggregateException(
+                        "Container-master cleanup failed and the completed suite keys could not be released.",
+                        cleanupFailure,
+                        resultCleanupFailure);
+                }
+
+                throw;
+            }
+        }
     }
 }
 

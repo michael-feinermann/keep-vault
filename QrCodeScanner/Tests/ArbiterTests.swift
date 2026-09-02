@@ -118,19 +118,47 @@ private enum ArbiterTests {
         expect(
             pasteboard.types?.contains(NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")) == true,
             "the copied payload carries the concealed clipboard marker")
+        let earlyTermination = IdempotentTerminationCleanup()
+        earlyTermination.run {
+            clipboard.clearIfStillOurs()
+        }
+        expect(
+            pasteboard.string(forType: .string) == nil,
+            "terminating before expiry clears a clipboard item the scanner still owns")
+        expectEqual(expiryCallbacks, 1, "early termination reports one clipboard cleanup")
+        earlyTermination.run {
+            clipboard.clearIfStillOurs()
+        }
+        expectEqual(expiryCallbacks, 1, "window-close plus application termination is idempotent")
         clipboard.clearIfStillOurs()
-        expect(pasteboard.string(forType: .string) == nil, "the scanner clears a clipboard item it still owns")
-        expectEqual(expiryCallbacks, 1, "clearing the owned payload reports one expiry")
+        expectEqual(expiryCallbacks, 1, "a queued expiry after termination is also idempotent")
 
         clipboard.copy("second-secret") { expiryCallbacks += 1 }
         pasteboard.clearContents()
         pasteboard.setString("user-copy", forType: .string)
+        let terminationAfterOwnerChange = IdempotentTerminationCleanup()
+        terminationAfterOwnerChange.run {
+            clipboard.clearIfStillOurs()
+        }
+        expectEqual(
+            pasteboard.string(forType: .string),
+            "user-copy",
+            "termination never erases a clipboard value copied later by the user")
+        expectEqual(expiryCallbacks, 2, "losing clipboard ownership still closes the scanner lifecycle once")
+        terminationAfterOwnerChange.run {
+            clipboard.clearIfStillOurs()
+        }
+        expectEqual(
+            pasteboard.string(forType: .string),
+            "user-copy",
+            "repeated termination cleanup still preserves the later owner")
+        expectEqual(expiryCallbacks, 2, "owner-change cleanup remains idempotent")
         clipboard.clearIfStillOurs()
         expectEqual(
             pasteboard.string(forType: .string),
             "user-copy",
-            "expiry never erases a clipboard value copied later by the user")
-        expectEqual(expiryCallbacks, 2, "losing clipboard ownership still closes the scanner lifecycle once")
+            "a queued expiry after owner-change cleanup preserves the later owner")
+        expectEqual(expiryCallbacks, 2, "a queued expiry does not repeat the owner-change callback")
     }
 
     static func singleInstancePolicy() {

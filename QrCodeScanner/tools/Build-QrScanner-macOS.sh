@@ -1,6 +1,446 @@
-#!/bin/zsh
+#!/bin/zsh -f
 set -euo pipefail
 umask 077
+PATH='/usr/bin:/bin:/usr/sbin:/sbin'
+export PATH
+unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+  RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES SSL_CERT_FILE \
+  SSL_CERT_DIR CURL_HOME XDG_CONFIG_HOME
+unset DEVELOPER_DIR SDKROOT TOOLCHAINS \
+  CCC_OVERRIDE_OPTIONS COMPILER_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH \
+  OBJC_INCLUDE_PATH LIBRARY_PATH GCC_EXEC_PREFIX \
+  ADDITIONAL_SWIFT_DRIVER_FLAGS SWIFT_EXEC SWIFT_DRIVER_SWIFT_FRONTEND_EXEC \
+  SWIFT_DRIVER_SWIFTSCAN_LIB SWIFT_DRIVER_TOOLCHAIN_CASPLUGIN_LIB \
+  DYLD_INSERT_LIBRARIES DYLD_LIBRARY_PATH DYLD_FRAMEWORK_PATH \
+  DYLD_FALLBACK_LIBRARY_PATH DYLD_FALLBACK_FRAMEWORK_PATH
+unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE \
+  DOTNET_ROOT DOTNET_ROOT_X64 DOTNET_ROOT_ARM64 DOTNET_HOST_PATH \
+  DOTNET_DiagnosticPorts DOTNET_DefaultDiagnosticPortSuspend DOTNET_ROLL_FORWARD \
+  DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX DOTNET_ROLL_FORWARD_TO_PRERELEASE \
+  DOTNET_MULTILEVEL_LOOKUP CORECLR_ENABLE_PROFILING CORECLR_PROFILER \
+  CORECLR_PROFILER_PATH CORECLR_PROFILER_PATH_32 CORECLR_PROFILER_PATH_64 \
+  CORECLR_PROFILER_PATH_ARM64 COR_ENABLE_PROFILING COR_PROFILER \
+  COR_PROFILER_PATH COR_PROFILER_PATH_32 COR_PROFILER_PATH_64 \
+  COMPlus_AltJit COMPlus_AltJitName DOTNET_AltJit DOTNET_AltJitName \
+  MSBuildSDKsPath MSBUILD_EXE_PATH MSBuildExtensionsPath MSBuildExtensionsPath32 \
+  MSBuildExtensionsPath64 MSBuildUserExtensionsPath MSBuildToolsPath \
+  MSBuildBinPath MSBUILDLEGACYEXTENSIONSPATH MSBUILDADDITIONALSDKRESOLVERSFOLDER \
+  CustomBeforeMicrosoftCommonTargets CustomAfterMicrosoftCommonTargets \
+  CustomBeforeMicrosoftCSharpTargets CustomAfterMicrosoftCSharpTargets \
+  DirectoryBuildPropsPath DirectoryBuildTargetsPath ImportDirectoryBuildProps \
+  ImportDirectoryBuildTargets DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR \
+  DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR DOTNET_MSBUILD_SDK_RESOLVER_SDKS_VER \
+  NUGET_PLUGIN_PATHS NUGET_CREDENTIALPROVIDERS_PATH NUGET_EXTENSIONS_PATH \
+  NUGET_PACKAGES NUGET_HTTP_CACHE_PATH NUGET_SCRATCH RestoreSources \
+  RestoreAdditionalProjectSources RestoreFallbackFolders RestorePackagesPath \
+  RestoreConfigFile
+export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
+require_sanitized_injection_environment() {
+  local variable=''
+  for variable in \
+      ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+      RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES CURL_HOME \
+      DEVELOPER_DIR SDKROOT TOOLCHAINS CCC_OVERRIDE_OPTIONS CPATH \
+      ADDITIONAL_SWIFT_DRIVER_FLAGS SWIFT_DRIVER_SWIFTSCAN_LIB \
+      DYLD_INSERT_LIBRARIES DOTNET_STARTUP_HOOKS CORECLR_ENABLE_PROFILING \
+      CORECLR_PROFILER CORECLR_PROFILER_PATH MSBuildSDKsPath \
+      CustomBeforeMicrosoftCommonTargets CustomBeforeMicrosoftCSharpTargets \
+      NUGET_PLUGIN_PATHS NUGET_PACKAGES NUGET_HTTP_CACHE_PATH NUGET_SCRATCH; do
+    if (( ${+parameters[$variable]} )); then
+      print -u2 "RELEASE GATE: inherited build-injection variable survived sanitization: ${variable}"
+      return 2
+    fi
+  done
+  if [[ ${DOTNET_EnableDiagnostics} != 0 || ${COMPlus_EnableDiagnostics} != 0 ]]; then
+    print -u2 'RELEASE GATE: managed diagnostics must remain disabled.'
+    return 2
+  fi
+}
+require_sanitized_injection_environment
+
+xcrun_path=/usr/bin/xcrun
+env_path=/usr/bin/env
+codesign_path=/usr/bin/codesign
+security_path=/usr/bin/security
+plutil_path=/usr/bin/plutil
+ditto_path=/usr/bin/ditto
+iconutil_path=/usr/bin/iconutil
+sed_path=/usr/bin/sed
+grep_path=/usr/bin/grep
+head_path=/usr/bin/head
+stat_path=/usr/bin/stat
+mktemp_path=/usr/bin/mktemp
+uname_path=/usr/bin/uname
+find_path=/usr/bin/find
+plistbuddy_path=/usr/libexec/PlistBuddy
+spctl_path=/usr/sbin/spctl
+rm_path=/bin/rm
+mkdir_path=/bin/mkdir
+ln_path=/bin/ln
+chmod_path=/bin/chmod
+mv_path=/bin/mv
+rmdir_path=/bin/rmdir
+
+require_root_system_tool() {
+  local tool=$1
+  if [[ ${tool} != /* || ! -f ${tool} || -L ${tool} || ! -x ${tool} \
+      || $(${stat_path} -f %u -- ${tool}) != 0 ]]; then
+    print -u2 "QR RELEASE GATE: required tool is not an absolute root-owned regular file: ${tool}"
+    exit 2
+  fi
+  local tool_mode=$(( 8#$(${stat_path} -f %Lp -- ${tool}) ))
+  if (( (tool_mode & 8#022) != 0 )); then
+    print -u2 "QR RELEASE GATE: required tool is group/other writable: ${tool}"
+    exit 2
+  fi
+}
+
+for fixed_tool in \
+    ${xcrun_path} ${env_path} ${codesign_path} ${security_path} ${plutil_path} \
+    ${ditto_path} ${iconutil_path} ${sed_path} ${grep_path} ${head_path} \
+    ${stat_path} ${mktemp_path} ${uname_path} ${find_path} \
+    ${plistbuddy_path} ${spctl_path} ${rm_path} ${mkdir_path} ${ln_path} \
+    ${chmod_path} ${mv_path} ${rmdir_path}; do
+  require_root_system_tool ${fixed_tool}
+done
+
+# Resolve every Xcode tool once through the already validated system xcrun,
+# then execute only its physical, root-owned binary. The Swift compiler is a
+# multicall driver, so ARGV0 selects its `swiftc` or `swift` mode without
+# following Xcode's public symlink aliases.
+clang_path=$(${xcrun_path} --sdk macosx --find clang)
+clang_path=${clang_path:A}
+swiftc_alias=$(${xcrun_path} --sdk macosx --find swiftc)
+swift_driver_path=${swiftc_alias:h}/swift-driver
+swift_driver_path=${swift_driver_path:A}
+swift_frontend_path=${swiftc_alias:A}
+lipo_path=$(${xcrun_path} --sdk macosx --find lipo)
+lipo_path=${lipo_path:A}
+notarytool_path=$(${xcrun_path} --find notarytool)
+notarytool_path=${notarytool_path:A}
+stapler_path=$(${xcrun_path} --find stapler)
+stapler_path=${stapler_path:A}
+for developer_tool in \
+    ${clang_path} ${swift_driver_path} ${swift_frontend_path} ${lipo_path} \
+    ${notarytool_path} ${stapler_path}; do
+  require_root_system_tool ${developer_tool}
+done
+
+sdk_root=$(${xcrun_path} --sdk macosx --show-sdk-path)
+sdk_root=${sdk_root:A}
+if [[ ! -d ${sdk_root} || -L ${sdk_root} \
+    || $(${stat_path} -f %u -- ${sdk_root}) != 0 ]]; then
+  print -u2 'QR RELEASE GATE: the selected macOS SDK is not a root-owned physical directory.'
+  exit 2
+fi
+sdk_mode=$(( 8#$(${stat_path} -f %Lp -- ${sdk_root}) ))
+if (( (sdk_mode & 8#022) != 0 )); then
+  print -u2 'QR RELEASE GATE: the selected macOS SDK is group/other writable.'
+  exit 2
+fi
+
+codesign() { ${codesign_path} "$@"; }
+security() { ${security_path} "$@"; }
+plutil() { ${plutil_path} "$@"; }
+ditto() { ${ditto_path} "$@"; }
+iconutil() { ${iconutil_path} "$@"; }
+sed() { ${sed_path} "$@"; }
+grep() { ${grep_path} "$@"; }
+head() { ${head_path} "$@"; }
+stat() { ${stat_path} "$@"; }
+mktemp() { ${mktemp_path} "$@"; }
+uname() { ${uname_path} "$@"; }
+find() { ${find_path} "$@"; }
+plistbuddy() { ${plistbuddy_path} "$@"; }
+spctl() { ${spctl_path} "$@"; }
+rm() { ${rm_path} "$@"; }
+mkdir() { ${mkdir_path} "$@"; }
+ln() { ${ln_path} "$@"; }
+chmod() { ${chmod_path} "$@"; }
+mv() { ${mv_path} "$@"; }
+rmdir() { ${rmdir_path} "$@"; }
+clang() { ${clang_path} "$@"; }
+swiftc() { ARGV0=swiftc ${swift_driver_path} "$@"; }
+swift() { ARGV0=swift ${swift_driver_path} "$@"; }
+lipo() { ${lipo_path} "$@"; }
+notarytool() { ${notarytool_path} "$@"; }
+stapler() { ${stapler_path} "$@"; }
+
+# A locked restore authenticates downloaded package archives, but NuGet trusts
+# files that are already extracted in a shared cache. Give every invocation a
+# new cache below the physical system temporary directory, and bind each path
+# to the device/inode that was created here. The clean environment also closes
+# open-ended MSBuild, profiler, startup-hook and NuGet-plugin injection paths.
+private_tmp_parent=/private/tmp
+private_dotnet_root=''
+private_dotnet_tmp=''
+private_dotnet_cli_home=''
+private_dotnet_packages=''
+private_dotnet_http_cache=''
+private_dotnet_scratch=''
+private_dotnet_keychain_temp=''
+private_dotnet_sdk_target=''
+private_dotnet_artifacts=''
+private_signer_intermediate=''
+signer_dll=''
+signer_dll_identity=''
+private_dotnet_directories=()
+private_dotnet_identities=()
+
+require_private_tmp_parent() {
+  local private_tmp_mode=$(( 8#$(stat -f %p -- ${private_tmp_parent}) ))
+  if [[ ! -d ${private_tmp_parent} || -L ${private_tmp_parent} \
+      || ${private_tmp_parent:A} != ${private_tmp_parent} \
+      || $(stat -f %u -- ${private_tmp_parent}) != 0 ]] \
+      || (( (private_tmp_mode & 8#7777) != 8#1777 )); then
+    print -u2 'QR RELEASE GATE: /private/tmp must be a physical root-owned mode-1777 directory.'
+    return 2
+  fi
+}
+
+create_private_nuget_cache() {
+  [[ -z ${private_dotnet_root} ]] || return 0
+  require_private_tmp_parent
+
+  private_dotnet_root=$(mktemp -d "${private_tmp_parent}/keep-vault-qr-dotnet.XXXXXXXX")
+  private_dotnet_root=${private_dotnet_root:A}
+  private_dotnet_tmp=${private_dotnet_root}/tmp
+  private_dotnet_cli_home=${private_dotnet_root}/cli-home
+  private_dotnet_packages=${private_dotnet_root}/packages
+  private_dotnet_http_cache=${private_dotnet_root}/http-cache
+  private_dotnet_scratch=${private_dotnet_root}/scratch
+  private_dotnet_keychain_temp=${private_dotnet_root}/keychain-temp
+  private_dotnet_sdk_target=${private_dotnet_root}/verified-sdk
+  private_dotnet_artifacts=${private_dotnet_root}/artifacts
+  private_signer_intermediate=${private_dotnet_root}/signer-obj
+  chmod 0700 ${private_dotnet_root}
+  private_dotnet_directories=(${private_dotnet_root})
+  private_dotnet_identities=("$(stat -f '%d:%i:%u:%Lp' -- ${private_dotnet_root})")
+  local directory=''
+  for directory in \
+      ${private_dotnet_tmp} \
+      ${private_dotnet_cli_home} \
+      ${private_dotnet_packages} \
+      ${private_dotnet_http_cache} \
+      ${private_dotnet_scratch} \
+      ${private_dotnet_keychain_temp} \
+      ${private_dotnet_artifacts} \
+      ${private_signer_intermediate}; do
+    mkdir -m 0700 -- ${directory}
+    private_dotnet_directories+=(${directory})
+    private_dotnet_identities+=("$(stat -f '%d:%i:%u:%Lp' -- ${directory})")
+  done
+  require_private_nuget_cache_identity
+}
+
+require_private_nuget_cache_identity() {
+  if [[ -z ${private_dotnet_root} \
+      || ${#private_dotnet_directories[@]} != ${#private_dotnet_identities[@]} ]]; then
+    print -u2 'QR RELEASE GATE: the private .NET cache has no complete identity record.'
+    return 2
+  fi
+  local index=0
+  local directory=''
+  local actual=''
+  for (( index = 1; index <= ${#private_dotnet_directories[@]}; index++ )); do
+    directory=${private_dotnet_directories[index]}
+    if [[ ! -d ${directory} || -L ${directory} ]]; then
+      print -u2 'QR RELEASE GATE: a private .NET cache directory was replaced.'
+      return 2
+    fi
+    actual=$(stat -f '%d:%i:%u:%Lp' -- ${directory})
+    if [[ ${actual} != ${private_dotnet_identities[index]} \
+        || $(stat -f %u -- ${directory}) != ${EUID} \
+        || $(stat -f %Lp -- ${directory}) != 700 ]]; then
+      print -u2 'QR RELEASE GATE: a private .NET cache identity, owner or mode changed.'
+      return 2
+    fi
+  done
+}
+
+cleanup_private_nuget_cache() {
+  [[ -n ${private_dotnet_root} ]] || return 0
+  if ! require_private_nuget_cache_identity; then
+    print -u2 'QR RELEASE GATE: refusing to remove a substituted private .NET cache path.'
+    return 2
+  fi
+  if ! rm -rf -- ${private_dotnet_root}; then
+    print -u2 'QR RELEASE GATE: unable to remove the private .NET cache.'
+    return 2
+  fi
+  private_dotnet_root=''
+  private_dotnet_directories=()
+  private_dotnet_identities=()
+}
+
+self_test_private_nuget_cache_identity() {
+  require_private_nuget_cache_identity
+  local held_path=${private_dotnet_root}.held
+  if [[ -e ${held_path} || -L ${held_path} ]]; then
+    print -u2 'QR RELEASE GATE: private-cache identity self-test path already exists.'
+    return 2
+  fi
+  mv -- ${private_dotnet_root} ${held_path}
+  if [[ $(stat -f '%d:%i:%u:%Lp' -- ${held_path}) != ${private_dotnet_identities[1]} ]]; then
+    print -u2 'QR RELEASE GATE: private-cache identity changed during the self-test hold.'
+    return 2
+  fi
+  mkdir -m 0700 -- ${private_dotnet_root}
+  local replacement_identity=$(stat -f '%d:%i:%u:%Lp' -- ${private_dotnet_root})
+  local substitution_was_rejected=0
+  require_private_nuget_cache_identity >/dev/null 2>&1 \
+    || substitution_was_rejected=1
+  if [[ $(stat -f '%d:%i:%u:%Lp' -- ${private_dotnet_root}) != ${replacement_identity} ]]; then
+    print -u2 'QR RELEASE GATE: refusing to remove a changed cache-test replacement.'
+    return 2
+  fi
+  rmdir -- ${private_dotnet_root}
+  mv -- ${held_path} ${private_dotnet_root}
+  require_private_nuget_cache_identity
+  if (( ! substitution_was_rejected )); then
+    print -u2 'QR RELEASE GATE: private-cache pathname substitution was not rejected.'
+    return 2
+  fi
+}
+
+require_verified_dotnet_identity() {
+  if [[ -z ${dotnet_command} || ${dotnet_command} != ${private_dotnet_sdk_target}/dotnet \
+      || ! -f ${dotnet_command} || -L ${dotnet_command} || ! -x ${dotnet_command} \
+      || $(stat -f '%d:%i:%u:%Lp' -- ${dotnet_command}) != ${dotnet_command_identity} \
+      || $(stat -f %u -- ${dotnet_command}) != ${EUID} ]]; then
+    print -u2 'QR RELEASE GATE: the freshly verified .NET SDK host identity changed.'
+    return 2
+  fi
+  local dotnet_mode=$(( 8#$(stat -f %Lp -- ${dotnet_command}) ))
+  if (( (dotnet_mode & 8#022) != 0 )); then
+    print -u2 'QR RELEASE GATE: the freshly verified .NET SDK host became writable by another user.'
+    return 2
+  fi
+}
+
+ensure_verified_dotnet() {
+  if [[ -n ${dotnet_command} ]]; then
+    require_verified_dotnet_identity
+    return
+  fi
+  if [[ ! -f ${verified_dotnet_provisioner} || -L ${verified_dotnet_provisioner} \
+      || ! -x ${verified_dotnet_provisioner} \
+      || $(stat -f %u -- ${verified_dotnet_provisioner}) != ${EUID} ]]; then
+    print -u2 'QR RELEASE GATE: the reviewed .NET SDK provisioner is unavailable or substituted.'
+    return 2
+  fi
+  local provisioner_mode=$(( 8#$(stat -f %Lp -- ${verified_dotnet_provisioner}) ))
+  if (( (provisioner_mode & 8#022) != 0 )); then
+    print -u2 'QR RELEASE GATE: the reviewed .NET SDK provisioner is group/other writable.'
+    return 2
+  fi
+  verified_dotnet_provisioner_identity=$(stat -f '%d:%i:%u:%Lp' -- ${verified_dotnet_provisioner})
+
+  local provisioned_dotnet=''
+  local provision_status=0
+  provisioned_dotnet=$(${env_path} -i \
+    "PATH=${PATH}" \
+    "TMPDIR=${private_dotnet_tmp}/" \
+    ${verified_dotnet_provisioner} --target ${private_dotnet_sdk_target}) \
+    || provision_status=$?
+  if [[ $(stat -f '%d:%i:%u:%Lp' -- ${verified_dotnet_provisioner}) \
+      != ${verified_dotnet_provisioner_identity} ]]; then
+    print -u2 'QR RELEASE GATE: the .NET SDK provisioner identity changed while executing.'
+    return 2
+  fi
+  if (( provision_status != 0 )); then
+    print -u2 'QR RELEASE GATE: the pinned Microsoft .NET SDK could not be provisioned.'
+    return ${provision_status}
+  fi
+  if [[ ${provisioned_dotnet} != ${private_dotnet_sdk_target}/dotnet \
+      || ! -d ${private_dotnet_sdk_target} || -L ${private_dotnet_sdk_target} ]]; then
+    print -u2 'QR RELEASE GATE: the SDK provisioner returned an unexpected host path.'
+    return 2
+  fi
+  private_dotnet_directories+=(${private_dotnet_sdk_target})
+  private_dotnet_identities+=("$(stat -f '%d:%i:%u:%Lp' -- ${private_dotnet_sdk_target})")
+  dotnet_command=${provisioned_dotnet}
+  dotnet_command_identity=$(stat -f '%d:%i:%u:%Lp' -- ${dotnet_command})
+  require_private_nuget_cache_identity
+  require_verified_dotnet_identity
+}
+
+run_dotnet_clean() {
+  require_private_nuget_cache_identity || return
+  ensure_verified_dotnet || return
+  require_verified_dotnet_identity || return
+  local runtime_tmp=${private_dotnet_tmp}
+  local -a home_environment=("HOME=${private_dotnet_cli_home}")
+  local -a keychain_environment=()
+  if [[ ${1:-} == --with-keychain-temp ]]; then
+    shift
+    runtime_tmp=${private_dotnet_keychain_temp}
+    home_environment=()
+    keychain_environment=(
+      "KEEPVAULT_KEYCHAIN_TEMP_ROOT=${private_dotnet_keychain_temp}"
+    )
+  fi
+  local dotnet_status=0
+  ${env_path} -i \
+    "${home_environment[@]}" \
+    "PATH=${PATH}" \
+    "TMPDIR=${runtime_tmp}/" \
+    "${keychain_environment[@]}" \
+    "DOTNET_CLI_HOME=${private_dotnet_cli_home}" \
+    "NUGET_PACKAGES=${private_dotnet_packages}" \
+    "NUGET_HTTP_CACHE_PATH=${private_dotnet_http_cache}" \
+    "NUGET_SCRATCH=${private_dotnet_scratch}" \
+    DOTNET_EnableDiagnostics=0 \
+    COMPlus_EnableDiagnostics=0 \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE=1 \
+    DOTNET_NOLOGO=1 \
+    ${dotnet_command} "$@" || dotnet_status=$?
+  require_private_nuget_cache_identity || return
+  require_verified_dotnet_identity || return
+  return ${dotnet_status}
+}
+
+require_private_signer_identity() {
+  if [[ -z ${signer_dll_identity} \
+      || ${signer_dll} != ${private_dotnet_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll \
+      || ! -f ${signer_dll} || -L ${signer_dll} \
+      || $(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' -- ${signer_dll}) != ${signer_dll_identity} \
+      || $(stat -f %u -- ${signer_dll}) != ${EUID} \
+      || $(stat -f %l -- ${signer_dll}) != 1 ]]; then
+    print -u2 'QR RELEASE GATE: the private HybridSigner assembly identity changed.'
+    return 2
+  fi
+  local signer_mode=$(( 8#$(stat -f %Lp -- ${signer_dll}) ))
+  if (( (signer_mode & 8#022) != 0 )); then
+    print -u2 'QR RELEASE GATE: the private HybridSigner assembly became writable by another user.'
+    return 2
+  fi
+}
+
+capture_private_signer_identity() {
+  signer_dll=${private_dotnet_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll
+  if [[ ! -f ${signer_dll} || -L ${signer_dll} ]]; then
+    print -u2 'QR RELEASE GATE: the isolated build did not produce its private HybridSigner assembly.'
+    return 2
+  fi
+  signer_dll_identity=$(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' -- ${signer_dll})
+  require_private_signer_identity
+}
+
+run_dotnet_signer_clean() {
+  require_private_signer_identity || return
+  local signer_status=0
+  if [[ ${1:-} == --with-keychain-temp ]]; then
+    shift
+    run_dotnet_clean --with-keychain-temp ${signer_dll} "$@" || signer_status=$?
+  else
+    run_dotnet_clean ${signer_dll} "$@" || signer_status=$?
+  fi
+  require_private_signer_identity || return
+  return ${signer_status}
+}
 
 # Builds, signs and verifies QR-Scanner.
 #
@@ -10,11 +450,11 @@ umask 077
 #
 # Usage:
 #   ./QrCodeScanner/tools/Build-QrScanner-macOS.sh
-#   ./QrCodeScanner/tools/Build-QrScanner-macOS.sh --install
 #   ./QrCodeScanner/tools/Build-QrScanner-macOS.sh --notary-profile "QR-Scanner"
 
 script_dir=${0:A:h}
 project_root=${script_dir:h}
+repository_root=${project_root:h}
 packaging_dir=${project_root}/Packaging
 sources_dir=${project_root}/Sources
 bundle_identifier='de.michael-feinermann.qr-scanner'
@@ -23,20 +463,21 @@ marketing_version='1.0.0'
 build_version='1'
 architecture='universal'
 deployment_target='14.0'
-install_app=0
 run_tests=1
 preflight_only=0
 atomic_publish_self_test=0
+tool_path_self_test=0
 identity=${QRSCANNER_CODESIGN_IDENTITY:-}
 # Name of an "xcrun notarytool store-credentials" keychain profile. Empty means
 # the build stops short of notarization; no secret ever lives in this file.
 notary_profile=${QRSCANNER_NOTARY_PROFILE:-}
+dotnet_command=''
+verified_dotnet_provisioner=${repository_root}/tools/Provision-VerifiedDotnet-macOS.sh
+verified_dotnet_provisioner_identity=''
+dotnet_command_identity=''
 
 while (( $# > 0 )); do
   case $1 in
-    --install)
-      install_app=1
-      ;;
     --identity)
       (( $# >= 2 )) || { print -u2 'Missing value for --identity.'; exit 64; }
       identity=$2
@@ -68,13 +509,16 @@ while (( $# > 0 )); do
     --self-test-atomic-publish)
       atomic_publish_self_test=1
       ;;
+    --tool-path-self-test)
+      tool_path_self_test=1
+      ;;
     --skip-tests)
       run_tests=0
       ;;
     -h|--help)
-      print 'Usage: Build-QrScanner-macOS.sh [--install] [--identity NAME] [--notary-profile NAME]'
+      print 'Usage: Build-QrScanner-macOS.sh [--identity NAME] [--notary-profile NAME]'
       print '       [--arch universal|arm64|x86_64] [--version X.Y.Z] [--build-number N]'
-      print '       [--skip-tests] [--preflight] [--self-test-atomic-publish]'
+      print '       [--skip-tests] [--preflight] [--self-test-atomic-publish] [--tool-path-self-test]'
       exit 0
       ;;
     *)
@@ -84,6 +528,32 @@ while (( $# > 0 )); do
   esac
   shift
 done
+
+cleanup_early() {
+  local original_status=$?
+  local cleanup_status=0
+  trap - EXIT INT TERM
+  cleanup_private_nuget_cache || cleanup_status=$?
+  if (( original_status == 0 && cleanup_status != 0 )); then
+    original_status=${cleanup_status}
+  fi
+  exit ${original_status}
+}
+trap cleanup_early EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+create_private_nuget_cache
+
+if (( tool_path_self_test )); then
+  require_sanitized_injection_environment
+  self_test_private_nuget_cache_identity
+  clang --version >/dev/null
+  swiftc --version >/dev/null
+  swift --version >/dev/null
+  run_dotnet_clean --version >/dev/null
+  print 'qr_release_tool_paths=verified'
+  exit 0
+fi
 
 if [[ ! ${marketing_version} =~ '^[0-9]+([.][0-9]+){1,2}$' || ! ${build_version} =~ '^[1-9][0-9]*$' ]]; then
   print -u2 'Version values must be numeric (for example 4.0.2 and build 6).'
@@ -96,39 +566,42 @@ render_info_plist() {
       -e "s/@@BUILD_VERSION@@/${build_version}/g" \
     ${packaging_dir}/Info.plist.template > ${destination}
   plutil -lint ${destination} > /dev/null
-  [[ $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' ${destination}) == ${bundle_identifier} ]] || {
+  [[ $(plistbuddy -c 'Print :CFBundleIdentifier' ${destination}) == ${bundle_identifier} ]] || {
     print -u2 'The rendered QR-Scanner bundle identifier is incorrect.'
     exit 1
   }
-  [[ $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' ${destination}) == ${marketing_version} ]] || {
+  [[ $(plistbuddy -c 'Print :CFBundleShortVersionString' ${destination}) == ${marketing_version} ]] || {
     print -u2 'The rendered QR-Scanner marketing version is incorrect.'
     exit 1
   }
-  [[ $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' ${destination}) == ${build_version} ]] || {
+  [[ $(plistbuddy -c 'Print :CFBundleVersion' ${destination}) == ${build_version} ]] || {
     print -u2 'The rendered QR-Scanner build number is incorrect.'
     exit 1
   }
-  [[ $(/usr/libexec/PlistBuddy -c 'Print :LSMultipleInstancesProhibited' ${destination}) == true ]] || {
+  [[ $(plistbuddy -c 'Print :LSMultipleInstancesProhibited' ${destination}) == true ]] || {
     print -u2 'The rendered QR-Scanner does not prohibit multiple camera/payload instances.'
     exit 1
   }
 }
 
-for required_command in xcrun codesign security plutil ditto iconutil; do
-  if ! command -v ${required_command} > /dev/null 2>&1; then
-    print -u2 "Required command not found: ${required_command}"
-    exit 1
-  fi
-done
-
 if (( preflight_only )); then
   preflight_root=$(mktemp -d "${TMPDIR:-/tmp}/qr-scanner-preflight.XXXXXXXX")
   cleanup_preflight() {
+    local original_status=$?
+    local cleanup_status=0
+    trap - EXIT INT TERM
     if [[ -n ${preflight_root:-} && -d ${preflight_root} && ${preflight_root} == */qr-scanner-preflight.* ]]; then
       rm -rf -- ${preflight_root}
     fi
+    cleanup_private_nuget_cache || cleanup_status=$?
+    if (( original_status == 0 && cleanup_status != 0 )); then
+      original_status=${cleanup_status}
+    fi
+    exit ${original_status}
   }
-  trap cleanup_preflight EXIT INT TERM
+  trap cleanup_preflight EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
   render_info_plist ${preflight_root}/Info.plist
   print "preflight_version=${marketing_version}"
   print "preflight_build=${build_version}"
@@ -173,6 +646,9 @@ staging_root=$(mktemp -d "${project_root}/.qr-build.XXXXXXXX")
 publish_helper_root=$(mktemp -d "${project_root}/.qr-publish-helper.XXXXXXXX")
 backup_dir=''
 cleanup_build() {
+  local original_status=$?
+  local cleanup_status=0
+  trap - EXIT INT TERM
   if [[ -n ${backup_dir:-} && -d ${backup_dir} \
       && ${backup_dir} == ${TMPDIR:-/tmp}/qr-scanner-backup.* ]]; then
     rm -rf -- ${backup_dir}
@@ -185,11 +661,18 @@ cleanup_build() {
       && ${publish_helper_root} == ${project_root}/.qr-publish-helper.* ]]; then
     rm -rf -- ${publish_helper_root}
   fi
+  cleanup_private_nuget_cache || cleanup_status=$?
+  if (( original_status == 0 && cleanup_status != 0 )); then
+    original_status=${cleanup_status}
+  fi
+  exit ${original_status}
 }
-trap cleanup_build EXIT INT TERM
+trap cleanup_build EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 atomic_publish_helper=${publish_helper_root}/atomic-publish
-xcrun --sdk macosx clang -O2 -Wall -Wextra -Werror \
+clang -isysroot ${sdk_root} -O2 -Wall -Wextra -Werror \
   -mmacosx-version-min=${deployment_target} -x c - -o ${atomic_publish_helper} <<'EOF'
 #include <fcntl.h>
 #include <stdio.h>
@@ -304,7 +787,7 @@ mkdir -p ${macos_dir} ${resources_dir}
 if (( run_tests )); then
   host_arch=$(uname -m)
   test_binary=${build_root}/ArbiterTests
-  xcrun swiftc \
+  swiftc -sdk ${sdk_root} \
     -target ${host_arch}-apple-macos${deployment_target} \
     -O -parse-as-library \
     ${sources_dir}/CodeArbiter.swift \
@@ -337,7 +820,7 @@ render_info_plist ${plist_path}
 thin_binaries=()
 for slice in ${architectures[@]}; do
   thin=${build_root}/qr-scanner-${slice}
-  xcrun swiftc \
+  swiftc -sdk ${sdk_root} \
     -target ${slice}-apple-macos${deployment_target} \
     -O -whole-module-optimization -parse-as-library \
     ${sources_dir}/CodeArbiter.swift \
@@ -357,8 +840,8 @@ done
 
 executable=${macos_dir}/${app_name}
 if (( ${#thin_binaries} > 1 )); then
-  xcrun lipo -create ${thin_binaries[@]} -output ${executable}
-  xcrun lipo ${executable} -verify_arch ${architectures[@]}
+  lipo -create ${thin_binaries[@]} -output ${executable}
+  lipo ${executable} -verify_arch ${architectures[@]}
 else
   ditto ${thin_binaries[1]} ${executable}
 fi
@@ -371,7 +854,7 @@ print -n 'APPL????' > ${contents}/PkgInfo
 # The icon is generated from tools/make-icon.swift, so what it depicts is
 # readable source rather than a committed binary.
 iconset=${build_root}/AppIcon.iconset
-xcrun swift ${script_dir}/make-icon.swift ${iconset} > /dev/null
+swift -sdk ${sdk_root} ${script_dir}/make-icon.swift ${iconset} > /dev/null
 iconutil -c icns ${iconset} -o ${resources_dir}/AppIcon.icns
 rm -rf ${iconset}
 
@@ -439,10 +922,11 @@ print 'hardened-runtime=enabled'
 # Notarization. Requires a Developer ID Application certificate and a stored
 # notarytool profile:
 #
-#   xcrun notarytool store-credentials "QR-Scanner" \
-#     --apple-id you@example.com --team-id TEAMID --password APP-SPECIFIC-PASSWORD
+#   /usr/bin/xcrun notarytool store-credentials "Keep Vault v12" \
+#     --apple-id you@example.com --team-id TEAMID
 #
-# then pass --notary-profile "QR-Scanner". The submission ZIP is scratch: the
+# Enter the app-specific password only at notarytool's protected prompt, then
+# pass --notary-profile "Keep Vault v12". The submission ZIP is scratch: the
 # released ZIP is assembled only after the stapled app and all five hybrid
 # sidecars exist, otherwise users would receive an archive that the repository
 # verifier necessarily rejects.
@@ -455,127 +939,76 @@ elif [[ ${signature_details} != *'Authority=Developer ID Application:'* ]]; then
 else
   notary_submission_zip=${publish_helper_root}/QR-Scanner-notary-submission.zip
   ditto -c -k --keepParent ${app_bundle} ${notary_submission_zip}
-  xcrun notarytool submit ${notary_submission_zip} --keychain-profile ${notary_profile} --wait
-  xcrun stapler staple ${app_bundle}
-  xcrun stapler validate ${app_bundle}
+  notarytool submit ${notary_submission_zip} --keychain-profile ${notary_profile} --wait
+  stapler staple ${app_bundle}
+  stapler validate ${app_bundle}
   spctl --assess --type execute --verbose=4 ${app_bundle}
   print "notarization=stapled (${notary_profile})"
 fi
 
 # --- Hybrid Signatures --------------------------------------------------------
 repo_root=${project_root:h}
-dotnet_command=${KEEPVAULT_DOTNET:-/Users/michael/.dotnet-keepvault/dotnet}
-pfx_path=${KEEPVAULT_SIGNING_PFX:-}
-if [[ -z ${pfx_path} ]]; then
-  for candidate in /Volumes/*/Keep\ Vault\ ReleaseKeys*/*.pfx(N); do
-    [[ -f ${candidate} && ! -L ${candidate} ]] || continue
-    pfx_path=${candidate}
-    break
-  done
-fi
-# Where the keys actually live when no removable volume is mounted. Without
-# this the search ended empty on the machine that holds them, the signing block
-# below was skipped, and the build failed a minute later in the verifier with
-# a missing sidecar rather than with the reason.
-if [[ -z ${pfx_path} ]]; then
-  pfx_path="${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/hybrid-rsa4096.pfx"
-fi
-
-mldsa_private_key=${KEEPVAULT_MLDSA_PRIVATE_KEY:-}
-if [[ -z ${mldsa_private_key} ]]; then
-  for candidate in /Volumes/*/Keep\ Vault\ ReleaseKeys*/mldsa87-private.key(N); do
-    [[ -f ${candidate} && ! -L ${candidate} ]] || continue
-    mldsa_private_key=${candidate}
-    break
-  done
-fi
-if [[ -z ${mldsa_private_key} ]]; then
-  mldsa_private_key="${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key"
-fi
-mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${mldsa_private_key}.enc}
-mldsa_keychain_service=${KEEPVAULT_MLDSA_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-wrapping-key}
-mldsa_keychain_account=${KEEPVAULT_MLDSA_KEYCHAIN_ACCOUNT:-${USER:-}}
-
-mldsa_key_arguments=(--mldsa-private-key ${mldsa_private_key})
-if [[ -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} ]]; then
-  mldsa_key_arguments=(
-    --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
-    --mldsa-key-keychain-service ${mldsa_keychain_service}
-    --mldsa-key-keychain-account ${mldsa_keychain_account}
-  )
-fi
-
-wrapping_key_file=${KEEPVAULT_WRAPPING_KEY_FILE:-}
-if [[ -z ${wrapping_key_file} ]]; then
-  for candidate in /Volumes/*/Keep\ Vault\ ReleaseKeys*/wrapping-key.b64(N); do
-    [[ -f ${candidate} && ! -L ${candidate} ]] || continue
-    wrapping_key_file=${candidate}
-    break
-  done
-fi
-if [[ -n ${wrapping_key_file} && -f ${wrapping_key_file} && ! -L ${wrapping_key_file} ]]; then
-  mldsa_key_arguments+=(--wrapping-key-file ${wrapping_key_file})
-fi
-
+release_key_root="${HOME}/Library/Application Support/Keep Vault/ReleaseKeys"
+pfx_path=${KEEPVAULT_HYBRID_PFX:-${release_key_root}/hybrid-rsa4096.pfx}
+mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${release_key_root}/mldsa87-private.key.v12.enc}
+pfx_password_encrypted=${KEEPVAULT_PFX_PASSWORD_ENCRYPTED:-${release_key_root}/hybrid-rsa4096.pfx.password.v12.enc}
+mldsa_wrapping_service=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.v12.mldsa-wrapping-key}
+mldsa_wrapping_account=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-mldsa-v12:${USER:-}}
+pfx_wrapping_service=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.v12.pfx-wrapping-key}
+pfx_wrapping_account=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-pfx-v12:${USER:-}}
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
-pfx_password_encrypted=${KEEPVAULT_PFX_PASSWORD_ENCRYPTED:-${pfx_path}.password.enc}
-pfx_password_arguments=()
-if [[ -f ${pfx_password_encrypted} && ! -L ${pfx_password_encrypted} ]]; then
-  pfx_password_arguments=(--pfx-password-encrypted ${pfx_password_encrypted})
-fi
-pfx_password_service=${KEEPVAULT_PFX_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-pfx}
-pfx_password_account=${KEEPVAULT_PFX_KEYCHAIN_ACCOUNT:-${USER:-}}
-pfx_password_environment=${KEEPVAULT_PFX_PASSWORD_ENV:-KEEPVAULT_HYBRID_PFX_PASSWORD}
 
-# The wrapped key is the normal case: once both halves are wrapped, the
-# plaintext ML-DSA key is deleted and only the .enc file remains. Testing for
-# the plaintext path alone made this block skip itself on exactly the tree that
-# had been migrated, which is the tree every release is built from.
-mldsa_key_present=0
-if [[ -f ${mldsa_private_key} && ! -L ${mldsa_private_key} ]]; then
-  mldsa_key_present=1
-fi
-if [[ -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} ]]; then
-  mldsa_key_present=1
+if [[ -z ${mldsa_wrapping_service} || -z ${mldsa_wrapping_account} \
+    || -z ${pfx_wrapping_service} || -z ${pfx_wrapping_account} \
+    || ${mldsa_wrapping_service} == ${pfx_wrapping_service} \
+    || ${mldsa_wrapping_account} == ${pfx_wrapping_account} ]]; then
+  print -u2 'QR-Scanner signing requires distinct, nonempty ML-DSA and PFX wrapping-key services and accounts.'
+  exit 1
 fi
 
-if [[ -n ${pfx_path} && -f ${pfx_path} && ${mldsa_key_present} -eq 1 && -x ${dotnet_command} ]]; then
-  signer_dll=${repo_root}/KeepVaultMac/Packaging/HybridSigner/bin/Release/net10.0/KeepVaultMac.HybridSigner.dll
+hybrid_secret_arguments=(
+  --pfx ${pfx_path}
+  --pfx-password-encrypted ${pfx_password_encrypted}
+  --pfx-wrapping-key-keychain-service ${pfx_wrapping_service}
+  --pfx-wrapping-key-keychain-account ${pfx_wrapping_account}
+  --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
+  --mldsa-wrapping-key-keychain-service ${mldsa_wrapping_service}
+  --mldsa-wrapping-key-keychain-account ${mldsa_wrapping_account}
+)
+
+if [[ -f ${pfx_path} && ! -L ${pfx_path} \
+    && -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} \
+    && -f ${pfx_password_encrypted} && ! -L ${pfx_password_encrypted} ]]; then
+  ensure_verified_dotnet
   (
     cd ${repo_root}/KeepVaultMac
-    ${dotnet_command} restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj --locked-mode --nologo
-    ${dotnet_command} build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj -c Release --no-restore --nologo
+    run_dotnet_clean restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \
+      --artifacts-path ${private_dotnet_artifacts} \
+      -p:BaseIntermediateOutputPath=${private_signer_intermediate}/ \
+      -p:MSBuildProjectExtensionsPath=${private_signer_intermediate}/ \
+      --locked-mode --disable-build-servers --nologo
+    run_dotnet_clean build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \
+      --artifacts-path ${private_dotnet_artifacts} \
+      -p:BaseIntermediateOutputPath=${private_signer_intermediate}/ \
+      -p:MSBuildProjectExtensionsPath=${private_signer_intermediate}/ \
+      -c Release --no-restore --no-incremental --disable-build-servers \
+      -p:UseSharedCompilation=false --nologo
   )
+  capture_private_signer_identity
   
   hybrid_arguments=(
-    ${signer_dll}
     sign
-    --pfx ${pfx_path}
-    ${pfx_password_arguments[@]}
-    ${mldsa_key_arguments[@]}
+    ${hybrid_secret_arguments[@]}
     --mldsa-public-key ${mldsa_public_key}
     --reference-library ${repo_root}/KeepVaultMac/Native/osx-arm64/libmldsa87_ref.dylib
     --policy ${repo_root}/KeepVaultMac/Directory.Build.props
     --launcher-pins ${publish_helper_root}/ScannerPins.swift
     --target ${app_bundle}/Contents/MacOS/QR-Scanner
   )
-  if [[ ${#pfx_password_arguments[@]} -eq 0 ]]; then
-    if [[ -n ${pfx_password_service} ]]; then
-      hybrid_arguments+=(--pfx-password-keychain-service ${pfx_password_service})
-      [[ -n ${pfx_password_account} ]] && hybrid_arguments+=(--pfx-keychain-account ${pfx_password_account})
-    else
-      hybrid_arguments+=(--pfx-password-env ${pfx_password_environment})
-    fi
-  fi
 
-  hybrid_keychain_tmp=${publish_helper_root}/hybrid-keychain-app
-  mkdir -p -m 0700 ${hybrid_keychain_tmp}
   (
     cd ${repo_root}/KeepVaultMac
-    TMPDIR=${hybrid_keychain_tmp} \
-      KEEPVAULT_KEYCHAIN_TEMP_ROOT=${hybrid_keychain_tmp} \
-      DOTNET_EnableDiagnostics=0 \
-      ${dotnet_command} ${hybrid_arguments[@]}
+    run_dotnet_signer_clean --with-keychain-temp ${hybrid_arguments[@]}
   )
 
   scanner_bin=${app_bundle}/Contents/MacOS/QR-Scanner
@@ -593,10 +1026,9 @@ else
   # without them is not a lesser build, it is an unusable one. Say which input
   # was missing here rather than letting the verifier report the consequence.
   print -u2 'QR-Scanner hybrid signing was skipped, so the bundle has no sidecars and nothing will accept it.'
-  print -u2 "  RSA PFX:            ${pfx_path} ($([[ -f ${pfx_path} ]] && print present || print MISSING))"
-  print -u2 "  ML-DSA key:         ${mldsa_private_key} ($([[ -f ${mldsa_private_key} ]] && print present || print absent))"
-  print -u2 "  ML-DSA key wrapped: ${mldsa_private_key_encrypted} ($([[ -f ${mldsa_private_key_encrypted} ]] && print present || print MISSING))"
-  print -u2 "  dotnet:             ${dotnet_command} ($([[ -x ${dotnet_command} ]] && print executable || print MISSING))"
+  print -u2 "  RSA PFX:              ${pfx_path} ($([[ -f ${pfx_path} && ! -L ${pfx_path} ]] && print present || print MISSING))"
+  print -u2 "  ML-DSA v12 envelope:  ${mldsa_private_key_encrypted} ($([[ -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} ]] && print present || print MISSING))"
+  print -u2 "  PFX v12 envelope:     ${pfx_password_encrypted} ($([[ -f ${pfx_password_encrypted} && ! -L ${pfx_password_encrypted} ]] && print present || print MISSING))"
   exit 1
 fi
 
@@ -628,41 +1060,24 @@ ${repo_root}/tools/Verify-QR-Scanner-macOS.sh \
 # The archive is a release artifact in its own right. Bind it and both hash
 # manifests to the same RSA-PSS plus ML-DSA-87 policy as the scanner binary.
 archive_hybrid_arguments=(
-  ${signer_dll}
   sign
-  --pfx ${pfx_path}
-  ${pfx_password_arguments[@]}
-  ${mldsa_key_arguments[@]}
+  ${hybrid_secret_arguments[@]}
   --mldsa-public-key ${mldsa_public_key}
   --reference-library ${repo_root}/KeepVaultMac/Native/osx-arm64/libmldsa87_ref.dylib
   --policy ${repo_root}/KeepVaultMac/Directory.Build.props
   --launcher-pins ${publish_helper_root}/ScannerArchivePins.swift
   --target ${release_zip}
 )
-if [[ ${#pfx_password_arguments[@]} -eq 0 ]]; then
-  if [[ -n ${pfx_password_service} ]]; then
-    archive_hybrid_arguments+=(--pfx-password-keychain-service ${pfx_password_service})
-    [[ -n ${pfx_password_account} ]] && archive_hybrid_arguments+=(--pfx-keychain-account ${pfx_password_account})
-  else
-    archive_hybrid_arguments+=(--pfx-password-env ${pfx_password_environment})
-  fi
-fi
-archive_keychain_tmp=${publish_helper_root}/hybrid-keychain-archive
-mkdir -p -m 0700 ${archive_keychain_tmp}
 (
   cd ${repo_root}/KeepVaultMac
-  TMPDIR=${archive_keychain_tmp} \
-    KEEPVAULT_KEYCHAIN_TEMP_ROOT=${archive_keychain_tmp} \
-    DOTNET_EnableDiagnostics=0 \
-    ${dotnet_command} ${archive_hybrid_arguments[@]}
+  run_dotnet_signer_clean --with-keychain-temp ${archive_hybrid_arguments[@]}
 )
 (
   cd ${repo_root}/KeepVaultMac
-  DOTNET_EnableDiagnostics=0 \
-    ${dotnet_command} ${signer_dll} verify \
-      --mldsa-public-key ${mldsa_public_key} \
-      --policy ${repo_root}/KeepVaultMac/Directory.Build.props \
-      --target ${release_zip}
+  run_dotnet_signer_clean verify \
+    --mldsa-public-key ${mldsa_public_key} \
+    --policy ${repo_root}/KeepVaultMac/Directory.Build.props \
+    --target ${release_zip}
 )
 
 expected_outputs=(
@@ -700,82 +1115,6 @@ publish_distribution ${staging_root} ${final_build_root} 0
 app_bundle=${final_build_root}/${app_name}.app
 release_zip=${final_build_root}/${app_name}-macOS.zip
 print "distribution_publish=atomic (${final_build_root})"
-
-if (( install_app )); then
-  destination=/Applications/${app_name}.app
-  backup_dir=$(mktemp -d "${TMPDIR:-/tmp}/qr-scanner-backup.XXXXXXXX")
-  install_stage=${publish_helper_root}/install-stage
-  install_app_bundle=${install_stage}/${app_name}.app
-  mkdir -p -- ${install_stage}
-  ditto ${app_bundle} ${install_app_bundle}
-  for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-    ditto ${app_bundle}${suffix} ${install_app_bundle}${suffix}
-  done
-  has_existing=0
-  if [[ -e ${destination} || -L ${destination} ]]; then
-    if [[ ! -d ${destination} || -L ${destination} ]]; then
-      print -u2 "Refusing to replace a non-directory object: ${destination}"
-      exit 1
-    fi
-    existing_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' ${destination}/Contents/Info.plist 2>/dev/null || true)
-    if [[ ${existing_id} != ${bundle_identifier} ]]; then
-      print -u2 "Refusing to replace foreign app at ${destination} (bundle id: ${existing_id})"
-      exit 1
-    fi
-    has_existing=1
-    ditto ${destination} ${backup_dir}/QR-Scanner.app
-    for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-      if [[ -f ${destination}${suffix} ]]; then
-        ditto ${destination}${suffix} ${backup_dir}/QR-Scanner.app${suffix}
-      fi
-    done
-  fi
-
-  # Atomic replace
-  if (( has_existing )); then
-    backup_name=.QR-Scanner.previous.$RANDOM.$$.app
-    DESTINATION_PATH=${destination} NEW_ITEM_PATH=${install_app_bundle} BACKUP_ITEM_NAME=${backup_name} \
-      osascript -l JavaScript <<'JAVASCRIPT'
-ObjC.import('Foundation')
-const env = $.NSProcessInfo.processInfo.environment
-const dest = $.NSURL.fileURLWithPath(ObjC.unwrap(env.objectForKey('DESTINATION_PATH')))
-const newItem = $.NSURL.fileURLWithPath(ObjC.unwrap(env.objectForKey('NEW_ITEM_PATH')))
-const bName = ObjC.unwrap(env.objectForKey('BACKUP_ITEM_NAME'))
-const err = Ref()
-const replaced = $.NSFileManager.defaultManager.replaceItemAtURLWithItemAtURLBackupItemNameOptionsResultingItemURLError(
-  dest, newItem, bName, $.NSFileManagerItemReplacementWithoutDeletingBackupItem, Ref(), err)
-if (!replaced) throw new Error(err[0] ? ObjC.unwrap(err[0].localizedDescription) : 'replace failed')
-JAVASCRIPT
-  else
-    ditto ${install_app_bundle} ${destination}
-  fi
-
-  # Copy sidecars
-  for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-    if [[ -f ${install_app_bundle}${suffix} ]]; then
-      ditto ${install_app_bundle}${suffix} ${destination}${suffix}
-    fi
-  done
-
-  # Verify installed scanner
-  if ! ${repo_root}/tools/Verify-QR-Scanner-macOS.sh --app ${destination} --allow-development; then
-    print -u2 "Installed QR-Scanner verification failed; restoring previous version..."
-    if (( has_existing )) && [[ -d ${backup_dir}/QR-Scanner.app ]]; then
-      ditto ${backup_dir}/QR-Scanner.app ${destination}
-      for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-        if [[ -f ${backup_dir}/QR-Scanner.app${suffix} ]]; then
-          ditto ${backup_dir}/QR-Scanner.app${suffix} ${destination}${suffix}
-        fi
-      done
-    fi
-    exit 1
-  fi
-
-  chmod -R go+rX ${destination}
-  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-    -f ${destination} > /dev/null 2>&1 || true
-  print "installed=${destination}"
-fi
 
 print "bundle=${app_bundle}"
 print "zip=${release_zip}"

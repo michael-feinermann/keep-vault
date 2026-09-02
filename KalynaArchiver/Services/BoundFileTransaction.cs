@@ -168,6 +168,30 @@ internal sealed class BoundFileTransaction : IDisposable
         IsCommitted = false;
     }
 
+    /// <summary>
+    /// Proves that the transaction's current public name still denotes the
+    /// exact held object. Multi-file commits call this for every member after
+    /// all renames, and again after their final content validation.
+    /// </summary>
+    internal void RequireStillInstalled()
+    {
+        if (_deleted)
+        {
+            throw new InvalidOperationException("A deleted bound file cannot be revalidated.");
+        }
+        if (!IsCommitted)
+        {
+            throw new InvalidOperationException("A bound file cannot be revalidated as installed before commit.");
+        }
+
+        FileStream stream = Stream;
+        WindowsSafeFileSystem.RequireSameObject(
+            stream.SafeFileHandle,
+            _identity,
+            _currentPath,
+            directory: false);
+    }
+
     public void Dispose()
     {
         Interlocked.Exchange(ref _stream, null)?.Dispose();

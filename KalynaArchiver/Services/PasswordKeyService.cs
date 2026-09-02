@@ -91,13 +91,30 @@ public sealed class PasswordKeyService
         ArgumentNullException.ThrowIfNull(firstGeneratedPassword);
         ArgumentNullException.ThrowIfNull(secondGeneratedPassword);
 
-        using (var firstBuf = ContainerKeyDerivation.ParseFactor(firstGeneratedPassword, nameof(firstGeneratedPassword)))
-        using (var secondBuf = ContainerKeyDerivation.ParseFactor(secondGeneratedPassword, nameof(secondGeneratedPassword)))
+        LockedSensitiveBuffer? firstBuf = null;
+        LockedSensitiveBuffer? secondBuf = null;
+        Exception? operationFailure = null;
+        try
         {
+            firstBuf = ContainerKeyDerivation.ParseFactor(firstGeneratedPassword, nameof(firstGeneratedPassword));
+            secondBuf = ContainerKeyDerivation.ParseFactor(secondGeneratedPassword, nameof(secondGeneratedPassword));
             if (CryptographicOperations.FixedTimeEquals(firstBuf.Bytes, secondBuf.Bytes))
             {
                 throw new ArgumentException("Die beiden generierten Passwortfaktoren müssen verschieden sein.", nameof(secondGeneratedPassword));
             }
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                operationFailure,
+                "Generated-factor validation failed and one or more factor buffers could not be released.",
+                secondBuf,
+                firstBuf);
         }
 
         ValidateUserPasswordAnalysis(AnalyzeUserPassword(userPassword, firstGeneratedPassword, secondGeneratedPassword));
@@ -182,6 +199,8 @@ public sealed class PasswordKeyService
         }
 
         LockedSensitiveBuffer? userBuf = null;
+        var generatedBuffers = new List<LockedSensitiveBuffer>();
+        Exception? operationFailure = null;
         try
         {
             try
@@ -202,11 +221,9 @@ public sealed class PasswordKeyService
 
                 try
                 {
-                    using var genBuf = ContainerKeyDerivation.ParseFactor(generatedPassword, nameof(generatedPassword));
-                    if (CryptographicOperations.FixedTimeEquals(userBuf.Bytes, genBuf.Bytes))
-                    {
-                        return true;
-                    }
+                    generatedBuffers.Add(ContainerKeyDerivation.ParseFactor(
+                        generatedPassword,
+                        nameof(generatedPassword)));
                 }
                 catch (ArgumentException)
                 {
@@ -214,11 +231,20 @@ public sealed class PasswordKeyService
                 }
             }
 
-            return false;
+            return generatedBuffers.Any(
+                generated => CryptographicOperations.FixedTimeEquals(userBuf.Bytes, generated.Bytes));
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
         }
         finally
         {
-            userBuf?.Dispose();
+            SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                operationFailure,
+                "Generated-factor comparison failed and one or more sensitive buffers could not be released.",
+                [.. generatedBuffers.AsEnumerable().Reverse(), userBuf]);
         }
     }
 
@@ -482,9 +508,9 @@ public sealed class PasswordPolicyException : ArgumentException
 /// The Argon2id cost parameters this build fixes at compile time.
 /// </summary>
 /// <remarks>
-/// Memory is deliberately not part of this record. v11 derives the memory cost
+/// Memory is deliberately not part of this record. v12 derives the memory cost
 /// from the credentials themselves - <c>m = 1 GiB + 16 KiB * PMI16</c>, see
-/// <see cref="V11MasterKdf.DerivePmi"/> - so there is no single productive
+/// <see cref="V12MasterKdf.DerivePmi"/> - so there is no single productive
 /// memory value to state here. A record that carried a "fixed 1 GiB" alongside
 /// the real iteration and parallelism counts would read like the whole profile
 /// and would be exactly the wrong thing for later code to reuse.
@@ -506,7 +532,7 @@ public sealed record Argon2ExecutionProfile(int Iterations, int Parallelism)
 /// native adapter against an independent Argon2id implementation.
 /// </summary>
 /// <remarks>
-/// This is a test reference point, not the v11 production profile: production
+/// This is a test reference point, not the v12 production profile: production
 /// memory comes from PMI16 and is never this exact value except by chance.
 /// </remarks>
 public static class Argon2ReferenceProfile

@@ -47,6 +47,18 @@ internal static class SpecLintTests
         new(@"version\s*:\s*10\b", "a call that selects derivation version 10"),
     ];
 
+    private static readonly ForbiddenPattern[] ForbiddenInMacProductionSource =
+    [
+        new(@"KZPAQ1\\0", "the removed v11 container magic"),
+        new(@"Kalyna-ZPAQ/v11/", "a v11 cryptographic domain"),
+        new(@"keepvault_argon2id_v11", "the removed v11 native Argon2id export"),
+        new(@"KZPAQ_ARGON2_V11_", "removed v11 native Argon2id constants"),
+        new(@"\bV11MasterKdf\b", "the removed v11 master KDF"),
+        new(@"Version\s*==\s*11\b", "an equality test against container version 11"),
+        new(@"Version\s*!=\s*11\b", "an inequality test against container version 11"),
+        new(@"version\s*:\s*11\b", "a call that selects derivation version 11"),
+    ];
+
     internal static Task NoLegacyLintAsync()
     {
         string root = RepositoryLayout.FindRepositoryRoot();
@@ -84,7 +96,7 @@ internal static class SpecLintTests
 
         string[] requiredTrustAndVendorSources =
         [
-            Path.Combine(root, "external", "Kalyna-reference", "tables.c"),
+            Path.Combine(root, "external", "cryptopp", "kalyna.cpp"),
             Path.Combine(root, "external", "cryptopp", "rijndael_simd.cpp"),
             Path.Combine(root, "KeepVaultMac", "Packaging", "KeepVault.entitlements"),
             Path.Combine(root, "QrCodeScanner", "Packaging", "QrScanner.entitlements"),
@@ -99,12 +111,24 @@ internal static class SpecLintTests
         foreach (string file in sources)
         {
             string text = RepositoryLayout.ReadText(file);
-            foreach (ForbiddenPattern forbidden in ForbiddenInProductionSource)
+            string relative = Path.GetRelativePath(root, file);
+            bool isMacProduction = relative.StartsWith($"KalynaArchiver{Path.DirectorySeparatorChar}Services{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                || relative.StartsWith($"KeepVaultMac{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                || relative.StartsWith($"KeepVaultMac.ReleaseVerifier{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                || relative.StartsWith($"QrCodeScanner{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                || relative.StartsWith($"native{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                || (relative.StartsWith($"tools{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && (relative.Contains("macOS", StringComparison.Ordinal)
+                        || Path.GetExtension(relative) is ".c" or ".cc" or ".cpp" or ".h"));
+            IEnumerable<ForbiddenPattern> forbiddenPatterns = isMacProduction
+                ? ForbiddenInProductionSource.Concat(ForbiddenInMacProductionSource)
+                : ForbiddenInProductionSource;
+            foreach (ForbiddenPattern forbidden in forbiddenPatterns)
             {
                 foreach (Match match in Regex.Matches(text, forbidden.Pattern, RegexOptions.None, TimeSpan.FromSeconds(5)))
                 {
                     int line = text.Take(match.Index).Count(c => c == '\n') + 1;
-                    violations.Add($"{Path.GetRelativePath(root, file)}:{line} contains {forbidden.Why} ({match.Value})");
+                    violations.Add($"{relative}:{line} contains {forbidden.Why} ({match.Value})");
                 }
             }
         }
@@ -116,8 +140,8 @@ internal static class SpecLintTests
         // The role context has to serialize the current schedule version. The
         // byte-exact KAT proves the value; this proves nobody reintroduced a
         // second, older constant to choose from.
-        Require(SuiteKeySchedule.ContextVersion == 11, "The role-key schedule context version is not 11.");
-        Require(ContainerKeyDerivation.ContainerVersion == 11, "The container key derivation is not pinned to v11.");
+        Require(SuiteKeySchedule.ContextVersion == 12, "The role-key schedule context version is not 12.");
+        Require(ContainerKeyDerivation.ContainerVersion == 12, "The container key derivation is not pinned to v12.");
         return Task.CompletedTask;
     }
 
@@ -226,10 +250,10 @@ internal static class SpecLintTests
 
         (string Path, string RollForward)[] globalJsonFiles =
         [
-            ("global.json", "latestMajor"),
-            ("KeepVaultMac/global.json", "latestPatch"),
-            ("KeepVaultMac.Tests/global.json", "latestPatch"),
-            ("KeepVaultMac.ReleaseVerifier/global.json", "latestPatch"),
+            ("global.json", "disable"),
+            ("KeepVaultMac/global.json", "disable"),
+            ("KeepVaultMac.Tests/global.json", "disable"),
+            ("KeepVaultMac.ReleaseVerifier/global.json", "disable"),
         ];
         foreach ((string relativePath, string expectedRollForward) in globalJsonFiles)
         {
@@ -328,9 +352,28 @@ internal static class SpecLintTests
             {
                 if (!string.Equals(target.Name, expectation.BaseTarget, StringComparison.Ordinal)
                     && target.Value.ValueKind == JsonValueKind.Object
-                    && target.Value.TryGetProperty(package, out _))
+                    && target.Value.TryGetProperty(package, out JsonElement ridEntry))
                 {
-                    violations.Add($"{name} carries SDK tool pack {package} outside its base dependency target.");
+                    // NuGet's lock writer repeats a NativeAOT SDK pack in each
+                    // RID target when the project has more than one runtime
+                    // identifier. Those entries are valid only when they are
+                    // the exact same pinned direct pack as the base target.
+                    // Managed-only projects may never carry an SDK tool pack.
+                    bool validRidCopy = expectedVersion is not null
+                        && ridEntry.ValueKind == JsonValueKind.Object
+                        && ridEntry.TryGetProperty("type", out JsonElement ridType)
+                        && ridType.ValueKind == JsonValueKind.String
+                        && ridType.GetString() == "Direct"
+                        && ridEntry.TryGetProperty("requested", out JsonElement ridRequested)
+                        && ridRequested.ValueKind == JsonValueKind.String
+                        && ridRequested.GetString() == $"[{expectedVersion}, )"
+                        && ridEntry.TryGetProperty("resolved", out JsonElement ridResolved)
+                        && ridResolved.ValueKind == JsonValueKind.String
+                        && ridResolved.GetString() == expectedVersion;
+                    if (!validRidCopy)
+                    {
+                        violations.Add($"{name} carries an invalid SDK tool pack {package} outside its base dependency target.");
+                    }
                 }
             }
 
@@ -467,11 +510,11 @@ internal static class SpecLintTests
             }
         }
 
-        RequireInReadme(V11MasterKdf.KdfMode, "KDF mode");
-        RequireInReadme(V11MasterKdf.KdfInputMode, "KDF input mode");
-        RequireInReadme(V11MasterKdf.PasswordMode, "password mode");
+        RequireInReadme(V12MasterKdf.KdfMode, "KDF mode");
+        RequireInReadme(V12MasterKdf.KdfInputMode, "KDF input mode");
+        RequireInReadme(V12MasterKdf.PasswordMode, "password mode");
 
-        // The v11 factor split, stated the way the specification states it.
+        // The v12 factor split, stated the way the specification states it.
         RequireInReadme("A1 = A[0..64)", "factor A split");
         RequireInReadme("A2 = A[64..128)", "factor A split");
         RequireInReadme("B1 = B[0..64)", "factor B split");
@@ -484,7 +527,20 @@ internal static class SpecLintTests
         RequireInReadme("1,048,576 to 2,097,136 KiB", "PMI-derived memory range");
         RequireInReadme("`t=4`, `p=4`", "Argon2id cost parameters");
         RequireInReadme("PIN of 6 to 16 digits", "PIN length policy");
-        RequireInReadme("container format **v11**", "container version");
+        RequireInReadme("container format **v12**", "container version");
+        RequireInReadme("Magic `KZPAQ2\\0`", "v12 container magic");
+
+        string mainWindowSource = RepositoryLayout.ReadText(Path.Combine(root, "KeepVaultMac", "MainWindow.axaml.cs"));
+        string programSource = RepositoryLayout.ReadText(Path.Combine(root, "KeepVaultMac", "Program.cs"));
+        if (!mainWindowSource.Contains("ConfirmAsync(T(\"cupsSpoolWarning\"))", StringComparison.Ordinal))
+        {
+            missing.Add("physical key-sheet printing must confirm the CUPS spool warning");
+        }
+        if (!programSource.Contains("MacNativeAlert.ShowCritical", StringComparison.Ordinal)
+            || !programSource.Contains("Environment.Exit(StartupConfigurationErrorExitCode)", StringComparison.Ordinal))
+        {
+            missing.Add("startup hardening failure must show the native alert and exit with EX_CONFIG");
+        }
 
         Require(missing.Count == 0, "README no longer matches the normative specification:\n  " + string.Join("\n  ", missing));
 
@@ -493,13 +549,17 @@ internal static class SpecLintTests
         // forbidden legacy strings as search needles and negative examples; it
         // is deliberately not a product claim.
         const string AuditFileName = "KEEP_VAULT_V11_MACOS_CODEX_AUDIT.md";
+        const string ReleaseFileName = "KEEP_VAULT_V12_MACOS_RELEASE.md";
         string docsDirectory = Path.Combine(root, "docs");
         string[] referenceDocuments =
         [
             .. Directory.EnumerateFiles(docsDirectory, "*.md")
                 .Where(path => string.Equals(Path.GetFileName(path), AuditFileName, StringComparison.OrdinalIgnoreCase)),
         ];
-        Require(referenceDocuments.Length == 1, "The normative Codex audit reference is missing or ambiguous.");
+        Require(referenceDocuments.Length == 1, "The historical Codex audit reference is missing or ambiguous.");
+        Require(
+            File.Exists(Path.Combine(docsDirectory, ReleaseFileName)),
+            "The normative v12 macOS release contract is missing.");
         string[] docs =
         [
             Path.Combine(root, "README.md"),

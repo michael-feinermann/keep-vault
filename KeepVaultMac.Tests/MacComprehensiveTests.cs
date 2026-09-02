@@ -36,6 +36,47 @@ internal static partial class MacComprehensiveTests
     private const string UserPin = "428317";
     private const string WrongPassword = "Q!m8$Ls2#Vx7%Tp4&Jd9*Wr5+Kn6=Zu3?Ce";
 
+    // SHA3-512 over KZPAQ2\0 || LE32(header length) || the exact canonical
+    // v12 header. These values were produced independently from the C# writer
+    // using Python's SHA3-512 and an explicit System.Text.Json-compatible
+    // encoding of the fixed KAT entropy. Pinning every suite's prefix keeps a
+    // version, field-order, domain, nonce-split or tweak change from hiding
+    // behind the worker-1-vs-N byte comparison.
+    private static readonly IReadOnlyDictionary<EncryptionSuite, string> V12WorkerKatHeaderPrefixSha3 =
+        new Dictionary<EncryptionSuite, string>
+        {
+            [EncryptionSuite.ThreefishOverKalyna] =
+                "C77CE0CEC527974ABF1F79C0BEADD8607BA0BBC2633FA6A5E5C74B28BBB3FA21"
+                + "AA32375C1531D186FDBB9E07629F127763A227D80D47D1046382A19FB5B400C2",
+            [EncryptionSuite.ChaChaOverAes] =
+                "F3EF179BA200F6F857B11CFBB01FE8B27138CCE87E98B469EA90AA44812329764"
+                + "0CD3A1EF840085B1DB4A1A77F4AAA062CE80ECE24E45AA642D31AA89711004D",
+            [EncryptionSuite.MixedCascade] =
+                "8D9BDA5AFD497A9D0B171A3082AC5F9173E54DF56AC01A0E178ECEAF6F8B25C3"
+                + "851B7A8B3061C4933667A2F8199B3749B510F26C97F345570915431512669CC9",
+            [EncryptionSuite.ParanoiaCascade] =
+                "9BE88414B0F62B1F1C9253ABB0394775106FB0E2185C0EFD53459FD92DFC82D20"
+                + "D002CDC5BB951CC4055FD69D6F2E250166F9DCE2A7F10A41EAD1071B8527899",
+            [EncryptionSuite.Threefish1024] =
+                "FB2F2498AFE6DEAE2161B8A6BC5B5A828EAD8581B1CB502009BC67FE5E0046F2"
+                + "D10DA6A3205F6FDD744AE196FB774275DF82EBCB8589AD104880225680E8E74D",
+            [EncryptionSuite.Kalyna512_512] =
+                "CB55EF7ED633A9DFED45FF65F4047495C4544BD8635A39C65ABF17348BCE2F16"
+                + "2C7EED5B48D581E042CA441B6D0C803F6D880D88ACAA2438F1EF477ADFAB84A2",
+            [EncryptionSuite.Shacal2_512] =
+                "05D8A9CE0E59D9C78848FC3A0EC7A1B4C6102358625B36945010E7627D94C0A5"
+                + "8FC22445A80AB274F092A33F3B3A66014C3AF9C7CFD48E29D0C2BB802F502EA0",
+            [EncryptionSuite.Mars448] =
+                "334582185A69C837162C4B27D54D9A37805686715C77C19EAAB2D5778A28EC008"
+                + "A291D566B172009BBD2A7344E3DD4FDBBB0A93E389F59B45FE8D8CBD588886B",
+            [EncryptionSuite.Aes256] =
+                "500232504124476611628586BC754BB964A22E4142883B2EAA997ABAA69A0EACF"
+                + "9C59E3D99BCAD67352EF498C4494C5ACB5540260E3409183BA1552B864BD248",
+            [EncryptionSuite.ChaCha20Poly1305] =
+                "07318F3AB1736E90DFDB9214D0D11852E095A229F44C7F9C6DCA65D33CF7D057"
+                + "C4296626FC064B2C790303013A603B72D782837D6BB93F13072AB43E417B35E7",
+        };
+
     private static readonly AsyncLocal<Random?> CurrentPrng = new();
     internal static uint? TestSeed { get; set; }
 
@@ -68,7 +109,7 @@ internal static partial class MacComprehensiveTests
         // Source- and documentation-level gates. Cheap enough to run on every
         // changed-file pass, including documentation-only changes.
         new("spec.no-legacy-source", "no legacy constructions in production source", SpecLintTests.NoLegacyLintAsync, TestResource.Light, "Spec"),
-        new("spec.normative-v11-docs", "documentation matches the normative v11 specification", SpecLintTests.SpecConsistencyAsync, TestResource.Light, "Spec"),
+        new("spec.normative-v12-docs", "documentation matches the normative v12 specification", SpecLintTests.SpecConsistencyAsync, TestResource.Light, "Spec"),
         new("spec.lockfile-runtimes", "lock files match the platform their project builds on", SpecLintTests.LockFileRuntimesAsync, TestResource.Light, "Spec"),
         new("security.process-hardening", "macOS process hardening", TestProcessHardeningAsync, TestResource.ProcessGlobal, "Security"),
         new("trust.native-tools", "signed native trust and tamper rejection", TestNativeTrustAsync, TestResource.Light, "Trust"),
@@ -82,22 +123,57 @@ internal static partial class MacComprehensiveTests
         new("crypto.primitive-vectors", "SHA3, Skein, Kalyna and Threefish reference vectors", TestPrimitiveVectorsAsync, TestResource.Light, "Crypto"),
         new("crypto.mldsa87-interop", "ML-DSA-87 managed/reference interoperability", TestMldsaInteropAsync, TestResource.CpuHeavy, "Crypto"),
         new("crypto.reference-differential", "randomised differential testing against every reference library", TestReferenceDifferentialAsync, TestResource.CpuHeavy, "Crypto"),
+        new("crypto.v12-parallel-mac-kat", "v12 parallel MAC tree against an independent serial KAT", TestV12ParallelMacKatAsync, TestResource.CpuHeavy, "Crypto"),
         .. FastPathDifferentialTests.Tests,
+        .. SecurityHardeningTests.Tests,
+        .. HybridKeyProtectionTests.Tests,
         // Manual release gate: deliberately absent from full/quick/changed
         // selection. Run it on an otherwise idle host with --performance.
-        new("performance.cipher-suites", "individual cipher and cascade release-performance medians", () =>
+        new("performance.cipher-suites", "primitive and full-container release medians for every cipher suite and cascade", () =>
             {
                 CipherSuitePerformanceTests.Run();
                 return Task.CompletedTask;
             }, TestResource.CpuHeavy, "Performance", IsPerformance: true)
         {
-            Cost = new TestCost(4, 1024, false, TestConstraint.HostExclusive),
+            Cost = new TestCost(4, 3072, true, TestConstraint.HostExclusive),
+        },
+        new("performance.paranoia-256mib-e2e", "256 MiB level-5 Paranoia production Argon2id end-to-end measurement",
+            ReleaseEndToEndPerformanceTests.RunExact256MiBAsync,
+            TestResource.ArgonPeakMemory,
+            "Performance",
+            IsPerformance: true)
+        {
+            Cost = new TestCost(
+                9,
+                8960,
+                true,
+                TestConstraint.HostExclusive | TestConstraint.EntropyState | TestConstraint.ZpaqProcess),
+        },
+        new("performance.paranoia-complex-tree-e2e", "complex heterogeneous tree level-5 Paranoia and KPAR2 repair end-to-end measurement",
+            ReleaseEndToEndPerformanceTests.RunComplexTreeAsync,
+            TestResource.ArgonPeakMemory,
+            "Performance",
+            IsPerformance: true)
+        {
+            Cost = new TestCost(
+                9,
+                8960,
+                true,
+                TestConstraint.HostExclusive | TestConstraint.EntropyState | TestConstraint.ZpaqProcess),
         },
         new("kdf.argon2-equivalence", "Argon2id fixed 1 GiB profile and independent equivalence", TestArgon2Async, TestResource.ArgonHeavy, "KDF"),
+        new("zpaq.seatbelt-runtime", "operation-specific Seatbelt policy, kernel canaries, lifecycle and inherited-FD gate", TestZpaqSeatbeltRuntimeAsync, TestResource.ZpaqGlobal, "ZPAQ")
+        {
+            Cost = new TestCost(2, 512, false, TestConstraint.HostExclusive | TestConstraint.ZpaqProcess),
+        },
         new("zpaq.full-matrix", "ZPAQ levels, streaming, traversal and malformed corpus", TestZpaqAsync, TestResource.ZpaqGlobal, "ZPAQ"),
         new("zpaq.free-space-descriptor", "ZPAQ free-space gate stays bound to the extraction descriptor", TestFreeSpaceDescriptorBindingAsync, TestResource.Light, "ZPAQ"),
-        new("kdf.v11-master-factor-split", "v11 master KDF and 512/512 factor split mutation isolation", TestV11MasterKdfAsync, TestResource.ArgonHeavy, "KDF"),
-        new("containers.v11-kpar2-roundtrip", "v11 container header, decryption and KPAR2 round trip", TestV11ContainersAsync, TestResource.EntropyGlobal, "Containers"),
+        new("kdf.v12-master-factor-split", "v12 master KDF and 512/512 factor split mutation isolation", TestV12MasterKdfAsync, TestResource.ArgonHeavy, "KDF"),
+        new("containers.v12-production-worker-equivalence", "all ten production suites are byte-identical with one worker and production workers", TestV12ProductionWorkerEquivalenceAsync, TestResource.ProcessGlobal, "Containers")
+        {
+            Cost = new TestCost(4, 512, false, TestConstraint.HostExclusive),
+        },
+        new("containers.v12-kpar2-roundtrip", "v12 container, ZPAQ extraction and KPAR2 round trip", TestV12ContainersAsync, TestResource.EntropyGlobal, "Containers"),
         new("deletion.quarantine-symlink", "quarantine rollback object binding and symlink-safe directory traversal", TestQuarantineAndSymlinkSafetyAsync, TestResource.Light, "Deletion"),
         // Reads the process-wide locked-byte counter, so it cannot share the
         // process with another test that locks or releases memory: in parallel
@@ -112,6 +188,7 @@ internal static partial class MacComprehensiveTests
         new("deletion.secure-file-object-binding", "secure deletion destroys and deletes the same object", TestSecureFileObjectBoundDeletionAsync, TestResource.Light, "Deletion"),
         new("recovery.sidecar-transaction", "KPAR2 sidecar replacement survives a failure at every step", TestRecoverySidecarTransactionAsync, TestResource.Light, "Recovery"),
         new("recovery.kpar2-v4-adversarial", "KPAR2 v4 repair, authentication and transplantation rejection", TestRecoveryAsync, TestResource.EntropyGlobal, "Recovery"),
+        .. ParallelRecoveryTests.Tests,
         new("deletion.cryptographic-erase", "cryptographic erase ordering and hard-link refusal", TestCryptographicEraseAsync, TestResource.EntropyGlobal, "Deletion"),
         new("deletion.original-verification", "verified original deletion refuses on any mismatch", TestVerifiedOriginalDeletionAsync, TestResource.Light, "Deletion"),
         .. ContainerSuiteCases(),
@@ -136,6 +213,9 @@ internal static partial class MacComprehensiveTests
 
     private static Task TestProcessHardeningAsync()
     {
+        Require(
+            KalynaArchiver.Program.StartupConfigurationErrorExitCode == 78,
+            "A startup-hardening failure is not mapped to EX_CONFIG (78).");
         MacProcessHardeningStatus status = MacProcessHardening.Apply();
         Require(status.AllRequiredApplied, "Required macOS process hardening was not applied.");
         Require(status.CoreDumpsDisabled, "Core dumps remain enabled.");
@@ -237,7 +317,7 @@ internal static partial class MacComprehensiveTests
     private static Task TestNativeTrustAsync()
     {
         IReadOnlyList<string> logicalNames = NativeToolIntegrity.RequiredLogicalToolNames;
-        Require(logicalNames.Count == 9, $"Production requires {logicalNames.Count} native tools instead of the normative v11 set of nine.");
+        Require(logicalNames.Count == 9, $"Production requires {logicalNames.Count} native tools instead of the normative v12 set of nine.");
         Require(
             logicalNames.Distinct(StringComparer.OrdinalIgnoreCase).Count() == logicalNames.Count,
             "Production's required native-tool inventory contains duplicate logical names.");
@@ -688,19 +768,26 @@ internal static partial class MacComprehensiveTests
         // --- keyed Skein-MAC-1024-1024 -------------------------------------
         byte[] key = RandomNumberGenerator.GetBytes(256);
         byte[] message = RandomNumberGenerator.GetBytes(77);
-        byte[] mac = KeyedSkein1024.Compute(key, "Keep Vault v11 test domain", message);
+        byte[] mac = KeyedSkein1024.Compute(key, "Keep Vault v12 test domain", message);
+        byte[] independentMac = BouncyPersonalisedSkein(
+            key,
+            "Keep Vault v12 test domain",
+            message);
         Require(mac.Length == 128, $"Skein-MAC-1024-1024 returned {mac.Length} bytes, not 128.");
+        Require(
+            FixedEqual(mac, independentMac),
+            "The locked native personalised Skein-MAC differs from the independent Bouncy Castle implementation.");
 
         byte[] otherKey = [.. key];
         otherKey[0] ^= 0xFF;
         Require(
-            !FixedEqual(mac, KeyedSkein1024.Compute(otherKey, "Keep Vault v11 test domain", message)),
+            !FixedEqual(mac, KeyedSkein1024.Compute(otherKey, "Keep Vault v12 test domain", message)),
             "The Skein MAC ignored a change in its key.");
         Require(
             !FixedEqual(mac, KeyedSkein1024.Compute(key, "a different domain", message)),
             "The Skein MAC ignored its personalisation, so role separation would collapse.");
         Require(
-            !FixedEqual(mac, KeyedSkein1024.Compute(key, "Keep Vault v11 test domain", [.. message, 0x00])),
+            !FixedEqual(mac, KeyedSkein1024.Compute(key, "Keep Vault v12 test domain", [.. message, 0x00])),
             "The Skein MAC ignored a change in its message.");
 
         // An unkeyed digest over key||message must not coincide with the keyed
@@ -795,7 +882,7 @@ internal static partial class MacComprehensiveTests
 
         // The role context must carry the current schedule version, so a role
         // key can never be reproduced under an older context serialization.
-        Require(SuiteKeySchedule.ContextVersion == 11, "The role-key schedule no longer identifies itself as v11.");
+        Require(SuiteKeySchedule.ContextVersion == 12, "The role-key schedule no longer identifies itself as v12.");
 
         // --- canonical string mappings ------------------------------------
         Require(string.Equals(SuiteKeySchedule.CanonicalPurposeString(KeyRolePurpose.Encryption), "Encryption", StringComparison.Ordinal), "Canonical purpose string mapping mismatch.");
@@ -811,47 +898,47 @@ internal static partial class MacComprehensiveTests
         Require(string.Equals(SuiteKeySchedule.CanonicalCipherString(CascadeCipher.Shacal2_512), "SHACAL-2-512", StringComparison.Ordinal), "Canonical cipher string mapping mismatch.");
         Require(string.Equals(SuiteKeySchedule.CanonicalCipherString(CascadeCipher.ChaCha20Poly1305), "ChaCha20-Poly1305", StringComparison.Ordinal), "Canonical cipher string mapping mismatch.");
 
-        // --- byte-exact Known Answer Tests for the v11 role schedule ---------
-        // Format: LP(D_ROLE) || LE32(11) || LP(Algorithm) || LE32(StageIndex) || LP(Cipher) || LP(Purpose) || LE32(KeyBits)
+        // --- byte-exact Known Answer Tests for the v12 role schedule ---------
+        // Format: LP(D_ROLE) || LE32(12) || LP(Algorithm) || LE32(StageIndex) || LP(Cipher) || LP(Purpose) || LE32(KeyBits)
         // Both context vectors are built independently from that documented
         // format, not read back out of this implementation.
         byte[] expectedRoleContext = Convert.FromHexString(
-            "170000004B616C796E612D5A5041512F7631312F526F6C654B65790B0000000A0000004B616C796E612D353132000000000E0000004B616C796E612D3531322F3531320A000000456E6372797074696F6E00020000");
+            "170000004B616C796E612D5A5041512F7631322F526F6C654B65790C0000000A0000004B616C796E612D353132000000000E0000004B616C796E612D3531322F3531320A000000456E6372797074696F6E00020000");
         byte[] actualRoleContext = SuiteKeySchedule.RoleContext(
             "Kalyna-512", 0, "Kalyna-512/512", KeyRolePurpose.Encryption, 512);
-        Require(FixedEqual(actualRoleContext, expectedRoleContext), "Byte-exact KAT for the v11 RoleContext failed.");
+        Require(FixedEqual(actualRoleContext, expectedRoleContext), "Byte-exact KAT for the v12 RoleContext failed.");
 
         byte[] expectedSkeinMacCtx = Convert.FromHexString(
-            "170000004B616C796E612D5A5041512F7631312F526F6C654B65790B0000000F000000506172616E6F696143617363616465FFFFFFFF13000000536B65696E2D4D41432D313032342D3130323408000000536B65696E4D616300040000");
+            "170000004B616C796E612D5A5041512F7631322F526F6C654B65790C0000000F000000506172616E6F696143617363616465FFFFFFFF13000000536B65696E2D4D41432D313032342D3130323408000000536B65696E4D616300040000");
         byte[] actualSkeinMacCtx = SuiteKeySchedule.GlobalRoleContext(
             "ParanoiaCascade", "Skein-MAC-1024-1024", KeyRolePurpose.SkeinMac, 1024);
-        Require(FixedEqual(actualSkeinMacCtx, expectedSkeinMacCtx), "Byte-exact KAT for the v11 global Skein-MAC-1024-1024 RoleContext failed.");
+        Require(FixedEqual(actualSkeinMacCtx, expectedSkeinMacCtx), "Byte-exact KAT for the v12 global Skein-MAC-1024-1024 RoleContext failed.");
 
         byte[] syntheticMaster = new byte[128];
         for (int i = 0; i < 128; i++) syntheticMaster[i] = (byte)((i * 7 + 13) % 256);
 
-        // Frozen v11 role value for the synthetic master above. Generated once
+        // Frozen v12 role value for the synthetic master above. Generated once
         // out of band and pinned here; the two PRF families it combines are
         // covered by their own published-vector tests, so what this pins is the
-        // v11 composition - which domains, which halves, and the XOR.
+        // v12 composition - which domains, which halves, and the XOR.
         byte[] expectedSkeinMacRoleKey = Convert.FromHexString(
-            "683077AC819956102C54D4EFC44977136696C5D73EBB7C682BB3BFB758A36977"
-            + "0272CB962AB0331D20C7E60987F9E3C2B6D210B100E1814ABB05431AE8F4D97F"
-            + "0587C911590A91F9B3AA912B82492AC23712072BA86BC9839F3D0E2D5FCAB3EE"
-            + "CCE8474EB17FA163983C892DE11DE37257666609E4519564BA717AFB816B0A7D");
+            "50FE07FE258BC56042F1B6F1CA9FE015B6E84D808EADB0E590A689B827781B512"
+            + "94625A24237D9255E3F924831836E7C420ED0E8D2284901D70075A545F5A5DE7B"
+            + "05E0C6BB288A2D9088B9B79B34697FA564A2E8012BEEBDFCFC801B5EDF22BC6B0"
+            + "05E4A8C2B24D883D480794CC88D32EE534AE834D2DC58F532E4BD0D6F18B9");
         byte[] actualSkeinMacRoleKey = SuiteKeySchedule.DeriveRoleValue(syntheticMaster, actualSkeinMacCtx);
         Require(
             FixedEqual(actualSkeinMacRoleKey, expectedSkeinMacRoleKey),
-            $"Byte-exact KAT for the v11 Skein-MAC-1024-1024 role-key derivation failed: {Convert.ToHexString(actualSkeinMacRoleKey)}");
+            $"Byte-exact KAT for the v12 Skein-MAC-1024-1024 role-key derivation failed: {Convert.ToHexString(actualSkeinMacRoleKey)}");
 
-        // --- byte-exact KAT for the v11 Threefish-1024 CTR tweak --------------
+        // --- byte-exact KAT for the v12 Threefish-1024 CTR tweak --------------
         byte[] threefishNonce = new byte[128];
         for (int i = 0; i < 128; i++) threefishNonce[i] = (byte)(i + 1);
-        byte[] expectedTweak = Convert.FromHexString("BF0FC009B5945FC59C1A65248AD1C130");
+        byte[] expectedTweak = Convert.FromHexString("AB19B54D79B86101B023082BF768C290");
         byte[] actualTweak = KalynaContainerService.CreateSuiteTweak(EncryptionSuite.Threefish1024, threefishNonce);
-        Require(FixedEqual(actualTweak, expectedTweak), "Byte-exact KAT for the v11 Threefish-1024 CTR tweak failed.");
+        Require(FixedEqual(actualTweak, expectedTweak), "Byte-exact KAT for the v12 Threefish-1024 CTR tweak failed.");
 
-        Zero(key, message, mac, otherKey, prk, info, left, right, master, master2, narrow, wide,
+        Zero(key, message, mac, independentMac, otherKey, prk, info, left, right, master, master2, narrow, wide,
             syntheticMaster, expectedRoleContext, actualRoleContext, expectedSkeinMacCtx, actualSkeinMacCtx,
             expectedSkeinMacRoleKey, actualSkeinMacRoleKey,
             threefishNonce, expectedTweak, actualTweak);
@@ -990,15 +1077,15 @@ internal static partial class MacComprehensiveTests
     /// </remarks>
     private static async Task TestKdfPropertiesAsync()
     {
-        const string Algorithm = "Test-Suite-v11-properties";
+        const string Algorithm = "Test-Suite-v12-properties";
         const string Password = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
         const string Pin = "0428193";
         byte[] factorA = RandomNumberGenerator.GetBytes(128);
         byte[] factorB = RandomNumberGenerator.GetBytes(128);
 
         // --- credential paths ----------------------------------------------
-        byte[] qs = V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorA, factorB);
-        byte[] qk = V11MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, factorA, factorB);
+        byte[] qs = V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorA, factorB);
+        byte[] qk = V12MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, factorA, factorB);
         Require(qs.Length == 128 && qk.Length == 128, "A credential hash is not 1024 bits.");
         Require(!FixedEqual(qs, qk), "Both credential paths produced the same value.");
 
@@ -1008,14 +1095,14 @@ internal static partial class MacComprehensiveTests
         byte[] otherB = [.. factorB]; otherB[127] ^= 0xFF;
         foreach ((string label, byte[] changedQs, byte[] changedQk) in new[]
         {
-            ("user password", V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password + "x", Pin, factorA, factorB),
-                              V11MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password + "x", Pin, factorA, factorB)),
-            ("PIN",           V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, "0428194", factorA, factorB),
-                              V11MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, "0428194", factorA, factorB)),
-            ("factor A",      V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, otherA, factorB),
-                              V11MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, otherA, factorB)),
-            ("factor B",      V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorA, otherB),
-                              V11MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, factorA, otherB)),
+            ("user password", V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password + "x", Pin, factorA, factorB),
+                              V12MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password + "x", Pin, factorA, factorB)),
+            ("PIN",           V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, "0428194", factorA, factorB),
+                              V12MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, "0428194", factorA, factorB)),
+            ("factor A",      V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, otherA, factorB),
+                              V12MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, otherA, factorB)),
+            ("factor B",      V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorA, otherB),
+                              V12MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, factorA, otherB)),
         })
         {
             Require(!FixedEqual(qs, changedQs), $"The SHA3 credential path ignores the {label}.");
@@ -1024,7 +1111,7 @@ internal static partial class MacComprehensiveTests
 
         // A leading zero in the PIN has to be significant.
         Require(
-            !FixedEqual(qs, V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, "428193", factorA, factorB)),
+            !FixedEqual(qs, V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, "428193", factorA, factorB)),
             "A leading zero in the PIN was discarded.");
 
         // --- PMI ------------------------------------------------------------
@@ -1032,24 +1119,24 @@ internal static partial class MacComprehensiveTests
         byte[] saltSkein = Enumerable.Range(0, 64).Select(i => (byte)(i * 5 + 7)).ToArray();
         byte[] saltSha3Alt = Enumerable.Range(0, 64).Select(i => (byte)(i * 7 + 11)).ToArray();
         byte[] saltSkeinAlt = Enumerable.Range(0, 64).Select(i => (byte)(i * 11 + 13)).ToArray();
-        (ushort pmi, uint memory) = V11MasterKdf.DerivePmi(
+        (ushort pmi, uint memory) = V12MasterKdf.DerivePmi(
             Algorithm, 1, qs, qk, [], saltSha3, saltSkein);
         Require(
-            memory >= V11MasterKdf.MemoryMinKiB && memory <= V11MasterKdf.MemoryMaxKiB,
+            memory >= V12MasterKdf.MemoryMinKiB && memory <= V12MasterKdf.MemoryMaxKiB,
             $"The derived memory cost {memory} KiB is outside 1 GiB..2 GiB-16 KiB.");
         Require(
-            (memory - V11MasterKdf.MemoryMinKiB) % V11MasterKdf.MemoryStepKiB == 0,
+            (memory - V12MasterKdf.MemoryMinKiB) % V12MasterKdf.MemoryStepKiB == 0,
             "The derived memory cost is not on the 16 KiB grid.");
         Require(
-            memory == V11MasterKdf.MemoryMinKiB + (16u * pmi),
+            memory == V12MasterKdf.MemoryMinKiB + (16u * pmi),
             "The memory cost does not follow m = 1 GiB + 16*PMI.");
-        (ushort pmiAgain, _) = V11MasterKdf.DerivePmi(Algorithm, 1, qs, qk, [], saltSha3, saltSkein);
+        (ushort pmiAgain, _) = V12MasterKdf.DerivePmi(Algorithm, 1, qs, qk, [], saltSha3, saltSkein);
         Require(pmi == pmiAgain, "PMI is not deterministic.");
-        (ushort pmiOtherSalt, _) = V11MasterKdf.DerivePmi(
+        (ushort pmiOtherSalt, _) = V12MasterKdf.DerivePmi(
             Algorithm, 1, qs, qk, [], saltSha3, saltSkeinAlt);
-        (ushort pmiRound2, _) = V11MasterKdf.DerivePmi(
+        (ushort pmiRound2, _) = V12MasterKdf.DerivePmi(
             Algorithm, 2, qs, qk, [], saltSha3, saltSkein);
-        (ushort pmiAltSha3, _) = V11MasterKdf.DerivePmi(
+        (ushort pmiAltSha3, _) = V12MasterKdf.DerivePmi(
             Algorithm, 1, qs, qk, [], saltSha3Alt, saltSkein);
         Require(
             pmi != pmiOtherSalt,
@@ -1072,27 +1159,27 @@ internal static partial class MacComprehensiveTests
 
         // --- associated data separates the branches --------------------------
         Require(
-            !V11MasterKdf.AssociatedData(Algorithm, true, 1)
-                .SequenceEqual(V11MasterKdf.AssociatedData(Algorithm, false, 1)),
+            !V12MasterKdf.AssociatedData(Algorithm, true, 1)
+                .SequenceEqual(V12MasterKdf.AssociatedData(Algorithm, false, 1)),
             "Both Argon2 branches of a round share associated data.");
         Require(
-            !V11MasterKdf.AssociatedData(Algorithm, true, 1)
-                .SequenceEqual(V11MasterKdf.AssociatedData(Algorithm, true, 2)),
+            !V12MasterKdf.AssociatedData(Algorithm, true, 1)
+                .SequenceEqual(V12MasterKdf.AssociatedData(Algorithm, true, 2)),
             "Both Paranoia rounds share associated data on the same branch.");
 
         // --- the real rounds -------------------------------------------------
         // Fixed salts, so the whole group is deterministic. The exact answers
-        // are pinned separately by the v11 known-answer group; what this proves
+        // are pinned separately by the v12 known-answer group; what this proves
         // is the chaining, which fixed vectors alone would not distinguish from
         // a round two that ignores round one.
         byte[] katSaltSha3Round1 = Enumerable.Range(0, 64).Select(i => (byte)((i * 17) + 5)).ToArray();
         byte[] katSaltSkeinRound1 = Enumerable.Range(0, 64).Select(i => (byte)((i * 19) + 23)).ToArray();
         byte[] saltSha3Round2 = Enumerable.Range(0, 64).Select(i => (byte)((i * 29) + 31)).ToArray();
         byte[] saltSkeinRound2 = Enumerable.Range(0, 64).Select(i => (byte)((i * 37) + 41)).ToArray();
-        (_, uint katMemory1) = V11MasterKdf.DerivePmi(
+        (_, uint katMemory1) = V12MasterKdf.DerivePmi(
             Algorithm, 1, qs, qk, [], katSaltSha3Round1, katSaltSkeinRound1);
 
-        byte[] round1 = V11MasterKdf.DeriveRoundMaster(
+        byte[] round1 = V12MasterKdf.DeriveRoundMaster(
             Algorithm, 1, qs, qk, katSaltSha3Round1, katSaltSkeinRound1, secret: null, katMemory1);
         Require(round1.Length == 128, "The round master is not 1024 bits.");
         Require(
@@ -1100,14 +1187,14 @@ internal static partial class MacComprehensiveTests
             "Both halves of the master are identical, so the two branches agreed.");
 
         // Deterministic for identical inputs.
-        byte[] round1Again = V11MasterKdf.DeriveRoundMaster(
+        byte[] round1Again = V12MasterKdf.DeriveRoundMaster(
             Algorithm, 1, qs, qk, katSaltSha3Round1, katSaltSkeinRound1, secret: null, katMemory1);
         Require(FixedEqual(round1, round1Again), "The round master is not deterministic.");
 
         // Paranoia round 2 takes round 1's whole master as the Argon2 secret.
-        (_, uint memory2) = V11MasterKdf.DerivePmi(
+        (_, uint memory2) = V12MasterKdf.DerivePmi(
             Algorithm, 2, qs, qk, round1, saltSha3Round2, saltSkeinRound2);
-        byte[] round2 = V11MasterKdf.DeriveRoundMaster(
+        byte[] round2 = V12MasterKdf.DeriveRoundMaster(
             Algorithm, 2, qs, qk, saltSha3Round2, saltSkeinRound2, secret: round1, memory2);
 
         // This is the round-chaining regression, stated the only way that proves
@@ -1116,20 +1203,20 @@ internal static partial class MacComprehensiveTests
         // independent of what came before it.
         byte[] wrongSecret = [.. round1];
         wrongSecret[0] ^= 0xFF;
-        byte[] round2WrongSecret = V11MasterKdf.DeriveRoundMaster(
+        byte[] round2WrongSecret = V12MasterKdf.DeriveRoundMaster(
             Algorithm, 2, qs, qk, saltSha3Round2, saltSkeinRound2, secret: wrongSecret, memory2);
         Require(
             !FixedEqual(round2, round2WrongSecret),
             "Paranoia round 2 ignored a one-bit change in round 1's master.");
 
-        byte[] round2NoSecret = V11MasterKdf.DeriveRoundMaster(
+        byte[] round2NoSecret = V12MasterKdf.DeriveRoundMaster(
             Algorithm, 2, qs, qk, saltSha3Round2, saltSkeinRound2, secret: null, memory2);
         Require(
             !FixedEqual(round2, round2NoSecret),
             "Paranoia round 2 produced the same master with and without the round-1 secret.");
 
         // The master buffers survive the native calls that clear their copies.
-        byte[] round1AfterUse = V11MasterKdf.DeriveRoundMaster(
+        byte[] round1AfterUse = V12MasterKdf.DeriveRoundMaster(
             Algorithm, 1, qs, qk, katSaltSha3Round1, katSaltSkeinRound1, secret: null, katMemory1);
         Require(
             FixedEqual(round1, round1AfterUse),
@@ -1635,6 +1722,9 @@ internal static partial class MacComprehensiveTests
         byte[] salt = Enumerable.Range(0, 64).Select(value => (byte)(value + 1)).ToArray();
         byte[] native = new byte[64];
         byte[] independent = [];
+        byte[] v12Password = Enumerable.Range(0, 128).Select(value => (byte)(value ^ 0x6D)).ToArray();
+        byte[] v12AssociatedData = "KeepVault/v12/production-export-profile-check"u8.ToArray();
+        byte[] v12Output = new byte[64];
         long lockedBaseline = SecureMemory.LockedBytesForTests;
         try
         {
@@ -1675,13 +1765,35 @@ internal static partial class MacComprehensiveTests
             }
 
             Require(reducedRejected, "Native Argon2 adapter accepted a reduced profile.");
+
+            bool reducedV12ProductionRejected = false;
+            try
+            {
+                NativeArgon2id.HashRaw(
+                    V12MasterKdf.Iterations,
+                    8 * 1024,
+                    V12MasterKdf.Parallelism,
+                    v12Password,
+                    salt,
+                    null,
+                    v12AssociatedData,
+                    v12Output);
+            }
+            catch (CryptographicException)
+            {
+                reducedV12ProductionRejected = true;
+            }
+
+            Require(
+                reducedV12ProductionRejected,
+                "The production v12 Argon2id export accepted the release KAT memory profile.");
             RequireThrows<ArgumentOutOfRangeException>(
                 () => PasswordKeyService.ValidateArgon2Profile(new Argon2ExecutionProfile(1, 1)),
                 "Managed KDF accepted a reduced Argon2 profile.");
         }
         finally
         {
-            Zero(password, salt, native, independent);
+            Zero(password, salt, native, independent, v12Password, v12AssociatedData, v12Output);
         }
 
         return Task.CompletedTask;
@@ -2070,13 +2182,13 @@ internal static partial class MacComprehensiveTests
         // derivation computes it. Asserting against a fixed 2 GiB would pass
         // even if both branches ran at once and each happened to pick a small
         // profile.
-        byte[] sha3Credential = V11MasterKdf.DeriveSha3CredentialHash(
+        byte[] sha3Credential = V12MasterKdf.DeriveSha3CredentialHash(
             parameters.Algorithm, UserPassword, UserPin,
             HexToBytes(factorA), HexToBytes(factorB));
-        byte[] skeinCredential = V11MasterKdf.DeriveSkeinCredentialHash(
+        byte[] skeinCredential = V12MasterKdf.DeriveSkeinCredentialHash(
             parameters.Algorithm, UserPassword, UserPin,
             HexToBytes(factorA), HexToBytes(factorB));
-        (_, uint memoryKiB) = V11MasterKdf.DerivePmi(
+        (_, uint memoryKiB) = V12MasterKdf.DerivePmi(
             parameters.Algorithm, 1, sha3Credential, skeinCredential,
             ReadOnlySpan<byte>.Empty, salts.Sha3Round1, salts.SkeinRound1);
         Zero(sha3Credential, skeinCredential);
@@ -2143,7 +2255,7 @@ internal static partial class MacComprehensiveTests
 
     private static async Task TestHeaderPublishesNoDerivedCostAsync()
     {
-        string root = CreateTempRoot("keep-vault-v11-header-");
+        string root = CreateTempRoot("keep-vault-v12-header-");
         try
         {
             AddMouseSamplesUntilReady();
@@ -2188,7 +2300,7 @@ internal static partial class MacComprehensiveTests
             string[] actual = [.. header.EnumerateObject().Select(property => property.Name)];
             Require(
                 actual.Length == expected.Length && !actual.Except(expected, StringComparer.Ordinal).Any(),
-                $"The v11 header field set changed: {string.Join(", ", actual.Except(expected, StringComparer.Ordinal))}");
+                $"The v12 header field set changed: {string.Join(", ", actual.Except(expected, StringComparer.Ordinal))}");
 
             Require(
                 header.GetProperty("Argon2MemoryKiB").GetInt32() == 0,
@@ -2201,8 +2313,8 @@ internal static partial class MacComprehensiveTests
             {
                 if (property.Value.ValueKind == JsonValueKind.Number
                     && property.Value.TryGetInt64(out long value)
-                    && value >= V11MasterKdf.MemoryMinKiB
-                    && value <= V11MasterKdf.MemoryMaxKiB)
+                    && value >= V12MasterKdf.MemoryMinKiB
+                    && value <= V12MasterKdf.MemoryMaxKiB)
                 {
                     throw new InvalidOperationException(
                         $"Header field {property.Name} holds {value}, inside the derived Argon2id memory range.");
@@ -2245,7 +2357,7 @@ internal static partial class MacComprehensiveTests
     internal static IEnumerable<TestCase> ContainerSuiteCases() =>
         Enum.GetValues<EncryptionSuite>().Select(suite => new TestCase(
             ContainerSuiteId(suite),
-            $"v11 container roundtrip and manipulation rejection: {suite}",
+            $"v12 container roundtrip and manipulation rejection: {suite}",
             () => TestContainersAsync(suite),
             TestResource.EntropyGlobal,
             "Containers"));
@@ -2318,7 +2430,7 @@ internal static partial class MacComprehensiveTests
         Require(!entropy.HasPendingEncryptionParameters, $"{suite} did not consume prepared entropy exactly once.");
         ValidateContainerHeader(path, suite);
         KalynaContainerInfo info = await containers.ReadContainerInfoAsync(path, CancellationToken.None).ConfigureAwait(false);
-        Require(info.Version == 11 && info.Suite == suite && info.GeneratedPasswordFactorCount == 2 && info.GeneratedPasswordBits == 1024, $"{suite} header metadata mismatch.");
+        Require(info.Version == 12 && info.Suite == suite && info.GeneratedPasswordFactorCount == 2 && info.GeneratedPasswordBits == 1024, $"{suite} header metadata mismatch.");
 
         using var output = new MemoryStream();
         await containers.DecryptToStreamAsync(path, UserPassword, UserPin, factorA, factorB, output, null, CancellationToken.None).ConfigureAwait(false);
@@ -2363,13 +2475,13 @@ internal static partial class MacComprehensiveTests
             () => containers.ReadContainerInfoAsync(nonCanonical, CancellationToken.None),
             $"{suite} accepted noncanonical header JSON.").ConfigureAwait(false);
 
-        // v11 is a clean break. A container claiming any other version must be
+        // v12 is a clean break. A container claiming any other version must be
         // refused outright rather than read on a compatibility path, and the
         // refusal must not depend on the MACs noticing the edit afterwards.
-        foreach (int rejected in new[] { 8, 9, 10, 12 })
+        foreach (int rejected in new[] { 8, 9, 10, 11 })
         {
             string downgraded = CopyContainer(path, root, $"{suite}-version-{rejected}.kzpaq");
-            ReplaceHeaderToken(downgraded, "\"Version\":11", $"\"Version\":{rejected}");
+            ReplaceHeaderToken(downgraded, "\"Version\":12", $"\"Version\":{rejected}");
             await RequireThrowsAsync<InvalidDataException>(
                 () => containers.ReadContainerInfoAsync(downgraded, CancellationToken.None),
                 $"{suite} accepted a container claiming version {rejected}.").ConfigureAwait(false);
@@ -2707,7 +2819,7 @@ internal static partial class MacComprehensiveTests
             int locatorFormatVersion = BinaryPrimitives.ReadInt32LittleEndian(sidecarHeader.AsSpan(8));
             Require(locatorFormatVersion == 4, $"KPAR2 format version mismatch: expected 4, got {locatorFormatVersion}");
             int locatorContainerVersion = BinaryPrimitives.ReadInt32LittleEndian(sidecarHeader.AsSpan(72));
-            Require(locatorContainerVersion == 11, $"KPAR2 container version mismatch: expected 11, got {locatorContainerVersion}");
+            Require(locatorContainerVersion == 12, $"KPAR2 container version mismatch: expected 12, got {locatorContainerVersion}");
 
             // Targeted ContainerVersion tamper.
             //
@@ -2741,7 +2853,7 @@ internal static partial class MacComprehensiveTests
             // still authenticate. Without this the rejections below could just
             // as well mean the rewrite itself produced an invalid locator.
             byte[] rewrittenUnchanged = await File.ReadAllBytesAsync(authenticatedSidecar).ConfigureAwait(false);
-            RewriteLocatorContainerVersion(rewrittenUnchanged, 11);
+            RewriteLocatorContainerVersion(rewrittenUnchanged, 12);
             await File.WriteAllBytesAsync(tamperedRecoveryPath, rewrittenUnchanged).ConfigureAwait(false);
             RecoveryRepairResult rewrittenRepair = await recovery.VerifyAndRepairAuthenticatedAsync(
                 tamperedContainer, UserPassword, UserPin, factorA, factorB, null, CancellationToken.None).ConfigureAwait(false);
@@ -3720,7 +3832,7 @@ internal static partial class MacComprehensiveTests
         }
 
         // A payload with structure an attacker would recognise instantly.
-        byte[] marker = "KZPAQ1\0KEEP-VAULT-PLAINTEXT-MARKER"u8.ToArray();
+        byte[] marker = "KZPAQ2\0KEEP-VAULT-PLAINTEXT-MARKER"u8.ToArray();
         byte[] plaintext = new byte[64 * 1024];
         for (int offset = 0; offset + marker.Length <= plaintext.Length; offset += marker.Length)
         {
@@ -3787,7 +3899,7 @@ internal static partial class MacComprehensiveTests
         using FileStream input = File.OpenRead(path);
         byte[] magic = new byte[7];
         input.ReadExactly(magic);
-        Require(FixedEqual(magic, "KZPAQ1\0"u8), "Container magic mismatch.");
+        Require(FixedEqual(magic, "KZPAQ2\0"u8), "Container magic mismatch.");
         Span<byte> lengthBytes = stackalloc byte[4];
         input.ReadExactly(lengthBytes);
         int length = BinaryPrimitives.ReadInt32LittleEndian(lengthBytes);
@@ -3800,7 +3912,7 @@ internal static partial class MacComprehensiveTests
             JsonElement header = document.RootElement;
             EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.Get(suite);
             int version = header.GetProperty("Version").GetInt32();
-            Require(version == 11, "Container version is not v11.");
+            Require(version == 12, "Container version is not v12.");
 
             // The second-round fields are always present. Present-and-null is
             // not cosmetic: the reader compares the header against its own
@@ -3857,7 +3969,7 @@ internal static partial class MacComprehensiveTests
             }
             Require(header.GetProperty("Algorithm").GetString() == parameters.Algorithm, "Container algorithm label mismatch.");
             Require(header.GetProperty("CounterEndian").GetString() == EncryptionSuiteCatalog.CounterEndian, "Container counter endian mismatch.");
-            // Zero, and asserted as zero. v11 derives the memory cost from the
+            // Zero, and asserted as zero. v12 derives the memory cost from the
             // credentials; a header that published it would give away the one
             // KDF parameter that is deliberately secret.
             Require(header.GetProperty("Argon2MemoryKiB").GetInt32() == 0, "Container header published the Argon2id memory cost.");
@@ -4755,7 +4867,7 @@ internal static partial class MacComprehensiveTests
             "The two-round derivation did not consume the salt pool exactly once.");
 
         // The regression test that lived here proved round two no longer ran
-        // over a zeroed prehash. v11 does not share a prehash between rounds at
+        // over a zeroed prehash. v12 does not share a prehash between rounds at
         // all: round two takes round one's complete master as Argon2id's secret
         // input, which the KDF-properties group verifies directly by changing a
         // single bit of round one and observing round two change with it.
@@ -5084,25 +5196,25 @@ internal static partial class MacComprehensiveTests
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
-    private static async Task TestV11MasterKdfAsync()
+    private static async Task TestV12MasterKdfAsync()
     {
-        const string Algorithm = "Test-Suite-v11";
+        const string Algorithm = "Test-Suite-v12";
         const string Password = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
         const string Pin = "0428193";
         byte[] factorA = RandomNumberGenerator.GetBytes(128);
         byte[] factorB = RandomNumberGenerator.GetBytes(128);
 
         // --- credential paths ----------------------------------------------
-        byte[] qs = V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorA, factorB);
-        byte[] qk = V11MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, factorA, factorB);
-        Require(qs.Length == 128 && qk.Length == 128, "A v11 credential hash is not 1024 bits.");
+        byte[] qs = V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorA, factorB);
+        byte[] qk = V12MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, factorA, factorB);
+        Require(qs.Length == 128 && qk.Length == 128, "A v12 credential hash is not 1024 bits.");
         Require(!FixedEqual(qs, qk), "Both credential paths produced the same value.");
 
         // Factor role binding: (A, B) != (B, A)
-        byte[] qsSwapped = V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorB, factorA);
-        byte[] qkSwapped = V11MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, factorB, factorA);
-        Require(!FixedEqual(qs, qsSwapped), "v11 SHA3 credential path is symmetric in factors (A,B) vs (B,A).");
-        Require(!FixedEqual(qk, qkSwapped), "v11 Skein credential path is symmetric in factors (A,B) vs (B,A).");
+        byte[] qsSwapped = V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorB, factorA);
+        byte[] qkSwapped = V12MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, factorB, factorA);
+        Require(!FixedEqual(qs, qsSwapped), "v12 SHA3 credential path is symmetric in factors (A,B) vs (B,A).");
+        Require(!FixedEqual(qk, qkSwapped), "v12 Skein credential path is symmetric in factors (A,B) vs (B,A).");
 
         // --- Comprehensive 256-Byte Mutation Isolation Testing (512/512 Factor Split) ---
         // Mutating each byte of factor A:
@@ -5110,7 +5222,7 @@ internal static partial class MacComprehensiveTests
         {
             byte[] mutA = (byte[])factorA.Clone();
             mutA[i] ^= 0x5A;
-            byte[] mutQs = V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, mutA, factorB);
+            byte[] mutQs = V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, mutA, factorB);
             if (i < 64)
             {
                 // A1 slice: Q_S1 MUST change, Q_S2 MUST be 100% bit-exact identical
@@ -5130,7 +5242,7 @@ internal static partial class MacComprehensiveTests
         {
             byte[] mutB = (byte[])factorB.Clone();
             mutB[i] ^= 0xA5;
-            byte[] mutQs = V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorA, mutB);
+            byte[] mutQs = V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, factorA, mutB);
             if (i < 64)
             {
                 // B1 slice: Q_S1 MUST change, Q_S2 MUST be 100% bit-exact identical
@@ -5150,7 +5262,7 @@ internal static partial class MacComprehensiveTests
         {
             byte[] mutA = (byte[])factorA.Clone();
             mutA[idx] ^= 0xFF;
-            byte[] mutQs = V11MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, mutA, factorB);
+            byte[] mutQs = V12MasterKdf.DeriveSha3CredentialHash(Algorithm, Password, Pin, mutA, factorB);
             if (idx <= 63)
             {
                 Require(!FixedEqual(qs[..64], mutQs[..64]) && FixedEqual(qs[64..], mutQs[64..]),
@@ -5169,26 +5281,26 @@ internal static partial class MacComprehensiveTests
         {
             byte[] mutA = (byte[])factorA.Clone();
             mutA[i] ^= 0x33;
-            byte[] mutQk = V11MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, mutA, factorB);
+            byte[] mutQk = V12MasterKdf.DeriveSkeinCredentialHash(Algorithm, Password, Pin, mutA, factorB);
             Require(!FixedEqual(qk, mutQk), $"Skein MAC ignored mutation in factor A at index {i}.");
         }
 
         // --- PMI and memory cost -------------------------------------------
         byte[] saltSha3 = Enumerable.Range(0, 64).Select(i => (byte)(i * 3 + 1)).ToArray();
         byte[] saltSkein = Enumerable.Range(0, 64).Select(i => (byte)(i * 5 + 7)).ToArray();
-        (ushort pmi, uint memory) = V11MasterKdf.DerivePmi(
+        (ushort pmi, uint memory) = V12MasterKdf.DerivePmi(
             Algorithm, 1, qs, qk, [], saltSha3, saltSkein);
         Require(
-            memory >= V11MasterKdf.MemoryMinKiB && memory <= V11MasterKdf.MemoryMaxKiB,
+            memory >= V12MasterKdf.MemoryMinKiB && memory <= V12MasterKdf.MemoryMaxKiB,
             $"The derived memory cost {memory} KiB is outside 1 GiB..2 GiB-16 KiB.");
         Require(
-            (memory - V11MasterKdf.MemoryMinKiB) % V11MasterKdf.MemoryStepKiB == 0,
+            (memory - V12MasterKdf.MemoryMinKiB) % V12MasterKdf.MemoryStepKiB == 0,
             "The derived memory cost is not on the 16 KiB grid.");
         Require(
-            memory == V11MasterKdf.MemoryMinKiB + (16u * pmi),
+            memory == V12MasterKdf.MemoryMinKiB + (16u * pmi),
             "The memory cost does not follow m = 1 GiB + 16*PMI.");
 
-        // --- v11 master round derivation and exact known-answer tests ------
+        // --- v12 master round derivation and exact known-answer tests ------
         //
         // The two SHA3 halves are pinned against values produced outside this
         // implementation (Python hashlib SHA3-512 over the same length-prefixed
@@ -5197,9 +5309,9 @@ internal static partial class MacComprehensiveTests
         // frozen composition vectors: the primitives underneath them are
         // separately covered by the Skein-1024 official-vector tests and the
         // Argon2id PHC reference-CLI comparison, so what these pin is the way
-        // v11 wires them together - key = A||B, secret K = full M1, which salt
+        // v12 wires them together - key = A||B, secret K = full M1, which salt
         // feeds which branch, and the interleave order.
-        const string KatAlgorithm = "Kalyna-512/Threefish-1024/v11";
+        const string KatAlgorithm = "Kalyna-512/Threefish-1024/v12";
         const string KatPassword = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
         const string KatPin = "428317";
         byte[] katFactorA = Enumerable.Range(0, 128).Select(i => (byte)((i * 7) + 3)).ToArray();
@@ -5210,85 +5322,85 @@ internal static partial class MacComprehensiveTests
         byte[] katSaltSkeinRound2 = Enumerable.Range(0, 64).Select(i => (byte)((i * 37) + 41)).ToArray();
 
         const string ExpectedQs1 =
-            "7E54073D2D6FFC7B4C543AFACF8A0567E76B459E38E4500016190EE7C09991CC"
-            + "A03BEB2CF2737E6903ACBAEAC471117643C439C2796309530BEF086B4879E513";
+            "92BEA2914B9F5710766E96C6376841513A12DC9D5450A814344432E147F151C8"
+            + "EA2590240C84936D353BDEE85C3C6B7E33215BC0E8C175B7A6F37BA66BC1999B";
         const string ExpectedQs2 =
-            "C0BB2C145CA81FFAB67DF4D69B9742FBEF44FECC1EA3E1A9C9626E2A41814F69"
-            + "09ED3BFCB9B01A50805929B5F3873BA4C70CE03A1737BCD35D4504AFFD0A7CE3";
+            "7014DB1862D3AED6338B07CAD00DB60420138BFC15E7EB5EEC9CB5C0CF47C068"
+            + "3AB47D248CE5D61C4FCD7F3855D1FE4C8CA3E3A9D9C6AFA8BCF08BF854149A71";
         const string ExpectedQk =
-            "B5D6C3D13F9B63FAF593C1EBB89016DCE381A1B331661E2A8976966B9DF5E716"
-            + "7DE1173BEEF20C534AA7987025E2F4EA598EDEEA36CCC38AAFFEDC32C2A739DB"
-            + "B36330FAB848BF5CE031E99537E1B97112FB828F009462863E10F948AE1BFE6B"
-            + "B7DD9B063BE1D1DC78D09CB9C322CFA26B8EB0055A561E58FBDA069F39F644F0";
-        const ushort ExpectedPmi1 = 26144;
-        const uint ExpectedMemory1 = 1_466_880;
+            "5E0E22CD6C79449323DA80AF74DAE373FE56D9799887002DC1B9D89A8EF752CC"
+            + "7DAB06ACE5FEEBE43A75AA98659136A1A66FB910026B1C07E6D2AA6A06E8EFC3"
+            + "F03D5C0EAB0F3BFEFC6C4709A57C92B8A9EA5770C301C0926BE8E486B881FDCC"
+            + "7A1184893CFBB25BBF6244D761BC0CA81C52091BBB97D08046E827907C4A6805";
+        const ushort ExpectedPmi1 = 27922;
+        const uint ExpectedMemory1 = 1_495_328;
         const string ExpectedMaster1 =
-            "06B237C0433C0A2362458C818B7C43E248ECF605859AD37C64965A49BF403A47"
-            + "4B3ABFF992649199AD6A42182662C1F466B988D00373A4C6189AFA4F3975BD9B"
-            + "9884F4D66C2CB634788814614FB4B18264AC11F7BDFC63BD02319729F415E2B1"
-            + "CF5987BDF19443051832E883FB0B9AAE07719D56BD2920F1A96CC0110B447718";
-        const ushort ExpectedPmi2 = 29647;
-        const uint ExpectedMemory2 = 1_522_928;
+            "FFB0A3FAADEB67DBDB2BD90F419693300C4E165BCFC2446D76BF7D99FBDD358C"
+            + "04D64A733B1012EDA348DE22F04000B2CD1EB5E41474AC9D8F9FC90EB6D86056"
+            + "C33AE0C7A3614635C47305817775D92DA0910F82DEC0F5E598B9D9A9D9130332"
+            + "4FBEE5B6F04570420F2CD62778FC2719D981A747D3B8878EA622D15F6FE675D1";
+        const ushort ExpectedPmi2 = 3279;
+        const uint ExpectedMemory2 = 1_101_040;
         const string ExpectedMaster2 =
-            "BC37DAB1E59CDD6EDCE4DD00EBC7CF136A56573BFF5BD9C41B3A4C305BCE9834"
-            + "5DECD0427CCE3E7889BCB9BB7FFEDE6FA761E1A243B09EDEA755FA1602D55390"
-            + "779C9F2BE19EBD60B45A90E562EAEDB8D6601B9A2B9AB65FD0A3ABED8996A003"
-            + "6A2D01B130FDE162EA05CCF70C005AE28790CA241E6CAD63C96649B74E3F6E0A";
+            "CEF0250D3E7C6055EE299AAB4A72BABEFCAAD84DD57BA21ABEC4D555E33EDDD4"
+            + "DDE92FB63183D9D890B052C4090A48DDCED10A52BB05915D32FA4AC09E7C9C95"
+            + "32F4C11A72D0B50F300D0FEA640BF72346993782331CDAF49112B8C67CDE4CDD"
+            + "8298770DA3E33AB8F20BBEB007BCAB4D67C76D9374775D62619136CB5030BDC5";
 
-        byte[] katQs = V11MasterKdf.DeriveSha3CredentialHash(KatAlgorithm, KatPassword, KatPin, katFactorA, katFactorB);
-        byte[] katQk = V11MasterKdf.DeriveSkeinCredentialHash(KatAlgorithm, KatPassword, KatPin, katFactorA, katFactorB);
-        Require(katQs.Length == 128 && katQk.Length == 128, "A v11 KAT credential hash is not 1024 bits.");
+        byte[] katQs = V12MasterKdf.DeriveSha3CredentialHash(KatAlgorithm, KatPassword, KatPin, katFactorA, katFactorB);
+        byte[] katQk = V12MasterKdf.DeriveSkeinCredentialHash(KatAlgorithm, KatPassword, KatPin, katFactorA, katFactorB);
+        Require(katQs.Length == 128 && katQk.Length == 128, "A v12 KAT credential hash is not 1024 bits.");
         Require(
             Convert.ToHexString(katQs.AsSpan(0, 64)) == ExpectedQs1,
-            $"v11 KAT Q_S1 mismatch: {Convert.ToHexString(katQs.AsSpan(0, 64))}");
+            $"v12 KAT Q_S1 mismatch: {Convert.ToHexString(katQs.AsSpan(0, 64))}");
         Require(
             Convert.ToHexString(katQs.AsSpan(64, 64)) == ExpectedQs2,
-            $"v11 KAT Q_S2 mismatch: {Convert.ToHexString(katQs.AsSpan(64, 64))}");
+            $"v12 KAT Q_S2 mismatch: {Convert.ToHexString(katQs.AsSpan(64, 64))}");
         Require(
             Convert.ToHexString(katQs) == ExpectedQs1 + ExpectedQs2,
-            "v11 KAT Q_S is not Q_S1 || Q_S2.");
+            "v12 KAT Q_S is not Q_S1 || Q_S2.");
         Require(
             Convert.ToHexString(katQk) == ExpectedQk,
-            $"v11 KAT Q_K mismatch: {Convert.ToHexString(katQk)}");
+            $"v12 KAT Q_K mismatch: {Convert.ToHexString(katQk)}");
 
-        (ushort katPmi1, uint katMemory1) = V11MasterKdf.DerivePmi(
+        (ushort katPmi1, uint katMemory1) = V12MasterKdf.DerivePmi(
             KatAlgorithm, 1, katQs, katQk, [], katSaltSha3Round1, katSaltSkeinRound1);
         Require(
             katPmi1 == ExpectedPmi1 && katMemory1 == ExpectedMemory1,
-            $"v11 KAT round 1 PMI/memory mismatch: {katPmi1}/{katMemory1}");
+            $"v12 KAT round 1 PMI/memory mismatch: {katPmi1}/{katMemory1}");
         Require(
-            katMemory1 >= V11MasterKdf.MemoryMinKiB && katMemory1 <= V11MasterKdf.MemoryMaxKiB,
-            "v11 KAT round 1 memory cost is outside 1 GiB..2 GiB-16 KiB.");
+            katMemory1 >= V12MasterKdf.MemoryMinKiB && katMemory1 <= V12MasterKdf.MemoryMaxKiB,
+            "v12 KAT round 1 memory cost is outside 1 GiB..2 GiB-16 KiB.");
         Require(
-            katMemory1 == V11MasterKdf.MemoryMinKiB + (V11MasterKdf.MemoryStepKiB * katPmi1),
-            "v11 KAT round 1 memory cost does not follow m = 1 GiB + 16*PMI.");
+            katMemory1 == V12MasterKdf.MemoryMinKiB + (V12MasterKdf.MemoryStepKiB * katPmi1),
+            "v12 KAT round 1 memory cost does not follow m = 1 GiB + 16*PMI.");
 
-        byte[] katRound1 = V11MasterKdf.DeriveRoundMaster(
+        byte[] katRound1 = V12MasterKdf.DeriveRoundMaster(
             KatAlgorithm, 1, katQs, katQk, katSaltSha3Round1, katSaltSkeinRound1, null, katMemory1);
-        Require(katRound1.Length == 128, "v11 KAT round 1 master is not 1024 bits.");
+        Require(katRound1.Length == 128, "v12 KAT round 1 master is not 1024 bits.");
         Require(
             Convert.ToHexString(katRound1) == ExpectedMaster1,
-            $"v11 KAT M1 mismatch: {Convert.ToHexString(katRound1)}");
+            $"v12 KAT M1 mismatch: {Convert.ToHexString(katRound1)}");
 
-        (ushort katPmi2, uint katMemory2) = V11MasterKdf.DerivePmi(
+        (ushort katPmi2, uint katMemory2) = V12MasterKdf.DerivePmi(
             KatAlgorithm, 2, katQs, katQk, katRound1, katSaltSha3Round2, katSaltSkeinRound2);
         Require(
             katPmi2 == ExpectedPmi2 && katMemory2 == ExpectedMemory2,
-            $"v11 KAT round 2 PMI/memory mismatch: {katPmi2}/{katMemory2}");
+            $"v12 KAT round 2 PMI/memory mismatch: {katPmi2}/{katMemory2}");
         Require(
-            katMemory2 >= V11MasterKdf.MemoryMinKiB && katMemory2 <= V11MasterKdf.MemoryMaxKiB,
-            "v11 KAT round 2 memory cost is outside 1 GiB..2 GiB-16 KiB.");
+            katMemory2 >= V12MasterKdf.MemoryMinKiB && katMemory2 <= V12MasterKdf.MemoryMaxKiB,
+            "v12 KAT round 2 memory cost is outside 1 GiB..2 GiB-16 KiB.");
         Require(
-            katMemory2 == V11MasterKdf.MemoryMinKiB + (V11MasterKdf.MemoryStepKiB * katPmi2),
-            "v11 KAT round 2 memory cost does not follow m = 1 GiB + 16*PMI.");
+            katMemory2 == V12MasterKdf.MemoryMinKiB + (V12MasterKdf.MemoryStepKiB * katPmi2),
+            "v12 KAT round 2 memory cost does not follow m = 1 GiB + 16*PMI.");
 
-        byte[] katRound2 = V11MasterKdf.DeriveRoundMaster(
+        byte[] katRound2 = V12MasterKdf.DeriveRoundMaster(
             KatAlgorithm, 2, katQs, katQk, katSaltSha3Round2, katSaltSkeinRound2, katRound1, katMemory2);
-        Require(katRound2.Length == 128, "v11 KAT round 2 master is not 1024 bits.");
-        Require(!FixedEqual(katRound1, katRound2), "v11 KAT round 1 and round 2 masters collided.");
+        Require(katRound2.Length == 128, "v12 KAT round 2 master is not 1024 bits.");
+        Require(!FixedEqual(katRound1, katRound2), "v12 KAT round 1 and round 2 masters collided.");
         Require(
             Convert.ToHexString(katRound2) == ExpectedMaster2,
-            $"v11 KAT M2 mismatch: {Convert.ToHexString(katRound2)}");
+            $"v12 KAT M2 mismatch: {Convert.ToHexString(katRound2)}");
 
         // Round 2 must consume the complete 128-byte M1 as the Argon2id secret.
         // A short secret is refused outright rather than zero-padded up to the
@@ -5296,25 +5408,25 @@ internal static partial class MacComprehensiveTests
         // bytes of padding and still produced a usable-looking key.
         byte[] truncatedSecret = katRound1[..64];
         RequireThrows<ArgumentException>(
-            () => V11MasterKdf.DeriveRoundMaster(
+            () => V12MasterKdf.DeriveRoundMaster(
                 KatAlgorithm, 2, katQs, katQk, katSaltSha3Round2, katSaltSkeinRound2, truncatedSecret, katMemory2),
-            "v11 round 2 accepted a truncated M1 as the Argon2id secret.");
+            "v12 round 2 accepted a truncated M1 as the Argon2id secret.");
 
         // A short credential hash is refused for the same reason.
         RequireThrows<ArgumentException>(
-            () => V11MasterKdf.DeriveRoundMaster(
+            () => V12MasterKdf.DeriveRoundMaster(
                 KatAlgorithm, 1, katQs[..64], katQk, katSaltSha3Round1, katSaltSkeinRound1, null, katMemory1),
-            "v11 accepted a truncated credential hash as the Argon2id password.");
+            "v12 accepted a truncated credential hash as the Argon2id password.");
 
         // An off-grid or out-of-range memory cost cannot reach Argon2 either.
         RequireThrows<CryptographicException>(
-            () => V11MasterKdf.DeriveRoundMaster(
-                KatAlgorithm, 1, katQs, katQk, katSaltSha3Round1, katSaltSkeinRound1, null, V11MasterKdf.MemoryMinKiB - 16),
-            "v11 accepted an Argon2id memory cost below the PMI range.");
+            () => V12MasterKdf.DeriveRoundMaster(
+                KatAlgorithm, 1, katQs, katQk, katSaltSha3Round1, katSaltSkeinRound1, null, V12MasterKdf.MemoryMinKiB - 16),
+            "v12 accepted an Argon2id memory cost below the PMI range.");
         RequireThrows<CryptographicException>(
-            () => V11MasterKdf.DeriveRoundMaster(
-                KatAlgorithm, 1, katQs, katQk, katSaltSha3Round1, katSaltSkeinRound1, null, V11MasterKdf.MemoryMinKiB + 1),
-            "v11 accepted an Argon2id memory cost off the 16 KiB grid.");
+            () => V12MasterKdf.DeriveRoundMaster(
+                KatAlgorithm, 1, katQs, katQk, katSaltSha3Round1, katSaltSkeinRound1, null, V12MasterKdf.MemoryMinKiB + 1),
+            "v12 accepted an Argon2id memory cost off the 16 KiB grid.");
 
         await Task.CompletedTask.ConfigureAwait(false);
         Zero(factorA, factorB, qs, qk, qsSwapped, qkSwapped, saltSha3, saltSkein,
@@ -5516,15 +5628,450 @@ internal static partial class MacComprehensiveTests
         return Task.CompletedTask;
     }
 
-    private static async Task TestV11ContainersAsync()
+    private static async Task TestV12ParallelMacKatAsync()
     {
-        string root = CreateTempRoot("keep-vault-v11-containers-");
+        byte[] prefixOne = "KZPAQ2-v12-prefix"u8.ToArray();
+        byte[] prefixTwo = new byte[193];
+        byte[] ciphertext = new byte[(2 * ParallelContainerAuthenticator.LeafBytes) + 333];
+        byte[] sha3Key = new byte[64];
+        byte[] skeinKey = new byte[128];
+        byte[] streamPadding = new byte[37];
+        FillKatEntropy(prefixTwo, 0x31, 17);
+        FillKatEntropy(ciphertext, 0x57, 101);
+        FillKatEntropy(sha3Key, 0x83, 13);
+        FillKatEntropy(skeinKey, 0xA9, 29);
+        FillKatEntropy(streamPadding, 0xC7, 7);
+
+        byte[] streamBytes = [.. streamPadding, .. ciphertext];
+        (byte[] Sha3Tag, byte[] SkeinTag) reference = ([], []);
+        (byte[] Sha3Tag, byte[] SkeinTag) serial = ([], []);
+        (byte[] Sha3Tag, byte[] SkeinTag) production = ([], []);
+        try
+        {
+            reference = ComputeIndependentV12MacTree(
+                [prefixOne, prefixTwo], ciphertext, sha3Key, skeinKey);
+            using var stream = new MemoryStream(streamBytes, writable: false);
+            using (ParallelContainerAuthenticator.UseWorkerCountForTests(1))
+            {
+                serial = await ParallelContainerAuthenticator.ComputeAsync(
+                    stream,
+                    streamPadding.Length,
+                    [prefixOne, prefixTwo],
+                    sha3Key,
+                    skeinKey,
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+
+            production = await ParallelContainerAuthenticator.ComputeAsync(
+                stream,
+                streamPadding.Length,
+                [prefixOne, prefixTwo],
+                sha3Key,
+                skeinKey,
+                CancellationToken.None).ConfigureAwait(false);
+
+            Require(
+                FixedEqual(reference.Sha3Tag, serial.Sha3Tag)
+                    && FixedEqual(reference.SkeinTag, serial.SkeinTag)
+                    && FixedEqual(reference.Sha3Tag, production.Sha3Tag)
+                    && FixedEqual(reference.SkeinTag, production.SkeinTag),
+                "The production v12 MAC tree differs from the independent serial construction.");
+
+            const string ExpectedSha3 =
+                "8CD6EB272C15BAE0163969F85252B537044FBCFBD3F81D4C7A7581D8C137FF99"
+                + "64219D62D1CEE47F1460375AEA6D80487EE4E1E73A32352BEBC4AA731AD80A5B";
+            const string ExpectedSkein =
+                "F443D11E11D3D0EC02EED42C38197D5765BD107323AB56FF95570658A15A1C96"
+                + "C5BBB60E355B60A13A4775D0DA6579272EA6387E20D24B4850CDB5E50C3C08E9"
+                + "00CCCE6CC0D508E30EC326C715E83B9B98CD0FE5915844461CFE1C3A0A3E1614"
+                + "8FE267A57AEAA9A20D833A31B0275C3C0775658BBB4F00B72B71146265C6FE0E";
+            Require(
+                Convert.ToHexString(reference.Sha3Tag) == ExpectedSha3
+                    && Convert.ToHexString(reference.SkeinTag) == ExpectedSkein,
+                "v12 MAC root KAT mismatch: SHA3=" + Convert.ToHexString(reference.Sha3Tag)
+                    + ", Skein=" + Convert.ToHexString(reference.SkeinTag));
+        }
+        finally
+        {
+            Zero(
+                prefixOne,
+                prefixTwo,
+                ciphertext,
+                sha3Key,
+                skeinKey,
+                streamPadding,
+                streamBytes,
+                reference.Sha3Tag,
+                reference.SkeinTag,
+                serial.Sha3Tag,
+                serial.SkeinTag,
+                production.Sha3Tag,
+                production.SkeinTag);
+        }
+    }
+
+    private static (byte[] Sha3Tag, byte[] SkeinTag) ComputeIndependentV12MacTree(
+        IReadOnlyList<byte[]> prefixes,
+        byte[] ciphertext,
+        byte[] sha3MacKey,
+        byte[] skeinMacKey)
+    {
+        byte[] leafDomain = "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/Leaf"u8.ToArray();
+        byte[] rootDomain = "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/Root"u8.ToArray();
+        byte[] sha3LeafDomain = "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/HMAC-SHA3-512/Leaf-Key"u8.ToArray();
+        byte[] sha3RootDomain = "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/HMAC-SHA3-512/Root-Key"u8.ToArray();
+        byte[] skeinLeafLabel = "Leaf-Key"u8.ToArray();
+        byte[] skeinRootLabel = "Root-Key"u8.ToArray();
+        byte[] logical = [.. prefixes.SelectMany(static part => part), .. ciphertext];
+        byte[] sha3LeafKey = BouncyHmacSha3(sha3MacKey, sha3LeafDomain);
+        byte[] sha3RootKey = BouncyHmacSha3(sha3MacKey, sha3RootDomain);
+        byte[] skeinLeafKey = BouncyPersonalisedSkein(
+            skeinMacKey,
+            "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/Skein-MAC-1024-1024/Key-Derivation",
+            skeinLeafLabel);
+        byte[] skeinRootKey = BouncyPersonalisedSkein(
+            skeinMacKey,
+            "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/Skein-MAC-1024-1024/Key-Derivation",
+            skeinRootLabel);
+        var rootTranscript = new List<byte>();
+        long leafCount = (logical.LongLength + ParallelContainerAuthenticator.LeafBytes - 1)
+            / ParallelContainerAuthenticator.LeafBytes;
+        byte[] rootHeader = new byte[rootDomain.Length + sizeof(long) + sizeof(long) + sizeof(int)];
+        rootDomain.CopyTo(rootHeader, 0);
+        int rootOffset = rootDomain.Length;
+        BinaryPrimitives.WriteInt64BigEndian(rootHeader.AsSpan(rootOffset), logical.LongLength);
+        rootOffset += sizeof(long);
+        BinaryPrimitives.WriteInt64BigEndian(rootHeader.AsSpan(rootOffset), leafCount);
+        rootOffset += sizeof(long);
+        BinaryPrimitives.WriteInt32BigEndian(rootHeader.AsSpan(rootOffset), ParallelContainerAuthenticator.LeafBytes);
+        rootTranscript.AddRange(rootHeader);
+
+        try
+        {
+            for (long leafIndex = 0; leafIndex < leafCount; leafIndex++)
+            {
+                int offset = checked((int)(leafIndex * ParallelContainerAuthenticator.LeafBytes));
+                int length = Math.Min(ParallelContainerAuthenticator.LeafBytes, logical.Length - offset);
+                byte[] leafHeader = new byte[leafDomain.Length + sizeof(long) + sizeof(int)];
+                leafDomain.CopyTo(leafHeader, 0);
+                BinaryPrimitives.WriteInt64BigEndian(leafHeader.AsSpan(leafDomain.Length), leafIndex);
+                BinaryPrimitives.WriteInt32BigEndian(leafHeader.AsSpan(leafDomain.Length + sizeof(long)), length);
+                byte[] leafMessage = [.. leafHeader, .. logical.AsSpan(offset, length)];
+                byte[] sha3Leaf = BouncyHmacSha3(sha3LeafKey, leafMessage);
+                byte[] skeinLeaf = BouncySkeinMac(skeinLeafKey, leafMessage);
+                byte[] leafRootHeader = new byte[sizeof(long) + sizeof(int)];
+                BinaryPrimitives.WriteInt64BigEndian(leafRootHeader, leafIndex);
+                BinaryPrimitives.WriteInt32BigEndian(leafRootHeader.AsSpan(sizeof(long)), length);
+                try
+                {
+                    rootTranscript.AddRange(leafRootHeader);
+                    rootTranscript.AddRange(sha3Leaf);
+                    rootTranscript.AddRange(skeinLeaf);
+                }
+                finally
+                {
+                    Zero(leafHeader, leafMessage, sha3Leaf, skeinLeaf, leafRootHeader);
+                }
+            }
+
+            byte[] rootMessage = [.. rootTranscript];
+            try
+            {
+                return (
+                    BouncyHmacSha3(sha3RootKey, rootMessage),
+                    BouncySkeinMac(skeinRootKey, rootMessage));
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(rootMessage);
+            }
+        }
+        finally
+        {
+            Zero(
+                leafDomain,
+                rootDomain,
+                sha3LeafDomain,
+                sha3RootDomain,
+                skeinLeafLabel,
+                skeinRootLabel,
+                logical,
+                sha3LeafKey,
+                sha3RootKey,
+                skeinLeafKey,
+                skeinRootKey,
+                rootHeader);
+            CollectionsMarshal.AsSpan(rootTranscript).Clear();
+        }
+    }
+
+    private static byte[] BouncyHmacSha3(byte[] key, byte[] data)
+    {
+        var mac = new Org.BouncyCastle.Crypto.Macs.HMac(
+            new Org.BouncyCastle.Crypto.Digests.Sha3Digest(512));
+        mac.Init(new KeyParameter(key));
+        mac.BlockUpdate(data);
+        byte[] output = new byte[mac.GetMacSize()];
+        mac.DoFinal(output);
+        return output;
+    }
+
+    private static byte[] BouncyPersonalisedSkein(byte[] key, string personalisation, byte[] data)
+    {
+        byte[] personalisationBytes = Encoding.UTF8.GetBytes(personalisation);
+        var mac = new SkeinMac(1024, 1024);
+        try
+        {
+            SkeinParameters parameters = new SkeinParameters.Builder()
+                .SetKey(key)
+                .SetPersonalisation(personalisationBytes)
+                .Build();
+            mac.Init(parameters);
+            mac.BlockUpdate(data);
+            byte[] output = new byte[128];
+            mac.DoFinal(output);
+            return output;
+        }
+        finally
+        {
+            mac.Reset();
+            CryptographicOperations.ZeroMemory(personalisationBytes);
+        }
+    }
+
+    private static async Task TestV12ProductionWorkerEquivalenceAsync()
+    {
+        const uint katMemoryKiB = 8 * 1024;
+        const int payloadBytes = (16 * 1024 * 1024) + (2 * 1024 * 1024) + 137;
+        Require(
+            KalynaContainerService.ProductionPipelineWorkerCount > 1,
+            "The production container pipeline selected only one worker; the worker-equivalence gate cannot run.");
+        Require(
+            ParallelContainerAuthenticator.ProductionWorkerCount > 1,
+            "The production MAC tree selected only one worker; the worker-equivalence gate cannot run.");
+
+        EncryptionSuite[] suites = [.. EncryptionSuiteCatalog.DisplayOrder];
+        Require(suites.Length == 10, $"The production worker KAT requires exactly ten suites, found {suites.Length}.");
+
+        string root = CreateTempRoot("keep-vault-v12-worker-kat-");
+        byte[] payload = new byte[payloadBytes];
+        for (int index = 0; index < payload.Length; index++)
+        {
+            payload[index] = (byte)((index * 131 + (index >> 8) + 0x5D) & 0xFF);
+        }
+
+        try
+        {
+            using IDisposable memoryScope = V12MasterKdf.UseMemoryCostForTests(katMemoryKiB);
+            foreach (EncryptionSuite suite in suites)
+            {
+                string serialPath = Path.Combine(root, $"{suite}-worker-1.kzpaq");
+                string productionPath = Path.Combine(root, $"{suite}-worker-production.kzpaq");
+                string tamperedPath = Path.Combine(root, $"{suite}-tampered.kzpaq");
+                using GeneratedArchiveEntropy serialEntropy = CreateProductionWorkerKatEntropy();
+                using GeneratedArchiveEntropy productionEntropy = CreateProductionWorkerKatEntropy();
+                string factorA = serialEntropy.FirstPassword;
+                string factorB = serialEntropy.SecondPassword;
+                Require(
+                    factorA == productionEntropy.FirstPassword && factorB == productionEntropy.SecondPassword,
+                    $"{suite} worker KAT did not start from identical factors.");
+
+                var containers = new KalynaContainerService();
+                using (KalynaContainerService.UsePipelineWorkerCountForTests(1))
+                using (ParallelContainerAuthenticator.UseWorkerCountForTests(1))
+                await using (var serialInput = new MemoryStream(payload, writable: false))
+                {
+                    await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
+                        serialInput,
+                        serialPath,
+                        UserPassword,
+                        UserPin,
+                        factorA,
+                        factorB,
+                        suite,
+                        serialEntropy,
+                        "v12-production-worker-kat",
+                        null,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+
+                await using (var productionInput = new MemoryStream(payload, writable: false))
+                {
+                    await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
+                        productionInput,
+                        productionPath,
+                        UserPassword,
+                        UserPin,
+                        factorA,
+                        factorB,
+                        suite,
+                        productionEntropy,
+                        "v12-production-worker-kat",
+                        null,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+
+                byte[] serialContainer = await File.ReadAllBytesAsync(serialPath).ConfigureAwait(false);
+                byte[] productionContainer = await File.ReadAllBytesAsync(productionPath).ConfigureAwait(false);
+                byte[] serialPlaintext = [];
+                byte[] productionPlaintext = [];
+                byte[] expectedHash = Sha3_512Compat.HashData(payload);
+                byte[] serialHash = [];
+                byte[] productionHash = [];
+                try
+                {
+                    Require(
+                        FixedEqual(serialContainer, productionContainer),
+                        $"{suite} produced scheduling-dependent v12 container bytes.");
+
+                    Require(
+                        serialContainer.Length >= 11
+                            && serialContainer.AsSpan(0, 7).SequenceEqual("KZPAQ2\0"u8),
+                        $"{suite} did not produce the exclusive v12 KZPAQ2 container magic.");
+                    int headerLength = BinaryPrimitives.ReadInt32LittleEndian(serialContainer.AsSpan(7, 4));
+                    int headerPrefixLength = checked(11 + headerLength);
+                    Require(
+                        headerLength is > 0 and < 16 * 1024
+                            && headerPrefixLength <= serialContainer.Length,
+                        $"{suite} produced an invalid v12 header length.");
+                    byte[] headerPrefixHash = Sha3_512Compat.HashData(
+                        serialContainer.AsSpan(0, headerPrefixLength));
+                    try
+                    {
+                        Require(
+                            V12WorkerKatHeaderPrefixSha3.TryGetValue(suite, out string? expectedHeaderPrefixHash)
+                                && Convert.ToHexString(headerPrefixHash) == expectedHeaderPrefixHash,
+                            $"{suite} changed the pinned deterministic v12 header prefix: "
+                                + Convert.ToHexString(headerPrefixHash));
+                    }
+                    finally
+                    {
+                        CryptographicOperations.ZeroMemory(headerPrefixHash);
+                    }
+
+                    using (KalynaContainerService.UsePipelineWorkerCountForTests(1))
+                    using (ParallelContainerAuthenticator.UseWorkerCountForTests(1))
+                    using (var serialOutput = new MemoryStream())
+                    {
+                        await containers.DecryptToStreamAsync(
+                            serialPath,
+                            UserPassword,
+                            UserPin,
+                            factorA,
+                            factorB,
+                            serialOutput,
+                            null,
+                            CancellationToken.None).ConfigureAwait(false);
+                        serialPlaintext = serialOutput.ToArray();
+                    }
+
+                    using (var productionOutput = new MemoryStream())
+                    {
+                        await containers.DecryptToStreamAsync(
+                            productionPath,
+                            UserPassword,
+                            UserPin,
+                            factorA,
+                            factorB,
+                            productionOutput,
+                            null,
+                            CancellationToken.None).ConfigureAwait(false);
+                        productionPlaintext = productionOutput.ToArray();
+                    }
+
+                    serialHash = Sha3_512Compat.HashData(serialPlaintext);
+                    productionHash = Sha3_512Compat.HashData(productionPlaintext);
+                    Require(
+                        FixedEqual(payload, serialPlaintext)
+                            && FixedEqual(payload, productionPlaintext)
+                            && FixedEqual(expectedHash, serialHash)
+                            && FixedEqual(expectedHash, productionHash),
+                        $"{suite} worker-1 and production-worker decryptions did not return the same payload hash.");
+
+                    File.Copy(productionPath, tamperedPath, overwrite: false);
+                    FlipByte(tamperedPath, new FileInfo(tamperedPath).Length - 1);
+                    await RequireFailureWithoutOutputAsync(
+                        containers,
+                        tamperedPath,
+                        UserPassword,
+                        UserPin,
+                        factorA,
+                        factorB,
+                        typeof(CryptographicException),
+                        $"{suite} production-worker manipulation").ConfigureAwait(false);
+                }
+                finally
+                {
+                    Zero(
+                        serialContainer,
+                        productionContainer,
+                        serialPlaintext,
+                        productionPlaintext,
+                        expectedHash,
+                        serialHash,
+                        productionHash);
+                }
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(payload);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static GeneratedArchiveEntropy CreateProductionWorkerKatEntropy()
+    {
+        LockedSensitiveBuffer? firstSalt = LockedSensitiveBuffer.Create(EntropyMixer.SaltPairBytes);
+        LockedSensitiveBuffer? firstNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+        LockedSensitiveBuffer? secondSalt = LockedSensitiveBuffer.Create(EntropyMixer.SaltPairBytes);
+        LockedSensitiveBuffer? secondNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+        try
+        {
+            FillKatEntropy(firstSalt.Bytes, 0x17, 29);
+            FillKatEntropy(firstNonce.Bytes, 0x2B, 43);
+            FillKatEntropy(secondSalt.Bytes, 0xA1, 61);
+            FillKatEntropy(secondNonce.Bytes, 0xD3, 73);
+            var result = new GeneratedArchiveEntropy(
+                GeneratedFactor('A'),
+                GeneratedFactor('B'),
+                firstSalt,
+                firstNonce,
+                secondSalt,
+                secondNonce);
+            firstSalt = null;
+            firstNonce = null;
+            secondSalt = null;
+            secondNonce = null;
+            return result;
+        }
+        finally
+        {
+            secondNonce?.Dispose();
+            secondSalt?.Dispose();
+            firstNonce?.Dispose();
+            firstSalt?.Dispose();
+        }
+    }
+
+    private static void FillKatEntropy(Span<byte> destination, int seed, int multiplier)
+    {
+        for (int index = 0; index < destination.Length; index++)
+        {
+            destination[index] = (byte)(seed + (index * multiplier));
+        }
+    }
+
+    private static async Task TestV12ContainersAsync()
+    {
+        string root = CreateTempRoot("keep-vault-v12-containers-");
         try
         {
             var containers = new KalynaContainerService();
             string source = Path.Combine(root, "input.txt");
-            byte[] sourceBytes = "Keep Vault v11 container test payload with multiple blocks."u8.ToArray();
+            byte[] sourceBytes = "Keep Vault v12 container test payload with multiple blocks."u8.ToArray();
             await File.WriteAllBytesAsync(source, sourceBytes).ConfigureAwait(false);
+            byte[] sourceHash = Sha3_512Compat.HashData(sourceBytes);
 
             using var zpaqBytes = new MemoryStream();
             ProcessResult zpaqResult = await new ZpaqService().AddStreamingAsync(
@@ -5533,17 +6080,17 @@ internal static partial class MacComprehensiveTests
                 (stream, cancellationToken) => stream.CopyToAsync(zpaqBytes, cancellationToken),
                 null,
                 CancellationToken.None).ConfigureAwait(false);
-            Require(zpaqResult.Succeeded, "Could not create ZPAQ payload for v11 test.");
+            Require(zpaqResult.Succeeded, "Could not create ZPAQ payload for v12 test.");
             byte[] payload = zpaqBytes.ToArray();
 
-            // Test v11 container creation and reading for default suite and paranoia suite
+            // Test v12 container creation and reading for default suite and paranoia suite
             foreach (EncryptionSuite suite in new[] { EncryptionSuite.ThreefishOverKalyna, EncryptionSuite.ParanoiaCascade })
             {
                 AddMouseSamplesUntilReady();
                 using GeneratedArchiveEntropy entropy = EntropyMixer.CreateArchiveEntropy();
                 string factorA = entropy.FirstPassword;
                 string factorB = entropy.SecondPassword;
-                string path = Path.Combine(root, $"{suite}-v11.kzpaq");
+                string path = Path.Combine(root, $"{suite}-v12.kzpaq");
 
                 await using (var memSource = new MemoryStream(payload, writable: false))
                 {
@@ -5556,7 +6103,7 @@ internal static partial class MacComprehensiveTests
                         factorB,
                         suite,
                         entropy,
-                        "v11-test",
+                        "v12-test",
                         null,
                         CancellationToken.None).ConfigureAwait(false);
                 }
@@ -5565,20 +6112,37 @@ internal static partial class MacComprehensiveTests
                 byte[] headerBytes = ReadHeaderBytes(path);
                 using JsonDocument doc = JsonDocument.Parse(headerBytes);
                 JsonElement header = doc.RootElement;
-                Require(header.GetProperty("Version").GetInt32() == 11, "v11 container version != 11");
-                Require(header.GetProperty("PasswordMode").GetString() == V11MasterKdf.PasswordMode, "v11 PasswordMode mismatch");
-                Require(header.GetProperty("KdfInputMode").GetString() == V11MasterKdf.KdfInputMode, "v11 KdfInputMode mismatch");
-                Require(header.GetProperty("KdfMode").GetString() == V11MasterKdf.KdfMode, "v11 KdfMode mismatch");
+                Require(header.GetProperty("Version").GetInt32() == 12, "v12 container version != 12");
+                Require(header.GetProperty("PasswordMode").GetString() == V12MasterKdf.PasswordMode, "v12 PasswordMode mismatch");
+                Require(header.GetProperty("KdfInputMode").GetString() == V12MasterKdf.KdfInputMode, "v12 KdfInputMode mismatch");
+                Require(header.GetProperty("KdfMode").GetString() == V12MasterKdf.KdfMode, "v12 KdfMode mismatch");
 
                 // Decrypt and verify
                 using var outStream = new MemoryStream();
                 await containers.DecryptToStreamAsync(
                     path, UserPassword, UserPin, factorA, factorB, outStream, null, CancellationToken.None).ConfigureAwait(false);
                 byte[] decrypted = outStream.ToArray();
-                Require(FixedEqual(payload, decrypted), $"v11 {suite} decrypted payload does not match original.");
-                CryptographicOperations.ZeroMemory(decrypted);
+                try
+                {
+                    Require(FixedEqual(payload, decrypted), $"v12 {suite} decrypted payload does not match original.");
+                    string extractedDirectory = Path.Combine(root, $"{suite}-extracted");
+                    ProcessResult extracted = await new ZpaqService().ExtractStreamingAsync(
+                        (destination, cancellationToken) => destination.WriteAsync(decrypted, cancellationToken).AsTask(),
+                        extractedDirectory,
+                        null,
+                        CancellationToken.None).ConfigureAwait(false);
+                    Require(extracted.Succeeded, $"v12 {suite} decrypted ZPAQ stream did not extract: {extracted.StandardError}");
+                    await RequireFileHashAsync(
+                        Path.Combine(extractedDirectory, Path.GetFileName(source)),
+                        sourceHash,
+                        $"v12 {suite} container/ZPAQ end-to-end").ConfigureAwait(false);
+                }
+                finally
+                {
+                    CryptographicOperations.ZeroMemory(decrypted);
+                }
 
-                // Test KPAR2 recovery creation and verification with v11 container
+                // Test KPAR2 recovery creation and verification with v12 container
                 var recoveryService = new RecoveryService();
                 string sidecar = await recoveryService.CreateAuthenticatedAsync(
                     path,
@@ -5588,7 +6152,7 @@ internal static partial class MacComprehensiveTests
                     factorB,
                     null,
                     CancellationToken.None).ConfigureAwait(false);
-                Require(File.Exists(sidecar), "Failed to create KPAR2 recovery file for v11 container.");
+                Require(File.Exists(sidecar), "Failed to create KPAR2 recovery file for v12 container.");
 
                 RecoveryRepairResult recResult = await recoveryService.VerifyAndRepairAuthenticatedAsync(
                     path,
@@ -5598,10 +6162,10 @@ internal static partial class MacComprehensiveTests
                     factorB,
                     null,
                     CancellationToken.None).ConfigureAwait(false);
-                Require(recResult.RecoveryAvailable && recResult.ArchiveHealthy && recResult.Authenticated, "KPAR2 verification of v11 container failed.");
+                Require(recResult.RecoveryAvailable && recResult.ArchiveHealthy && recResult.Authenticated, "KPAR2 verification of v12 container failed.");
             }
 
-            Zero(sourceBytes, payload);
+            Zero(sourceBytes, sourceHash, payload);
         }
         finally
         {

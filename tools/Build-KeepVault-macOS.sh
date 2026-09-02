@@ -1,6 +1,452 @@
-#!/bin/zsh
+#!/bin/zsh -f
 set -euo pipefail
 umask 077
+PATH='/usr/bin:/bin:/usr/sbin:/sbin'
+export PATH
+unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+  RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES SSL_CERT_FILE \
+  SSL_CERT_DIR CURL_HOME XDG_CONFIG_HOME
+unset DEVELOPER_DIR SDKROOT TOOLCHAINS
+unset CCC_OVERRIDE_OPTIONS COMPILER_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH \
+  OBJC_INCLUDE_PATH LIBRARY_PATH GCC_EXEC_PREFIX ADDITIONAL_SWIFT_DRIVER_FLAGS \
+  SWIFT_EXEC SWIFT_DRIVER_SWIFT_FRONTEND_EXEC SWIFT_DRIVER_SWIFTSCAN_LIB \
+  SWIFT_DRIVER_TOOLCHAIN_CASPLUGIN_LIB DYLD_INSERT_LIBRARIES DYLD_LIBRARY_PATH \
+  DYLD_FRAMEWORK_PATH DYLD_FALLBACK_LIBRARY_PATH DYLD_FALLBACK_FRAMEWORK_PATH
+unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE DOTNET_ROOT \
+  DOTNET_ROOT_X64 DOTNET_ROOT_ARM64 DOTNET_HOST_PATH DOTNET_DiagnosticPorts \
+  DOTNET_DefaultDiagnosticPortSuspend DOTNET_ROLL_FORWARD \
+  DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX DOTNET_ROLL_FORWARD_TO_PRERELEASE \
+  DOTNET_MULTILEVEL_LOOKUP CORECLR_ENABLE_PROFILING CORECLR_PROFILER \
+  CORECLR_PROFILER_PATH CORECLR_PROFILER_PATH_32 CORECLR_PROFILER_PATH_64 \
+  CORECLR_PROFILER_PATH_ARM64 COR_ENABLE_PROFILING COR_PROFILER \
+  COR_PROFILER_PATH COR_PROFILER_PATH_32 COR_PROFILER_PATH_64 \
+  COMPlus_AltJit COMPlus_AltJitName DOTNET_AltJit DOTNET_AltJitName \
+  MSBuildSDKsPath MSBUILD_EXE_PATH MSBuildExtensionsPath \
+  MSBuildExtensionsPath32 MSBuildExtensionsPath64 MSBuildUserExtensionsPath \
+  MSBuildToolsPath MSBuildBinPath MSBUILDLEGACYEXTENSIONSPATH \
+  MSBUILDADDITIONALSDKRESOLVERSFOLDER CustomBeforeMicrosoftCommonTargets \
+  CustomAfterMicrosoftCommonTargets CustomBeforeMicrosoftCSharpTargets \
+  CustomAfterMicrosoftCSharpTargets DirectoryBuildPropsPath \
+  DirectoryBuildTargetsPath ImportDirectoryBuildProps ImportDirectoryBuildTargets \
+  DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR \
+  DOTNET_MSBUILD_SDK_RESOLVER_SDKS_VER NUGET_PLUGIN_PATHS \
+  NUGET_CREDENTIALPROVIDERS_PATH NUGET_EXTENSIONS_PATH NUGET_PACKAGES \
+  NUGET_HTTP_CACHE_PATH NUGET_SCRATCH RestoreSources \
+  RestoreAdditionalProjectSources RestoreFallbackFolders RestorePackagesPath \
+  RestoreConfigFile
+export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
+
+xcrun_path=/usr/bin/xcrun
+codesign_path=/usr/bin/codesign
+security_path=/usr/bin/security
+plutil_path=/usr/bin/plutil
+ditto_path=/usr/bin/ditto
+file_path=/usr/bin/file
+shasum_path=/usr/bin/shasum
+openssl_path=/usr/bin/openssl
+awk_path=/usr/bin/awk
+stat_path=/usr/bin/stat
+grep_path=/usr/bin/grep
+sed_path=/usr/bin/sed
+find_path=/usr/bin/find
+sort_path=/usr/bin/sort
+comm_path=/usr/bin/comm
+cmp_path=/usr/bin/cmp
+mktemp_path=/usr/bin/mktemp
+env_path=/usr/bin/env
+chmod_path=/bin/chmod
+mkdir_path=/bin/mkdir
+rm_path=/bin/rm
+mv_path=/bin/mv
+sips_path=/usr/bin/sips
+iconutil_path=/usr/bin/iconutil
+cat_path=/bin/cat
+
+require_root_system_tool() {
+  local tool=$1
+  if [[ ${tool} != /* || ! -f ${tool} || -L ${tool} || ! -x ${tool} \
+      || $(${stat_path} -f %u -- ${tool}) != 0 ]]; then
+    print -u2 "RELEASE GATE: required system tool is not an absolute root-owned regular file: ${tool}"
+    exit 2
+  fi
+  local tool_mode=$(( 8#$(${stat_path} -f %Lp -- ${tool}) ))
+  if (( (tool_mode & 8#022) != 0 )); then
+    print -u2 "RELEASE GATE: required system tool is group/other writable: ${tool}"
+    exit 2
+  fi
+}
+for fixed_tool in \
+    ${xcrun_path} ${codesign_path} ${security_path} ${plutil_path} \
+    ${ditto_path} ${file_path} ${shasum_path} ${openssl_path} ${awk_path} \
+    ${stat_path} ${grep_path} ${sed_path} ${find_path} ${sort_path} \
+    ${comm_path} ${cmp_path} ${mktemp_path} ${env_path} ${chmod_path} ${mkdir_path} \
+    ${rm_path} ${mv_path} ${sips_path} ${iconutil_path} ${cat_path}; do
+  require_root_system_tool ${fixed_tool}
+done
+
+xcrun() { ${xcrun_path} "$@"; }
+codesign() { ${codesign_path} "$@"; }
+security() { ${security_path} "$@"; }
+plutil() { ${plutil_path} "$@"; }
+ditto() { ${ditto_path} "$@"; }
+file() { ${file_path} "$@"; }
+shasum() { ${env_path} -i PATH=${PATH} ${shasum_path} "$@"; }
+openssl() { ${openssl_path} "$@"; }
+awk() { ${awk_path} "$@"; }
+stat() { ${stat_path} "$@"; }
+grep() { ${grep_path} "$@"; }
+sed() { ${sed_path} "$@"; }
+find() { ${find_path} "$@"; }
+sort() { ${sort_path} "$@"; }
+comm() { ${comm_path} "$@"; }
+cmp() { ${cmp_path} "$@"; }
+mktemp() { ${mktemp_path} "$@"; }
+env() { ${env_path} "$@"; }
+chmod() { ${chmod_path} "$@"; }
+mkdir() { ${mkdir_path} "$@"; }
+rm() { ${rm_path} "$@"; }
+mv() { ${mv_path} "$@"; }
+sips() { ${sips_path} "$@"; }
+iconutil() { ${iconutil_path} "$@"; }
+cat() { ${cat_path} "$@"; }
+
+if ! zmodload zsh/system; then
+  print -u2 'RELEASE GATE: zsh/system is required for descriptor-bound notice assembly.'
+  exit 2
+fi
+if ! zmodload -F zsh/stat b:zstat; then
+  print -u2 'RELEASE GATE: zsh/stat is required for descriptor-bound notice identities.'
+  exit 2
+fi
+
+# A notice source is opened exactly once with O_NOFOLLOW. All metadata, hashes
+# and bytes are then obtained through that one descriptor. This prevents a
+# same-UID process from changing the pathname between the digest checks and the
+# copy. The destination likewise remains one O_EXCL descriptor until its final
+# digest and namespace identity have been checked.
+third_party_notice_fd=-1
+third_party_notice_output_object=''
+third_party_notice_sha256=''
+notice_binding_test_hook=''
+
+bound_notice_fd_identity() {
+  local descriptor=$1
+  local -A descriptor_stat
+  local -A modification_time
+  local -A change_time
+  zstat -f ${descriptor} -H descriptor_stat 2>/dev/null || return 2
+  zstat -f ${descriptor} -H modification_time -F '%s.%N' +mtime 2>/dev/null || return 2
+  zstat -f ${descriptor} -H change_time -F '%s.%N' +ctime 2>/dev/null || return 2
+  print -r -- \
+    ${descriptor_stat[device]}:${descriptor_stat[inode]}:${descriptor_stat[uid]}:${descriptor_stat[mode]}:${descriptor_stat[nlink]}:${descriptor_stat[size]}:${modification_time[mtime]}:${change_time[ctime]}
+}
+
+require_bound_notice_source_identity() {
+  local identity=$1
+  local label=$2
+  local -a fields=("${(@s.:.)identity}")
+  if (( ${#fields} != 8 )); then
+    print -u2 "RELEASE GATE: third-party notice identity is incomplete: ${label}"
+    return 2
+  fi
+  local mode_value=${fields[4]}
+  if [[ ${fields[3]} != ${EUID} || ${fields[5]} != 1 ]] \
+      || (( (mode_value & 8#170000) != 8#100000 \
+          || (mode_value & 8#022) != 0 \
+          || fields[6] <= 0 || fields[6] > 2000000 )); then
+    print -u2 "RELEASE GATE: third-party notice is not a protected current-user-owned single-link regular file: ${label}"
+    return 2
+  fi
+}
+
+hash_bound_notice_fd() {
+  local descriptor=$1
+  local digest_line=''
+  sysseek -u ${descriptor} -w start 0 || return 2
+  if ! digest_line=$(shasum -a 256 <&${descriptor}); then
+    sysseek -u ${descriptor} -w start 0 2>/dev/null || true
+    return 2
+  fi
+  sysseek -u ${descriptor} -w start 0 || return 2
+  REPLY=${digest_line%%[[:space:]]*}
+  if (( ${#REPLY} != 64 )) || [[ ${REPLY} == *[^0-9a-f]* ]]; then
+    print -u2 'RELEASE GATE: a descriptor-bound notice hash was malformed.'
+    return 2
+  fi
+}
+
+require_bound_notice_output_object() {
+  local identity
+  identity=$(bound_notice_fd_identity ${third_party_notice_fd}) || return 2
+  local -a fields=("${(@s.:.)identity}")
+  local mode_value=${fields[4]}
+  local object_identity=${fields[1]}:${fields[2]}:${fields[3]}:${fields[5]}
+  if [[ ${fields[3]} != ${EUID} || ${fields[5]} != 1 \
+      || ${object_identity} != ${third_party_notice_output_object} ]] \
+      || (( (mode_value & 8#170000) != 8#100000 \
+          || (mode_value & 8#0777) != 8#0600 )); then
+    print -u2 'RELEASE GATE: the third-party-notice output descriptor changed identity.'
+    return 2
+  fi
+}
+
+create_bound_notice_output() {
+  local output_path=$1
+  if [[ -e ${output_path} || -L ${output_path} ]]; then
+    print -u2 'RELEASE GATE: refusing to replace an existing third-party-notice output.'
+    return 2
+  fi
+  if ! sysopen -rw -m 0600 -o create,excl,nofollow,sync \
+      -u third_party_notice_fd ${output_path}; then
+    print -u2 'RELEASE GATE: the third-party-notice output could not be created exclusively.'
+    return 2
+  fi
+
+  local identity
+  identity=$(bound_notice_fd_identity ${third_party_notice_fd}) || return 2
+  local -a fields=("${(@s.:.)identity}")
+  third_party_notice_output_object=${fields[1]}:${fields[2]}:${fields[3]}:${fields[5]}
+  require_bound_notice_output_object
+}
+
+copy_pinned_notice_source() (
+  emulate -L zsh
+  set -euo pipefail
+  local label=$1
+  local notice_source=$2
+  local expected_sha256=$3
+  local include_heading=$4
+  local source_fd=-1
+  local before_identity=''
+  local after_identity=''
+  local before_sha256=''
+  local after_sha256=''
+
+  require_bound_notice_output_object || return 2
+  if ! sysopen -r -o nofollow -u source_fd ${notice_source}; then
+    print -u2 "RELEASE GATE: required third-party notice cannot be opened without following a symbolic link: ${label}"
+    return 2
+  fi
+  before_identity=$(bound_notice_fd_identity ${source_fd}) || {
+    print -u2 "RELEASE GATE: required third-party notice cannot be identified: ${label}"
+    return 2
+  }
+  require_bound_notice_source_identity ${before_identity} ${label} || return 2
+  hash_bound_notice_fd ${source_fd} || {
+    print -u2 "RELEASE GATE: required third-party notice cannot be hashed through its descriptor: ${label}"
+    return 2
+  }
+  before_sha256=${REPLY}
+  if [[ ${before_sha256} != ${expected_sha256} ]]; then
+    print -u2 "RELEASE GATE: third-party notice digest changed: ${label}"
+    return 2
+  fi
+
+  if (( notice_binding_self_test )) && [[ -n ${notice_binding_test_hook} ]]; then
+    if ! ${notice_binding_test_hook} ${notice_source} ${label}; then
+      print -u2 'RELEASE GATE: the notice-binding test hook itself failed.'
+      return 70
+    fi
+  fi
+
+  if (( include_heading )); then
+    print -r -u ${third_party_notice_fd} -- ''
+    print -r -u ${third_party_notice_fd} -- '=============================================================================='
+    print -r -u ${third_party_notice_fd} -- ${label}
+    print -r -u ${third_party_notice_fd} -- '=============================================================================='
+  fi
+  sysseek -u ${source_fd} -w start 0 || return 2
+  local transfer_status=0
+  while true; do
+    if sysread -i ${source_fd} -o ${third_party_notice_fd} -s 65536; then
+      continue
+    else
+      transfer_status=$?
+    fi
+    if (( transfer_status == 5 )); then
+      break
+    fi
+    print -u2 "RELEASE GATE: third-party notice copy failed through its bound descriptor: ${label}"
+    return 2
+  done
+
+  after_identity=$(bound_notice_fd_identity ${source_fd}) || return 2
+  hash_bound_notice_fd ${source_fd} || return 2
+  after_sha256=${REPLY}
+  if [[ ${after_identity} != ${before_identity} \
+      || ${after_sha256} != ${before_sha256} \
+      || ${after_sha256} != ${expected_sha256} ]]; then
+    print -u2 "RELEASE GATE: third-party notice changed while its bound descriptor was copied: ${label}"
+    return 2
+  fi
+  require_bound_notice_output_object
+)
+
+append_pinned_notice() {
+  copy_pinned_notice_source $1 $2 $3 1
+}
+
+finalize_bound_notice_output() {
+  local output_path=$1
+  local minimum_size=$2
+  local maximum_size=$3
+  local expected_sha256=$4
+  require_bound_notice_output_object || return 2
+  chmod 0644 /dev/fd/${third_party_notice_fd}
+
+  local before_identity
+  local after_identity
+  before_identity=$(bound_notice_fd_identity ${third_party_notice_fd}) || return 2
+  local -a fields=("${(@s.:.)before_identity}")
+  local mode_value=${fields[4]}
+  if [[ ${fields[3]} != ${EUID} || ${fields[5]} != 1 ]] \
+      || (( (mode_value & 8#170000) != 8#100000 \
+          || (mode_value & 8#0777) != 8#0644 \
+          || fields[6] < minimum_size || fields[6] > maximum_size )); then
+    print -u2 'RELEASE GATE: the completed third-party notice has invalid descriptor metadata.'
+    return 2
+  fi
+  hash_bound_notice_fd ${third_party_notice_fd} || return 2
+  third_party_notice_sha256=${REPLY}
+  if [[ ${third_party_notice_sha256} != ${expected_sha256} ]]; then
+    print -u2 'RELEASE GATE: the assembled third-party notice does not match its reviewed whole-file digest.'
+    return 2
+  fi
+  after_identity=$(bound_notice_fd_identity ${third_party_notice_fd}) || return 2
+  local descriptor_path_identity=${fields[1]}:${fields[2]}:${fields[3]}:${fields[5]}
+  local -A output_path_stat
+  local output_path_identity=invalid
+  local output_path_mode=0
+  if zstat -L -H output_path_stat ${output_path} 2>/dev/null; then
+    output_path_identity=${output_path_stat[device]}:${output_path_stat[inode]}:${output_path_stat[uid]}:${output_path_stat[nlink]}
+    output_path_mode=${output_path_stat[mode]}
+  fi
+  if [[ ${after_identity} != ${before_identity} || -L ${output_path} \
+      || ${output_path_identity} != ${descriptor_path_identity} ]] \
+      || (( (output_path_mode & 8#170000) != 8#100000 )); then
+    print -u2 'RELEASE GATE: the completed third-party notice changed during its final descriptor hash.'
+    return 2
+  fi
+  exec {third_party_notice_fd}>&-
+  third_party_notice_fd=-1
+}
+
+create_notice_self_test_file() {
+  local path=$1
+  local contents=$2
+  local descriptor=-1
+  sysopen -rw -m 0600 -o create,excl,nofollow,sync -u descriptor ${path} || return 2
+  chmod 0600 /dev/fd/${descriptor} || return 2
+  syswrite -o ${descriptor} ${contents} || return 2
+  exec {descriptor}>&-
+}
+
+notice_self_test_path_aba() {
+  local source=$1
+  mv ${source} ${source}.held
+  create_notice_self_test_file ${source} $'attacker replacement\n'
+  mv ${source} ${source}.replacement
+  mv ${source}.held ${source}
+}
+
+notice_self_test_inplace_aba() {
+  local source=$1
+  local descriptor=-1
+  sysopen -w -o trunc,nofollow,sync -u descriptor ${source} || return 2
+  syswrite -o ${descriptor} $'changed notice!!\n' || return 2
+  exec {descriptor}>&-
+  chmod 0400 ${source}
+  chmod 0600 ${source}
+  sysopen -w -o trunc,nofollow,sync -u descriptor ${source} || return 2
+  syswrite -o ${descriptor} $'reviewed notice\n' || return 2
+  exec {descriptor}>&-
+}
+
+run_notice_binding_self_test() {
+  local test_root
+  test_root=$(mktemp -d '/private/tmp/keep-vault-notice-binding.XXXXXXXX')
+  chmod 0700 ${test_root}
+  local test_root_identity=$(stat -f '%d:%i:%u:%Lp' ${test_root})
+  local test_status=0
+  (
+    local source=${test_root}/source.txt
+    local output=${test_root}/notices.txt
+    create_notice_self_test_file ${source} $'reviewed notice\n' || return 2
+    local expected_sha256
+    expected_sha256=$(shasum -a 256 ${source} | awk '{print $1}') || return 2
+
+    create_bound_notice_output ${output} || return 2
+    copy_pinned_notice_source 'self-test baseline' ${source} ${expected_sha256} 0 || return 2
+    finalize_bound_notice_output ${output} 1 4096 ${expected_sha256} || return 2
+    [[ ${third_party_notice_sha256} == ${expected_sha256} ]] || {
+      print -u2 'RELEASE GATE: descriptor-bound notice baseline digest changed.'
+      return 2
+    }
+
+    source=${test_root}/source-swap.txt
+    output=${test_root}/notices-swap.txt
+    create_notice_self_test_file ${source} $'reviewed notice\n' || return 2
+    create_bound_notice_output ${output} || return 2
+    notice_binding_test_hook=notice_self_test_path_aba
+    local swap_status=0
+    copy_pinned_notice_source 'self-test path swap/ABA' \
+      ${source} ${expected_sha256} 0 2>/dev/null || swap_status=$?
+    notice_binding_test_hook=''
+    if (( swap_status != 2 )) \
+        || [[ $(shasum -a 256 ${source} | awk '{print $1}') != ${expected_sha256} ]]; then
+      print -u2 'RELEASE GATE: a notice pathname swap/ABA was not rejected after the exact source was restored.'
+      return 2
+    fi
+    exec {third_party_notice_fd}>&-
+    third_party_notice_fd=-1
+
+    source=${test_root}/source-output.txt
+    output=${test_root}/notices-output.txt
+    create_notice_self_test_file ${source} $'reviewed notice\n' || return 2
+    create_bound_notice_output ${output} || return 2
+    copy_pinned_notice_source 'self-test output mutation' \
+      ${source} ${expected_sha256} 0 || return 2
+    local attacker_fd=-1
+    sysopen -w -o trunc,nofollow,sync -u attacker_fd ${output} || return 2
+    syswrite -o ${attacker_fd} $'attacker notice\n' || return 2
+    exec {attacker_fd}>&-
+    local output_mutation_status=0
+    finalize_bound_notice_output ${output} 1 4096 ${expected_sha256} \
+      2>/dev/null || output_mutation_status=$?
+    if (( output_mutation_status != 2 )); then
+      print -u2 'RELEASE GATE: an in-place mutation of the bound notice output was accepted.'
+      return 2
+    fi
+    exec {third_party_notice_fd}>&-
+    third_party_notice_fd=-1
+
+    source=${test_root}/source-inplace.txt
+    output=${test_root}/notices-inplace.txt
+    create_notice_self_test_file ${source} $'reviewed notice\n' || return 2
+    create_bound_notice_output ${output} || return 2
+    notice_binding_test_hook=notice_self_test_inplace_aba
+    local inplace_status=0
+    copy_pinned_notice_source 'self-test in-place ABA' \
+      ${source} ${expected_sha256} 0 2>/dev/null || inplace_status=$?
+    notice_binding_test_hook=''
+    if (( inplace_status != 2 )) \
+        || [[ $(shasum -a 256 ${source} | awk '{print $1}') != ${expected_sha256} ]]; then
+      print -u2 'RELEASE GATE: an in-place notice ABA mutation with restored bytes was not rejected.'
+      return 2
+    fi
+    exec {third_party_notice_fd}>&-
+    third_party_notice_fd=-1
+  ) || test_status=$?
+
+  if [[ $(stat -f '%d:%i:%u:%Lp' ${test_root} 2>/dev/null || print invalid) == ${test_root_identity} ]]; then
+    rm -rf -- ${test_root}
+  else
+    print -u2 'RELEASE GATE: notice self-test root identity changed; it was preserved.'
+    (( test_status == 0 )) && test_status=2
+  fi
+  (( test_status == 0 )) || return ${test_status}
+  print 'notice_binding=verified'
+}
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
@@ -12,73 +458,38 @@ core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
 marketing_version='5.0.0'
-build_version='10'
+build_version='12'
 preflight_only=0
+tool_path_self_test=0
+notice_binding_self_test=0
 release_mode=0
 identity=${KEEPVAULT_CODESIGN_IDENTITY:-}
 # Name of an "xcrun notarytool store-credentials" keychain profile. Empty means
 # the build stops short of notarization; the secrets never live here.
 notary_profile=${KEEPVAULT_NOTARY_PROFILE:-}
+requested_performance_baseline=${KEEPVAULT_PERF_BASELINE:-}
+unset KEEPVAULT_TEST_RELEASE_ROOT KEEPVAULT_PERF_BASELINE
 pfx_path=${KEEPVAULT_HYBRID_PFX:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/hybrid-rsa4096.pfx}
-mldsa_private_key=${KEEPVAULT_MLDSA_PRIVATE_KEY:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key}
-mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${mldsa_private_key}.enc}
-mldsa_keychain_service=${KEEPVAULT_MLDSA_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-wrapping-key}
-pfx_password_encrypted=${KEEPVAULT_PFX_PASSWORD_ENCRYPTED:-${pfx_path}.password.enc}
-mldsa_keychain_account=${KEEPVAULT_MLDSA_KEYCHAIN_ACCOUNT:-${USER:-}}
-
-# Both halves of the hybrid certificate are released by one Keychain
-# confirmation once they have been wrapped: a signature counts only when
-# RSA-PSS and ML-DSA-87 both verify, so gating them separately would mean two
-# prompts for one indivisible decision. The unwrapped paths stay as a fallback
-# so a tree that has not been migrated still builds.
-mldsa_key_arguments=(--mldsa-private-key ${mldsa_private_key})
-if [[ -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} ]]; then
-  mldsa_key_arguments=(
-    --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
-    --mldsa-key-keychain-service ${mldsa_keychain_service}
-    --mldsa-key-keychain-account ${mldsa_keychain_account}
-  )
-fi
-pfx_password_arguments=()
-if [[ -f ${pfx_password_encrypted} && ! -L ${pfx_password_encrypted} ]]; then
-  pfx_password_arguments=(--pfx-password-encrypted ${pfx_password_encrypted})
-fi
-
-# A wrapping key on removable media lets a build run unattended while that
-# volume is mounted; unplug it and signing falls back to the Keychain prompt.
-# Physical presence is a weaker gate than the prompt -- anything running as this
-# user can read a mounted volume -- but it is bounded by something the key
-# holder can see and pull out, and it keeps routine development from being four
-# confirmations long.
-wrapping_key_file=${KEEPVAULT_WRAPPING_KEY_FILE:-}
-if [[ -z ${wrapping_key_file} ]]; then
-  for candidate in /Volumes/*/Keep\ Vault\ ReleaseKeys*/wrapping-key.b64(N); do
-    [[ -f ${candidate} && ! -L ${candidate} ]] || continue
-    wrapping_key_file=${candidate}
-    break
-  done
-fi
-if [[ -n ${wrapping_key_file} && -f ${wrapping_key_file} && ! -L ${wrapping_key_file} ]]; then
-  mldsa_key_arguments+=(--wrapping-key-file ${wrapping_key_file})
-  print "wrapping_key=removable media (${wrapping_key_file:h:t})"
-else
-  print "wrapping_key=Keychain (confirmation required per signing pass)"
-fi
+mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key.v12.enc}
+pfx_password_encrypted=${KEEPVAULT_PFX_PASSWORD_ENCRYPTED:-${pfx_path}.password.v12.enc}
+mldsa_wrapping_service=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.v12.mldsa-wrapping-key}
+mldsa_wrapping_account=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-mldsa-v12:${USER:-}}
+pfx_wrapping_service=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.v12.pfx-wrapping-key}
+pfx_wrapping_account=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-pfx-v12:${USER:-}}
 
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${packaging_dir}/Keys/mldsa87-public.key}
-pfx_password_service=${KEEPVAULT_PFX_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-pfx}
-pfx_password_account=${KEEPVAULT_PFX_KEYCHAIN_ACCOUNT:-${USER:-}}
-pfx_password_environment=${KEEPVAULT_PFX_PASSWORD_ENV:-KEEPVAULT_HYBRID_PFX_PASSWORD}
-dotnet_command=${KEEPVAULT_DOTNET:-/Users/michael/.dotnet-keepvault/dotnet}
-expected_main_lock_sha256='CE79838C19ED716DBB3276EFB75A47510B2BD6B41B4D2B25687166523FF81546'
+dotnet_command=''
+expected_main_lock_sha256='B111FBCD11FBF46DF0E61164109CBD8BFB2C22B80EC79E4B4D1EA0ED7FE07DE7'
 expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF39407EB6BA5EB'
+expected_tests_lock_sha256='EE7FEDF92179705DE025536CDCF1CB6B5991AA69D457B26103B3E420B9957A24'
 
 usage() {
   print -u2 'Usage: Build-KeepVault-macOS.sh [--architecture universal|arm64] [--identity HASH_OR_NAME]'
-  print -u2 '       [--pfx FILE] [--mldsa-private-key FILE] [--mldsa-public-key FILE]'
-  print -u2 '       [--pfx-password-keychain-service NAME] [--pfx-keychain-account NAME]'
-  print -u2 '       [--dotnet /path/to/official/dotnet] [--version X.Y.Z] [--build-number N]'
-  print -u2 '       [--notary-profile NOTARYTOOL_KEYCHAIN_PROFILE] [--preflight]'
+  print -u2 '       [--pfx FILE] [--mldsa-private-key-encrypted FILE] [--pfx-password-encrypted FILE]'
+  print -u2 '       [--mldsa-public-key FILE]'
+  print -u2 '       [--version X.Y.Z] [--build-number N]'
+  print -u2 '       [--notary-profile NOTARYTOOL_KEYCHAIN_PROFILE] [--release] [--preflight]'
+  print -u2 '       [--tool-path-self-test] [--notice-binding-self-test]'
   exit 64
 }
 
@@ -99,29 +510,19 @@ while (( $# != 0 )); do
       pfx_path=$2
       shift 2
       ;;
-    --mldsa-private-key)
+    --mldsa-private-key-encrypted)
       (( $# >= 2 )) || usage
-      mldsa_private_key=$2
+      mldsa_private_key_encrypted=$2
+      shift 2
+      ;;
+    --pfx-password-encrypted)
+      (( $# >= 2 )) || usage
+      pfx_password_encrypted=$2
       shift 2
       ;;
     --mldsa-public-key)
       (( $# >= 2 )) || usage
       mldsa_public_key=$2
-      shift 2
-      ;;
-    --pfx-password-keychain-service)
-      (( $# >= 2 )) || usage
-      pfx_password_service=$2
-      shift 2
-      ;;
-    --pfx-keychain-account)
-      (( $# >= 2 )) || usage
-      pfx_password_account=$2
-      shift 2
-      ;;
-    --dotnet)
-      (( $# >= 2 )) || usage
-      dotnet_command=$2
       shift 2
       ;;
     --version)
@@ -147,9 +548,22 @@ while (( $# != 0 )); do
       preflight_only=1
       shift
       ;;
+    --tool-path-self-test)
+      tool_path_self_test=1
+      shift
+      ;;
+    --notice-binding-self-test)
+      notice_binding_self_test=1
+      shift
+      ;;
     *) usage ;;
   esac
 done
+
+if (( tool_path_self_test )); then
+  print 'release_tool_paths=verified'
+  exit 0
+fi
 
 if [[ ${architecture} != universal && ${architecture} != arm64 ]]; then
   print -u2 'Only universal or arm64 release architectures are supported.'
@@ -164,19 +578,193 @@ if [[ -L ${repo_root} || -L ${mac_project} || -L ${packaging_dir} ]]; then
   exit 1
 fi
 
-for required_command in xcrun codesign security plutil ditto file shasum openssl; do
-  if ! command -v ${required_command} >/dev/null 2>&1; then
-    print -u2 "Required release tool is unavailable: ${required_command}"
-    exit 1
+private_temp_parent=/private/tmp
+private_temp_uid=$(stat -f '%u' ${private_temp_parent} 2>/dev/null || print invalid)
+private_temp_mode=$(( 8#$(stat -f '%p' ${private_temp_parent} 2>/dev/null || print 0) & 8#7777 ))
+if [[ ! -d ${private_temp_parent} || -L ${private_temp_parent} \
+    || ${private_temp_uid} != 0 ]] || (( private_temp_mode != 8#1777 )); then
+  print -u2 'RELEASE GATE: /private/tmp must be a physical root-owned mode-1777 directory.'
+  exit 2
+fi
+
+if (( notice_binding_self_test )); then
+  run_notice_binding_self_test
+  exit 0
+fi
+
+build_root=''
+build_root_identity=''
+private_nuget_root=''
+private_nuget_root_identity=''
+private_nuget_packages=''
+private_nuget_packages_identity=''
+private_nuget_http_cache=''
+private_nuget_http_cache_identity=''
+private_nuget_scratch=''
+private_nuget_scratch_identity=''
+private_dotnet_cli_home=''
+private_dotnet_cli_home_identity=''
+private_dotnet_tmp=''
+private_dotnet_tmp_identity=''
+private_artifacts_root=''
+private_artifacts_root_identity=''
+private_app_artifacts=''
+private_app_artifacts_identity=''
+private_signer_artifacts=''
+private_signer_artifacts_identity=''
+private_tests_artifacts=''
+private_tests_artifacts_identity=''
+verified_dotnet_root=''
+verified_dotnet_root_identity=''
+dotnet_command_identity=''
+hybrid_keychain_tmp=''
+hybrid_keychain_tmp_identity=''
+signer_dll=''
+signer_dll_identity=''
+
+require_private_directory_identity() {
+  local directory=$1
+  local expected_identity=$2
+  [[ -n ${directory} && -d ${directory} && ! -L ${directory} \
+      && $(stat -f '%d:%i' ${directory} 2>/dev/null || print invalid) == ${expected_identity} \
+      && $(stat -f '%u:%Lp' ${directory} 2>/dev/null || print invalid) == ${EUID}:700 ]]
+}
+
+require_private_nuget_cache_identity() {
+  require_private_directory_identity ${build_root} ${build_root_identity} \
+    && require_private_directory_identity ${private_nuget_root} ${private_nuget_root_identity} \
+    && require_private_directory_identity ${private_nuget_packages} ${private_nuget_packages_identity} \
+    && require_private_directory_identity ${private_nuget_http_cache} ${private_nuget_http_cache_identity} \
+    && require_private_directory_identity ${private_nuget_scratch} ${private_nuget_scratch_identity} \
+    && require_private_directory_identity ${private_dotnet_cli_home} ${private_dotnet_cli_home_identity} \
+    && require_private_directory_identity ${private_dotnet_tmp} ${private_dotnet_tmp_identity} \
+    && require_private_directory_identity ${private_artifacts_root} ${private_artifacts_root_identity} \
+    && require_private_directory_identity ${private_app_artifacts} ${private_app_artifacts_identity} \
+    && require_private_directory_identity ${private_signer_artifacts} ${private_signer_artifacts_identity} \
+    && require_private_directory_identity ${private_tests_artifacts} ${private_tests_artifacts_identity} \
+    && { [[ -z ${verified_dotnet_root} ]] \
+      || { require_private_directory_identity ${verified_dotnet_root} ${verified_dotnet_root_identity} \
+        && [[ -f ${dotnet_command} && ! -L ${dotnet_command} && -x ${dotnet_command} \
+          && $(stat -f '%d:%i' ${dotnet_command} 2>/dev/null || print invalid) == ${dotnet_command_identity} ]]; }; }
+}
+
+create_private_nuget_cache() {
+  build_root=$(mktemp -d "${private_temp_parent}/keep-vault-release.XXXXXXXX")
+  chmod 0700 ${build_root}
+  build_root_identity=$(stat -f '%d:%i' ${build_root})
+  private_nuget_root=${build_root}/nuget
+  private_nuget_packages=${private_nuget_root}/packages
+  private_nuget_http_cache=${private_nuget_root}/http-cache
+  private_nuget_scratch=${private_nuget_root}/scratch
+  private_dotnet_cli_home=${private_nuget_root}/cli-home
+  private_dotnet_tmp=${private_nuget_root}/tmp
+  private_artifacts_root=${build_root}/artifacts
+  private_app_artifacts=${private_artifacts_root}/app
+  private_signer_artifacts=${private_artifacts_root}/signer
+  private_tests_artifacts=${private_artifacts_root}/tests
+  mkdir -m 0700 ${private_nuget_root} ${private_nuget_packages} \
+    ${private_nuget_http_cache} ${private_nuget_scratch} \
+    ${private_dotnet_cli_home} ${private_dotnet_tmp} ${private_artifacts_root} \
+    ${private_app_artifacts} ${private_signer_artifacts} ${private_tests_artifacts}
+  private_nuget_root_identity=$(stat -f '%d:%i' ${private_nuget_root})
+  private_nuget_packages_identity=$(stat -f '%d:%i' ${private_nuget_packages})
+  private_nuget_http_cache_identity=$(stat -f '%d:%i' ${private_nuget_http_cache})
+  private_nuget_scratch_identity=$(stat -f '%d:%i' ${private_nuget_scratch})
+  private_dotnet_cli_home_identity=$(stat -f '%d:%i' ${private_dotnet_cli_home})
+  private_dotnet_tmp_identity=$(stat -f '%d:%i' ${private_dotnet_tmp})
+  private_artifacts_root_identity=$(stat -f '%d:%i' ${private_artifacts_root})
+  private_app_artifacts_identity=$(stat -f '%d:%i' ${private_app_artifacts})
+  private_signer_artifacts_identity=$(stat -f '%d:%i' ${private_signer_artifacts})
+  private_tests_artifacts_identity=$(stat -f '%d:%i' ${private_tests_artifacts})
+  require_private_nuget_cache_identity || {
+    print -u2 'RELEASE GATE: failed to create the identity-bound private NuGet cache.'
+    exit 2
+  }
+}
+
+cleanup_private_nuget_cache() {
+  if [[ -z ${build_root:-} ]]; then
+    return 0
   fi
-done
+  require_private_nuget_cache_identity || {
+    print -u2 'RELEASE GATE: private NuGet cache identity changed; preserving it for inspection.'
+    return 1
+  }
+  return 0
+}
+
+cleanup() {
+  set +e
+  if cleanup_private_nuget_cache \
+      && [[ ${build_root} == ${private_temp_parent}/keep-vault-release.* ]]; then
+    rm -rf -- ${build_root}
+  fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+create_private_nuget_cache
+
+run_dotnet_clean() {
+  require_private_nuget_cache_identity || {
+    print -u2 'RELEASE GATE: private NuGet cache identity changed before a .NET invocation.'
+    return 2
+  }
+  local -a clean_environment=(
+    HOME=${private_dotnet_cli_home}
+    PATH=${PATH}
+    TMPDIR=${private_dotnet_tmp}
+    DOTNET_CLI_HOME=${private_dotnet_cli_home}
+    NUGET_PACKAGES=${private_nuget_packages}
+    NUGET_HTTP_CACHE_PATH=${private_nuget_http_cache}
+    NUGET_SCRATCH=${private_nuget_scratch}
+    DOTNET_EnableDiagnostics=0
+    COMPlus_EnableDiagnostics=0
+    DOTNET_CLI_TELEMETRY_OPTOUT=1
+    DOTNET_NOLOGO=1
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+    DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE=1
+    DOTNET_GENERATE_ASPNET_CERTIFICATE=false
+    DOTNET_ADD_GLOBAL_TOOLS_TO_PATH=false
+    MSBUILDDISABLENODEREUSE=1
+  )
+  [[ -z ${KEEPVAULT_TEST_RELEASE_ROOT:-} ]] \
+    || clean_environment+=(KEEPVAULT_TEST_RELEASE_ROOT=${KEEPVAULT_TEST_RELEASE_ROOT})
+  clean_environment+=(KEEPVAULT_TEST_REPOSITORY_ROOT=${repo_root})
+  [[ -z ${KEEPVAULT_PERF_BASELINE:-} ]] \
+    || clean_environment+=(KEEPVAULT_PERF_BASELINE=${KEEPVAULT_PERF_BASELINE})
+  local dotnet_status=0
+  ${env_path} -i "${clean_environment[@]}" ${dotnet_command} "$@" || dotnet_status=$?
+  require_private_nuget_cache_identity || {
+    print -u2 'RELEASE GATE: private NuGet cache identity changed during a .NET invocation.'
+    return 2
+  }
+  return ${dotnet_status}
+}
+
+dotnet_provisioner=${script_dir}/Provision-VerifiedDotnet-macOS.sh
+if [[ ! -f ${dotnet_provisioner} || -L ${dotnet_provisioner} || ! -x ${dotnet_provisioner} ]]; then
+  print -u2 'RELEASE GATE: verified .NET SDK provisioner is missing, symbolic, or not executable.'
+  exit 2
+fi
+verified_dotnet_target=${build_root}/dotnet-sdk
+dotnet_command=$(${dotnet_provisioner} --target ${verified_dotnet_target})
+verified_dotnet_root=${verified_dotnet_target}
+verified_dotnet_root_identity=$(stat -f '%d:%i' ${verified_dotnet_root})
+dotnet_command_identity=$(stat -f '%d:%i' ${dotnet_command})
+require_private_nuget_cache_identity || {
+  print -u2 'RELEASE GATE: freshly provisioned Microsoft SDK lost its identity binding.'
+  exit 2
+}
 
 dotnet_command=${dotnet_command:A}
 if [[ ! -x ${dotnet_command} || -L ${dotnet_command} ]]; then
   print -u2 "The explicitly selected official .NET SDK host is unavailable or a symbolic link: ${dotnet_command}"
   exit 1
 fi
-if ! ${dotnet_command} --list-sdks | grep -q '^10[.]0[.]400 '; then
+selected_sdk=$(cd ${repo_root} && run_dotnet_clean --version)
+if [[ ${selected_sdk} != '10.0.400' ]]; then
   print -u2 'Keep Vault release builds require the reviewed official .NET SDK 10.0.400.'
   exit 1
 fi
@@ -225,24 +813,26 @@ else
   exit 2
 fi
 
-if [[ -z ${pfx_path} || -z ${mldsa_private_key} ]]; then
+if [[ -z ${pfx_path} || -z ${mldsa_private_key_encrypted} \
+    || -z ${pfx_password_encrypted} ]]; then
   print -u2 'RELEASE GATE: macOS hybrid-signing private keys are not available.'
-  print -u2 'Provide an external RSA-4096/SHA-512 code-signing PFX and ML-DSA-87 private key.'
+  print -u2 'Provide the external RSA PFX and both role-specific v12 secret envelopes.'
   print -u2 'Private keys are intentionally never generated in or copied into the repository.'
+  exit 2
+fi
+if [[ -z ${USER:-} || -z ${mldsa_wrapping_service} || -z ${mldsa_wrapping_account} \
+    || -z ${pfx_wrapping_service} || -z ${pfx_wrapping_account} \
+    || ${mldsa_wrapping_service} == ${pfx_wrapping_service} \
+    || ${mldsa_wrapping_account} == ${pfx_wrapping_account} ]]; then
+  print -u2 'RELEASE GATE: RSA and ML-DSA need distinct, nonempty Keychain services and accounts.'
   exit 2
 fi
 
 pfx_path=${pfx_path:A}
-mldsa_private_key=${mldsa_private_key:A}
 mldsa_private_key_encrypted=${mldsa_private_key_encrypted:A}
+pfx_password_encrypted=${pfx_password_encrypted:A}
 mldsa_public_key=${mldsa_public_key:A}
-# Once the key has been wrapped the plaintext file is meant to be gone, so the
-# gate checks whichever form this tree actually signs with.
-mldsa_key_material=${mldsa_private_key}
-if [[ ${mldsa_key_arguments[1]} == --mldsa-private-key-encrypted ]]; then
-  mldsa_key_material=${mldsa_private_key_encrypted}
-fi
-for private_path in ${pfx_path} ${mldsa_key_material}; do
+for private_path in ${pfx_path} ${mldsa_private_key_encrypted} ${pfx_password_encrypted}; do
   if [[ ${private_path} == ${repo_root}/* ]]; then
     print -u2 "RELEASE GATE: private signing material must remain outside the repository: ${private_path}"
     exit 2
@@ -275,16 +865,41 @@ if [[ ! -f ${mldsa_public_key} || -L ${mldsa_public_key} ]]; then
   print -u2 "Pinned ML-DSA-87 public key is missing or a symbolic link: ${mldsa_public_key}"
   exit 2
 fi
-if [[ -z ${pfx_password_service} && -z ${(P)pfx_password_environment:-} ]]; then
-  print -u2 "RELEASE GATE: store the PFX password in macOS Keychain or set ${pfx_password_environment}."
-  exit 2
-fi
+
+# The read-free verifier rejects a missing item, a shared identity, a trusted
+# application added with "Always Allow", or a role-swapped ACL before any
+# signing secret is requested.
+KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED=${mldsa_private_key_encrypted} \
+KEEPVAULT_PFX_PASSWORD_ENCRYPTED=${pfx_password_encrypted} \
+KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_SERVICE=${mldsa_wrapping_service} \
+KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_ACCOUNT=${mldsa_wrapping_account} \
+KEEPVAULT_PFX_WRAPPING_KEYCHAIN_SERVICE=${pfx_wrapping_service} \
+KEEPVAULT_PFX_WRAPPING_KEYCHAIN_ACCOUNT=${pfx_wrapping_account} \
+  ${script_dir}/Protect-HybridKeys-macOS.sh --verify-only
+
+mldsa_key_arguments=(
+  --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
+  --mldsa-wrapping-key-keychain-service ${mldsa_wrapping_service}
+  --mldsa-wrapping-key-keychain-account ${mldsa_wrapping_account}
+)
+pfx_password_arguments=(
+  --pfx-password-encrypted ${pfx_password_encrypted}
+  --pfx-wrapping-key-keychain-service ${pfx_wrapping_service}
+  --pfx-wrapping-key-keychain-account ${pfx_wrapping_account}
+)
 
 main_lock=${mac_project}/packages.lock.json
 signer_lock=${packaging_dir}/HybridSigner/packages.lock.json
-for lock_file expected_lock_hash in \
-  ${main_lock} ${expected_main_lock_sha256} \
-  ${signer_lock} ${expected_signer_lock_sha256}; do
+tests_lock=${repo_root}/KeepVaultMac.Tests/packages.lock.json
+lock_files=("${main_lock}" "${signer_lock}" "${tests_lock}")
+expected_lock_hashes=(
+  ${expected_main_lock_sha256}
+  ${expected_signer_lock_sha256}
+  ${expected_tests_lock_sha256}
+)
+for (( lock_index = 1; lock_index <= ${#lock_files}; lock_index++ )); do
+  lock_file=${lock_files[lock_index]}
+  expected_lock_hash=${expected_lock_hashes[lock_index]}
   if [[ ! -f ${lock_file} || -L ${lock_file} ]]; then
     print -u2 "RELEASE GATE: reviewed NuGet lockfile is missing or a symbolic link: ${lock_file}"
     exit 2
@@ -305,29 +920,32 @@ fi
 
 (
   cd ${mac_project}
-  ${dotnet_command} restore KeepVaultMac.csproj --locked-mode --nologo
-  ${dotnet_command} restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj --locked-mode --nologo
+  run_dotnet_clean restore KeepVaultMac.csproj --artifacts-path ${private_app_artifacts} --locked-mode --force --force-evaluate --no-http-cache --disable-build-servers --nologo
+  run_dotnet_clean restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj --artifacts-path ${private_signer_artifacts} --locked-mode --force --force-evaluate --no-http-cache --disable-build-servers --nologo
 )
-
-build_root=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-release.XXXXXXXX")
-chmod 0700 ${build_root}
-cleanup() {
-  if [[ -n ${build_root:-} && -d ${build_root} && ${build_root} == */keep-vault-release.* ]]; then
-    rm -rf -- ${build_root}
-  fi
-}
-trap cleanup EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
+(
+  cd ${repo_root}
+  run_dotnet_clean restore KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path ${private_tests_artifacts} --locked-mode --force --force-evaluate --no-http-cache --disable-build-servers --nologo
+)
 
 hybrid_keychain_tmp=${build_root}/hybrid-keychain-tmp
 mkdir -m 0700 ${hybrid_keychain_tmp}
+hybrid_keychain_tmp_identity=$(stat -f '%d:%i' ${hybrid_keychain_tmp})
 keychain_inventory_counter=0
 run_hybrid_signer() {
   local before_inventory=${build_root}/keychains-before-${keychain_inventory_counter}.txt
   local after_inventory=${build_root}/keychains-after-${keychain_inventory_counter}.txt
   local new_keychain_paths=${build_root}/keychains-new-${keychain_inventory_counter}.txt
   (( keychain_inventory_counter += 1 ))
+  if ! require_private_nuget_cache_identity \
+      || ! require_private_directory_identity ${hybrid_keychain_tmp} ${hybrid_keychain_tmp_identity} \
+      || [[ -z ${signer_dll_identity} || -z ${signer_dll} \
+        || ${signer_dll} != ${private_signer_artifacts}/* \
+        || ! -f ${signer_dll} || -L ${signer_dll} \
+        || $(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${signer_dll} 2>/dev/null || print invalid) != ${signer_dll_identity} ]]; then
+    print -u2 'RELEASE GATE: private signer or signer scratch identity changed before execution.'
+    return 2
+  fi
   if find ${hybrid_keychain_tmp} -mindepth 1 -print -quit | grep -q .; then
     print -u2 'RELEASE GATE: the isolated temporary-keychain directory was not empty before PFX loading.'
     return 2
@@ -339,10 +957,32 @@ run_hybrid_signer() {
   fi
 
   local signer_status=0
-  TMPDIR=${hybrid_keychain_tmp} \
+  require_private_nuget_cache_identity || return 2
+  ${env_path} -i \
+    PATH=${PATH} \
+    TMPDIR=${hybrid_keychain_tmp} \
+    DOTNET_CLI_HOME=${private_dotnet_cli_home} \
+    NUGET_PACKAGES=${private_nuget_packages} \
+    NUGET_HTTP_CACHE_PATH=${private_nuget_http_cache} \
+    NUGET_SCRATCH=${private_nuget_scratch} \
     KEEPVAULT_KEYCHAIN_TEMP_ROOT=${hybrid_keychain_tmp} \
     DOTNET_EnableDiagnostics=0 \
+    COMPlus_EnableDiagnostics=0 \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE=1 \
+    DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
+    DOTNET_ADD_GLOBAL_TOOLS_TO_PATH=false \
+    MSBUILDDISABLENODEREUSE=1 \
     ${dotnet_command} "$@" || signer_status=$?
+  if ! require_private_nuget_cache_identity \
+      || ! require_private_directory_identity ${hybrid_keychain_tmp} ${hybrid_keychain_tmp_identity} \
+      || [[ ! -f ${signer_dll} || -L ${signer_dll} \
+        || $(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${signer_dll} 2>/dev/null || print invalid) != ${signer_dll_identity} ]]; then
+    print -u2 'RELEASE GATE: private signer or signer scratch identity changed during execution.'
+    return 2
+  fi
 
   if [[ -d ${HOME}/Library/Keychains && ! -L ${HOME}/Library/Keychains ]]; then
     find -x ${HOME}/Library/Keychains -print | LC_ALL=C sort > ${after_inventory}
@@ -366,15 +1006,18 @@ publish_runtime() {
   local output=$2
   (
     cd ${mac_project}
-    ${dotnet_command} publish KeepVaultMac.csproj \
+    run_dotnet_clean publish KeepVaultMac.csproj \
       -c ${configuration} \
       -r ${runtime} \
+      --artifacts-path ${private_app_artifacts} \
       --no-restore \
       --self-contained true \
       --nologo \
       -p:PublishAot=true \
       -p:PublishTrimmed=true \
       -p:StripSymbols=true \
+      -p:UseSharedCompilation=false \
+      --disable-build-servers \
       -o ${output}
   )
 }
@@ -487,7 +1130,7 @@ if [[ -d ${native_dir} && ${native_dir} == ${build_root}/* ]]; then
 fi
 mkdir -p ${native_dir}
 native_source=${repo_root}/KeepVaultMac/Native/$([[ ${architecture} == universal ]] && print osx-universal || print osx-arm64)
-for native_name in zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_ref.dylib libmars_ref.dylib libshacal2_ref.dylib libthreefish_ref.dylib; do
+for native_name in zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_v12.dylib libmars_ref.dylib libshacal2_ref.dylib libthreefish_ref.dylib; do
   ditto ${native_source}/${native_name} ${native_dir}/${native_name}
 done
 
@@ -503,6 +1146,65 @@ macos_dir=${contents}/MacOS
 resources_dir=${contents}/Resources
 mkdir -p ${macos_dir} ${resources_dir}
 ditto ${merged_publish} ${macos_dir}
+
+# License compliance is part of the signed payload, not an external web page.
+# The exact locked-package notices are copied only after the private restore and
+# publish have completed. Every source is opened once without following a
+# symbolic link, hash-pinned and copied through that same identity-bound FD. The
+# single O_EXCL output stays descriptor-bound through its final hash and is then
+# covered by Apple's CodeResources seal and Keep Vault's detached manifests.
+third_party_header=${packaging_dir}/ThirdPartyNoticesHeader.txt
+third_party_notices=${resources_dir}/THIRD-PARTY-NOTICES.txt
+expected_third_party_header_sha256='908f80164af2529cc884b1712649f306ca4653c18ea79b910e7835df368ce4ae'
+expected_third_party_notices_sha256='bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159'
+create_bound_notice_output ${third_party_notices}
+copy_pinned_notice_source 'reviewed third-party-notice header' \
+  ${third_party_header} ${expected_third_party_header_sha256} 0
+
+nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.11
+if [[ ! -d ${nativeaot_notice_root} ]]; then
+  nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-x64/10.0.11
+fi
+append_pinned_notice 'Crypto++ 8.9.0' \
+  ${repo_root}/external/cryptopp/License.txt \
+  78e4010b682cb94187fe0b57e50116d0ba271ef81104d1ddb35c80c3d81e3169
+append_pinned_notice 'ZPAQ and libdivsufsort-lite' \
+  ${repo_root}/external/zpaq/COPYING \
+  927b5feda84f7a7f2063998b124829182967f54b954db2c3569e8bd07958bf07
+append_pinned_notice 'Argon2 reference implementation' \
+  ${repo_root}/external/phc-winner-argon2/LICENSE \
+  e01fc30f00792a2bb95136ebe7dd7d01baab62e719ed26ae1b08a3b6b114fdad
+append_pinned_notice 'ML-DSA reference implementation used by release tooling' \
+  ${repo_root}/external/ML-DSA-reference/LICENSE \
+  83504f283bf6b5d1ee3ede4d73eba3e2d620f507183a3915e3fbca7d574cb04a
+append_pinned_notice 'BouncyCastle.Cryptography 2.6.2' \
+  ${private_nuget_packages}/bouncycastle.cryptography/2.6.2/LICENSE.md \
+  afc1653b666b64a2386b7b9b914406904f45c20b9571765d8c1121b513313179
+append_pinned_notice 'QRCoder 1.8.0' \
+  ${private_nuget_packages}/qrcoder/1.8.0/LICENSE.txt \
+  fde71b40fff47192a02738042cb39fa780635daa00827771bec65366ccd1e46d
+append_pinned_notice 'HarfBuzzSharp native assets 8.3.1.3 licence' \
+  ${private_nuget_packages}/harfbuzzsharp.nativeassets.macos/8.3.1.3/LICENSE.txt \
+  89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938
+append_pinned_notice 'HarfBuzzSharp native assets 8.3.1.3 third-party notices' \
+  ${private_nuget_packages}/harfbuzzsharp.nativeassets.macos/8.3.1.3/THIRD-PARTY-NOTICES.txt \
+  21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5
+append_pinned_notice 'SkiaSharp native assets 3.119.4 licence' \
+  ${private_nuget_packages}/skiasharp.nativeassets.macos/3.119.4/LICENSE.txt \
+  89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938
+append_pinned_notice 'SkiaSharp native assets 3.119.4 third-party notices' \
+  ${private_nuget_packages}/skiasharp.nativeassets.macos/3.119.4/THIRD-PARTY-NOTICES.txt \
+  21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5
+append_pinned_notice '.NET 10.0.11 NativeAOT runtime licence' \
+  ${nativeaot_notice_root}/LICENSE.TXT \
+  cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310
+append_pinned_notice '.NET 10.0.11 NativeAOT runtime third-party notices' \
+  ${nativeaot_notice_root}/THIRD-PARTY-NOTICES.TXT \
+  66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54
+
+finalize_bound_notice_output \
+  ${third_party_notices} 300000 2000000 ${expected_third_party_notices_sha256}
+print "third_party_notices_sha256=${third_party_notice_sha256}"
 
 sed \
   -e "s/@@MARKETING_VERSION@@/${marketing_version}/g" \
@@ -552,12 +1254,17 @@ launcher_architectures=(arm64)
 signer_project=${packaging_dir}/HybridSigner/KeepVaultMac.HybridSigner.csproj
 (
   cd ${mac_project}
-  ${dotnet_command} build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj -c Release --no-restore --nologo
+  run_dotnet_clean build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj -c Release --no-restore --no-incremental --artifacts-path ${private_signer_artifacts} --disable-build-servers -p:UseSharedCompilation=false --nologo
 )
-signer_dll=${packaging_dir}/HybridSigner/bin/Release/net10.0/KeepVaultMac.HybridSigner.dll
+signer_dll=${private_signer_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll
 if [[ ! -f ${signer_dll} || -L ${signer_dll} ]]; then
   print -u2 'The reviewed hybrid signer did not produce its managed entry assembly.'
   exit 1
+fi
+signer_dll_identity=$(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${signer_dll})
+if [[ ${signer_dll_identity} != *:${EUID}:*:*:*:*:1 ]]; then
+  print -u2 'The private hybrid signer assembly is not a single-link caller-owned file.'
+  exit 2
 fi
 
 signer_arguments=(
@@ -594,12 +1301,6 @@ done < <(find ${macos_dir} -type f -print0 | sort -z)
 if (( hybrid_target_count < 10 )); then
   print -u2 "Too few Mach-O hybrid-signing targets were found: ${hybrid_target_count}"
   exit 1
-fi
-if [[ -n ${pfx_password_service} ]]; then
-  signer_arguments+=(--pfx-password-keychain-service ${pfx_password_service})
-  [[ -n ${pfx_password_account} ]] && signer_arguments+=(--pfx-keychain-account ${pfx_password_account})
-else
-  signer_arguments+=(--pfx-password-env ${pfx_password_environment})
 fi
 (
   cd ${mac_project}
@@ -677,12 +1378,6 @@ supervisor_signature_arguments=(
   --launcher-pins ${build_root}/SupervisorHybridPins.swift
   --target ${supervisor_path}
 )
-if [[ -n ${pfx_password_service} ]]; then
-  supervisor_signature_arguments+=(--pfx-password-keychain-service ${pfx_password_service})
-  [[ -n ${pfx_password_account} ]] && supervisor_signature_arguments+=(--pfx-keychain-account ${pfx_password_account})
-else
-  supervisor_signature_arguments+=(--pfx-password-env ${pfx_password_environment})
-fi
 (
   cd ${mac_project}
   run_hybrid_signer ${supervisor_signature_arguments[@]}
@@ -825,12 +1520,6 @@ launcher_signature_common=(
   --launcher-pins ${build_root}/SelfHybridPins.swift
   --target ${final_app}/Contents/MacOS/Keep\ Vault\ Launcher
 )
-if [[ -n ${pfx_password_service} ]]; then
-  launcher_signature_common+=(--pfx-password-keychain-service ${pfx_password_service})
-  [[ -n ${pfx_password_account} ]] && launcher_signature_common+=(--pfx-keychain-account ${pfx_password_account})
-else
-  launcher_signature_common+=(--pfx-password-env ${pfx_password_environment})
-fi
 (
   cd ${mac_project}
   run_hybrid_signer ${launcher_signature_common[@]}
@@ -920,12 +1609,6 @@ archive_common=(
   --launcher-pins ${build_root}/ArchiveHybridPins.swift
   --target ${final_zip}
 )
-if [[ -n ${pfx_password_service} ]]; then
-  archive_common+=(--pfx-password-keychain-service ${pfx_password_service})
-  [[ -n ${pfx_password_account} ]] && archive_common+=(--pfx-keychain-account ${pfx_password_account})
-else
-  archive_common+=(--pfx-password-env ${pfx_password_environment})
-fi
 (
   cd ${mac_project}
   run_hybrid_signer ${archive_common[@]}
@@ -969,28 +1652,228 @@ if [[ ${architecture} == universal ]]; then
   arch -x86_64 ${native_kats_x64} ${repo_root}/KeepVaultMac/Native/osx-x64
 fi
 
-print 'RELEASE GATE: staging test natives and running comprehensive tests + key-sheet render verification...'
+print 'RELEASE GATE: building the test project before staging any signed test-native bytes...'
+(
+  cd ${repo_root}
+  run_dotnet_clean build KeepVaultMac.Tests/KeepVaultMac.Tests.csproj \
+    -c Release \
+    --no-restore \
+    --no-incremental \
+    --artifacts-path ${private_tests_artifacts} \
+    --disable-build-servers \
+    -p:UseSharedCompilation=false \
+    --nologo
+)
+
+print 'RELEASE GATE: staging test natives after the final project build...'
 ${script_dir}/Stage-TestNatives-macOS.sh \
   --app ${final_app} \
+  --destination ${private_tests_artifacts}/bin/KeepVaultMac.Tests/release_osx-arm64/Native \
   --identity ${identity}
 (
   cd ${repo_root}
-  test_sheet_dir=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-test-sheets.XXXXXX")
+  test_sheet_dir=$(mktemp -d "${build_root}/test-sheets.XXXXXX")
+  trap 'rm -rf -- "${test_sheet_dir}"' EXIT INT TERM
+  test_project=KeepVaultMac.Tests/KeepVaultMac.Tests.csproj
+  test_inventory=$(run_dotnet_clean run \
+    --project ${test_project} \
+    --artifacts-path ${private_tests_artifacts} \
+    -c Release \
+    --no-build \
+    --no-restore \
+    --disable-build-servers \
+    -- \
+    --list)
+  required_test_ids=(
+    crypto.v12-parallel-mac-kat
+    crypto.chacha20-poly1305-rfc8439
+    containers.v12-production-worker-equivalence
+    containers.v12-kpar2-roundtrip
+    recovery.parallel-worker-equivalence
+    recovery.physical-eio-repair
+    packaging.keychain-secret-not-in-argv
+    packaging.hybrid-key-separation
+    zpaq.full-matrix
+    zpaq.process-resource-limits
+    zpaq.fail-fast-error-preservation
+    zpaq.sync-consumer-fail-fast
+    performance.cipher-suites
+    performance.paranoia-256mib-e2e
+    performance.paranoia-complex-tree-e2e
+    containers.suite.kalyna512-512
+    containers.suite.threefish1024
+    containers.suite.threefish-over-kalyna
+    containers.suite.paranoia-cascade
+    containers.suite.chacha-over-aes
+    containers.suite.aes256
+    containers.suite.mars448
+    containers.suite.shacal2-512
+    containers.suite.chacha20-poly1305
+    containers.suite.mixed-cascade
+  )
+  for required_test_id in ${required_test_ids[@]}; do
+    if ! print -r -- ${test_inventory} | grep -Fq -- ${required_test_id}; then
+      print -u2 "RELEASE GATE: required v12 test is absent: ${required_test_id}"
+      exit 2
+    fi
+  done
+
+  logical_processors=$(/usr/sbin/sysctl -n hw.logicalcpu 2>/dev/null || print 1)
+  if [[ ! ${logical_processors} =~ '^[1-9][0-9]*$' ]]; then
+    print -u2 'RELEASE GATE: the logical processor count is unavailable.'
+    exit 2
+  fi
+  parallel_test_workers=$(( logical_processors > 8 ? 8 : logical_processors ))
+  if (( parallel_test_workers < 2 )); then
+    print -u2 'RELEASE GATE: production worker equivalence requires at least two logical processors.'
+    exit 2
+  fi
+
+  print 'RELEASE GATE: running the complete suite with one test worker...'
   KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-    ${dotnet_command} run --project KeepVaultMac.Tests/KeepVaultMac.Tests.csproj -c Release -- --full --dump-key-sheets "${test_sheet_dir}"
-  rm -rf -- "${test_sheet_dir}"
+    run_dotnet_clean run \
+      --project ${test_project} \
+      --artifacts-path ${private_tests_artifacts} \
+      -c Release \
+      --no-build \
+      --no-restore \
+      --disable-build-servers \
+      -- \
+      --full \
+      --parallel 1 \
+      --dump-key-sheets "${test_sheet_dir}"
+
+  if (( release_mode )); then
+    print "RELEASE GATE: running the complete suite with ${parallel_test_workers} test workers..."
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --full \
+        --parallel ${parallel_test_workers}
+
+    print 'RELEASE GATE: explicitly running the production worker-1-vs-N container KAT...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --full \
+        --no-smoke \
+        --only containers.v12-production-worker-equivalence \
+        --parallel 1
+
+    print 'RELEASE GATE: explicitly running the independently pinned v12 parallel-MAC KAT...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --full \
+        --no-smoke \
+        --only crypto.v12-parallel-mac-kat \
+        --parallel 1
+
+    print 'RELEASE GATE: explicitly running the integrated v12 container, ZPAQ and KPAR2 end-to-end gates...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --full \
+        --no-smoke \
+        --only containers.v12-kpar2-roundtrip \
+        --parallel 1
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --full \
+        --no-smoke \
+        --only recovery.parallel-worker-equivalence \
+        --parallel 1
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --full \
+        --no-smoke \
+        --only recovery.physical-eio-repair \
+        --parallel 1
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --full \
+        --no-smoke \
+        --only zpaq.full-matrix \
+        --parallel 1
+
+    performance_baseline=${requested_performance_baseline}
+    if [[ -z ${performance_baseline} || ! -f ${performance_baseline} || -L ${performance_baseline} ]]; then
+      print -u2 'RELEASE GATE: --release requires KEEPVAULT_PERF_BASELINE to name a regular same-machine schema-2 baseline.'
+      exit 2
+    fi
+    performance_baseline=${performance_baseline:A}
+    print 'RELEASE GATE: running the ten-suite manual performance matrix on one test worker...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      KEEPVAULT_PERF_BASELINE=${performance_baseline} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --performance \
+        --only performance.cipher-suites \
+        --parallel 1
+  fi
 )
 
 # Notarization. Apple must see the build before Gatekeeper will accept it on
 # another Mac. Credentials are never passed on the command line or stored in
 # this repository: create a keychain profile once with
 #
-#     xcrun notarytool store-credentials "Keep Vault" \
-#       --apple-id <your-apple-id> --team-id <your-team-id> \
-#       --password <app-specific-password>
+#     xcrun notarytool store-credentials "Keep Vault v12" \
+#       --apple-id <your-apple-id> --team-id <your-team-id>
 #
-# and then pass --notary-profile "Keep Vault". The profile name is all this
-# script ever sees; the secrets stay in the login keychain.
+# Enter the app-specific password only at notarytool's protected prompt, then
+# pass --notary-profile "Keep Vault v12". The profile name is all this script
+# ever sees; the secrets stay in the login keychain.
 if [[ -z ${notary_profile} ]]; then
   print 'notarization=not_performed (pass --notary-profile NAME once a Developer ID certificate and a notarytool profile exist)'
 else

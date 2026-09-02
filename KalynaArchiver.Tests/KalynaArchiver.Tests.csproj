@@ -20,7 +20,7 @@
   <ItemGroup>
     <None Include="..\tools\zpaq.exe" Link="zpaq.exe" CopyToOutputDirectory="Always" />
     <None Include="..\tools\argon2.exe" Link="argon2.exe" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\kalyna_ref.dll" Link="kalyna_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="..\tools\kalyna_v12.dll" Link="kalyna_v12.dll" CopyToOutputDirectory="Always" />
     <None Include="..\tools\threefish_ref.dll" Link="threefish_ref.dll" CopyToOutputDirectory="Always" />
     <None Include="..\tools\argon2_ref.dll" Link="argon2_ref.dll" CopyToOutputDirectory="Always" />
     <None Include="..\tools\aes_ref.dll" Link="aes_ref.dll" CopyToOutputDirectory="Always" />

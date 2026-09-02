@@ -1,5 +1,102 @@
-#!/bin/zsh
+#!/bin/zsh -f
 set -euo pipefail
+umask 077
+PATH='/usr/bin:/bin:/usr/sbin:/sbin'
+export PATH
+unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+  RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES SSL_CERT_FILE \
+  SSL_CERT_DIR CURL_HOME XDG_CONFIG_HOME
+unset DEVELOPER_DIR SDKROOT TOOLCHAINS
+unset CCC_OVERRIDE_OPTIONS COMPILER_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH \
+  OBJC_INCLUDE_PATH LIBRARY_PATH GCC_EXEC_PREFIX ADDITIONAL_SWIFT_DRIVER_FLAGS \
+  SWIFT_EXEC SWIFT_DRIVER_SWIFT_FRONTEND_EXEC SWIFT_DRIVER_SWIFTSCAN_LIB \
+  SWIFT_DRIVER_TOOLCHAIN_CASPLUGIN_LIB DYLD_INSERT_LIBRARIES DYLD_LIBRARY_PATH \
+  DYLD_FRAMEWORK_PATH DYLD_FALLBACK_LIBRARY_PATH DYLD_FALLBACK_FRAMEWORK_PATH
+unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE DOTNET_ROOT \
+  DOTNET_ROOT_X64 DOTNET_ROOT_ARM64 DOTNET_HOST_PATH DOTNET_DiagnosticPorts \
+  DOTNET_DefaultDiagnosticPortSuspend DOTNET_ROLL_FORWARD \
+  DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX DOTNET_ROLL_FORWARD_TO_PRERELEASE \
+  DOTNET_MULTILEVEL_LOOKUP CORECLR_ENABLE_PROFILING CORECLR_PROFILER \
+  CORECLR_PROFILER_PATH CORECLR_PROFILER_PATH_32 CORECLR_PROFILER_PATH_64 \
+  CORECLR_PROFILER_PATH_ARM64 COR_ENABLE_PROFILING COR_PROFILER \
+  COR_PROFILER_PATH COR_PROFILER_PATH_32 COR_PROFILER_PATH_64 \
+  COMPlus_AltJit COMPlus_AltJitName DOTNET_AltJit DOTNET_AltJitName \
+  MSBuildSDKsPath MSBUILD_EXE_PATH MSBuildExtensionsPath \
+  MSBuildExtensionsPath32 MSBuildExtensionsPath64 MSBuildUserExtensionsPath \
+  MSBuildToolsPath MSBuildBinPath MSBUILDLEGACYEXTENSIONSPATH \
+  MSBUILDADDITIONALSDKRESOLVERSFOLDER CustomBeforeMicrosoftCommonTargets \
+  CustomAfterMicrosoftCommonTargets CustomBeforeMicrosoftCSharpTargets \
+  CustomAfterMicrosoftCSharpTargets DirectoryBuildPropsPath \
+  DirectoryBuildTargetsPath ImportDirectoryBuildProps ImportDirectoryBuildTargets \
+  DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR \
+  DOTNET_MSBUILD_SDK_RESOLVER_SDKS_VER NUGET_PLUGIN_PATHS \
+  NUGET_CREDENTIALPROVIDERS_PATH NUGET_EXTENSIONS_PATH NUGET_PACKAGES \
+  NUGET_HTTP_CACHE_PATH NUGET_SCRATCH RestoreSources \
+  RestoreAdditionalProjectSources RestoreFallbackFolders RestorePackagesPath \
+  RestoreConfigFile
+export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
+
+xcrun_path=/usr/bin/xcrun
+codesign_path=/usr/bin/codesign
+stat_path=/usr/bin/stat
+shlock_path=/usr/bin/shlock
+osascript_path=/usr/bin/osascript
+file_path=/usr/bin/file
+mktemp_path=/usr/bin/mktemp
+ditto_path=/usr/bin/ditto
+rm_path=/bin/rm
+chmod_path=/bin/chmod
+mkdir_path=/bin/mkdir
+mv_path=/bin/mv
+rmdir_path=/bin/rmdir
+find_path=/usr/bin/find
+env_path=/usr/bin/env
+shasum_path=/usr/bin/shasum
+awk_path=/usr/bin/awk
+plist_buddy_path=/usr/libexec/PlistBuddy
+launch_services_path=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
+root_system_tool_is_safe() {
+  local tool=$1
+  if [[ ${tool} != /* || ! -f ${tool} || -L ${tool} || ! -x ${tool} \
+      || $(${stat_path} -f %u -- ${tool} 2>/dev/null || print invalid) != 0 ]]; then
+    return 1
+  fi
+  local tool_mode=$(( 8#$(${stat_path} -f %Lp -- ${tool}) ))
+  (( (tool_mode & 8#022) == 0 ))
+}
+
+require_root_system_tool() {
+  local tool=$1
+  if ! root_system_tool_is_safe ${tool}; then
+    print -u2 "INSTALLER GATE: required system tool is not an absolute root-owned, non-writable regular file: ${tool}"
+    exit 2
+  fi
+}
+
+for fixed_tool in \
+    ${xcrun_path} ${codesign_path} ${stat_path} ${shlock_path} \
+    ${osascript_path} ${file_path} ${mktemp_path} ${ditto_path} \
+    ${rm_path} ${chmod_path} ${mkdir_path} ${mv_path} ${rmdir_path} \
+    ${find_path} ${env_path} ${shasum_path} ${awk_path} \
+    ${plist_buddy_path} ${launch_services_path}; do
+  require_root_system_tool ${fixed_tool}
+done
+
+xcrun() { ${xcrun_path} "$@"; }
+codesign() { ${codesign_path} "$@"; }
+stat() { ${stat_path} "$@"; }
+shlock() { ${shlock_path} "$@"; }
+osascript() { ${osascript_path} "$@"; }
+file() { ${file_path} "$@"; }
+mktemp() { ${mktemp_path} "$@"; }
+ditto() { ${ditto_path} "$@"; }
+rm() { ${rm_path} "$@"; }
+chmod() { ${chmod_path} "$@"; }
+mkdir() { ${mkdir_path} "$@"; }
+mv() { ${mv_path} "$@"; }
+rmdir() { ${rmdir_path} "$@"; }
+sha256_file() { ${env_path} -i PATH='/usr/bin:/bin:/usr/sbin:/sbin' ${shasum_path} -a 256 -- "$1" | ${awk_path} '{print $1}'; }
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
@@ -10,11 +107,13 @@ allow_development=0
 test_root=''
 injected_failure=''
 deferred_test_failure=''
+tool_path_self_test=0
 
 usage() {
   print -u2 'Usage: Install-KeepVault-macOS.sh [--app "Keep Vault.app"] [--development]'
   print -u2 '       [--applications-dir /Applications] [--no-desktop-alias]'
   print -u2 '       [--test-root PRIVATE_MKTEMP_ROOT --inject-failure NAME]'
+  print -u2 '       [--tool-path-self-test]'
   exit 64
 }
 
@@ -48,9 +147,18 @@ while (( $# != 0 )); do
       injected_failure=$2
       shift 2
       ;;
+    --tool-path-self-test)
+      tool_path_self_test=1
+      shift
+      ;;
     *) usage ;;
   esac
 done
+
+if (( tool_path_self_test )); then
+  print 'installer_tool_paths=verified'
+  exit 0
+fi
 
 test_mode=0
 if [[ -n ${test_root} ]]; then
@@ -103,12 +211,15 @@ allowed_injected_failures=(
   main-app-replace
   launcher-replace
   scanner-replace
+  zpaq-anchor-install
+  zpaq-anchor-post-check
   native-verify
   main-verify
   anchor-create
   anchor-replace
   anchor-post-check
   rollback-anchor
+  rollback-zpaq-anchor
   rollback-app
   recovery-dir-create
   backup-move-main-app
@@ -159,20 +270,119 @@ defer_injected_failure() {
   print -u2 "installer_fault_deferred=${point}"
 }
 
-# ACQUIRE EXCLUSIVE INSTALLATION LOCK
-if (( test_mode )); then
-  lock_file=${test_root}/install.lock
-else
-  lock_file="${TMPDIR:-/tmp}/keep-vault-install.lock"
-fi
-if ! shlock -f "${lock_file}" -p $$; then
-  print -u2 'Another Keep Vault installation is currently in progress.'
-  exit 1
-fi
+# ACQUIRE EXCLUSIVE INSTALLATION LOCK. The directory creation is the actual
+# machine-wide atomic lock; shlock records the owner PID inside that private
+# directory. Production never inherits TMPDIR, so every administrator contends
+# on the same sticky-directory pathname. Existing locks fail closed.
+lock_directory=''
+lock_directory_identity=''
+lock_directory_owned=0
+lock_file=''
+lock_file_identity=''
+lock_file_owned=0
+lock_parent=''
+lock_parent_identity=''
+bound_delete_helper=''
+bound_delete_helper_identity=''
 
 release_lock() {
-  rm -f -- "${lock_file}"
+  local current_lock_contents=''
+  local current_lock_pid=''
+  if [[ -n ${bound_delete_helper_identity} ]]; then
+    if [[ -f ${bound_delete_helper} && ! -L ${bound_delete_helper} \
+        && $(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${bound_delete_helper} 2>/dev/null || print invalid) == ${bound_delete_helper_identity} ]]; then
+      rm -- ${bound_delete_helper}
+      bound_delete_helper_identity=''
+    elif [[ ! -e ${bound_delete_helper} && ! -L ${bound_delete_helper} ]]; then
+      bound_delete_helper_identity=''
+    else
+      print -u2 'Installer rollback helper changed identity; preserving the lock directory for inspection.'
+    fi
+  fi
+  if (( lock_file_owned )); then
+    if [[ -f ${lock_file} && ! -L ${lock_file} \
+        && $(stat -f '%d:%i' ${lock_file} 2>/dev/null || print invalid) == ${lock_file_identity} \
+        && $(stat -f '%u:%Lp:%l' ${lock_file} 2>/dev/null || print invalid) == ${EUID}:600:1 ]]; then
+      current_lock_contents=$(<${lock_file})
+      current_lock_pid=${${current_lock_contents}//[[:space:]]/}
+      if [[ ${current_lock_pid} == $$ ]]; then
+        rm -- ${lock_file}
+        lock_file_owned=0
+      else
+        print -u2 'Installer lock PID changed; preserving the lock for inspection.'
+      fi
+    elif [[ ! -e ${lock_file} && ! -L ${lock_file} ]]; then
+      lock_file_owned=0
+    else
+      print -u2 'Installer lock file changed identity; preserving it for inspection.'
+    fi
+  fi
+
+  if (( lock_directory_owned )); then
+    if [[ -d ${lock_parent} && ! -L ${lock_parent} \
+        && $(stat -f '%d:%i' ${lock_parent} 2>/dev/null || print invalid) == ${lock_parent_identity} \
+        && -d ${lock_directory} && ! -L ${lock_directory} \
+        && $(stat -f '%d:%i' ${lock_directory} 2>/dev/null || print invalid) == ${lock_directory_identity} \
+        && $(stat -f '%u:%Lp' ${lock_directory} 2>/dev/null || print invalid) == ${EUID}:700 \
+        && -z $(${find_path} ${lock_directory} -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null) ]]; then
+      rmdir -- ${lock_directory}
+      lock_directory_owned=0
+    elif [[ ! -e ${lock_directory} && ! -L ${lock_directory} ]]; then
+      lock_directory_owned=0
+    else
+      print -u2 'Installer lock directory changed or is nonempty; preserving it for inspection.'
+    fi
+  fi
 }
+
+if (( test_mode )); then
+  lock_parent=${test_root}
+  lock_parent_identity=${test_root_identity}
+  lock_directory=${test_root}/install.lock
+else
+  lock_parent=/private/tmp
+  private_tmp_mode=$(( 8#$(stat -f '%p' ${lock_parent} 2>/dev/null || print 0) & 8#7777 ))
+  if [[ ! -d ${lock_parent} || -L ${lock_parent} \
+      || $(stat -f '%u' ${lock_parent} 2>/dev/null || print invalid) != 0 ]] \
+      || (( private_tmp_mode != 8#1777 )); then
+    print -u2 'The machine-wide installer lock requires physical root-owned mode-1777 /private/tmp.'
+    exit 2
+  fi
+  lock_parent_identity=$(stat -f '%d:%i' ${lock_parent})
+  lock_directory=/private/tmp/keep-vault-install.lock
+fi
+
+if ! mkdir -m 0700 -- ${lock_directory}; then
+  print -u2 'Another Keep Vault installation is currently in progress, or a stale lock requires inspection.'
+  exit 1
+fi
+lock_directory_identity=$(stat -f '%d:%i' ${lock_directory} 2>/dev/null || true)
+if [[ ! ${lock_directory_identity} =~ '^[0-9]+:[0-9]+$' \
+    || ! -d ${lock_directory} || -L ${lock_directory} \
+    || $(stat -f '%u:%Lp' ${lock_directory} 2>/dev/null || print invalid) != ${EUID}:700 ]]; then
+  print -u2 'The newly acquired installer lock directory has invalid identity or permissions and was preserved.'
+  exit 2
+fi
+lock_directory_owned=1
+lock_file=${lock_directory}/owner
+if ! shlock -f ${lock_file} -p $$ \
+    || [[ ! -f ${lock_file} || -L ${lock_file} ]] \
+    || ! chmod 0600 ${lock_file}; then
+  print -u2 'The installer could not create its private PID lock record.'
+  release_lock
+  exit 2
+fi
+lock_file_identity=$(stat -f '%d:%i' ${lock_file} 2>/dev/null || true)
+lock_file_owned=1
+lock_contents=$(<${lock_file})
+lock_pid=${${lock_contents}//[[:space:]]/}
+if [[ ! ${lock_file_identity} =~ '^[0-9]+:[0-9]+$' \
+    || $(stat -f '%u:%Lp:%l' ${lock_file} 2>/dev/null || print invalid) != ${EUID}:600:1 \
+    || ${lock_pid} != $$ ]]; then
+  print -u2 'The installer PID lock record is not bound to this process.'
+  release_lock
+  exit 2
+fi
 
 if [[ -z ${source_app} ]]; then
   dist_candidate=${repo_root}/dist/Keep\ Vault-macOS/Keep\ Vault.app
@@ -260,7 +470,8 @@ fi
 
 bound_delete_source=${script_dir}/InstallerBoundDelete.c
 bound_delete_compiler=$(xcrun --find clang 2>/dev/null || true)
-if [[ ! -f ${bound_delete_source} || -L ${bound_delete_source} || ! -x ${bound_delete_compiler} ]]; then
+if [[ ! -f ${bound_delete_source} || -L ${bound_delete_source} ]] \
+    || ! root_system_tool_is_safe ${bound_delete_compiler}; then
   release_lock
   print -u2 'The trusted installer rollback helper source or Apple clang is unavailable.'
   exit 1
@@ -276,6 +487,14 @@ if [[ ! ${install_root_identity} =~ '^[0-9]+:[0-9]+$' \
   exit 1
 fi
 
+install_root_identity_is_current() {
+  [[ -d ${applications_dir} && ! -L ${applications_dir} \
+      && $(stat -f '%d:%i' ${applications_dir} 2>/dev/null || print invalid) == ${applications_dir_identity} \
+      && -d ${install_root} && ! -L ${install_root} \
+      && $(stat -f '%d:%i' ${install_root} 2>/dev/null || print invalid) == ${install_root_identity} \
+      && $(stat -f '%u:%Lp' ${install_root} 2>/dev/null || print invalid) == ${EUID}:700 ]]
+}
+
 rollback_quarantine=${install_root}/rollback-quarantine
 mkdir -m 0700 -- ${rollback_quarantine}
 rollback_quarantine_identity=$(stat -f '%d:%i' ${rollback_quarantine} 2>/dev/null || true)
@@ -288,14 +507,29 @@ fi
 rollback_quarantine_device=${rollback_quarantine_identity%%:*}
 rollback_quarantine_inode=${rollback_quarantine_identity#*:}
 
-bound_delete_helper=${install_root}/installer-bound-delete
+bound_delete_helper=${lock_directory}/installer-bound-delete
 if ! xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
     ${bound_delete_source} -o ${bound_delete_helper} \
     || ! chmod 0500 ${bound_delete_helper}; then
   release_lock
-  print -u2 "The object-bound rollback helper could not be built; the private root was preserved: ${install_root}"
+  print -u2 "The object-bound rollback helper could not be built; the private roots were preserved: ${install_root}"
   exit 1
 fi
+bound_delete_helper_identity=$(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${bound_delete_helper} 2>/dev/null || true)
+if [[ ! -f ${bound_delete_helper} || -L ${bound_delete_helper} \
+    || ${bound_delete_helper_identity} != *:${EUID}:500:*:*:*:1 ]]; then
+  release_lock
+  print -u2 'The object-bound rollback helper has invalid identity, ownership, mode, or link count.'
+  exit 1
+fi
+
+require_bound_delete_helper_identity() {
+  [[ -d ${lock_directory} && ! -L ${lock_directory} \
+      && $(stat -f '%d:%i' ${lock_directory} 2>/dev/null || print invalid) == ${lock_directory_identity} \
+      && $(stat -f '%u:%Lp' ${lock_directory} 2>/dev/null || print invalid) == ${EUID}:700 \
+      && -f ${bound_delete_helper} && ! -L ${bound_delete_helper} \
+      && $(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${bound_delete_helper} 2>/dev/null || print invalid) == ${bound_delete_helper_identity} ]]
+}
 
 staged_app=${install_root}/Keep\ Vault.app
 backup_dir=${install_root}/backup
@@ -317,12 +551,92 @@ transaction_committed=0
 anchor_updated=0
 had_existing_anchor=0
 had_existing_anchor_directory=0
+zpaq_anchor_updated=0
+had_existing_zpaq_anchor=0
+zpaq_anchor_identity=''
+zpaq_anchor_backup_identity=''
 recorded_version=0
 rollback_failed=0
 staged_app_identity=''
 staged_scanner_identity=''
 typeset -A staged_launcher_sidecar_identities
 typeset -A staged_scanner_sidecar_identities
+
+verify_installed_object_identity() {
+  local installed_path=$1
+  local expected_identity=$2
+  local description=$3
+  local actual_identity=''
+
+  if [[ -L ${installed_path} || ( ! -f ${installed_path} && ! -d ${installed_path} ) \
+      || ! ${expected_identity} =~ '^[0-9]+:[0-9]+$' ]]; then
+    print -u2 "Installed ${description} is missing, has the wrong type, is a symlink, or has no bound staging identity: ${installed_path}"
+    return 1
+  fi
+
+  actual_identity=$(stat -f '%d:%i' ${installed_path} 2>/dev/null || true)
+  if [[ ${actual_identity} != ${expected_identity} ]]; then
+    print -u2 "Installed ${description} changed identity: expected ${expected_identity}, got ${actual_identity:-unavailable}."
+    return 1
+  fi
+}
+
+verify_installed_release_identities() {
+  if [[ -L ${applications_dir} || ! -d ${applications_dir} \
+      || $(stat -f '%d:%i' ${applications_dir} 2>/dev/null || print invalid) != ${applications_dir_identity} ]]; then
+    print -u2 "The Applications directory changed identity during installation: ${applications_dir}"
+    return 1
+  fi
+
+  verify_installed_object_identity ${destination} ${staged_app_identity} 'Keep Vault application' || return 1
+  local sidecar_suffix=''
+  local final_sidecar=''
+  local expected_sidecar_identity=''
+  for sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+    final_sidecar=${applications_dir}/Keep\ Vault.app.launcher${sidecar_suffix}
+    expected_sidecar_identity=${staged_launcher_sidecar_identities[${sidecar_suffix}]:-}
+    verify_installed_object_identity \
+      ${final_sidecar} ${expected_sidecar_identity} "Keep Vault launcher sidecar ${sidecar_suffix}" || return 1
+    if [[ $(stat -f '%l' ${final_sidecar} 2>/dev/null || print 0) != 1 ]]; then
+      print -u2 "Installed Keep Vault launcher sidecar has multiple links: ${final_sidecar}"
+      return 1
+    fi
+  done
+
+  if (( install_scanner )); then
+    verify_installed_object_identity ${scanner_destination} ${staged_scanner_identity} 'QR-Scanner application' || return 1
+    for sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+      final_sidecar=${applications_dir}/QR-Scanner.app${sidecar_suffix}
+      expected_sidecar_identity=${staged_scanner_sidecar_identities[${sidecar_suffix}]:-}
+      verify_installed_object_identity \
+        ${final_sidecar} ${expected_sidecar_identity} "QR-Scanner sidecar ${sidecar_suffix}" || return 1
+      if [[ $(stat -f '%l' ${final_sidecar} 2>/dev/null || print 0) != 1 ]]; then
+        print -u2 "Installed QR-Scanner sidecar has multiple links: ${final_sidecar}"
+        return 1
+      fi
+    done
+  fi
+
+  local zpaq_uid=0
+  local zpaq_gid=0
+  (( test_mode )) && zpaq_uid=${EUID}
+  (( test_mode )) && zpaq_gid=$(stat -f '%g' ${anchor_directory})
+  if [[ ! ${zpaq_anchor_identity:-} =~ '^[0-9]+:[0-9]+$' \
+      || $(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || print invalid) != ${zpaq_anchor_identity} ]] \
+      || ! validate_zpaq_anchor_structure ${zpaq_anchor_directory} ${zpaq_uid} ${zpaq_gid}; then
+    print -u2 'The root-owned v12 ZPAQ anchor changed identity or security metadata during installation.'
+    return 1
+  fi
+  local zpaq_index=1
+  local zpaq_leaf=''
+  for zpaq_leaf in ${zpaq_anchor_path} ${zpaq_anchor_path}${^zpaq_sidecar_suffixes}; do
+    if [[ $(sha256_file ${zpaq_leaf}) != ${zpaq_anchor_expected_sha256[${zpaq_index}]:-missing} ]]; then
+      print -u2 'The root-owned v12 ZPAQ anchor changed bytes during installation.'
+      return 1
+    fi
+    (( zpaq_index++ ))
+  done
+}
 
 bound_delete_expected() {
   local object=$1
@@ -338,6 +652,12 @@ bound_delete_expected() {
     return 1
   fi
 
+  if ! require_bound_delete_helper_identity; then
+    rollback_errors+=("Refused object-bound rollback deletion for ${description}: helper identity changed.")
+    preserve_install_root=1
+    return 1
+  fi
+
   ${bound_delete_helper} \
     ${applications_dir} \
     ${object_name} \
@@ -348,7 +668,7 @@ bound_delete_expected() {
     ${rollback_quarantine_inode} \
     ${expected_identity}
   local helper_status=$?
-  if (( helper_status != 0 )); then
+  if (( helper_status != 0 )) || ! require_bound_delete_helper_identity; then
     rollback_errors+=("Object-bound rollback deletion failed for ${description} (helper exit ${helper_status}); any quarantined object was preserved.")
     preserve_install_root=1
     return 1
@@ -363,6 +683,26 @@ else
 fi
 anchor_parent=${anchor_directory:h}
 anchor_path=${anchor_directory}/minimum-version
+zpaq_anchor_directory=${anchor_directory}/v12
+zpaq_anchor_path=${zpaq_anchor_directory}/zpaq
+zpaq_anchor_backup=${anchor_directory}/.v12.rollback.$$.$RANDOM$RANDOM
+zpaq_sidecar_suffixes=(.sha3 .skein .khsig .sha3.khsig .skein.khsig)
+
+validate_zpaq_anchor_structure() {
+  local directory=$1
+  local expected_uid=$2
+  local expected_gid=$3
+  local executable=${directory}/zpaq
+  local suffix=''
+  [[ -d ${directory} && ! -L ${directory} \
+      && $(stat -f '%u:%g:%Lp' ${directory} 2>/dev/null || print invalid) == ${expected_uid}:${expected_gid}:755 \
+      && -f ${executable} && ! -L ${executable} \
+      && $(stat -f '%u:%g:%Lp:%l' ${executable} 2>/dev/null || print invalid) == ${expected_uid}:${expected_gid}:555:1 ]] || return 1
+  for suffix in ${zpaq_sidecar_suffixes[@]}; do
+    [[ -f ${executable}${suffix} && ! -L ${executable}${suffix} \
+        && $(stat -f '%u:%g:%Lp:%l' ${executable}${suffix} 2>/dev/null || print invalid) == ${expected_uid}:${expected_gid}:444:1 ]] || return 1
+  done
+}
 
 # The anchor directory has to be validated before *any* privileged mutation,
 # not only when the anchor file already exists. Without the anchor file the
@@ -443,6 +783,29 @@ if [[ -e ${anchor_path} || -L ${anchor_path} ]]; then
     print -u2 "The machine-wide rollback anchor contains non-numeric version: ${recorded_version}"
     exit 1
   fi
+fi
+
+if [[ -e ${zpaq_anchor_backup} || -L ${zpaq_anchor_backup} ]]; then
+  release_lock
+  print -u2 "The selected ZPAQ rollback pathname already exists: ${zpaq_anchor_backup}"
+  exit 1
+fi
+if [[ -e ${zpaq_anchor_directory} || -L ${zpaq_anchor_directory} ]]; then
+  if (( test_mode )); then
+    zpaq_expected_uid=${EUID}
+    zpaq_expected_gid=$(stat -f '%g' ${anchor_directory})
+  else
+    zpaq_expected_uid=0
+    zpaq_expected_gid=0
+  fi
+  if ! validate_zpaq_anchor_structure \
+      ${zpaq_anchor_directory} ${zpaq_expected_uid} ${zpaq_expected_gid}; then
+    release_lock
+    print -u2 "The existing v12 ZPAQ anchor is unsafe, incomplete, or not root-bound: ${zpaq_anchor_directory}"
+    exit 1
+  fi
+  had_existing_zpaq_anchor=1
+  zpaq_anchor_identity=$(stat -f '%d:%i' ${zpaq_anchor_directory})
 fi
 
 execute_rollback() {
@@ -526,6 +889,54 @@ execute_rollback() {
         fi
       done
       (( has_existing_scanner )) && print -u2 'Previous QR-Scanner app and signatures restore attempted.'
+    fi
+
+    # Roll back the root-owned v12 ZPAQ execution anchor before the version
+    # anchor. This ordering lets a first-install rollback remove the now-empty
+    # Keep Vault state directory without ever following a user-controlled path.
+    if (( zpaq_anchor_updated )); then
+      if (( test_mode )); then
+        zpaq_failed=${anchor_directory}/.v12.failed.$$.$RANDOM$RANDOM
+        if (( had_existing_zpaq_anchor )); then
+          if [[ -d ${zpaq_anchor_directory} && ! -L ${zpaq_anchor_directory} \
+              && $(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || print invalid) == ${zpaq_anchor_identity} \
+              && -d ${zpaq_anchor_backup} && ! -L ${zpaq_anchor_backup} \
+              && $(stat -f '%d:%i' ${zpaq_anchor_backup} 2>/dev/null || print invalid) == ${zpaq_anchor_backup_identity} ]] \
+              && mv -- ${zpaq_anchor_directory} ${zpaq_failed} \
+              && mv -- ${zpaq_anchor_backup} ${zpaq_anchor_directory}; then
+            rm -rf -- ${zpaq_failed}
+          else
+            rollback_errors+=("Failed to restore the previous private v12 ZPAQ anchor")
+          fi
+        elif [[ -d ${zpaq_anchor_directory} && ! -L ${zpaq_anchor_directory} \
+            && $(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || print invalid) == ${zpaq_anchor_identity} ]]; then
+          if ! mv -- ${zpaq_anchor_directory} ${zpaq_failed} || ! rm -rf -- ${zpaq_failed}; then
+            rollback_errors+=("Failed to remove the new private v12 ZPAQ anchor")
+          fi
+        elif [[ -e ${zpaq_anchor_directory} || -L ${zpaq_anchor_directory} ]]; then
+          rollback_errors+=("Private v12 ZPAQ anchor identity changed; replacement was preserved")
+        fi
+      else
+        ZPAQ_DIR=${zpaq_anchor_directory} ZPAQ_BACKUP=${zpaq_anchor_backup} \
+          ZPAQ_INSTALLED_ID=${zpaq_anchor_identity} ZPAQ_BACKUP_ID=${zpaq_anchor_backup_identity} \
+          ZPAQ_HAD_PREVIOUS=${had_existing_zpaq_anchor} osascript <<'APPLESCRIPT' \
+          || rollback_errors+=("Failed to restore the root-owned v12 ZPAQ anchor")
+set zpaqDir to system attribute "ZPAQ_DIR"
+set zpaqBackup to system attribute "ZPAQ_BACKUP"
+set installedIdentity to system attribute "ZPAQ_INSTALLED_ID"
+set backupIdentity to system attribute "ZPAQ_BACKUP_ID"
+set hadPrevious to system attribute "ZPAQ_HAD_PREVIOUS"
+set commandText to "set -eu; dir=" & quoted form of zpaqDir & "; backup=" & quoted form of zpaqBackup & "; expected=" & quoted form of installedIdentity & "; backup_expected=" & quoted form of backupIdentity & "; had=" & quoted form of hadPrevious & "; " & ¬
+  "base=\"${dir%/*}\"; failed=\"$base/.v12.failed.$$\"; " & ¬
+  "[ ! -e \"$failed\" ] && [ ! -L \"$failed\" ] || exit 1; " & ¬
+  "[ -d \"$dir\" ] && [ ! -L \"$dir\" ] && [ \"$(/usr/bin/stat -f %d:%i \"$dir\")\" = \"$expected\" ] || exit 1; " & ¬
+  "if [ \"$had\" = 1 ]; then [ -d \"$backup\" ] && [ ! -L \"$backup\" ] && [ \"$(/usr/bin/stat -f %d:%i \"$backup\")\" = \"$backup_expected\" ] || exit 1; /bin/mv \"$dir\" \"$failed\"; if ! /bin/mv \"$backup\" \"$dir\"; then /bin/mv \"$failed\" \"$dir\"; exit 1; fi; /bin/rm -rf \"$failed\"; else /bin/mv \"$dir\" \"$failed\"; /bin/rm -rf \"$failed\"; fi"
+do shell script commandText with administrator privileges
+APPLESCRIPT
+      fi
+      if [[ ${injected_failure} == rollback-zpaq-anchor ]]; then
+        print -u2 'installer_fault_injected=rollback-zpaq-anchor'
+      fi
     fi
 
     # Rollback Anchor if modified
@@ -619,8 +1030,10 @@ cleanup() {
   # directory does not remove the database entry, so without this every install
   # left another launchable Keep Vault behind - pointing at a path that no
   # longer exists.
-  local launch_services_cleanup='/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
-  if (( ! test_mode )) && [[ -x ${launch_services_cleanup} && -n ${install_root:-} && ${install_root} == ${applications_dir}/.keep-vault-install.* ]]; then
+  local launch_services_cleanup=${launch_services_path}
+  if (( ! test_mode )) && [[ -x ${launch_services_cleanup} && -n ${install_root:-} \
+      && ${install_root} == ${applications_dir}/.keep-vault-install.* ]] \
+      && install_root_identity_is_current; then
     # By name, not by glob: a successful install has already moved the staged
     # bundle to its destination, so nothing matches here any more while the
     # database still holds the staging path it was indexed under.
@@ -634,8 +1047,24 @@ cleanup() {
   fi
 
   if (( ! ${rollback_failed:-0} && ! ${preserve_install_root:-0} )); then
-    if [[ -n ${install_root:-} && -d ${install_root} && ${install_root} == ${applications_dir}/.keep-vault-install.* ]]; then
-      rm -rf -- ${install_root}
+    if [[ -n ${install_root:-} && ${install_root} == ${applications_dir}/.keep-vault-install.* \
+        && ${install_root_identity:-} =~ '^[0-9]+:[0-9]+$' ]] \
+        && require_bound_delete_helper_identity; then
+      local cleanup_helper_status=0
+      ${bound_delete_helper} \
+        ${applications_dir} \
+        ${install_root:t} \
+        ${applications_dir_device} \
+        ${applications_dir_inode} \
+        ${lock_directory} \
+        ${lock_directory_identity%%:*} \
+        ${lock_directory_identity#*:} \
+        ${install_root_identity} || cleanup_helper_status=$?
+      if (( cleanup_helper_status != 0 )) || ! require_bound_delete_helper_identity; then
+        print -u2 "Descriptor-bound installation-root cleanup failed (helper exit ${cleanup_helper_status}); preserving all unresolved objects."
+      fi
+    elif [[ -n ${install_root:-} && ( -e ${install_root} || -L ${install_root} ) ]]; then
+      print -u2 "Installation root or Applications directory changed identity; preserving the replacement at ${install_root}."
     fi
   else
     if (( ${preserve_install_root:-0} )); then
@@ -695,6 +1124,31 @@ kv_verify_flags=(--app ${staged_app} --require-launcher-signature)
 (( installation_requires_notarization )) && kv_verify_flags+=(--require-notarization)
 ${script_dir}/Verify-KeepVault-macOS.sh ${kv_verify_flags[@]}
 inject_failure_now native-verify
+
+# Bind the exact ZPAQ executable and all five signed integrity sidecars from the
+# already verified staged bundle. The privileged installer rechecks these
+# SHA-256 values after copying into a root-only staging directory, so a
+# same-UID source-path swap cannot change the bytes that become executable.
+staged_zpaq=${staged_app}/Contents/MacOS/Native/zpaq
+staged_zpaq_sidecar_base=${staged_app}/Contents/Resources/HybridSignatures/Native/zpaq
+zpaq_anchor_sources=(${staged_zpaq})
+for zpaq_suffix in ${zpaq_sidecar_suffixes[@]}; do
+  zpaq_anchor_sources+=(${staged_zpaq_sidecar_base}${zpaq_suffix})
+done
+zpaq_anchor_expected_sha256=()
+for zpaq_source_file in ${zpaq_anchor_sources[@]}; do
+  if [[ ! -f ${zpaq_source_file} || -L ${zpaq_source_file} \
+      || $(stat -f '%l' ${zpaq_source_file} 2>/dev/null || print 0) != 1 ]]; then
+    print -u2 "The verified bundle has an unsafe or incomplete ZPAQ anchor source: ${zpaq_source_file}"
+    exit 1
+  fi
+  zpaq_anchor_expected_sha256+=($(sha256_file ${zpaq_source_file}))
+done
+if ! codesign --verify --strict --all-architectures ${staged_zpaq} >/dev/null 2>&1 \
+    || [[ $(codesign -dv --verbose=4 ${staged_zpaq} 2>&1) != *'TeamIdentifier=2T6K9PGS55'* ]]; then
+  print -u2 'The verified bundle ZPAQ executable does not carry the pinned Apple Team signature.'
+  exit 1
+fi
 
 # 2. READ CANDIDATE VERSION FROM VERIFIED STAGED APP
 candidate_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' ${staged_app}/Contents/Info.plist 2>/dev/null || true)
@@ -821,6 +1275,125 @@ fi
 # 5. BEGIN MUTATION TRANSACTION
 transaction_active=1
 
+# Install the only ZPAQ pathname that the v12 application will execute. The
+# directory swap is atomic on the anchor filesystem; the privileged block
+# restores the old directory itself if the second rename fails. The outer
+# transaction retains the previous root directory until the app, signatures,
+# rollback floor, and exact installed identities have all committed.
+zpaq_anchor_updated=1
+if (( test_mode )); then
+  if [[ ! -d ${anchor_directory} ]]; then
+    mkdir -m 0700 -- ${anchor_directory}
+  fi
+  zpaq_test_gid=$(stat -f '%g' ${anchor_directory})
+  zpaq_stage=$(mktemp -d "${anchor_directory}/.v12.stage.XXXXXXXX")
+  chmod 0755 ${zpaq_stage}
+  ditto ${zpaq_anchor_sources[1]} ${zpaq_stage}/zpaq
+  zpaq_source_index=2
+  for zpaq_suffix in ${zpaq_sidecar_suffixes[@]}; do
+    ditto ${zpaq_anchor_sources[${zpaq_source_index}]} ${zpaq_stage}/zpaq${zpaq_suffix}
+    (( zpaq_source_index++ ))
+  done
+  chmod 0555 ${zpaq_stage}/zpaq
+  for zpaq_suffix in ${zpaq_sidecar_suffixes[@]}; do
+    chmod 0444 ${zpaq_stage}/zpaq${zpaq_suffix}
+  done
+  zpaq_source_index=1
+  for zpaq_installed_source in ${zpaq_stage}/zpaq ${zpaq_stage}/zpaq${^zpaq_sidecar_suffixes}; do
+    if [[ $(sha256_file ${zpaq_installed_source}) != ${zpaq_anchor_expected_sha256[${zpaq_source_index}]} ]]; then
+      print -u2 'Private test ZPAQ staging changed bytes.'
+      exit 1
+    fi
+    (( zpaq_source_index++ ))
+  done
+  if (( had_existing_zpaq_anchor )); then
+    mv -- ${zpaq_anchor_directory} ${zpaq_anchor_backup}
+    zpaq_anchor_backup_identity=$(stat -f '%d:%i' ${zpaq_anchor_backup})
+  fi
+  if ! mv -- ${zpaq_stage} ${zpaq_anchor_directory}; then
+    (( had_existing_zpaq_anchor )) && mv -- ${zpaq_anchor_backup} ${zpaq_anchor_directory}
+    exit 1
+  fi
+  zpaq_anchor_identity=$(stat -f '%d:%i' ${zpaq_anchor_directory})
+  validate_zpaq_anchor_structure \
+    ${zpaq_anchor_directory} ${EUID} ${zpaq_test_gid} || exit 1
+else
+  ZPAQ_BASE=${anchor_directory} ZPAQ_DIR=${zpaq_anchor_directory} \
+    ZPAQ_BACKUP=${zpaq_anchor_backup} ZPAQ_HAD_PREVIOUS=${had_existing_zpaq_anchor} \
+    ZPAQ_SOURCE=${zpaq_anchor_sources[1]} ZPAQ_SHA=${zpaq_anchor_expected_sha256[1]} \
+    ZPAQ_SHA3_SOURCE=${zpaq_anchor_sources[2]} ZPAQ_SHA3=${zpaq_anchor_expected_sha256[2]} \
+    ZPAQ_SKEIN_SOURCE=${zpaq_anchor_sources[3]} ZPAQ_SKEIN=${zpaq_anchor_expected_sha256[3]} \
+    ZPAQ_SIG_SOURCE=${zpaq_anchor_sources[4]} ZPAQ_SIG=${zpaq_anchor_expected_sha256[4]} \
+    ZPAQ_SHA3_SIG_SOURCE=${zpaq_anchor_sources[5]} ZPAQ_SHA3_SIG=${zpaq_anchor_expected_sha256[5]} \
+    ZPAQ_SKEIN_SIG_SOURCE=${zpaq_anchor_sources[6]} ZPAQ_SKEIN_SIG=${zpaq_anchor_expected_sha256[6]} \
+    osascript <<'APPLESCRIPT' || {
+set basePath to system attribute "ZPAQ_BASE"
+set targetPath to system attribute "ZPAQ_DIR"
+set backupPath to system attribute "ZPAQ_BACKUP"
+set hadPrevious to system attribute "ZPAQ_HAD_PREVIOUS"
+set sourcePath to system attribute "ZPAQ_SOURCE"
+set sourceSha to system attribute "ZPAQ_SHA"
+set sha3Source to system attribute "ZPAQ_SHA3_SOURCE"
+set sha3Sha to system attribute "ZPAQ_SHA3"
+set skeinSource to system attribute "ZPAQ_SKEIN_SOURCE"
+set skeinSha to system attribute "ZPAQ_SKEIN"
+set sigSource to system attribute "ZPAQ_SIG_SOURCE"
+set sigSha to system attribute "ZPAQ_SIG"
+set sha3SigSource to system attribute "ZPAQ_SHA3_SIG_SOURCE"
+set sha3SigSha to system attribute "ZPAQ_SHA3_SIG"
+set skeinSigSource to system attribute "ZPAQ_SKEIN_SIG_SOURCE"
+set skeinSigSha to system attribute "ZPAQ_SKEIN_SIG"
+set commandText to "set -eu; umask 077; base=" & quoted form of basePath & "; target=" & quoted form of targetPath & "; backup=" & quoted form of backupPath & "; had=" & quoted form of hadPrevious & "; " & ¬
+  "src=" & quoted form of sourcePath & "; src_sha=" & quoted form of sourceSha & "; sha3_src=" & quoted form of sha3Source & "; sha3_sha=" & quoted form of sha3Sha & "; skein_src=" & quoted form of skeinSource & "; skein_sha=" & quoted form of skeinSha & "; sig_src=" & quoted form of sigSource & "; sig_sha=" & quoted form of sigSha & "; sha3_sig_src=" & quoted form of sha3SigSource & "; sha3_sig_sha=" & quoted form of sha3SigSha & "; skein_sig_src=" & quoted form of skeinSigSource & "; skein_sig_sha=" & quoted form of skeinSigSha & "; " & ¬
+  "check_parent() { p=\"$1\"; wheel=\"$2\"; [ -d \"$p\" ] && [ ! -L \"$p\" ] || return 1; meta=$(/usr/bin/stat -f %u:%g:%Lp \"$p\"); uid=${meta%%:*}; rest=${meta#*:}; gid=${rest%%:*}; mode=${rest##*:}; [ \"$uid\" = 0 ] || return 1; [ $((0$mode & 022)) -eq 0 ] || return 1; [ \"$wheel\" = 0 ] || [ \"$gid\" = 0 ]; }; " & ¬
+  "check_parent / 1; check_parent /Library 1; check_parent '/Library/Application Support' 0; " & ¬
+  "if [ -e \"$base\" ] || [ -L \"$base\" ]; then check_parent \"$base\" 1 && [ \"$(/usr/bin/stat -f %Lp \"$base\")\" = 755 ] || exit 1; else /bin/mkdir \"$base\"; /usr/sbin/chown 0:0 \"$base\"; /bin/chmod 0755 \"$base\"; fi; " & ¬
+  "[ ! -e \"$backup\" ] && [ ! -L \"$backup\" ] || exit 1; stage=$(/usr/bin/mktemp -d \"$base/.v12.stage.XXXXXXXX\"); cleanup() { [ -z \"${stage:-}\" ] || /bin/rm -rf \"$stage\"; }; trap cleanup EXIT HUP INT TERM; /usr/sbin/chown 0:0 \"$stage\"; /bin/chmod 0755 \"$stage\"; " & ¬
+  "/usr/bin/ditto \"$src\" \"$stage/zpaq\"; /usr/bin/ditto \"$sha3_src\" \"$stage/zpaq.sha3\"; /usr/bin/ditto \"$skein_src\" \"$stage/zpaq.skein\"; /usr/bin/ditto \"$sig_src\" \"$stage/zpaq.khsig\"; /usr/bin/ditto \"$sha3_sig_src\" \"$stage/zpaq.sha3.khsig\"; /usr/bin/ditto \"$skein_sig_src\" \"$stage/zpaq.skein.khsig\"; /usr/sbin/chown 0:0 \"$stage\"/*; /bin/chmod 0555 \"$stage/zpaq\"; /bin/chmod 0444 \"$stage/zpaq.sha3\" \"$stage/zpaq.skein\" \"$stage/zpaq.khsig\" \"$stage/zpaq.sha3.khsig\" \"$stage/zpaq.skein.khsig\"; " & ¬
+  "hash() { /usr/bin/env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin /usr/bin/shasum -a 256 -- \"$1\" | /usr/bin/awk '{print $1}'; }; [ \"$(hash \"$stage/zpaq\")\" = \"$src_sha\" ] && [ \"$(hash \"$stage/zpaq.sha3\")\" = \"$sha3_sha\" ] && [ \"$(hash \"$stage/zpaq.skein\")\" = \"$skein_sha\" ] && [ \"$(hash \"$stage/zpaq.khsig\")\" = \"$sig_sha\" ] && [ \"$(hash \"$stage/zpaq.sha3.khsig\")\" = \"$sha3_sig_sha\" ] && [ \"$(hash \"$stage/zpaq.skein.khsig\")\" = \"$skein_sig_sha\" ] || exit 1; " & ¬
+  "/usr/bin/codesign --verify --strict --all-architectures \"$stage/zpaq\"; signature=$(/usr/bin/codesign -dv --verbose=4 \"$stage/zpaq\" 2>&1); case \"$signature\" in *TeamIdentifier=2T6K9PGS55*) ;; *) exit 1;; esac; " & ¬
+  "[ \"$(/usr/bin/stat -f %u:%g:%Lp:%l \"$stage/zpaq\")\" = 0:0:555:1 ] || exit 1; for leaf in \"$stage/zpaq.sha3\" \"$stage/zpaq.skein\" \"$stage/zpaq.khsig\" \"$stage/zpaq.sha3.khsig\" \"$stage/zpaq.skein.khsig\"; do [ \"$(/usr/bin/stat -f %u:%g:%Lp:%l \"$leaf\")\" = 0:0:444:1 ] || exit 1; done; " & ¬
+  "if [ \"$had\" = 1 ]; then [ -d \"$target\" ] && [ ! -L \"$target\" ] && [ \"$(/usr/bin/stat -f %u:%g:%Lp \"$target\")\" = 0:0:755 ] || exit 1; /bin/mv \"$target\" \"$backup\"; if ! /bin/mv \"$stage\" \"$target\"; then /bin/mv \"$backup\" \"$target\"; exit 1; fi; else [ ! -e \"$target\" ] && [ ! -L \"$target\" ] || exit 1; /bin/mv \"$stage\" \"$target\"; fi; stage=''; trap - EXIT HUP INT TERM"
+do shell script commandText with administrator privileges
+APPLESCRIPT
+    print -u2 'Failed to install the root-owned v12 ZPAQ execution anchor.'
+    exit 1
+  }
+  zpaq_anchor_identity=$(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || true)
+  if (( had_existing_zpaq_anchor )); then
+    zpaq_anchor_backup_identity=$(stat -f '%d:%i' ${zpaq_anchor_backup} 2>/dev/null || true)
+  fi
+fi
+inject_failure_now zpaq-anchor-install
+if (( test_mode )); then
+  zpaq_expected_uid=${EUID}
+  zpaq_expected_gid=$(stat -f '%g' ${anchor_directory})
+else
+  zpaq_expected_uid=0
+  zpaq_expected_gid=0
+fi
+if [[ ! ${zpaq_anchor_identity} =~ '^[0-9]+:[0-9]+$' \
+    || $(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || print invalid) != ${zpaq_anchor_identity} ]] \
+    || ! validate_zpaq_anchor_structure \
+      ${zpaq_anchor_directory} ${zpaq_expected_uid} ${zpaq_expected_gid}; then
+  print -u2 'The installed v12 ZPAQ anchor failed its post-install identity or ownership check.'
+  exit 1
+fi
+zpaq_source_index=1
+for zpaq_installed_source in ${zpaq_anchor_path} ${zpaq_anchor_path}${^zpaq_sidecar_suffixes}; do
+  if [[ $(sha256_file ${zpaq_installed_source}) != ${zpaq_anchor_expected_sha256[${zpaq_source_index}]} ]]; then
+    print -u2 'The installed v12 ZPAQ anchor failed its SHA-256 pin.'
+    exit 1
+  fi
+  (( zpaq_source_index++ ))
+done
+if ! codesign --verify --strict --all-architectures ${zpaq_anchor_path} >/dev/null 2>&1 \
+    || [[ $(codesign -dv --verbose=4 ${zpaq_anchor_path} 2>&1) != *'TeamIdentifier=2T6K9PGS55'* ]]; then
+  print -u2 'The installed v12 ZPAQ anchor failed its pinned Apple Team signature check.'
+  exit 1
+fi
+inject_failure_now zpaq-anchor-post-check
+
 # Execute installation of Keep Vault
 if (( has_existing_installation )); then
   atomic_replace ${destination} ${staged_app} ${backup_name}
@@ -881,6 +1454,15 @@ if (( install_scanner )); then
 fi
 
 if (( ! main_verification_passed || ! scanner_verification_passed )); then
+  execute_rollback
+  exit 1
+fi
+
+# Bind the complete installed file set back to the exact staged objects before
+# any rollback anchor is changed. Cryptographic verification alone proves
+# bytes at paths, not that the paths still name the objects moved by this
+# transaction.
+if ! verify_installed_release_identities; then
   execute_rollback
   exit 1
 fi
@@ -989,8 +1571,37 @@ else
   print "rollback_anchor=${anchor_path} (unveraendert ${recorded_version})"
 fi
 
+# Revalidate the whole set once more at the actual commit boundary. A
+# substitution during the privileged anchor update must trigger the same
+# object-bound rollback instead of becoming a committed mixed installation.
+if ! verify_installed_release_identities; then
+  execute_rollback
+  exit 1
+fi
+print 'installed_identity_set=verified'
+
 # COMMIT TRANSACTION
 transaction_committed=1
+
+if (( had_existing_zpaq_anchor )) && [[ -n ${zpaq_anchor_backup_identity} ]]; then
+  if (( test_mode )); then
+    if [[ -d ${zpaq_anchor_backup} && ! -L ${zpaq_anchor_backup} \
+        && $(stat -f '%d:%i' ${zpaq_anchor_backup} 2>/dev/null || print invalid) == ${zpaq_anchor_backup_identity} ]]; then
+      rm -rf -- ${zpaq_anchor_backup}
+      print 'previous_zpaq_anchor=removed_after_commit'
+    else
+      print -u2 "Warning: previous private ZPAQ anchor changed identity and was preserved: ${zpaq_anchor_backup}"
+    fi
+  else
+    ZPAQ_BACKUP=${zpaq_anchor_backup} ZPAQ_BACKUP_ID=${zpaq_anchor_backup_identity} \
+      osascript <<'APPLESCRIPT' || print -u2 "Warning: previous root-owned ZPAQ anchor could not be removed and remains recoverable at ${zpaq_anchor_backup}"
+set backupPath to system attribute "ZPAQ_BACKUP"
+set backupIdentity to system attribute "ZPAQ_BACKUP_ID"
+set commandText to "set -eu; backup=" & quoted form of backupPath & "; expected=" & quoted form of backupIdentity & "; [ -d \"$backup\" ] && [ ! -L \"$backup\" ] && [ \"$(/usr/bin/stat -f %d:%i \"$backup\")\" = \"$expected\" ] && [ \"$(/usr/bin/stat -f %u:%g:%Lp \"$backup\")\" = 0:0:755 ] || exit 1; /bin/rm -rf \"$backup\""
+do shell script commandText with administrator privileges
+APPLESCRIPT
+  fi
+fi
 
 recovery_path=''
 recovery_dir=''
@@ -1106,7 +1717,7 @@ if [[ -d ${backup_path} && ! -L ${backup_path} ]] || [[ -d ${scanner_backup_path
   fi
 fi
 
-launch_services='/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
+launch_services=${launch_services_path}
 if (( ! test_mode )) && [[ -x ${launch_services} ]]; then
   ${launch_services} -f ${destination} 2>/dev/null || true
   (( install_scanner )) && ${launch_services} -f ${scanner_destination} 2>/dev/null || true

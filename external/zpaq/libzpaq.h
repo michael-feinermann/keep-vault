@@ -1419,8 +1419,10 @@ public:
   // Set output limit
   void setLimit(size_t n) {limit=n;}
 
-  // Free memory
-  ~StringBuffer() {if (p) free(p);}
+  // Erase and free memory. Keep Vault feeds plaintext through these buffers;
+  // returning it to the allocator without an explicit wipe would retain file
+  // contents after both successful and failed compression/decompression.
+  ~StringBuffer() {reset();}
 
   // Return number of bytes written.
   size_t size() const {return wpos;}
@@ -1430,9 +1432,23 @@ public:
 
   // Reset size to 0 and free memory.
   void reset() {
-    if (p) free(p);
+    if (p) {
+      volatile unsigned char* wipe=p;
+      for (size_t i=0; i<al; ++i) wipe[i]=0;
+      free(p);
+    }
     p=0;
     al=rpos=wpos=0;
+  }
+
+  // Erase the logical contents while retaining the allocation for a bounded
+  // worker that will immediately reuse it.
+  void secureClear() {
+    if (p) {
+      volatile unsigned char* wipe=p;
+      for (size_t i=0; i<wpos; ++i) wipe[i]=0;
+    }
+    rpos=wpos=0;
   }
 
   // Write a single byte.

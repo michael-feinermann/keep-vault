@@ -12,19 +12,21 @@ und Buildnummer auf. Die App selbst besteht ausschließlich aus Swift; für die
 verbindlichen hybriden RSA-PSS-/ML-DSA-Signaturen verwendet das Buildskript den
 gesperrt wiederhergestellten Keep-Vault-Signer auf Basis des gepinnten .NET-SDKs.
 
-## Bauen und installieren
+## Bauen
 
 ```bash
 ./QrCodeScanner/tools/Build-QrScanner-macOS.sh \
-  --version 4.0.2 --build-number 6 --install
+  --version 5.0.0 --build-number 12
 ```
 
 Das Skript baut universell (arm64 + x86_64), fuehrt die Tests aus, erzeugt das
 Icon, signiert mit Hardened Runtime und Sandbox, prueft die Signatur und legt
-die App unter `/Applications/QR-Scanner.app` ab. Danach steht sie in Finder,
-Launchpad und Spotlight und laesst sich per Doppelklick oeffnen.
+das verifizierte Ergebnis in `QrCodeScanner/dist/` ab.
 
-Ohne `--install` bleibt das Ergebnis in `QrCodeScanner/dist/`.
+Die Installation erfolgt ausschließlich zusammen mit Keep Vault über
+`tools/Install-KeepVault-macOS.sh`. Der frühere eigenständige `--install`-Pfad
+wurde entfernt, damit es nur einen objektgebundenen, gegen Austauschrennen
+gehärteten Installations- und Rollbackpfad für App und Signatur-Sidecars gibt.
 Für ein gemeinsames Keep-Vault-Release müssen `--version` und
 `--build-number` exakt den Werten des Keep-Vault-Builds entsprechen; der
 portable Paket-Build lehnt fehlende oder abweichende Scanner-Metadaten ab.
@@ -72,14 +74,17 @@ gleicher `CodeArbiter`:
 xcrun swiftc -parse-as-library -O \
   QrCodeScanner/Sources/CodeArbiter.swift \
   QrCodeScanner/Sources/PayloadInspector.swift \
-  QrCodeScanner/tools/scan-file.swift -o /tmp/scan-file
+  QrCodeScanner/Sources/Localization.swift \
+  QrCodeScanner/tools/scan-file.swift -framework AppKit -o /tmp/scan-file
 /tmp/scan-file ~/Downloads/mein-schluesselzettel.pdf
 ```
 
 Auf den beiden Beispielzetteln: beide Codes gefunden, ein einziger
 unterschiedlicher Inhalt, uebernommen als „durch 2 Codes bestaetigt“. Wird der
-linke Code im Bild zerstoert, findet die App nur noch einen — und bekommt
-denselben 128-stelligen Faktor heraus.
+linke Code im Bild zerstoert, findet die App nur noch einen und bestaetigt
+intern denselben 128-stelligen Faktor. Das Werkzeug gibt niemals Nutzinhalt,
+Teilstrings oder daraus abgeleitete reversible Kennwerte aus, sondern nur
+Laengen, Positionen, Anzahlen und Entscheidungsmetadaten.
 
 ## Was die App nicht auf die SSD schreibt
 
@@ -141,21 +146,22 @@ eines davon in den Entitlements auftaucht **oder** in der fertigen Signatur
 steht, und prueft danach, dass Sandbox, Kamera und Hardened Runtime wirklich
 gesetzt sind.
 
-Zum Zustand der Zertifizierung, ohne Beschoenigung: im Schluesselbund liegt
-derzeit nur ein **Apple-Development**-Zertifikat. Damit laeuft die App auf
-diesem Mac, aber `spctl --assess` weist sie ab und die Notarisierung nimmt sie
-nicht an — der Notardienst akzeptiert ausschliesslich **Developer ID
-Application**. Fuer eine App, die von diesem Rechner weitergegeben werden soll,
-fehlt also das Zertifikat, nicht die Vorbereitung. Sobald es vorliegt:
+Eine öffentlich verteilte App wird ausschließlich mit einer `Developer ID
+Application`-Identität desselben Teams gebaut, an Apples Notardienst gesendet,
+gestapelt und danach erneut mit `codesign`, `spctl` und `stapler` geprüft. Eine
+lokale `Apple Development`-Signatur ist nur für Entwicklungs-Gates zulässig und
+wird niemals als veröffentlichbarer Build ausgegeben.
 
 ```bash
 xcrun notarytool store-credentials "QR-Scanner" \
-  --apple-id DEINE-APPLE-ID --team-id TEAM-ID --password APP-SPEZIFISCHES-PASSWORT
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --notary-profile "QR-Scanner" --install
+  --apple-id DEINE-APPLE-ID --team-id TEAM-ID
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh --notary-profile "Keep Vault v12"
 ```
 
-Das Skript waehlt Developer ID automatisch, sobald es im Schluesselbund liegt,
-notarisiert, heftet das Ticket an und prueft es mit `spctl` nach.
+`notarytool` fragt das app-spezifische Passwort verdeckt ab und speichert das
+Profil im Schlüsselbund. Das Buildskript notarisiert, heftet das Ticket an und
+prüft es mit `spctl` nach.
+Installiert wird der Scanner nur über den gemeinsamen Keep-Vault-Installer.
 
 ## Icon
 

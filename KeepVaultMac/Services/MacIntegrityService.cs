@@ -408,9 +408,12 @@ public sealed class IntegrityService : IDisposable
             while ((read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
             {
                 length = checked(length + read);
-                sha3.AppendData(buffer.AsSpan(0, read));
-                sha512.AppendData(buffer.AsSpan(0, read));
-                skein.AppendData(buffer.AsSpan(0, read));
+                int count = read;
+                await Task.WhenAll(
+                    Task.Run(() => sha3.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
+                    Task.Run(() => sha512.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
+                    Task.Run(() => skein.AppendData(buffer.AsSpan(0, count)), CancellationToken.None))
+                    .ConfigureAwait(false);
             }
 
             return (sha3.GetHashAndReset(), skein.GetHashAndReset(), sha512.GetHashAndReset(), length);
@@ -434,9 +437,11 @@ public sealed class IntegrityService : IDisposable
             while ((read = stream.Read(buffer)) > 0)
             {
                 length = checked(length + read);
-                sha3.AppendData(buffer.AsSpan(0, read));
-                sha512.AppendData(buffer.AsSpan(0, read));
-                skein.AppendData(buffer.AsSpan(0, read));
+                int count = read;
+                Parallel.Invoke(
+                    () => sha3.AppendData(buffer.AsSpan(0, count)),
+                    () => sha512.AppendData(buffer.AsSpan(0, count)),
+                    () => skein.AppendData(buffer.AsSpan(0, count)));
             }
 
             return (sha3.GetHashAndReset(), skein.GetHashAndReset(), sha512.GetHashAndReset(), length);
@@ -544,12 +549,12 @@ public enum SignatureState
 internal static class NativeToolIntegrity
 {
     internal static IReadOnlyList<string> RequiredLogicalToolNames { get; } =
-        new[] { "zpaq.exe", "kalyna_ref.dll", "threefish_ref.dll", "mars_ref.dll", "shacal2_ref.dll", "aes_ref.dll", "chachapoly_ref.dll", "argon2_ref.dll", "argon2.exe" };
+        new[] { "zpaq.exe", "kalyna_v12.dll", "threefish_ref.dll", "mars_ref.dll", "shacal2_ref.dll", "aes_ref.dll", "chachapoly_ref.dll", "argon2_ref.dll", "argon2.exe" };
 
     private static readonly IReadOnlyDictionary<string, string> MacNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         ["zpaq.exe"] = "zpaq",
-        ["kalyna_ref.dll"] = "libkalyna_ref.dylib",
+        ["kalyna_v12.dll"] = "libkalyna_v12.dylib",
         ["threefish_ref.dll"] = "libthreefish_ref.dylib",
         ["mars_ref.dll"] = "libmars_ref.dylib",
         ["shacal2_ref.dll"] = "libshacal2_ref.dylib",
@@ -568,6 +573,14 @@ internal static class NativeToolIntegrity
         {
             stream = MacSafeFileSystem.OpenReadNoSymlinks(fullPath);
             string canonical = NativePathResolver.RequireCanonicalFilePath(stream.SafeFileHandle, fullPath, "Native tool");
+            bool rootOwnedZpaq = string.Equals(
+                canonical,
+                MacZpaqRootAnchor.ExecutablePath,
+                StringComparison.Ordinal);
+            if (rootOwnedZpaq)
+            {
+                MacZpaqRootAnchor.RequireSecureInstalledSet(stream);
+            }
             ToolIntegrityStatus status = IntegrityService.CheckFile(stream, canonical, requireManifest: true);
             if (!status.IsTrusted)
             {
@@ -575,6 +588,15 @@ internal static class NativeToolIntegrity
             }
 
             MacSafeFileSystem.RequirePathStillNamesHandle(stream.SafeFileHandle, canonical);
+            if (rootOwnedZpaq)
+            {
+                MacZpaqRootAnchor.RequireSecureInstalledSet(stream);
+                MacZpaqRootAnchor.RequireMatchesSealedApplicationCopy(stream);
+                MacZpaqRootAnchor.RequireSecureInstalledSet(stream);
+                var rootLease = new TrustedNativeFileLease(canonical, stream);
+                stream = null;
+                return rootLease;
+            }
 
             // A component that already lives inside the sealed app bundle is
             // used where it is, rather than through a private copy.
@@ -644,6 +666,10 @@ internal static class NativeToolIntegrity
 
     private static void EnsureAllowedPath(string fullPath)
     {
+        if (string.Equals(fullPath, MacZpaqRootAnchor.ExecutablePath, StringComparison.Ordinal))
+        {
+            return;
+        }
         string baseDirectory = Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory));
         string directory = Path.GetDirectoryName(fullPath) ?? string.Empty;
         bool allowed = string.Equals(directory, baseDirectory, StringComparison.Ordinal)

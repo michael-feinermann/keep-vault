@@ -1,13 +1,156 @@
-#!/bin/zsh
+#!/bin/zsh -f
 set -euo pipefail
+umask 077
+PATH='/usr/bin:/bin:/usr/sbin:/sbin'
+export PATH
+unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+  RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES SSL_CERT_FILE \
+  SSL_CERT_DIR CURL_HOME XDG_CONFIG_HOME
+unset DEVELOPER_DIR SDKROOT TOOLCHAINS
+unset CCC_OVERRIDE_OPTIONS COMPILER_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH \
+  OBJC_INCLUDE_PATH LIBRARY_PATH GCC_EXEC_PREFIX ADDITIONAL_SWIFT_DRIVER_FLAGS \
+  SWIFT_EXEC SWIFT_DRIVER_SWIFT_FRONTEND_EXEC SWIFT_DRIVER_SWIFTSCAN_LIB \
+  SWIFT_DRIVER_TOOLCHAIN_CASPLUGIN_LIB DYLD_INSERT_LIBRARIES DYLD_LIBRARY_PATH \
+  DYLD_FRAMEWORK_PATH DYLD_FALLBACK_LIBRARY_PATH DYLD_FALLBACK_FRAMEWORK_PATH
+unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE DOTNET_ROOT \
+  DOTNET_ROOT_X64 DOTNET_ROOT_ARM64 DOTNET_HOST_PATH DOTNET_DiagnosticPorts \
+  DOTNET_DefaultDiagnosticPortSuspend DOTNET_ROLL_FORWARD \
+  DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX DOTNET_ROLL_FORWARD_TO_PRERELEASE \
+  DOTNET_MULTILEVEL_LOOKUP CORECLR_ENABLE_PROFILING CORECLR_PROFILER \
+  CORECLR_PROFILER_PATH CORECLR_PROFILER_PATH_32 CORECLR_PROFILER_PATH_64 \
+  CORECLR_PROFILER_PATH_ARM64 COR_ENABLE_PROFILING COR_PROFILER \
+  COR_PROFILER_PATH COR_PROFILER_PATH_32 COR_PROFILER_PATH_64 \
+  COMPlus_AltJit COMPlus_AltJitName DOTNET_AltJit DOTNET_AltJitName \
+  MSBuildSDKsPath MSBUILD_EXE_PATH MSBuildExtensionsPath \
+  MSBuildExtensionsPath32 MSBuildExtensionsPath64 MSBuildUserExtensionsPath \
+  MSBuildToolsPath MSBuildBinPath MSBUILDLEGACYEXTENSIONSPATH \
+  MSBUILDADDITIONALSDKRESOLVERSFOLDER CustomBeforeMicrosoftCommonTargets \
+  CustomAfterMicrosoftCommonTargets CustomBeforeMicrosoftCSharpTargets \
+  CustomAfterMicrosoftCSharpTargets DirectoryBuildPropsPath \
+  DirectoryBuildTargetsPath ImportDirectoryBuildProps ImportDirectoryBuildTargets \
+  DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR \
+  DOTNET_MSBUILD_SDK_RESOLVER_SDKS_VER NUGET_PLUGIN_PATHS \
+  NUGET_CREDENTIALPROVIDERS_PATH NUGET_EXTENSIONS_PATH NUGET_PACKAGES \
+  NUGET_HTTP_CACHE_PATH NUGET_SCRATCH RestoreSources \
+  RestoreAdditionalProjectSources RestoreFallbackFolders RestorePackagesPath \
+  RestoreConfigFile
+export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
+
+xcrun_path=/usr/bin/xcrun
+shasum_path=/usr/bin/shasum
+awk_path=/usr/bin/awk
+file_path=/usr/bin/file
+stat_path=/usr/bin/stat
+mktemp_path=/usr/bin/mktemp
+chmod_path=/bin/chmod
+mkdir_path=/bin/mkdir
+rm_path=/bin/rm
+mv_path=/bin/mv
+readlink_path=/usr/bin/readlink
+env_path=/usr/bin/env
+
+require_root_system_tool() {
+  local tool=$1
+  if [[ ${tool} != /* || ! -f ${tool} || -L ${tool} || ! -x ${tool} \
+      || $(${stat_path} -f %u -- ${tool}) != 0 ]]; then
+    print -u2 "Native build tool is not an absolute root-owned regular file: ${tool}"
+    exit 1
+  fi
+  local tool_mode=$(( 8#$(${stat_path} -f %Lp -- ${tool}) ))
+  if (( (tool_mode & 8#022) != 0 )); then
+    print -u2 "Native build tool is group/other writable: ${tool}"
+    exit 1
+  fi
+}
+for fixed_tool in ${xcrun_path} ${shasum_path} ${awk_path} ${file_path} \
+    ${stat_path} ${mktemp_path} ${chmod_path} ${mkdir_path} ${rm_path} ${mv_path} \
+    ${readlink_path} ${env_path}; do
+  require_root_system_tool ${fixed_tool}
+done
+
+xcrun() { ${xcrun_path} "$@"; }
+shasum() { ${env_path} -i PATH=${PATH} ${shasum_path} "$@"; }
+awk() { ${awk_path} "$@"; }
+file() { ${file_path} "$@"; }
+stat() { ${stat_path} "$@"; }
+mktemp() { ${mktemp_path} "$@"; }
+chmod() { ${chmod_path} "$@"; }
+mkdir() { ${mkdir_path} "$@"; }
+rm() { ${rm_path} "$@"; }
+mv() { ${mv_path} "$@"; }
+readlink() { ${readlink_path} "$@"; }
+
+tool_path_self_test=0
+if (( $# == 1 )) && [[ $1 == --tool-path-self-test ]]; then
+  tool_path_self_test=1
+fi
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
 final_output_root=${repo_root}/KeepVaultMac/Native
 reference_dir=${repo_root}/external/ML-DSA-reference
+native_source_manifest=${repo_root}/external/NATIVE_SOURCE_SHA256SUMS
+native_vendor_paths=()
 cc=$(xcrun --find clang)
-cxx=$(xcrun --find clang++)
-sdk_root=$(xcrun --sdk macosx --show-sdk-path)
+# Xcode's clang++ pathname is a symlink. Use the reviewed physical clang
+# binary directly; every C++ invocation below names .cpp inputs or -std=c++17,
+# so the driver selects C++ without following that alias.
+cxx=${cc}
+cxx_driver_flags=(--driver-mode=g++)
+sdk_root=$(${readlink_path} -f "$(xcrun --sdk macosx --show-sdk-path)")
+require_root_system_tool ${cc}
+if [[ ! -d ${sdk_root} || -L ${sdk_root} \
+    || $(${stat_path} -f %u -- ${sdk_root}) != 0 ]]; then
+  print -u2 'The selected macOS SDK is not a root-owned physical directory.'
+  exit 1
+fi
+if (( tool_path_self_test )); then
+  print 'native_tool_paths=verified'
+  exit 0
+fi
+
+verify_native_vendor_sources() {
+  if [[ ! -f ${native_source_manifest} || -L ${native_source_manifest} ]]; then
+    print -u2 'The reviewed native-source SHA-256 manifest is missing or is a symbolic link.'
+    exit 1
+  fi
+
+  local expected=''
+  local relative_path=''
+  local source_file=''
+  local actual=''
+  local entry_count=0
+  while read -r expected relative_path; do
+    [[ -z ${expected:-} ]] && continue
+    if [[ ! ${expected} =~ '^[0-9A-F]{64}$' \
+        || ${relative_path} != external/* \
+        || ${relative_path} == *'..'* \
+        || ${relative_path} == /* ]]; then
+      print -u2 "Invalid native-source manifest entry: ${expected} ${relative_path}"
+      exit 1
+    fi
+
+    source_file=${repo_root}/${relative_path}
+    if [[ ! -f ${source_file} || -L ${source_file} ]]; then
+      print -u2 "Pinned native vendor source is missing or is a symbolic link: ${relative_path}"
+      exit 1
+    fi
+
+    actual=$(shasum -a 256 -- ${source_file} | awk '{print toupper($1)}')
+    if [[ ${actual} != ${expected} ]]; then
+      print -u2 "Pinned native vendor SHA-256 mismatch: ${relative_path}"
+      exit 1
+    fi
+
+    native_vendor_paths+=(${relative_path})
+    (( entry_count += 1 ))
+  done < ${native_source_manifest}
+
+  if (( entry_count == 0 )); then
+    print -u2 'The reviewed native-source SHA-256 manifest is empty.'
+    exit 1
+  fi
+}
 
 compile_rename_swap_helper() {
   local helper_path=$1
@@ -107,9 +250,14 @@ run_atomic_publish_self_test() {
 }
 
 if (( $# > 0 )); then
-  if [[ $# != 1 || $1 != --self-test-atomic-publish ]]; then
-    print -u2 'Usage: Build-Native-macOS.sh [--self-test-atomic-publish]'
+  if [[ $# != 1 || ( $1 != --self-test-atomic-publish && $1 != --verify-sources ) ]]; then
+    print -u2 'Usage: Build-Native-macOS.sh [--self-test-atomic-publish|--verify-sources]'
     exit 64
+  fi
+  if [[ $1 == --verify-sources ]]; then
+    verify_native_vendor_sources
+    print "native_source_manifest=verified (${#native_vendor_paths} files)"
+    exit 0
   fi
   atomic_self_test_root=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-native-publish-selftest.XXXXXXXX")
   cleanup_atomic_self_test() {
@@ -127,6 +275,8 @@ if [[ -L ${repo_root} || -L ${final_output_root:h} || -L ${final_output_root} ]]
   print -u2 "Refusing to build through a symbolic-link workspace path."
   exit 1
 fi
+
+verify_native_vendor_sources
 
 # Compile into a private sibling tree. Writing directly into tracked Native/
 # follows any prepared hard link and leaves a mixture of old and new slices if
@@ -249,8 +399,24 @@ build_architecture() {
 
   local cryptopp_sources=()
   local simd_sources=()
+  local manifest_cryptopp_sources=()
+  local disk_cryptopp_sources=(${cryptopp_dir}/*.cpp(N:t))
+  local relative_path
   local candidate
-  for candidate in ${cryptopp_dir}/*.cpp(N:t); do
+  for relative_path in ${native_vendor_paths[@]}; do
+    if [[ ${relative_path:h} == external/cryptopp && ${relative_path:e} == cpp ]]; then
+      manifest_cryptopp_sources+=(${relative_path:t})
+    fi
+  done
+
+  if [[ ${(F)${(on)manifest_cryptopp_sources}} != ${(F)${(on)disk_cryptopp_sources}} ]]; then
+    print -u2 'Crypto++ source inventory differs from the reviewed native-source manifest.'
+    exit 1
+  fi
+
+  # Compile only the reviewed manifest inventory. A newly dropped .cpp file
+  # cannot silently enter the native artifacts through a filesystem wildcard.
+  for candidate in ${manifest_cryptopp_sources[@]}; do
     # The validation, benchmark and self-test drivers ship in the same
     # directory as the library and pull in a main().
     case ${candidate} in
@@ -277,7 +443,7 @@ build_architecture() {
   fi
 
   print -r -- ${(F)cryptopp_sources} \
-    | xargs -P 10 -I{} ${cxx} ${common_flags[@]} ${cryptopp_flags[@]} -c \
+    | xargs -P 10 -I{} ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -c \
         -I${cryptopp_dir} -o ${cryptopp_objects}/{}.o ${cryptopp_dir}/{}
 
   # One flag set per file, copied from the rules in Crypto++'s own GNUmakefile.
@@ -358,14 +524,14 @@ build_architecture() {
       exit 1
     fi
 
-    ${cxx} ${common_flags[@]} ${cryptopp_flags[@]} ${=simd_flags[${simd_source}]} -c \
+    ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} ${=simd_flags[${simd_source}]} -c \
       -I${cryptopp_dir} -o ${cryptopp_objects}/${simd_source}.o ${cryptopp_dir}/${simd_source}
   done
 
   xcrun ar rcs ${cryptopp_archive} ${cryptopp_objects}/*.o
   rm -rf -- ${cryptopp_objects}
 
-  ${cxx} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
+  ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
     -install_name @rpath/libmars_ref.dylib \
     -o ${output_dir}/libmars_ref.dylib \
     -I${cryptopp_dir} \
@@ -373,7 +539,7 @@ build_architecture() {
     ${cryptopp_archive} \
     ${link_flags[@]}
 
-  ${cxx} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
+  ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
     -install_name @rpath/libaes_ref.dylib \
     -o ${output_dir}/libaes_ref.dylib \
     -I${cryptopp_dir} \
@@ -381,7 +547,7 @@ build_architecture() {
     ${cryptopp_archive} \
     ${link_flags[@]}
 
-  ${cxx} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
+  ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
     -install_name @rpath/libchachapoly_ref.dylib \
     -o ${output_dir}/libchachapoly_ref.dylib \
     -I${cryptopp_dir} \
@@ -389,7 +555,7 @@ build_architecture() {
     ${cryptopp_archive} \
     ${link_flags[@]}
 
-  ${cxx} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
+  ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
     -install_name @rpath/libshacal2_ref.dylib \
     -o ${output_dir}/libshacal2_ref.dylib \
     -I${cryptopp_dir} \
@@ -397,21 +563,25 @@ build_architecture() {
     ${cryptopp_archive} \
     ${link_flags[@]}
 
-  ${cxx} ${common_flags[@]} -DNOJIT -DBSD -fPIE -pthread \
+  ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} -DNOJIT -DBSD -fPIE -pthread \
     -o ${output_dir}/zpaq \
     ${repo_root}/external/zpaq/zpaq.cpp \
     ${repo_root}/external/zpaq/libzpaq.cpp \
+    -framework CoreFoundation \
     -Wl,-pie ${link_flags[@]}
 
-  # kalyna_fast.c carries the table-driven encryption; the reference stays
-  # linked in and verifies it at start-up before it may be used.
-  ${cc} ${common_flags[@]} -dynamiclib -pthread \
-    -install_name @rpath/libkalyna_ref.dylib \
-    -o ${output_dir}/libkalyna_ref.dylib \
-    ${repo_root}/native/kalyna_ref_export.c \
-    ${repo_root}/native/kalyna_fast.c \
-    ${repo_root}/external/Kalyna-reference/kalyna.c \
-    ${repo_root}/external/Kalyna-reference/tables.c \
+  # v12 uses only Crypto++'s Boost-licensed Kalyna implementation. The old
+  # unlicensed reference source and its derived table path are intentionally
+  # absent from both this build and the repository.
+  ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
+    -install_name @rpath/libkalyna_v12.dylib \
+    -Wl,-exported_symbol,_keepvault_v12_kalyna_512_512_ctr_xcrypt \
+    -Wl,-exported_symbol,_keepvault_v12_kalyna_512_512_ctr_xcrypt_scalar \
+    -Wl,-exported_symbol,_keepvault_v12_kalyna_join_failure_kat \
+    -o ${output_dir}/libkalyna_v12.dylib \
+    -I${cryptopp_dir} \
+    ${repo_root}/native/kalyna_v12_export.cpp \
+    ${cryptopp_archive} \
     ${link_flags[@]}
 
   ${cc} ${common_flags[@]} -dynamiclib -pthread \
@@ -473,7 +643,7 @@ build_architecture x86_64 osx-x64
 
 universal_dir=${output_root}/osx-universal
 mkdir -p -- ${universal_dir}
-artifacts=(zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_ref.dylib libmars_ref.dylib libmldsa87_ref.dylib libshacal2_ref.dylib libsha3_ref.dylib libthreefish_ref.dylib)
+artifacts=(zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_v12.dylib libmars_ref.dylib libmldsa87_ref.dylib libshacal2_ref.dylib libsha3_ref.dylib libthreefish_ref.dylib)
 for artifact_name in ${artifacts[@]}; do
   xcrun lipo -create \
     ${output_root}/osx-arm64/${artifact_name} \

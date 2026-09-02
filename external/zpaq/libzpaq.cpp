@@ -694,9 +694,9 @@ void stretchKey(char* out, const char* in, const char* salt) {
 void random(char* buf, int n) {
 #ifdef unix
   FILE* in=fopen("/dev/urandom", "rb");
-  if (in && int(fread(buf, 1, n, in))==n)
-    fclose(in);
-  else {
+  const int read_count=in ? int(fread(buf, 1, n, in)) : -1;
+  const int close_result=in ? fclose(in) : -1;
+  if (read_count!=n || close_result!=0) {
     error("key generation failed");
   }
 #else
@@ -3065,7 +3065,7 @@ void compress(Reader* in, Writer* out, const char* method,
     compressBlock(&sb, out, method, filename, comment, dosha1);
     filename=0;
     comment=0;
-    sb.resize(0);
+    sb.secureClear();
   }
 }
 

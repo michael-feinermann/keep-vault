@@ -1,5 +1,7 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -10,7 +12,7 @@ namespace KalynaArchiver.Services;
 
 public sealed partial class KalynaContainerService
 {
-    private static readonly byte[] Magic = "KZPAQ1\0"u8.ToArray();
+    private static readonly byte[] Magic = "KZPAQ2\0"u8.ToArray();
     /// <summary>
     /// The CTR tweak domain names the container generation it belongs to.
     /// </summary>
@@ -20,12 +22,12 @@ public sealed partial class KalynaContainerService
     /// generation; a second one would only exist to serve archives this build
     /// refuses to open.
     /// </remarks>
-    internal static readonly byte[] ThreefishTweakDomain = "Kalyna-ZPAQ/v11/Threefish-1024/CTR-Tweak"u8.ToArray();
-    // Version 11 is the only container generation this build reads or writes.
+    internal static readonly byte[] ThreefishTweakDomain = "Kalyna-ZPAQ/v12/Threefish-1024/CTR-Tweak"u8.ToArray();
+    // Version 12 is the only container generation this build reads or writes.
     // There is deliberately no reader for anything older: a format this app
     // writes once and reads years later is safer with one shape than with a
     // compatibility path that is exercised rarely and audited less.
-    private const int CurrentVersion = 11;
+    private const int CurrentVersion = 12;
 
     /// <summary>
     /// The width of the master key. Every role key is cut from a value of
@@ -34,10 +36,34 @@ public sealed partial class KalynaContainerService
     /// </summary>
     private const int MasterKeyBits = 1024;
     private const int BufferSize = 16 * 1024 * 1024;
+    // Each native transform already spreads one 16 MiB chunk over all logical
+    // processors. Two outer slots are enough to overlap adjacent chunks and
+    // the ordered writer without multiplying locked-memory use by the CPU
+    // count or creating an unbounded nested-thread fan-out.
+    private const int MaxPipelineWorkers = 2;
     private const int Sha3TagSize = 64;
     private const int SkeinTagSize = 128;
     private const int MaxHeaderSize = 16 * 1024;
     private readonly PasswordKeyService _passwords = new();
+    private static readonly AsyncLocal<int?> PipelineWorkerOverride = new();
+
+    internal static IDisposable UsePipelineWorkerCountForTests(int workers)
+    {
+        if (workers is < 1 or > MaxPipelineWorkers)
+        {
+            throw new ArgumentOutOfRangeException(nameof(workers));
+        }
+
+        int? previous = PipelineWorkerOverride.Value;
+        PipelineWorkerOverride.Value = workers;
+        return new PipelineWorkerOverrideScope(previous);
+    }
+
+    internal static int ProductionPipelineWorkerCount =>
+        Math.Clamp(Environment.ProcessorCount, 1, MaxPipelineWorkers);
+
+    private static int PipelineWorkerCount =>
+        PipelineWorkerOverride.Value ?? ProductionPipelineWorkerCount;
 
     public bool IsNativeKalynaAvailable => NativeKalyna.IsAvailable();
     public bool IsNativeThreefishAvailable => NativeThreefish.IsAvailable();
@@ -226,11 +252,10 @@ public sealed partial class KalynaContainerService
         byte[] kdfSecondSalt = [];
         SuiteKeyMaterial? keyMaterial = null;
         byte[] tweak = [];
-        byte[] counter = [];
         IDisposable? nonceLock = null;
         IDisposable? tweakLock = null;
-        IDisposable? counterLock = null;
         Argon2ExecutionProfile effectiveProfile;
+        Exception? operationFailure = null;
         try
         {
             kdfSalt = (byte[])salt.Clone();
@@ -258,7 +283,6 @@ public sealed partial class KalynaContainerService
             chunkNonceBase = BuildChunkNonceBase(nonce, secondNonce);
 
             tweak = CreateSuiteTweak(suite, nonce);
-            counter = (byte[])nonce.Clone();
             // These stay locked until the outer finally has zeroed them.
             // A `using` declaration here would unlock the pages when this
             // block ends and leave the still-populated buffers unpinned until
@@ -266,7 +290,6 @@ public sealed partial class KalynaContainerService
             // prevent.
             nonceLock = SecureMemory.TryLock(nonce);
             tweakLock = SecureMemory.TryLock(tweak);
-            counterLock = SecureMemory.TryLock(counter);
 
             var header = new ContainerHeader(
                 CurrentVersion,
@@ -288,7 +311,7 @@ public sealed partial class KalynaContainerService
                 parameters.TweakBytes > 0 ? EncryptionSuiteCatalog.ThreefishTweakMode : "None",
                 tweak.Length == 0 ? null : Convert.ToBase64String(tweak),
                 hint,
-                // Zero on purpose. v11 derives the Argon2id memory cost from
+                // Zero on purpose. v12 derives the Argon2id memory cost from
                 // the credentials, so writing it here would publish the one
                 // parameter the derivation keeps secret. Iterations and
                 // parallelism are fixed constants and reveal nothing.
@@ -299,11 +322,11 @@ public sealed partial class KalynaContainerService
                 MasterKeyBits,
                 "Sequential",
                 "PMI16",
-                V11MasterKdf.PasswordMode,
-                V11MasterKdf.KdfInputMode,
+                V12MasterKdf.PasswordMode,
+                V12MasterKdf.KdfInputMode,
                 1024,
                 2,
-                V11MasterKdf.KdfMode,
+                V12MasterKdf.KdfMode,
                 secondNonce.Length == 0 ? 0 : parameters.NonceBytes * 8,
                 secondNonce.Length == 0 ? null : Convert.ToBase64String(secondNonce));
             byte[] headerBytes = JsonSerializer.SerializeToUtf8Bytes(header, ContainerJsonContext.Default.ContainerHeader);
@@ -330,101 +353,53 @@ public sealed partial class KalynaContainerService
             {
                 {
                     FileStream output = temporaryEncrypted.Stream;
-                    using var hmac = new HmacSha3_512(keyMaterial.Sha3MacKey);
-                    using NativeSkein1024Mac skeinMac = NativeThreefish.CreateSkeinMac(keyMaterial.SkeinMacKey);
                     await output.WriteAsync(Magic, cancellationToken).ConfigureAwait(false);
                     await output.WriteAsync(headerLengthBytes, cancellationToken).ConfigureAwait(false);
                     await output.WriteAsync(headerBytes, cancellationToken).ConfigureAwait(false);
                     await output.WriteAsync(sha3TagPlaceholder, cancellationToken).ConfigureAwait(false);
                     await output.WriteAsync(skeinTagPlaceholder, cancellationToken).ConfigureAwait(false);
-                    AppendAuthentication(hmac, skeinMac, Magic);
-                    AppendAuthentication(hmac, skeinMac, headerLengthBytes);
-                    AppendAuthentication(hmac, skeinMac, headerBytes);
+                    long cipherStart = output.Position;
 
-                    byte[] plainChunk = new byte[BufferSize];
-                    byte[] cipherChunk = new byte[BufferSize];
-                    using IDisposable plainChunkLock = SecureMemory.TryLock(plainChunk);
-                    using IDisposable cipherChunkLock = SecureMemory.TryLock(cipherChunk);
+                    long plaintextBytes = await EncryptPayloadParallelAsync(
+                        plainZpaqStream,
+                        output,
+                        parameters,
+                        keyMaterial.EncryptionKey,
+                        tweak,
+                        chunkNonceBase,
+                        cancellationToken).ConfigureAwait(false);
+                    if (plaintextBytes == 0)
+                    {
+                        throw new InvalidDataException("An encrypted ZPAQ container cannot have an empty payload.");
+                    }
+
+                    await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+                    (byte[] sha3Tag, byte[] skeinTag) = await ParallelContainerAuthenticator
+                        .ComputeAsync(
+                            output,
+                            cipherStart,
+                            [Magic, headerLengthBytes, headerBytes],
+                            keyMaterial.Sha3MacKey,
+                            keyMaterial.SkeinMacKey,
+                            cancellationToken)
+                        .ConfigureAwait(false);
                     try
                     {
-                        int read;
-                        long plaintextBytes = 0;
-                        long chunkIndex = 0;
-                        while ((read = await ReadChunkAsync(plainZpaqStream, plainChunk, cancellationToken).ConfigureAwait(false)) > 0)
-                        {
-                            plaintextBytes = checked(plaintextBytes + read);
-                            DeriveChunkNonce(chunkNonceBase, chunkIndex, counter);
-                            XCrypt(parameters, keyMaterial.EncryptionKey, tweak, counter, plainChunk, cipherChunk, read);
-
-                            byte[]? chunkTag = null;
-                            if (parameters.Cascade is { OutermostIsAead: true } aeadLayout)
-                            {
-                                // The tag follows its own chunk rather than
-                                // collecting in a table, so a reader never has
-                                // to hold unverified plaintext while it goes
-                                // looking for the proof.
-                                byte[] tag = new byte[NativeChaChaPoly.TagBytes];
-                                (byte[] aeadKey, byte[] aeadNonce) =
-                                    SplitAeadMaterial(aeadLayout, keyMaterial.EncryptionKey, counter);
-                                byte[] associated =
-                                    BuildChunkAssociatedData(parameters, chunkNonceBase, chunkIndex, read, CurrentVersion);
-                                try
-                                {
-                                    NativeChaChaPoly.Encrypt(
-                                        aeadKey, aeadNonce, associated, cipherChunk, cipherChunk, read, tag);
-                                }
-                                finally
-                                {
-                                    CryptographicOperations.ZeroMemory(aeadKey);
-                                    CryptographicOperations.ZeroMemory(aeadNonce);
-                                }
-
-                                chunkTag = tag;
-                            }
-
-                            await output.WriteAsync(cipherChunk.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
-                            AppendAuthentication(hmac, skeinMac, cipherChunk.AsSpan(0, read));
-
-                            if (chunkTag is not null)
-                            {
-                                await output.WriteAsync(chunkTag, cancellationToken).ConfigureAwait(false);
-                                AppendAuthentication(hmac, skeinMac, chunkTag);
-                            }
-                            chunkIndex = checked(chunkIndex + 1);
-                            CryptographicOperations.ZeroMemory(plainChunk.AsSpan(0, read));
-                            CryptographicOperations.ZeroMemory(cipherChunk.AsSpan(0, read));
-                        }
-
-                        if (plaintextBytes == 0)
-                        {
-                            throw new InvalidDataException("An encrypted ZPAQ container cannot have an empty payload.");
-                        }
-
-                        byte[] sha3Tag = hmac.GetHashAndReset();
-                        byte[] skeinTag = skeinMac.GetTag();
-                        try
-                        {
-                            output.Position = Magic.Length + headerLengthBytes.Length + headerBytes.Length;
-                            await output.WriteAsync(sha3Tag, cancellationToken).ConfigureAwait(false);
-                            await output.WriteAsync(skeinTag, cancellationToken).ConfigureAwait(false);
-                            await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+                        output.Position = Magic.Length + headerLengthBytes.Length + headerBytes.Length;
+                        await output.WriteAsync(sha3Tag, cancellationToken).ConfigureAwait(false);
+                        await output.WriteAsync(skeinTag, cancellationToken).ConfigureAwait(false);
+                        await output.FlushAsync(cancellationToken).ConfigureAwait(false);
 #pragma warning disable CA1849 // Flush(true) makes the completed ciphertext durable before the atomic rename.
-                            output.Flush(flushToDisk: true);
+                        output.Flush(flushToDisk: true);
 #if KEEPVAULT_MACOS
-                            MacSafeFileSystem.FullSync(output.SafeFileHandle);
+                        MacSafeFileSystem.FullSync(output.SafeFileHandle);
 #endif
 #pragma warning restore CA1849
-                        }
-                        finally
-                        {
-                            CryptographicOperations.ZeroMemory(sha3Tag);
-                            CryptographicOperations.ZeroMemory(skeinTag);
-                        }
                     }
                     finally
                     {
-                        CryptographicOperations.ZeroMemory(plainChunk);
-                        CryptographicOperations.ZeroMemory(cipherChunk);
+                        CryptographicOperations.ZeroMemory(sha3Tag);
+                        CryptographicOperations.ZeroMemory(skeinTag);
                     }
                 }
                 temporaryEncrypted.RenameTo(fullEncryptedPath, overwrite: false);
@@ -458,29 +433,51 @@ public sealed partial class KalynaContainerService
                 CryptographicOperations.ZeroMemory(skeinTagPlaceholder);
             }
         }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
         finally
         {
             CryptographicOperations.ZeroMemory(kdfSalt);
             CryptographicOperations.ZeroMemory(kdfSecondSalt);
             CryptographicOperations.ZeroMemory(chunkNonceBase);
-            keyMaterial?.Dispose();
-            CryptographicOperations.ZeroMemory(counter);
             CryptographicOperations.ZeroMemory(tweak);
             CryptographicOperations.ZeroMemory(nonce);
             CryptographicOperations.ZeroMemory(salt);
-            counterLock?.Dispose();
-            tweakLock?.Dispose();
-            nonceLock?.Dispose();
-            // A two-round set owns all four buffers, so disposing it covers the
-            // salt and nonce aliases taken from it.
+            CryptographicOperations.ZeroMemory(secondSalt);
+            CryptographicOperations.ZeroMemory(secondNonce);
+            keyMaterial?.ZeroForDisposal();
             if (twoRound is not null)
             {
-                twoRound.Dispose();
+                twoRound.FirstSalt.ZeroForDisposal();
+                twoRound.FirstNonce.ZeroForDisposal();
+                twoRound.SecondSalt.ZeroForDisposal();
+                twoRound.SecondNonce.ZeroForDisposal();
+                DisposeSensitiveResources(
+                    operationFailure,
+                    "Encrypted-container creation failed and one or more sensitive-memory resources could not be released.",
+                    keyMaterial,
+                    tweakLock,
+                    nonceLock,
+                    twoRound.FirstSalt,
+                    twoRound.FirstNonce,
+                    twoRound.SecondSalt,
+                    twoRound.SecondNonce);
             }
             else
             {
-                nonceBuffer.Dispose();
-                saltBuffer.Dispose();
+                nonceBuffer.ZeroForDisposal();
+                saltBuffer.ZeroForDisposal();
+                DisposeSensitiveResources(
+                    operationFailure,
+                    "Encrypted-container creation failed and one or more sensitive-memory resources could not be released.",
+                    keyMaterial,
+                    tweakLock,
+                    nonceLock,
+                    nonceBuffer,
+                    saltBuffer);
             }
         }
     }
@@ -518,10 +515,9 @@ public sealed partial class KalynaContainerService
         byte[]? actualSha3Tag = null;
         byte[]? actualSkeinTag = null;
         SuiteKeyMaterial? keyMaterial = null;
-        byte[]? counter = null;
         IDisposable? nonceLock = null;
         IDisposable? tweakLock = null;
-        IDisposable? counterLock = null;
+        Exception? operationFailure = null;
 
         try
         {
@@ -608,102 +604,37 @@ public sealed partial class KalynaContainerService
                 throw new CryptographicException("Wrong password or manipulated container.");
             }
 
-            counter = (byte[])nonce.Clone();
             // Locked until the outer finally has zeroed them; a `using`
             // declaration would unlock the pages while they still hold their
             // contents.
             nonceLock = SecureMemory.TryLock(nonce);
             tweakLock = SecureMemory.TryLock(tweak);
-            counterLock = SecureMemory.TryLock(counter);
             input.Position = cipherStart;
-            // Sized to one written chunk: payload, plus the tag that follows
-            // it when the suite has an authenticated outer layer. A single read
-            // then lands exactly on a chunk boundary.
-            //
-            // The allowance must not be added unconditionally. For a suite
-            // without a tag the writer emits BufferSize per chunk, and a reader
-            // taking BufferSize + 16 would drift by a tag every chunk — the
-            // chunk indices on the two sides would diverge, and the per-chunk
-            // nonces with them.
-            int chunkTagAllowance = parameters.Cascade is { OutermostIsAead: true }
-                ? NativeChaChaPoly.TagBytes
-                : 0;
-            byte[] cipherChunk = new byte[BufferSize + chunkTagAllowance];
-            byte[] plainChunk = new byte[BufferSize];
-            using IDisposable cipherChunkLock = SecureMemory.TryLock(cipherChunk);
-            using IDisposable plainChunkLock = SecureMemory.TryLock(plainChunk);
-            try
-            {
-                int read;
-                long chunkIndex = 0;
-                while ((read = await ReadChunkAsync(input, cipherChunk, cancellationToken).ConfigureAwait(false)) > 0)
-                {
-                    DeriveChunkNonce(chunkNonceBase, chunkIndex, counter);
-
-                    if (parameters.Cascade is { OutermostIsAead: true } aeadLayout)
-                    {
-                        // The chunk and its tag were written together, so the
-                        // tag sits in the last bytes of what was just read.
-                        // Verification happens before the inner layers run: a
-                        // reader must never hand out plaintext it has not
-                        // authenticated, not even to the next cipher.
-                        int tagBytes = NativeChaChaPoly.TagBytes;
-                        if (read < tagBytes)
-                        {
-                            throw new InvalidDataException("The container ends inside an authentication tag.");
-                        }
-
-                        int payload = read - tagBytes;
-                        byte[] tag = cipherChunk.AsSpan(payload, tagBytes).ToArray();
-                        (byte[] aeadKey, byte[] aeadNonce) =
-                            SplitAeadMaterial(aeadLayout, keyMaterial.EncryptionKey, counter);
-                        byte[] associated =
-                            BuildChunkAssociatedData(parameters, chunkNonceBase, chunkIndex, payload, header.Version);
-                        try
-                        {
-                            NativeChaChaPoly.Decrypt(
-                                aeadKey, aeadNonce, associated, cipherChunk, cipherChunk, payload, tag);
-                        }
-                        finally
-                        {
-                            CryptographicOperations.ZeroMemory(aeadKey);
-                            CryptographicOperations.ZeroMemory(aeadNonce);
-                            CryptographicOperations.ZeroMemory(tag);
-                        }
-
-                        read = payload;
-                    }
-
-                    XCrypt(parameters, keyMaterial.EncryptionKey, tweak, counter, cipherChunk, plainChunk, read);
-                    await plainZpaqDestination.WriteAsync(plainChunk.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
-                    chunkIndex = checked(chunkIndex + 1);
-                    CryptographicOperations.ZeroMemory(cipherChunk.AsSpan(0, read));
-                    CryptographicOperations.ZeroMemory(plainChunk.AsSpan(0, read));
-                }
-
-                await plainZpaqDestination.FlushAsync(cancellationToken).ConfigureAwait(false);
-            }
-            finally
-            {
-                CryptographicOperations.ZeroMemory(cipherChunk);
-                CryptographicOperations.ZeroMemory(plainChunk);
-            }
+            await DecryptPayloadParallelAsync(
+                input,
+                plainZpaqDestination,
+                parameters,
+                header.Version,
+                keyMaterial.EncryptionKey,
+                tweak,
+                chunkNonceBase,
+                cancellationToken).ConfigureAwait(false);
 
             progress?.Report($"{parameters.DisplayName} container decrypted.");
         }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
         finally
         {
-            keyMaterial?.Dispose();
             ZeroIfNotNull(actualSha3Tag);
             ZeroIfNotNull(actualSkeinTag);
             ZeroIfNotNull(expectedSha3Tag);
             ZeroIfNotNull(expectedSkeinTag);
-            ZeroIfNotNull(counter);
             ZeroIfNotNull(tweak);
             ZeroIfNotNull(nonce);
-            counterLock?.Dispose();
-            tweakLock?.Dispose();
-            nonceLock?.Dispose();
             ZeroIfNotNull(secondSalt);
             ZeroIfNotNull(secondNonce);
             ZeroIfNotNull(chunkNonceBase);
@@ -711,6 +642,13 @@ public sealed partial class KalynaContainerService
             ZeroIfNotNull(magic);
             ZeroIfNotNull(headerLengthBytes);
             ZeroIfNotNull(headerBytes);
+            keyMaterial?.ZeroForDisposal();
+            DisposeSensitiveResources(
+                operationFailure,
+                "Container decryption failed and one or more sensitive-memory resources could not be released.",
+                keyMaterial,
+                tweakLock,
+                nonceLock);
         }
     }
 
@@ -762,6 +700,7 @@ public sealed partial class KalynaContainerService
         byte[]? actualSkeinTag = null;
         byte[]? salt = null;
         SuiteKeyMaterial? keyMaterial = null;
+        Exception? operationFailure = null;
         try
         {
             await input.ReadExactlyAsync(magic, cancellationToken).ConfigureAwait(false);
@@ -845,9 +784,13 @@ public sealed partial class KalynaContainerService
                 throw new CryptographicException("Wrong password or manipulated container.");
             }
         }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
         finally
         {
-            keyMaterial?.Dispose();
             ZeroIfNotNull(actualSha3Tag);
             ZeroIfNotNull(actualSkeinTag);
             ZeroIfNotNull(expectedSha3Tag);
@@ -856,6 +799,11 @@ public sealed partial class KalynaContainerService
             ZeroIfNotNull(magic);
             ZeroIfNotNull(headerLengthBytes);
             ZeroIfNotNull(headerBytes);
+            keyMaterial?.ZeroForDisposal();
+            DisposeSensitiveResources(
+                operationFailure,
+                "Container authentication failed and one or more sensitive-memory resources could not be released.",
+                keyMaterial);
         }
     }
 
@@ -1067,45 +1015,15 @@ public sealed partial class KalynaContainerService
         byte[] headerBytes,
         CancellationToken cancellationToken)
     {
-        using var hmac = new HmacSha3_512(sha3MacKey);
-        using NativeSkein1024Mac skeinMac = NativeThreefish.CreateSkeinMac(skeinMacKey);
-        AppendAuthentication(hmac, skeinMac, Magic);
-        AppendAuthentication(hmac, skeinMac, headerLengthBytes);
-        AppendAuthentication(hmac, skeinMac, headerBytes);
-
-        input.Position = cipherStart;
-        byte[] buffer = new byte[BufferSize];
-        byte[]? sha3Tag = null;
-        try
-        {
-            int read;
-            while ((read = await input.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
-            {
-                AppendAuthentication(hmac, skeinMac, buffer.AsSpan(0, read));
-            }
-
-            sha3Tag = hmac.GetHashAndReset();
-            byte[] skeinTag = skeinMac.GetTag();
-            return (sha3Tag, skeinTag);
-        }
-        catch
-        {
-            ZeroIfNotNull(sha3Tag);
-            throw;
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(buffer);
-        }
-    }
-
-    private static void AppendAuthentication(
-        HmacSha3_512 hmac,
-        NativeSkein1024Mac skeinMac,
-        ReadOnlySpan<byte> data)
-    {
-        hmac.AppendData(data);
-        skeinMac.AppendData(data);
+        return await ParallelContainerAuthenticator
+            .ComputeAsync(
+                input,
+                cipherStart,
+                [Magic, headerLengthBytes, headerBytes],
+                sha3MacKey,
+                skeinMacKey,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static async ValueTask<int> ReadChunkAsync(Stream source, byte[] buffer, CancellationToken cancellationToken)
@@ -1123,6 +1041,460 @@ public sealed partial class KalynaContainerService
         }
 
         return total;
+    }
+
+    private static async Task<long> EncryptPayloadParallelAsync(
+        Stream plaintext,
+        Stream ciphertext,
+        EncryptionSuiteParameters parameters,
+        byte[] encryptionKey,
+        byte[] tweak,
+        byte[] chunkNonceBase,
+        CancellationToken cancellationToken)
+    {
+        int workerCount = PipelineWorkerCount;
+        var slots = new ContainerChunkSlot[workerCount];
+        Exception? operationFailure = null;
+        try
+        {
+            for (int index = 0; index < slots.Length; index++)
+            {
+                slots[index] = new ContainerChunkSlot(
+                    BufferSize,
+                    BufferSize,
+                    parameters.NonceBytes);
+            }
+
+            long total = 0;
+            long chunkIndex = 0;
+            long expectedWriteIndex = 0;
+            while (true)
+            {
+                int active = 0;
+                for (; active < slots.Length; active++)
+                {
+                    ContainerChunkSlot slot = slots[active];
+                    int read = await ReadChunkAsync(plaintext, slot.Input, cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    slot.Prepare(chunkIndex, read);
+                    total = checked(total + read);
+                    chunkIndex = checked(chunkIndex + 1);
+                }
+
+                if (active == 0)
+                {
+                    break;
+                }
+
+                await RunChunkWorkersAsync(
+                    active,
+                    index => EncryptChunk(
+                        slots[index],
+                        parameters,
+                        encryptionKey,
+                        tweak,
+                        chunkNonceBase),
+                    cancellationToken).ConfigureAwait(false);
+
+                // Task.WhenAll is the ownership barrier: no worker can still
+                // read a slot when the ordered writer consumes and clears it.
+                for (int index = 0; index < active; index++)
+                {
+                    ContainerChunkSlot slot = slots[index];
+                    if (slot.Index != expectedWriteIndex)
+                    {
+                        throw new InvalidOperationException(
+                            $"The encryption reorder barrier received chunk {slot.Index}, expected {expectedWriteIndex}.");
+                    }
+
+                    try
+                    {
+                        await ciphertext.WriteAsync(
+                            slot.Output.AsMemory(0, slot.PayloadLength),
+                            cancellationToken).ConfigureAwait(false);
+                        if (slot.HasTag)
+                        {
+                            await ciphertext.WriteAsync(slot.Tag, cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                    finally
+                    {
+                        slot.ClearForReuse();
+                    }
+
+                    expectedWriteIndex = checked(expectedWriteIndex + 1);
+                }
+            }
+
+            if (expectedWriteIndex != chunkIndex)
+            {
+                throw new InvalidOperationException("The encryption pipeline did not write every produced chunk exactly once.");
+            }
+
+            return total;
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            foreach (ContainerChunkSlot? slot in slots)
+            {
+                slot?.ZeroForDisposal();
+            }
+
+            DisposeSensitiveResources(
+                operationFailure,
+                "Container encryption failed and one or more chunk-slot locks could not be released.",
+                slots);
+        }
+    }
+
+    private static void EncryptChunk(
+        ContainerChunkSlot slot,
+        EncryptionSuiteParameters parameters,
+        byte[] encryptionKey,
+        byte[] tweak,
+        byte[] chunkNonceBase)
+    {
+        DeriveChunkNonce(chunkNonceBase, slot.Index, slot.Counter);
+        XCrypt(
+            parameters,
+            encryptionKey,
+            tweak,
+            slot.Counter,
+            slot.Input,
+            slot.Output,
+            slot.PayloadLength);
+
+        if (parameters.Cascade is not { OutermostIsAead: true } aeadLayout)
+        {
+            return;
+        }
+
+        (byte[] aeadKey, byte[] aeadNonce) =
+            SplitAeadMaterial(aeadLayout, encryptionKey, slot.Counter);
+        byte[] associated = BuildChunkAssociatedData(
+            parameters,
+            chunkNonceBase,
+            slot.Index,
+            slot.PayloadLength,
+            CurrentVersion);
+        try
+        {
+            NativeChaChaPoly.Encrypt(
+                aeadKey,
+                aeadNonce,
+                associated,
+                slot.Output,
+                slot.Output,
+                slot.PayloadLength,
+                slot.Tag);
+            slot.HasTag = true;
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(aeadKey);
+            CryptographicOperations.ZeroMemory(aeadNonce);
+            CryptographicOperations.ZeroMemory(associated);
+        }
+    }
+
+    private static async Task DecryptPayloadParallelAsync(
+        Stream ciphertext,
+        Stream plaintext,
+        EncryptionSuiteParameters parameters,
+        int version,
+        byte[] encryptionKey,
+        byte[] tweak,
+        byte[] chunkNonceBase,
+        CancellationToken cancellationToken)
+    {
+        int tagBytes = parameters.Cascade is { OutermostIsAead: true }
+            ? NativeChaChaPoly.TagBytes
+            : 0;
+        int workerCount = PipelineWorkerCount;
+        var slots = new ContainerChunkSlot[workerCount];
+        Exception? operationFailure = null;
+        try
+        {
+            for (int index = 0; index < slots.Length; index++)
+            {
+                slots[index] = new ContainerChunkSlot(
+                    BufferSize + tagBytes,
+                    BufferSize,
+                    parameters.NonceBytes);
+            }
+
+            long chunkIndex = 0;
+            long expectedWriteIndex = 0;
+            while (true)
+            {
+                int active = 0;
+                for (; active < slots.Length; active++)
+                {
+                    ContainerChunkSlot slot = slots[active];
+                    int read = await ReadChunkAsync(ciphertext, slot.Input, cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    int payloadLength = checked(read - tagBytes);
+                    if (payloadLength <= 0 || payloadLength > BufferSize)
+                    {
+                        throw new InvalidDataException(
+                            tagBytes == 0
+                                ? "The container has an invalid ciphertext chunk length."
+                                : "The container ends inside an authentication tag.");
+                    }
+
+                    slot.Prepare(chunkIndex, payloadLength, read);
+                    chunkIndex = checked(chunkIndex + 1);
+                }
+
+                if (active == 0)
+                {
+                    break;
+                }
+
+                await RunChunkWorkersAsync(
+                    active,
+                    index => DecryptChunk(
+                        slots[index],
+                        parameters,
+                        version,
+                        encryptionKey,
+                        tweak,
+                        chunkNonceBase),
+                    cancellationToken).ConfigureAwait(false);
+
+                // Authentication for every slot in the batch has succeeded
+                // before the first byte of this batch is handed to the caller.
+                for (int index = 0; index < active; index++)
+                {
+                    ContainerChunkSlot slot = slots[index];
+                    if (slot.Index != expectedWriteIndex)
+                    {
+                        throw new InvalidOperationException(
+                            $"The decryption reorder barrier received chunk {slot.Index}, expected {expectedWriteIndex}.");
+                    }
+
+                    try
+                    {
+                        await plaintext.WriteAsync(
+                            slot.Output.AsMemory(0, slot.PayloadLength),
+                            cancellationToken).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        slot.ClearForReuse();
+                    }
+
+                    expectedWriteIndex = checked(expectedWriteIndex + 1);
+                }
+            }
+
+            if (expectedWriteIndex != chunkIndex)
+            {
+                throw new InvalidOperationException("The decryption pipeline did not write every authenticated chunk exactly once.");
+            }
+
+            await plaintext.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            foreach (ContainerChunkSlot? slot in slots)
+            {
+                slot?.ZeroForDisposal();
+            }
+
+            DisposeSensitiveResources(
+                operationFailure,
+                "Container decryption failed and one or more chunk-slot locks could not be released.",
+                slots);
+        }
+    }
+
+    private static async Task RunChunkWorkersAsync(
+        int workerCount,
+        Action<int> worker,
+        CancellationToken cancellationToken)
+    {
+        var tasks = new Task[workerCount];
+        int started = 0;
+        try
+        {
+            for (; started < workerCount; started++)
+            {
+                int workerIndex = started;
+                tasks[started] = Task.Run(
+                    () => worker(workerIndex),
+                    cancellationToken);
+            }
+        }
+        catch (Exception schedulingFailure)
+        {
+            // A partial scheduling failure must not let the caller erase or
+            // reuse slots and keys while an accepted worker still owns them.
+            Task[] startedTasks = tasks.AsSpan(0, started).ToArray();
+            Exception? joinFailure = null;
+            try
+            {
+                await Task.WhenAll(startedTasks).ConfigureAwait(false);
+            }
+            catch (Exception failure)
+            {
+                joinFailure = failure;
+            }
+
+            Exception[] workerFailures = CollectTaskFailuresDeterministically(
+                startedTasks,
+                joinFailure);
+            if (workerFailures.Length != 0)
+            {
+                throw new AggregateException(
+                    "A container worker could not be scheduled and an already-started worker also failed.",
+                    CombineDistinctFailures(schedulingFailure, workerFailures));
+            }
+
+            ExceptionDispatchInfo.Capture(schedulingFailure).Throw();
+            throw new UnreachableException();
+        }
+
+        Task allWorkers = Task.WhenAll(tasks);
+        try
+        {
+            await allWorkers.ConfigureAwait(false);
+        }
+        catch (Exception awaitFailure)
+        {
+            Exception[] failures = CollectTaskFailuresDeterministically(tasks, awaitFailure);
+            if (failures.Length == 1)
+            {
+                ExceptionDispatchInfo.Capture(failures[0]).Throw();
+            }
+
+            throw new AggregateException(
+                "Multiple container workers failed.",
+                failures);
+        }
+    }
+
+    internal static Task RunChunkWorkersForFailureTestsAsync(
+        int workerCount,
+        Action<int> worker) =>
+        RunChunkWorkersAsync(workerCount, worker, CancellationToken.None);
+
+    private static Exception[] CollectTaskFailuresDeterministically(
+        IReadOnlyList<Task> tasks,
+        Exception? fallback)
+    {
+        var failures = new List<Exception>();
+        var seen = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
+        foreach (Task task in tasks)
+        {
+            if (task.Exception is not { } aggregate)
+            {
+                continue;
+            }
+
+            foreach (Exception failure in aggregate.Flatten().InnerExceptions)
+            {
+                if (seen.Add(failure))
+                {
+                    failures.Add(failure);
+                }
+            }
+        }
+
+        if (failures.Count == 0 && fallback is not null && seen.Add(fallback))
+        {
+            failures.Add(fallback);
+        }
+
+        return failures.ToArray();
+    }
+
+    private static Exception[] CombineDistinctFailures(
+        Exception primary,
+        IReadOnlyList<Exception> additional)
+    {
+        var combined = new List<Exception>(additional.Count + 1) { primary };
+        var seen = new HashSet<Exception>(ReferenceEqualityComparer.Instance) { primary };
+        foreach (Exception failure in additional)
+        {
+            if (seen.Add(failure))
+            {
+                combined.Add(failure);
+            }
+        }
+
+        return combined.ToArray();
+    }
+
+    private static void DecryptChunk(
+        ContainerChunkSlot slot,
+        EncryptionSuiteParameters parameters,
+        int version,
+        byte[] encryptionKey,
+        byte[] tweak,
+        byte[] chunkNonceBase)
+    {
+        DeriveChunkNonce(chunkNonceBase, slot.Index, slot.Counter);
+        if (parameters.Cascade is { OutermostIsAead: true } aeadLayout)
+        {
+            slot.Input.AsSpan(slot.PayloadLength, NativeChaChaPoly.TagBytes).CopyTo(slot.Tag);
+            (byte[] aeadKey, byte[] aeadNonce) =
+                SplitAeadMaterial(aeadLayout, encryptionKey, slot.Counter);
+            byte[] associated = BuildChunkAssociatedData(
+                parameters,
+                chunkNonceBase,
+                slot.Index,
+                slot.PayloadLength,
+                version);
+            try
+            {
+                // NativeChaChaPoly performs the constant-time tag check before
+                // writing any plaintext. On failure this slot is discarded and
+                // the ordered writer is never entered.
+                NativeChaChaPoly.Decrypt(
+                    aeadKey,
+                    aeadNonce,
+                    associated,
+                    slot.Input,
+                    slot.Input,
+                    slot.PayloadLength,
+                    slot.Tag);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(aeadKey);
+                CryptographicOperations.ZeroMemory(aeadNonce);
+                CryptographicOperations.ZeroMemory(associated);
+                CryptographicOperations.ZeroMemory(slot.Tag);
+            }
+        }
+
+        XCrypt(
+            parameters,
+            encryptionKey,
+            tweak,
+            slot.Counter,
+            slot.Input,
+            slot.Output,
+            slot.PayloadLength);
     }
 
     private static long BlocksForLength(int length, int blockBytes)
@@ -1166,7 +1538,7 @@ public sealed partial class KalynaContainerService
     /// cores read each byte before writing the same index and never declare
     /// their buffers restricted, so the aliasing is defined.
     /// </remarks>
-    private static readonly byte[] ChunkNonceDomain = "Kalyna-ZPAQ/v11/chunk-nonce"u8.ToArray();
+    private static readonly byte[] ChunkNonceDomain = "Kalyna-ZPAQ/v12/chunk-nonce"u8.ToArray();
 
     /// <summary>
     /// Gives every chunk its own nonce instead of running one counter across
@@ -1409,18 +1781,31 @@ public sealed partial class KalynaContainerService
 
             byte[] stageKey = new byte[stage.KeyBytes];
             byte[] stageCounter = new byte[stage.NonceBytes];
-            using IDisposable stageKeyLock = SecureMemory.TryLock(stageKey);
-            using IDisposable stageCounterLock = SecureMemory.TryLock(stageCounter);
+            IDisposable? stageKeyLock = null;
+            IDisposable? stageCounterLock = null;
+            Exception? operationFailure = null;
             try
             {
+                stageKeyLock = SecureMemory.TryLock(stageKey);
+                stageCounterLock = SecureMemory.TryLock(stageCounter);
                 encryptionKey.AsSpan(keyOffsets[index], stage.KeyBytes).CopyTo(stageKey);
                 counter.AsSpan(nonceOffsets[index], stage.NonceBytes).CopyTo(stageCounter);
                 ApplyCtrStage(stage, stageKey, tweak, stageCounter, output, length);
+            }
+            catch (Exception failure)
+            {
+                operationFailure = failure;
+                throw;
             }
             finally
             {
                 CryptographicOperations.ZeroMemory(stageKey);
                 CryptographicOperations.ZeroMemory(stageCounter);
+                DisposeSensitiveResources(
+                    operationFailure,
+                    "Cascade-stage execution failed and one or more stage locks could not be released.",
+                    stageCounterLock,
+                    stageKeyLock);
             }
         }
     }
@@ -1645,7 +2030,7 @@ public sealed partial class KalynaContainerService
                 CascadeCipher.Aes256 => (NativeAes.IsAvailable(), "aes_ref.dll"),
                 CascadeCipher.Mars448 => (NativeMars.IsAvailable(), "mars_ref.dll"),
                 CascadeCipher.Shacal2_512 => (NativeShacal2.IsAvailable(), "shacal2_ref.dll"),
-                CascadeCipher.Kalyna512_512 => (NativeKalyna.IsAvailable(), "kalyna_ref.dll"),
+                CascadeCipher.Kalyna512_512 => (NativeKalyna.IsAvailable(), "kalyna_v12.dll"),
                 CascadeCipher.Threefish1024 => (NativeThreefish.IsAvailable(), "threefish_ref.dll"),
                 CascadeCipher.ChaCha20Poly1305 => (NativeChaChaPoly.IsAvailable(), "chachapoly_ref.dll"),
                 _ => (false, "an unknown cipher"),
@@ -1700,10 +2085,10 @@ public sealed partial class KalynaContainerService
 
         ValidatePasswordMode(header);
         if (header.Argon2MemoryKiB != 0
-            || header.Argon2Iterations != (int)V11MasterKdf.Iterations
-            || header.Argon2Parallelism != (int)V11MasterKdf.Parallelism)
+            || header.Argon2Iterations != (int)V12MasterKdf.Iterations
+            || header.Argon2Parallelism != (int)V12MasterKdf.Parallelism)
         {
-            throw new InvalidDataException("Container header does not use the fixed v11 Argon2id profile.");
+            throw new InvalidDataException("Container header does not use the fixed v12 Argon2id profile.");
         }
 
         if (header.Hint is { Length: > 180 } || header.Hint?.Any(char.IsControl) == true)
@@ -1867,11 +2252,11 @@ public sealed partial class KalynaContainerService
             throw new InvalidDataException($"Unsupported container version: {header.Version}");
         }
 
-        if (!string.Equals(header.PasswordMode, V11MasterKdf.PasswordMode, StringComparison.Ordinal)
-            || !string.Equals(header.KdfInputMode, V11MasterKdf.KdfInputMode, StringComparison.Ordinal)
-            || !string.Equals(header.KdfMode, V11MasterKdf.KdfMode, StringComparison.Ordinal))
+        if (!string.Equals(header.PasswordMode, V12MasterKdf.PasswordMode, StringComparison.Ordinal)
+            || !string.Equals(header.KdfInputMode, V12MasterKdf.KdfInputMode, StringComparison.Ordinal)
+            || !string.Equals(header.KdfMode, V12MasterKdf.KdfMode, StringComparison.Ordinal))
         {
-            throw new InvalidDataException("Container header contains no valid v11 four-credential KDF model.");
+            throw new InvalidDataException("Container header contains no valid v12 four-credential KDF model.");
         }
     }
 
@@ -1888,6 +2273,26 @@ public sealed partial class KalynaContainerService
         if (value is not null)
         {
             CryptographicOperations.ZeroMemory(value);
+        }
+    }
+
+    private static void DisposeSensitiveResources(
+        Exception? operationFailure,
+        string message,
+        params IDisposable?[] resources)
+    {
+        try
+        {
+            SecureMemory.DisposeAll(resources);
+        }
+        catch (Exception cleanupFailure)
+        {
+            if (operationFailure is null)
+            {
+                ExceptionDispatchInfo.Capture(cleanupFailure).Throw();
+            }
+
+            throw new AggregateException(message, operationFailure, cleanupFailure);
         }
     }
 
@@ -1921,16 +2326,68 @@ public sealed partial class KalynaContainerService
         return Task.Run(
             () =>
             {
-                using RoleKeyMaterial roles = ContainerKeyDerivation.DeriveSuiteKeys(
-                    parameters,
-                    userPassword,
-                    pin,
-                    firstGeneratedPassword,
-                    secondGeneratedPassword,
-                    salts,
-                    progress,
-                    cancellationToken);
-                return SuiteKeyMaterial.FromRoleKeys(roles, parameters);
+                RoleKeyMaterial? roles = null;
+                SuiteKeyMaterial? material = null;
+                Exception? operationFailure = null;
+                try
+                {
+                    roles = ContainerKeyDerivation.DeriveSuiteKeys(
+                        parameters,
+                        userPassword,
+                        pin,
+                        firstGeneratedPassword,
+                        secondGeneratedPassword,
+                        salts,
+                        progress,
+                        cancellationToken);
+                    material = SuiteKeyMaterial.FromRoleKeys(roles, parameters);
+                    return material;
+                }
+                catch (Exception failure)
+                {
+                    operationFailure = failure;
+                    throw;
+                }
+                finally
+                {
+                    List<Exception>? cleanupFailures = null;
+                    if (roles is not null)
+                    {
+                        try
+                        {
+                            roles.Dispose();
+                        }
+                        catch (Exception cleanupFailure)
+                        {
+                            (cleanupFailures ??= []).Add(cleanupFailure);
+                        }
+                    }
+
+                    if (cleanupFailures is not null && material is not null)
+                    {
+                        material.ZeroForDisposal();
+                        try
+                        {
+                            material.Dispose();
+                        }
+                        catch (Exception cleanupFailure)
+                        {
+                            cleanupFailures.Add(cleanupFailure);
+                        }
+                    }
+
+                    if (cleanupFailures is not null)
+                    {
+                        if (operationFailure is not null)
+                        {
+                            cleanupFailures.Insert(0, operationFailure);
+                        }
+
+                        throw new AggregateException(
+                            "Container-key derivation failed or one or more derived-key buffers could not be released.",
+                            cleanupFailures);
+                    }
+                }
             },
             cancellationToken);
     }
@@ -1968,7 +2425,137 @@ public sealed partial class KalynaContainerService
         return salts;
     }
 
-    private sealed class SuiteKeyMaterial : IDisposable
+    internal sealed class ContainerChunkSlot : IDisposable
+    {
+        private IDisposable? _inputLock;
+        private IDisposable? _outputLock;
+        private IDisposable? _counterLock;
+        private bool _disposed;
+        private bool _disposeStarted;
+
+        internal ContainerChunkSlot(int inputBytes, int outputBytes, int counterBytes)
+        {
+            Input = new byte[inputBytes];
+            Output = new byte[outputBytes];
+            Counter = new byte[counterBytes];
+            Tag = new byte[NativeChaChaPoly.TagBytes];
+            try
+            {
+                _inputLock = SecureMemory.TryLock(Input);
+                _outputLock = SecureMemory.TryLock(Output);
+                _counterLock = SecureMemory.TryLock(Counter);
+            }
+            catch (Exception operationFailure)
+            {
+                ZeroForDisposal();
+                try
+                {
+                    Dispose();
+                }
+                catch (Exception cleanupFailure)
+                {
+                    throw new AggregateException(
+                        "Container chunk-slot construction failed and one or more sensitive buffers could not be released.",
+                        operationFailure,
+                        cleanupFailure);
+                }
+                throw;
+            }
+        }
+
+        internal byte[] Input { get; }
+        internal byte[] Output { get; }
+        internal byte[] Counter { get; }
+        internal byte[] Tag { get; }
+        internal long Index { get; private set; }
+        internal int InputLength { get; private set; }
+        internal int PayloadLength { get; private set; }
+        internal bool HasTag { get; set; }
+
+        internal void Prepare(long index, int payloadLength) =>
+            Prepare(index, payloadLength, payloadLength);
+
+        internal void Prepare(long index, int payloadLength, int inputLength)
+        {
+            ObjectDisposedException.ThrowIf(_disposeStarted, this);
+            if (payloadLength <= 0
+                || payloadLength > Output.Length
+                || inputLength < payloadLength
+                || inputLength > Input.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(payloadLength));
+            }
+
+            Index = index;
+            PayloadLength = payloadLength;
+            InputLength = inputLength;
+            HasTag = false;
+            CryptographicOperations.ZeroMemory(Counter);
+            CryptographicOperations.ZeroMemory(Tag);
+        }
+
+        internal void ClearForReuse()
+        {
+            if (_disposeStarted)
+            {
+                return;
+            }
+
+            CryptographicOperations.ZeroMemory(Input.AsSpan(0, InputLength));
+            CryptographicOperations.ZeroMemory(Output.AsSpan(0, PayloadLength));
+            CryptographicOperations.ZeroMemory(Counter);
+            CryptographicOperations.ZeroMemory(Tag);
+            Index = 0;
+            InputLength = 0;
+            PayloadLength = 0;
+            HasTag = false;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposeStarted = true;
+            ZeroForDisposal();
+            var failures = new List<Exception>();
+            DisposeLock(ref _counterLock, failures);
+            DisposeLock(ref _outputLock, failures);
+            DisposeLock(ref _inputLock, failures);
+            _disposed = _counterLock is null && _outputLock is null && _inputLock is null;
+            if (failures.Count > 0)
+            {
+                throw new AggregateException(
+                    "One or more container chunk-slot locks could not be released; failed locks remain retryable.",
+                    failures);
+            }
+        }
+
+        internal void ZeroForDisposal()
+        {
+            CryptographicOperations.ZeroMemory(Input);
+            CryptographicOperations.ZeroMemory(Output);
+            CryptographicOperations.ZeroMemory(Counter);
+            CryptographicOperations.ZeroMemory(Tag);
+        }
+    }
+
+    private sealed class PipelineWorkerOverrideScope(int? previous) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                PipelineWorkerOverride.Value = previous;
+            }
+        }
+    }
+
+    internal sealed class SuiteKeyMaterial : IDisposable
     {
         private IDisposable? _encryptionKeyLock;
         private IDisposable? _sha3MacKeyLock;
@@ -1992,7 +2579,7 @@ public sealed partial class KalynaContainerService
         /// Takes over the keys the role schedule derived.
         /// </summary>
         /// <remarks>
-        /// v11 derives each role from its own domain-separated context rather
+        /// v12 derives each role from its own domain-separated context rather
         /// than slicing one flat Argon2id output, so there is nothing to slice
         /// here — only three finished keys to copy into locked storage.
         /// </remarks>
@@ -2017,9 +2604,19 @@ public sealed partial class KalynaContainerService
                 roles.SkeinMacKey.Bytes.CopyTo(material.SkeinMacKey, 0);
                 return material;
             }
-            catch
+            catch (Exception operationFailure)
             {
-                material.Dispose();
+                try
+                {
+                    material.Dispose();
+                }
+                catch (Exception cleanupFailure)
+                {
+                    throw new AggregateException(
+                        "Suite-key material construction failed and one or more sensitive buffers could not be released.",
+                        operationFailure,
+                        cleanupFailure);
+                }
                 throw;
             }
         }
@@ -2045,9 +2642,19 @@ public sealed partial class KalynaContainerService
                 derivedKey.Slice(sha3MacKeyEnd, parameters.SkeinMacKeyBytes).CopyTo(material.SkeinMacKey);
                 return material;
             }
-            catch
+            catch (Exception operationFailure)
             {
-                material.Dispose();
+                try
+                {
+                    material.Dispose();
+                }
+                catch (Exception cleanupFailure)
+                {
+                    throw new AggregateException(
+                        "Suite-key material construction failed and one or more sensitive buffers could not be released.",
+                        operationFailure,
+                        cleanupFailure);
+                }
                 throw;
             }
         }
@@ -2059,13 +2666,46 @@ public sealed partial class KalynaContainerService
                 return;
             }
 
-            _disposed = true;
+            ZeroForDisposal();
+            var failures = new List<Exception>();
+            DisposeLock(ref _skeinMacKeyLock, failures);
+            DisposeLock(ref _sha3MacKeyLock, failures);
+            DisposeLock(ref _encryptionKeyLock, failures);
+            _disposed = _skeinMacKeyLock is null
+                && _sha3MacKeyLock is null
+                && _encryptionKeyLock is null;
+            if (failures.Count > 0)
+            {
+                throw new AggregateException(
+                    "One or more suite-key locks could not be released; failed locks remain retryable.",
+                    failures);
+            }
+        }
+
+        internal void ZeroForDisposal()
+        {
             CryptographicOperations.ZeroMemory(EncryptionKey);
             CryptographicOperations.ZeroMemory(Sha3MacKey);
             CryptographicOperations.ZeroMemory(SkeinMacKey);
-            _skeinMacKeyLock?.Dispose();
-            _sha3MacKeyLock?.Dispose();
-            _encryptionKeyLock?.Dispose();
+        }
+    }
+
+    private static void DisposeLock(ref IDisposable? memoryLock, List<Exception> failures)
+    {
+        IDisposable? current = memoryLock;
+        if (current is null)
+        {
+            return;
+        }
+
+        try
+        {
+            current.Dispose();
+            memoryLock = null;
+        }
+        catch (Exception failure)
+        {
+            failures.Add(failure);
         }
     }
 
@@ -2182,11 +2822,11 @@ internal sealed class ContainerRecoveryKdfInfo : IDisposable
 
 internal static unsafe class NativeKalyna
 {
-    private const string DllName = "kalyna_ref.dll";
+    private const string DllName = "kalyna_v12.dll";
     private static readonly object LoadGate = new();
     private static nint _libraryHandle;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int> _xcryptCtr;
-    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int> _xcryptCtrReference;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int> _xcryptCtrScalar;
 
     /// <summary>
     /// Why the last <see cref="IsAvailable"/> probe failed, or null when the
@@ -2218,37 +2858,29 @@ internal static unsafe class NativeKalyna
 
     public static void XCryptCtr512(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
     {
-        XCryptCtr512(key, nonce, input, output, length, useReference: false);
+        XCryptCtr512(key, nonce, input, output, length, forceScalar: false);
     }
 
     /// <summary>
-    /// The same counter mode driven by the linked-in reference cipher.
+    /// Runs the same licensed v12 primitive with exactly one CTR worker.
     /// </summary>
     /// <remarks>
-    /// For the differential test only, and thousands of times slower than the
-    /// production path. Production never selects it: the table-driven path
-    /// already refuses to run unless it reproduces this one at start-up.
+    /// Test and performance invariant only. Independent algorithm agreement is
+    /// established separately against Bouncy Castle and official DSTU vectors.
     /// </remarks>
-    internal static void XCryptCtr512Reference(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
+    internal static void XCryptCtr512Scalar(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
     {
-        XCryptCtr512(key, nonce, input, output, length, useReference: true);
+        XCryptCtr512(key, nonce, input, output, length, forceScalar: true);
     }
 
-    private static void XCryptCtr512(byte[] key, byte[] nonce, byte[] input, byte[] output, int length, bool useReference)
+    private static void XCryptCtr512(byte[] key, byte[] nonce, byte[] input, byte[] output, int length, bool forceScalar)
     {
         if (key.Length != 64 || nonce.Length != 64 || length < 0 || input.Length < length || output.Length < length)
         {
             throw new ArgumentException("Kalyna-512/512 requires a 64-byte key, 64-byte nonce, and sufficiently large buffers.");
         }
 
-        if (useReference)
-        {
-            EnsureReferenceLoaded();
-        }
-        else
-        {
-            EnsureLoaded();
-        }
+        EnsureLoaded();
 
         int result;
         fixed (byte* keyPointer = key)
@@ -2256,8 +2888,8 @@ internal static unsafe class NativeKalyna
         fixed (byte* inputPointer = input)
         fixed (byte* outputPointer = output)
         {
-            result = useReference
-                ? _xcryptCtrReference(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length)
+            result = forceScalar
+                ? _xcryptCtrScalar(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length)
                 : _xcryptCtr(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length);
         }
 
@@ -2265,42 +2897,13 @@ internal static unsafe class NativeKalyna
         {
             throw new CryptographicException(result switch
             {
-                1 => "Kalyna reference library received invalid buffers.",
-                2 => "Kalyna reference library could not initialize a cipher context.",
-                3 => "Kalyna reference library could not start CTR worker threads.",
+                1 => "Kalyna v12 library received invalid or overlapping buffers.",
+                2 => "Kalyna v12 library could not initialize a cipher context.",
+                3 => "Kalyna v12 library could not start or join CTR worker threads.",
                 4 => "Kalyna CTR counter is exhausted or overflowed.",
-                // The table-driven encryption checks itself against the linked-in
-                // reference before it will run. Reaching this means the two
-                // disagreed, which cannot happen on a sound build and machine
-                // because both are derived from the same constants.
-                5 => "Kalyna reference library failed its start-up self-check: "
-                    + "the table-driven implementation disagreed with the reference. "
-                    + "This build or this machine is not producing the cipher the source describes.",
-                _ => $"Kalyna reference library returned error {result}.",
+                5 => "Kalyna v12 library failed its official DSTU 7624:2014 start-up vector.",
+                _ => $"Kalyna v12 library returned error {result}.",
             });
-        }
-    }
-
-    /// <summary>
-    /// Resolves the reference export, which only the differential test calls.
-    /// </summary>
-    /// <remarks>
-    /// Deliberately not resolved in <see cref="EnsureLoaded"/>. A library built
-    /// before this export existed would fail to load there, and the whole
-    /// application would refuse to encrypt because a test-only symbol was
-    /// missing. The cost of being wrong about that is far higher than the cost
-    /// of finding out later, in the one test that needs it.
-    /// </remarks>
-    private static void EnsureReferenceLoaded()
-    {
-        EnsureLoaded();
-        lock (LoadGate)
-        {
-            if (_xcryptCtrReference == null)
-            {
-                _xcryptCtrReference = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
-                    NativeLibrary.GetExport(_libraryHandle, "kalyna_512_512_ctr_xcrypt_reference");
-            }
         }
     }
 
@@ -2314,13 +2917,16 @@ internal static unsafe class NativeKalyna
                 try
                 {
                     _xcryptCtr = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
-                        NativeLibrary.GetExport(handle, "kalyna_512_512_ctr_xcrypt");
+                        NativeLibrary.GetExport(handle, "keepvault_v12_kalyna_512_512_ctr_xcrypt");
+                    _xcryptCtrScalar = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
+                        NativeLibrary.GetExport(handle, "keepvault_v12_kalyna_512_512_ctr_xcrypt_scalar");
                     _libraryHandle = handle;
                 }
                 catch
                 {
                     NativeLibrary.Free(handle);
                     _xcryptCtr = null;
+                    _xcryptCtrScalar = null;
                     throw;
                 }
             }
@@ -2341,6 +2947,7 @@ internal static unsafe class NativeThreefish
     private static delegate* unmanaged[Cdecl]<nint, void> _skeinDestroy;
     private static delegate* unmanaged[Cdecl]<byte*, nuint, byte*, int> _skeinHash;
     private static delegate* unmanaged[Cdecl]<byte*, nuint, byte*, nuint, byte*, int> _skeinMac;
+    private static delegate* unmanaged[Cdecl]<byte*, nuint, byte*, nuint, byte*, nuint, byte*, int> _skeinPersonalizedMac;
 
     /// <summary>
     /// Why the last <see cref="IsAvailable"/> probe failed, or null when the
@@ -2501,6 +3108,58 @@ internal static unsafe class NativeThreefish
         return output;
     }
 
+    /// <summary>
+    /// Computes a personalised Skein-MAC in a locked native state that is
+    /// erased before the call returns.
+    /// </summary>
+    internal static void MacSkein1024Personalized(
+        ReadOnlySpan<byte> key,
+        ReadOnlySpan<byte> personalization,
+        ReadOnlySpan<byte> input,
+        Span<byte> output)
+    {
+        if (key.IsEmpty || key.Length > 4096)
+        {
+            throw new ArgumentException("Skein-1024 KDF keys must contain between 1 and 4096 bytes.", nameof(key));
+        }
+        if (personalization.IsEmpty)
+        {
+            throw new ArgumentException("Skein-1024 personalization cannot be empty.", nameof(personalization));
+        }
+        if (output.Length < Skein1024Digest.DigestSize)
+        {
+            throw new ArgumentException("Skein-1024 output requires 128 bytes.", nameof(output));
+        }
+
+        EnsurePersonalizedMacLoaded();
+        int result;
+        fixed (byte* keyPointer = key)
+        fixed (byte* personalizationPointer = personalization)
+        fixed (byte* inputPointer = input)
+        fixed (byte* outputPointer = output)
+        {
+            result = _skeinPersonalizedMac(
+                keyPointer,
+                (nuint)key.Length,
+                personalizationPointer,
+                (nuint)personalization.Length,
+                inputPointer,
+                (nuint)input.Length,
+                outputPointer);
+        }
+
+        if (result != 0)
+        {
+            CryptographicOperations.ZeroMemory(output[..Skein1024Digest.DigestSize]);
+            throw new CryptographicException(result switch
+            {
+                1 => "Skein-1024 personalised MAC received invalid input.",
+                3 => "Skein-1024 could not initialize a locked personalised state.",
+                _ => $"Skein-1024 personalised MAC returned error {result}.",
+            });
+        }
+    }
+
     internal static void UpdateSkein(nint handle, ReadOnlySpan<byte> data)
     {
         EnsureLoaded();
@@ -2545,6 +3204,19 @@ internal static unsafe class NativeThreefish
         _skeinDestroy(handle);
     }
 
+    private static void EnsurePersonalizedMacLoaded()
+    {
+        EnsureLoaded();
+        lock (LoadGate)
+        {
+            if (_skeinPersonalizedMac == null)
+            {
+                _skeinPersonalizedMac = (delegate* unmanaged[Cdecl]<byte*, nuint, byte*, nuint, byte*, nuint, byte*, int>)
+                    NativeLibrary.GetExport(_libraryHandle, "skein_1024_personalized_mac");
+            }
+        }
+    }
+
     private static void EnsureLoaded()
     {
         lock (LoadGate)
@@ -2583,6 +3255,7 @@ internal static unsafe class NativeThreefish
                     _skeinDestroy = null;
                     _skeinHash = null;
                     _skeinMac = null;
+                    _skeinPersonalizedMac = null;
                     throw;
                 }
             }

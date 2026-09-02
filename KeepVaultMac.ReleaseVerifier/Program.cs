@@ -1,7 +1,11 @@
 using System.Buffers.Binary;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text;
 using KalynaArchiver.Services;
 using KalynaArchiver.Signing;
+using Microsoft.Win32.SafeHandles;
 
 // Standalone checker for a Keep Vault macOS release. It is the macOS
 // counterpart of the Windows "Keep Vault Release Verifier" and answers one
@@ -122,6 +126,8 @@ static string? ResolvePayloadPath(string sidecarBase)
 
 static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
 {
+    const string ExpectedThirdPartyNoticesSha256 =
+        "BD4BD21C7FFA79D36A4F20ABB6B7AF3116FC005D3971CA0BE09B49E083D6F159";
     bool isAppBundle = string.Equals(Path.GetExtension(directory), ".app", StringComparison.OrdinalIgnoreCase);
     bool isKeepVaultBundle = isAppBundle
         && File.Exists(Path.Combine(directory, "Contents", "MacOS", "Keep Vault"));
@@ -158,7 +164,7 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
             "Contents/MacOS/Native/zpaq",
             "Contents/MacOS/Native/argon2",
             "Contents/MacOS/Native/libargon2_ref.dylib",
-            "Contents/MacOS/Native/libkalyna_ref.dylib",
+            "Contents/MacOS/Native/libkalyna_v12.dylib",
             "Contents/MacOS/Native/libthreefish_ref.dylib",
             // The four Crypto++ adapters. The application refuses to reach a
             // trusted state without them and the cascades that name AES,
@@ -171,6 +177,7 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
             "Contents/MacOS/Native/libmars_ref.dylib",
             "Contents/MacOS/Native/libshacal2_ref.dylib",
             "Contents/MacOS/Native/libchachapoly_ref.dylib",
+            "Contents/Resources/THIRD-PARTY-NOTICES.txt",
             "Contents/Info.plist",
         ];
         foreach (string relative in required)
@@ -179,6 +186,57 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
             {
                 throw new InvalidDataException($"Required app-bundle artifact is missing: {relative}");
             }
+        }
+
+        string noticesPath = Path.Combine(directory, "Contents", "Resources", "THIRD-PARTY-NOTICES.txt");
+        BoundNoticeFile noticesFile = BoundNoticeFile.Read(noticesPath);
+        if (!CryptographicOperations.FixedTimeEquals(
+                noticesFile.Sha256,
+                Convert.FromHexString(ExpectedThirdPartyNoticesSha256)))
+        {
+            throw new InvalidDataException(
+                "THIRD-PARTY-NOTICES.txt does not match the reviewed whole-file digest.");
+        }
+
+        string[] requiredNoticeSections =
+        [
+            "Crypto++ 8.9.0",
+            "ZPAQ and libdivsufsort-lite",
+            "BouncyCastle.Cryptography 2.6.2",
+            "QRCoder 1.8.0",
+            "HarfBuzzSharp native assets 8.3.1.3 third-party notices",
+            "SkiaSharp native assets 3.119.4 third-party notices",
+            ".NET 10.0.11 NativeAOT runtime third-party notices",
+            "SIL OPEN FONT LICENSE Version 1.1",
+            "Brian Gladman",
+        ];
+        foreach (string section in requiredNoticeSections)
+        {
+            if (!noticesFile.Text.Contains(section, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"THIRD-PARTY-NOTICES.txt is incomplete; missing section: {section}");
+            }
+        }
+    }
+
+    // A portable folder exposes the same legally required notice at its root so
+    // it can be read without entering an application bundle. Both files must be
+    // the exact reviewed bytes, read once through O_NOFOLLOW_ANY descriptors.
+    string nestedKeepVault = Path.Combine(directory, "Keep Vault.app");
+    if (!isAppBundle && Directory.Exists(nestedKeepVault))
+    {
+        BoundNoticeFile rootNotice = BoundNoticeFile.Read(
+            Path.Combine(directory, "THIRD-PARTY-NOTICES.txt"));
+        BoundNoticeFile nestedNotice = BoundNoticeFile.Read(
+            Path.Combine(nestedKeepVault, "Contents", "Resources", "THIRD-PARTY-NOTICES.txt"));
+        byte[] expectedNoticeDigest = Convert.FromHexString(ExpectedThirdPartyNoticesSha256);
+        if (!CryptographicOperations.FixedTimeEquals(rootNotice.Sha256, expectedNoticeDigest)
+            || !CryptographicOperations.FixedTimeEquals(nestedNotice.Sha256, expectedNoticeDigest)
+            || !CryptographicOperations.FixedTimeEquals(rootNotice.Sha256, nestedNotice.Sha256))
+        {
+            throw new InvalidDataException(
+                "The portable root notice and the in-app notice are not the exact reviewed file.");
         }
     }
 
@@ -492,4 +550,215 @@ internal sealed class OutOfScopeException : Exception
         : base(message)
     {
     }
+}
+
+/// <summary>
+/// One stable macOS read of the shipped third-party notice. The file is opened
+/// once with O_NOFOLLOW_ANY, bounded from fstat, read through that descriptor,
+/// and checked against the same descriptor plus the final namespace identity.
+/// </summary>
+internal sealed class BoundNoticeFile
+{
+    private const int OpenReadOnly = 0x0000;
+    private const int OpenCloseOnExec = 0x01000000;
+    private const int OpenNoFollowAny = 0x20000000;
+    private const ushort FileTypeMask = 0xF000;
+    private const ushort RegularFile = 0x8000;
+    private const ushort GroupOrOtherWrite = 0x0012;
+    private const int MinimumBytes = 300_000;
+    private const int MaximumBytes = 2_000_000;
+
+    private BoundNoticeFile(string text, byte[] sha256)
+    {
+        Text = text;
+        Sha256 = sha256;
+    }
+
+    internal string Text { get; }
+    internal byte[] Sha256 { get; }
+
+    internal static BoundNoticeFile Read(string path)
+    {
+        string fullPath = Path.GetFullPath(path);
+        int descriptor = Open(fullPath, OpenReadOnly | OpenCloseOnExec | OpenNoFollowAny);
+        if (descriptor < 0)
+        {
+            throw NativeIOException(
+                $"THIRD-PARTY-NOTICES.txt could not be opened without symbolic links: {fullPath}");
+        }
+
+        using var handle = new SafeFileHandle((nint)descriptor, ownsHandle: true);
+        FileIdentity before = GetIdentity(handle);
+        RequireNoticeIdentity(before);
+        FileIdentity pathBefore = GetPathIdentity(fullPath);
+        if (!before.SameSnapshot(pathBefore))
+        {
+            throw new IOException("The notice pathname does not identify its opened descriptor.");
+        }
+
+        byte[] bytes = GC.AllocateUninitializedArray<byte>(checked((int)before.Size));
+        using (var stream = new FileStream(
+                   handle,
+                   FileAccess.Read,
+                   bufferSize: 64 * 1024,
+                   isAsync: false))
+        {
+            stream.ReadExactly(bytes);
+            if (stream.ReadByte() != -1)
+            {
+                throw new IOException("THIRD-PARTY-NOTICES.txt grew during its bounded read.");
+            }
+
+            FileIdentity after = GetIdentity(stream.SafeFileHandle);
+            FileIdentity pathAfter = GetPathIdentity(fullPath);
+            if (!before.SameSnapshot(after) || !after.SameSnapshot(pathAfter))
+            {
+                throw new IOException("THIRD-PARTY-NOTICES.txt changed during its descriptor-bound read.");
+            }
+        }
+
+        byte[] digest = SHA256.HashData(bytes);
+        string text;
+        try
+        {
+            text = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true)
+                .GetString(bytes);
+        }
+        catch
+        {
+            Array.Clear(bytes);
+            Array.Clear(digest);
+            throw;
+        }
+        Array.Clear(bytes);
+        return new BoundNoticeFile(text, digest);
+    }
+
+    private static void RequireNoticeIdentity(FileIdentity identity)
+    {
+        if ((identity.Mode & FileTypeMask) != RegularFile
+            || (identity.Mode & GroupOrOtherWrite) != 0
+            || identity.LinkCount != 1
+            || identity.Size < MinimumBytes
+            || identity.Size > MaximumBytes)
+        {
+            throw new InvalidDataException(
+                "THIRD-PARTY-NOTICES.txt is not a protected single-link regular file with a plausible length.");
+        }
+    }
+
+    private static FileIdentity GetIdentity(SafeFileHandle handle)
+    {
+        bool added = false;
+        try
+        {
+            handle.DangerousAddRef(ref added);
+            int descriptor = checked((int)handle.DangerousGetHandle());
+            if (FStat(descriptor, out DarwinStat status) != 0)
+            {
+                throw NativeIOException("The notice descriptor could not be inspected.");
+            }
+            return FileIdentity.From(status);
+        }
+        finally
+        {
+            if (added)
+            {
+                handle.DangerousRelease();
+            }
+        }
+    }
+
+    private static FileIdentity GetPathIdentity(string path)
+    {
+        if (LStat(path, out DarwinStat status) != 0)
+        {
+            throw NativeIOException("The notice pathname could not be revalidated.");
+        }
+        return FileIdentity.From(status);
+    }
+
+    private static IOException NativeIOException(string message) =>
+        new(message, new Win32Exception(Marshal.GetLastPInvokeError()));
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DarwinTimespec
+    {
+        internal long Seconds;
+        internal long Nanoseconds;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DarwinStat
+    {
+        internal int Device;
+        internal ushort Mode;
+        internal ushort LinkCount;
+        internal ulong Inode;
+        internal uint Uid;
+        internal uint Gid;
+        internal int Rdev;
+        internal DarwinTimespec AccessTime;
+        internal DarwinTimespec ModificationTime;
+        internal DarwinTimespec ChangeTime;
+        internal DarwinTimespec BirthTime;
+        internal long Size;
+        internal long Blocks;
+        internal int BlockSize;
+        internal uint Flags;
+        internal uint Generation;
+        internal int Spare;
+        internal long Reserved0;
+        internal long Reserved1;
+    }
+
+    private readonly record struct FileIdentity(
+        int Device,
+        ulong Inode,
+        ushort Mode,
+        ushort LinkCount,
+        uint Uid,
+        long Size,
+        long ModificationSeconds,
+        long ModificationNanoseconds,
+        long ChangeSeconds,
+        long ChangeNanoseconds,
+        uint Generation)
+    {
+        internal static FileIdentity From(DarwinStat status) =>
+            new(
+                status.Device,
+                status.Inode,
+                status.Mode,
+                status.LinkCount,
+                status.Uid,
+                status.Size,
+                status.ModificationTime.Seconds,
+                status.ModificationTime.Nanoseconds,
+                status.ChangeTime.Seconds,
+                status.ChangeTime.Nanoseconds,
+                status.Generation);
+
+        internal bool SameSnapshot(FileIdentity other) =>
+            Device == other.Device
+            && Inode == other.Inode
+            && Mode == other.Mode
+            && LinkCount == other.LinkCount
+            && Uid == other.Uid
+            && Size == other.Size
+            && ModificationSeconds == other.ModificationSeconds
+            && ModificationNanoseconds == other.ModificationNanoseconds
+            && ChangeSeconds == other.ChangeSeconds
+            && ChangeNanoseconds == other.ChangeNanoseconds
+            && Generation == other.Generation;
+    }
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "open", SetLastError = true)]
+    private static extern int Open(string path, int flags);
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "fstat", SetLastError = true)]
+    private static extern int FStat(int descriptor, out DarwinStat status);
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "lstat", SetLastError = true)]
+    private static extern int LStat(string path, out DarwinStat status);
 }

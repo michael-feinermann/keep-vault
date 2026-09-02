@@ -13,6 +13,7 @@
 #else
 #include <errno.h>
 #include <pthread.h>
+#include <sched.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
@@ -57,8 +58,23 @@ typedef volatile LONG64 threefish_cursor;
 typedef _Atomic size_t threefish_cursor;
 #define THREEFISH_CURSOR_NEXT(cursor) atomic_fetch_add((cursor), (size_t)1)
 #endif
+
+#if defined(_WIN32)
+#define THREEFISH_COMPLETION_INCREMENT(cursor) \
+    ((void)InterlockedIncrement64((volatile LONG64*)(cursor)))
+#define THREEFISH_COMPLETION_LOAD(cursor) \
+    ((size_t)InterlockedCompareExchange64((volatile LONG64*)(cursor), 0, 0))
+#define THREEFISH_YIELD() ((void)SwitchToThread())
+#else
+#define THREEFISH_COMPLETION_INCREMENT(cursor) \
+    ((void)atomic_fetch_add_explicit((cursor), (size_t)1, memory_order_release))
+#define THREEFISH_COMPLETION_LOAD(cursor) \
+    atomic_load_explicit((cursor), memory_order_acquire)
+#define THREEFISH_YIELD() ((void)sched_yield())
+#endif
 #define SKEIN1024_DIGEST_BYTES 128
 #define SKEIN1024_MAC_KEY_BYTES 128
+#define SKEIN1024_MAX_KDF_KEY_BYTES 4096
 
 void Skein1024_Process_Block(
     Skein1024_Ctxt_t* ctx,
@@ -82,6 +98,7 @@ static void secure_zero(void* pointer, size_t length)
 
 typedef struct skein1024_stream_state {
     Skein1024_Ctxt_t context;
+    uint8_t parameter_state[SKEIN1024_DIGEST_BYTES];
     int finalized;
     int locked;
 } skein1024_stream_state;
@@ -91,7 +108,8 @@ static skein1024_stream_state* create_skein_state(
     size_t key_length)
 {
     if ((key == NULL && key_length != 0)
-        || (key != NULL && key_length != SKEIN1024_MAC_KEY_BYTES)) {
+        || (key != NULL
+            && (key_length == 0 || key_length > SKEIN1024_MAX_KDF_KEY_BYTES))) {
         return NULL;
     }
 
@@ -172,6 +190,9 @@ THREEFISH_EXPORT void* skein_1024_mac_create(
     const uint8_t key[SKEIN1024_MAC_KEY_BYTES],
     size_t key_length)
 {
+    if (key == NULL || key_length != SKEIN1024_MAC_KEY_BYTES) {
+        return NULL;
+    }
     return create_skein_state(key, key_length);
 }
 
@@ -282,6 +303,67 @@ THREEFISH_EXPORT int skein_1024_mac(
 
     skein_1024_destroy(state);
     return result;
+}
+
+/*
+ * Skein-MAC-1024-1024 with an explicit personalization parameter.
+ *
+ * A managed SkeinMac.Reset() deliberately restores its keyed initial state,
+ * which is useful for reuse but leaves a key-derived object on the GC heap
+ * after a one-shot KDF call. Keep Vault's macOS v12 path therefore performs
+ * the operation in this locked native state. The Skein 1.3 parameter order is
+ * KEY, CFG, PERS, MSG, OUT. The context and intermediate PERS state are erased
+ * by skein_1024_destroy() on every return path.
+ */
+THREEFISH_EXPORT int skein_1024_personalized_mac(
+    const uint8_t key[SKEIN1024_MAC_KEY_BYTES],
+    size_t key_length,
+    const uint8_t* personalization,
+    size_t personalization_length,
+    const uint8_t* input,
+    size_t input_length,
+    uint8_t output[SKEIN1024_DIGEST_BYTES])
+{
+    if (key == NULL
+        || key_length == 0
+        || key_length > SKEIN1024_MAX_KDF_KEY_BYTES
+        || personalization == NULL
+        || personalization_length == 0
+        || (input == NULL && input_length != 0)
+        || output == NULL) {
+        return 1;
+    }
+
+    skein1024_stream_state* state = create_skein_state(key, key_length);
+    if (state == NULL) {
+        return 3;
+    }
+
+    int result;
+    Skein_Start_New_Type(&state->context, PERS);
+    result = Skein1024_Update(
+        &state->context,
+        personalization,
+        personalization_length);
+    if (result == SKEIN_SUCCESS) {
+        result = Skein1024_Final_Pad(
+            &state->context,
+            state->parameter_state);
+    }
+    if (result == SKEIN_SUCCESS) {
+        Skein_Start_New_Type(&state->context, MSG);
+        result = Skein1024_Update(&state->context, input, input_length);
+    }
+    if (result == SKEIN_SUCCESS) {
+        result = Skein1024_Final(&state->context, output);
+    }
+
+    skein_1024_destroy(state);
+    if (result != SKEIN_SUCCESS) {
+        secure_zero(output, SKEIN1024_DIGEST_BYTES);
+        return 2;
+    }
+    return 0;
 }
 
 static int increment_counter(uint8_t counter[THREEFISH_BLOCK_BYTES])
@@ -421,6 +503,7 @@ typedef struct threefish_ctr_shared {
     size_t total_blocks;
     size_t chunk_blocks;
     threefish_cursor next_chunk;
+    threefish_cursor finished;
 } threefish_ctr_shared;
 
 typedef struct threefish_ctr_job {
@@ -505,6 +588,11 @@ static void* threefish_ctr_worker(void* parameter)
             break;
         }
     }
+
+    /* Publish every preceding output and job-result write. The parent waits
+       for this counter before destroying stack-backed state even when the OS
+       join primitive itself reports an error. */
+    THREEFISH_COMPLETION_INCREMENT(&shared->finished);
 #if defined(_WIN32)
     return 0;
 #else
@@ -581,15 +669,18 @@ THREEFISH_EXPORT int threefish_1024_encrypt_block(
     return 0;
 }
 
-THREEFISH_EXPORT int threefish_1024_ctr_xcrypt(
+static int threefish_1024_ctr_xcrypt_internal(
     const uint8_t key[THREEFISH_BLOCK_BYTES],
     const uint8_t tweak[THREEFISH_TWEAK_BYTES],
     const uint8_t nonce[THREEFISH_BLOCK_BYTES],
     const uint8_t* input,
     uint8_t* output,
-    size_t length)
+    size_t length,
+    int force_join_failure,
+    int force_create_failure)
 {
-    if (key == NULL || tweak == NULL || nonce == NULL || input == NULL || output == NULL) {
+    if (key == NULL || tweak == NULL || nonce == NULL
+        || (length != 0 && (input == NULL || output == NULL))) {
         return 1;
     }
 
@@ -606,7 +697,9 @@ THREEFISH_EXPORT int threefish_1024_ctr_xcrypt(
         return 4;
     }
 
-    size_t thread_count = choose_thread_count(length, total_blocks);
+    size_t thread_count = (force_join_failure || force_create_failure)
+        ? (total_blocks < 2 ? 1 : 2)
+        : choose_thread_count(length, total_blocks);
     if (thread_count > 1) {
 #if defined(_WIN32)
         HANDLE handles[THREEFISH_MAX_THREADS];
@@ -631,64 +724,67 @@ THREEFISH_EXPORT int threefish_1024_ctr_xcrypt(
         shared.total_blocks = total_blocks;
         shared.chunk_blocks = THREEFISH_CHUNK_BLOCKS;
         shared.next_chunk = 0;
+        shared.finished = 0;
 
-
+        size_t created = 0;
         for (size_t index = 0; index < thread_count; ++index) {
             jobs[index].shared = &shared;
             jobs[index].worker_index = index;
+            if (force_create_failure && index == 1) {
+                break;
+            }
 #if defined(_WIN32)
             handles[index] = CreateThread(NULL, 0, threefish_ctr_worker, &jobs[index], 0, NULL);
             if (handles[index] == NULL) {
-                for (size_t previous = 0; previous < index; ++previous) {
-                    WaitForSingleObject(handles[previous], INFINITE);
-                    CloseHandle(handles[previous]);
-                }
-
-                secure_zero(jobs, sizeof(jobs));
-                secure_zero(handles, sizeof(handles));
-                return 3;
+                break;
             }
+            ++created;
 #else
             if (pthread_create(
                     &handles[index],
                     NULL,
                     threefish_ctr_worker,
                     &jobs[index]) != 0) {
-                for (size_t previous = 0; previous < index; ++previous) {
-                    if (started[previous]) {
-                        (void)pthread_join(handles[previous], NULL);
-                    }
-                }
-
-                secure_zero(jobs, sizeof(jobs));
-                secure_zero(handles, sizeof(handles));
-                secure_zero(started, sizeof(started));
-                return 3;
+                break;
             }
             started[index] = 1;
+            ++created;
 #endif
         }
 
+        /* Joining is normally the completion proof. This independent
+           release/acquire counter makes create- and join-error paths safe as
+           well: no worker can still reference shared, jobs, or caller buffers
+           when this function returns. */
+        while (THREEFISH_COMPLETION_LOAD(&shared.finished) < created) {
+            THREEFISH_YIELD();
+        }
 
-        int result = 0;
+        int result = created == thread_count ? 0 : 3;
+        for (size_t index = 0; index < created; ++index) {
 #if defined(_WIN32)
-        /* WaitForMultipleObjects rejects more than MAXIMUM_WAIT_OBJECTS (64)
-           handles. The worker limit deliberately exceeds one processor group,
-           so wait on each valid thread handle instead; all threads are already
-           running concurrently. */
-        for (size_t index = 0; index < thread_count; ++index) {
-            if (WaitForSingleObject(handles[index], INFINITE) != WAIT_OBJECT_0
-                && result == 0) {
+            DWORD wait_result = force_join_failure && index == 0
+                ? WAIT_FAILED
+                : WaitForSingleObject(handles[index], INFINITE);
+            if (wait_result != WAIT_OBJECT_0 && result == 0) {
                 result = 3;
             }
-        }
-#endif
-
-        for (size_t index = 0; index < thread_count; ++index) {
-#if defined(_WIN32)
             CloseHandle(handles[index]);
 #else
-            if (started[index] && pthread_join(handles[index], NULL) != 0 && result == 0) {
+            int join_result = 0;
+            if (started[index]) {
+                if (force_join_failure && index == 0) {
+                    join_result = EINVAL;
+                    (void)pthread_detach(handles[index]);
+                }
+                else {
+                    join_result = pthread_join(handles[index], NULL);
+                    if (join_result != 0) {
+                        (void)pthread_detach(handles[index]);
+                    }
+                }
+            }
+            if (join_result != 0 && result == 0) {
                 result = 3;
             }
 #endif
@@ -706,4 +802,107 @@ THREEFISH_EXPORT int threefish_1024_ctr_xcrypt(
     }
 
     return xcrypt_ctr_range(key, tweak, nonce, input, output, length, 0, total_blocks);
+}
+
+THREEFISH_EXPORT int threefish_1024_ctr_xcrypt(
+    const uint8_t key[THREEFISH_BLOCK_BYTES],
+    const uint8_t tweak[THREEFISH_TWEAK_BYTES],
+    const uint8_t nonce[THREEFISH_BLOCK_BYTES],
+    const uint8_t* input,
+    uint8_t* output,
+    size_t length)
+{
+    return threefish_1024_ctr_xcrypt_internal(
+        key,
+        tweak,
+        nonce,
+        input,
+        output,
+        length,
+        0,
+        0);
+}
+
+THREEFISH_EXPORT int keepvault_v12_threefish_join_failure_kat(void)
+{
+    enum { kat_length = 512 * 1024 };
+    uint8_t key[THREEFISH_BLOCK_BYTES];
+    uint8_t tweak[THREEFISH_TWEAK_BYTES];
+    uint8_t nonce[THREEFISH_BLOCK_BYTES];
+    uint8_t* input = NULL;
+    uint8_t* expected = NULL;
+    uint8_t* actual = NULL;
+    int result = 2;
+
+    for (size_t index = 0; index < sizeof(key); ++index) {
+        key[index] = (uint8_t)(index * 17u + 3u);
+        nonce[index] = (uint8_t)(index * 29u + 11u);
+    }
+    for (size_t index = 0; index < sizeof(tweak); ++index) {
+        tweak[index] = (uint8_t)(index * 31u + 7u);
+    }
+
+    input = (uint8_t*)malloc(kat_length);
+    expected = (uint8_t*)malloc(kat_length);
+    actual = (uint8_t*)malloc(kat_length);
+    if (input == NULL || expected == NULL || actual == NULL) {
+        goto cleanup;
+    }
+    for (size_t index = 0; index < kat_length; ++index) {
+        input[index] = (uint8_t)(index * 13u + (index >> 8));
+    }
+
+    if (xcrypt_ctr_range(
+            key,
+            tweak,
+            nonce,
+            input,
+            expected,
+            kat_length,
+            0,
+            kat_length / THREEFISH_BLOCK_BYTES) != 0) {
+        goto cleanup;
+    }
+    if (threefish_1024_ctr_xcrypt_internal(
+            key,
+            tweak,
+            nonce,
+            input,
+            actual,
+            kat_length,
+            1,
+            0) != 3) {
+        goto cleanup;
+    }
+    secure_zero(actual, kat_length);
+    if (threefish_1024_ctr_xcrypt_internal(
+            key,
+            tweak,
+            nonce,
+            input,
+            actual,
+            kat_length,
+            0,
+            1) != 3) {
+        goto cleanup;
+    }
+    result = memcmp(expected, actual, kat_length) == 0 ? 0 : 2;
+
+cleanup:
+    if (input != NULL) {
+        secure_zero(input, kat_length);
+        free(input);
+    }
+    if (expected != NULL) {
+        secure_zero(expected, kat_length);
+        free(expected);
+    }
+    if (actual != NULL) {
+        secure_zero(actual, kat_length);
+        free(actual);
+    }
+    secure_zero(key, sizeof(key));
+    secure_zero(tweak, sizeof(tweak));
+    secure_zero(nonce, sizeof(nonce));
+    return result;
 }

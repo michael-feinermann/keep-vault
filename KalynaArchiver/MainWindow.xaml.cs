@@ -1493,33 +1493,60 @@ public sealed partial class MainWindow : Window, IDisposable
         string firstGeneratedPassword,
         string secondGeneratedPassword)
     {
-        using LockedSensitiveBuffer pathBytes = LockedSensitiveBuffer.Encode(
-            Path.GetFullPath(archivePath).ToUpperInvariant(),
-            Encoding.UTF8);
-        using LockedSensitiveBuffer suiteBytes = LockedSensitiveBuffer.Encode(suite.ToString(), Encoding.ASCII);
-        using LockedSensitiveBuffer firstBytes = LockedSensitiveBuffer.Encode(
-            PasswordKeyService.NormalizeGeneratedPassword(firstGeneratedPassword),
-            Encoding.ASCII);
-        using LockedSensitiveBuffer secondBytes = LockedSensitiveBuffer.Encode(
-            PasswordKeyService.NormalizeGeneratedPassword(secondGeneratedPassword),
-            Encoding.ASCII);
-        using LockedSensitiveBuffer sha3Fingerprint = LockedSensitiveBuffer.Create(SHA3_512.HashSizeInBytes);
-        using LockedSensitiveBuffer skeinFingerprint = LockedSensitiveBuffer.Create(Skein1024Digest.DigestSize);
-        using IncrementalHash hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA3_512);
-        using var skein = new Skein1024Digest();
-        AppendFingerprintPart(hasher, skein, "Kalyna-ZPAQ/v11/key-sheet-fingerprint"u8);
-        AppendFingerprintPart(hasher, skein, pathBytes.Bytes);
-        AppendFingerprintPart(hasher, skein, suiteBytes.Bytes);
-        AppendFingerprintPart(hasher, skein, firstBytes.Bytes);
-        AppendFingerprintPart(hasher, skein, secondBytes.Bytes);
-        if (!hasher.TryGetHashAndReset(sha3Fingerprint.Bytes, out int sha3Written)
-            || sha3Written != SHA3_512.HashSizeInBytes)
+        LockedSensitiveBuffer? pathBytes = null;
+        LockedSensitiveBuffer? suiteBytes = null;
+        LockedSensitiveBuffer? firstBytes = null;
+        LockedSensitiveBuffer? secondBytes = null;
+        LockedSensitiveBuffer? sha3Fingerprint = null;
+        LockedSensitiveBuffer? skeinFingerprint = null;
+        Exception? operationFailure = null;
+        try
         {
-            throw new CryptographicException("SHA3-512 returned an invalid key-sheet fingerprint length.");
-        }
+            pathBytes = LockedSensitiveBuffer.Encode(
+                Path.GetFullPath(archivePath).ToUpperInvariant(),
+                Encoding.UTF8);
+            suiteBytes = LockedSensitiveBuffer.Encode(suite.ToString(), Encoding.ASCII);
+            firstBytes = LockedSensitiveBuffer.Encode(
+                PasswordKeyService.NormalizeGeneratedPassword(firstGeneratedPassword),
+                Encoding.ASCII);
+            secondBytes = LockedSensitiveBuffer.Encode(
+                PasswordKeyService.NormalizeGeneratedPassword(secondGeneratedPassword),
+                Encoding.ASCII);
+            sha3Fingerprint = LockedSensitiveBuffer.Create(SHA3_512.HashSizeInBytes);
+            skeinFingerprint = LockedSensitiveBuffer.Create(Skein1024Digest.DigestSize);
+            using IncrementalHash hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA3_512);
+            using var skein = new Skein1024Digest();
+            AppendFingerprintPart(hasher, skein, "Kalyna-ZPAQ/v12/key-sheet-fingerprint"u8);
+            AppendFingerprintPart(hasher, skein, pathBytes.Bytes);
+            AppendFingerprintPart(hasher, skein, suiteBytes.Bytes);
+            AppendFingerprintPart(hasher, skein, firstBytes.Bytes);
+            AppendFingerprintPart(hasher, skein, secondBytes.Bytes);
+            if (!hasher.TryGetHashAndReset(sha3Fingerprint.Bytes, out int sha3Written)
+                || sha3Written != SHA3_512.HashSizeInBytes)
+            {
+                throw new CryptographicException("SHA3-512 returned an invalid key-sheet fingerprint length.");
+            }
 
-        skein.GetHashAndReset(skeinFingerprint.Bytes);
-        return $"{Convert.ToHexString(sha3Fingerprint.Bytes)}:{Convert.ToHexString(skeinFingerprint.Bytes)}";
+            skein.GetHashAndReset(skeinFingerprint.Bytes);
+            return $"{Convert.ToHexString(sha3Fingerprint.Bytes)}:{Convert.ToHexString(skeinFingerprint.Bytes)}";
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                operationFailure,
+                "Key-sheet fingerprinting failed and one or more sensitive buffers could not be released.",
+                skeinFingerprint,
+                sha3Fingerprint,
+                secondBytes,
+                firstBytes,
+                suiteBytes,
+                pathBytes);
+        }
     }
 
     private static void AppendFingerprintPart(
@@ -2326,7 +2353,7 @@ public sealed partial class MainWindow : Window, IDisposable
             Span<byte> header = stackalloc byte[7];
             using FileStream stream = File.OpenRead(path);
             int read = stream.Read(header);
-            return read >= 7 && header[..7].SequenceEqual("KZPAQ1\0"u8)
+            return read >= 7 && header[..7].SequenceEqual("KZPAQ2\0"u8)
                 || read >= 4 && header[..4].SequenceEqual("7kSt"u8)
                 || read >= 3 && header[..3].SequenceEqual("zPQ"u8);
         }

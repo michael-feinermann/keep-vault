@@ -22,7 +22,7 @@
 function Get-NativeToolNames {
     return @(
         "zpaq.exe",
-        "kalyna_ref.dll",
+        "kalyna_v12.dll",
         "threefish_ref.dll",
         "mars_ref.dll",
         "shacal2_ref.dll",

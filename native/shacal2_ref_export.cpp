@@ -1,7 +1,7 @@
 /*
  * Native adapter for SHACAL-2 with a 512-bit key, in CTR mode.
  *
- * SHACAL-2 is used by the current v11 mixed and paranoia production cascades.
+ * SHACAL-2 is used by the current v12 mixed and paranoia production cascades.
  * Like MARS it has no separate in-repository reference implementation and
  * comes from the vendored Crypto++ release; see external/VENDOR-PROVENANCE.md.
  *

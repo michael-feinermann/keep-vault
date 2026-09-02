@@ -1061,23 +1061,41 @@ internal static class TestRunner
         foreach (string file in normalizedFiles)
         {
             bool matched = false;
-            if (file.Contains("V11MasterKdf") || file.Contains("KdfPrimitives") || file.Contains("KdfSalts") || file.Contains("SuiteKeySchedule") || file.Contains("PasswordKeyService") || file.Contains("ContainerKeyDerivation") || file.Contains("SecureMemory"))
+            if (file.Contains("V12MasterKdf") || file.Contains("KdfPrimitives") || file.Contains("KdfSalts") || file.Contains("SuiteKeySchedule") || file.Contains("PasswordKeyService") || file.Contains("ContainerKeyDerivation") || file.Contains("SecureMemory"))
             {
                 matched = true;
+                if (file.Contains("SecureMemory", StringComparison.Ordinal))
+                {
+                    affected.Add("security.secure-memory-unlock-accounting");
+                }
                 affected.Add("crypto.kdf-primitives");
                 affected.Add("kdf.properties");
-                affected.Add("kdf.v11-master-factor-split");
+                affected.Add("kdf.v12-master-factor-split");
                 affected.Add("kdf.argon2-equivalence");
                 affected.Add("kdf.peak-memory-and-header");
                 affected.Add("policy.password");
                 affected.Add("policy.pin-creation");
                 affected.Add("ALL_CONTAINER_SUITES");
-                affected.Add("containers.v11-kpar2-roundtrip");
+                affected.Add("containers.v12-kpar2-roundtrip");
+                affected.Add("containers.v12-production-worker-equivalence");
             }
-            if (file.Contains("ZpaqService") || file.Contains("MacPlatformSecurity") || file.Contains("MacSecureFile") || file.Contains("MacOriginalDeletionService"))
+            if (file.Contains("KalynaContainerService") || file.Contains("ParallelContainerAuthenticator"))
+            {
+                matched = true;
+                affected.Add("crypto.v12-parallel-mac-kat");
+                affected.Add("ALL_CONTAINER_SUITES");
+                affected.Add("containers.v12-kpar2-roundtrip");
+                affected.Add("containers.v12-production-worker-equivalence");
+                affected.Add("performance.cipher-suites");
+            }
+            if (file.Contains("ZpaqService") || file.Contains("BoundFileTransaction") || file.Contains("MacPlatformSecurity") || file.Contains("MacSecureFile") || file.Contains("MacOriginalDeletionService"))
             {
                 matched = true;
                 affected.Add("zpaq.full-matrix");
+                affected.Add("zpaq.process-resource-limits");
+                affected.Add("zpaq.fail-fast-error-preservation");
+                affected.Add("zpaq.three-file-commit-binding");
+                affected.Add("containers.v12-kpar2-roundtrip");
                 affected.Add("deletion.original-verification");
                 affected.Add("deletion.cryptographic-erase");
                 affected.Add("smoke.descriptor-identity");
@@ -1086,11 +1104,28 @@ internal static class TestRunner
                 affected.Add("smoke.archive-input-snapshot-location");
                 affected.Add("smoke.overlapping-input-normalization");
                 affected.Add("smoke.descriptor-bound-snapshot");
+                affected.Add("smoke.private-snapshot-cleanup-identity");
+                affected.Add("smoke.private-snapshot-race-failclosed");
+                affected.Add("smoke.private-snapshot-resource-failures");
+                affected.Add("smoke.private-authenticated-snapshot");
             }
-            if (file.Contains("RecoveryService") || file.Contains("Kpar2"))
+            if (file.Contains("MacPrivateFileSnapshot", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("NativeCascadeCiphers", StringComparison.OrdinalIgnoreCase)
+                || file.Contains("chachapoly_ref_export", StringComparison.OrdinalIgnoreCase))
+            {
+                matched = true;
+                affected.Add("smoke.descriptor-bound-snapshot");
+                affected.Add("smoke.private-snapshot-cleanup-identity");
+                affected.Add("smoke.private-snapshot-race-failclosed");
+                affected.Add("smoke.private-snapshot-resource-failures");
+                affected.Add("smoke.private-authenticated-snapshot");
+            }
+            if (file.Contains("RecoveryService") || file.Contains("Kpar2") || file.Contains("ParallelRecoveryTests"))
             {
                 matched = true;
                 affected.Add("recovery.kpar2-v4-adversarial");
+                affected.Add("recovery.parallel-worker-equivalence");
+                affected.Add("recovery.physical-eio-repair");
                 affected.Add("ALL_RECOVERY_SUITES");
             }
             if (file.Contains("MainWindow") || file.Contains("MacGuiTests") || file.Contains("Avalonia"))
@@ -1110,7 +1145,7 @@ internal static class TestRunner
             if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
             {
                 matched = true;
-                affected.Add("spec.normative-v11-docs");
+                affected.Add("spec.normative-v12-docs");
                 affected.Add("spec.no-legacy-source");
             }
             if (file.Contains("QrCodeScanner") || file.Contains("QR-Scanner") || file.Contains("Verify-QR-Scanner"))
@@ -1119,9 +1154,10 @@ internal static class TestRunner
                 affected.Add("packaging.companion-qr");
                 affected.Add("smoke.release-companion-version");
             }
-            if (file.Contains("Packaging") || file.Contains("HybridSigner") || file.Contains("Integrity"))
+            if (file.Contains("Packaging") || file.Contains("HybridSigner") || file.Contains("Protect-HybridKeys") || file.Contains("Integrity"))
             {
                 matched = true;
+                affected.Add("packaging.keychain-secret-not-in-argv");
                 affected.Add("trust.native-tools");
                 affected.Add("packaging.macho-signature-closure");
                 affected.Add("crypto.mldsa87-interop");
@@ -1148,6 +1184,8 @@ internal static class TestRunner
                 affected.Add("crypto.chacha20-fast-path-differential");
                 affected.Add("crypto.chacha20-poly1305-rfc8439");
                 affected.Add("crypto.aes-ctr-differential");
+                affected.Add("crypto.v12-parallel-mac-kat");
+                affected.Add("containers.v12-production-worker-equivalence");
             }
 
             foreach (string impactedTest in GetPerformanceSensitiveImpact(file))
@@ -1158,7 +1196,7 @@ internal static class TestRunner
             if (IsSourceOrBuildFile(file))
             {
                 affected.Add("spec.no-legacy-source");
-                affected.Add("spec.normative-v11-docs");
+                affected.Add("spec.normative-v12-docs");
             }
 
             if (!matched && !IsBenignFile(file))
@@ -1242,8 +1280,7 @@ internal static class TestRunner
 
         string[] sensitiveNames =
         [
-            "kalyna_fast.c",
-            "kalyna_ref_export.c",
+            "kalyna_v12_export.cpp",
             "threefish_ref_export.c",
             "chachapoly_ref_export.cpp",
             "aes_ref_export.cpp",
@@ -1278,6 +1315,8 @@ internal static class TestRunner
             "crypto.chacha20-fast-path-differential",
             "crypto.chacha20-poly1305-rfc8439",
             "crypto.aes-ctr-differential",
+            "crypto.v12-parallel-mac-kat",
+            "containers.v12-production-worker-equivalence",
         };
     }
 

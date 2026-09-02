@@ -6,11 +6,11 @@ using KalynaArchiver.Signing;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// Derives the 1024-bit v11 master from the four secret credentials with the
+/// Derives the 1024-bit v12 master from the four secret credentials with the
 /// 512/512 factor split in the SHA3 credential path.
 /// </summary>
 /// <remarks>
-/// The v11 shape is:
+/// The v12 shape is:
 /// <code>
 ///   A1  = factorA[0..64), A2 = factorA[64..128)
 ///   B1  = factorB[0..64), B2 = factorB[64..128)
@@ -25,12 +25,14 @@ namespace KalynaArchiver.Services;
 ///   M    = Interleave(L, R)                                          128 bytes
 /// </code>
 ///
-/// Defense-in-depth guarantee of v11 SHA3 split:
+/// Defense-in-depth guarantee of v12 SHA3 split:
 /// If only one 1024-bit factor is compromised, every 512-bit SHA3 half still
 /// depends on 512 uncompromised bits of the remaining factor.
 /// </remarks>
-internal static class V11MasterKdf
+internal static class V12MasterKdf
 {
+    internal static Action? BeforeCredentialCleanupForTests { get; set; }
+
     public const int CredentialHashBytes = 128;
     public const int BranchOutputBytes = 64;
     public const int MasterBytes = 128;
@@ -43,12 +45,31 @@ internal static class V11MasterKdf
     public const uint Iterations = 4;
     public const uint Parallelism = 4;
 
+    // This scoped override exists solely so the byte-equivalence release KAT
+    // can exercise every real container worker path without allocating more
+    // than twenty production-sized Argon2 matrices. It is internal, has no
+    // environment/configuration input, and never changes t=4 or p=4.
+    private const uint MinimumTestMemoryKiB = 8 * 1024;
+    private static readonly AsyncLocal<uint?> TestMemoryOverride = new();
+
     public const string KdfMode = "DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024";
-    public const string KdfInputMode = "DualBranch-v11: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024";
+    public const string KdfInputMode = "DualBranch-v12: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024";
     public const string PasswordMode = "UserPassword24to256+PIN6to16+GeneratedHex1024x2";
 
+    internal static IDisposable UseMemoryCostForTests(uint memoryKiB)
+    {
+        if (memoryKiB < MinimumTestMemoryKiB || memoryKiB % (4 * Parallelism) != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(memoryKiB));
+        }
+
+        uint? previous = TestMemoryOverride.Value;
+        TestMemoryOverride.Value = memoryKiB;
+        return new TestMemoryOverrideScope(previous);
+    }
+
     /// <summary>
-    /// Q_S(v11): the SHA3 credential path with 512/512 factor split.
+    /// Q_S(v12): the SHA3 credential path with 512/512 factor split.
     /// </summary>
     public static void DeriveSha3CredentialHash(
         string algorithm,
@@ -70,25 +91,30 @@ internal static class V11MasterKdf
         ReadOnlySpan<byte> b1 = factorB[..FactorHalfBytes];
         ReadOnlySpan<byte> b2 = factorB[FactorHalfBytes..];
 
-        byte[] domain1 = Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v11/{algorithm}/SHA3-512/User+PIN+Factors-A1+B1");
-        byte[] domain2 = Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v11/{algorithm}/SHA3-512/User+PIN+Factors-A2+B2");
+        byte[] domain1 = Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v12/{algorithm}/SHA3-512/User+PIN+Factors-A1+B1");
+        byte[] domain2 = Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v12/{algorithm}/SHA3-512/User+PIN+Factors-A2+B2");
 
-        int maxPassBytes = Encoding.UTF8.GetMaxByteCount(userPassword.Length);
-        using var passBuf = LockedSensitiveBuffer.Create(maxPassBytes);
-        int passLen = Encoding.UTF8.GetBytes(userPassword.AsSpan(), passBuf.Bytes);
-        ReadOnlySpan<byte> passwordSpan = passBuf.Bytes.AsSpan(0, passLen);
-
-        using var pinBuf = LockedSensitiveBuffer.Create(pin.Length);
-        int pinLen = Encoding.ASCII.GetBytes(pin.AsSpan(), pinBuf.Bytes);
-        ReadOnlySpan<byte> pinSpan = pinBuf.Bytes.AsSpan(0, pinLen);
-
-        int len1 = (sizeof(int) + domain1.Length) + (sizeof(int) + passLen) + (sizeof(int) + pinLen) + (sizeof(int) + a1.Length) + (sizeof(int) + b1.Length);
-        int len2 = (sizeof(int) + domain2.Length) + (sizeof(int) + passLen) + (sizeof(int) + pinLen) + (sizeof(int) + a2.Length) + (sizeof(int) + b2.Length);
-
-        using var message1Buf = LockedSensitiveBuffer.Create(len1);
-        using var message2Buf = LockedSensitiveBuffer.Create(len2);
+        LockedSensitiveBuffer? passBuf = null;
+        LockedSensitiveBuffer? pinBuf = null;
+        LockedSensitiveBuffer? message1Buf = null;
+        LockedSensitiveBuffer? message2Buf = null;
+        Exception? operationFailure = null;
         try
         {
+            int maxPassBytes = Encoding.UTF8.GetMaxByteCount(userPassword.Length);
+            passBuf = LockedSensitiveBuffer.Create(maxPassBytes);
+            int passLen = Encoding.UTF8.GetBytes(userPassword.AsSpan(), passBuf.Bytes);
+            ReadOnlySpan<byte> passwordSpan = passBuf.Bytes.AsSpan(0, passLen);
+
+            pinBuf = LockedSensitiveBuffer.Create(pin.Length);
+            int pinLen = Encoding.ASCII.GetBytes(pin.AsSpan(), pinBuf.Bytes);
+            ReadOnlySpan<byte> pinSpan = pinBuf.Bytes.AsSpan(0, pinLen);
+
+            int len1 = (sizeof(int) + domain1.Length) + (sizeof(int) + passLen) + (sizeof(int) + pinLen) + (sizeof(int) + a1.Length) + (sizeof(int) + b1.Length);
+            int len2 = (sizeof(int) + domain2.Length) + (sizeof(int) + passLen) + (sizeof(int) + pinLen) + (sizeof(int) + a2.Length) + (sizeof(int) + b2.Length);
+
+            message1Buf = LockedSensitiveBuffer.Create(len1);
+            message2Buf = LockedSensitiveBuffer.Create(len2);
             int offset1 = 0;
             WriteLengthPrefixed(message1Buf.Bytes, ref offset1, domain1);
             WriteLengthPrefixed(message1Buf.Bytes, ref offset1, passwordSpan);
@@ -106,10 +132,32 @@ internal static class V11MasterKdf
             _ = Sha3_512Compat.HashData(message1Buf.Bytes, destination.Slice(0, 64));
             _ = Sha3_512Compat.HashData(message2Buf.Bytes, destination.Slice(64, 64));
         }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(destination[..CredentialHashBytes]);
+            throw;
+        }
         finally
         {
             CryptographicOperations.ZeroMemory(domain1);
             CryptographicOperations.ZeroMemory(domain2);
+            BeforeCredentialCleanupForTests?.Invoke();
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "SHA3 credential derivation failed and one or more sensitive buffers could not be released.",
+                    message2Buf,
+                    message1Buf,
+                    pinBuf,
+                    passBuf);
+            }
+            catch
+            {
+                CryptographicOperations.ZeroMemory(destination[..CredentialHashBytes]);
+                throw;
+            }
         }
     }
 
@@ -126,7 +174,7 @@ internal static class V11MasterKdf
     }
 
     /// <summary>
-    /// Q_K(v11): the keyed Skein credential path with full factors A and B as key.
+    /// Q_K(v12): the keyed Skein credential path with full factors A and B as key.
     /// </summary>
     public static void DeriveSkeinCredentialHash(
         string algorithm,
@@ -143,32 +191,65 @@ internal static class V11MasterKdf
             throw new ArgumentException($"Destination must be at least {CredentialHashBytes} bytes.", nameof(destination));
         }
 
-        using var keyBuffer = LockedSensitiveBuffer.Create(FactorBytes * 2);
+        LockedSensitiveBuffer? keyBuffer = null;
+        LockedSensitiveBuffer? passBuf = null;
+        LockedSensitiveBuffer? pinBuf = null;
+        LockedSensitiveBuffer? messageBuf = null;
+        Exception? operationFailure = null;
+        try
+        {
+            keyBuffer = LockedSensitiveBuffer.Create(FactorBytes * 2);
 
-        int maxPassBytes = Encoding.UTF8.GetMaxByteCount(userPassword.Length);
-        using var passBuf = LockedSensitiveBuffer.Create(maxPassBytes);
-        int passLen = Encoding.UTF8.GetBytes(userPassword.AsSpan(), passBuf.Bytes);
-        ReadOnlySpan<byte> passwordSpan = passBuf.Bytes.AsSpan(0, passLen);
+            int maxPassBytes = Encoding.UTF8.GetMaxByteCount(userPassword.Length);
+            passBuf = LockedSensitiveBuffer.Create(maxPassBytes);
+            int passLen = Encoding.UTF8.GetBytes(userPassword.AsSpan(), passBuf.Bytes);
+            ReadOnlySpan<byte> passwordSpan = passBuf.Bytes.AsSpan(0, passLen);
 
-        using var pinBuf = LockedSensitiveBuffer.Create(pin.Length);
-        int pinLen = Encoding.ASCII.GetBytes(pin.AsSpan(), pinBuf.Bytes);
-        ReadOnlySpan<byte> pinSpan = pinBuf.Bytes.AsSpan(0, pinLen);
+            pinBuf = LockedSensitiveBuffer.Create(pin.Length);
+            int pinLen = Encoding.ASCII.GetBytes(pin.AsSpan(), pinBuf.Bytes);
+            ReadOnlySpan<byte> pinSpan = pinBuf.Bytes.AsSpan(0, pinLen);
 
-        int msgLen = (sizeof(int) + passLen) + (sizeof(int) + pinLen);
-        using var messageBuf = LockedSensitiveBuffer.Create(msgLen);
+            int msgLen = (sizeof(int) + passLen) + (sizeof(int) + pinLen);
+            messageBuf = LockedSensitiveBuffer.Create(msgLen);
 
-        factorA.CopyTo(keyBuffer.Bytes.AsSpan(0, FactorBytes));
-        factorB.CopyTo(keyBuffer.Bytes.AsSpan(FactorBytes, FactorBytes));
+            factorA.CopyTo(keyBuffer.Bytes.AsSpan(0, FactorBytes));
+            factorB.CopyTo(keyBuffer.Bytes.AsSpan(FactorBytes, FactorBytes));
 
-        int offset = 0;
-        WriteLengthPrefixed(messageBuf.Bytes, ref offset, passwordSpan);
-        WriteLengthPrefixed(messageBuf.Bytes, ref offset, pinSpan);
+            int offset = 0;
+            WriteLengthPrefixed(messageBuf.Bytes, ref offset, passwordSpan);
+            WriteLengthPrefixed(messageBuf.Bytes, ref offset, pinSpan);
 
-        KeyedSkein1024.Compute(
-            keyBuffer.Bytes,
-            $"Kalyna-ZPAQ/v11/{algorithm}/Skein-MAC-1024-1024/User+PIN/Factors-A+B-Key",
-            messageBuf.Bytes,
-            destination);
+            KeyedSkein1024.Compute(
+                keyBuffer.Bytes,
+                $"Kalyna-ZPAQ/v12/{algorithm}/Skein-MAC-1024-1024/User+PIN/Factors-A+B-Key",
+                messageBuf.Bytes,
+                destination);
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(destination[..CredentialHashBytes]);
+            throw;
+        }
+        finally
+        {
+            BeforeCredentialCleanupForTests?.Invoke();
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "Skein credential derivation failed and one or more sensitive buffers could not be released.",
+                    messageBuf,
+                    pinBuf,
+                    passBuf,
+                    keyBuffer);
+            }
+            catch
+            {
+                CryptographicOperations.ZeroMemory(destination[..CredentialHashBytes]);
+                throw;
+            }
+        }
     }
 
     public static byte[] DeriveSkeinCredentialHash(
@@ -184,7 +265,7 @@ internal static class V11MasterKdf
     }
 
     /// <summary>
-    /// Personal Memory Index for v11 round.
+    /// Personal Memory Index for v12 round.
     /// </summary>
     public static (ushort Pmi, uint MemoryKiB) DerivePmi(
         string algorithm,
@@ -195,7 +276,7 @@ internal static class V11MasterKdf
         ReadOnlySpan<byte> sha3Salt,
         ReadOnlySpan<byte> skeinSalt)
     {
-        string domain = $"Kalyna-ZPAQ/v11/{algorithm}/SHA3-512/PMI/Round-{round}";
+        string domain = $"Kalyna-ZPAQ/v12/{algorithm}/SHA3-512/PMI/Round-{round}";
         byte[] domainBytes = Encoding.UTF8.GetBytes(domain);
 
         int total = (sizeof(int) + domainBytes.Length)
@@ -205,12 +286,15 @@ internal static class V11MasterKdf
             + (sizeof(int) + sha3Salt.Length)
             + (sizeof(int) + skeinSalt.Length);
 
-        using LockedSensitiveBuffer messageBuf = LockedSensitiveBuffer.Create(total);
-        using LockedSensitiveBuffer digestBuf = LockedSensitiveBuffer.Create(64);
-        Span<byte> message = messageBuf.Bytes;
-        Span<byte> digest = digestBuf.Bytes;
+        LockedSensitiveBuffer? messageBuf = null;
+        LockedSensitiveBuffer? digestBuf = null;
+        Exception? operationFailure = null;
         try
         {
+            messageBuf = LockedSensitiveBuffer.Create(total);
+            digestBuf = LockedSensitiveBuffer.Create(64);
+            Span<byte> message = messageBuf.Bytes;
+            Span<byte> digest = digestBuf.Bytes;
             int offset = 0;
             WriteLengthPrefixed(message, ref offset, domainBytes);
             WriteLengthPrefixed(message, ref offset, sha3CredentialHash);
@@ -230,20 +314,30 @@ internal static class V11MasterKdf
                 throw new CryptographicException($"The derived Argon2id memory cost {memory} KiB is out of range.");
             }
 
-            return (pmi, memory);
+            return (pmi, TestMemoryOverride.Value ?? memory);
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
         }
         finally
         {
             CryptographicOperations.ZeroMemory(domainBytes);
+            SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                operationFailure,
+                "PMI derivation failed and one or more sensitive buffers could not be released.",
+                digestBuf,
+                messageBuf);
         }
     }
 
     public static byte[] AssociatedData(string algorithm, bool sha3Branch, int round) =>
         Encoding.UTF8.GetBytes(
-            $"Kalyna-ZPAQ/v11/{algorithm}/Argon2id/{(sha3Branch ? "SHA3" : "Skein")}-Branch/Round-{round}");
+            $"Kalyna-ZPAQ/v12/{algorithm}/Argon2id/{(sha3Branch ? "SHA3" : "Skein")}-Branch/Round-{round}");
 
     /// <summary>
-    /// One complete v11 KDF round: two sequential Argon2id branches, interleaved.
+    /// One complete v12 KDF round: two sequential Argon2id branches, interleaved.
     /// </summary>
     public static void DeriveRoundMaster(
         string algorithm,
@@ -261,24 +355,54 @@ internal static class V11MasterKdf
             throw new ArgumentException($"Destination must be at least {MasterBytes} bytes.", nameof(destination));
         }
 
-        if (memoryKiB is < MemoryMinKiB or > MemoryMaxKiB
-            || (memoryKiB - MemoryMinKiB) % MemoryStepKiB != 0)
+        bool productiveMemory = memoryKiB is >= MemoryMinKiB and <= MemoryMaxKiB
+            && (memoryKiB - MemoryMinKiB) % MemoryStepKiB == 0;
+        bool scopedTestMemory = TestMemoryOverride.Value == memoryKiB;
+        if (!productiveMemory && !scopedTestMemory)
         {
             throw new CryptographicException(
-                $"The Argon2id memory cost {memoryKiB} KiB is not a value the v11 PMI can produce.");
+                $"The Argon2id memory cost {memoryKiB} KiB is not a value the v12 PMI can produce.");
         }
 
-        using LockedSensitiveBuffer left = LockedSensitiveBuffer.Create(BranchOutputBytes);
-        using LockedSensitiveBuffer right = LockedSensitiveBuffer.Create(BranchOutputBytes);
+        LockedSensitiveBuffer? left = null;
+        LockedSensitiveBuffer? right = null;
+        Exception? operationFailure = null;
+        try
+        {
+            left = LockedSensitiveBuffer.Create(BranchOutputBytes);
+            right = LockedSensitiveBuffer.Create(BranchOutputBytes);
 
-        RunBranch(
-            algorithm, round, sha3Branch: true,
-            sha3CredentialHash, sha3Salt, secret, memoryKiB, left.Bytes);
-        RunBranch(
-            algorithm, round, sha3Branch: false,
-            skeinCredentialHash, skeinSalt, secret, memoryKiB, right.Bytes);
+            RunBranch(
+                algorithm, round, sha3Branch: true,
+                sha3CredentialHash, sha3Salt, secret, memoryKiB, left.Bytes);
+            RunBranch(
+                algorithm, round, sha3Branch: false,
+                skeinCredentialHash, skeinSalt, secret, memoryKiB, right.Bytes);
 
-        MasterInterleave.Interleave(left.Bytes, right.Bytes, destination);
+            MasterInterleave.Interleave(left.Bytes, right.Bytes, destination);
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(destination[..MasterBytes]);
+            throw;
+        }
+        finally
+        {
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "Argon2id branch derivation failed and one or more branch outputs could not be released.",
+                    right,
+                    left);
+            }
+            catch
+            {
+                CryptographicOperations.ZeroMemory(destination[..MasterBytes]);
+                throw;
+            }
+        }
     }
 
     public static byte[] DeriveRoundMaster(
@@ -334,20 +458,23 @@ internal static class V11MasterKdf
                 $"An Argon2id branch salt must be exactly {KdfSalts.SaltBytes} bytes.", nameof(salt));
         }
 
-        using LockedSensitiveBuffer passwordCopy = LockedSensitiveBuffer.Create(CredentialHashBytes);
-        credentialHash.CopyTo(passwordCopy.Bytes);
-        using LockedSensitiveBuffer? secretCopy = secret.IsEmpty
-            ? null
-            : LockedSensitiveBuffer.Create(MasterBytes);
-        if (!secret.IsEmpty)
-        {
-            secret.CopyTo(secretCopy!.Bytes);
-        }
-
+        LockedSensitiveBuffer? passwordCopy = null;
+        LockedSensitiveBuffer? secretCopy = null;
         byte[] saltCopy = salt.ToArray();
         byte[] associatedData = AssociatedData(algorithm, sha3Branch, round);
+        Exception? operationFailure = null;
         try
         {
+            passwordCopy = LockedSensitiveBuffer.Create(CredentialHashBytes);
+            credentialHash.CopyTo(passwordCopy.Bytes);
+            secretCopy = secret.IsEmpty
+                ? null
+                : LockedSensitiveBuffer.Create(MasterBytes);
+            if (!secret.IsEmpty)
+            {
+                secret.CopyTo(secretCopy!.Bytes);
+            }
+
             NativeArgon2id.HashRaw(
                 Iterations,
                 memoryKiB,
@@ -356,12 +483,32 @@ internal static class V11MasterKdf
                 saltCopy,
                 secretCopy?.Bytes,
                 associatedData,
-                output);
+                output,
+                useKatProfile: TestMemoryOverride.Value == memoryKiB);
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            CryptographicOperations.ZeroMemory(output);
+            throw;
         }
         finally
         {
             CryptographicOperations.ZeroMemory(saltCopy);
             CryptographicOperations.ZeroMemory(associatedData);
+            try
+            {
+                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                    operationFailure,
+                    "Argon2id branch execution failed and one or more sensitive inputs could not be released.",
+                    secretCopy,
+                    passwordCopy);
+            }
+            catch
+            {
+                CryptographicOperations.ZeroMemory(output);
+                throw;
+            }
         }
     }
 
@@ -378,6 +525,19 @@ internal static class V11MasterKdf
         if (factor.Length != FactorBytes)
         {
             throw new ArgumentException($"A factor must be {FactorBytes} bytes.", name);
+        }
+    }
+
+    private sealed class TestMemoryOverrideScope(uint? previous) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                TestMemoryOverride.Value = previous;
+            }
         }
     }
 }

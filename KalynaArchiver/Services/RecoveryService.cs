@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.IO;
 using System.Numerics;
+using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -90,8 +91,85 @@ public sealed partial class RecoveryService
     private const int MetadataEnvelopeHeaderSize = 8 + sizeof(int) + sizeof(int) + sizeof(long) + Sha3_512Compat.HashSizeInBytes + Skein1024Digest.DigestSize;
     private const int MaxMetadataEnvelopeBytes = 128 * 1024 * 1024;
     private const long MaxEncodedMetadataBytes = 192L * 1024 * 1024;
+    private const int MaxManifestJsonDepth = 8;
+    private const int MaxManifestStringUtf8Bytes = 4096;
+    private const int MaxManifestPropertyNameUtf8Bytes = 64;
+    private const int MaxManifestNumberUtf8Bytes = 32;
+    private const int MaxManifestSections = 2;
+    private const int MaxManifestArrays = 1 + (MaxManifestSections * 2);
+    private const int ManifestFixedBudgetBytes = 64 * 1024;
+    private const int ManifestDataDigestBudgetBytes = 320;
+    private const int ManifestParityEntryBudgetBytes = 512;
     private const int RecoverySidecarDestructionBytes = 1024 * 1024;
     private const int RecoveryCopyChunkBytes = 1024 * 1024;
+    private const int RecoveryParallelChunkBytes = 256 * 1024;
+    private const int MaxRecoveryWorkers = 64;
+
+    private static readonly AsyncLocal<int?> RecoveryWorkerOverride = new();
+    private static readonly AsyncLocal<Func<long, int, bool>?> RecoverySourceReadFaultOverride = new();
+    private static readonly AsyncLocal<Action<RecoveryKeyDerivationTestStage, byte[], byte[]?>?>
+        RecoveryKeyDerivationHookOverride = new();
+    private static readonly AsyncLocal<Func<int, int, CancellationToken, ValueTask>?>
+        RecoveryCopyChunkHookOverride = new();
+    private static readonly AsyncLocal<Action<int>?> RecoveryCopyWorkerScheduleHookOverride = new();
+
+    internal static IDisposable UseRecoveryWorkerCountForTests(int workers)
+    {
+        if (workers is < 1 or > MaxRecoveryWorkers)
+        {
+            throw new ArgumentOutOfRangeException(nameof(workers));
+        }
+
+        int? previous = RecoveryWorkerOverride.Value;
+        RecoveryWorkerOverride.Value = workers;
+        return new RecoveryWorkerOverrideScope(previous);
+    }
+
+    /// <summary>
+    /// Deterministically makes selected descriptor-relative source reads report
+    /// EIO. The predicate receives the requested offset and byte count and must
+    /// return true when that range intersects an unreadable physical region.
+    /// AsyncLocal keeps concurrently scheduled release tests isolated.
+    /// </summary>
+    internal static IDisposable UseRecoverySourceReadFaultForTests(
+        Func<long, int, bool> faultPredicate)
+    {
+        ArgumentNullException.ThrowIfNull(faultPredicate);
+        Func<long, int, bool>? previous = RecoverySourceReadFaultOverride.Value;
+        RecoverySourceReadFaultOverride.Value = faultPredicate;
+        return new RecoverySourceReadFaultOverrideScope(previous);
+    }
+
+    internal static IDisposable UseRecoveryKeyDerivationHookForTests(
+        Action<RecoveryKeyDerivationTestStage, byte[], byte[]?> hook)
+    {
+        ArgumentNullException.ThrowIfNull(hook);
+        Action<RecoveryKeyDerivationTestStage, byte[], byte[]?>? previous =
+            RecoveryKeyDerivationHookOverride.Value;
+        RecoveryKeyDerivationHookOverride.Value = hook;
+        return new RecoveryKeyDerivationHookOverrideScope(previous);
+    }
+
+    internal static IDisposable UseRecoveryCopyChunkHookForTests(
+        Func<int, int, CancellationToken, ValueTask> hook)
+    {
+        ArgumentNullException.ThrowIfNull(hook);
+        Func<int, int, CancellationToken, ValueTask>? previous = RecoveryCopyChunkHookOverride.Value;
+        RecoveryCopyChunkHookOverride.Value = hook;
+        return new RecoveryCopyChunkHookOverrideScope(previous);
+    }
+
+    internal static IDisposable UseRecoveryCopyWorkerScheduleHookForTests(Action<int> hook)
+    {
+        ArgumentNullException.ThrowIfNull(hook);
+        Action<int>? previous = RecoveryCopyWorkerScheduleHookOverride.Value;
+        RecoveryCopyWorkerScheduleHookOverride.Value = hook;
+        return new RecoveryCopyWorkerScheduleHookOverrideScope(previous);
+    }
+
+    private static int RecoveryWorkerCount =>
+        RecoveryWorkerOverride.Value
+        ?? Math.Clamp(Environment.ProcessorCount, 1, MaxRecoveryWorkers);
 
     private readonly PasswordKeyService _passwords = new();
     private readonly KalynaContainerService _containers = new();
@@ -398,7 +476,7 @@ public sealed partial class RecoveryService
                     try
                     {
                         int envelopeLength = checked(MetadataEnvelopeHeaderSize + manifestBytes.Length);
-                        if (envelopeLength > MaxMetadataEnvelopeBytes)
+                        if (envelopeLength > GetMaximumMetadataEnvelopeBytes(archiveLength))
                         {
                             throw new InvalidDataException("Recovery metadata exceeds the supported size.");
                         }
@@ -744,35 +822,78 @@ public sealed partial class RecoveryService
             {
                 for (int stripe = 0; stripe < section.StripeCount; stripe++)
                 {
+                    var dataReads = new Task[section.DataShardCount];
                     for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
                     {
+                        int capturedIndex = dataIndex;
                         long shardOffset = section.Offset
                             + (((long)stripe * section.DataShardCount + dataIndex) * section.ShardSize);
-                        await ReadArchiveShardAsync(
+                        dataReads[dataIndex] = ReadArchiveShardAtAsync(
                             archive,
                             shardOffset,
                             section.Offset + section.Length,
-                            data[dataIndex],
-                            cancellationToken).ConfigureAwait(false);
+                            data[capturedIndex],
+                            cancellationToken);
+                    }
+
+                    await Task.WhenAll(dataReads).ConfigureAwait(false);
+                    var validData = new bool[section.DataShardCount];
+                    Parallel.For(
+                        0,
+                        section.DataShardCount,
+                        new ParallelOptions
+                        {
+                            CancellationToken = cancellationToken,
+                            MaxDegreeOfParallelism = RecoveryWorkerCount,
+                        },
+                        dataIndex =>
+                        {
                         string expectedDataDigest = section.DataDigests[
                             (stripe * section.DataShardCount) + dataIndex];
-                        if (!DualDigestMatches(data[dataIndex], expectedDataDigest))
+                            validData[dataIndex] = DualDigestMatches(data[dataIndex], expectedDataDigest);
+                        });
+                    for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
+                    {
+                        if (!validData[dataIndex])
                         {
                             throw new InvalidDataException(
                                 $"Generated KPAR2 data shard changed before commit: {section.Name}, stripe {stripe}, shard {dataIndex}.");
                         }
                     }
 
+                    var parityReads = new Task<bool>[section.ParityShardCount];
                     for (int parityIndex = 0; parityIndex < section.ParityShardCount; parityIndex++)
                     {
+                        int capturedIndex = parityIndex;
                         RecoveryParityShard parity = section.Parity[
                             (stripe * section.ParityShardCount) + parityIndex];
-                        bool readable = await TryReadAtAsync(
+                        parityReads[parityIndex] = TryReadAtAsync(
                             recovery,
                             parity.Offset,
-                            writtenParity[parityIndex],
-                            cancellationToken).ConfigureAwait(false);
-                        if (!readable || !DualDigestMatches(writtenParity[parityIndex], parity.Digest))
+                            writtenParity[capturedIndex],
+                            cancellationToken);
+                    }
+
+                    bool[] parityReadable = await Task.WhenAll(parityReads).ConfigureAwait(false);
+                    var validParity = new bool[section.ParityShardCount];
+                    Parallel.For(
+                        0,
+                        section.ParityShardCount,
+                        new ParallelOptions
+                        {
+                            CancellationToken = cancellationToken,
+                            MaxDegreeOfParallelism = RecoveryWorkerCount,
+                        },
+                        parityIndex =>
+                        {
+                            RecoveryParityShard parity = section.Parity[
+                                (stripe * section.ParityShardCount) + parityIndex];
+                            validParity[parityIndex] = parityReadable[parityIndex]
+                                && DualDigestMatches(writtenParity[parityIndex], parity.Digest);
+                        });
+                    for (int parityIndex = 0; parityIndex < section.ParityShardCount; parityIndex++)
+                    {
+                        if (!validParity[parityIndex])
                         {
                             throw new InvalidDataException(
                                 $"Generated KPAR2 parity shard is invalid: {section.Name}, stripe {stripe}, parity {parityIndex}.");
@@ -901,10 +1022,10 @@ public sealed partial class RecoveryService
                 cancellationToken).ConfigureAwait(false);
 
 #if KEEPVAULT_MACOS
-            using MacPrivateFileSnapshot archiveSnapshot = await MacPrivateFileSnapshot
-                .CaptureAsync(fullArchivePath, cancellationToken)
-                .ConfigureAwait(false);
-            FileStream archive = archiveSnapshot.Stream;
+            using MacRecoveryReadLease archiveLease = MacRecoveryReadLease.Open(
+                fullArchivePath,
+                MaxArchiveBytes);
+            FileStream archive = archiveLease.Stream;
 #else
             await using FileStream archive = SecureFile.OpenReadNoReparse(
                 fullArchivePath,
@@ -912,16 +1033,36 @@ public sealed partial class RecoveryService
                 bufferSize: 1024 * 1024,
                 randomAccess: true);
 #endif
-            if (archive.Length != package.Manifest.ArchiveLength)
+            var archiveSource = new FileRecoveryRandomAccessSource(
+                archive,
+                enableTestFaults: true);
+            using var archiveVerification = new RecoveryRandomAccessStream(archiveSource);
+            if (archiveSource.Length != package.Manifest.ArchiveLength)
             {
                 throw new InvalidDataException(
                     "KPAR2 refuses archive-length changes. Recovery is limited to damaged blocks inside the original file length.");
             }
 
-            if (expectedMode == RecoveryProtectionMode.ErrorCorrectionOnly
-                && await HasEncryptedContainerMagicAsync(
-                    archive,
-                    cancellationToken).ConfigureAwait(false))
+            bool encryptedMagic = false;
+            if (expectedMode == RecoveryProtectionMode.ErrorCorrectionOnly)
+            {
+                try
+                {
+                    encryptedMagic = await HasEncryptedContainerMagicAsync(
+                        archiveVerification,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                catch (IOException)
+                {
+                    // An unreadable header is precisely what KPAR2 must be able
+                    // to reconstruct. The same downgrade check is mandatory on
+                    // the fully repaired candidate below, where it cannot be
+                    // bypassed by source EIO.
+                    progress?.Report(
+                        "The source header is unreadable; KPAR2 will validate its container profile after candidate repair.");
+                }
+            }
+            if (encryptedMagic)
             {
                 throw new InvalidDataException(
                     "An encrypted container cannot be recovered through the unauthenticated plain KPAR2 profile.");
@@ -931,7 +1072,7 @@ public sealed partial class RecoveryService
             try
             {
                 archiveHealthy = await ArchiveMatchesManifestAsync(
-                    archive,
+                    archiveVerification,
                     package.Manifest,
                     cancellationToken).ConfigureAwait(false);
             }
@@ -943,6 +1084,9 @@ public sealed partial class RecoveryService
             }
             if (archiveHealthy && !emergencyMode)
             {
+#if KEEPVAULT_MACOS
+                archiveLease.ValidateUnchanged();
+#endif
                 progress?.Report("KPAR2 verification: archive is unchanged.");
                 return new RecoveryRepairResult(
                     true,
@@ -972,10 +1116,13 @@ public sealed partial class RecoveryService
             FileStream candidate = candidateObject.Stream;
             {
                 int unreadableBlocks = await CopyArchiveForRecoveryAsync(
-                    archive,
+                    archiveSource,
                     candidate,
                     package.Manifest.ArchiveLength,
                     cancellationToken).ConfigureAwait(false);
+#if KEEPVAULT_MACOS
+                archiveLease.ValidateUnchanged();
+#endif
                 if (unreadableBlocks > 0)
                 {
                     progress?.Report(
@@ -986,6 +1133,12 @@ public sealed partial class RecoveryService
                 {
                     throw new InvalidDataException("The recovery candidate length changed while it was copied.");
                 }
+
+                // RandomAccess.WriteAsync deliberately bypasses the FileStream
+                // position and buffer. Flush the parallel copy first so a later
+                // buffer flush cannot overwrite a repaired shard with the
+                // pre-repair bytes.
+                await candidate.FlushAsync(cancellationToken).ConfigureAwait(false);
 
                 int repairedShards = 0;
                 foreach (RecoverySection section in package.Manifest.Sections)
@@ -1235,7 +1388,7 @@ public sealed partial class RecoveryService
                 }
             }
 
-            RecoveryManifest manifest = DeserializeCanonicalManifest(payload);
+            RecoveryManifest manifest = DeserializeCanonicalManifest(payload, locator.ArchiveLength);
             ValidateManifest(manifest, locator, expectedArchiveFileName);
             return new RecoveryPackage(locator, manifest, authenticationVerified);
         }
@@ -1292,61 +1445,141 @@ public sealed partial class RecoveryService
             paranoia ? locator.SaltSha3Round2 : null,
             paranoia ? locator.SaltSkeinRound2 : null);
         salts.Validate(paranoia);
-        using ContainerKeyDerivation.MasterResult master = await Task.Run(
-            () => ContainerKeyDerivation.DeriveMaster(
-                parameters,
-                userPassword,
-                pin,
-                firstGeneratedPassword,
-                secondGeneratedPassword,
-                salts,
-                progress: null,
-                cancellationToken),
-            cancellationToken).ConfigureAwait(false);
-
-        byte[] parentSha3Key = SuiteKeySchedule.DeriveGlobalKey(
-            master.Master.Bytes,
-            parameters.Algorithm,
-            "KPAR2/HMAC-SHA3-512",
-            KeyRolePurpose.RecoverySha3Certification,
-            parameters.Sha3MacKeyBytes);
-        byte[] parentSkeinKey = SuiteKeySchedule.DeriveGlobalKey(
-            master.Master.Bytes,
-            parameters.Algorithm,
-            "KPAR2/Skein-MAC-1024-1024",
-            KeyRolePurpose.RecoverySkeinCertification,
-            parameters.SkeinMacKeyBytes);
-        byte[] sha3Message = BuildKeyDerivationMessage(Sha3KeyDomain, locator);
-        byte[] skeinMessage = BuildKeyDerivationMessage(SkeinKeyDomain, locator);
+        ContainerKeyDerivation.MasterResult? master = null;
+        RecoveryKeys? derivedKeys = null;
+        byte[]? parentSha3Key = null;
+        byte[]? parentSkeinKey = null;
+        byte[]? sha3Message = null;
+        byte[]? skeinMessage = null;
+        Exception? operationFailure = null;
         try
         {
-            byte[] sha3Key;
+            master = await Task.Run(
+                () => ContainerKeyDerivation.DeriveMaster(
+                    parameters,
+                    userPassword,
+                    pin,
+                    firstGeneratedPassword,
+                    secondGeneratedPassword,
+                    salts,
+                    progress: null,
+                    cancellationToken),
+                cancellationToken).ConfigureAwait(false);
+            parentSha3Key = SuiteKeySchedule.DeriveGlobalKey(
+                master.Master.Bytes,
+                parameters.Algorithm,
+                "KPAR2/HMAC-SHA3-512",
+                KeyRolePurpose.RecoverySha3Certification,
+                parameters.Sha3MacKeyBytes);
+            parentSkeinKey = SuiteKeySchedule.DeriveGlobalKey(
+                master.Master.Bytes,
+                parameters.Algorithm,
+                "KPAR2/Skein-MAC-1024-1024",
+                KeyRolePurpose.RecoverySkeinCertification,
+                parameters.SkeinMacKeyBytes);
+            sha3Message = BuildKeyDerivationMessage(Sha3KeyDomain, locator);
+            skeinMessage = BuildKeyDerivationMessage(SkeinKeyDomain, locator);
+            derivedKeys = DeriveRecoveryCertificationKeys(
+                parentSha3Key,
+                parentSkeinKey,
+                sha3Message,
+                skeinMessage);
+
+            // Commit result ownership only after the no-longer-needed master has
+            // been erased and unlocked successfully. A using-return would lose
+            // the already-derived child keys if master disposal threw here.
+            ZeroIfNotNull(parentSha3Key);
+            ZeroIfNotNull(parentSkeinKey);
+            ZeroIfNotNull(sha3Message);
+            ZeroIfNotNull(skeinMessage);
+            master.Master.ZeroForDisposal();
+            master.Dispose();
+            master = null;
+            RecoveryKeys completed = derivedKeys;
+            derivedKeys = null;
+            return completed;
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            throw;
+        }
+        finally
+        {
+            ZeroIfNotNull(parentSha3Key);
+            ZeroIfNotNull(parentSkeinKey);
+            ZeroIfNotNull(sha3Message);
+            ZeroIfNotNull(skeinMessage);
+            master?.Master.ZeroForDisposal();
+            derivedKeys?.ZeroForDisposal();
+            try
+            {
+                SecureMemory.DisposeAll(derivedKeys, master);
+            }
+            catch (Exception cleanupFailure)
+            {
+                if (operationFailure is null)
+                {
+                    ExceptionDispatchInfo.Capture(cleanupFailure).Throw();
+                }
+
+                throw new AggregateException(
+                    "KPAR2 recovery-key derivation failed and one or more locked secret buffers could not be released.",
+                    operationFailure,
+                    cleanupFailure);
+            }
+        }
+    }
+
+    private static RecoveryKeys DeriveRecoveryCertificationKeys(
+        byte[] parentSha3Key,
+        byte[] parentSkeinKey,
+        byte[] sha3Message,
+        byte[] skeinMessage)
+    {
+        byte[]? sha3Key = null;
+        byte[]? skeinKey = null;
+        try
+        {
             using (var hmac = new HmacSha3_512(parentSha3Key))
             {
                 hmac.AppendData(sha3Message);
                 sha3Key = hmac.GetHashAndReset();
             }
 
-            byte[] skeinKey = NativeThreefish.MacSkein1024Reference(parentSkeinKey, skeinMessage);
-            try
-            {
-                return new RecoveryKeys(sha3Key, skeinKey);
-            }
-            catch
-            {
-                CryptographicOperations.ZeroMemory(sha3Key);
-                CryptographicOperations.ZeroMemory(skeinKey);
-                throw;
-            }
+            RecoveryKeyDerivationHookOverride.Value?.Invoke(
+                RecoveryKeyDerivationTestStage.AfterSha3,
+                sha3Key,
+                null);
+            skeinKey = NativeThreefish.MacSkein1024Reference(parentSkeinKey, skeinMessage);
+            RecoveryKeyDerivationHookOverride.Value?.Invoke(
+                RecoveryKeyDerivationTestStage.AfterSkein,
+                sha3Key,
+                skeinKey);
+
+            var result = new RecoveryKeys(sha3Key, skeinKey);
+            sha3Key = null;
+            skeinKey = null;
+            return result;
         }
-        finally
+        catch
         {
-            CryptographicOperations.ZeroMemory(parentSha3Key);
-            CryptographicOperations.ZeroMemory(parentSkeinKey);
-            CryptographicOperations.ZeroMemory(sha3Message);
-            CryptographicOperations.ZeroMemory(skeinMessage);
+            ZeroIfNotNull(sha3Key);
+            ZeroIfNotNull(skeinKey);
+            throw;
         }
     }
+
+    internal static IDisposable DeriveRecoveryCertificationKeysForTests(
+        byte[] parentSha3Key,
+        byte[] parentSkeinKey,
+        byte[] sha3Message,
+        byte[] skeinMessage) =>
+        DeriveRecoveryCertificationKeys(
+            parentSha3Key,
+            parentSkeinKey,
+            sha3Message,
+            skeinMessage);
 
     private static byte[] BuildKeyDerivationMessage(byte[] domain, RecoveryLocator locator)
     {
@@ -1536,16 +1769,33 @@ public sealed partial class RecoveryService
             for (int stripe = 0; stripe < section.StripeCount; stripe++)
             {
                 ZeroShards(parity);
+                var readTasks = new Task[DataShardCount];
                 for (int dataIndex = 0; dataIndex < DataShardCount; dataIndex++)
                 {
+                    int capturedIndex = dataIndex;
                     long shardOffset = offset + (((long)stripe * DataShardCount + dataIndex) * shardSize);
-                    await ReadArchiveShardAsync(
+                    readTasks[dataIndex] = ReadArchiveShardAtAsync(
                         archive,
                         shardOffset,
                         offset + length,
-                        data[dataIndex],
-                        cancellationToken).ConfigureAwait(false);
-                    section.DataDigests.Add(DualDigestBase64(data[dataIndex]));
+                        data[capturedIndex],
+                        cancellationToken);
+                }
+
+                await Task.WhenAll(readTasks).ConfigureAwait(false);
+                var dataDigests = new string[DataShardCount];
+                Parallel.For(
+                    0,
+                    DataShardCount,
+                    new ParallelOptions
+                    {
+                        CancellationToken = cancellationToken,
+                        MaxDegreeOfParallelism = RecoveryWorkerCount,
+                    },
+                    dataIndex => dataDigests[dataIndex] = DualDigestBase64(data[dataIndex]));
+                foreach (string digest in dataDigests)
+                {
+                    section.DataDigests.Add(digest);
                 }
 
                 ComputeParity(data, parity, cancellationToken);
@@ -1586,18 +1836,38 @@ public sealed partial class RecoveryService
             {
                 var badData = new List<int>();
                 var goodParity = new List<int>();
+                var dataReads = new Task[section.DataShardCount];
                 for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
                 {
+                    int capturedIndex = dataIndex;
                     long shardOffset = section.Offset
                         + (((long)stripe * section.DataShardCount + dataIndex) * section.ShardSize);
-                    await ReadArchiveShardAsync(
+                    dataReads[dataIndex] = ReadArchiveShardAtAsync(
                         archive,
                         shardOffset,
                         section.Offset + section.Length,
-                        data[dataIndex],
-                        cancellationToken).ConfigureAwait(false);
+                        data[capturedIndex],
+                        cancellationToken);
+                }
+
+                await Task.WhenAll(dataReads).ConfigureAwait(false);
+                var validData = new bool[section.DataShardCount];
+                Parallel.For(
+                    0,
+                    section.DataShardCount,
+                    new ParallelOptions
+                    {
+                        CancellationToken = cancellationToken,
+                        MaxDegreeOfParallelism = RecoveryWorkerCount,
+                    },
+                    dataIndex =>
+                    {
                     string expected = section.DataDigests[(stripe * section.DataShardCount) + dataIndex];
-                    if (!DualDigestMatches(data[dataIndex], expected))
+                        validData[dataIndex] = DualDigestMatches(data[dataIndex], expected);
+                    });
+                for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
+                {
+                    if (!validData[dataIndex])
                     {
                         badData.Add(dataIndex);
                     }
@@ -1614,16 +1884,39 @@ public sealed partial class RecoveryService
                         $"KPAR2 cannot repair stripe {stripe} in {section.Name}: {badData.Count} bad data shards, but only {section.ParityShardCount} parity shards.");
                 }
 
+                var parityReads = new Task<bool>[section.ParityShardCount];
                 for (int parityIndex = 0; parityIndex < section.ParityShardCount; parityIndex++)
                 {
+                    int capturedIndex = parityIndex;
                     RecoveryParityShard parityInfo = section.Parity[
                         (stripe * section.ParityShardCount) + parityIndex];
-                    bool readable = await TryReadAtAsync(
+                    parityReads[parityIndex] = TryReadAtAsync(
                         recovery,
                         parityInfo.Offset,
-                        parity[parityIndex],
-                        cancellationToken).ConfigureAwait(false);
-                    if (readable && DualDigestMatches(parity[parityIndex], parityInfo.Digest))
+                        parity[capturedIndex],
+                        cancellationToken);
+                }
+
+                bool[] parityReadable = await Task.WhenAll(parityReads).ConfigureAwait(false);
+                var validParity = new bool[section.ParityShardCount];
+                Parallel.For(
+                    0,
+                    section.ParityShardCount,
+                    new ParallelOptions
+                    {
+                        CancellationToken = cancellationToken,
+                        MaxDegreeOfParallelism = RecoveryWorkerCount,
+                    },
+                    parityIndex =>
+                    {
+                        RecoveryParityShard parityInfo = section.Parity[
+                            (stripe * section.ParityShardCount) + parityIndex];
+                        validParity[parityIndex] = parityReadable[parityIndex]
+                            && DualDigestMatches(parity[parityIndex], parityInfo.Digest);
+                    });
+                for (int parityIndex = 0; parityIndex < section.ParityShardCount; parityIndex++)
+                {
+                    if (validParity[parityIndex])
                     {
                         goodParity.Add(parityIndex);
                     }
@@ -1635,26 +1928,52 @@ public sealed partial class RecoveryService
                         $"KPAR2 cannot repair stripe {stripe} in {section.Name}: {badData.Count} bad data shards and only {goodParity.Count} valid parity shards.");
                 }
 
-                RecoverBadShards(data, parity, badData, goodParity.Take(badData.Count).ToArray());
-                foreach (int dataIndex in badData)
+                RecoverBadShards(
+                    data,
+                    parity,
+                    badData,
+                    goodParity.Take(badData.Count).ToArray(),
+                    cancellationToken);
+                var repairedValid = new bool[badData.Count];
+                Parallel.For(
+                    0,
+                    badData.Count,
+                    new ParallelOptions
+                    {
+                        CancellationToken = cancellationToken,
+                        MaxDegreeOfParallelism = RecoveryWorkerCount,
+                    },
+                    repairIndex =>
+                    {
+                        int dataIndex = badData[repairIndex];
+                        string expected = section.DataDigests[(stripe * section.DataShardCount) + dataIndex];
+                        repairedValid[repairIndex] = DualDigestMatches(data[dataIndex], expected);
+                    });
+                for (int repairIndex = 0; repairIndex < badData.Count; repairIndex++)
                 {
-                    string expected = section.DataDigests[(stripe * section.DataShardCount) + dataIndex];
-                    if (!DualDigestMatches(data[dataIndex], expected))
+                    if (!repairedValid[repairIndex])
                     {
                         throw new InvalidDataException(
-                            $"KPAR2 reconstructed an invalid shard: {section.Name}, stripe {stripe}, shard {dataIndex}.");
+                            $"KPAR2 reconstructed an invalid shard: {section.Name}, stripe {stripe}, shard {badData[repairIndex]}.");
                     }
+                }
 
+                var writes = new Task[badData.Count];
+                for (int repairIndex = 0; repairIndex < badData.Count; repairIndex++)
+                {
+                    int dataIndex = badData[repairIndex];
                     long shardOffset = section.Offset
                         + (((long)stripe * section.DataShardCount + dataIndex) * section.ShardSize);
-                    await WriteArchiveShardAsync(
+                    writes[repairIndex] = WriteArchiveShardAtAsync(
                         archive,
                         shardOffset,
                         section.Offset + section.Length,
                         data[dataIndex],
-                        cancellationToken).ConfigureAwait(false);
-                    repaired++;
+                        cancellationToken);
                 }
+
+                await Task.WhenAll(writes).ConfigureAwait(false);
+                repaired = checked(repaired + badData.Count);
             }
         }
         finally
@@ -1849,7 +2168,8 @@ public sealed partial class RecoveryService
                             data,
                             parity,
                             badData,
-                            goodParity.Take(badData.Count).ToArray());
+                            goodParity.Take(badData.Count).ToArray(),
+                            cancellationToken);
                     }
 
                     for (int dataIndex = 0; dataIndex < DataShardCount; dataIndex++)
@@ -2201,6 +2521,7 @@ public sealed partial class RecoveryService
             || locator.MetadataOffset < PrefixLocatorBytes
             || locator.MetadataOffset % RecoveryBlockAlignment != 0
             || locator.MetadataEnvelopeLength is <= MetadataEnvelopeHeaderSize or > MaxMetadataEnvelopeBytes
+            || locator.MetadataEnvelopeLength > GetMaximumMetadataEnvelopeBytes(locator.ArchiveLength)
             || locator.MetadataStripeCount <= 0)
         {
             throw new InvalidDataException("KPAR2 locator contains invalid bounded fields.");
@@ -2280,10 +2601,11 @@ public sealed partial class RecoveryService
         }
     }
 
-    private static RecoveryManifest DeserializeCanonicalManifest(byte[] payload)
+    private static RecoveryManifest DeserializeCanonicalManifest(byte[] payload, long archiveLength)
     {
         try
         {
+            PreflightCanonicalManifest(payload, archiveLength);
             RecoveryManifest manifest = JsonSerializer.Deserialize(payload, RecoveryJsonContext.Default.RecoveryManifest)
                 ?? throw new InvalidDataException("KPAR2 manifest could not be read.");
             byte[] canonical = JsonSerializer.SerializeToUtf8Bytes(manifest, RecoveryJsonContext.Default.RecoveryManifest);
@@ -2306,6 +2628,207 @@ public sealed partial class RecoveryService
             throw new InvalidDataException("KPAR2 manifest is not valid canonical JSON.", ex);
         }
     }
+
+    /// <summary>
+    /// Applies allocation-free, geometry-bound JSON limits before the source-generated
+    /// deserializer is allowed to materialize strings, lists, or parity objects.
+    /// Canonical schema and exact section geometry are still checked afterwards.
+    /// </summary>
+    private static void PreflightCanonicalManifest(ReadOnlySpan<byte> payload, long archiveLength)
+    {
+        ManifestJsonLimits limits = GetManifestJsonLimits(archiveLength);
+        if (payload.Length == 0 || payload.Length > limits.MaximumPayloadBytes)
+        {
+            throw new InvalidDataException("KPAR2 manifest exceeds its archive-geometry JSON size limit.");
+        }
+
+        var reader = new Utf8JsonReader(
+            payload,
+            new JsonReaderOptions
+            {
+                AllowTrailingCommas = false,
+                CommentHandling = JsonCommentHandling.Disallow,
+                MaxDepth = MaxManifestJsonDepth,
+            });
+        Span<ManifestArrayKind> arrayKinds = stackalloc ManifestArrayKind[MaxManifestJsonDepth + 1];
+        Span<int> arrayElements = stackalloc int[MaxManifestJsonDepth + 1];
+        ManifestArrayKind pendingArrayKind = ManifestArrayKind.Other;
+        long tokenCount = 0;
+        int objectCount = 0;
+        int arrayCount = 0;
+        int sectionEntries = 0;
+        int dataDigestEntries = 0;
+        int parityEntries = 0;
+
+        while (reader.Read())
+        {
+            if (++tokenCount > limits.MaximumTokens)
+            {
+                throw new InvalidDataException("KPAR2 manifest exceeds its archive-geometry JSON token limit.");
+            }
+
+            JsonTokenType token = reader.TokenType;
+            if (token == JsonTokenType.PropertyName)
+            {
+                if (JsonTokenByteLength(ref reader) > MaxManifestPropertyNameUtf8Bytes)
+                {
+                    throw new InvalidDataException("KPAR2 manifest contains an oversized JSON property name.");
+                }
+
+                pendingArrayKind = reader.ValueTextEquals("Sections"u8)
+                    ? ManifestArrayKind.Sections
+                    : reader.ValueTextEquals("DataDigests"u8)
+                        ? ManifestArrayKind.DataDigests
+                        : reader.ValueTextEquals("Parity"u8)
+                            ? ManifestArrayKind.Parity
+                            : ManifestArrayKind.Other;
+                continue;
+            }
+
+            bool beginsValue = token is JsonTokenType.StartObject
+                or JsonTokenType.StartArray
+                or JsonTokenType.String
+                or JsonTokenType.Number
+                or JsonTokenType.True
+                or JsonTokenType.False
+                or JsonTokenType.Null;
+            if (beginsValue && reader.CurrentDepth > 0)
+            {
+                int parentDepth = reader.CurrentDepth - 1;
+                ManifestArrayKind parentKind = arrayKinds[parentDepth];
+                if (parentKind != ManifestArrayKind.None)
+                {
+                    int count = checked(++arrayElements[parentDepth]);
+                    if (count > limits.MaximumGenericListEntries)
+                    {
+                        throw new InvalidDataException("KPAR2 manifest contains an oversized JSON list.");
+                    }
+
+                    switch (parentKind)
+                    {
+                        case ManifestArrayKind.Sections when ++sectionEntries > MaxManifestSections:
+                            throw new InvalidDataException("KPAR2 manifest contains too many archive sections.");
+                        case ManifestArrayKind.DataDigests when ++dataDigestEntries > limits.MaximumDataDigests:
+                            throw new InvalidDataException("KPAR2 manifest contains too many data digests for its archive geometry.");
+                        case ManifestArrayKind.Parity when ++parityEntries > limits.MaximumParityEntries:
+                            throw new InvalidDataException("KPAR2 manifest contains too many parity entries for its archive geometry.");
+                    }
+                }
+            }
+
+            switch (token)
+            {
+                case JsonTokenType.StartObject:
+                    if (++objectCount > limits.MaximumObjects)
+                    {
+                        throw new InvalidDataException("KPAR2 manifest contains too many JSON objects.");
+                    }
+                    break;
+                case JsonTokenType.StartArray:
+                    if (++arrayCount > MaxManifestArrays)
+                    {
+                        throw new InvalidDataException("KPAR2 manifest contains too many JSON arrays.");
+                    }
+
+                    arrayKinds[reader.CurrentDepth] = pendingArrayKind;
+                    arrayElements[reader.CurrentDepth] = 0;
+                    break;
+                case JsonTokenType.EndArray:
+                    arrayKinds[reader.CurrentDepth] = ManifestArrayKind.None;
+                    arrayElements[reader.CurrentDepth] = 0;
+                    break;
+                case JsonTokenType.String:
+                    if (JsonTokenByteLength(ref reader) > MaxManifestStringUtf8Bytes)
+                    {
+                        throw new InvalidDataException("KPAR2 manifest contains an oversized JSON string.");
+                    }
+                    break;
+                case JsonTokenType.Number:
+                    if (JsonTokenByteLength(ref reader) > MaxManifestNumberUtf8Bytes)
+                    {
+                        throw new InvalidDataException("KPAR2 manifest contains an oversized JSON number.");
+                    }
+                    break;
+            }
+
+            if (beginsValue)
+            {
+                pendingArrayKind = ManifestArrayKind.Other;
+            }
+        }
+    }
+
+    private static long JsonTokenByteLength(ref Utf8JsonReader reader) =>
+        reader.HasValueSequence ? reader.ValueSequence.Length : reader.ValueSpan.Length;
+
+    private static int GetMaximumMetadataEnvelopeBytes(long archiveLength) =>
+        checked(MetadataEnvelopeHeaderSize + GetManifestJsonLimits(archiveLength).MaximumPayloadBytes);
+
+    private static ManifestJsonLimits GetManifestJsonLimits(long archiveLength)
+    {
+        if (archiveLength is < 0 or > MaxArchiveBytes)
+        {
+            throw new InvalidDataException("KPAR2 archive length is outside the supported range.");
+        }
+
+        // Creation always emits at most one header stripe. The remainder uses
+        // 20 x 4 MiB stripes once it is large enough to need more than one.
+        // Two extra stripes conservatively cover the header and a short body.
+        long maximumStripes = archiveLength == 0
+            ? 0
+            : checked(2 + DivideRoundUp(archiveLength, (long)DataShardCount * BodyShardSize));
+        long maximumDataDigests = checked(maximumStripes * DataShardCount);
+        long maximumParityEntries = checked(maximumStripes * ParityShardCount);
+        long maximumPayloadBytes = checked(
+            ManifestFixedBudgetBytes
+            + (maximumDataDigests * ManifestDataDigestBudgetBytes)
+            + (maximumParityEntries * ManifestParityEntryBudgetBytes));
+        maximumPayloadBytes = Math.Min(
+            maximumPayloadBytes,
+            MaxMetadataEnvelopeBytes - MetadataEnvelopeHeaderSize);
+        long maximumTokens = checked(
+            512
+            + (MaxManifestSections * 32L)
+            + maximumDataDigests
+            + (maximumParityEntries * 12L));
+        long maximumObjects = checked(1 + MaxManifestSections + maximumParityEntries);
+        long maximumGenericListEntries = checked(
+            MaxManifestSections + maximumDataDigests + maximumParityEntries);
+
+        return new ManifestJsonLimits(
+            checked((int)maximumPayloadBytes),
+            maximumTokens,
+            checked((int)maximumDataDigests),
+            checked((int)maximumParityEntries),
+            checked((int)maximumObjects),
+            checked((int)maximumGenericListEntries));
+    }
+
+    internal static void ValidateManifestJsonPreflightForTests(byte[] payload, long archiveLength)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+        PreflightCanonicalManifest(payload, archiveLength);
+    }
+
+    internal static int MaximumManifestJsonBytesForTests(long archiveLength) =>
+        GetManifestJsonLimits(archiveLength).MaximumPayloadBytes;
+
+    private enum ManifestArrayKind : byte
+    {
+        None,
+        Other,
+        Sections,
+        DataDigests,
+        Parity,
+    }
+
+    private readonly record struct ManifestJsonLimits(
+        int MaximumPayloadBytes,
+        long MaximumTokens,
+        int MaximumDataDigests,
+        int MaximumParityEntries,
+        int MaximumObjects,
+        int MaximumGenericListEntries);
 
     private static void ValidateManifest(
         RecoveryManifest manifest,
@@ -2489,7 +3012,7 @@ public sealed partial class RecoveryService
         string.Equals(manifestName, expectedName, StringComparison.Ordinal);
 
     private static async Task<bool> ArchiveMatchesManifestAsync(
-        FileStream archive,
+        Stream archive,
         RecoveryManifest manifest,
         CancellationToken cancellationToken)
     {
@@ -2605,7 +3128,37 @@ public sealed partial class RecoveryService
 
     private static (byte[] Sha3, byte[] Skein) ComputeDualHash(ReadOnlySpan<byte> data)
     {
-        return (Sha3_512Compat.HashData(data), Skein1024Digest.HashData(data));
+        byte[] copy = data.ToArray();
+        try
+        {
+            return ComputeDualHash(copy);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(copy);
+        }
+    }
+
+    private static (byte[] Sha3, byte[] Skein) ComputeDualHash(byte[] data)
+    {
+        byte[]? sha3 = null;
+        byte[]? skein = null;
+        try
+        {
+            Parallel.Invoke(
+                new ParallelOptions { MaxDegreeOfParallelism = Math.Min(2, RecoveryWorkerCount) },
+                () => sha3 = Sha3_512Compat.HashData(data),
+                () => skein = Skein1024Digest.HashData(data));
+            return (
+                sha3 ?? throw new CryptographicException("SHA3-512 recovery digest did not complete."),
+                skein ?? throw new CryptographicException("Skein-1024 recovery digest did not complete."));
+        }
+        catch
+        {
+            ZeroIfNotNull(sha3);
+            ZeroIfNotNull(skein);
+            throw;
+        }
     }
 
     private static bool IsHexDigest(string? value, int byteLength)
@@ -2641,7 +3194,7 @@ public sealed partial class RecoveryService
     }
 
     private static async Task<bool> HasEncryptedContainerMagicAsync(
-        FileStream input,
+        Stream input,
         CancellationToken cancellationToken)
     {
         if (input.Length < 7)
@@ -2654,7 +3207,7 @@ public sealed partial class RecoveryService
         {
             input.Position = 0;
             await input.ReadExactlyAsync(magic, cancellationToken).ConfigureAwait(false);
-            return magic.AsSpan().SequenceEqual("KZPAQ1\0"u8);
+            return magic.AsSpan().SequenceEqual("KZPAQ2\0"u8);
         }
         finally
         {
@@ -2678,7 +3231,7 @@ public sealed partial class RecoveryService
         try
         {
             await input.ReadExactlyAsync(prefix, cancellationToken).ConfigureAwait(false);
-            if (prefix.AsSpan().SequenceEqual("KZPAQ1\0"u8))
+            if (prefix.AsSpan().SequenceEqual("KZPAQ2\0"u8))
             {
                 await input.ReadExactlyAsync(lengthBytes, cancellationToken).ConfigureAwait(false);
                 int headerLength = BinaryPrimitives.ReadInt32LittleEndian(lengthBytes);
@@ -2752,63 +3305,274 @@ public sealed partial class RecoveryService
     }
 
     private static async Task<int> CopyArchiveForRecoveryAsync(
-        FileStream source,
+        IRecoveryRandomAccessSource source,
         FileStream destination,
         long length,
         CancellationToken cancellationToken)
     {
-        byte[] chunk = new byte[RecoveryCopyChunkBytes];
-        byte[] block = new byte[RecoveryBlockAlignment];
+        if (length < 0 || length > source.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length));
+        }
+        if (!destination.CanWrite || !destination.CanSeek)
+        {
+            throw new ArgumentException(
+                "The KPAR2 recovery candidate must be writable and seekable.",
+                nameof(destination));
+        }
+
+        int chunkCount = checked((int)DivideRoundUp(length, RecoveryCopyChunkBytes));
+        if (chunkCount == 0)
+        {
+            destination.SetLength(0);
+            return 0;
+        }
+
+        int workerCount = Math.Min(RecoveryWorkerCount, chunkCount);
         int unreadableBlocks = 0;
+        using var workerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        CancellationToken workerToken = workerCts.Token;
+        var failureGate = new object();
+        ExceptionDispatchInfo? primaryFailure = null;
+        var secondaryFailures = new List<Exception>();
+        var startWorkers = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var workers = new Task[workerCount];
+        Array.Fill(workers, Task.CompletedTask);
+        for (int worker = 0; worker < workers.Length; worker++)
+        {
+            int workerIndex = worker;
+            try
+            {
+                RecoveryCopyWorkerScheduleHookOverride.Value?.Invoke(workerIndex);
+                workers[worker] = Task.Run(
+                    async () =>
+                    {
+                        try
+                        {
+                            await startWorkers.Task.ConfigureAwait(false);
+                            await CopyArchiveWorkerAsync(workerIndex).ConfigureAwait(false);
+                        }
+                        catch (Exception failure)
+                        {
+                            RecordFailureAndCancelSiblings(failure);
+                        }
+                    },
+                    CancellationToken.None);
+            }
+            catch (Exception schedulingFailure)
+            {
+                RecordFailureAndCancelSiblings(schedulingFailure);
+                break;
+            }
+        }
+
+        // No worker can consume a chunk until every worker has either been
+        // scheduled or scheduling has failed. This prevents synchronously
+        // completing RandomAccess ValueTasks from letting worker zero drain the
+        // entire queue while its siblings have not even been created yet.
+        startWorkers.TrySetResult();
         try
         {
-            for (long chunkOffset = 0; chunkOffset < length; chunkOffset += chunk.Length)
+            await Task.WhenAll(workers).ConfigureAwait(false);
+        }
+        catch (Exception taskFailure)
+        {
+            // Worker bodies capture their failures, but retain a fail-closed
+            // boundary for an unexpected TaskScheduler/runtime failure too.
+            RecordFailureAndCancelSiblings(taskFailure);
+        }
+        ExceptionDispatchInfo? capturedPrimary;
+        Exception[] capturedSecondary;
+        lock (failureGate)
+        {
+            capturedPrimary = primaryFailure;
+            capturedSecondary = secondaryFailures.ToArray();
+        }
+
+        if (capturedPrimary is not null)
+        {
+            if (capturedSecondary.Length == 0)
             {
-                int chunkLength = (int)Math.Min(chunk.Length, length - chunkOffset);
-                bool chunkReadable = await TryReadAtAsync(
-                    source,
-                    chunkOffset,
-                    chunk.AsMemory(0, chunkLength),
-                    cancellationToken).ConfigureAwait(false);
-                if (chunkReadable)
+                capturedPrimary.Throw();
+            }
+
+            throw new AggregateException(
+                "KPAR2 parallel archive copying failed and one or more sibling or cancellation-cleanup operations also failed.",
+                [capturedPrimary.SourceException, .. capturedSecondary]);
+        }
+
+        destination.SetLength(length);
+        return unreadableBlocks;
+
+        void RecordFailureAndCancelSiblings(Exception failure)
+        {
+            bool firstFailure;
+            lock (failureGate)
+            {
+                firstFailure = primaryFailure is null;
+                if (firstFailure)
                 {
-                    destination.Position = chunkOffset;
-                    await destination.WriteAsync(
-                        chunk.AsMemory(0, chunkLength),
-                        cancellationToken).ConfigureAwait(false);
-                    CryptographicOperations.ZeroMemory(chunk.AsSpan(0, chunkLength));
-                    continue;
+                    primaryFailure = ExceptionDispatchInfo.Capture(failure);
                 }
-
-                for (int relativeOffset = 0; relativeOffset < chunkLength; relativeOffset += block.Length)
+                else if (failure is not OperationCanceledException || !workerCts.IsCancellationRequested)
                 {
-                    int blockLength = Math.Min(block.Length, chunkLength - relativeOffset);
-                    long sourceOffset = chunkOffset + relativeOffset;
-                    bool blockReadable = await TryReadAtAsync(
-                        source,
-                        sourceOffset,
-                        block.AsMemory(0, blockLength),
-                        cancellationToken).ConfigureAwait(false);
-                    if (!blockReadable)
-                    {
-                        CryptographicOperations.ZeroMemory(block.AsSpan(0, blockLength));
-                        unreadableBlocks++;
-                    }
-
-                    destination.Position = sourceOffset;
-                    await destination.WriteAsync(
-                        block.AsMemory(0, blockLength),
-                        cancellationToken).ConfigureAwait(false);
-                    CryptographicOperations.ZeroMemory(block.AsSpan(0, blockLength));
+                    secondaryFailures.Add(failure);
                 }
             }
 
-            return unreadableBlocks;
+            if (!firstFailure)
+            {
+                return;
+            }
+
+            try
+            {
+                workerCts.Cancel();
+            }
+            catch (Exception cancellationFailure)
+            {
+                lock (failureGate)
+                {
+                    secondaryFailures.Add(cancellationFailure);
+                }
+            }
         }
-        finally
+
+        async Task CopyArchiveWorkerAsync(int workerIndex)
         {
-            CryptographicOperations.ZeroMemory(chunk);
-            CryptographicOperations.ZeroMemory(block);
+            byte[]? chunk = null;
+            byte[]? block = null;
+            int localUnreadableBlocks = 0;
+            try
+            {
+                workerToken.ThrowIfCancellationRequested();
+                chunk = new byte[RecoveryCopyChunkBytes];
+                block = new byte[RecoveryBlockAlignment];
+                for (int chunkIndex = workerIndex;
+                     chunkIndex < chunkCount;
+                     chunkIndex = checked(chunkIndex + workerCount))
+                {
+                    workerToken.ThrowIfCancellationRequested();
+                    Func<int, int, CancellationToken, ValueTask>? chunkHook =
+                        RecoveryCopyChunkHookOverride.Value;
+                    if (chunkHook is not null)
+                    {
+                        await chunkHook(workerIndex, chunkIndex, workerToken).ConfigureAwait(false);
+                    }
+
+                    long chunkOffset = checked((long)chunkIndex * RecoveryCopyChunkBytes);
+                    int chunkLength = (int)Math.Min(
+                        RecoveryCopyChunkBytes,
+                        length - chunkOffset);
+                    bool chunkReadable = await TryReadAtAsync(
+                        source,
+                        chunkOffset,
+                        chunk.AsMemory(0, chunkLength),
+                        workerToken).ConfigureAwait(false);
+                    if (chunkReadable)
+                    {
+                        await RandomAccess.WriteAsync(
+                            destination.SafeFileHandle,
+                            chunk.AsMemory(0, chunkLength),
+                            chunkOffset,
+                            workerToken).ConfigureAwait(false);
+                        CryptographicOperations.ZeroMemory(chunk.AsSpan(0, chunkLength));
+                        continue;
+                    }
+
+                    for (int relativeOffset = 0;
+                         relativeOffset < chunkLength;
+                         relativeOffset += RecoveryBlockAlignment)
+                    {
+                        int blockLength = Math.Min(
+                            RecoveryBlockAlignment,
+                            chunkLength - relativeOffset);
+                        long sourceOffset = checked(chunkOffset + relativeOffset);
+                        bool blockReadable = await TryReadAtAsync(
+                            source,
+                            sourceOffset,
+                            block.AsMemory(0, blockLength),
+                            workerToken).ConfigureAwait(false);
+                        if (!blockReadable)
+                        {
+                            CryptographicOperations.ZeroMemory(block.AsSpan(0, blockLength));
+                            localUnreadableBlocks++;
+                        }
+
+                        await RandomAccess.WriteAsync(
+                            destination.SafeFileHandle,
+                            block.AsMemory(0, blockLength),
+                            sourceOffset,
+                            workerToken).ConfigureAwait(false);
+                        CryptographicOperations.ZeroMemory(block.AsSpan(0, blockLength));
+                    }
+                }
+            }
+            catch (Exception failure)
+            {
+                RecordFailureAndCancelSiblings(failure);
+            }
+            finally
+            {
+                if (localUnreadableBlocks != 0)
+                {
+                    Interlocked.Add(ref unreadableBlocks, localUnreadableBlocks);
+                }
+                ZeroIfNotNull(chunk);
+                ZeroIfNotNull(block);
+            }
+        }
+    }
+
+    internal static async Task<int> CopyArchiveForRecoveryForTestsAsync(
+        FileStream source,
+        FileStream destination,
+        long length,
+        int workers,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(destination);
+        using IDisposable workerScope = UseRecoveryWorkerCountForTests(workers);
+        return await CopyArchiveForRecoveryAsync(
+            new FileRecoveryRandomAccessSource(source, enableTestFaults: false),
+            destination,
+            length,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<bool> TryReadAtAsync(
+        IRecoveryRandomAccessSource source,
+        long offset,
+        Memory<byte> destination,
+        CancellationToken cancellationToken)
+    {
+        CryptographicOperations.ZeroMemory(destination.Span);
+        try
+        {
+            int total = 0;
+            while (total < destination.Length)
+            {
+                int read = await source.ReadAtAsync(
+                    destination[total..],
+                    checked(offset + total),
+                    cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                {
+                    CryptographicOperations.ZeroMemory(destination.Span);
+                    return false;
+                }
+
+                total += read;
+            }
+
+            return true;
+        }
+        catch (IOException)
+        {
+            CryptographicOperations.ZeroMemory(destination.Span);
+            return false;
         }
     }
 
@@ -2837,8 +3601,8 @@ public sealed partial class RecoveryService
             int total = 0;
             while (total < destination.Length)
             {
-                int read = await RandomAccess.ReadAsync(
-                    stream.SafeFileHandle,
+                int read = await ReadAtOffsetAsync(
+                    stream,
                     destination[total..],
                     checked(offset + total),
                     cancellationToken).ConfigureAwait(false);
@@ -2858,6 +3622,21 @@ public sealed partial class RecoveryService
             CryptographicOperations.ZeroMemory(destination.Span);
             return false;
         }
+    }
+
+    private static ValueTask<int> ReadAtOffsetAsync(
+        FileStream stream,
+        Memory<byte> destination,
+        long offset,
+        CancellationToken cancellationToken)
+    {
+        return stream is IPrivateSnapshotRandomAccess mapped
+            ? mapped.ReadAtAsync(destination, offset, cancellationToken)
+            : RandomAccess.ReadAsync(
+                stream.SafeFileHandle,
+                destination,
+                offset,
+                cancellationToken);
     }
 
     private static int ChooseHeaderShardSize(long headerLength)
@@ -2909,26 +3688,27 @@ public sealed partial class RecoveryService
         return value == 0 ? 0 : checked(((value - 1) / divisor) + 1);
     }
 
-    private static async Task ReadArchiveShardAsync(
+    private static async Task ReadArchiveShardAtAsync(
         FileStream archive,
         long shardOffset,
         long sectionEnd,
         byte[] destination,
         CancellationToken cancellationToken)
     {
-        Array.Clear(destination);
+        CryptographicOperations.ZeroMemory(destination);
         if (shardOffset >= sectionEnd)
         {
             return;
         }
 
-        int toRead = (int)Math.Min(destination.Length, sectionEnd - shardOffset);
-        archive.Position = shardOffset;
+        int toRead = checked((int)Math.Min(destination.Length, sectionEnd - shardOffset));
         int total = 0;
         while (total < toRead)
         {
-            int read = await archive.ReadAsync(
+            int read = await ReadAtOffsetAsync(
+                archive,
                 destination.AsMemory(total, toRead - total),
+                checked(shardOffset + total),
                 cancellationToken).ConfigureAwait(false);
             if (read == 0)
             {
@@ -2940,7 +3720,7 @@ public sealed partial class RecoveryService
         }
     }
 
-    private static async Task WriteArchiveShardAsync(
+    private static async Task WriteArchiveShardAtAsync(
         FileStream archive,
         long shardOffset,
         long sectionEnd,
@@ -2952,16 +3732,20 @@ public sealed partial class RecoveryService
             return;
         }
 
-        int toWrite = (int)Math.Min(source.Length, sectionEnd - shardOffset);
-        archive.Position = shardOffset;
-        await archive.WriteAsync(source.AsMemory(0, toWrite), cancellationToken).ConfigureAwait(false);
+        int toWrite = checked((int)Math.Min(source.Length, sectionEnd - shardOffset));
+        await RandomAccess.WriteAsync(
+            archive.SafeFileHandle,
+            source.AsMemory(0, toWrite),
+            shardOffset,
+            cancellationToken).ConfigureAwait(false);
     }
 
     private static void RecoverBadShards(
         byte[][] data,
         byte[][] parity,
         IReadOnlyList<int> badData,
-        IReadOnlyList<int> parityRows)
+        IReadOnlyList<int> parityRows,
+        CancellationToken cancellationToken)
     {
         if (badData.Count == 0)
         {
@@ -2978,28 +3762,15 @@ public sealed partial class RecoveryService
         byte[,] matrix = new byte[missingCount, missingCount];
         try
         {
+            var isMissing = new bool[data.Length];
+            foreach (int index in badData)
+            {
+                isMissing[index] = true;
+            }
+
             for (int equation = 0; equation < missingCount; equation++)
             {
                 int parityIndex = parityRows[equation];
-                Buffer.BlockCopy(
-                    parity[parityIndex],
-                    0,
-                    syndromes[equation],
-                    0,
-                    parity[parityIndex].Length);
-                for (int dataIndex = 0; dataIndex < data.Length; dataIndex++)
-                {
-                    if (badData.Contains(dataIndex))
-                    {
-                        continue;
-                    }
-
-                    XorScaledInto(
-                        syndromes[equation],
-                        data[dataIndex],
-                        GfPow((byte)(dataIndex + 1), parityIndex));
-                }
-
                 for (int missingIndex = 0; missingIndex < missingCount; missingIndex++)
                 {
                     matrix[equation, missingIndex] = GfPow(
@@ -3008,19 +3779,86 @@ public sealed partial class RecoveryService
                 }
             }
 
+            int shardLength = parity[0].Length;
+            int rangeCount = checked((int)DivideRoundUp(shardLength, RecoveryParallelChunkBytes));
+            int syndromeWorkItems = checked(missingCount * rangeCount);
+            Parallel.For(
+                0,
+                syndromeWorkItems,
+                new ParallelOptions
+                {
+                    CancellationToken = cancellationToken,
+                    MaxDegreeOfParallelism = RecoveryWorkerCount,
+                },
+                workItem =>
+                {
+                    int equation = workItem / rangeCount;
+                    int rangeIndex = workItem % rangeCount;
+                    int offset = checked(rangeIndex * RecoveryParallelChunkBytes);
+                    int length = Math.Min(RecoveryParallelChunkBytes, shardLength - offset);
+                    int parityIndex = parityRows[equation];
+                    Buffer.BlockCopy(
+                        parity[parityIndex],
+                        offset,
+                        syndromes[equation],
+                        offset,
+                        length);
+                    for (int dataIndex = 0; dataIndex < data.Length; dataIndex++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (isMissing[dataIndex])
+                        {
+                            continue;
+                        }
+
+                        XorScaledIntoRange(
+                            syndromes[equation],
+                            data[dataIndex],
+                            ParityMultiplicationTables[(parityIndex * DataShardCount) + dataIndex],
+                            offset,
+                            length);
+                    }
+                });
+
             byte[,] inverse = InvertMatrix(matrix, missingCount);
+            var inverseTables = new byte[missingCount, missingCount][];
             for (int missingIndex = 0; missingIndex < missingCount; missingIndex++)
             {
-                byte[] recovered = data[badData[missingIndex]];
-                CryptographicOperations.ZeroMemory(recovered);
-                for (int parityIndex = 0; parityIndex < missingCount; parityIndex++)
+                for (int equation = 0; equation < missingCount; equation++)
                 {
-                    XorScaledInto(
-                        recovered,
-                        syndromes[parityIndex],
-                        inverse[missingIndex, parityIndex]);
+                    inverseTables[missingIndex, equation] = BuildMultiplicationTable(
+                        inverse[missingIndex, equation]);
                 }
             }
+
+            int recoveryWorkItems = checked(missingCount * rangeCount);
+            Parallel.For(
+                0,
+                recoveryWorkItems,
+                new ParallelOptions
+                {
+                    CancellationToken = cancellationToken,
+                    MaxDegreeOfParallelism = RecoveryWorkerCount,
+                },
+                workItem =>
+                {
+                    int missingIndex = workItem / rangeCount;
+                    int rangeIndex = workItem % rangeCount;
+                    int offset = checked(rangeIndex * RecoveryParallelChunkBytes);
+                    int length = Math.Min(RecoveryParallelChunkBytes, shardLength - offset);
+                    byte[] recovered = data[badData[missingIndex]];
+                    CryptographicOperations.ZeroMemory(recovered.AsSpan(offset, length));
+                    for (int equation = 0; equation < missingCount; equation++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        XorScaledIntoRange(
+                            recovered,
+                            syndromes[equation],
+                            inverseTables[missingIndex, equation],
+                            offset,
+                            length);
+                    }
+                });
         }
         finally
         {
@@ -3047,32 +3885,35 @@ public sealed partial class RecoveryService
         }
     }
 
-    private static void XorInto(byte[] target, byte[] source)
+    private static void XorIntoRange(
+        byte[] target,
+        byte[] source,
+        int offset,
+        int length)
     {
-        int index = 0;
+        int index = offset;
+        int end = checked(offset + length);
         int vectorLength = Vector<byte>.Count;
-        for (; index <= target.Length - vectorLength; index += vectorLength)
+        for (; index <= end - vectorLength; index += vectorLength)
         {
             (new Vector<byte>(target, index) ^ new Vector<byte>(source, index)).CopyTo(target, index);
         }
 
-        for (; index < target.Length; index++)
+        for (; index < end; index++)
         {
             target[index] ^= source[index];
         }
     }
 
-    private static void XorScaledInto(byte[] target, byte[] source, byte coefficient)
+    private static void XorScaledIntoRange(
+        byte[] target,
+        byte[] source,
+        byte[] multiplicationTable,
+        int offset,
+        int length)
     {
-        for (int i = 0; i < target.Length; i++)
-        {
-            target[i] ^= GfMul(coefficient, source[i]);
-        }
-    }
-
-    private static void XorScaledInto(byte[] target, byte[] source, byte[] multiplicationTable)
-    {
-        for (int index = 0; index < target.Length; index++)
+        int end = checked(offset + length);
+        for (int index = offset; index < end; index++)
         {
             target[index] ^= multiplicationTable[source[index]];
         }
@@ -3083,7 +3924,7 @@ public sealed partial class RecoveryService
         byte[][] parity,
         CancellationToken cancellationToken)
     {
-        void ComputeRow(int parityIndex)
+        void ComputeRange(int parityIndex, int offset, int length)
         {
             for (int dataIndex = 0; dataIndex < data.Length; dataIndex++)
             {
@@ -3091,23 +3932,28 @@ public sealed partial class RecoveryService
                 byte coefficient = GfPow((byte)(dataIndex + 1), parityIndex);
                 if (coefficient == 1)
                 {
-                    XorInto(parity[parityIndex], data[dataIndex]);
+                    XorIntoRange(parity[parityIndex], data[dataIndex], offset, length);
                 }
                 else
                 {
-                    XorScaledInto(
+                    XorScaledIntoRange(
                         parity[parityIndex],
                         data[dataIndex],
-                        ParityMultiplicationTables[(parityIndex * DataShardCount) + dataIndex]);
+                        ParityMultiplicationTables[(parityIndex * DataShardCount) + dataIndex],
+                        offset,
+                        length);
                 }
             }
         }
 
-        if (data[0].Length < 256 * 1024)
+        int shardLength = data[0].Length;
+        int rangeCount = checked((int)DivideRoundUp(shardLength, RecoveryParallelChunkBytes));
+        int workItems = checked(parity.Length * rangeCount);
+        if (RecoveryWorkerCount == 1 || workItems == 1)
         {
             for (int parityIndex = 0; parityIndex < parity.Length; parityIndex++)
             {
-                ComputeRow(parityIndex);
+                ComputeRange(parityIndex, 0, shardLength);
             }
 
             return;
@@ -3115,13 +3961,106 @@ public sealed partial class RecoveryService
 
         Parallel.For(
             0,
-            parity.Length,
+            workItems,
             new ParallelOptions
             {
                 CancellationToken = cancellationToken,
-                MaxDegreeOfParallelism = ParityShardCount,
+                MaxDegreeOfParallelism = RecoveryWorkerCount,
             },
-            ComputeRow);
+            workItem =>
+            {
+                int parityIndex = workItem / rangeCount;
+                int rangeIndex = workItem % rangeCount;
+                int offset = checked(rangeIndex * RecoveryParallelChunkBytes);
+                int length = Math.Min(RecoveryParallelChunkBytes, shardLength - offset);
+                ComputeRange(parityIndex, offset, length);
+            });
+    }
+
+    /// <summary>
+    /// Test-only entry point that exercises the exact production RS parity
+    /// implementation with a fixed worker count. It exists so release tests
+    /// can prove that the parallel traversal is byte-identical to one worker.
+    /// </summary>
+    internal static byte[][] ComputeParityForWorkerEquivalenceTests(
+        byte[][] data,
+        int workers,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateCodingFixtureForTests(data, expectedCount: DataShardCount);
+        byte[][] parity = AllocateShards(ParityShardCount, data[0].Length);
+        try
+        {
+            using IDisposable scope = UseRecoveryWorkerCountForTests(workers);
+            ComputeParity(data, parity, cancellationToken);
+            return parity;
+        }
+        catch
+        {
+            ZeroShards(parity);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Test-only entry point for the production reconstruction path. The first
+    /// <paramref name="missingDataIndexes"/> parity rows form the recovery
+    /// equations, matching the authenticated sidecar reader's normal choice.
+    /// </summary>
+    internal static void RecoverForWorkerEquivalenceTests(
+        byte[][] data,
+        byte[][] parity,
+        IReadOnlyList<int> missingDataIndexes,
+        int workers,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateCodingFixtureForTests(data, expectedCount: DataShardCount);
+        ValidateCodingFixtureForTests(
+            parity,
+            expectedCount: ParityShardCount,
+            expectedLength: data[0].Length);
+        ArgumentNullException.ThrowIfNull(missingDataIndexes);
+        if (missingDataIndexes.Count is < 1 or > ParityShardCount
+            || missingDataIndexes.Distinct().Count() != missingDataIndexes.Count
+            || missingDataIndexes.Any(index => index < 0 || index >= DataShardCount))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(missingDataIndexes),
+                "A recovery fixture must name one to three distinct data shards.");
+        }
+
+        int[] parityRows = Enumerable.Range(0, missingDataIndexes.Count).ToArray();
+        using IDisposable scope = UseRecoveryWorkerCountForTests(workers);
+        RecoverBadShards(
+            data,
+            parity,
+            missingDataIndexes,
+            parityRows,
+            cancellationToken);
+    }
+
+    private static void ValidateCodingFixtureForTests(
+        byte[][] shards,
+        int expectedCount,
+        int? expectedLength = null)
+    {
+        ArgumentNullException.ThrowIfNull(shards);
+        if (shards.Length != expectedCount
+            || shards.Any(shard => shard is null)
+            || shards[0].Length == 0)
+        {
+            throw new ArgumentException(
+                $"The coding fixture must contain exactly {expectedCount} non-empty shards.",
+                nameof(shards));
+        }
+
+        int length = expectedLength ?? shards[0].Length;
+        if (shards.Any(shard => shard.Length != length))
+        {
+            throw new ArgumentException(
+                "Every coding fixture shard must have the same length.",
+                nameof(shards));
+        }
     }
 
     private static byte GfMul(byte a, byte b)
@@ -3327,6 +4266,253 @@ public sealed partial class RecoveryService
         return tables;
     }
 
+    private static byte[] BuildMultiplicationTable(byte coefficient)
+    {
+        byte[] table = new byte[256];
+        for (int value = 0; value < table.Length; value++)
+        {
+            table[value] = GfMul(coefficient, (byte)value);
+        }
+
+        return table;
+    }
+
+    private interface IRecoveryRandomAccessSource
+    {
+        long Length { get; }
+
+        int ReadAt(Span<byte> destination, long offset);
+
+        ValueTask<int> ReadAtAsync(
+            Memory<byte> destination,
+            long offset,
+            CancellationToken cancellationToken);
+    }
+
+    private sealed class FileRecoveryRandomAccessSource(
+        FileStream stream,
+        bool enableTestFaults) : IRecoveryRandomAccessSource
+    {
+        public long Length => stream.Length;
+
+        public int ReadAt(Span<byte> destination, long offset)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
+            ThrowIfInjected(offset, destination.Length);
+            return RandomAccess.Read(stream.SafeFileHandle, destination, offset);
+        }
+
+        public ValueTask<int> ReadAtAsync(
+            Memory<byte> destination,
+            long offset,
+            CancellationToken cancellationToken)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfInjected(offset, destination.Length);
+            return RandomAccess.ReadAsync(
+                stream.SafeFileHandle,
+                destination,
+                offset,
+                cancellationToken);
+        }
+
+        private void ThrowIfInjected(long offset, int length)
+        {
+            Func<long, int, bool>? fault = enableTestFaults
+                ? RecoverySourceReadFaultOverride.Value
+                : null;
+            if (length != 0 && fault?.Invoke(offset, length) == true)
+            {
+                throw new IOException(
+                    $"Injected physical EIO for KPAR2 recovery source range {offset}..{checked(offset + length)}.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Presents descriptor-relative random reads as one seekable verification
+    /// stream without transferring ownership of the held source descriptor.
+    /// </summary>
+    private sealed class RecoveryRandomAccessStream(
+        IRecoveryRandomAccessSource source) : Stream
+    {
+        private long _position;
+
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
+        public override bool CanWrite => false;
+        public override long Length => source.Length;
+
+        public override long Position
+        {
+            get => _position;
+            set
+            {
+                if (value < 0 || value > Length)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+
+                _position = value;
+            }
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+            if (buffer.Length - offset < count)
+            {
+                throw new ArgumentException("The recovery-read destination range escapes its array.", nameof(count));
+            }
+
+            return Read(buffer.AsSpan(offset, count));
+        }
+
+        public override int Read(Span<byte> buffer)
+        {
+            int requested = ClampRead(buffer.Length);
+            if (requested == 0)
+            {
+                return 0;
+            }
+
+            int read = source.ReadAt(buffer[..requested], _position);
+            _position = checked(_position + read);
+            return read;
+        }
+
+        public override Task<int> ReadAsync(
+            byte[] buffer,
+            int offset,
+            int count,
+            CancellationToken cancellationToken) =>
+            ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+        public override async ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default)
+        {
+            int requested = ClampRead(buffer.Length);
+            if (requested == 0)
+            {
+                return 0;
+            }
+
+            int read = await source.ReadAtAsync(
+                buffer[..requested],
+                _position,
+                cancellationToken).ConfigureAwait(false);
+            _position = checked(_position + read);
+            return read;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            long target = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => checked(_position + offset),
+                SeekOrigin.End => checked(Length + offset),
+                _ => throw new ArgumentOutOfRangeException(nameof(origin)),
+            };
+            Position = target;
+            return target;
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Write(ReadOnlySpan<byte> buffer) => throw new NotSupportedException();
+
+        private int ClampRead(int requested)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(requested);
+            long remaining = Length - _position;
+            return remaining <= 0 ? 0 : (int)Math.Min(requested, remaining);
+        }
+    }
+
+    private sealed class RecoveryWorkerOverrideScope(int? previous) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                RecoveryWorkerOverride.Value = previous;
+            }
+        }
+    }
+
+    private sealed class RecoverySourceReadFaultOverrideScope(
+        Func<long, int, bool>? previous) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                RecoverySourceReadFaultOverride.Value = previous;
+            }
+        }
+    }
+
+    private sealed class RecoveryKeyDerivationHookOverrideScope(
+        Action<RecoveryKeyDerivationTestStage, byte[], byte[]?>? previous) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                RecoveryKeyDerivationHookOverride.Value = previous;
+            }
+        }
+    }
+
+    private sealed class RecoveryCopyChunkHookOverrideScope(
+        Func<int, int, CancellationToken, ValueTask>? previous) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                RecoveryCopyChunkHookOverride.Value = previous;
+            }
+        }
+    }
+
+    private sealed class RecoveryCopyWorkerScheduleHookOverrideScope(
+        Action<int>? previous) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                RecoveryCopyWorkerScheduleHookOverride.Value = previous;
+            }
+        }
+    }
+
     [JsonSourceGenerationOptions(
         PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
         WriteIndented = false,
@@ -3361,12 +4547,22 @@ public sealed partial class RecoveryService
                 _sha3Lock = sha3Lock;
                 _skeinLock = skeinLock;
             }
-            catch
+            catch (Exception operationFailure)
             {
-                skeinLock?.Dispose();
-                sha3Lock?.Dispose();
                 CryptographicOperations.ZeroMemory(Sha3Key);
                 CryptographicOperations.ZeroMemory(SkeinKey);
+                try
+                {
+                    SecureMemory.DisposeAll(skeinLock, sha3Lock);
+                }
+                catch (Exception cleanupFailure)
+                {
+                    throw new AggregateException(
+                        "KPAR2 key construction failed and one or more memory locks could not be released.",
+                        operationFailure,
+                        cleanupFailure);
+                }
+
                 throw;
             }
         }
@@ -3375,6 +4571,12 @@ public sealed partial class RecoveryService
 
         public byte[] SkeinKey { get; }
 
+        internal void ZeroForDisposal()
+        {
+            CryptographicOperations.ZeroMemory(Sha3Key);
+            CryptographicOperations.ZeroMemory(SkeinKey);
+        }
+
         public void Dispose()
         {
             if (_disposed)
@@ -3382,13 +4584,17 @@ public sealed partial class RecoveryService
                 return;
             }
 
+            ZeroForDisposal();
+            SecureMemory.DisposeAll(_skeinLock, _sha3Lock);
             _disposed = true;
-            CryptographicOperations.ZeroMemory(Sha3Key);
-            CryptographicOperations.ZeroMemory(SkeinKey);
-            _skeinLock.Dispose();
-            _sha3Lock.Dispose();
         }
     }
+}
+
+internal enum RecoveryKeyDerivationTestStage
+{
+    AfterSha3 = 0,
+    AfterSkein = 1,
 }
 
 public sealed record RecoveryRepairResult(

@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/zsh -f
 # Builds the portable Keep Vault release for macOS, the counterpart of
 # tools/Build-Portable.ps1 on Windows.
 #
@@ -11,6 +11,43 @@
 # checked before anything is launched.
 set -euo pipefail
 umask 077
+PATH='/usr/bin:/bin:/usr/sbin:/sbin'
+export PATH
+unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+  RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES SSL_CERT_FILE \
+  SSL_CERT_DIR CURL_HOME XDG_CONFIG_HOME
+unset DEVELOPER_DIR SDKROOT TOOLCHAINS
+unset CCC_OVERRIDE_OPTIONS COMPILER_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH \
+  OBJC_INCLUDE_PATH LIBRARY_PATH GCC_EXEC_PREFIX ADDITIONAL_SWIFT_DRIVER_FLAGS \
+  SWIFT_EXEC SWIFT_DRIVER_SWIFT_FRONTEND_EXEC SWIFT_DRIVER_SWIFTSCAN_LIB \
+  SWIFT_DRIVER_TOOLCHAIN_CASPLUGIN_LIB DYLD_INSERT_LIBRARIES DYLD_LIBRARY_PATH \
+  DYLD_FRAMEWORK_PATH DYLD_FALLBACK_LIBRARY_PATH DYLD_FALLBACK_FRAMEWORK_PATH
+unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE DOTNET_ROOT \
+  DOTNET_ROOT_X64 DOTNET_ROOT_ARM64 DOTNET_HOST_PATH DOTNET_DiagnosticPorts \
+  DOTNET_DefaultDiagnosticPortSuspend DOTNET_ROLL_FORWARD \
+  DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX DOTNET_ROLL_FORWARD_TO_PRERELEASE \
+  DOTNET_MULTILEVEL_LOOKUP CORECLR_ENABLE_PROFILING CORECLR_PROFILER \
+  CORECLR_PROFILER_PATH CORECLR_PROFILER_PATH_32 CORECLR_PROFILER_PATH_64 \
+  CORECLR_PROFILER_PATH_ARM64 COR_ENABLE_PROFILING COR_PROFILER \
+  COR_PROFILER_PATH COR_PROFILER_PATH_32 COR_PROFILER_PATH_64 \
+  COMPlus_AltJit COMPlus_AltJitName DOTNET_AltJit DOTNET_AltJitName \
+  MSBuildSDKsPath MSBUILD_EXE_PATH MSBuildExtensionsPath \
+  MSBuildExtensionsPath32 MSBuildExtensionsPath64 MSBuildUserExtensionsPath \
+  MSBuildToolsPath MSBuildBinPath MSBUILDLEGACYEXTENSIONSPATH \
+  MSBUILDADDITIONALSDKRESOLVERSFOLDER CustomBeforeMicrosoftCommonTargets \
+  CustomAfterMicrosoftCommonTargets CustomBeforeMicrosoftCSharpTargets \
+  CustomAfterMicrosoftCSharpTargets DirectoryBuildPropsPath \
+  DirectoryBuildTargetsPath ImportDirectoryBuildProps ImportDirectoryBuildTargets \
+  DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR \
+  DOTNET_MSBUILD_SDK_RESOLVER_SDKS_VER NUGET_PLUGIN_PATHS \
+  NUGET_CREDENTIALPROVIDERS_PATH NUGET_EXTENSIONS_PATH NUGET_PACKAGES \
+  NUGET_HTTP_CACHE_PATH NUGET_SCRATCH RestoreSources \
+  RestoreAdditionalProjectSources RestoreFallbackFolders RestorePackagesPath \
+  RestoreConfigFile
+export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
+
+env_path=/usr/bin/env
+private_temp_parent=/private/tmp
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
@@ -25,55 +62,15 @@ identity=${KEEPVAULT_CODESIGN_IDENTITY:-}
 notary_profile=${KEEPVAULT_NOTARY_PROFILE:-}
 self_test_rollback=0
 pfx_path=${KEEPVAULT_HYBRID_PFX:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/hybrid-rsa4096.pfx}
-mldsa_private_key=${KEEPVAULT_MLDSA_PRIVATE_KEY:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key}
-mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${mldsa_private_key}.enc}
-mldsa_keychain_service=${KEEPVAULT_MLDSA_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-wrapping-key}
-pfx_password_encrypted=${KEEPVAULT_PFX_PASSWORD_ENCRYPTED:-${pfx_path}.password.enc}
-mldsa_keychain_account=${KEEPVAULT_MLDSA_KEYCHAIN_ACCOUNT:-${USER:-}}
-
-# Both halves of the hybrid certificate are released by one Keychain
-# confirmation once they have been wrapped: a signature counts only when
-# RSA-PSS and ML-DSA-87 both verify, so gating them separately would mean two
-# prompts for one indivisible decision. The unwrapped paths stay as a fallback
-# so a tree that has not been migrated still builds.
-mldsa_key_arguments=(--mldsa-private-key ${mldsa_private_key})
-if [[ -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} ]]; then
-  mldsa_key_arguments=(
-    --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
-    --mldsa-key-keychain-service ${mldsa_keychain_service}
-    --mldsa-key-keychain-account ${mldsa_keychain_account}
-  )
-fi
-pfx_password_arguments=()
-if [[ -f ${pfx_password_encrypted} && ! -L ${pfx_password_encrypted} ]]; then
-  pfx_password_arguments=(--pfx-password-encrypted ${pfx_password_encrypted})
-fi
-
-# A wrapping key on removable media lets a build run unattended while that
-# volume is mounted; unplug it and signing falls back to the Keychain prompt.
-# Physical presence is a weaker gate than the prompt -- anything running as this
-# user can read a mounted volume -- but it is bounded by something the key
-# holder can see and pull out, and it keeps routine development from being four
-# confirmations long.
-wrapping_key_file=${KEEPVAULT_WRAPPING_KEY_FILE:-}
-if [[ -z ${wrapping_key_file} ]]; then
-  for candidate in /Volumes/*/Keep\ Vault\ ReleaseKeys*/wrapping-key.b64(N); do
-    [[ -f ${candidate} && ! -L ${candidate} ]] || continue
-    wrapping_key_file=${candidate}
-    break
-  done
-fi
-if [[ -n ${wrapping_key_file} && -f ${wrapping_key_file} && ! -L ${wrapping_key_file} ]]; then
-  mldsa_key_arguments+=(--wrapping-key-file ${wrapping_key_file})
-  print "wrapping_key=removable media (${wrapping_key_file:h:t})"
-else
-  print "wrapping_key=Keychain (confirmation required per signing pass)"
-fi
+mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key.v12.enc}
+pfx_password_encrypted=${KEEPVAULT_PFX_PASSWORD_ENCRYPTED:-${pfx_path}.password.v12.enc}
+mldsa_wrapping_service=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.v12.mldsa-wrapping-key}
+mldsa_wrapping_account=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-mldsa-v12:${USER:-}}
+pfx_wrapping_service=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.v12.pfx-wrapping-key}
+pfx_wrapping_account=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-pfx-v12:${USER:-}}
 
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${packaging_dir}/Keys/mldsa87-public.key}
-pfx_password_service=${KEEPVAULT_PFX_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-pfx}
-pfx_password_account=${KEEPVAULT_PFX_KEYCHAIN_ACCOUNT:-${USER:-}}
-dotnet_command=${KEEPVAULT_DOTNET:-/Users/michael/.dotnet-keepvault/dotnet}
+dotnet_command=''
 source_app=${repo_root}/dist/Keep\ Vault-macOS/Keep\ Vault.app
 scanner_app=${repo_root}/QrCodeScanner/dist/QR-Scanner.app
 
@@ -81,7 +78,7 @@ usage() {
   print -u2 'Usage: Build-Portable-macOS.sh [--app "Keep Vault.app"] [--scanner "QR-Scanner.app"]'
   print -u2 '       [--identity HASH] [--notary-profile NOTARYTOOL_KEYCHAIN_PROFILE]'
   print -u2 '       [--output-name NAME] [--self-test-rollback]'
-  print -u2 '       [--architecture universal|arm64] [--dotnet /path/to/dotnet]'
+  print -u2 '       [--architecture universal|arm64]'
   exit 64
 }
 
@@ -93,7 +90,6 @@ while (( $# != 0 )); do
     --notary-profile) (( $# >= 2 )) || usage; notary_profile=$2; shift 2 ;;
     --output-name) (( $# >= 2 )) || usage; output_name=$2; shift 2 ;;
     --architecture) (( $# >= 2 )) || usage; architecture=$2; shift 2 ;;
-    --dotnet) (( $# >= 2 )) || usage; dotnet_command=$2; shift 2 ;;
     --self-test-rollback) self_test_rollback=1; shift ;;
     *) usage ;;
   esac
@@ -121,9 +117,18 @@ if [[ ! -d ${scanner_app} || -L ${scanner_app} ]]; then
   exit 1
 fi
 ${script_dir}/Verify-ReleasePairMetadata-macOS.sh --app ${source_app} --scanner ${scanner_app}
-if [[ ! -x ${dotnet_command} || -L ${dotnet_command} ]]; then
-  print -u2 "The official .NET SDK host is unavailable or a symbolic link: ${dotnet_command}"
-  exit 1
+if [[ ! -x ${env_path} || -L ${env_path} \
+    || $(/usr/bin/stat -f '%u' ${env_path} 2>/dev/null || print invalid) != 0 \
+    || $(( 8#$(/usr/bin/stat -f '%Lp' ${env_path}) & 8#022 )) != 0 ]]; then
+  print -u2 'Portable release requires the physical root-owned /usr/bin/env.'
+  exit 2
+fi
+private_temp_uid=$(/usr/bin/stat -f '%u' ${private_temp_parent} 2>/dev/null || print invalid)
+private_temp_mode=$(( 8#$(/usr/bin/stat -f '%p' ${private_temp_parent} 2>/dev/null || print 0) & 8#7777 ))
+if [[ ! -d ${private_temp_parent} || -L ${private_temp_parent} \
+    || ${private_temp_uid} != 0 ]] || (( private_temp_mode != 8#1777 )); then
+  print -u2 'Portable release requires physical root-owned mode-1777 /private/tmp.'
+  exit 2
 fi
 for required_command in xcrun codesign security ditto shasum lipo openssl spctl; do
   command -v ${required_command} >/dev/null 2>&1 || {
@@ -131,6 +136,174 @@ for required_command in xcrun codesign security ditto shasum lipo openssl spctl;
     exit 1
   }
 done
+shasum() { ${env_path} -i PATH=${PATH} /usr/bin/shasum "$@"; }
+
+if ! zmodload zsh/system || ! zmodload -F zsh/stat b:zstat; then
+  print -u2 'Portable release requires zsh descriptor/stat modules.'
+  exit 2
+fi
+
+expected_third_party_notices_sha256='bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159'
+
+portable_notice_fd_identity() {
+  local descriptor=$1
+  local -A descriptor_stat
+  local -A modification_time
+  local -A change_time
+  zstat -f ${descriptor} -H descriptor_stat 2>/dev/null || return 2
+  zstat -f ${descriptor} -H modification_time -F '%s.%N' +mtime 2>/dev/null || return 2
+  zstat -f ${descriptor} -H change_time -F '%s.%N' +ctime 2>/dev/null || return 2
+  print -r -- \
+    ${descriptor_stat[device]}:${descriptor_stat[inode]}:${descriptor_stat[uid]}:${descriptor_stat[mode]}:${descriptor_stat[nlink]}:${descriptor_stat[size]}:${modification_time[mtime]}:${change_time[ctime]}
+}
+
+hash_portable_notice_fd() {
+  local descriptor=$1
+  local digest_line=''
+  sysseek -u ${descriptor} -w start 0 || return 2
+  if ! digest_line=$(shasum -a 256 <&${descriptor}); then
+    sysseek -u ${descriptor} -w start 0 2>/dev/null || true
+    return 2
+  fi
+  sysseek -u ${descriptor} -w start 0 || return 2
+  REPLY=${digest_line%%[[:space:]]*}
+  (( ${#REPLY} == 64 )) && [[ ${REPLY} != *[^0-9a-f]* ]]
+}
+
+copy_portable_root_notice() (
+  emulate -L zsh
+  set -euo pipefail
+  local source=$1
+  local destination=$2
+  local expected_sha256=$3
+  local source_fd=-1
+  local destination_fd=-1
+
+  sysopen -r -o nofollow -u source_fd ${source} || {
+    print -u2 'Portable release could not open its in-app notice without following a symbolic link.'
+    return 2
+  }
+  local source_before=$(portable_notice_fd_identity ${source_fd}) || return 2
+  local -a source_fields=("${(@s.:.)source_before}")
+  local source_mode=${source_fields[4]}
+  if (( (source_mode & 8#170000) != 8#100000 \
+      || (source_mode & 8#022) != 0 || source_fields[5] != 1 \
+      || source_fields[6] < 300000 || source_fields[6] > 2000000 )) \
+      || [[ ${source_fields[3]} != 0 && ${source_fields[3]} != ${EUID} ]]; then
+    print -u2 'Portable release in-app notice has unsafe descriptor metadata.'
+    return 2
+  fi
+  hash_portable_notice_fd ${source_fd} || return 2
+  [[ ${REPLY} == ${expected_sha256} ]] || {
+    print -u2 'Portable release in-app notice does not match the reviewed whole-file digest.'
+    return 2
+  }
+
+  if [[ -e ${destination} || -L ${destination} ]] \
+      || ! sysopen -rw -m 0600 -o create,excl,nofollow,sync \
+        -u destination_fd ${destination}; then
+    print -u2 'Portable release root notice could not be created exclusively.'
+    return 2
+  fi
+  chmod 0600 /dev/fd/${destination_fd}
+  local destination_before=$(portable_notice_fd_identity ${destination_fd}) || return 2
+  local -a destination_fields=("${(@s.:.)destination_before}")
+  local destination_object=${destination_fields[1]}:${destination_fields[2]}:${destination_fields[3]}:${destination_fields[5]}
+  local destination_mode=${destination_fields[4]}
+  if [[ ${destination_fields[3]} != ${EUID} || ${destination_fields[5]} != 1 ]] \
+      || (( (destination_mode & 8#170000) != 8#100000 \
+          || (destination_mode & 8#0777) != 8#0600 )); then
+    print -u2 'Portable release root notice output has unsafe descriptor metadata.'
+    return 2
+  fi
+
+  local transfer_status=0
+  while true; do
+    if sysread -i ${source_fd} -o ${destination_fd} -s 65536; then
+      continue
+    else
+      transfer_status=$?
+    fi
+    (( transfer_status == 5 )) && break
+    print -u2 'Portable release root notice failed during descriptor-bound copy.'
+    return 2
+  done
+
+  local source_after=$(portable_notice_fd_identity ${source_fd}) || return 2
+  hash_portable_notice_fd ${source_fd} || return 2
+  if [[ ${source_after} != ${source_before} || ${REPLY} != ${expected_sha256} ]]; then
+    print -u2 'Portable release in-app notice changed during descriptor-bound copy.'
+    return 2
+  fi
+
+  chmod 0644 /dev/fd/${destination_fd}
+  local output_before_hash=$(portable_notice_fd_identity ${destination_fd}) || return 2
+  local -a output_fields=("${(@s.:.)output_before_hash}")
+  local output_mode=${output_fields[4]}
+  if [[ ${output_fields[1]}:${output_fields[2]}:${output_fields[3]}:${output_fields[5]} != ${destination_object} ]] \
+      || (( (output_mode & 8#170000) != 8#100000 \
+          || (output_mode & 8#0777) != 8#0644 \
+          || output_fields[6] < 300000 || output_fields[6] > 2000000 )); then
+    print -u2 'Portable release root notice output changed identity.'
+    return 2
+  fi
+  hash_portable_notice_fd ${destination_fd} || return 2
+  [[ ${REPLY} == ${expected_sha256} ]] || {
+    print -u2 'Portable release root notice does not match the reviewed whole-file digest.'
+    return 2
+  }
+  local output_after_hash=$(portable_notice_fd_identity ${destination_fd}) || return 2
+  local -A output_path_stat
+  zstat -L -H output_path_stat ${destination} 2>/dev/null || return 2
+  if [[ ${output_after_hash} != ${output_before_hash} \
+      || ${output_path_stat[device]}:${output_path_stat[inode]}:${output_path_stat[uid]}:${output_path_stat[nlink]} != ${destination_object} ]] \
+      || (( (output_path_stat[mode] & 8#170000) != 8#100000 )); then
+    print -u2 'Portable release root notice changed during its final bound hash.'
+    return 2
+  fi
+)
+
+if [[ -z ${USER:-} || -z ${mldsa_wrapping_service} || -z ${mldsa_wrapping_account} \
+    || -z ${pfx_wrapping_service} || -z ${pfx_wrapping_account} \
+    || ${mldsa_wrapping_service} == ${pfx_wrapping_service} \
+    || ${mldsa_wrapping_account} == ${pfx_wrapping_account} ]]; then
+  print -u2 'RSA and ML-DSA need distinct, nonempty Keychain services and accounts.'
+  exit 2
+fi
+pfx_path=${pfx_path:A}
+mldsa_private_key_encrypted=${mldsa_private_key_encrypted:A}
+pfx_password_encrypted=${pfx_password_encrypted:A}
+for private_path in ${pfx_path} ${mldsa_private_key_encrypted} ${pfx_password_encrypted}; do
+  if [[ ${private_path} == ${repo_root}/* \
+      || ! -f ${private_path} || -L ${private_path} ]]; then
+    print -u2 "Private signing material is missing, symbolic, or inside the repository: ${private_path}"
+    exit 2
+  fi
+  private_mode=$(( 8#$(stat -f %Lp ${private_path}) ))
+  if (( (private_mode & 8#077) != 0 )); then
+    print -u2 "Private signing material must be mode 0600 or stricter: ${private_path}"
+    exit 2
+  fi
+done
+
+KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED=${mldsa_private_key_encrypted} \
+KEEPVAULT_PFX_PASSWORD_ENCRYPTED=${pfx_password_encrypted} \
+KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_SERVICE=${mldsa_wrapping_service} \
+KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_ACCOUNT=${mldsa_wrapping_account} \
+KEEPVAULT_PFX_WRAPPING_KEYCHAIN_SERVICE=${pfx_wrapping_service} \
+KEEPVAULT_PFX_WRAPPING_KEYCHAIN_ACCOUNT=${pfx_wrapping_account} \
+  ${script_dir}/Protect-HybridKeys-macOS.sh --verify-only
+
+mldsa_key_arguments=(
+  --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
+  --mldsa-wrapping-key-keychain-service ${mldsa_wrapping_service}
+  --mldsa-wrapping-key-keychain-account ${mldsa_wrapping_account}
+)
+pfx_password_arguments=(
+  --pfx-password-encrypted ${pfx_password_encrypted}
+  --pfx-wrapping-key-keychain-service ${pfx_wrapping_service}
+  --pfx-wrapping-key-keychain-account ${pfx_wrapping_account}
+)
 
 if [[ -z ${identity} ]]; then
   identity=$(security find-identity -v -p codesigning | awk '/Developer ID Application/{print $2; exit}')
@@ -224,14 +397,201 @@ if [[ ! ${portable_output_identity} =~ '^[0-9]+:[0-9]+$' ]]; then
   exit 1
 fi
 
-build_root=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-portable.XXXXXXXX")
+build_root=$(mktemp -d "${private_temp_parent}/keep-vault-portable.XXXXXXXX")
 chmod 0700 ${build_root}
 build_root_identity=$(stat -f '%d:%i' ${build_root})
+private_nuget_root=''
+private_nuget_root_identity=''
+private_nuget_packages=''
+private_nuget_packages_identity=''
+private_nuget_http_cache=''
+private_nuget_http_cache_identity=''
+private_nuget_scratch=''
+private_nuget_scratch_identity=''
+private_dotnet_cli_home=''
+private_dotnet_cli_home_identity=''
+private_dotnet_tmp=''
+private_dotnet_tmp_identity=''
+private_artifacts_root=''
+private_artifacts_root_identity=''
+private_verifier_artifacts=''
+private_verifier_artifacts_identity=''
+private_signer_artifacts=''
+private_signer_artifacts_identity=''
+verified_dotnet_root=''
+verified_dotnet_root_identity=''
+dotnet_command_identity=''
+signer_dll=''
+signer_dll_identity=''
 release_stage=''
 release_stage_identity=''
 published_paths=()
 published_identities=()
 publish_committed=0
+
+# Install an identity-bound cleanup before SDK/cache provisioning. The fuller
+# rollback handler below replaces this function once public staging state
+# exists, while the trap continues to resolve the current definition.
+cleanup() {
+  set +e
+  if [[ -d ${build_root:-} && ! -L ${build_root:-} \
+      && ${build_root} == ${private_temp_parent}/keep-vault-portable.* \
+      && $(stat -f '%d:%i' ${build_root} 2>/dev/null || print invalid) == ${build_root_identity:-invalid} ]]; then
+    rm -rf -- ${build_root}
+  fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+require_private_directory_identity() {
+  local directory=$1
+  local expected_identity=$2
+  [[ -n ${directory} && -d ${directory} && ! -L ${directory} \
+      && $(stat -f '%d:%i' ${directory} 2>/dev/null || print invalid) == ${expected_identity} \
+      && $(stat -f '%u:%Lp' ${directory} 2>/dev/null || print invalid) == ${EUID}:700 ]]
+}
+
+require_private_nuget_cache_identity() {
+  require_private_directory_identity ${build_root} ${build_root_identity} \
+    && require_private_directory_identity ${private_nuget_root} ${private_nuget_root_identity} \
+    && require_private_directory_identity ${private_nuget_packages} ${private_nuget_packages_identity} \
+    && require_private_directory_identity ${private_nuget_http_cache} ${private_nuget_http_cache_identity} \
+    && require_private_directory_identity ${private_nuget_scratch} ${private_nuget_scratch_identity} \
+    && require_private_directory_identity ${private_dotnet_cli_home} ${private_dotnet_cli_home_identity} \
+    && require_private_directory_identity ${private_dotnet_tmp} ${private_dotnet_tmp_identity} \
+    && require_private_directory_identity ${private_artifacts_root} ${private_artifacts_root_identity} \
+    && require_private_directory_identity ${private_verifier_artifacts} ${private_verifier_artifacts_identity} \
+    && require_private_directory_identity ${private_signer_artifacts} ${private_signer_artifacts_identity} \
+    && { [[ -z ${verified_dotnet_root} ]] \
+      || { require_private_directory_identity ${verified_dotnet_root} ${verified_dotnet_root_identity} \
+        && [[ -f ${dotnet_command} && ! -L ${dotnet_command} && -x ${dotnet_command} \
+          && $(stat -f '%d:%i' ${dotnet_command} 2>/dev/null || print invalid) == ${dotnet_command_identity} ]]; }; }
+}
+
+create_private_nuget_cache() {
+  private_nuget_root=${build_root}/nuget
+  private_nuget_packages=${private_nuget_root}/packages
+  private_nuget_http_cache=${private_nuget_root}/http-cache
+  private_nuget_scratch=${private_nuget_root}/scratch
+  private_dotnet_cli_home=${private_nuget_root}/cli-home
+  private_dotnet_tmp=${private_nuget_root}/tmp
+  private_artifacts_root=${build_root}/artifacts
+  private_verifier_artifacts=${private_artifacts_root}/verifier
+  private_signer_artifacts=${private_artifacts_root}/signer
+  mkdir -m 0700 ${private_nuget_root} ${private_nuget_packages} \
+    ${private_nuget_http_cache} ${private_nuget_scratch} \
+    ${private_dotnet_cli_home} ${private_dotnet_tmp} ${private_artifacts_root} \
+    ${private_verifier_artifacts} ${private_signer_artifacts}
+  private_nuget_root_identity=$(stat -f '%d:%i' ${private_nuget_root})
+  private_nuget_packages_identity=$(stat -f '%d:%i' ${private_nuget_packages})
+  private_nuget_http_cache_identity=$(stat -f '%d:%i' ${private_nuget_http_cache})
+  private_nuget_scratch_identity=$(stat -f '%d:%i' ${private_nuget_scratch})
+  private_dotnet_cli_home_identity=$(stat -f '%d:%i' ${private_dotnet_cli_home})
+  private_dotnet_tmp_identity=$(stat -f '%d:%i' ${private_dotnet_tmp})
+  private_artifacts_root_identity=$(stat -f '%d:%i' ${private_artifacts_root})
+  private_verifier_artifacts_identity=$(stat -f '%d:%i' ${private_verifier_artifacts})
+  private_signer_artifacts_identity=$(stat -f '%d:%i' ${private_signer_artifacts})
+  require_private_nuget_cache_identity || {
+    print -u2 'Portable release failed to create its identity-bound private NuGet cache.'
+    exit 2
+  }
+}
+
+cleanup_private_nuget_cache() {
+  require_private_nuget_cache_identity || {
+    print -u2 'Portable private NuGet cache identity changed; preserving it for inspection.'
+    return 1
+  }
+}
+
+run_dotnet_clean() {
+  require_private_nuget_cache_identity || {
+    print -u2 'Portable private NuGet cache identity changed before a .NET invocation.'
+    return 2
+  }
+  local dotnet_status=0
+  ${env_path} -i \
+    HOME=${private_dotnet_cli_home} \
+    PATH=${PATH} \
+    TMPDIR=${private_dotnet_tmp} \
+    DOTNET_CLI_HOME=${private_dotnet_cli_home} \
+    NUGET_PACKAGES=${private_nuget_packages} \
+    NUGET_HTTP_CACHE_PATH=${private_nuget_http_cache} \
+    NUGET_SCRATCH=${private_nuget_scratch} \
+    DOTNET_EnableDiagnostics=0 \
+    COMPlus_EnableDiagnostics=0 \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE=1 \
+    DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
+    DOTNET_ADD_GLOBAL_TOOLS_TO_PATH=false \
+    MSBUILDDISABLENODEREUSE=1 \
+    ${dotnet_command} "$@" || dotnet_status=$?
+  require_private_nuget_cache_identity || {
+    print -u2 'Portable private NuGet cache identity changed during a .NET invocation.'
+    return 2
+  }
+  return ${dotnet_status}
+}
+
+run_dotnet_signer_clean() {
+  require_private_nuget_cache_identity \
+    && require_private_directory_identity ${keychain_temp} ${keychain_temp_identity} \
+    && [[ -n ${signer_dll} && ${signer_dll} == ${private_signer_artifacts}/* \
+      && -f ${signer_dll} && ! -L ${signer_dll} \
+      && $(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${signer_dll} 2>/dev/null || print invalid) == ${signer_dll_identity} \
+      && $(stat -f '%u:%l' ${signer_dll} 2>/dev/null || print invalid) == ${EUID}:1 ]] || {
+      print -u2 'Portable signer scratch identity changed before execution.'
+      return 2
+    }
+  local signer_status=0
+  ${env_path} -i \
+    PATH=${PATH} TMPDIR=${keychain_temp} \
+    DOTNET_CLI_HOME=${private_dotnet_cli_home} \
+    NUGET_PACKAGES=${private_nuget_packages} \
+    NUGET_HTTP_CACHE_PATH=${private_nuget_http_cache} \
+    NUGET_SCRATCH=${private_nuget_scratch} \
+    KEEPVAULT_KEYCHAIN_TEMP_ROOT=${keychain_temp} \
+    DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0 \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE=1 \
+    DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
+    DOTNET_ADD_GLOBAL_TOOLS_TO_PATH=false MSBUILDDISABLENODEREUSE=1 \
+    ${dotnet_command} "$@" || signer_status=$?
+  require_private_nuget_cache_identity \
+    && require_private_directory_identity ${keychain_temp} ${keychain_temp_identity} \
+    && [[ -f ${signer_dll} && ! -L ${signer_dll} \
+      && $(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${signer_dll} 2>/dev/null || print invalid) == ${signer_dll_identity} \
+      && $(stat -f '%u:%l' ${signer_dll} 2>/dev/null || print invalid) == ${EUID}:1 ]] || {
+      print -u2 'Portable signer, scratch, or NuGet cache identity changed during execution.'
+      return 2
+    }
+  return ${signer_status}
+}
+
+create_private_nuget_cache
+dotnet_provisioner=${script_dir}/Provision-VerifiedDotnet-macOS.sh
+if [[ ! -f ${dotnet_provisioner} || -L ${dotnet_provisioner} || ! -x ${dotnet_provisioner} ]]; then
+  print -u2 'Portable release requires the physical verified .NET SDK provisioner.'
+  exit 2
+fi
+verified_dotnet_target=${build_root}/dotnet-sdk
+dotnet_command=$(${dotnet_provisioner} --target ${verified_dotnet_target})
+verified_dotnet_root=${verified_dotnet_target}
+verified_dotnet_root_identity=$(stat -f '%d:%i' ${verified_dotnet_root})
+dotnet_command_identity=$(stat -f '%d:%i' ${dotnet_command})
+require_private_nuget_cache_identity || {
+  print -u2 'Portable release lost the freshly provisioned Microsoft SDK identity.'
+  exit 2
+}
+selected_sdk=$(run_dotnet_clean --version)
+if [[ ${selected_sdk} != '10.0.400' ]]; then
+  print -u2 'Portable release builds require the reviewed official .NET SDK 10.0.400.'
+  exit 2
+fi
 
 publish_rename_source=${script_dir}/ReleasePublishRename.c
 publish_delete_source=${script_dir}/InstallerBoundDelete.c
@@ -299,8 +659,9 @@ cleanup() {
   else
     print -u2 "Portable rollback quarantine was replaced or is nonempty and was preserved: ${rollback_quarantine:-missing}"
   fi
-  if [[ -d ${build_root:-} && ! -L ${build_root:-} \
-      && ${build_root} == ${TMPDIR:-/tmp}/keep-vault-portable.* \
+  if cleanup_private_nuget_cache \
+      && [[ -d ${build_root:-} && ! -L ${build_root:-} \
+      && ${build_root} == ${private_temp_parent}/keep-vault-portable.* \
       && $(stat -f '%d:%i' ${build_root} 2>/dev/null || true) == ${build_root_identity:-invalid} ]]; then
     rm -rf -- ${build_root}
   fi
@@ -371,8 +732,21 @@ verifier_runtimes=(osx-arm64)
 # a per-slice restore rewrites the evaluated RID set and correctly fails NU1004.
 (
   cd ${repo_root}/KeepVaultMac.ReleaseVerifier
-  ${dotnet_command} restore ${verifier_project} \
+  run_dotnet_clean restore ${verifier_project} \
+    --artifacts-path ${private_verifier_artifacts} \
     --locked-mode \
+    --force \
+    --force-evaluate \
+    --no-http-cache \
+    --disable-build-servers \
+    --nologo
+  run_dotnet_clean restore ${packaging_dir}/HybridSigner/KeepVaultMac.HybridSigner.csproj \
+    --artifacts-path ${private_signer_artifacts} \
+    --locked-mode \
+    --force \
+    --force-evaluate \
+    --no-http-cache \
+    --disable-build-servers \
     --nologo
 )
 for runtime in ${verifier_runtimes[@]}; do
@@ -381,15 +755,18 @@ for runtime in ${verifier_runtimes[@]}; do
     cd ${repo_root}/KeepVaultMac.ReleaseVerifier
     # NativeAOT runtime packs are part of the locked graph restored above.
     # Publish is now incapable of reaching NuGet or changing that graph.
-    ${dotnet_command} publish ${verifier_project} \
+    run_dotnet_clean publish ${verifier_project} \
       -c Release \
       -r ${runtime} \
+      --artifacts-path ${private_verifier_artifacts} \
       --no-restore \
       --self-contained true \
       --nologo \
       -p:PublishAot=true \
       -p:PublishTrimmed=true \
       -p:StripSymbols=true \
+      -p:UseSharedCompilation=false \
+      --disable-build-servers \
       -o ${publish_dir}
   )
   slice=${publish_dir}/Keep\ Vault\ Release\ Verifier
@@ -435,6 +812,10 @@ portable_dir=${release_stage}/${output_name}
 portable_zip=${release_stage}/${output_name}.zip
 mkdir -p ${portable_dir}
 ditto ${source_app} ${portable_dir}/Keep\ Vault.app
+copy_portable_root_notice \
+  ${portable_dir}/Keep\ Vault.app/Contents/Resources/THIRD-PARTY-NOTICES.txt \
+  ${portable_dir}/THIRD-PARTY-NOTICES.txt \
+  ${expected_third_party_notices_sha256}
 
 # The launcher's dual signature covers the bundle's main executable, whose bytes
 # codesign rewrites when it seals the bundle — so it cannot live inside. It sits
@@ -470,6 +851,9 @@ Keep Vault Portable (macOS)
 Start:
   Keep Vault.app
   Keep Vault.app.launcher.khsig (plus .sha3/.skein sidecars)
+
+Third-party licences:
+  THIRD-PARTY-NOTICES.txt (the exact reviewed copy also sealed inside Keep Vault.app)
 
 Reading the printed QR codes:
   QR-Scanner.app — a separate, sandboxed program. Keep Vault itself never
@@ -513,23 +897,30 @@ README
 # The hybrid signer and its scratch keychain are resolved once here: the scanner
 # is signed before the archive is built, and the archive is signed after, so both
 # steps need them.
-signer_dll=${packaging_dir}/HybridSigner/bin/Release/net10.0/KeepVaultMac.HybridSigner.dll
+signer_dll=${private_signer_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll
 (
   cd ${mac_project}
-  ${dotnet_command} restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \
-    --locked-mode \
-    --nologo
-  ${dotnet_command} build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \
+  run_dotnet_clean build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \
     -c Release \
     --no-restore \
+    --no-incremental \
+    --artifacts-path ${private_signer_artifacts} \
+    --disable-build-servers \
+    -p:UseSharedCompilation=false \
     --nologo
 )
 [[ -f ${signer_dll} && ! -L ${signer_dll} ]] || {
   print -u2 'The locked HybridSigner build did not produce its release assembly.'
   exit 1
 }
+signer_dll_identity=$(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${signer_dll})
+if [[ $(stat -f '%u:%l' ${signer_dll} 2>/dev/null || print invalid) != ${EUID}:1 ]]; then
+  print -u2 'The private HybridSigner assembly is not a single-link caller-owned file.'
+  exit 2
+fi
 keychain_temp=${build_root}/keychain-temp
-mkdir -p ${keychain_temp}
+mkdir -m 0700 ${keychain_temp}
+keychain_temp_identity=$(stat -f '%d:%i' ${keychain_temp})
 
 # Everything in the package that is executable code gets the same post-quantum
 # pair, so no component rests on Apple's signature alone. That includes the
@@ -553,16 +944,9 @@ package_signature_arguments=(
   --target ${portable_dir}/Keep\ Vault\ Release\ Verifier
 )
 package_signature_arguments+=(--target ${portable_dir}/QR-Scanner.app/Contents/MacOS/QR-Scanner)
-if [[ -n ${pfx_password_service} ]]; then
-  package_signature_arguments+=(--pfx-password-keychain-service ${pfx_password_service})
-  [[ -n ${pfx_password_account} ]] && package_signature_arguments+=(--pfx-keychain-account ${pfx_password_account})
-fi
 (
   cd ${mac_project}
-  TMPDIR=${keychain_temp} \
-    KEEPVAULT_KEYCHAIN_TEMP_ROOT=${keychain_temp} \
-    DOTNET_EnableDiagnostics=0 \
-    ${dotnet_command} ${package_signature_arguments[@]}
+  run_dotnet_signer_clean ${package_signature_arguments[@]}
 )
 print "verifier_dual_signature=${portable_dir}/Keep Vault Release Verifier.khsig"
 
@@ -597,17 +981,9 @@ signer_arguments=(
   --launcher-pins ${build_root}/HybridPins.swift
   --target ${portable_zip}
 )
-if [[ -n ${pfx_password_service} ]]; then
-  signer_arguments+=(--pfx-password-keychain-service ${pfx_password_service})
-  [[ -n ${pfx_password_account} ]] && signer_arguments+=(--pfx-keychain-account ${pfx_password_account})
-fi
-
 (
   cd ${mac_project}
-  TMPDIR=${keychain_temp} \
-    KEEPVAULT_KEYCHAIN_TEMP_ROOT=${keychain_temp} \
-    DOTNET_EnableDiagnostics=0 \
-    ${dotnet_command} ${signer_arguments[@]}
+  run_dotnet_signer_clean ${signer_arguments[@]}
 )
 
 # --- Final gate -------------------------------------------------------------

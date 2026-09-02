@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,6 +20,13 @@ internal static partial class SecureMemory
     private static bool _originalWorkingSetAvailable;
     private static readonly Dictionary<nuint, int> MacLockedPages = [];
     private static readonly Dictionary<nuint, int> WinLockedPages = [];
+    private static readonly List<LockedArray> RetainedFailedLockRollbacks = [];
+
+    internal static Func<nint, nuint, int>? MacMemoryLockOverrideForTests { get; set; }
+    internal static Func<nint, nuint, int>? MacMemoryUnlockOverrideForTests { get; set; }
+    internal static Func<nint, nuint, bool>? WindowsMemoryLockOverrideForTests { get; set; }
+    internal static Func<nint, nuint, bool>? WindowsMemoryUnlockOverrideForTests { get; set; }
+    internal static Action? SensitiveBufferBeforeUnlockForTests { get; set; }
 
     internal static long LockedBytesForTests
     {
@@ -66,6 +75,17 @@ internal static partial class SecureMemory
         }
     }
 
+    internal static int RetainedFailedLockRollbacksForTests
+    {
+        get
+        {
+            lock (WorkingSetGate)
+            {
+                return RetainedFailedLockRollbacks.Count;
+            }
+        }
+    }
+
     public static IDisposable TryLock(byte[]? buffer)
     {
         if (buffer is null || buffer.Length == 0)
@@ -78,7 +98,100 @@ internal static partial class SecureMemory
             throw new PlatformNotSupportedException("Secure memory locking requires a reviewed operating-system adapter.");
         }
 
+        RetryRetainedFailedLockRollbacks();
         return new LockedArray(buffer);
+    }
+
+    internal static void RetryRetainedFailedLockRollbacksForTests() =>
+        RetryRetainedFailedLockRollbacks();
+
+    private static void RetryRetainedFailedLockRollbacks()
+    {
+        lock (WorkingSetGate)
+        {
+            for (int index = RetainedFailedLockRollbacks.Count - 1; index >= 0; index--)
+            {
+                try
+                {
+                    RetainedFailedLockRollbacks[index].Dispose();
+                }
+                catch (CryptographicException)
+                {
+                    // The buffer was erased before retention. Keep its pin,
+                    // pages and accounting intact and retry on a later lock.
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Attempts every cleanup even when an earlier resource reports an unlock
+    /// failure. Failed secure-memory locks retain their own retry registration.
+    /// </summary>
+    internal static void DisposeAll(params IDisposable?[] resources)
+    {
+        List<Exception>? failures = null;
+        foreach (IDisposable? resource in resources)
+        {
+            if (resource is null)
+            {
+                continue;
+            }
+
+            try
+            {
+                resource.Dispose();
+            }
+            catch (Exception failure)
+            {
+                (failures ??= []).Add(failure);
+            }
+        }
+
+        if (failures is not null)
+        {
+            throw new AggregateException(
+                "One or more sensitive-memory resources could not be released; failed locks remain pinned, accounted and retryable.",
+                failures);
+        }
+    }
+
+    /// <summary>
+    /// Erases every member of a composite secret before the first member is
+    /// unlocked, then attempts every unlock independently.
+    /// </summary>
+    internal static void ZeroAndDisposeAll(params LockedSensitiveBuffer?[] buffers)
+    {
+        foreach (LockedSensitiveBuffer? buffer in buffers)
+        {
+            buffer?.ZeroForDisposal();
+        }
+
+        DisposeAll(buffers);
+    }
+
+    /// <summary>
+    /// Erases and releases a composite secret without losing the exception that
+    /// caused cleanup to begin. Every member is erased before the first unlock.
+    /// </summary>
+    internal static void ZeroAndDisposeAllPreservingFailure(
+        Exception? operationFailure,
+        string message,
+        params LockedSensitiveBuffer?[] buffers)
+    {
+        try
+        {
+            ZeroAndDisposeAll(buffers);
+        }
+        catch (Exception cleanupFailure)
+        {
+            if (operationFailure is null)
+            {
+                ExceptionDispatchInfo.Capture(cleanupFailure).Throw();
+            }
+
+            throw new AggregateException(message, operationFailure, cleanupFailure);
+        }
     }
 
     private static long RoundedPageBytes(int length)
@@ -110,6 +223,7 @@ internal static partial class SecureMemory
             throw new PlatformNotSupportedException("Working-set reservations require a reviewed operating-system adapter.");
         }
 
+        RetryRetainedFailedLockRollbacks();
         var reservation = new WorkingSetReservation(bytes);
         lock (WorkingSetGate)
         {
@@ -215,10 +329,11 @@ internal static partial class SecureMemory
     private sealed class LockedArray : IDisposable
     {
         private readonly int _length;
-        private readonly long _reservedBytes;
+        private long _reservedBytes;
         private nuint[] _lockedPages = [];
         private GCHandle _handle;
         private bool _locked;
+        private bool _retainedForRetry;
 
         public LockedArray(byte[] buffer)
         {
@@ -263,9 +378,33 @@ internal static partial class SecureMemory
                     if (!lockSucceeded)
                     {
                         int error = Marshal.GetLastPInvokeError();
-                        ReleaseWorkingSet(_reservedBytes);
+                        long stillLockedBytes = checked(
+                            _lockedPages.LongLength * Environment.SystemPageSize);
+                        long releasedBytes = checked(_reservedBytes - stillLockedBytes);
+                        if (releasedBytes > 0)
+                        {
+                            ReleaseWorkingSet(releasedBytes);
+                            _reservedBytes = stillLockedBytes;
+                        }
+
+                        if (_lockedPages.Length > 0)
+                        {
+                            // The failed lock attempt could not completely undo
+                            // the pages it had already acquired. Erase the
+                            // caller's bytes immediately, retain the pin and keep
+                            // the pages charged in the accounting. Freeing the
+                            // GCHandle here would let the array move while the OS
+                            // still has its old pages locked.
+                            CryptographicOperations.ZeroMemory(buffer);
+                            _locked = true;
+                            _lockedAllocations = checked(_lockedAllocations + 1);
+                            RetainForRetryLocked();
+                        }
+
                         throw new CryptographicException(
-                            "The operating system could not lock sensitive memory; the operation was stopped to prevent swap exposure.",
+                            _lockedPages.Length == 0
+                                ? "The operating system could not lock sensitive memory; the operation was stopped to prevent swap exposure."
+                                : "The operating system could not lock sensitive memory and could not completely release the partial lock. The bytes were erased and remain pinned and accounted.",
                             new Win32Exception(error));
                     }
 
@@ -275,7 +414,10 @@ internal static partial class SecureMemory
             }
             catch
             {
-                _handle.Free();
+                if (_lockedPages.Length == 0)
+                {
+                    _handle.Free();
+                }
                 throw;
             }
         }
@@ -287,27 +429,75 @@ internal static partial class SecureMemory
                 return;
             }
 
+            Exception? unlockFailure = null;
             lock (WorkingSetGate)
             {
                 if (_locked)
                 {
+                    PageUnlockResult result;
                     if (OperatingSystem.IsWindows())
                     {
-                        UnlockWinPages(_lockedPages);
-                        _lockedPages = [];
+                        result = UnlockWinPages(_lockedPages);
                     }
                     else
                     {
-                        UnlockMacPages(_lockedPages);
-                        _lockedPages = [];
+                        result = UnlockMacPages(_lockedPages);
                     }
-                    _locked = false;
-                    _lockedAllocations = Math.Max(0, _lockedAllocations - 1);
-                    ReleaseWorkingSet(_reservedBytes);
+
+                    _lockedPages = result.RemainingPages;
+                    if (result.ReleasedBytes > 0)
+                    {
+                        _reservedBytes = checked(_reservedBytes - result.ReleasedBytes);
+                        ReleaseWorkingSet(result.ReleasedBytes);
+                    }
+
+                    if (_lockedPages.Length == 0)
+                    {
+                        _locked = false;
+                        _lockedAllocations = Math.Max(0, _lockedAllocations - 1);
+                    }
+                    else
+                    {
+                        RetainForRetryLocked();
+                        unlockFailure = new CryptographicException(
+                            "The operating system could not unlock every sensitive-memory page. The buffer remains pinned and the unreleased pages remain accounted.",
+                            new Win32Exception(result.Error == 0 ? 5 : result.Error));
+                    }
                 }
             }
 
+            if (unlockFailure is not null)
+            {
+                throw unlockFailure;
+            }
+
+            lock (WorkingSetGate)
+            {
+                RemoveRetainedRetryLocked();
+            }
             _handle.Free();
+        }
+
+        private void RetainForRetryLocked()
+        {
+            if (_retainedForRetry)
+            {
+                return;
+            }
+
+            RetainedFailedLockRollbacks.Add(this);
+            _retainedForRetry = true;
+        }
+
+        private void RemoveRetainedRetryLocked()
+        {
+            if (!_retainedForRetry)
+            {
+                return;
+            }
+
+            _ = RetainedFailedLockRollbacks.Remove(this);
+            _retainedForRetry = false;
         }
     }
 
@@ -348,11 +538,15 @@ internal static partial class SecureMemory
                 continue;
             }
 
-            if (MacMemoryLock(checked((nint)page), pageSize) != 0)
+            if (InvokeMacMemoryLock(checked((nint)page), pageSize) != 0)
             {
                 error = Marshal.GetLastPInvokeError();
-                UnlockMacPages([.. acquired]);
-                pages = [];
+                PageUnlockResult rollback = UnlockMacPages([.. acquired]);
+                pages = rollback.RemainingPages;
+                if (rollback.Error != 0)
+                {
+                    error = rollback.Error;
+                }
                 return false;
             }
 
@@ -364,26 +558,44 @@ internal static partial class SecureMemory
         return true;
     }
 
-    private static void UnlockMacPages(nuint[] pages)
+    private static PageUnlockResult UnlockMacPages(nuint[] pages)
     {
         nuint pageSize = checked((nuint)Environment.SystemPageSize);
+        var remaining = new List<nuint>();
+        long releasedBytes = 0;
+        int firstError = 0;
         foreach (nuint page in pages)
         {
             if (!MacLockedPages.TryGetValue(page, out int leases))
             {
+                remaining.Add(page);
+                firstError = firstError == 0 ? 22 : firstError;
                 continue;
             }
 
             if (leases > 1)
             {
                 MacLockedPages[page] = leases - 1;
+                releasedBytes = checked(releasedBytes + (long)pageSize);
             }
             else
             {
-                _ = MacMemoryUnlock(checked((nint)page), pageSize);
-                MacLockedPages.Remove(page);
+                int result = InvokeMacMemoryUnlock(checked((nint)page), pageSize);
+                if (result == 0)
+                {
+                    MacLockedPages.Remove(page);
+                    releasedBytes = checked(releasedBytes + (long)pageSize);
+                }
+                else
+                {
+                    remaining.Add(page);
+                    int error = Marshal.GetLastPInvokeError();
+                    firstError = firstError == 0 ? (error == 0 ? 5 : error) : firstError;
+                }
             }
         }
+
+        return new PageUnlockResult([.. remaining], releasedBytes, firstError);
     }
 
     private static bool TryLockWinPages(
@@ -406,11 +618,15 @@ internal static partial class SecureMemory
                 continue;
             }
 
-            if (!VirtualLock(checked((nint)page), pageSize))
+            if (!InvokeWindowsMemoryLock(checked((nint)page), pageSize))
             {
                 error = Marshal.GetLastPInvokeError();
-                UnlockWinPages([.. acquired]);
-                pages = [];
+                PageUnlockResult rollback = UnlockWinPages([.. acquired]);
+                pages = rollback.RemainingPages;
+                if (rollback.Error != 0)
+                {
+                    error = rollback.Error;
+                }
                 return false;
             }
 
@@ -422,27 +638,81 @@ internal static partial class SecureMemory
         return true;
     }
 
-    private static void UnlockWinPages(nuint[] pages)
+    private static PageUnlockResult UnlockWinPages(nuint[] pages)
     {
         nuint pageSize = checked((nuint)Environment.SystemPageSize);
+        var remaining = new List<nuint>();
+        long releasedBytes = 0;
+        int firstError = 0;
         foreach (nuint page in pages)
         {
             if (!WinLockedPages.TryGetValue(page, out int leases))
             {
+                remaining.Add(page);
+                firstError = firstError == 0 ? 487 : firstError;
                 continue;
             }
 
             if (leases > 1)
             {
                 WinLockedPages[page] = leases - 1;
+                releasedBytes = checked(releasedBytes + (long)pageSize);
             }
             else
             {
-                _ = VirtualUnlock(checked((nint)page), pageSize);
-                WinLockedPages.Remove(page);
+                if (InvokeWindowsMemoryUnlock(checked((nint)page), pageSize))
+                {
+                    WinLockedPages.Remove(page);
+                    releasedBytes = checked(releasedBytes + (long)pageSize);
+                }
+                else
+                {
+                    remaining.Add(page);
+                    int error = Marshal.GetLastPInvokeError();
+                    firstError = firstError == 0 ? (error == 0 ? 487 : error) : firstError;
+                }
             }
         }
+
+        return new PageUnlockResult([.. remaining], releasedBytes, firstError);
     }
+
+    private static int InvokeMacMemoryLock(nint address, nuint size)
+    {
+        Func<nint, nuint, int>? testOverride = MacMemoryLockOverrideForTests;
+        return testOverride is null
+            ? MacMemoryLock(address, size)
+            : testOverride(address, size);
+    }
+
+    private static int InvokeMacMemoryUnlock(nint address, nuint size)
+    {
+        Func<nint, nuint, int>? testOverride = MacMemoryUnlockOverrideForTests;
+        return testOverride is null
+            ? MacMemoryUnlock(address, size)
+            : testOverride(address, size);
+    }
+
+    private static bool InvokeWindowsMemoryLock(nint address, nuint size)
+    {
+        Func<nint, nuint, bool>? testOverride = WindowsMemoryLockOverrideForTests;
+        return testOverride is null
+            ? VirtualLock(address, size)
+            : testOverride(address, size);
+    }
+
+    private static bool InvokeWindowsMemoryUnlock(nint address, nuint size)
+    {
+        Func<nint, nuint, bool>? testOverride = WindowsMemoryUnlockOverrideForTests;
+        return testOverride is null
+            ? VirtualUnlock(address, size)
+            : testOverride(address, size);
+    }
+
+    private readonly record struct PageUnlockResult(
+        nuint[] RemainingPages,
+        long ReleasedBytes,
+        int Error);
 
     private sealed class NoopDisposable : IDisposable
     {
@@ -535,11 +805,23 @@ internal sealed class LockedSensitiveBuffer : IDisposable
             memoryLock = SecureMemory.TryLock(bytes);
             return new LockedSensitiveBuffer(bytes, memoryLock);
         }
-        catch
+        catch (Exception operationFailure)
         {
             CryptographicOperations.ZeroMemory(bytes);
-            memoryLock?.Dispose();
-            throw;
+            try
+            {
+                SecureMemory.DisposeAll(memoryLock);
+            }
+            catch (Exception cleanupFailure)
+            {
+                throw new AggregateException(
+                    "Sensitive-buffer construction failed and its acquired memory lock could not be released.",
+                    operationFailure,
+                    cleanupFailure);
+            }
+
+            ExceptionDispatchInfo.Capture(operationFailure).Throw();
+            throw new UnreachableException();
         }
     }
 
@@ -558,10 +840,33 @@ internal sealed class LockedSensitiveBuffer : IDisposable
 
             return buffer;
         }
-        catch
+        catch (Exception operationFailure)
         {
-            buffer.Dispose();
-            throw;
+            try
+            {
+                SecureMemory.ZeroAndDisposeAll(buffer);
+            }
+            catch (Exception cleanupFailure)
+            {
+                throw new AggregateException(
+                    "Sensitive-text encoding failed and its locked buffer could not be released.",
+                    operationFailure,
+                    cleanupFailure);
+            }
+
+            ExceptionDispatchInfo.Capture(operationFailure).Throw();
+            throw new UnreachableException();
+        }
+    }
+
+    internal void ZeroForDisposal()
+    {
+        lock (_gate)
+        {
+            if (_bytes is not null)
+            {
+                CryptographicOperations.ZeroMemory(_bytes);
+            }
         }
     }
 
@@ -575,9 +880,10 @@ internal sealed class LockedSensitiveBuffer : IDisposable
             }
 
             CryptographicOperations.ZeroMemory(_bytes);
-            _bytes = null;
+            SecureMemory.SensitiveBufferBeforeUnlockForTests?.Invoke();
             _memoryLock?.Dispose();
             _memoryLock = null;
+            _bytes = null;
         }
     }
 }

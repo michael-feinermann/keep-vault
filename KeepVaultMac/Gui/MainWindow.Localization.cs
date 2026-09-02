@@ -314,6 +314,9 @@ public sealed partial class MainWindow
                 ? "This explicit test export permanently writes both secret factors to a PDF. Continue only in a controlled test environment."
                 : "Dieser ausdrückliche Testexport schreibt beide geheimen Faktoren dauerhaft in eine PDF. Nur in einer kontrollierten Testumgebung fortfahren.",
             "noPhysicalPrinter" => en ? "No non-virtual CUPS printer is available." : "Es ist keine nicht virtuelle CUPS-Druckerwarteschlange verfügbar.",
+            "cupsSpoolWarning" => en
+                ? "CUPS, the printer, or a network print server can retain this secret key-sheet job in a spool, cache, or device memory. Continue only with a trusted physical printer that you control. Keep Vault cannot erase copies outside the app."
+                : "CUPS, der Drucker oder ein Netzwerk-Druckserver kann diesen geheimen Schlüsselzettelauftrag in einer Warteschlange, einem Zwischenspeicher oder Gerätespeicher behalten. Nur mit einem vertrauenswürdigen physischen Drucker fortfahren, den du kontrollierst. Keep Vault kann Kopien außerhalb der App nicht löschen.",
             "creatingZpaq" => en ? "Creating ZPAQ stream …" : "ZPAQ-Stream wird erstellt …",
             "encryptingStreaming" => en ? "Encrypting the ZPAQ stream directly with {0} …" : "ZPAQ-Stream wird direkt mit {0} verschlüsselt …",
             "archiveCreated" => en ? "The archive and its KPAR2 recovery data were created." : "Archiv und KPAR2-Wiederherstellungsdaten wurden erstellt.",

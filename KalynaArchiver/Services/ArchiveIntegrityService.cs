@@ -160,7 +160,10 @@ public sealed class ArchiveIntegrityService
         try
         {
 #if KEEPVAULT_MACOS
-            string resolvedPath = snapshot.SnapshotPath;
+            // The macOS snapshot is unlinked before it is authenticated. It
+            // can therefore be consumed only through its retained descriptor;
+            // the native archiver receives those exact bytes over stdin.
+            const string resolvedPath = "-";
 #else
             string resolvedPath = ResolveCanonicalArchivePath(stream, fullPath);
 #endif
@@ -442,6 +445,14 @@ internal sealed class ArchiveIntegrityLease : IDisposable
     }
 
     public string Path { get; }
+
+    internal async Task CopyToAsync(Stream destination, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        FileStream stream = _stream ?? throw new ObjectDisposedException(nameof(ArchiveIntegrityLease));
+        stream.Position = 0;
+        await stream.CopyToAsync(destination, 1024 * 1024, cancellationToken).ConfigureAwait(false);
+    }
 
     public void Dispose()
     {

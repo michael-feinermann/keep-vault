@@ -6,7 +6,7 @@ using Microsoft.Win32.SafeHandles;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// Descriptor-relative file creation, validation and commit for shared v11
+/// Descriptor-relative file creation, validation and commit for shared v12
 /// writer code on macOS.
 /// </summary>
 internal sealed class BoundFileTransaction : IDisposable
@@ -199,6 +199,30 @@ internal sealed class BoundFileTransaction : IDisposable
         MacSafeFileSystem.UnlinkAt(_parentHandle, _currentName);
         _deleted = true;
         IsCommitted = false;
+    }
+
+    /// <summary>
+    /// Proves that the transaction's current public name still denotes the
+    /// exact held object. Multi-file commits call this for every member after
+    /// all renames, and again after their final content validation.
+    /// </summary>
+    internal void RequireStillInstalled()
+    {
+        if (_deleted)
+        {
+            throw new InvalidOperationException("A deleted bound file cannot be revalidated.");
+        }
+        if (!IsCommitted)
+        {
+            throw new InvalidOperationException("A bound file cannot be revalidated as installed before commit.");
+        }
+
+        MacFileIdentity handleIdentity = MacSafeFileSystem.GetIdentity(Stream.SafeFileHandle);
+        MacFileIdentity entryIdentity = MacSafeFileSystem.GetIdentityAt(_parentHandle, _currentName);
+        if (!handleIdentity.SameObject(_identity) || !entryIdentity.SameObject(_identity))
+        {
+            throw new IOException("A committed file name no longer identifies its bound transaction object.");
+        }
     }
 
     private static string RequireFileName(string path)

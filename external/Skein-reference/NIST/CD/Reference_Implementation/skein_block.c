@@ -17,6 +17,21 @@
 #include <string.h>
 #include "skein.h"
 
+/*
+ * Keep Vault processes key-derived chaining values in these block helpers.
+ * The upstream reference implementation leaves its local key schedule and
+ * working words on the caller's stack after returning.  A volatile byte loop
+ * is intentional here: unlike memset(), the compiler may not remove it as a
+ * dead store.  This keeps the reference arithmetic unchanged while ensuring
+ * every block helper erases its transient schedule before it returns.
+ */
+static void Skein_Secure_Zero_Local(void *pointer,size_t length)
+    {
+    volatile u08b_t *bytes = (volatile u08b_t *)pointer;
+    while (length-- != 0)
+        *bytes++ = 0;
+    }
+
 /* 64-bit rotate left */
 u64b_t RotL_64(u64b_t x,uint_t N)
     {
@@ -110,6 +125,11 @@ void Skein_256_Process_Block(Skein_256_Ctxt_t *ctx,const u08b_t *blkPtr,size_t b
         blkPtr += SKEIN_256_BLOCK_BYTES;
         }
     while (--blkCnt);
+
+    Skein_Secure_Zero_Local(ts,sizeof(ts));
+    Skein_Secure_Zero_Local(ks,sizeof(ks));
+    Skein_Secure_Zero_Local(X,sizeof(X));
+    Skein_Secure_Zero_Local(w,sizeof(w));
     }
 
 #if defined(SKEIN_CODE_SIZE) || defined(SKEIN_PERF)
@@ -216,6 +236,11 @@ void Skein_512_Process_Block(Skein_512_Ctxt_t *ctx,const u08b_t *blkPtr,size_t b
         blkPtr += SKEIN_512_BLOCK_BYTES;
         }
     while (--blkCnt);
+
+    Skein_Secure_Zero_Local(ts,sizeof(ts));
+    Skein_Secure_Zero_Local(ks,sizeof(ks));
+    Skein_Secure_Zero_Local(X,sizeof(X));
+    Skein_Secure_Zero_Local(w,sizeof(w));
     }
 
 #if defined(SKEIN_CODE_SIZE) || defined(SKEIN_PERF)
@@ -354,6 +379,11 @@ void Skein1024_Process_Block(Skein1024_Ctxt_t *ctx,const u08b_t *blkPtr,size_t b
         blkPtr += SKEIN1024_BLOCK_BYTES;
         }
     while (--blkCnt);
+
+    Skein_Secure_Zero_Local(ts,sizeof(ts));
+    Skein_Secure_Zero_Local(ks,sizeof(ks));
+    Skein_Secure_Zero_Local(X,sizeof(X));
+    Skein_Secure_Zero_Local(w,sizeof(w));
     }
 
 #if defined(SKEIN_CODE_SIZE) || defined(SKEIN_PERF)

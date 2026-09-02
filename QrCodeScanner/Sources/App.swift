@@ -40,6 +40,14 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         true
     }
 
+    /// Covers ⌘Q and every other normal AppKit termination path. Closing the
+    /// last window performs the same cleanup first; the controller's gate makes
+    /// this second notification harmless and keeps pasteboard cleanup
+    /// synchronous on the main actor.
+    func applicationWillTerminate(_ notification: Notification) {
+        controller?.prepareForTermination()
+    }
+
     /// A minimal menu bar, present so the standard shortcuts exist at all.
     ///
     /// Without an application menu ⌘Q does not work and ⌘C never reaches the

@@ -1,82 +1,119 @@
-#!/bin/zsh
-# Produces a set of native components that the comprehensive test suite can
-# actually execute.
-#
-# The shipped helpers (zpaq, argon2) are signed with com.apple.security.inherit,
-# so they adopt the sandbox of the app that spawns them and the kernel refuses
-# to start them under any other parent — including a test runner. That is
-# correct production behaviour and is verified separately by
-# Verify-KeepVault-macOS.sh, which asserts the shipped entitlements.
-#
-# For the functional groups the suite therefore uses copies re-signed with the
-# same Apple identity and hardened runtime but without the sandbox
-# entitlements. Every other trust gate stays fully in force: the Team ID pin,
-# the dual SHA3-512/Skein-1024 manifests, and the hybrid RSA-PSS + ML-DSA-87
-# signatures are all regenerated for the re-signed bytes.
+#!/bin/zsh -f
+# Produces byte-identical copies of the released native components for the
+# comprehensive test suite. The shipped zpaq and argon2 helpers deliberately
+# have no app-sandbox or inherit entitlement (Helper.entitlements is empty), so
+# they can and must execute unchanged under the test runner. Re-signing them
+# here would test different bytes and would invalidate the release evidence.
 set -euo pipefail
 umask 077
+PATH='/usr/bin:/bin:/usr/sbin:/sbin'
+export PATH
+unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+  RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES SSL_CERT_FILE \
+  SSL_CERT_DIR CURL_HOME XDG_CONFIG_HOME
+unset DEVELOPER_DIR SDKROOT TOOLCHAINS \
+  CCC_OVERRIDE_OPTIONS COMPILER_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH \
+  OBJC_INCLUDE_PATH LIBRARY_PATH GCC_EXEC_PREFIX \
+  ADDITIONAL_SWIFT_DRIVER_FLAGS SWIFT_EXEC SWIFT_DRIVER_SWIFT_FRONTEND_EXEC \
+  SWIFT_DRIVER_SWIFTSCAN_LIB SWIFT_DRIVER_TOOLCHAIN_CASPLUGIN_LIB \
+  DYLD_INSERT_LIBRARIES DYLD_LIBRARY_PATH DYLD_FRAMEWORK_PATH \
+  DYLD_FALLBACK_LIBRARY_PATH DYLD_FALLBACK_FRAMEWORK_PATH
+unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE \
+  DOTNET_ROOT DOTNET_ROOT_X64 DOTNET_ROOT_ARM64 DOTNET_HOST_PATH \
+  DOTNET_DiagnosticPorts DOTNET_DefaultDiagnosticPortSuspend DOTNET_ROLL_FORWARD \
+  DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX DOTNET_ROLL_FORWARD_TO_PRERELEASE \
+  DOTNET_MULTILEVEL_LOOKUP CORECLR_ENABLE_PROFILING CORECLR_PROFILER \
+  CORECLR_PROFILER_PATH CORECLR_PROFILER_PATH_32 CORECLR_PROFILER_PATH_64 \
+  CORECLR_PROFILER_PATH_ARM64 COR_ENABLE_PROFILING COR_PROFILER \
+  COR_PROFILER_PATH COR_PROFILER_PATH_32 COR_PROFILER_PATH_64 \
+  COMPlus_AltJit COMPlus_AltJitName DOTNET_AltJit DOTNET_AltJitName \
+  MSBuildSDKsPath MSBUILD_EXE_PATH MSBuildExtensionsPath MSBuildExtensionsPath32 \
+  MSBuildExtensionsPath64 MSBuildUserExtensionsPath MSBuildToolsPath \
+  MSBuildBinPath MSBUILDLEGACYEXTENSIONSPATH MSBUILDADDITIONALSDKRESOLVERSFOLDER \
+  CustomBeforeMicrosoftCommonTargets CustomAfterMicrosoftCommonTargets \
+  CustomBeforeMicrosoftCSharpTargets CustomAfterMicrosoftCSharpTargets \
+  DirectoryBuildPropsPath DirectoryBuildTargetsPath ImportDirectoryBuildProps \
+  ImportDirectoryBuildTargets DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR \
+  DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR DOTNET_MSBUILD_SDK_RESOLVER_SDKS_VER \
+  NUGET_PLUGIN_PATHS NUGET_CREDENTIALPROVIDERS_PATH NUGET_EXTENSIONS_PATH \
+  NUGET_PACKAGES NUGET_HTTP_CACHE_PATH NUGET_SCRATCH RestoreSources \
+  RestoreAdditionalProjectSources RestoreFallbackFolders RestorePackagesPath \
+  RestoreConfigFile
+export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
+require_sanitized_injection_environment() {
+  local variable=''
+  for variable in \
+      ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+      RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES CURL_HOME \
+      DEVELOPER_DIR SDKROOT TOOLCHAINS CCC_OVERRIDE_OPTIONS CPATH \
+      ADDITIONAL_SWIFT_DRIVER_FLAGS SWIFT_DRIVER_SWIFTSCAN_LIB \
+      DYLD_INSERT_LIBRARIES DOTNET_STARTUP_HOOKS CORECLR_ENABLE_PROFILING \
+      CORECLR_PROFILER CORECLR_PROFILER_PATH MSBuildSDKsPath \
+      CustomBeforeMicrosoftCommonTargets CustomBeforeMicrosoftCSharpTargets \
+      NUGET_PLUGIN_PATHS NUGET_PACKAGES NUGET_HTTP_CACHE_PATH NUGET_SCRATCH; do
+    if (( ${+parameters[$variable]} )); then
+      print -u2 "RELEASE GATE: inherited build-injection variable survived sanitization: ${variable}"
+      return 2
+    fi
+  done
+  if [[ ${DOTNET_EnableDiagnostics} != 0 || ${COMPlus_EnableDiagnostics} != 0 ]]; then
+    print -u2 'RELEASE GATE: managed diagnostics must remain disabled.'
+    return 2
+  fi
+}
+require_sanitized_injection_environment
+
+codesign_path=/usr/bin/codesign
+awk_path=/usr/bin/awk
+stat_path=/usr/bin/stat
+mktemp_path=/usr/bin/mktemp
+ditto_path=/usr/bin/ditto
+cmp_path=/usr/bin/cmp
+plistbuddy_path=/usr/libexec/PlistBuddy
+rm_path=/bin/rm
+mkdir_path=/bin/mkdir
+
+require_root_system_tool() {
+  local tool=$1
+  if [[ ${tool} != /* || ! -f ${tool} || -L ${tool} || ! -x ${tool} \
+      || $(${stat_path} -f %u -- ${tool}) != 0 ]]; then
+    print -u2 "NATIVE STAGING GATE: required tool is not an absolute root-owned regular file: ${tool}"
+    exit 2
+  fi
+  local tool_mode=$(( 8#$(${stat_path} -f %Lp -- ${tool}) ))
+  if (( (tool_mode & 8#022) != 0 )); then
+    print -u2 "NATIVE STAGING GATE: required tool is group/other writable: ${tool}"
+    exit 2
+  fi
+}
+
+for fixed_tool in \
+    ${codesign_path} ${awk_path} ${stat_path} ${mktemp_path} ${ditto_path} \
+    ${cmp_path} ${plistbuddy_path} ${rm_path} ${mkdir_path}; do
+  require_root_system_tool ${fixed_tool}
+done
+
+codesign() { ${codesign_path} "$@"; }
+awk() { ${awk_path} "$@"; }
+mktemp() { ${mktemp_path} "$@"; }
+ditto() { ${ditto_path} "$@"; }
+cmp() { ${cmp_path} "$@"; }
+plistbuddy() { ${plistbuddy_path} "$@"; }
+rm() { ${rm_path} "$@"; }
+mkdir() { ${mkdir_path} "$@"; }
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
 mac_project=${repo_root}/KeepVaultMac
 packaging_dir=${mac_project}/Packaging
 source_app=${repo_root}/dist/Keep\ Vault-macOS/Keep\ Vault.app
-destination=${repo_root}/KeepVaultMac.Tests/bin/Release/net10.0/osx-arm64/Native
-identity=${KEEPVAULT_CODESIGN_IDENTITY:-}
-pfx_path=${KEEPVAULT_HYBRID_PFX:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/hybrid-rsa4096.pfx}
-mldsa_private_key=${KEEPVAULT_MLDSA_PRIVATE_KEY:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys/mldsa87-private.key}
-mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${mldsa_private_key}.enc}
-mldsa_keychain_service=${KEEPVAULT_MLDSA_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-wrapping-key}
-mldsa_keychain_account=${KEEPVAULT_MLDSA_KEYCHAIN_ACCOUNT:-${USER:-}}
-pfx_password_encrypted=${KEEPVAULT_PFX_PASSWORD_ENCRYPTED:-${pfx_path}.password.enc}
-
-# Same key handling as the release builds: once both halves are wrapped they are
-# released by one Keychain confirmation, and the unwrapped paths remain only as
-# a fallback for a tree that has not been migrated. Staging signs the two helper
-# executables after re-signing them with codesign, so it needs the keys exactly
-# as a release build does -- leaving it on the deleted plaintext path made it
-# skip that step and hand the test suite natives whose manifests no longer
-# matched.
-mldsa_key_arguments=(--mldsa-private-key ${mldsa_private_key})
-if [[ -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} ]]; then
-  mldsa_key_arguments=(
-    --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
-    --mldsa-key-keychain-service ${mldsa_keychain_service}
-    --mldsa-key-keychain-account ${mldsa_keychain_account}
-  )
-fi
-pfx_password_arguments=()
-if [[ -f ${pfx_password_encrypted} && ! -L ${pfx_password_encrypted} ]]; then
-  pfx_password_arguments=(--pfx-password-encrypted ${pfx_password_encrypted})
-fi
-
-# A wrapping key on removable media lets a build run unattended while that
-# volume is mounted; unplug it and signing falls back to the Keychain prompt.
-# Physical presence is a weaker gate than the prompt -- anything running as this
-# user can read a mounted volume -- but it is bounded by something the key
-# holder can see and pull out, and it keeps routine development from being four
-# confirmations long.
-wrapping_key_file=${KEEPVAULT_WRAPPING_KEY_FILE:-}
-if [[ -z ${wrapping_key_file} ]]; then
-  for candidate in /Volumes/*/Keep\ Vault\ ReleaseKeys*/wrapping-key.b64(N); do
-    [[ -f ${candidate} && ! -L ${candidate} ]] || continue
-    wrapping_key_file=${candidate}
-    break
-  done
-fi
-if [[ -n ${wrapping_key_file} && -f ${wrapping_key_file} && ! -L ${wrapping_key_file} ]]; then
-  mldsa_key_arguments+=(--wrapping-key-file ${wrapping_key_file})
-  print "wrapping_key=removable media (${wrapping_key_file:h:t})"
-else
-  print "wrapping_key=Keychain (confirmation required per signing pass)"
-fi
-mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${packaging_dir}/Keys/mldsa87-public.key}
-pfx_password_service=${KEEPVAULT_PFX_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.hybrid-pfx}
-pfx_password_account=${KEEPVAULT_PFX_KEYCHAIN_ACCOUNT:-${USER:-}}
-dotnet_command=${KEEPVAULT_DOTNET:-/Users/michael/.dotnet-keepvault/dotnet}
+destination=''
+identity_argument=''
+tool_path_self_test=0
 
 usage() {
-  print -u2 'Usage: Stage-TestNatives-macOS.sh [--app "Keep Vault.app"] [--destination DIR] [--identity HASH]'
+  print -u2 'Usage: Stage-TestNatives-macOS.sh --destination DIR [--app "Keep Vault.app"] [--identity HASH]'
+  print -u2 '       Stage-TestNatives-macOS.sh --tool-path-self-test'
   exit 64
 }
 
@@ -84,36 +121,59 @@ while (( $# != 0 )); do
   case $1 in
     --app) (( $# >= 2 )) || usage; source_app=$2; shift 2 ;;
     --destination) (( $# >= 2 )) || usage; destination=$2; shift 2 ;;
-    --identity) (( $# >= 2 )) || usage; identity=$2; shift 2 ;;
+    # Kept for compatibility with Build-KeepVault-macOS.sh. The release bytes
+    # are never re-signed here, so this value is intentionally unused.
+    --identity) (( $# >= 2 )) || usage; identity_argument=$2; shift 2 ;;
+    --tool-path-self-test) tool_path_self_test=1; shift ;;
     *) usage ;;
   esac
 done
+
+if (( tool_path_self_test )); then
+  require_sanitized_injection_environment
+  print 'stage_test_natives_tool_paths=verified'
+  exit 0
+fi
+
+[[ -n ${destination} ]] || usage
 
 if [[ ! -d ${source_app} || -L ${source_app} ]]; then
   print -u2 "Signed app bundle not found or is a symbolic link: ${source_app}"
   exit 1
 fi
-if [[ ! -x ${dotnet_command} || -L ${dotnet_command} ]]; then
-  print -u2 "The official .NET SDK host is unavailable or a symbolic link: ${dotnet_command}"
-  exit 1
-fi
-
-if [[ -z ${identity} ]]; then
-  identity=$(security find-identity -v -p codesigning \
-    | awk '/Apple Development/{print $2; exit}')
-fi
-if [[ -z ${identity} ]]; then
-  print -u2 'No Apple Development code-signing identity was found.'
-  exit 1
-fi
-
 source_natives=${source_app}/Contents/MacOS/Native
 signature_root=${source_app}/Contents/Resources/HybridSignatures/Native
-components=(zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_ref.dylib libmars_ref.dylib libshacal2_ref.dylib libthreefish_ref.dylib)
-# Only the two helper executables carry sandbox entitlements and therefore need
-# re-signing; the libraries ship without entitlements and keep their release
-# signatures and manifests untouched.
-resigned=(zpaq argon2)
+components=(zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_v12.dylib libmars_ref.dylib libshacal2_ref.dylib libthreefish_ref.dylib)
+helpers=(zpaq argon2)
+
+app_team=$(codesign -dv --verbose=4 ${source_app} 2>&1 \
+  | awk -F= '/^TeamIdentifier=/{print $2; exit}')
+if [[ -z ${app_team} || ${app_team} == not\ set ]]; then
+  print -u2 'The release app has no TeamIdentifier.'
+  exit 1
+fi
+
+require_release_helper_entitlements() {
+  local helper=$1
+  local entitlement_dump=$2
+  if ! codesign -d --entitlements :- --xml ${helper} > ${entitlement_dump} 2>/dev/null; then
+    print -u2 "Unable to inspect helper entitlements: ${helper}"
+    return 1
+  fi
+  local forbidden=''
+  for forbidden in com.apple.security.app-sandbox com.apple.security.inherit; do
+    if plistbuddy -c "Print :${forbidden}" ${entitlement_dump} >/dev/null 2>&1; then
+      print -u2 "Release helper carries forbidden entitlement ${forbidden}: ${helper}"
+      return 1
+    fi
+  done
+}
+
+entitlement_root=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-test-entitlements.XXXXXXXX")
+cleanup() {
+  [[ -n ${entitlement_root:-} && -d ${entitlement_root} ]] && rm -rf -- ${entitlement_root}
+}
+trap cleanup EXIT INT TERM
 
 mkdir -p ${destination}
 for component in ${components[@]}; do
@@ -122,13 +182,38 @@ for component in ${components[@]}; do
     exit 1
   fi
   ditto ${source_natives}/${component} ${destination}/${component}
+  if ! cmp -s -- ${source_natives}/${component} ${destination}/${component}; then
+    print -u2 "Staged native component differs from the released bytes: ${component}"
+    exit 1
+  fi
   for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
     if [[ ! -f ${signature_root}/${component}${suffix} ]]; then
       print -u2 "Release sidecar is missing: ${component}${suffix}"
       exit 1
     fi
     ditto ${signature_root}/${component}${suffix} ${destination}/${component}${suffix}
+    if ! cmp -s -- ${signature_root}/${component}${suffix} ${destination}/${component}${suffix}; then
+      print -u2 "Staged native sidecar differs from the release sidecar: ${component}${suffix}"
+      exit 1
+    fi
   done
+done
+
+for helper in ${helpers[@]}; do
+  source_helper=${source_natives}/${helper}
+  staged_helper=${destination}/${helper}
+  codesign --verify --strict --verbose=2 ${source_helper}
+  codesign --verify --strict --verbose=2 ${staged_helper}
+  helper_team=$(codesign -dv --verbose=4 ${staged_helper} 2>&1 \
+    | awk -F= '/^TeamIdentifier=/{print $2; exit}')
+  if [[ ${helper_team} != ${app_team} ]]; then
+    print -u2 "Staged helper TeamIdentifier differs from the release app: ${helper}"
+    exit 1
+  fi
+  require_release_helper_entitlements \
+    ${source_helper} ${entitlement_root}/${helper}.source.plist
+  require_release_helper_entitlements \
+    ${staged_helper} ${entitlement_root}/${helper}.staged.plist
 done
 
 # The ML-DSA and SHA3 reference adapters are test oracles only: they are
@@ -149,74 +234,19 @@ for reference_oracle in libmldsa87_ref.dylib libsha3_ref.dylib; do
   ditto ${reference_path} ${destination}/${reference_oracle}
 done
 
-build_root=$(mktemp -d "${TMPDIR:-/tmp}/keep-vault-test-natives.XXXXXXXX")
-cleanup() {
-  [[ -n ${build_root:-} && -d ${build_root} ]] && rm -rf -- ${build_root}
-}
-trap cleanup EXIT INT TERM
-
-signer_dll=${packaging_dir}/HybridSigner/bin/Release/net10.0/KeepVaultMac.HybridSigner.dll
-if [[ ! -f ${signer_dll} || -L ${signer_dll} ]]; then
-  print -u2 'The hybrid signer has not been built; run Build-KeepVault-macOS.sh first.'
-  exit 1
-fi
-
-signer_arguments=(
-  ${signer_dll}
-  sign
-  --pfx ${pfx_path}
-  ${mldsa_key_arguments[@]}
-  ${pfx_password_arguments[@]}
-  --mldsa-public-key ${mldsa_public_key}
-  --reference-library ${mac_project}/Native/osx-arm64/libmldsa87_ref.dylib
-  --policy ${mac_project}/Directory.Build.props
-  --launcher-pins ${build_root}/HybridPins.swift
-)
-
-for component in ${resigned[@]}; do
-  target=${destination}/${component}
-  # Same identity and hardened runtime as the release, no entitlements: without
-  # com.apple.security.inherit the helper no longer requires a sandboxed parent.
-  codesign \
-    --force \
-    --sign ${identity} \
-    --options runtime \
-    --identifier de.michael-feinermann.keep-vault.test.${component} \
-    ${target}
-  if codesign -d --entitlements - ${target} 2>&1 | grep -q 'com.apple.security'; then
-    print -u2 "Test component still carries sandbox entitlements: ${component}"
-    exit 1
-  fi
-  chmod 0755 ${target}
-  signer_arguments+=(--target ${target})
-done
-
-if [[ -n ${pfx_password_service} ]]; then
-  signer_arguments+=(--pfx-password-keychain-service ${pfx_password_service})
-  [[ -n ${pfx_password_account} ]] && signer_arguments+=(--pfx-keychain-account ${pfx_password_account})
-fi
-
-keychain_temp=${build_root}/keychain-temp
-mkdir -p ${keychain_temp}
-(
-  cd ${mac_project}
-  TMPDIR=${keychain_temp} \
-    KEEPVAULT_KEYCHAIN_TEMP_ROOT=${keychain_temp} \
-    DOTNET_EnableDiagnostics=0 \
-    ${dotnet_command} ${signer_arguments[@]}
-)
-
 # A component killed for a code-signature or sandbox violation dies on SIGTRAP
 # (exit 133). Any ordinary usage/exit status means it started, which is all this
 # check needs to establish.
-for component in ${resigned[@]}; do
+for component in ${helpers[@]}; do
   target=${destination}/${component}
   launch_status=0
   ${target} >/dev/null 2>&1 || launch_status=$?
   if (( launch_status == 133 )); then
-    print -u2 "Re-signed test component still cannot start standalone: ${component}"
+    print -u2 "Released helper cannot start unchanged under the test runner: ${component}"
     exit 1
   fi
 done
 
+print "release_native_bytes=unchanged"
+print "release_helper_entitlements=verified-empty-of-sandbox-and-inherit"
 print "test_natives=${destination}"
