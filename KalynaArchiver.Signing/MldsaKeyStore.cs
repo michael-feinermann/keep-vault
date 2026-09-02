@@ -9,6 +9,7 @@ public static class MldsaKeyStore
     private static readonly byte[] Magic = "KZVMLK01"u8.ToArray();
     private static readonly byte[] OptionalEntropy = SHA512.HashData(
         Encoding.ASCII.GetBytes("KalynaZpaqVault/ML-DSA-87/DevelopmentSigningKey/v1"));
+    private static readonly byte[] ReleaseEnvelopeMagic = "KVSECRT1"u8.ToArray();
     private const int MaximumProtectedBytes = 32 * 1024;
 
     public static void CreateDevelopmentKey(string privateKeyPath, string publicKeyPath)
@@ -165,6 +166,111 @@ public static class MldsaKeyStore
             {
                 CryptographicOperations.ZeroMemory(expectedPublicKey);
             }
+        }
+    }
+
+    /// <summary>
+    /// Opens the AES-GCM envelope used by the release key set shared with the
+    /// macOS packaging tools. The private key exists only in the returned
+    /// lease; the envelope and wrapping key are wiped before returning.
+    /// </summary>
+    public static MldsaPrivateKeyLease OpenEncryptedKey(
+        string envelopePath,
+        string wrappingKeyPath,
+        string expectedPublicKeyPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(envelopePath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(wrappingKeyPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedPublicKeyPath);
+
+        const int nonceBytes = 12;
+        const int tagBytes = 16;
+        int envelopeBytes = checked(ReleaseEnvelopeMagic.Length + nonceBytes + Mldsa87.PrivateKeyBytes + tagBytes);
+        byte[] envelope = ReadBoundedFile(envelopePath, envelopeBytes, envelopeBytes);
+        byte[] wrappingKey = ReadWrappingKey(wrappingKeyPath);
+        byte[]? privateKey = null;
+        byte[]? expectedPublicKey = null;
+        try
+        {
+            if (!CryptographicOperations.FixedTimeEquals(
+                    envelope.AsSpan(0, ReleaseEnvelopeMagic.Length),
+                    ReleaseEnvelopeMagic))
+            {
+                throw new InvalidDataException("The encrypted ML-DSA release-key envelope has an invalid header.");
+            }
+
+            privateKey = new byte[Mldsa87.PrivateKeyBytes];
+            using (var aes = new AesGcm(wrappingKey, tagBytes))
+            {
+                aes.Decrypt(
+                    envelope.AsSpan(ReleaseEnvelopeMagic.Length, nonceBytes),
+                    envelope.AsSpan(ReleaseEnvelopeMagic.Length + nonceBytes, Mldsa87.PrivateKeyBytes),
+                    envelope.AsSpan(envelope.Length - tagBytes, tagBytes),
+                    privateKey,
+                    ReleaseEnvelopeMagic);
+            }
+
+            expectedPublicKey = ReadBoundedFile(
+                expectedPublicKeyPath,
+                Mldsa87.PublicKeyBytes,
+                Mldsa87.PublicKeyBytes);
+            byte[] derivedPublicKey = Mldsa87.DerivePublicKey(privateKey);
+            try
+            {
+                if (!CryptographicOperations.FixedTimeEquals(derivedPublicKey, expectedPublicKey))
+                {
+                    throw new CryptographicException(
+                        "The encrypted ML-DSA release key does not match the expected public key.");
+                }
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(derivedPublicKey);
+            }
+
+            var lease = new MldsaPrivateKeyLease(privateKey, expectedPublicKey);
+            privateKey = null;
+            expectedPublicKey = null;
+            return lease;
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(envelope);
+            CryptographicOperations.ZeroMemory(wrappingKey);
+            if (privateKey is not null)
+            {
+                CryptographicOperations.ZeroMemory(privateKey);
+            }
+
+            if (expectedPublicKey is not null)
+            {
+                CryptographicOperations.ZeroMemory(expectedPublicKey);
+            }
+        }
+    }
+
+    private static byte[] ReadWrappingKey(string path)
+    {
+        byte[] encodedBytes = ReadBoundedFile(path, 1, 1024);
+        try
+        {
+            string encoded = Encoding.ASCII.GetString(encodedBytes).Trim();
+            byte[] key = Convert.FromBase64String(encoded);
+            if (key.Length != 32)
+            {
+                CryptographicOperations.ZeroMemory(key);
+                throw new CryptographicException("The ML-DSA release wrapping key must contain 32 bytes.");
+            }
+
+            return key;
+        }
+        catch (FormatException exception)
+        {
+            throw new CryptographicException("The ML-DSA release wrapping key is not valid base64.", exception);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(encodedBytes);
         }
     }
 

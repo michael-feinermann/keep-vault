@@ -168,10 +168,13 @@ internal static partial class WindowsSafeFileSystem
         string path,
         bool allowWriters,
         bool denyRename,
-        bool requestDeleteAccess = false)
+        bool requestDeleteAccess = false,
+        bool requestReadAccess = false)
     {
         string fullPath = Path.GetFullPath(path);
-        uint desiredAccess = FileReadAttributes | (requestDeleteAccess ? DeleteAccess : 0u);
+        uint desiredAccess = FileReadAttributes
+            | (requestReadAccess ? GenericRead : 0u)
+            | (requestDeleteAccess ? DeleteAccess : 0u);
         uint shareMode = ShareRead
             | (allowWriters ? ShareWrite : 0u)
             | (denyRename ? 0u : ShareDelete);

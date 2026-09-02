@@ -6,6 +6,8 @@ param(
     [string] $PfxPath,
     [string] $PfxPassword,
     [string] $MldsaPrivateKeyPath,
+    [string] $MldsaPrivateKeyEncryptedPath,
+    [string] $WrappingKeyPath,
     [string] $MldsaPublicKeyPath,
     [string] $MldsaReferencePath,
     [string] $ExpectedSignerSha256,
@@ -22,7 +24,13 @@ $root = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $signingProject = Join-Path $root "KalynaSigningTool\KalynaSigningTool.csproj"
 $signingTool = Join-Path $root "KalynaSigningTool\bin\Release\net9.0-windows\KalynaSigningTool.dll"
 
-if (-not $MldsaPrivateKeyPath) {
+if ($MldsaPrivateKeyPath -and $MldsaPrivateKeyEncryptedPath) {
+    throw "Provide either MldsaPrivateKeyPath or MldsaPrivateKeyEncryptedPath, not both."
+}
+if ($WrappingKeyPath -and -not $MldsaPrivateKeyEncryptedPath) {
+    throw "WrappingKeyPath requires MldsaPrivateKeyEncryptedPath."
+}
+if (-not $MldsaPrivateKeyPath -and -not $MldsaPrivateKeyEncryptedPath) {
     $MldsaPrivateKeyPath = Join-Path $env:LOCALAPPDATA "KalynaZpaqVault\Signing\mldsa87-development.dpapi"
 }
 if (-not $MldsaPublicKeyPath) {
@@ -39,7 +47,8 @@ if (-not $NoBuild -or -not (Test-Path -LiteralPath $signingTool)) {
     }
 }
 
-foreach ($required in @($MldsaPrivateKeyPath, $MldsaPublicKeyPath, $MldsaReferencePath, $signingTool)) {
+$privateKeyPath = if ($MldsaPrivateKeyEncryptedPath) { $MldsaPrivateKeyEncryptedPath } else { $MldsaPrivateKeyPath }
+foreach ($required in @($privateKeyPath, $MldsaPublicKeyPath, $MldsaReferencePath, $signingTool)) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
         throw "Required hybrid-signing component is missing: $required"
     }
@@ -68,10 +77,21 @@ try {
             "sign",
             "--file", $resolvedTarget,
             "--signature", $signaturePath,
-            "--private-key", $MldsaPrivateKeyPath,
             "--public-key", $MldsaPublicKeyPath,
             "--reference-dll", $MldsaReferencePath
         )
+        if ($MldsaPrivateKeyEncryptedPath) {
+            if (-not $WrappingKeyPath) {
+                throw "WrappingKeyPath is required for an encrypted ML-DSA release key."
+            }
+            $arguments += @(
+                "--private-key-encrypted", $MldsaPrivateKeyEncryptedPath,
+                "--wrapping-key-file", (Resolve-Path -LiteralPath $WrappingKeyPath).Path
+            )
+        }
+        else {
+            $arguments += @("--private-key", $MldsaPrivateKeyPath)
+        }
         if ($PfxPath) {
             $arguments += @("--pfx", (Resolve-Path -LiteralPath $PfxPath).Path, "--pfx-password-env", "KALYNA_HYBRID_PFX_PASSWORD")
         }

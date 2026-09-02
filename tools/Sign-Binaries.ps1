@@ -11,6 +11,8 @@ param(
     [string] $ExpectedMldsa87Sha3_512,
     [string] $ExpectedMldsa87Skein1024,
     [string] $MldsaPrivateKeyPath,
+    [string] $MldsaPrivateKeyEncryptedPath,
+    [string] $WrappingKeyPath,
     [string] $MldsaPublicKeyPath,
     [string] $MldsaReferencePath,
     [switch] $CreateDevelopmentCertificate,
@@ -298,6 +300,8 @@ foreach ($target in $Path) {
         $hybridParameters.CertificateThumbprint = $signature.SignerCertificate.Thumbprint
     }
     if ($MldsaPrivateKeyPath) { $hybridParameters.MldsaPrivateKeyPath = $MldsaPrivateKeyPath }
+    if ($MldsaPrivateKeyEncryptedPath) { $hybridParameters.MldsaPrivateKeyEncryptedPath = $MldsaPrivateKeyEncryptedPath }
+    if ($WrappingKeyPath) { $hybridParameters.WrappingKeyPath = $WrappingKeyPath }
     if ($MldsaPublicKeyPath) { $hybridParameters.MldsaPublicKeyPath = $MldsaPublicKeyPath }
     if ($MldsaReferencePath) { $hybridParameters.MldsaReferencePath = $MldsaReferencePath }
     & $hybridSignatureScript @hybridParameters

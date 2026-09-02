@@ -187,6 +187,15 @@
                                                TextWrapping="Wrap"
                                                Margin="0,10,0,0" />
                                 </Grid>
+                                <CheckBox x:Name="DeleteOriginalsBox"
+                                          Content="Delete original files after a verified comparison"
+                                          IsChecked="False"
+                                          Margin="0,14,0,0" />
+                                <TextBlock x:Name="DeleteOriginalsHint"
+                                           Text="The archive is then extracted again and compared byte-for-byte with the original files. Files are deleted only after a complete match."
+                                           Foreground="#94A3B8"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0" />
                                 <Button x:Name="CreateArchiveButton" Content="Save archive" Margin="0,18,0,0" HorizontalAlignment="Left" Click="CreateArchive_Click" />
                             </StackPanel>
 
@@ -228,6 +237,10 @@
                                                        Foreground="#94A3B8"
                                                        TextWrapping="Wrap"
                                                        Margin="0,6,0,6" />
+                                            <ProgressBar x:Name="EntropyProgress"
+                                                         Minimum="0"
+                                                         Height="7"
+                                                         Foreground="#67E8F9" />
                                             <TextBlock x:Name="EntropyStatusText" Text="Collecting archive entropy: 0 current mouse samples" Foreground="#67E8F9" TextWrapping="Wrap" />
                                             <WrapPanel Margin="0,10,0,8">
                                                 <Button x:Name="GeneratePasswordButton" Content="Regenerate" Click="GeneratePassword_Click" />
@@ -398,6 +411,7 @@
                 </Grid.RowDefinitions>
                 <DockPanel>
                     <TextBlock x:Name="LogTitleText" Text="Log" FontSize="16" FontWeight="SemiBold" />
+                    <TextBlock x:Name="OperationStatusText" Text="Ready" Foreground="#94A3B8" Margin="10,0,0,0" VerticalAlignment="Center" />
                     <Button x:Name="ClearLogButton" Content="Clear" DockPanel.Dock="Right" Background="#334155" Foreground="#E5E7EB" Click="ClearLog_Click" />
                 </DockPanel>
                 <TextBox x:Name="LogBox"

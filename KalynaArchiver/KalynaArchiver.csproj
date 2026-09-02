@@ -42,7 +42,12 @@
           CopyToOutputDirectory="Always"
           CopyToPublishDirectory="Always"
           ExcludeFromSingleFile="true" />
-    <EmbeddedResource Include="..\tools\mldsa87-public.key" LogicalName="KeepVault.MLDsa87.PublicKey" />
+    <EmbeddedResource Include="..\tools\mldsa87-public.key"
+                      Condition="'$(KalynaReleaseIdentity)' != 'true'"
+                      LogicalName="KeepVault.MLDsa87.PublicKey" />
+    <EmbeddedResource Include="..\KeepVaultMac\Packaging\Keys\mldsa87-public.key"
+                      Condition="'$(KalynaReleaseIdentity)' == 'true'"
+                      LogicalName="KeepVault.MLDsa87.PublicKey" />
   </ItemGroup>
 
   <ItemGroup>

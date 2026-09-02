@@ -95,6 +95,7 @@ public sealed partial class MainWindow : Window, IDisposable
         UpdateProtectedOperationButtons();
         ApplyLanguage();
         CreatePasswordPanel.Opacity = EncryptBox.IsChecked == true ? 1.0 : 0.78;
+        CreatePasswordPanel.IsEnabled = EncryptBox.IsChecked == true;
         GeneratedPasswordFirstBox.Clear();
         GeneratedPasswordSecondBox.Clear();
         ResetKeySheetStatus();
@@ -219,6 +220,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private async Task CheckIntegrityAsync()
     {
         _integrityTrusted = false;
+        OperationStatusText.Text = T("integrityChecking");
         UpdateProtectedOperationButtons();
         try
         {
@@ -261,6 +263,7 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             UpdateProtectedOperationButtons();
+            OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
             if (!_integrityTrusted)
             {
                 Log("Application signature or integrity policy did not pass: archive operations disabled.");
@@ -274,6 +277,7 @@ public sealed partial class MainWindow : Window, IDisposable
             _integrityStatusRawMessage = null;
             _integrityStatusBrush = System.Windows.Media.Brushes.OrangeRed;
             ApplyIntegrityStatusText();
+            OperationStatusText.Text = T("blocked");
             Log(ex.Message);
         }
     }
@@ -397,6 +401,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         bool encryptionEnabled = EncryptBox.IsChecked == true;
         CreatePasswordPanel.Opacity = encryptionEnabled ? 1.0 : 0.78;
+        CreatePasswordPanel.IsEnabled = encryptionEnabled;
         CipherSuiteBox.IsEnabled = encryptionEnabled;
         if (!string.IsNullOrWhiteSpace(ArchivePathBox.Text))
         {
@@ -566,6 +571,13 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 await _recovery.CreateAsync(archivePath, Progress(), _shutdown.Token);
             }
+            bool deleteOriginals = DeleteOriginalsBox.IsChecked == true;
+            bool originalsDeleted = false;
+            if (deleteOriginals)
+            {
+                originalsDeleted = await VerifyAndDeleteOriginalsAsync(archivePath, inputs, EncryptBox.IsChecked == true);
+            }
+
             createdArchivePath = null;
             SaveCompressionLevel(compressionLevel);
             if (EncryptBox.IsChecked == true)
@@ -575,7 +587,12 @@ public sealed partial class MainWindow : Window, IDisposable
 
             ClearCreateSecrets();
             Log($"Fertig: {archivePath}");
-            MessageBox.Show(this, T("archiveCreated"), T("doneTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                this,
+                T(originalsDeleted ? "archiveCreatedOriginalsDeleted" : "archiveCreated"),
+                T("doneTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
@@ -591,6 +608,98 @@ public sealed partial class MainWindow : Window, IDisposable
         finally
         {
             EndProtectedOperation();
+        }
+    }
+
+    private async Task<bool> VerifyAndDeleteOriginalsAsync(
+        string archivePath,
+        IReadOnlyList<string> inputs,
+        bool encrypted)
+    {
+        string verifyRoot = Directory.CreateTempSubdirectory("keep-vault-verify-").FullName;
+        try
+        {
+            Log(T("verifyingBeforeDelete"));
+            OperationStatusText.Text = T("verifyingBeforeDelete");
+            WindowsOriginalDeletionService.ArchiveIdentity verifiedArchive =
+                WindowsOriginalDeletionService.CaptureArchiveIdentity(archivePath);
+
+            ProcessResult extraction = encrypted
+                ? await _zpaq.ExtractStreamingAsync(
+                    (zpaqInput, cancellationToken) => _kalyna.DecryptToStreamAsync(
+                        archivePath,
+                        CreatePasswordBox.Password,
+                        CreatePinBox.Password,
+                        GeneratedPasswordFirstBox.Text,
+                        GeneratedPasswordSecondBox.Text,
+                        zpaqInput,
+                        Progress(),
+                        cancellationToken),
+                    verifyRoot,
+                    Progress(),
+                    _shutdown.Token)
+                : await _zpaq.ExtractAsync(archivePath, verifyRoot, Progress(), _shutdown.Token);
+            if (!extraction.Succeeded)
+            {
+                Log(extraction.StandardError);
+                MessageBox.Show(this, T("verifyExtractFailed"), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            WindowsOriginalDeletionService.VerificationResult verification =
+                await WindowsOriginalDeletionService.VerifyExtractionAsync(
+                    inputs,
+                    verifyRoot,
+                    Progress(),
+                    _shutdown.Token);
+            if (!verification.Verified || verification.Originals is null)
+            {
+                Log($"{T("verifyMismatch")} — {verification.Failure}");
+                MessageBox.Show(this, T("verifyMismatch"), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            Log(string.Format(
+                CultureInfo.CurrentCulture,
+                T("verifyMatched"),
+                verification.FilesCompared,
+                verification.BytesCompared));
+
+            IReadOnlyList<string> failures = WindowsOriginalDeletionService.DeleteOriginals(
+                inputs,
+                archivePath,
+                verifiedArchive,
+                verification.Originals);
+            if (failures.Count > 0)
+            {
+                Log($"{T("deleteOriginalsFailed")} — {string.Join("; ", failures)}");
+                MessageBox.Show(this, T("deleteOriginalsFailed"), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            InputList.Items.Clear();
+            Log(T("originalsDeleted"));
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or InvalidOperationException)
+        {
+            Log($"{T("verifyMismatch")} — {exception.Message}");
+            MessageBox.Show(this, T("verifyMismatch"), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(verifyRoot, recursive: true);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                Log($"{T("verifyCleanupFailed")} — {exception.Message}");
+            }
         }
     }
 
@@ -1595,6 +1704,7 @@ public sealed partial class MainWindow : Window, IDisposable
             return false;
         }
 
+        OperationStatusText.Text = T("working");
         UpdateProtectedOperationButtons();
         return true;
     }
@@ -1602,6 +1712,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private void EndProtectedOperation()
     {
         Interlocked.Exchange(ref _protectedOperationActive, 0);
+        OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
         UpdateProtectedOperationButtons();
     }
 
@@ -1629,7 +1740,11 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private IProgress<string> Progress()
     {
-        return new Progress<string>(Log);
+        return new Progress<string>(message =>
+        {
+            OperationStatusText.Text = message;
+            Log(message);
+        });
     }
 
     private void Log(string? message)
@@ -1694,6 +1809,9 @@ public sealed partial class MainWindow : Window, IDisposable
             status.NonceFirst,
             status.NonceSecond,
             status.NonceThird,
+            EntropyMixer.RequiredMouseSamplesPerPurpose);
+        EntropyProgress.Value = Math.Min(
+            status.Minimum,
             EntropyMixer.RequiredMouseSamplesPerPurpose);
         EntropyStatusText.Foreground = statusKey == "entropyStatusPrepared"
             ? System.Windows.Media.Brushes.LightGreen
@@ -2453,6 +2571,8 @@ public sealed partial class MainWindow : Window, IDisposable
         EncryptBox.Content = T("encrypt");
         CipherSuiteLabel.Text = T("cipherSuite");
         Argon2ProfileText.Text = T("argon2Profile");
+        DeleteOriginalsBox.Content = T("deleteOriginals");
+        DeleteOriginalsHint.Text = T("deleteOriginalsHint");
         CreateArchiveButton.Content = T("saveArchive");
         ExtractTitleText.Text = T("extractTitle");
         ExtractSubtitleText.Text = T("extractSubtitle");
@@ -2512,6 +2632,11 @@ public sealed partial class MainWindow : Window, IDisposable
         EraseContainerButton.Content = T("eraseButton");
         LogTitleText.Text = T("log");
         ClearLogButton.Content = T("clear");
+        OperationStatusText.Text = Volatile.Read(ref _protectedOperationActive) != 0
+            ? T("working")
+            : _integrityTrusted
+                ? T("ready")
+                : T("blocked");
     }
 
     private string T(string key)
@@ -2654,6 +2779,9 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "recoveryNewFile") => "Recovery output selected: {0}",
             ("en", "log") => "Log",
             ("en", "clear") => "Clear",
+            ("en", "working") => "Working",
+            ("en", "ready") => "Ready",
+            ("en", "blocked") => "Blocked",
             ("en", "notFound") => "not found",
             ("en", "kalynaAvailable") => "Kalyna reference library: available",
             ("en", "kalynaMissing") => "Kalyna reference library: missing (encryption is blocked)",
@@ -2681,6 +2809,16 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "encrypting") => "Encrypting ZPAQ archive ...",
             ("en", "encryptingStreaming") => "Generating ZPAQ stream and encrypting directly in RAM with {0} ...",
             ("en", "archiveCreated") => "Archive created.",
+            ("en", "archiveCreatedOriginalsDeleted") => "Archive created; the originals were deleted after a verified byte-for-byte comparison.",
+            ("en", "deleteOriginals") => "Delete original files after a verified comparison",
+            ("en", "deleteOriginalsHint") => "The archive is then extracted again and compared byte-for-byte with the original files. Files are deleted only after a complete match.",
+            ("en", "verifyingBeforeDelete") => "Extracting the archive again and comparing it with the originals ...",
+            ("en", "verifyExtractFailed") => "The archive could not be extracted for verification. No original was deleted.",
+            ("en", "verifyMismatch") => "The archive does not reproduce the originals byte for byte. No original was deleted.",
+            ("en", "verifyMatched") => "Byte-for-byte comparison passed: {0} files, {1} bytes.",
+            ("en", "deleteOriginalsFailed") => "The comparison passed but an original could not be deleted.",
+            ("en", "originalsDeleted") => "The originals were deleted; only the archive remains.",
+            ("en", "verifyCleanupFailed") => "The temporary verification copy could not be removed",
             ("en", "extractInputMissing") => "Please select an archive file and output folder.",
             ("en", "extracting") => "Extracting archive ...",
             ("en", "extractingStreaming") => "Authenticating and decrypting container directly into ZPAQ extractor pipe ...",
@@ -2837,6 +2975,9 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "recoveryNewFile") => "Wiederherstellungsdatei ausgewählt: {0}",
             (_, "log") => "Protokoll",
             (_, "clear") => "Leeren",
+            (_, "working") => "In Bearbeitung",
+            (_, "ready") => "Bereit",
+            (_, "blocked") => "Gesperrt",
             (_, "notFound") => "nicht gefunden",
             (_, "kalynaAvailable") => "Kalyna-Referenzbibliothek: verfügbar",
             (_, "kalynaMissing") => "Kalyna-Referenzbibliothek: fehlt (Verschlüsselung wird blockiert)",
@@ -2864,6 +3005,16 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "encrypting") => "Verschlüssele ZPAQ-Archiv ...",
             (_, "encryptingStreaming") => "Erzeuge ZPAQ-Stream und verschlüssele direkt im RAM mit {0} ...",
             (_, "archiveCreated") => "Archiv wurde erstellt.",
+            (_, "archiveCreatedOriginalsDeleted") => "Archiv erstellt; die Originale wurden nach geprüftem bitweisem Abgleich gelöscht.",
+            (_, "deleteOriginals") => "Originaldateien nach geprüftem Abgleich löschen",
+            (_, "deleteOriginalsHint") => "Das Archiv wird danach erneut entpackt und bitweise mit den Originalen verglichen. Gelöscht wird erst nach vollständiger Übereinstimmung.",
+            (_, "verifyingBeforeDelete") => "Archiv wird erneut entpackt und mit den Originalen verglichen …",
+            (_, "verifyExtractFailed") => "Das Archiv konnte zur Prüfung nicht entpackt werden. Es wurde keine Originaldatei gelöscht.",
+            (_, "verifyMismatch") => "Das Archiv gibt die Originale nicht bitgenau wieder. Es wurde keine Originaldatei gelöscht.",
+            (_, "verifyMatched") => "Bitweiser Abgleich bestanden: {0} Dateien, {1} Bytes.",
+            (_, "deleteOriginalsFailed") => "Der Abgleich war erfolgreich, aber eine Originaldatei konnte nicht gelöscht werden.",
+            (_, "originalsDeleted") => "Die Originale wurden gelöscht; es verbleibt nur das Archiv.",
+            (_, "verifyCleanupFailed") => "Die temporäre Prüfkopie konnte nicht entfernt werden",
             (_, "extractInputMissing") => "Bitte Archivdatei und Zielordner auswählen.",
             (_, "extracting") => "Entpacke Archiv ...",
             (_, "extractingStreaming") => "Authentifiziere und entschlüssele den Container direkt in die ZPAQ-Entpacker-Pipe ...",

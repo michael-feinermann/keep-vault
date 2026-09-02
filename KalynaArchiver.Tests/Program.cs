@@ -127,6 +127,9 @@ var comprehensiveTests = new List<TestCase>
     new("files.object-bound-reads", "object-bound reads: reparse points, hard links and directories",
         Sync(RunObjectBoundReadTests), TestResource.Light, "Files"),
 
+        new("files.original-deletion-verification", "verified original deletion and quarantine safety",
+        RunWindowsOriginalDeletionTestsAsync, TestResource.Light, "Files"),
+
     new("zpaq.path-traversal-extraction", "ZPAQ path traversal and extraction directories",
         RunZpaqTraversalTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
 
@@ -2361,6 +2364,72 @@ static void RunObjectBoundReadTests()
         catch (IOException)
         {
         }
+    }
+}
+
+static async Task RunWindowsOriginalDeletionTestsAsync()
+{
+    string root = Path.Combine(Path.GetTempPath(), $"keep-vault-original-deletion-{Guid.NewGuid():N}");
+    string inputDirectory = Path.Combine(root, "inputs");
+    string extractedDirectory = Path.Combine(root, "extracted");
+    string archive = Path.Combine(root, "archive.zpaq");
+    Directory.CreateDirectory(inputDirectory);
+
+    try
+    {
+        string first = Path.Combine(inputDirectory, "first.txt");
+        string second = Path.Combine(inputDirectory, "second.bin");
+        await File.WriteAllTextAsync(first, "the first original");
+        await File.WriteAllBytesAsync(second, [0, 1, 2, 3, 4, 5, 6, 7]);
+        File.WriteAllBytes(archive, RandomNumberGenerator.GetBytes(257));
+
+        string[] inputs = [first, second];
+        Dictionary<string, string> entryMap = ZpaqService.BuildArchiveEntryMap(inputs);
+        foreach ((string relative, string original) in entryMap)
+        {
+            string extracted = Path.Combine(extractedDirectory, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(extracted)!);
+            File.Copy(original, extracted);
+        }
+
+        WindowsOriginalDeletionService.VerificationResult verified =
+            await WindowsOriginalDeletionService.VerifyExtractionAsync(
+                inputs,
+                extractedDirectory,
+                progress: null,
+                CancellationToken.None);
+        Assert(verified.Verified && verified.Originals is not null, "matching extraction passes original verification");
+
+        File.WriteAllText(first, "changed after verification");
+        IReadOnlyList<string> driftFailures = WindowsOriginalDeletionService.DeleteOriginals(
+            inputs,
+            archive,
+            WindowsOriginalDeletionService.CaptureArchiveIdentity(archive),
+            verified.Originals!);
+        Assert(driftFailures.Count > 0, "changed originals block deletion");
+        Assert(File.Exists(first) && File.Exists(second), "drift rejection leaves every original in place");
+
+        await File.WriteAllTextAsync(first, "the first original");
+        WindowsOriginalDeletionService.VerificationResult clean =
+            await WindowsOriginalDeletionService.VerifyExtractionAsync(
+                inputs,
+                extractedDirectory,
+                progress: null,
+                CancellationToken.None);
+        Assert(clean.Verified && clean.Originals is not null, "restored originals can be verified again");
+
+        IReadOnlyList<string> deletionFailures = WindowsOriginalDeletionService.DeleteOriginals(
+            inputs,
+            archive,
+            WindowsOriginalDeletionService.CaptureArchiveIdentity(archive),
+            clean.Originals!);
+        Assert(deletionFailures.Count == 0, $"verified originals delete cleanly: {string.Join("; ", deletionFailures)}");
+        Assert(!File.Exists(first) && !File.Exists(second), "successful verified deletion removes exactly the originals");
+        Assert(File.Exists(archive), "verified original deletion leaves the archive untouched");
+    }
+    finally
+    {
+        DeleteTestDirectory(root);
     }
 }
 

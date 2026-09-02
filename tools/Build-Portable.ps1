@@ -7,6 +7,7 @@ param(
     [switch] $TrustDevelopmentCertificate,
     [string] $PfxPath,
     [string] $PfxPassword,
+    [string] $ReleaseKeyDirectory,
     [string] $CertificateThumbprint,
     [string] $ExpectedSignerSha256,
     [string] $ExpectedSignerSha3_512,
@@ -15,6 +16,8 @@ param(
     [string] $ExpectedMldsa87Sha3_512,
     [string] $ExpectedMldsa87Skein1024,
     [string] $MldsaPrivateKeyPath,
+    [string] $MldsaPrivateKeyEncryptedPath,
+    [string] $WrappingKeyPath,
     [string] $MldsaPublicKeyPath,
     [string] $MldsaReferencePath
 )
@@ -45,6 +48,22 @@ $manifestScript = Join-Path $root "tools\Generate-Sha3Manifest.ps1"
 $skeinManifestScript = Join-Path $root "tools\Generate-SkeinManifest.ps1"
 $hybridSignatureScript = Join-Path $root "tools\New-HybridSignature.ps1"
 
+if ($ReleaseKeyDirectory) {
+    $releaseKeyRoot = [System.IO.Path]::GetFullPath($ReleaseKeyDirectory)
+    if (-not $PfxPath) {
+        $PfxPath = Join-Path $releaseKeyRoot "hybrid-rsa4096.pfx"
+    }
+    if (-not $MldsaPrivateKeyPath -and -not $MldsaPrivateKeyEncryptedPath) {
+        $MldsaPrivateKeyEncryptedPath = Join-Path $releaseKeyRoot "mldsa87-private.key.enc"
+    }
+    if (-not $WrappingKeyPath) {
+        $WrappingKeyPath = Join-Path $releaseKeyRoot "wrapping-key.b64"
+    }
+    if (-not $MldsaPublicKeyPath) {
+        $MldsaPublicKeyPath = Join-Path $root "KeepVaultMac\Packaging\Keys\mldsa87-public.key"
+    }
+}
+
 if ($TrustDevelopmentCertificate) {
     throw "Trusting the development root in CurrentUser\\Root is forbidden. Portable development builds use only the compiled signer pins."
 }
@@ -73,9 +92,17 @@ function Normalize-Digest {
     return $normalized.ToUpperInvariant()
 }
 
-[xml] $buildProperties = Get-Content -LiteralPath (Join-Path $root "Directory.Build.props")
-$propertyGroup = $buildProperties.Project.PropertyGroup
-$defaultCertificateThumbprint = Normalize-Thumbprint ($propertyGroup.SelectSingleNode("KalynaSigningCertificateThumbprint").InnerText)
+[xml] $rootBuildProperties = Get-Content -LiteralPath (Join-Path $root "Directory.Build.props")
+$rootPropertyGroup = $rootBuildProperties.Project.PropertyGroup
+$policyPath = if ($ReleaseKeyDirectory) {
+    Join-Path $root "KeepVaultMac\Directory.Build.props"
+}
+else {
+    Join-Path $root "Directory.Build.props"
+}
+[xml] $policyProperties = Get-Content -LiteralPath $policyPath
+$propertyGroup = $policyProperties.Project.PropertyGroup
+$defaultCertificateThumbprint = Normalize-Thumbprint ($rootPropertyGroup.SelectSingleNode("KalynaSigningCertificateThumbprint").InnerText)
 $defaultSignerSha256 = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedSignerSha256").InnerText) 64 "Expected SHA-256 SPKI fingerprint"
 $defaultSignerSha3 = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedSignerSha3_512").InnerText) 128 "Expected SHA3-512 SPKI fingerprint"
 $defaultSignerSkein = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedSignerSkein1024").InnerText) 256 "Expected Skein-1024 SPKI fingerprint"
@@ -90,7 +117,19 @@ else {
     $defaultCertificateThumbprint
 }
 
-$usingDefaultCertificate = -not $PfxPath -and $effectiveCertificateThumbprint -eq $defaultCertificateThumbprint
+if ($ReleaseKeyDirectory -and $PfxPath -and $PfxPassword) {
+    $releaseCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+        (Resolve-Path -LiteralPath $PfxPath).Path,
+        $PfxPassword)
+    try {
+        $effectiveCertificateThumbprint = Normalize-Thumbprint $releaseCertificate.Thumbprint
+    }
+    finally {
+        $releaseCertificate.Dispose()
+    }
+}
+
+$usingDefaultCertificate = ((-not $PfxPath -and $effectiveCertificateThumbprint -eq $defaultCertificateThumbprint) -or [bool]$ReleaseKeyDirectory)
 $effectiveSignerSha256 = if ($ExpectedSignerSha256) {
     Normalize-Digest $ExpectedSignerSha256 64 "Expected SHA-256 SPKI fingerprint"
 }
@@ -228,6 +267,7 @@ $publishArgs = @(
     "-p:PublishTrimmed=false",
     "-o", $publishDir
 )
+$publishArgs += "-p:KalynaReleaseIdentity=$([bool]$ReleaseKeyDirectory)"
 $publishArgs += "-p:KalynaExpectedSignerSha256=$effectiveSignerSha256"
 $publishArgs += "-p:KalynaExpectedSignerSha3_512=$effectiveSignerSha3"
 $publishArgs += "-p:KalynaExpectedSignerSkein1024=$effectiveSignerSkein"
@@ -255,6 +295,7 @@ $verifierPublishArgs = @(
     "-p:IncludeNativeLibrariesForSelfExtract=true",
     "-p:PublishReadyToRun=false",
     "-p:PublishTrimmed=false",
+    "-p:KalynaReleaseIdentity=$([bool]$ReleaseKeyDirectory)",
     "-p:KalynaExpectedSignerSha256=$effectiveSignerSha256",
     "-p:KalynaExpectedSignerSha3_512=$effectiveSignerSha3",
     "-p:KalynaExpectedSignerSkein1024=$effectiveSignerSkein",
@@ -338,6 +379,8 @@ if (-not $SkipSigning) {
             "-ExpectedMldsa87Skein1024", $effectiveMldsaSkein
         )
         if ($MldsaPrivateKeyPath) { $signArgs += @("-MldsaPrivateKeyPath", $MldsaPrivateKeyPath) }
+        if ($MldsaPrivateKeyEncryptedPath) { $signArgs += @("-MldsaPrivateKeyEncryptedPath", $MldsaPrivateKeyEncryptedPath) }
+        if ($WrappingKeyPath) { $signArgs += @("-WrappingKeyPath", $WrappingKeyPath) }
         if ($MldsaPublicKeyPath) { $signArgs += @("-MldsaPublicKeyPath", $MldsaPublicKeyPath) }
         if ($MldsaReferencePath) { $signArgs += @("-MldsaReferencePath", $MldsaReferencePath) }
 
@@ -378,6 +421,8 @@ foreach ($target in $portableBinaries) {
             $manifestHybridParameters.CertificateThumbprint = $effectiveCertificateThumbprint
         }
         if ($MldsaPrivateKeyPath) { $manifestHybridParameters.MldsaPrivateKeyPath = $MldsaPrivateKeyPath }
+        if ($MldsaPrivateKeyEncryptedPath) { $manifestHybridParameters.MldsaPrivateKeyEncryptedPath = $MldsaPrivateKeyEncryptedPath }
+        if ($WrappingKeyPath) { $manifestHybridParameters.WrappingKeyPath = $WrappingKeyPath }
         if ($MldsaPublicKeyPath) { $manifestHybridParameters.MldsaPublicKeyPath = $MldsaPublicKeyPath }
         if ($MldsaReferencePath) { $manifestHybridParameters.MldsaReferencePath = $MldsaReferencePath }
         & $hybridSignatureScript @manifestHybridParameters
@@ -491,6 +536,8 @@ if (-not $SkipSigning) {
             $catchAllParameters.CertificateThumbprint = $effectiveCertificateThumbprint
         }
         if ($MldsaPrivateKeyPath) { $catchAllParameters.MldsaPrivateKeyPath = $MldsaPrivateKeyPath }
+        if ($MldsaPrivateKeyEncryptedPath) { $catchAllParameters.MldsaPrivateKeyEncryptedPath = $MldsaPrivateKeyEncryptedPath }
+        if ($WrappingKeyPath) { $catchAllParameters.WrappingKeyPath = $WrappingKeyPath }
         if ($MldsaPublicKeyPath) { $catchAllParameters.MldsaPublicKeyPath = $MldsaPublicKeyPath }
         if ($MldsaReferencePath) { $catchAllParameters.MldsaReferencePath = $MldsaReferencePath }
         & $hybridSignatureScript @catchAllParameters
@@ -531,6 +578,8 @@ if (-not $SkipSigning) {
         $zipHybridParameters.CertificateThumbprint = $effectiveCertificateThumbprint
     }
     if ($MldsaPrivateKeyPath) { $zipHybridParameters.MldsaPrivateKeyPath = $MldsaPrivateKeyPath }
+    if ($MldsaPrivateKeyEncryptedPath) { $zipHybridParameters.MldsaPrivateKeyEncryptedPath = $MldsaPrivateKeyEncryptedPath }
+    if ($WrappingKeyPath) { $zipHybridParameters.WrappingKeyPath = $WrappingKeyPath }
     if ($MldsaPublicKeyPath) { $zipHybridParameters.MldsaPublicKeyPath = $MldsaPublicKeyPath }
     if ($MldsaReferencePath) { $zipHybridParameters.MldsaReferencePath = $MldsaReferencePath }
     & $hybridSignatureScript @zipHybridParameters

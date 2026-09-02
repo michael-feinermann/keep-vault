@@ -671,7 +671,7 @@ public sealed class IntegrityService : IDisposable
 
     internal static bool IsAcceptedSignatureState(SignatureState state)
     {
-        return state is SignatureState.Trusted or SignatureState.PinnedDevelopment;
+        return state is SignatureState.Trusted or SignatureState.PinnedDevelopment or SignatureState.PinnedSelfSigned;
     }
 }
 
@@ -752,6 +752,7 @@ public enum SignatureState
     Missing,
     PresentButUntrustedOrInvalid,
     PinnedDevelopment,
+    PinnedSelfSigned,
     Trusted,
 }
 
@@ -1070,7 +1071,7 @@ internal static partial class AuthenticodeSignature
             }
 
             if (result == CertEUntrustedRoot
-                && certificate?.IsDevelopmentCertificate == true
+                && (certificate?.IsDevelopmentCertificate == true || certificate?.IsSelfSigned == true)
                 && singlePrimarySignature
                 && sha512PolicySatisfied
                 && SigningTrustPolicy.Matches(
@@ -1079,13 +1080,19 @@ internal static partial class AuthenticodeSignature
                     certificate.SignerSkein1024))
             {
                 return new SignatureInfo(
-                    SignatureState.PinnedDevelopment,
+                    certificate.IsDevelopmentCertificate
+                        ? SignatureState.PinnedDevelopment
+                        : SignatureState.PinnedSelfSigned,
                     signer,
                     certificate.Thumbprint,
                     certificate.IsSelfSigned,
                     signer is null
-                        ? "Pinned development Authenticode signature verified; its root is intentionally not installed as a Windows trust root."
-                        : $"Pinned development Authenticode signature verified: {signer}. Its root is intentionally not installed as a Windows trust root.",
+                        ? certificate.IsDevelopmentCertificate
+                            ? "Pinned development Authenticode signature verified; its root is intentionally not installed as a Windows trust root."
+                            : "Pinned self-signed Authenticode signature verified by the compiled signer pins."
+                        : certificate.IsDevelopmentCertificate
+                            ? $"Pinned development Authenticode signature verified: {signer}. Its root is intentionally not installed as a Windows trust root."
+                            : $"Pinned self-signed Authenticode signature verified: {signer}.",
                     certificate.SignerSha256,
                     certificate.SignerSha3_512,
                     certificate.SignerSkein1024);

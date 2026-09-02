@@ -53,13 +53,12 @@ static int RunKeygen(Dictionary<string, string> options)
 static async Task<int> RunSignAsync(Dictionary<string, string> options)
 {
     string filePath = Require(options, "file");
-    string privatePath = Require(options, "private-key");
     string publicPath = Require(options, "public-key");
     string referencePath = Require(options, "reference-dll");
     string signaturePath = options.GetValueOrDefault("signature") ?? filePath + HybridSignatureService.SidecarExtension;
 
     using X509Certificate2 certificate = LoadCertificate(options);
-    using MldsaPrivateKeyLease key = MldsaKeyStore.OpenDevelopmentKey(privatePath, publicPath);
+    using MldsaPrivateKeyLease key = OpenSigningKey(options, publicPath);
     byte[] privateKeyCopy = key.PrivateKey.ToArray();
     byte[] publicKeyCopy = key.PublicKey.ToArray();
     try
@@ -87,6 +86,29 @@ static async Task<int> RunSignAsync(Dictionary<string, string> options)
         CryptographicOperations.ZeroMemory(publicKeyCopy);
     }
     return 0;
+}
+
+static MldsaPrivateKeyLease OpenSigningKey(
+    Dictionary<string, string> options,
+    string publicPath)
+{
+    bool encrypted = options.ContainsKey("private-key-encrypted");
+    bool development = options.ContainsKey("private-key");
+    if (encrypted == development)
+    {
+        throw new ArgumentException(
+            "Provide exactly one of --private-key or --private-key-encrypted.");
+    }
+
+    if (encrypted)
+    {
+        return MldsaKeyStore.OpenEncryptedKey(
+            Require(options, "private-key-encrypted"),
+            Require(options, "wrapping-key-file"),
+            publicPath);
+    }
+
+    return MldsaKeyStore.OpenDevelopmentKey(Require(options, "private-key"), publicPath);
 }
 
 static int RunVerify(Dictionary<string, string> options)
