@@ -60,9 +60,11 @@ static async Task<int> RunAsync(string[] args)
                 "pfx-password-encrypted",
                 "pfx-wrapping-key-keychain-service",
                 "pfx-wrapping-key-keychain-account",
+                "pfx-wrapping-key-file",
                 "mldsa-private-key-encrypted",
                 "mldsa-wrapping-key-keychain-service",
                 "mldsa-wrapping-key-keychain-account",
+                "mldsa-wrapping-key-file",
                 "mldsa-public-key",
                 "reference-library",
                 "policy",
@@ -115,7 +117,8 @@ static async Task<int> SignAsync(Dictionary<string, string> options, IReadOnlyLi
     Exception? operationFailure = null;
     try
     {
-        // Each half is released through a different Keychain item and ACL.
+        // Each half uses a distinct role-specific Keychain item or an
+        // explicitly selected private file on the offline signing volume.
         // Equality is rejected as a final invariant in case two independently
         // named items were accidentally populated with the same bytes.
         mldsaWrappingKey = ReadMldsaWrappingKey(options);
@@ -125,7 +128,7 @@ static async Task<int> SignAsync(Dictionary<string, string> options, IReadOnlyLi
                 pfxWrappingKey.Bytes))
         {
             throw new CryptographicException(
-                "The RSA and ML-DSA wrapping keys are equal; independent Keychain keys are required.");
+                "The RSA and ML-DSA wrapping keys are equal; independent role keys are required.");
         }
 
         privateKey = HybridKeyEnvelope.ReadMldsaPrivateKey(
@@ -581,14 +584,18 @@ static int WrapPfxPassword(Dictionary<string, string> options)
 }
 
 static LockedSensitiveBuffer ReadMldsaWrappingKey(Dictionary<string, string> options) =>
-    ReadWrappingKey(
+    options.TryGetValue("mldsa-wrapping-key-file", out string? path)
+    ? UsbWrappingKey.Read(path)
+    : ReadWrappingKey(
         options,
         "mldsa-wrapping-key-keychain-service",
         "mldsa-wrapping-key-keychain-account",
         "ML-DSA-87 wrapping key");
 
 static LockedSensitiveBuffer ReadPfxWrappingKey(Dictionary<string, string> options) =>
-    ReadWrappingKey(
+    options.TryGetValue("pfx-wrapping-key-file", out string? path)
+    ? UsbWrappingKey.Read(path)
+    : ReadWrappingKey(
         options,
         "pfx-wrapping-key-keychain-service",
         "pfx-wrapping-key-keychain-account",
@@ -640,6 +647,27 @@ static LockedSensitiveBuffer ReadWrappingKey(
 
 static void RequireDistinctWrappingKeyIdentities(Dictionary<string, string> options)
 {
+    bool mldsaFile = options.ContainsKey("mldsa-wrapping-key-file");
+    bool pfxFile = options.ContainsKey("pfx-wrapping-key-file");
+    if (mldsaFile || pfxFile)
+    {
+        if (!mldsaFile || !pfxFile
+            || options.ContainsKey("mldsa-wrapping-key-keychain-service")
+            || options.ContainsKey("mldsa-wrapping-key-keychain-account")
+            || options.ContainsKey("pfx-wrapping-key-keychain-service")
+            || options.ContainsKey("pfx-wrapping-key-keychain-account")
+            || string.Equals(
+                Path.GetFullPath(Require(options, "mldsa-wrapping-key-file")),
+                Path.GetFullPath(Require(options, "pfx-wrapping-key-file")),
+                StringComparison.Ordinal))
+        {
+            throw new CryptographicException(
+                "USB signing requires two distinct role-specific key files and no Keychain options.");
+        }
+        // SignAsync additionally rejects equal decoded keys with FixedTimeEquals.
+        return;
+    }
+
     string mldsaService = Require(options, "mldsa-wrapping-key-keychain-service");
     string mldsaAccount = Require(options, "mldsa-wrapping-key-keychain-account");
     string pfxService = Require(options, "pfx-wrapping-key-keychain-service");

@@ -20,16 +20,19 @@
 /*
  * Keep Vault processes key-derived chaining values in these block helpers.
  * The upstream reference implementation leaves its local key schedule and
- * working words on the caller's stack after returning.  A volatile byte loop
+ * working words on the caller's stack after returning.  A volatile word loop
  * is intentional here: unlike memset(), the compiler may not remove it as a
  * dead store.  This keeps the reference arithmetic unchanged while ensuring
  * every block helper erases its transient schedule before it returns.
+ * All callers pass a complete u64b_t array and its sizeof value in bytes;
+ * using the same qualified element type preserves alignment and every byte.
  */
-static void Skein_Secure_Zero_Local(void *pointer,size_t length)
+static void Skein_Secure_Zero_Local(u64b_t *pointer,size_t length)
     {
-    volatile u08b_t *bytes = (volatile u08b_t *)pointer;
+    volatile u64b_t *words = pointer;
+    length /= sizeof(*pointer);
     while (length-- != 0)
-        *bytes++ = 0;
+        *words++ = 0;
     }
 
 /* 64-bit rotate left */

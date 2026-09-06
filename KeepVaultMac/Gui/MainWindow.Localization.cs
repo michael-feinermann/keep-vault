@@ -311,8 +311,8 @@ public sealed partial class MainWindow
                 ? "Physically print the separate key sheets, or explicitly export a test PDF, for this exact archive path, suite and factor pair first."
                 : "Zuerst die getrennten Schlüsselzettel für exakt diesen Archivpfad, dieses Verfahren und dieses Faktorenpaar physisch drucken oder ausdrücklich als Test-PDF exportieren.",
             "testPdfWarning" => en
-                ? "This explicit test export permanently writes both secret factors to a PDF. Continue only in a controlled test environment."
-                : "Dieser ausdrückliche Testexport schreibt beide geheimen Faktoren dauerhaft in eine PDF. Nur in einer kontrollierten Testumgebung fortfahren.",
+                ? "This explicit test export permanently writes the secret factors to two separate PDFs, one factor per file. Continue only in a controlled test environment."
+                : "Dieser ausdrückliche Testexport schreibt die geheimen Faktoren dauerhaft in zwei getrennte PDFs, einen Faktor pro Datei. Nur in einer kontrollierten Testumgebung fortfahren.",
             "noPhysicalPrinter" => en ? "No non-virtual CUPS printer is available." : "Es ist keine nicht virtuelle CUPS-Druckerwarteschlange verfügbar.",
             "cupsSpoolWarning" => en
                 ? "CUPS, the printer, or a network print server can retain this secret key-sheet job in a spool, cache, or device memory. Continue only with a trusted physical printer that you control. Keep Vault cannot erase copies outside the app."
@@ -355,7 +355,7 @@ public sealed partial class MainWindow
             "integrityActionBlocked" => en ? "This operation remains blocked until every app and native component passes all integrity and signature checks." : "Diese Aktion bleibt gesperrt, bis alle App- und Native-Komponenten sämtliche Integritäts- und Signaturprüfungen bestanden haben.",
             "integrityBlockedLog" => en ? "Integrity policy did not pass. Archive, extraction and erase operations remain disabled." : "Die Integritätsrichtlinie wurde nicht erfüllt. Archivierung, Entpacken und Löschen bleiben deaktiviert.",
             "generatedPasswordLog" => en ? "Generated factors A/B and prepared fresh salt/nonces in locked memory; source pools were consumed." : "Faktoren A/B erzeugt und frischen Salt/Nonces im gesperrten Speicher vorbereitet; Quellpools wurden verbraucht.",
-            "keySheetTestPdfSavedLog" => en ? "Explicit test PDF containing both factors saved: {0}" : "Ausdrückliche Test-PDF mit beiden Faktoren gespeichert: {0}",
+            "keySheetTestPdfSavedLog" => en ? "Separate test PDF containing one factor saved: {0}" : "Getrennte Test-PDF mit einem Faktor gespeichert: {0}",
             "keySheetPrintedLog" => en ? "Three-page key-sheet job streamed to physical CUPS queue {0}; no app PDF was created." : "Dreiseitiger Schlüsselzettelauftrag an physische CUPS-Warteschlange {0} gestreamt; keine App-PDF wurde erzeugt.",
             "cipherSuiteSelected" => en ? "Cipher suite selected: {0}" : "Verschlüsselungsverfahren gewählt: {0}",
             "selectedSuiteMissing" => en ? "The signed, manifest-verified native reference library for {0} is unavailable." : "Die signierte und manifestgeprüfte native Referenzbibliothek für {0} ist nicht verfügbar.",

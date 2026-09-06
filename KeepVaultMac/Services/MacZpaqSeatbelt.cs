@@ -283,19 +283,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
     internal Process CreateProductionProcess()
     {
         RequireValid();
-        if (_operation == MacZpaqSandboxOperation.SystemTool)
-        {
-            return BuildProcess(_arguments);
-        }
-
-        var productionArguments = new List<string>(_arguments);
-        if (_operation is MacZpaqSandboxOperation.ExtractVerified
-            or MacZpaqSandboxOperation.ListVerified)
-        {
-            productionArguments.Add("-kv-shm-name");
-            productionArguments.Add(_allowedShmName);
-        }
-        return BuildProcess(productionArguments);
+        return BuildProcess(_arguments);
     }
 
     internal void RequireValid()
@@ -361,8 +349,8 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
     internal void RequireNoSharedMemoryResidue()
     {
         ThrowIfDisposed();
-        bool found = RemoveSharedMemoryIfPresent(_allowedShmName);
-        found |= RemoveSharedMemoryIfPresent(_deniedShmName);
+        bool found = SharedMemoryExists(_allowedShmName);
+        found |= SharedMemoryExists(_deniedShmName);
         if (found)
         {
             throw new IOException("ZPAQ left or recreated a bound POSIX shared-memory object.");
@@ -398,7 +386,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
             "--unix-socket", _unixSocketPath,
             "--exec", CanaryExecPath,
             "--inherited-fd", inheritedDescriptor.ToString(CultureInfo.InvariantCulture),
-            "--shm-mode", UsesVerifiedSharedMemory(_operation) ? "exact" : "none",
+            "--shm-mode", "none",
             "--allowed-shm", _allowedShmName,
             "--denied-shm", _deniedShmName,
         };
@@ -457,8 +445,8 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
             }
             try
             {
-                bool found = RemoveSharedMemoryIfPresent(_allowedShmName);
-                found |= RemoveSharedMemoryIfPresent(_deniedShmName);
+                bool found = SharedMemoryExists(_allowedShmName);
+                found |= SharedMemoryExists(_deniedShmName);
                 if (found)
                 {
                     throw new IOException("The ZPAQ canary left or recreated shared memory.");
@@ -524,7 +512,8 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
                 || capturedOutput.Length != 0
                 || !string.Equals(capturedError.Trim(), expectedErrorMarker, StringComparison.Ordinal))
             {
-                throw new InvalidOperationException("The ZPAQ Seatbelt kernel-enforcement canary failed.");
+                throw new InvalidOperationException(
+                    $"The ZPAQ Seatbelt kernel-enforcement canary failed for {validationStage}: exit={process.ExitCode}, stdoutLength={capturedOutput.Length}, stderrLength={capturedError.Length}.");
             }
             RequireValid();
         }
@@ -630,7 +619,6 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
         AddProfileParameter(start, "EXECUTABLE", _executablePath);
         AddProfileParameter(start, "WORKING_DIRECTORY", _workingDirectory);
         AddProfileParameter(start, "CANARY_UNIX_SOCKET", _unixSocketPath);
-        AddProfileParameter(start, "VERIFIED_SHM_NAME", _allowedShmName);
         if (_inputRoot is not null)
         {
             AddProfileParameter(start, "INPUT_ROOT", _inputRoot);
@@ -716,15 +704,6 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(operation));
-        }
-        if (UsesVerifiedSharedMemory(operation))
-        {
-            profile.Append(
-                "(allow ipc-posix-shm-read-data\n"
-                + "       ipc-posix-shm-write-create\n"
-                + "       ipc-posix-shm-write-data\n"
-                + "       ipc-posix-shm-write-unlink\n"
-                + "  (ipc-posix-name (param \"VERIFIED_SHM_NAME\")))\n");
         }
         return profile.ToString();
     }
@@ -960,10 +939,6 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
         }
     }
 
-    private static bool UsesVerifiedSharedMemory(MacZpaqSandboxOperation operation) =>
-        operation is MacZpaqSandboxOperation.ExtractVerified
-            or MacZpaqSandboxOperation.ListVerified;
-
     private static string RandomHex(int byteCount)
     {
         byte[] random = RandomNumberGenerator.GetBytes(byteCount);
@@ -1043,14 +1018,16 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
         }
     }
 
-    private static bool RemoveSharedMemoryIfPresent(string name)
+    private static bool SharedMemoryExists(string name)
     {
         if (!IsVerifiedSharedMemoryName(name))
         {
             return false;
         }
-        if (ShmUnlink(name) == 0)
+        int descriptor = ShmOpen(name, 0, 0); // O_RDONLY, never create or unlink.
+        if (descriptor >= 0)
         {
+            using var handle = new SafeFileHandle((nint)descriptor, ownsHandle: true);
             return true;
         }
         int error = Marshal.GetLastPInvokeError();
@@ -1095,11 +1072,11 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
 
         try
         {
-            bool found = RemoveSharedMemoryIfPresent(_allowedShmName);
-            found |= RemoveSharedMemoryIfPresent(_deniedShmName);
+            bool found = SharedMemoryExists(_allowedShmName);
+            found |= SharedMemoryExists(_deniedShmName);
             if (found)
             {
-                failures.Add(new IOException("ZPAQ shared-memory residue was removed during policy cleanup."));
+                failures.Add(new IOException("Unexpected ZPAQ shared-memory object was preserved during policy cleanup."));
             }
         }
         catch (Exception exception)
@@ -1216,7 +1193,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
     [LibraryImport("libSystem.B.dylib", EntryPoint = "fcntl", SetLastError = true)]
     private static partial int Fcntl(int descriptor, int command, int argument);
 
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "shm_unlink", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
-    private static partial int ShmUnlink(string name);
+    [LibraryImport("libSystem.B.dylib", EntryPoint = "shm_open", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+    private static partial int ShmOpen(string name, int flags, int mode);
 }
 #endif

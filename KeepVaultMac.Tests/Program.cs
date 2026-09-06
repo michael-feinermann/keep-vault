@@ -127,12 +127,15 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
         "main-app-replace",
         "launcher-replace",
         "scanner-replace",
+        "zpaq-anchor-install",
+        "zpaq-anchor-post-check",
         "native-verify",
         "main-verify",
         "anchor-create",
         "anchor-replace",
         "anchor-post-check",
         "rollback-anchor",
+        "rollback-zpaq-anchor",
         "rollback-app",
         "recovery-dir-create",
         "backup-move-main-app",
@@ -154,7 +157,7 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string installerFailurePointBody = string.Join(
         '\n',
         installerFailurePoints.Select(static point => $"  {point}"));
-    Require(installerFailurePoints.Length == 26, "The installer regression inventory must cover exactly 26 failure points.");
+    Require(installerFailurePoints.Length == 29, "The installer regression inventory must cover exactly 29 failure points.");
     Require(
         installerSource.Contains(
             $"allowed_injected_failures=(\n{installerFailurePointBody}\n)",
@@ -162,7 +165,7 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
         && installerSelfTestSource.Contains(
             $"failure_points=(\n{installerFailurePointBody}\n)",
             StringComparison.Ordinal),
-        "The installer and its adversarial self-test no longer share the exact 26-point failure inventory.");
+        "The installer and its adversarial self-test no longer share the exact 29-point failure inventory.");
     Require(
         installerSource.Contains("if [[ -n ${test_root} ]]; then", StringComparison.Ordinal)
         && installerSource.Contains(
@@ -230,23 +233,23 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
         "The installer no longer checks companion metadata both before mutation and after installation.");
     Require(
         portableBuilderSource.Contains(
-            "${dotnet_command} restore ${verifier_project} \\",
+            "run_dotnet_clean restore ${verifier_project} \\",
             StringComparison.Ordinal)
         && portableBuilderSource.Contains(
-            "--locked-mode \\\n    --nologo",
+            "--locked-mode \\\n    --force \\",
             StringComparison.Ordinal)
         && !portableBuilderSource.Contains("--runtime ${runtime}", StringComparison.Ordinal)
         && portableBuilderSource.Contains(
-            "${dotnet_command} publish ${verifier_project} \\",
+            "run_dotnet_clean publish ${verifier_project} \\",
             StringComparison.Ordinal)
         && portableBuilderSource.Contains(
-            "-r ${runtime} \\\n      --no-restore \\",
+            "-r ${runtime} \\\n      --artifacts-path",
             StringComparison.Ordinal)
         && portableBuilderSource.Contains(
-            "${dotnet_command} restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \\",
+            "run_dotnet_clean restore ${packaging_dir}/HybridSigner/KeepVaultMac.HybridSigner.csproj \\",
             StringComparison.Ordinal)
         && portableBuilderSource.Contains(
-            "${dotnet_command} build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \\",
+            "run_dotnet_clean build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj \\",
             StringComparison.Ordinal)
         && portableBuilderSource.Contains(
             "-c Release \\\n    --no-restore \\",

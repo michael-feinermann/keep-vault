@@ -59,10 +59,8 @@ internal static partial class MacComprehensiveTests
                 && !profile.Contains("(subpath (param \"HOME", StringComparison.Ordinal),
                 $"{operation} contains a broad IPC, HOME, or global-temporary grant.");
 
-            bool verified = operation is MacZpaqSandboxOperation.ExtractVerified
-                or MacZpaqSandboxOperation.ListVerified;
-            Require(profile.Contains("ipc-posix-name (param \"VERIFIED_SHM_NAME\")", StringComparison.Ordinal) == verified,
-                $"{operation} has the wrong exact POSIX-SHM capability.");
+            Require(!profile.Contains("ipc-posix-shm", StringComparison.Ordinal),
+                $"{operation} grants named POSIX-SHM access despite anonymous private staging.");
             Require(profile.Contains("INPUT_ROOT", StringComparison.Ordinal)
                     == (operation is MacZpaqSandboxOperation.AddFile or MacZpaqSandboxOperation.AddStreaming),
                 $"{operation} has the wrong input-root capability.");

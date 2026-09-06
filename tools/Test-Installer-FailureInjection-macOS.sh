@@ -294,12 +294,15 @@ failure_points=(
   main-app-replace
   launcher-replace
   scanner-replace
+  zpaq-anchor-install
+  zpaq-anchor-post-check
   native-verify
   main-verify
   anchor-create
   anchor-replace
   anchor-post-check
   rollback-anchor
+  rollback-zpaq-anchor
   rollback-app
   recovery-dir-create
   backup-move-main-app

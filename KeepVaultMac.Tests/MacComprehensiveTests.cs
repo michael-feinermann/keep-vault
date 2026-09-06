@@ -115,12 +115,15 @@ internal static partial class MacComprehensiveTests
         new("trust.native-tools", "signed native trust and tamper rejection", TestNativeTrustAsync, TestResource.Light, "Trust"),
         new("packaging.macho-signature-closure", "every Mach-O in the release bundle carries a hybrid signature", TestBundleMachOClosureAsync, TestResource.Light, "Packaging"),
         new("packaging.companion-qr", "the companion QR scanner is checked against the pinned keys", TestCompanionScannerAsync, TestResource.Light, "Packaging"),
+        new("packaging.installer-lock-cleanup", "installer lock cleanup is noninteractive on a terminal and preserves changed objects", TestInstallerLockCleanupAsync, TestResource.Light, "Packaging"),
         new("crypto.kdf-primitives", "KDF primitives against independent second implementations", TestKdfPrimitivesAsync, TestResource.Light, "Crypto"),
+        new("zpaq.verified-staging-vm", "v12 private VM staging framing, bounds and irreversible read-only sealing", TestVerifiedArchiveStagingAsync, TestResource.Light, "ZPAQ"),
         new("policy.pin-creation", "creation PIN policy and weak-pattern rejection", TestPinCreationPolicyAsync, TestResource.Light, "Policy"),
         new("policy.password", "password policy and KEEPVAULT term rejection", TestPasswordPolicyAsync, TestResource.Light, "Policy"),
         new("kdf.properties", "KDF properties: credential binding, PMI range and round chaining", TestKdfPropertiesAsync, TestResource.ArgonHeavy, "KDF"),
         new("kdf.peak-memory-and-header", "peak memory stays at one Argon2 matrix, and the header leaks nothing", TestCostAndHeaderAsync, TestResource.ArgonPeakMemory, "KDF"),
         new("crypto.primitive-vectors", "SHA3, Skein, Kalyna and Threefish reference vectors", TestPrimitiveVectorsAsync, TestResource.Light, "Crypto"),
+        new("security.skein-workspace-wipe", "optimized Skein workspace wiping clears complete arrays and preserves adjacent guards on both macOS slices", TestSkeinWordWipeAsync, TestResource.CpuHeavy, "Security"),
         new("crypto.mldsa87-interop", "ML-DSA-87 managed/reference interoperability", TestMldsaInteropAsync, TestResource.CpuHeavy, "Crypto"),
         new("crypto.reference-differential", "randomised differential testing against every reference library", TestReferenceDifferentialAsync, TestResource.CpuHeavy, "Crypto"),
         new("crypto.v12-parallel-mac-kat", "v12 parallel MAC tree against an independent serial KAT", TestV12ParallelMacKatAsync, TestResource.CpuHeavy, "Crypto"),
@@ -136,6 +139,14 @@ internal static partial class MacComprehensiveTests
             }, TestResource.CpuHeavy, "Performance", IsPerformance: true)
         {
             Cost = new TestCost(4, 3072, true, TestConstraint.HostExclusive),
+        },
+        new("performance.pipeline-slot-scaling", "focused 1:4 chunk-slot scaling comparison with test-only KDF isolation",
+            CipherSuitePerformanceTests.RunPipelineSlotScalingAsync,
+            TestResource.CpuHeavy,
+            "Performance",
+            IsPerformance: true)
+        {
+            Cost = new TestCost(9, 3072, true, TestConstraint.HostExclusive),
         },
         new("performance.paranoia-256mib-e2e", "256 MiB level-5 Paranoia production Argon2id end-to-end measurement",
             ReleaseEndToEndPerformanceTests.RunExact256MiBAsync,
@@ -171,7 +182,11 @@ internal static partial class MacComprehensiveTests
         new("kdf.v12-master-factor-split", "v12 master KDF and 512/512 factor split mutation isolation", TestV12MasterKdfAsync, TestResource.ArgonHeavy, "KDF"),
         new("containers.v12-production-worker-equivalence", "all ten production suites are byte-identical with one worker and production workers", TestV12ProductionWorkerEquivalenceAsync, TestResource.ProcessGlobal, "Containers")
         {
-            Cost = new TestCost(4, 512, false, TestConstraint.HostExclusive),
+            Cost = new TestCost(
+                Math.Max(4, Environment.ProcessorCount - 1),
+                ProductionWorkerKatPlan.MemoryMiB,
+                true,
+                TestConstraint.HostExclusive),
         },
         new("containers.v12-kpar2-roundtrip", "v12 container, ZPAQ extraction and KPAR2 round trip", TestV12ContainersAsync, TestResource.EntropyGlobal, "Containers"),
         new("deletion.quarantine-symlink", "quarantine rollback object binding and symlink-safe directory traversal", TestQuarantineAndSymlinkSafetyAsync, TestResource.Light, "Deletion"),
@@ -658,6 +673,16 @@ internal static partial class MacComprehensiveTests
 
     private static string? LocateReleaseBundle()
     {
+        string? testRoot = Environment.GetEnvironmentVariable("KEEPVAULT_TEST_RELEASE_ROOT");
+        if (!string.IsNullOrWhiteSpace(testRoot))
+        {
+            string envCandidate = Path.Combine(testRoot, "Keep Vault.app");
+            if (Directory.Exists(envCandidate))
+            {
+                return envCandidate;
+            }
+        }
+
         string[] candidates =
         [
             "/Applications/Keep Vault.app",
@@ -668,13 +693,17 @@ internal static partial class MacComprehensiveTests
 
     private static string RepositoryRoot()
     {
-        for (string? directory = AppContext.BaseDirectory;
-            directory is not null;
-            directory = Path.GetDirectoryName(directory))
+        string[] bases = [AppContext.BaseDirectory, Environment.CurrentDirectory];
+        foreach (string baseDir in bases)
         {
-            if (Directory.Exists(Path.Combine(directory, ".git")))
+            for (string? directory = baseDir;
+                directory is not null;
+                directory = Path.GetDirectoryName(directory))
             {
-                return directory;
+                if (Directory.Exists(Path.Combine(directory, ".git")))
+                {
+                    return directory;
+                }
             }
         }
 
@@ -1866,6 +1895,7 @@ internal static partial class MacComprehensiveTests
                     "A changed ZPAQ archive passed dual-manifest verification.").ConfigureAwait(false);
 
                 await TestZpaqTraversalAsync(root).ConfigureAwait(false);
+                await TestZpaqEmptyDirectoriesAsync(root).ConfigureAwait(false);
                 await TestZpaqStagingSubstitutionRefusalAsync(root).ConfigureAwait(false);
                 await TestZpaqDecompressionBombLimitsAsync(root).ConfigureAwait(false);
                 await TestMalformedZpaqCorpusAsync(source, root).ConfigureAwait(false);
@@ -1879,6 +1909,65 @@ internal static partial class MacComprehensiveTests
         {
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    private static async Task TestZpaqEmptyDirectoriesAsync(string root)
+    {
+        string source = Path.Combine(root, "tree-fixture");
+        Directory.CreateDirectory(Path.Combine(source, "empty", "child"));
+        Directory.CreateDirectory(Path.Combine(source, ".hidden-empty"));
+        Directory.CreateDirectory(Path.Combine(source, "Grüße_日本", "leer"));
+        await File.WriteAllBytesAsync(Path.Combine(source, "content.bin"), [3, 1, 4]).ConfigureAwait(false);
+        await File.WriteAllBytesAsync(Path.Combine(source, "zero.bin"), []).ConfigureAwait(false);
+        static string[] Entries(string directory) => Directory.EnumerateFileSystemEntries(
+                directory, "*", SearchOption.AllDirectories)
+            .Select(entry => Path.GetRelativePath(directory, entry) + (Directory.Exists(entry) ? "/" : string.Empty))
+            .Order(StringComparer.Ordinal).ToArray();
+        string[] expected = Entries(source);
+        var zpaq = new ZpaqService();
+        for (int level = 0; level <= 5; level++)
+        {
+            string plainArchive = Path.Combine(root, $"tree-{level}.zpaq");
+            string plainOutput = Path.Combine(root, $"tree-plain-{level}");
+            ProcessResult add = await zpaq.AddAsync(plainArchive, [source], level, null, CancellationToken.None).ConfigureAwait(false);
+            Require(add.Succeeded, "Regular directory fixture creation failed.");
+            ProcessResult extract = await zpaq.ExtractAsync(plainArchive, plainOutput, null, CancellationToken.None).ConfigureAwait(false);
+            Require(extract.Succeeded, "Regular directory fixture extraction failed.");
+            Require(expected.SequenceEqual(Entries(Path.Combine(plainOutput, "tree-fixture"))),
+                $"Regular ZPAQ level {level} lost or added directory/file entries.");
+
+            using var archive = new MemoryStream();
+            ProcessResult streamAdd = await zpaq.AddStreamingAsync([source], level,
+                (input, token) => input.CopyToAsync(archive, token), null, CancellationToken.None).ConfigureAwait(false);
+            Require(streamAdd.Succeeded, "Streaming directory fixture creation failed.");
+            byte[] encoded = archive.ToArray();
+            try
+            {
+                string output = Path.Combine(root, $"tree-stream-{level}");
+                ProcessResult streamExtract = await zpaq.ExtractStreamingAsync(
+                    (stream, token) => stream.WriteAsync(encoded, token).AsTask(), output, null, CancellationToken.None).ConfigureAwait(false);
+                Require(streamExtract.Succeeded, "Streaming directory fixture extraction failed.");
+                string extracted = Path.Combine(output, "tree-fixture");
+                Require(expected.SequenceEqual(Entries(extracted)),
+                    $"Streaming ZPAQ level {level} lost or added directory/file entries.");
+                Require((await File.ReadAllBytesAsync(Path.Combine(extracted, "content.bin")).ConfigureAwait(false)).SequenceEqual(new byte[] { 3, 1, 4 })
+                    && new FileInfo(Path.Combine(extracted, "zero.bin")).Length == 0, "Directory framing altered file contents.");
+            }
+            finally { CryptographicOperations.ZeroMemory(encoded); }
+        }
+
+        string onlyDirectories = Path.Combine(root, "only-empty-directories");
+        Directory.CreateDirectory(Path.Combine(onlyDirectories, "nested", "empty"));
+        using var emptyArchive = new MemoryStream();
+        ProcessResult emptyAdd = await zpaq.AddStreamingAsync([onlyDirectories], 5,
+            (input, token) => input.CopyToAsync(emptyArchive, token), null, CancellationToken.None).ConfigureAwait(false);
+        Require(emptyAdd.Succeeded && emptyArchive.Length > 0, "Directory-only archive creation failed.");
+        emptyArchive.Position = 0;
+        string emptyOutput = Path.Combine(root, "only-empty-output");
+        ProcessResult emptyExtract = await zpaq.ExtractStreamingAsync(
+            (output, token) => emptyArchive.CopyToAsync(output, token), emptyOutput, null, CancellationToken.None).ConfigureAwait(false);
+        Require(emptyExtract.Succeeded && Entries(onlyDirectories).SequenceEqual(Entries(Path.Combine(emptyOutput, "only-empty-directories"))),
+            "Streaming archive containing no regular files lost its empty directory tree.");
     }
 
     private static async Task TestZpaqStagingSubstitutionRefusalAsync(string root)
@@ -1946,13 +2035,24 @@ internal static partial class MacComprehensiveTests
         Require(add.Succeeded, "Could not build bomb test archive.");
 
         string extractTarget = Path.Combine(root, "bomb_extract_target");
+        string controlTarget = Path.Combine(root, "bomb_control_target");
+        ProcessResult control = await new ZpaqService().ExtractAsync(
+            archive, controlTarget, null, CancellationToken.None).ConfigureAwait(false);
+        Require(control.Succeeded, "The bomb-limit positive control did not extract: " + control.StandardError);
+        string[] controlFiles = Directory.GetFiles(controlTarget, "*", SearchOption.AllDirectories);
+        Require(controlFiles.Length == 5, "The bomb-limit control archive did not contain five files.");
+        foreach (string controlFile in controlFiles)
+            Require(await File.ReadAllTextAsync(controlFile).ConfigureAwait(false) == new string('A', 1000),
+                "The bomb-limit positive control changed the payload.");
 
         ZpaqService.MaxExtractedFilesOverride = 2;
         try
         {
-            await RequireThrowsAsync<Exception>(
-                () => new ZpaqService().ExtractAsync(archive, extractTarget, null, CancellationToken.None),
-                "ZPAQ extracted files beyond configured bomb limit without rejection.").ConfigureAwait(false);
+            ProcessResult rejected = await new ZpaqService().ExtractAsync(
+                archive, extractTarget, null, CancellationToken.None).ConfigureAwait(false);
+            Require(!rejected.Succeeded
+                && rejected.StandardError.Contains("extracted-entry limit", StringComparison.Ordinal),
+                "ZPAQ did not reject the configured native entry limit: " + rejected.StandardError);
             Require(!Directory.Exists(extractTarget), "Extraction directory was installed despite exceeding decompression bomb limit.");
         }
         finally
@@ -4686,16 +4786,20 @@ internal static partial class MacComprehensiveTests
     /// </summary>
     private static string ResolveVectorDirectory()
     {
-        DirectoryInfo? directory = new(AppContext.BaseDirectory);
-        while (directory is not null)
+        string[] bases = [AppContext.BaseDirectory, Environment.CurrentDirectory, RepositoryRoot()];
+        foreach (string baseDir in bases)
         {
-            string candidate = Path.Combine(directory.FullName, "external", "cryptopp", "TestVectors");
-            if (Directory.Exists(candidate))
+            DirectoryInfo? directory = new(baseDir);
+            while (directory is not null)
             {
-                return candidate;
-            }
+                string candidate = Path.Combine(directory.FullName, "external", "cryptopp", "TestVectors");
+                if (Directory.Exists(candidate))
+                {
+                    return candidate;
+                }
 
-            directory = directory.Parent;
+                directory = directory.Parent;
+            }
         }
 
         throw new InvalidOperationException("external/cryptopp/TestVectors was not found above the test binary.");
@@ -5074,9 +5178,11 @@ internal static partial class MacComprehensiveTests
         };
         foreach (string argument in arguments) start.ArgumentList.Add(argument);
         using Process process = Process.Start(start) ?? throw new InvalidOperationException($"Could not start {executable}.");
-        string stdout = await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-        string stderr = await process.StandardError.ReadToEndAsync().ConfigureAwait(false);
+        Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderrTask = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync().ConfigureAwait(false);
+        string stdout = await stdoutTask.ConfigureAwait(false);
+        string stderr = await stderrTask.ConfigureAwait(false);
         return new ProcessResult(process.ExitCode, stdout, stderr);
     }
 
@@ -5839,16 +5945,41 @@ internal static partial class MacComprehensiveTests
         }
     }
 
+    private readonly record struct V12WorkerKatResourcePlan(int Workers, int PayloadBytes, int MemoryMiB);
+
+    private static readonly V12WorkerKatResourcePlan ProductionWorkerKatPlan = CreateV12WorkerKatResourcePlan();
+
+    private static V12WorkerKatResourcePlan CreateV12WorkerKatResourcePlan()
+    {
+        const int mib = 1024 * 1024;
+        int workers = KalynaContainerService.ProductionPipelineWorkerCount;
+        Require(workers is >= 1 and <= 64, "The worker KAT requires the bounded production slot count.");
+
+        // Fill every production slot, with a non-full final chunk. Keeping at
+        // least two chunks also exercises reuse on single-slot machines.
+        // The 64-slot bound limits this payload to 1010 MiB + 137 bytes.
+        int payloadBytes = checked((Math.Max(2, workers) - 1) * 16 * mib + 2 * mib + 137);
+        int payloadMiB = checked((int)(((long)payloadBytes + mib - 1) / mib));
+
+        // Input, both complete containers and both plaintext comparisons use
+        // five payloads. Reserve two more for snapshots/temporary copies,
+        // two 16 MiB buffers per slot, and 256 MiB for the 8 MiB KAT matrix,
+        // bounded MAC leaves, page rounding and the test/runtime overhead.
+        // HostExclusive also prevents any other test from sharing this peak.
+        int memoryMiB = checked(Math.Max(512, 7 * payloadMiB + 32 * workers + 256));
+        return new V12WorkerKatResourcePlan(workers, payloadBytes, memoryMiB);
+    }
+
     private static async Task TestV12ProductionWorkerEquivalenceAsync()
     {
         const uint katMemoryKiB = 8 * 1024;
-        const int payloadBytes = (16 * 1024 * 1024) + (2 * 1024 * 1024) + 137;
+        int payloadBytes = ProductionWorkerKatPlan.PayloadBytes;
         Require(
-            KalynaContainerService.ProductionPipelineWorkerCount > 1,
-            "The production container pipeline selected only one worker; the worker-equivalence gate cannot run.");
+            KalynaContainerService.ProductionPipelineWorkerCount == ProductionWorkerKatPlan.Workers,
+            "The production slot count changed after the worker KAT reserved its memory budget.");
         Require(
-            ParallelContainerAuthenticator.ProductionWorkerCount > 1,
-            "The production MAC tree selected only one worker; the worker-equivalence gate cannot run.");
+            ParallelContainerAuthenticator.ProductionWorkerCount >= 1,
+            "The production MAC tree selected an invalid worker count.");
 
         EncryptionSuite[] suites = [.. EncryptionSuiteCatalog.DisplayOrder];
         Require(suites.Length == 10, $"The production worker KAT requires exactly ten suites, found {suites.Length}.");
@@ -5951,7 +6082,7 @@ internal static partial class MacComprehensiveTests
 
                     using (KalynaContainerService.UsePipelineWorkerCountForTests(1))
                     using (ParallelContainerAuthenticator.UseWorkerCountForTests(1))
-                    using (var serialOutput = new MemoryStream())
+                    using (var serialOutput = new MemoryStream(serialPlaintext = new byte[payloadBytes], writable: true))
                     {
                         await containers.DecryptToStreamAsync(
                             serialPath,
@@ -5962,10 +6093,11 @@ internal static partial class MacComprehensiveTests
                             serialOutput,
                             null,
                             CancellationToken.None).ConfigureAwait(false);
-                        serialPlaintext = serialOutput.ToArray();
+                        Require(serialOutput.Position == payloadBytes,
+                            $"{suite} worker-1 decryption wrote an unexpected plaintext length.");
                     }
 
-                    using (var productionOutput = new MemoryStream())
+                    using (var productionOutput = new MemoryStream(productionPlaintext = new byte[payloadBytes], writable: true))
                     {
                         await containers.DecryptToStreamAsync(
                             productionPath,
@@ -5976,7 +6108,8 @@ internal static partial class MacComprehensiveTests
                             productionOutput,
                             null,
                             CancellationToken.None).ConfigureAwait(false);
-                        productionPlaintext = productionOutput.ToArray();
+                        Require(productionOutput.Position == payloadBytes,
+                            $"{suite} production-worker decryption wrote an unexpected plaintext length.");
                     }
 
                     serialHash = Sha3_512Compat.HashData(serialPlaintext);

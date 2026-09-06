@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -20,6 +21,14 @@ internal static class CipherSuitePerformanceTests
     private const int DifferentialBytes = 64 * 1024 * 1024;
     private const int MeasurementRuns = 3;
     private const double AllowedBaselineRegression = 0.25;
+
+    // How close the shipped slot count has to come to the best measured one.
+    // The divisor in KalynaContainerService is a single integer for every
+    // machine, so it cannot be optimal everywhere; this is the margin within
+    // which one number is still the right compromise.
+    private const double PipelineSlotTolerance = 0.90;
+    private const int PipelineScalingBytes = 512 * 1024 * 1024;
+    private const uint PipelineScalingArgonMemoryKiB = 8 * 1024;
     private const string BaselineEnvironment = "KEEPVAULT_PERF_BASELINE";
     private const string ContainerPassword = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
     private const string ContainerPin = "428317";
@@ -178,6 +187,7 @@ internal static class CipherSuitePerformanceTests
         }
 
         RunContainerMeasurementsAsync(host).GetAwaiter().GetResult();
+        RunPipelineSlotScalingAsync().GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -309,6 +319,126 @@ internal static class CipherSuitePerformanceTests
                 throw new IOException(
                     "The container-performance run failed and its private workspace could not be removed.",
                     new AggregateException(operationFailure, cleanupFailure));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Measures the container pipeline at every plausible slot count, so the
+    /// production divisor is a measured choice and not a guess.
+    /// </summary>
+    /// <remarks>
+    /// Argon2id runs at the KAT memory cost here. It is a constant per
+    /// container, identical for every slot count, and at the production cost
+    /// it would swamp the difference this gate exists to see. Everything else
+    /// is the real path: the bounded chunk pipeline, per-chunk nonces, both
+    /// parallel tree MACs, the ordered writer and real file output.
+    ///
+    /// The slot count bounds how many chunks are in flight; it does not hand
+    /// out processors. Each chunk's own transform still spreads across every
+    /// logical processor, so two concurrent chunks on a ten-core machine
+    /// occupy all ten cores.
+    /// </remarks>
+    internal static async Task RunPipelineSlotScalingAsync()
+    {
+        const EncryptionSuite scalingSuite = EncryptionSuite.ThreefishOverKalyna;
+        int production = KalynaContainerService.ProductionPipelineWorkerCount;
+        var candidates = new List<int>();
+        foreach (int slots in new[] { 1, 2, 3, 4, 5, 6, 8, 10, 12, 16 })
+        {
+            if (slots <= Environment.ProcessorCount && !candidates.Contains(slots))
+            {
+                candidates.Add(slots);
+            }
+        }
+
+        if (!candidates.Contains(production))
+        {
+            candidates.Add(production);
+        }
+
+        candidates.Sort();
+
+        string root = Directory.CreateTempSubdirectory("keep-vault-pipeline-scaling-").FullName;
+#if KEEPVAULT_MACOS
+        root = MacSafeFileSystem.ResolveExistingRealPath(root);
+#endif
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(
+                root,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        byte[] payload = CreateDeterministicBytes(PipelineScalingBytes, 0x5343414C494E4731UL);
+        var measured = new Dictionary<string, double>(StringComparer.Ordinal);
+        try
+        {
+            Console.WriteLine(
+                $"    pipeline slot scaling: {PipelineScalingBytes / (1024 * 1024)} MiB through "
+                + $"{EncryptionSuiteCatalog.Get(scalingSuite).DisplayName}, "
+                + $"{MeasurementRuns} runs, KAT Argon2id memory, median; "
+                + $"{Environment.ProcessorCount} logical CPU(s)");
+            using IDisposable memoryScope =
+                V12MasterKdf.UseMemoryCostForTests(PipelineScalingArgonMemoryKiB);
+            var containers = new KalynaContainerService();
+            foreach (int slots in candidates)
+            {
+                var samples = new double[MeasurementRuns];
+                for (int run = 0; run < MeasurementRuns; run++)
+                {
+                    string containerPath = Path.Combine(root, $"slots-{slots}-{run}.kzpaq");
+                    using GeneratedArchiveEntropy entropy = CreateContainerEntropy(scalingSuite, run);
+                    await using var input = new MemoryStream(payload, writable: false);
+                    Stopwatch timer = Stopwatch.StartNew();
+                    using (KalynaContainerService.UsePipelineWorkerCountForTests(slots))
+                    {
+                        await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
+                            input,
+                            containerPath,
+                            ContainerPassword,
+                            ContainerPin,
+                            ContainerFactorA,
+                            ContainerFactorB,
+                            scalingSuite,
+                            entropy,
+                            "v12 pipeline slot scaling",
+                            null,
+                            CancellationToken.None).ConfigureAwait(false);
+                    }
+
+                    timer.Stop();
+                    samples[run] = RateMiBPerSecond(PipelineScalingBytes, timer.Elapsed);
+                    File.Delete(containerPath);
+                }
+
+                double median = Median(samples);
+                measured[slots.ToString(CultureInfo.InvariantCulture)] = median;
+                Console.WriteLine(
+                    $"      {slots,2} slot(s) {(slots == production ? "<- production" : "             ")}"
+                    + $" {median,9:F1} MiB/s"
+                    + $" (runs {string.Join(", ", samples.Select(value => value.ToString("F1")))})");
+            }
+
+            KeyValuePair<string, double> best = measured.OrderByDescending(pair => pair.Value).First();
+            double productionRate = measured[production.ToString(CultureInfo.InvariantCulture)];
+            Console.WriteLine(
+                $"    best {best.Key} slot(s) at {best.Value:F1} MiB/s; production {production} slot(s) "
+                + $"at {productionRate:F1} MiB/s ({productionRate / best.Value * 100:F1}% of best)");
+            Console.WriteLine(
+                "    PIPELINE_SCALING_JSON=" + JsonSerializer.Serialize(measured, JsonOptions));
+            Require(
+                productionRate >= best.Value * PipelineSlotTolerance,
+                $"The production pipeline slot count {production} reaches only {productionRate:F1} MiB/s "
+                + $"while {best.Key} slot(s) reach {best.Value:F1} MiB/s. Revisit "
+                + "KalynaContainerService.LogicalProcessorsPerPipelineWorker.");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(payload);
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
             }
         }
     }

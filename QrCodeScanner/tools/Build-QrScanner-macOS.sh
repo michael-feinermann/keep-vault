@@ -471,6 +471,8 @@ identity=${QRSCANNER_CODESIGN_IDENTITY:-}
 # Name of an "xcrun notarytool store-credentials" keychain profile. Empty means
 # the build stops short of notarization; no secret ever lives in this file.
 notary_profile=${QRSCANNER_NOTARY_PROFILE:-}
+notary_profile_explicit=0
+prepare_notarization_in_xcode=0
 dotnet_command=''
 verified_dotnet_provisioner=${repository_root}/tools/Provision-VerifiedDotnet-macOS.sh
 verified_dotnet_provisioner_identity=''
@@ -486,7 +488,11 @@ while (( $# > 0 )); do
     --notary-profile)
       (( $# >= 2 )) || { print -u2 'Missing value for --notary-profile.'; exit 64; }
       notary_profile=$2
+      notary_profile_explicit=1
       shift
+      ;;
+    --prepare-notarization-in-xcode)
+      prepare_notarization_in_xcode=1
       ;;
     --arch)
       (( $# >= 2 )) || { print -u2 'Missing value for --arch.'; exit 64; }
@@ -517,6 +523,7 @@ while (( $# > 0 )); do
       ;;
     -h|--help)
       print 'Usage: Build-QrScanner-macOS.sh [--identity NAME] [--notary-profile NAME]'
+      print '       [--prepare-notarization-in-xcode (Developer ID only, no notary profile)]'
       print '       [--arch universal|arm64|x86_64] [--version X.Y.Z] [--build-number N]'
       print '       [--skip-tests] [--preflight] [--self-test-atomic-publish] [--tool-path-self-test]'
       exit 0
@@ -528,6 +535,17 @@ while (( $# > 0 )); do
   esac
   shift
 done
+
+if (( prepare_notarization_in_xcode )); then
+  if [[ -n ${notary_profile} ]] || (( notary_profile_explicit )); then
+    print -u2 'QR RELEASE GATE: --prepare-notarization-in-xcode cannot be combined with a notary profile.'
+    exit 64
+  fi
+  if [[ ${identity} == '-' || ${identity} == 'Apple Development:'* ]]; then
+    print -u2 'QR RELEASE GATE: --prepare-notarization-in-xcode requires Developer ID Application signing.'
+    exit 64
+  fi
+fi
 
 cleanup_early() {
   local original_status=$?
@@ -609,6 +627,20 @@ if (( preflight_only )); then
   exit 0
 fi
 
+apple_keychain=${KEEPVAULT_APPLE_KEYCHAIN:-}
+apple_keychain_search=()
+apple_keychain_codesign_args=()
+if [[ -n ${apple_keychain} ]]; then
+  apple_keychain=${apple_keychain:a}
+  if [[ ${apple_keychain} != ${apple_keychain:A} || ! -f ${apple_keychain} \
+      || $(stat -f '%u:%Lp:%l' ${apple_keychain}) != ${EUID}:600:1 \
+      || $(stat -f '%u:%Lp' ${apple_keychain:h}) != ${EUID}:700 ]]; then
+    print -u2 'RELEASE GATE: the selected Apple keychain must be a private, current-user-owned, single-link file without symlink components.'
+    exit 2
+  fi
+  apple_keychain_search=(${apple_keychain})
+  apple_keychain_codesign_args=(--keychain ${apple_keychain})
+fi
 # Pick a signing identity if none was named.
 #
 # Developer ID is what a downloaded copy needs, so it wins when it is present.
@@ -617,17 +649,26 @@ fi
 # are useful at different points, so the build reports which one it used rather
 # than pretending they are equivalent.
 if [[ -z ${identity} ]]; then
-  identity=$(security find-identity -v -p codesigning \
-    | grep -o 'Developer ID Application: [^"]*' | head -n 1 || true)
+  identity=$(security find-identity -v -p codesigning ${apple_keychain_search[@]} \
+    | awk '($0 ~ /Developer ID Application:/) { print $2; exit }')
 fi
 if [[ -z ${identity} ]]; then
-  identity=$(security find-identity -v -p codesigning \
-    | grep -o 'Apple Development: [^"]*' | head -n 1 || true)
+  identity=$(security find-identity -v -p codesigning ${apple_keychain_search[@]} \
+    | awk '($0 ~ /Apple Development:/) { print $2; exit }')
 fi
-if [[ -z ${identity} ]]; then
+identity_details=$(security find-identity -v -p codesigning ${apple_keychain_search[@]} | grep -F -- "${identity}" || true)
+if (( prepare_notarization_in_xcode )) && [[ ${identity_details} != *'Developer ID Application:'* ]]; then
+  print -u2 'QR RELEASE GATE: Xcode notarization preparation requires an available Developer ID Application identity.'
+  exit 2
+fi
+if [[ -n ${apple_keychain} && ( -z ${identity} || ${identity} == '-' || -z ${identity_details} ) ]]; then
+  print -u2 'QR RELEASE GATE: the selected Apple keychain does not contain the requested signing identity.'
+  exit 2
+fi
+if [[ -z ${identity} || ${identity} == '-' ]]; then
   identity='-'
   print 'signing=ad-hoc (no codesigning certificate found; the app runs on this Mac only)'
-elif [[ ${identity} == 'Developer ID Application: '* ]]; then
+elif [[ ${identity_details} == *'Developer ID Application:'* ]]; then
   print "signing=developer-id (${identity})"
 else
   print "signing=development (${identity}) — usable on this Mac; the notary service rejects this certificate"
@@ -884,7 +925,7 @@ done
 timestamp_arguments=(--timestamp)
 [[ ${identity} == '-' ]] && timestamp_arguments=()
 
-codesign --force --sign ${identity} --options runtime ${timestamp_arguments[@]} \
+codesign ${apple_keychain_codesign_args[@]} --force --sign ${identity} --options runtime ${timestamp_arguments[@]} \
   --entitlements ${packaging_dir}/QrScanner.entitlements \
   --identifier ${bundle_identifier} \
   ${app_bundle}
@@ -913,6 +954,12 @@ done
 print 'entitlements=sandbox+camera (no injection-enabling entitlements present)'
 
 signature_details=$(codesign -dvvv ${app_bundle} 2>&1 || true)
+if (( prepare_notarization_in_xcode )) \
+    && [[ ${signature_details} != *'Authority=Developer ID Application:'* \
+      || ${signature_details} != *'TeamIdentifier=2T6K9PGS55'* ]]; then
+  print -u2 'QR RELEASE GATE: the Xcode preparation bundle must carry the pinned Developer ID Application signature.'
+  exit 1
+fi
 if [[ ${signature_details} != *'flags='*'runtime'* ]]; then
   print -u2 'The signed bundle does not carry the hardened runtime.'
   exit 1
@@ -931,7 +978,9 @@ print 'hardened-runtime=enabled'
 # sidecars exist, otherwise users would receive an archive that the repository
 # verifier necessarily rejects.
 release_zip=${build_root}/${app_name}-macOS.zip
-if [[ -z ${notary_profile} ]]; then
+if (( prepare_notarization_in_xcode )); then
+  print 'notarization=awaiting-xcode (preparation only; not a notarized release)'
+elif [[ -z ${notary_profile} ]]; then
   print 'notarization=not_performed (pass --notary-profile NAME once a Developer ID certificate and a notarytool profile exist)'
 elif [[ ${signature_details} != *'Authority=Developer ID Application:'* ]]; then
   print -u2 'Notarization requires a Developer ID Application identity; the notary service rejects an Apple Development certificate.'
@@ -948,7 +997,7 @@ fi
 
 # --- Hybrid Signatures --------------------------------------------------------
 repo_root=${project_root:h}
-release_key_root="${HOME}/Library/Application Support/Keep Vault/ReleaseKeys"
+release_key_root=${KEEPVAULT_RELEASE_KEYS:-${HOME}/Library/Application Support/Keep Vault/ReleaseKeys}
 pfx_path=${KEEPVAULT_HYBRID_PFX:-${release_key_root}/hybrid-rsa4096.pfx}
 mldsa_private_key_encrypted=${KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED:-${release_key_root}/mldsa87-private.key.v12.enc}
 pfx_password_encrypted=${KEEPVAULT_PFX_PASSWORD_ENCRYPTED:-${release_key_root}/hybrid-rsa4096.pfx.password.v12.enc}
@@ -956,6 +1005,8 @@ mldsa_wrapping_service=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_SERVICE:-de.michael-f
 mldsa_wrapping_account=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-mldsa-v12:${USER:-}}
 pfx_wrapping_service=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.v12.pfx-wrapping-key}
 pfx_wrapping_account=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-pfx-v12:${USER:-}}
+mldsa_wrapping_key_file=${KEEPVAULT_MLDSA_WRAPPING_KEY_FILE:-}
+pfx_wrapping_key_file=${KEEPVAULT_PFX_WRAPPING_KEY_FILE:-}
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
 
 if [[ -z ${mldsa_wrapping_service} || -z ${mldsa_wrapping_account} \
@@ -975,6 +1026,19 @@ hybrid_secret_arguments=(
   --mldsa-wrapping-key-keychain-service ${mldsa_wrapping_service}
   --mldsa-wrapping-key-keychain-account ${mldsa_wrapping_account}
 )
+if [[ -n ${mldsa_wrapping_key_file} || -n ${pfx_wrapping_key_file} ]]; then
+  if [[ -z ${mldsa_wrapping_key_file} || -z ${pfx_wrapping_key_file} ]]; then
+    print -u2 'USB signing requires both role-specific wrapping-key files.'
+    exit 2
+  fi
+  hybrid_secret_arguments=(
+    --pfx ${pfx_path}
+    --pfx-password-encrypted ${pfx_password_encrypted}
+    --pfx-wrapping-key-file ${pfx_wrapping_key_file}
+    --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
+    --mldsa-wrapping-key-file ${mldsa_wrapping_key_file}
+  )
+fi
 
 if [[ -f ${pfx_path} && ! -L ${pfx_path} \
     && -f ${mldsa_private_key_encrypted} && ! -L ${mldsa_private_key_encrypted} \
@@ -1035,9 +1099,13 @@ fi
 # Validate the staged companion with the same independent gate that Keep Vault
 # and the installer use. A successful codesign check alone says nothing about
 # the detached RSA-PSS/ML-DSA pair or its SHA3/Skein manifests.
+scanner_verifier_mode=(--allow-development)
+if (( prepare_notarization_in_xcode )); then
+  scanner_verifier_mode=(--allow-pre-notarization)
+fi
 ${repo_root}/tools/Verify-QR-Scanner-macOS.sh \
   --app ${app_bundle} \
-  --allow-development \
+  ${scanner_verifier_mode[@]} \
   --mldsa-public-key ${mldsa_public_key}
 
 # The former build archived the app before the detached sidecars existed, so
@@ -1054,7 +1122,7 @@ ditto -c -k --sequesterRsrc ${archive_payload} ${release_zip}
 ditto -x -k ${release_zip} ${archive_check}
 ${repo_root}/tools/Verify-QR-Scanner-macOS.sh \
   --app ${archive_check}/${app_name}.app \
-  --allow-development \
+  ${scanner_verifier_mode[@]} \
   --mldsa-public-key ${mldsa_public_key}
 
 # The archive is a release artifact in its own right. Bind it and both hash

@@ -17,6 +17,7 @@
     <Compile Include="../KalynaArchiver.Signing/Mldsa87Reference.cs" Link="Signing/Mldsa87Reference.cs" />
     <Compile Include="../KeepVaultMac/Packaging/HybridSigner/HybridKeyEnvelope.cs" Link="Packaging/HybridKeyEnvelope.cs" />
     <Compile Include="../KeepVaultMac/Packaging/HybridSigner/LockedBufferTransfer.cs" Link="Packaging/LockedBufferTransfer.cs" />
+    <Compile Include="../KeepVaultMac/Packaging/HybridSigner/UsbWrappingKey.cs" Link="Packaging/UsbWrappingKey.cs" />
     <Compile Include="../KeepVaultMac/Packaging/HybridSigner/MacBoundSecretFile.cs" Link="Packaging/MacBoundSecretFile.cs" />
     <!-- Test-only windowing backend so the real MainWindow can be driven without
          a display. It is referenced by this harness alone and never reaches the

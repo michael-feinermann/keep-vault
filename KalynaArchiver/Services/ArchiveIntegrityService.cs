@@ -454,6 +454,24 @@ internal sealed class ArchiveIntegrityLease : IDisposable
         await stream.CopyToAsync(destination, 1024 * 1024, cancellationToken).ConfigureAwait(false);
     }
 
+#if KEEPVAULT_MACOS
+    internal async Task CopyToVerifiedStagingAsync(Stream destination, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        FileStream stream = _stream ?? throw new ObjectDisposedException(nameof(ArchiveIntegrityLease));
+        long length = stream.Length;
+        if (length is <= 0 or > 512L * 1024 * 1024 * 1024)
+            throw new InvalidDataException("The verified ZPAQ staging length exceeds the v12 bound.");
+        byte[] header = new byte[16];
+        "KV12VM\0\0"u8.CopyTo(header);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt64BigEndian(header.AsSpan(8), length);
+        await destination.WriteAsync(header, cancellationToken).ConfigureAwait(false);
+        await CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+        if (stream.Length != length || stream.Position != length)
+            throw new IOException("The verified ZPAQ stream changed length during staging.");
+    }
+#endif
+
     public void Dispose()
     {
         IDisposable? owner = Interlocked.Exchange(ref _owner, null);

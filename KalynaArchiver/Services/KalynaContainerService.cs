@@ -36,16 +36,31 @@ public sealed partial class KalynaContainerService
     /// </summary>
     private const int MasterKeyBits = 1024;
     private const int BufferSize = 16 * 1024 * 1024;
-    // Each native transform already spreads one 16 MiB chunk over all logical
-    // processors. Two outer slots are enough to overlap adjacent chunks and
-    // the ordered writer without multiplying locked-memory use by the CPU
-    // count or creating an unbounded nested-thread fan-out.
-    private const int MaxPipelineWorkers = 2;
+
+    // Outer chunk concurrency, not CPU affinity. Native transforms also use
+    // bounded parallelism. The ordered writer runs after the batch joins;
+    // there is no overlap between that writer and the next batch here.
+    private const int LogicalProcessorsPerPipelineWorker = 4;
+
+    // Each slot owns two locked 16 MiB buffers, plus small nonce/tag storage.
+    // Also bound the aggregate buffers by 1/16 of reported available memory.
+    private const int MaxPipelineWorkers = 64;
     private const int Sha3TagSize = 64;
     private const int SkeinTagSize = 128;
     private const int MaxHeaderSize = 16 * 1024;
     private readonly PasswordKeyService _passwords = new();
     private static readonly AsyncLocal<int?> PipelineWorkerOverride = new();
+    private static readonly SemaphoreSlim NativePipelineConcurrency = new(
+        CalculateNativeTransformConcurrency(Environment.ProcessorCount));
+
+    // A 16 MiB native call uses at most 64 workers (256 KiB per work claim).
+    // Bound simultaneous native teams across container operations to roughly
+    // two workers per logical CPU, rather than multiplying both parallel axes.
+    internal static int CalculateNativeTransformConcurrency(int logicalProcessors)
+    {
+        long processors = Math.Max(1, logicalProcessors);
+        return (int)Math.Clamp(2L * processors / Math.Min(processors, 64), 1, 64);
+    }
 
     internal static IDisposable UsePipelineWorkerCountForTests(int workers)
     {
@@ -59,8 +74,17 @@ public sealed partial class KalynaContainerService
         return new PipelineWorkerOverrideScope(previous);
     }
 
-    internal static int ProductionPipelineWorkerCount =>
-        Math.Clamp(Environment.ProcessorCount, 1, MaxPipelineWorkers);
+    internal static int ProductionPipelineWorkerCount => CalculatePipelineWorkerCount(
+        Environment.ProcessorCount, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
+
+    internal static int CalculatePipelineWorkerCount(int logicalProcessors, long availableMemoryBytes)
+    {
+        int cpuSlots = Math.Clamp(logicalProcessors / LogicalProcessorsPerPipelineWorker, 1, MaxPipelineWorkers);
+        long memorySlots = availableMemoryBytes <= 0
+            ? 1
+            : Math.Clamp(availableMemoryBytes / (16L * (2L * BufferSize + 512)), 1, MaxPipelineWorkers);
+        return Math.Min(cpuSlots, (int)memorySlots);
+    }
 
     private static int PipelineWorkerCount =>
         PipelineWorkerOverride.Value ?? ProductionPipelineWorkerCount;
@@ -1061,14 +1085,6 @@ public sealed partial class KalynaContainerService
         Exception? operationFailure = null;
         try
         {
-            for (int index = 0; index < slots.Length; index++)
-            {
-                slots[index] = new ContainerChunkSlot(
-                    BufferSize,
-                    BufferSize,
-                    parameters.NonceBytes);
-            }
-
             long total = 0;
             long chunkIndex = 0;
             long expectedWriteIndex = 0;
@@ -1077,7 +1093,8 @@ public sealed partial class KalynaContainerService
                 int active = 0;
                 for (; active < slots.Length; active++)
                 {
-                    ContainerChunkSlot slot = slots[active];
+                    ContainerChunkSlot slot = slots[active] ??= new ContainerChunkSlot(
+                        BufferSize, BufferSize, parameters.NonceBytes);
                     int read = await ReadChunkAsync(plaintext, slot.Input, cancellationToken).ConfigureAwait(false);
                     if (read == 0)
                     {
@@ -1087,6 +1104,11 @@ public sealed partial class KalynaContainerService
                     slot.Prepare(chunkIndex, read);
                     total = checked(total + read);
                     chunkIndex = checked(chunkIndex + 1);
+                    if (read < BufferSize)
+                    {
+                        active++;
+                        break;
+                    }
                 }
 
                 if (active == 0)
@@ -1102,7 +1124,8 @@ public sealed partial class KalynaContainerService
                         encryptionKey,
                         tweak,
                         chunkNonceBase),
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken,
+                    limitNativeConcurrency: true).ConfigureAwait(false);
 
                 // Task.WhenAll is the ownership barrier: no worker can still
                 // read a slot when the ordered writer consumes and clears it.
@@ -1228,14 +1251,6 @@ public sealed partial class KalynaContainerService
         Exception? operationFailure = null;
         try
         {
-            for (int index = 0; index < slots.Length; index++)
-            {
-                slots[index] = new ContainerChunkSlot(
-                    BufferSize + tagBytes,
-                    BufferSize,
-                    parameters.NonceBytes);
-            }
-
             long chunkIndex = 0;
             long expectedWriteIndex = 0;
             while (true)
@@ -1243,7 +1258,8 @@ public sealed partial class KalynaContainerService
                 int active = 0;
                 for (; active < slots.Length; active++)
                 {
-                    ContainerChunkSlot slot = slots[active];
+                    ContainerChunkSlot slot = slots[active] ??= new ContainerChunkSlot(
+                        BufferSize + tagBytes, BufferSize, parameters.NonceBytes);
                     int read = await ReadChunkAsync(ciphertext, slot.Input, cancellationToken).ConfigureAwait(false);
                     if (read == 0)
                     {
@@ -1261,6 +1277,11 @@ public sealed partial class KalynaContainerService
 
                     slot.Prepare(chunkIndex, payloadLength, read);
                     chunkIndex = checked(chunkIndex + 1);
+                    if (read < BufferSize + tagBytes)
+                    {
+                        active++;
+                        break;
+                    }
                 }
 
                 if (active == 0)
@@ -1277,7 +1298,8 @@ public sealed partial class KalynaContainerService
                         encryptionKey,
                         tweak,
                         chunkNonceBase),
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken,
+                    limitNativeConcurrency: true).ConfigureAwait(false);
 
                 // Authentication for every slot in the batch has succeeded
                 // before the first byte of this batch is handed to the caller.
@@ -1334,7 +1356,8 @@ public sealed partial class KalynaContainerService
     private static async Task RunChunkWorkersAsync(
         int workerCount,
         Action<int> worker,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool limitNativeConcurrency = false)
     {
         var tasks = new Task[workerCount];
         int started = 0;
@@ -1343,9 +1366,9 @@ public sealed partial class KalynaContainerService
             for (; started < workerCount; started++)
             {
                 int workerIndex = started;
-                tasks[started] = Task.Run(
-                    () => worker(workerIndex),
-                    cancellationToken);
+                tasks[started] = limitNativeConcurrency
+                    ? RunNativeChunkWorkerAsync(worker, workerIndex, cancellationToken)
+                    : Task.Run(() => worker(workerIndex), cancellationToken);
             }
         }
         catch (Exception schedulingFailure)
@@ -1400,6 +1423,24 @@ public sealed partial class KalynaContainerService
         int workerCount,
         Action<int> worker) =>
         RunChunkWorkersAsync(workerCount, worker, CancellationToken.None);
+
+    private static async Task RunNativeChunkWorkerAsync(
+        Action<int> worker, int index, CancellationToken cancellationToken)
+    {
+        await NativePipelineConcurrency.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await Task.Run(() => worker(index), cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            NativePipelineConcurrency.Release();
+        }
+    }
+
+    internal static Task RunBoundedChunkWorkersForTestsAsync(
+        int workers, Action<int> worker, CancellationToken cancellationToken) =>
+        RunChunkWorkersAsync(workers, worker, cancellationToken, limitNativeConcurrency: true);
 
     private static Exception[] CollectTaskFailuresDeterministically(
         IReadOnlyList<Task> tasks,

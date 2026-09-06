@@ -570,38 +570,10 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 EncryptionSuite suite = SelectedEncryptionSuite;
                 Log(string.Format(CultureInfo.CurrentCulture, T("encryptingStreaming"), EncryptionSuiteCatalog.Get(suite).DisplayName));
+                Func<Stream, CancellationToken, Task> encrypt = CaptureEncryptionConsumer(archivePath, suite, prepared);
                 async Task ConsumeAsync(Stream zpaqStream, CancellationToken cancellationToken)
                 {
-                    if (prepared is null)
-                    {
-                        await _containers.EncryptZpaqStreamAsync(
-                            zpaqStream,
-                            archivePath,
-                            CreatePasswordBox.Text ?? string.Empty,
-                            CreatePinBox.Text ?? string.Empty,
-                            GeneratedPasswordFirstBox.Text ?? string.Empty,
-                            GeneratedPasswordSecondBox.Text ?? string.Empty,
-                            suite,
-                            HintBox.Text?.Trim(),
-                            Progress(),
-                            cancellationToken);
-                    }
-                    else
-                    {
-                        await _containers.EncryptZpaqStreamWithPreparedEntropyAsync(
-                            zpaqStream,
-                            archivePath,
-                            CreatePasswordBox.Text ?? string.Empty,
-                            CreatePinBox.Text ?? string.Empty,
-                            GeneratedPasswordFirstBox.Text ?? string.Empty,
-                            GeneratedPasswordSecondBox.Text ?? string.Empty,
-                            suite,
-                            prepared,
-                            HintBox.Text?.Trim(),
-                            Progress(),
-                            cancellationToken);
-                    }
-
+                    await encrypt(zpaqStream, cancellationToken).ConfigureAwait(false);
                     createdArchive = archivePath;
                 }
 
@@ -744,15 +716,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 result = await ExecuteEncryptedWithRecoveryRetryAsync(
                     archive,
                     effectivePath => _zpaq.ExtractStreamingAsync(
-                        (zpaqInput, token) => _containers.DecryptToStreamAsync(
-                            effectivePath,
-                            ExtractPasswordBox.Text ?? string.Empty,
-                            ExtractPinBox.Text ?? string.Empty,
-                            ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
-                            ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
-                            zpaqInput,
-                            Progress(),
-                            token),
+                        CaptureDecryptionProducer(effectivePath, creationCredentials: false),
                         output,
                         Progress(),
                         _lifetime.Token));
@@ -828,15 +792,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 result = await ExecuteEncryptedWithRecoveryRetryAsync(
                     archive,
                     effectivePath => _zpaq.ListStreamingAsync(
-                        (zpaqInput, token) => _containers.DecryptToStreamAsync(
-                            effectivePath,
-                            ExtractPasswordBox.Text ?? string.Empty,
-                            ExtractPinBox.Text ?? string.Empty,
-                            ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
-                            ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
-                            zpaqInput,
-                            Progress(),
-                            token),
+                        CaptureDecryptionProducer(effectivePath, creationCredentials: false),
                         Progress(),
                         _lifetime.Token));
             }
@@ -1231,18 +1187,45 @@ public sealed partial class MainWindow : Window, IDisposable
     private async Task<ProcessResult> ExtractEncryptedForVerificationAsync(string archivePath, string outputRoot)
     {
         return await _zpaq.ExtractStreamingAsync(
-            (zpaqStream, cancellationToken) => _containers.DecryptToStreamAsync(
-                archivePath,
-                CreatePasswordBox.Text ?? string.Empty,
-                CreatePinBox.Text ?? string.Empty,
-                GeneratedPasswordFirstBox.Text ?? string.Empty,
-                GeneratedPasswordSecondBox.Text ?? string.Empty,
-                zpaqStream,
-                Progress(),
-                cancellationToken),
+            CaptureDecryptionProducer(archivePath, creationCredentials: true),
             outputRoot,
             Progress(),
             _lifetime.Token);
+    }
+
+    // ZPAQ invokes its producer/consumer on worker threads. Capture every GUI
+    // value and the UI synchronization context before handing the callback off.
+    // No control may be read inside either returned delegate.
+    internal Func<Stream, CancellationToken, Task> CaptureEncryptionConsumer(
+        string archivePath, EncryptionSuite suite, GeneratedArchiveEntropy? prepared)
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        string password = CreatePasswordBox.Text ?? string.Empty;
+        string pin = CreatePinBox.Text ?? string.Empty;
+        string firstFactor = GeneratedPasswordFirstBox.Text ?? string.Empty;
+        string secondFactor = GeneratedPasswordSecondBox.Text ?? string.Empty;
+        string? hint = HintBox.Text?.Trim();
+        IProgress<string> progress = Progress();
+        KalynaContainerService containers = _containers;
+        return (stream, token) => prepared is null
+            ? containers.EncryptZpaqStreamAsync(stream, archivePath, password, pin,
+                firstFactor, secondFactor, suite, hint, progress, token)
+            : containers.EncryptZpaqStreamWithPreparedEntropyAsync(stream, archivePath,
+                password, pin, firstFactor, secondFactor, suite, prepared, hint, progress, token);
+    }
+
+    internal Func<Stream, CancellationToken, Task> CaptureDecryptionProducer(
+        string archivePath, bool creationCredentials)
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        string password = (creationCredentials ? CreatePasswordBox : ExtractPasswordBox).Text ?? string.Empty;
+        string pin = (creationCredentials ? CreatePinBox : ExtractPinBox).Text ?? string.Empty;
+        string firstFactor = (creationCredentials ? GeneratedPasswordFirstBox : ExtractGeneratedPasswordFirstBox).Text ?? string.Empty;
+        string secondFactor = (creationCredentials ? GeneratedPasswordSecondBox : ExtractGeneratedPasswordSecondBox).Text ?? string.Empty;
+        IProgress<string> progress = Progress();
+        KalynaContainerService containers = _containers;
+        return (stream, token) => containers.DecryptToStreamAsync(archivePath,
+            password, pin, firstFactor, secondFactor, stream, progress, token);
     }
 
     private async void ChooseEraseFile_Click(object? sender, RoutedEventArgs e)

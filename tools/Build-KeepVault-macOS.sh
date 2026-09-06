@@ -61,6 +61,7 @@ mv_path=/bin/mv
 sips_path=/usr/bin/sips
 iconutil_path=/usr/bin/iconutil
 cat_path=/bin/cat
+date_path=/bin/date
 
 require_root_system_tool() {
   local tool=$1
@@ -80,7 +81,7 @@ for fixed_tool in \
     ${ditto_path} ${file_path} ${shasum_path} ${openssl_path} ${awk_path} \
     ${stat_path} ${grep_path} ${sed_path} ${find_path} ${sort_path} \
     ${comm_path} ${cmp_path} ${mktemp_path} ${env_path} ${chmod_path} ${mkdir_path} \
-    ${rm_path} ${mv_path} ${sips_path} ${iconutil_path} ${cat_path}; do
+    ${rm_path} ${mv_path} ${sips_path} ${iconutil_path} ${cat_path} ${date_path}; do
   require_root_system_tool ${fixed_tool}
 done
 
@@ -109,6 +110,7 @@ mv() { ${mv_path} "$@"; }
 sips() { ${sips_path} "$@"; }
 iconutil() { ${iconutil_path} "$@"; }
 cat() { ${cat_path} "$@"; }
+date() { ${date_path} "$@"; }
 
 if ! zmodload zsh/system; then
   print -u2 'RELEASE GATE: zsh/system is required for descriptor-bound notice assembly.'
@@ -457,12 +459,15 @@ bundle_identifier='de.michael-feinermann.keep-vault'
 core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
-marketing_version='5.0.0'
+marketing_version='5.0.1'
 build_version='12'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
 release_mode=0
+install_for_tests=0
+notarize_in_xcode=0
+notarization_completed=0
 identity=${KEEPVAULT_CODESIGN_IDENTITY:-}
 # Name of an "xcrun notarytool store-credentials" keychain profile. Empty means
 # the build stops short of notarization; the secrets never live here.
@@ -476,6 +481,8 @@ mldsa_wrapping_service=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_SERVICE:-de.michael-f
 mldsa_wrapping_account=${KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-mldsa-v12:${USER:-}}
 pfx_wrapping_service=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_SERVICE:-de.michael-feinermann.keep-vault.v12.pfx-wrapping-key}
 pfx_wrapping_account=${KEEPVAULT_PFX_WRAPPING_KEYCHAIN_ACCOUNT:-keep-vault-pfx-v12:${USER:-}}
+mldsa_wrapping_key_file=${KEEPVAULT_MLDSA_WRAPPING_KEY_FILE:-}
+pfx_wrapping_key_file=${KEEPVAULT_PFX_WRAPPING_KEY_FILE:-}
 
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${packaging_dir}/Keys/mldsa87-public.key}
 dotnet_command=''
@@ -488,7 +495,8 @@ usage() {
   print -u2 '       [--pfx FILE] [--mldsa-private-key-encrypted FILE] [--pfx-password-encrypted FILE]'
   print -u2 '       [--mldsa-public-key FILE]'
   print -u2 '       [--version X.Y.Z] [--build-number N]'
-  print -u2 '       [--notary-profile NOTARYTOOL_KEYCHAIN_PROFILE] [--release] [--preflight]'
+  print -u2 '       [--notary-profile NOTARYTOOL_KEYCHAIN_PROFILE | --notarize-in-xcode] [--release] [--preflight]'
+  print -u2 '       [--install-for-tests] (explicitly install this same candidate before root-anchor tests)'
   print -u2 '       [--tool-path-self-test] [--notice-binding-self-test]'
   exit 64
 }
@@ -539,10 +547,18 @@ while (( $# != 0 )); do
       release_mode=1
       shift
       ;;
+    --install-for-tests)
+      install_for_tests=1
+      shift
+      ;;
     --notary-profile)
       (( $# >= 2 )) || usage
       notary_profile=$2
       shift 2
+      ;;
+    --notarize-in-xcode)
+      notarize_in_xcode=1
+      shift
       ;;
     --preflight)
       preflight_only=1
@@ -559,6 +575,11 @@ while (( $# != 0 )); do
     *) usage ;;
   esac
 done
+
+if (( notarize_in_xcode )) && [[ -n ${notary_profile} ]]; then
+  print -u2 -- '--notarize-in-xcode cannot be combined with a notarytool profile.'
+  exit 64
+fi
 
 if (( tool_path_self_test )); then
   print 'release_tool_paths=verified'
@@ -769,11 +790,25 @@ if [[ ${selected_sdk} != '10.0.400' ]]; then
   exit 1
 fi
 
+apple_keychain=${KEEPVAULT_APPLE_KEYCHAIN:-}
+apple_keychain_search=()
+apple_keychain_codesign_args=()
+if [[ -n ${apple_keychain} ]]; then
+  apple_keychain=${apple_keychain:a}
+  if [[ ${apple_keychain} != ${apple_keychain:A} || ! -f ${apple_keychain} \
+      || $(stat -f '%u:%Lp:%l' ${apple_keychain}) != ${EUID}:600:1 \
+      || $(stat -f '%u:%Lp' ${apple_keychain:h}) != ${EUID}:700 ]]; then
+    print -u2 'RELEASE GATE: the selected Apple keychain must be a private, current-user-owned, single-link file without symlink components.'
+    exit 2
+  fi
+  apple_keychain_search=(${apple_keychain})
+  apple_keychain_codesign_args=(--keychain ${apple_keychain})
+fi
 if [[ -z ${identity} ]]; then
-  identity=$(security find-identity -v -p codesigning \
+  identity=$(security find-identity -v -p codesigning ${apple_keychain_search[@]} \
     | awk '($0 ~ /Developer ID Application:/) { print $2; exit }')
   if [[ -z ${identity} ]]; then
-    identity=$(security find-identity -v -p codesigning \
+    identity=$(security find-identity -v -p codesigning ${apple_keychain_search[@]} \
       | awk '($0 ~ /Apple Development:/) { print $2; exit }')
   fi
 fi
@@ -782,14 +817,14 @@ if [[ -z ${identity} ]]; then
   exit 2
 fi
 
-identity_details=$(security find-identity -v -p codesigning | grep -F -- "${identity}" || true)
+identity_details=$(security find-identity -v -p codesigning ${apple_keychain_search[@]} | grep -F -- "${identity}" || true)
 if [[ -z ${identity_details} ]]; then
   print -u2 'The selected Apple signing identity is absent.'
   exit 2
 fi
 identity_label=${identity_details#*\"}
 identity_label=${identity_label%%\"*}
-certificate_subject=$(security find-certificate -c ${identity_label} -p \
+certificate_subject=$(security find-certificate -c ${identity_label} -p ${apple_keychain_search[@]} \
   | openssl x509 -noout -subject -nameopt RFC2253 2>/dev/null || true)
 if [[ ${certificate_subject} != *"OU=${team_identifier}"* ]]; then
   print -u2 "The selected Apple signing certificate does not belong to team ${team_identifier}."
@@ -798,14 +833,14 @@ fi
 timestamp_arguments=(--timestamp=none)
 if [[ ${identity_label} == 'Developer ID Application:'* ]]; then
   timestamp_arguments=(--timestamp)
-  if [[ -z ${notary_profile} ]]; then
-    print -u2 'RELEASE GATE: Developer ID release requires --notary-profile.'
+  if [[ -z ${notary_profile} ]] && (( ! notarize_in_xcode )); then
+    print -u2 'RELEASE GATE: Developer ID requires --notary-profile or --notarize-in-xcode.'
     exit 2
   fi
 elif [[ ${identity_label} == 'Apple Development:'* ]]; then
   timestamp_arguments=(--timestamp=none)
-  if (( release_mode )); then
-    print -u2 'RELEASE GATE: published release requires Developer ID.'
+  if (( release_mode || notarize_in_xcode )); then
+    print -u2 'RELEASE GATE: published releases and Xcode notarization require Developer ID.'
     exit 2
   fi
 else
@@ -828,12 +863,28 @@ if [[ -z ${USER:-} || -z ${mldsa_wrapping_service} || -z ${mldsa_wrapping_accoun
   exit 2
 fi
 
-pfx_path=${pfx_path:A}
-mldsa_private_key_encrypted=${mldsa_private_key_encrypted:A}
-pfx_password_encrypted=${pfx_password_encrypted:A}
+if [[ -n ${mldsa_wrapping_key_file} && -z ${pfx_wrapping_key_file} \
+    || -z ${mldsa_wrapping_key_file} && -n ${pfx_wrapping_key_file} ]]; then
+  print -u2 'RELEASE GATE: USB signing requires both role-specific wrapping-key files.'
+  exit 2
+fi
+private_signing_paths=(${pfx_path} ${mldsa_private_key_encrypted} ${pfx_password_encrypted})
+if [[ -n ${mldsa_wrapping_key_file} ]]; then
+  mldsa_wrapping_key_file=${mldsa_wrapping_key_file:a}
+  pfx_wrapping_key_file=${pfx_wrapping_key_file:a}
+  if [[ ${mldsa_wrapping_key_file} == ${pfx_wrapping_key_file} ]]; then
+    print -u2 'RELEASE GATE: USB wrapping-key roles require distinct files.'
+    exit 2
+  fi
+  private_signing_paths+=(${mldsa_wrapping_key_file} ${pfx_wrapping_key_file})
+fi
+# Preserve symlinks in signer inputs so O_NOFOLLOW_ANY can reject them.
+pfx_path=${pfx_path:a}
+mldsa_private_key_encrypted=${mldsa_private_key_encrypted:a}
+pfx_password_encrypted=${pfx_password_encrypted:a}
 mldsa_public_key=${mldsa_public_key:A}
-for private_path in ${pfx_path} ${mldsa_private_key_encrypted} ${pfx_password_encrypted}; do
-  if [[ ${private_path} == ${repo_root}/* ]]; then
+for private_path in ${private_signing_paths[@]}; do
+  if [[ ${private_path:A} == ${repo_root}/* ]]; then
     print -u2 "RELEASE GATE: private signing material must remain outside the repository: ${private_path}"
     exit 2
   fi
@@ -869,6 +920,7 @@ fi
 # The read-free verifier rejects a missing item, a shared identity, a trusted
 # application added with "Always Allow", or a role-swapped ACL before any
 # signing secret is requested.
+if [[ -z ${mldsa_wrapping_key_file} ]]; then
 KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED=${mldsa_private_key_encrypted} \
 KEEPVAULT_PFX_PASSWORD_ENCRYPTED=${pfx_password_encrypted} \
 KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_SERVICE=${mldsa_wrapping_service} \
@@ -876,6 +928,7 @@ KEEPVAULT_MLDSA_WRAPPING_KEYCHAIN_ACCOUNT=${mldsa_wrapping_account} \
 KEEPVAULT_PFX_WRAPPING_KEYCHAIN_SERVICE=${pfx_wrapping_service} \
 KEEPVAULT_PFX_WRAPPING_KEYCHAIN_ACCOUNT=${pfx_wrapping_account} \
   ${script_dir}/Protect-HybridKeys-macOS.sh --verify-only
+fi
 
 mldsa_key_arguments=(
   --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
@@ -887,6 +940,16 @@ pfx_password_arguments=(
   --pfx-wrapping-key-keychain-service ${pfx_wrapping_service}
   --pfx-wrapping-key-keychain-account ${pfx_wrapping_account}
 )
+if [[ -n ${mldsa_wrapping_key_file} ]]; then
+  mldsa_key_arguments=(
+    --mldsa-private-key-encrypted ${mldsa_private_key_encrypted}
+    --mldsa-wrapping-key-file ${mldsa_wrapping_key_file}
+  )
+  pfx_password_arguments=(
+    --pfx-password-encrypted ${pfx_password_encrypted}
+    --pfx-wrapping-key-file ${pfx_wrapping_key_file}
+  )
+fi
 
 main_lock=${mac_project}/packages.lock.json
 signer_lock=${packaging_dir}/HybridSigner/packages.lock.json
@@ -1231,7 +1294,7 @@ sign_macho() {
   if [[ -n ${entitlements} ]]; then
     arguments+=(--entitlements ${entitlements})
   fi
-  codesign ${arguments[@]} ${macho_path}
+  codesign ${apple_keychain_codesign_args[@]} ${arguments[@]} ${macho_path}
 }
 
 while IFS= read -r -d '' candidate; do
@@ -1475,6 +1538,7 @@ print "relocated_sidecars=${relocated_sidecars}"
 sign_macho ${launcher_path} ${bundle_identifier}.launcher ${packaging_dir}/Launcher.entitlements
 
 codesign \
+  ${apple_keychain_codesign_args[@]} \
   --force \
   --sign ${identity} \
   --options runtime \
@@ -1483,9 +1547,13 @@ codesign \
   --identifier ${bundle_identifier} \
   ${app_stage}
 
+pre_notarization_verify_arguments=(--allow-development)
+if [[ ${identity_label} == 'Developer ID Application:'* ]]; then
+  pre_notarization_verify_arguments=(--allow-pre-notarization)
+fi
 ${script_dir}/Verify-KeepVault-macOS.sh \
   --app ${app_stage} \
-  --allow-development \
+  ${pre_notarization_verify_arguments[@]} \
   --mldsa-public-key ${mldsa_public_key}
 
 dist_dir=${repo_root}/dist/Keep\ Vault-macOS
@@ -1545,7 +1613,7 @@ scanner_build_script=${repo_root}/QrCodeScanner/tools/Build-QrScanner-macOS.sh
 scanner_dist=${repo_root}/QrCodeScanner/dist/QR-Scanner.app
 if [[ -f ${scanner_build_script} ]]; then
   scanner_args=(
-    --identity "${identity_label}"
+    --identity "${identity}"
     --arch ${architecture}
     --version "${marketing_version}"
     --build-number "${build_version}"
@@ -1553,6 +1621,17 @@ if [[ -f ${scanner_build_script} ]]; then
   if [[ -n ${notary_profile:-} && ${identity_label} == 'Developer ID Application:'* ]]; then
     scanner_args+=(--notary-profile "${notary_profile}")
   fi
+  if (( notarize_in_xcode )); then
+    scanner_args+=(--prepare-notarization-in-xcode)
+  fi
+  KEEPVAULT_RELEASE_KEYS="${KEEPVAULT_RELEASE_KEYS:-${pfx_path:h}}" \
+  KEEPVAULT_APPLE_KEYCHAIN="${apple_keychain}" \
+  KEEPVAULT_HYBRID_PFX="${pfx_path}" \
+  KEEPVAULT_MLDSA_PRIVATE_KEY_ENCRYPTED="${mldsa_private_key_encrypted}" \
+  KEEPVAULT_PFX_PASSWORD_ENCRYPTED="${pfx_password_encrypted}" \
+  KEEPVAULT_MLDSA_PUBLIC_KEY="${mldsa_public_key}" \
+  KEEPVAULT_MLDSA_WRAPPING_KEY_FILE="${mldsa_wrapping_key_file}" \
+  KEEPVAULT_PFX_WRAPPING_KEY_FILE="${pfx_wrapping_key_file}" \
   ${scanner_build_script} ${scanner_args[@]}
 
   # Verify release pair metadata and hybrid integrity
@@ -1563,6 +1642,8 @@ if [[ -f ${scanner_build_script} ]]; then
   fi
   if [[ -n ${notary_profile:-} && ${identity_label} == 'Developer ID Application:'* ]]; then
     scanner_verify_args+=(--require-notarization)
+  elif (( notarize_in_xcode )); then
+    scanner_verify_args+=(--allow-pre-notarization)
   fi
   ${script_dir}/Verify-QR-Scanner-macOS.sh ${scanner_verify_args[@]}
 
@@ -1624,21 +1705,228 @@ if [[ ! -d ${archive_check}/Keep\ Vault.app || -L ${archive_check}/Keep\ Vault.a
 fi
 ${script_dir}/Verify-KeepVault-macOS.sh \
   --app ${archive_check}/Keep\ Vault.app \
-  --allow-development \
+  ${pre_notarization_verify_arguments[@]} \
   --require-launcher-signature \
   --mldsa-public-key ${mldsa_public_key}
 
 if [[ -d ${archive_check}/QR-Scanner.app ]]; then
+  scanner_archive_verify_args=(--app ${archive_check}/QR-Scanner.app)
+  if (( notarize_in_xcode )); then
+    scanner_archive_verify_args+=(--allow-pre-notarization)
+  else
+    scanner_archive_verify_args+=(--allow-development)
+  fi
   ${script_dir}/Verify-QR-Scanner-macOS.sh \
-    --app ${archive_check}/QR-Scanner.app \
-    --allow-development
+    ${scanner_archive_verify_args[@]}
 fi
 
 ${script_dir}/Verify-KeepVault-macOS.sh \
   --app ${final_app} \
-  --allow-development \
+  ${pre_notarization_verify_arguments[@]} \
   --require-launcher-signature \
   --mldsa-public-key ${mldsa_public_key}
+
+# Finish every mutation of the signed candidate before installing or testing
+# it. The regular installer requires notarization for Developer ID bundles;
+# rebuilding or stapling after installation would test different app bytes.
+# Credentials stay in the selected notarytool Keychain profile. To provision
+# it, use notarytool's protected prompt, never an argument or repository file:
+#
+#     xcrun notarytool store-credentials "Keep Vault v12" \
+#       --apple-id <your-apple-id> --team-id <your-team-id>
+create_xcode_notary_archive() {
+  local source_app=$1
+  local archive=$2
+  local archive_name=$3
+  if [[ -e ${archive} || -L ${archive} || ! -d ${source_app} || -L ${source_app} ]]; then
+    print -u2 'RELEASE GATE: Xcode archive inputs must be a regular app and an unused archive path.'
+    return 2
+  fi
+  mkdir -p ${archive}/Products/Applications ${archive}/dSYMs
+  ditto ${source_app} ${archive}/Products/Applications/${source_app:t}
+  local archive_info=${archive}/Info.plist
+  local app_info=${source_app}/Contents/Info.plist
+  local app_identifier=$(plutil -extract CFBundleIdentifier raw -o - ${app_info})
+  local app_version=$(plutil -extract CFBundleShortVersionString raw -o - ${app_info})
+  local app_build=$(plutil -extract CFBundleVersion raw -o - ${app_info})
+  plutil -create xml1 ${archive_info}
+  plutil -insert ArchiveVersion -integer 2 ${archive_info}
+  plutil -insert CreationDate -date "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" ${archive_info}
+  plutil -insert Name -string ${archive_name} ${archive_info}
+  plutil -insert SchemeName -string ${archive_name} ${archive_info}
+  plutil -insert ApplicationProperties -json '{}' ${archive_info}
+  plutil -insert ApplicationProperties.ApplicationPath -string "Applications/${source_app:t}" ${archive_info}
+  plutil -insert ApplicationProperties.CFBundleIdentifier -string ${app_identifier} ${archive_info}
+  plutil -insert ApplicationProperties.CFBundleShortVersionString -string ${app_version} ${archive_info}
+  plutil -insert ApplicationProperties.CFBundleVersion -string ${app_build} ${archive_info}
+  plutil -insert ApplicationProperties.SigningIdentity -string ${identity_label} ${archive_info}
+  plutil -insert ApplicationProperties.Team -string ${team_identifier} ${archive_info}
+  local archive_architectures='["arm64"]'
+  [[ ${architecture} != universal ]] || archive_architectures='["arm64","x86_64"]'
+  plutil -insert ApplicationProperties.Architectures -json ${archive_architectures} ${archive_info}
+  plutil -lint ${archive_info}
+}
+
+capture_xcode_app_hashes() {
+  local source_app=$1
+  local output=$2
+  (
+    cd ${source_app}
+    find . -type f -print0 | sort -z | while IFS= read -r -d '' app_file; do
+      shasum -a 256 -- ${app_file}
+    done
+  ) > ${output}
+}
+
+if [[ -z ${notary_profile} ]] && (( ! notarize_in_xcode )); then
+  print 'notarization=not_performed (pass --notary-profile NAME once a Developer ID certificate and a notarytool profile exist)'
+else
+  if [[ ${identity_details} != *'Developer ID Application'* ]]; then
+    print -u2 'Notarization requires a Developer ID Application identity; an Apple Development certificate is rejected by the notary service.'
+    exit 1
+  fi
+
+  if (( notarize_in_xcode )); then
+    original_scanner=${dist_stage}/QR-Scanner.app
+    if [[ ! -d ${original_scanner} || -L ${original_scanner} \
+        || ${dist_dir:a} != ${dist_dir:A} || ! -d ${dist_dir} || -L ${dist_dir} \
+        || $(stat -f '%u' ${dist_dir}) != ${EUID} ]]; then
+      print -u2 'RELEASE GATE: Xcode notarization requires the signed pair and a physical, existing, current-user-owned distribution parent.'
+      exit 2
+    fi
+    xcode_notary_root=$(mktemp -d "${dist_dir}/.xcode-notarization.XXXXXXXX")
+    if [[ ${xcode_notary_root:a} != ${xcode_notary_root:A} || -L ${xcode_notary_root} \
+        || $(stat -f '%u:%Lp' ${xcode_notary_root}) != ${EUID}:700 ]]; then
+      print -u2 'RELEASE GATE: the exclusive Xcode notarization directory is unsafe.'
+      exit 2
+    fi
+    xcode_candidate_root=${xcode_notary_root}/Candidate
+    mkdir ${xcode_candidate_root}
+    ditto ${dist_stage}/ ${xcode_candidate_root}/
+    print "xcode_preserved_candidate=${xcode_candidate_root}"
+    print 'This private candidate survives an interrupted Xcode upload; it is not an installation or release approval.'
+
+    xcode_keepvault_archive=${xcode_notary_root}/Keep\ Vault.xcarchive
+    xcode_scanner_archive=${xcode_notary_root}/QR-Scanner.xcarchive
+    create_xcode_notary_archive ${final_app} ${xcode_keepvault_archive} 'Keep Vault'
+    create_xcode_notary_archive ${original_scanner} ${xcode_scanner_archive} 'QR-Scanner'
+    capture_xcode_app_hashes ${final_app} ${xcode_notary_root}/keepvault-before.sha256
+    capture_xcode_app_hashes ${original_scanner} ${xcode_notary_root}/scanner-before.sha256
+    capture_xcode_app_hashes ${xcode_candidate_root}/Keep\ Vault.app ${xcode_notary_root}/keepvault-preserved.sha256
+    capture_xcode_app_hashes ${xcode_candidate_root}/QR-Scanner.app ${xcode_notary_root}/scanner-preserved.sha256
+    capture_xcode_app_hashes ${xcode_keepvault_archive}/Products/Applications/Keep\ Vault.app ${xcode_notary_root}/keepvault-archive.sha256
+    capture_xcode_app_hashes ${xcode_scanner_archive}/Products/Applications/QR-Scanner.app ${xcode_notary_root}/scanner-archive.sha256
+    for copied_state in preserved archive; do
+      cmp -s ${xcode_notary_root}/keepvault-before.sha256 ${xcode_notary_root}/keepvault-${copied_state}.sha256
+      cmp -s ${xcode_notary_root}/scanner-before.sha256 ${xcode_notary_root}/scanner-${copied_state}.sha256
+    done
+    xcode_slices=(arm64)
+    [[ ${architecture} != universal ]] || xcode_slices+=(x86_64)
+    generate_cdhash_pins ${final_app}/Contents/MacOS/Keep\ Vault\ Launcher \
+      ${xcode_notary_root}/keepvault-before-cdhash.swift XcodeNotaryKeepVault ${xcode_slices[@]}
+    generate_cdhash_pins ${original_scanner}/Contents/MacOS/QR-Scanner \
+      ${xcode_notary_root}/scanner-before-cdhash.swift XcodeNotaryScanner ${xcode_slices[@]}
+    print "xcode_keepvault_archive=${xcode_keepvault_archive}"
+    print "xcode_scanner_archive=${xcode_scanner_archive}"
+    print 'Open both archives in Xcode Organizer and upload them for Developer ID notarization.'
+    print 'Do not replace this candidate with an Xcode export. Only tickets valid for the original signed apps will be accepted.'
+    if ! read -r 'xcode_upload_confirmation?After both uploads succeed, type NOTARIZED and press Return: '; then
+      print -u2 "Xcode upload wait ended without confirmation. Candidate preserved at: ${xcode_candidate_root}"
+      exit 2
+    fi
+    if [[ ${xcode_upload_confirmation} != NOTARIZED ]]; then
+      print -u2 "Xcode upload was not confirmed. Candidate preserved at: ${xcode_candidate_root}"
+      exit 2
+    fi
+    capture_xcode_app_hashes ${final_app} ${xcode_notary_root}/keepvault-after-wait.sha256
+    capture_xcode_app_hashes ${original_scanner} ${xcode_notary_root}/scanner-after-wait.sha256
+    if ! cmp -s ${xcode_notary_root}/keepvault-before.sha256 ${xcode_notary_root}/keepvault-after-wait.sha256 \
+        || ! cmp -s ${xcode_notary_root}/scanner-before.sha256 ${xcode_notary_root}/scanner-after-wait.sha256; then
+      print -u2 'RELEASE GATE: an original app changed while waiting for Xcode. No exported replacement is accepted.'
+      exit 2
+    fi
+    # Xcode may re-sign its copies. Its UI success is not proof for our originals:
+    # both originals must independently obtain a ticket or the build stops here.
+    xcrun stapler staple ${original_scanner}
+    xcrun stapler validate ${original_scanner}
+  else
+    xcrun notarytool submit ${final_zip} --keychain-profile ${notary_profile} --wait
+  fi
+  xcrun stapler staple ${final_app}
+  xcrun stapler validate ${final_app}
+
+  if (( notarize_in_xcode )); then
+    generate_cdhash_pins ${final_app}/Contents/MacOS/Keep\ Vault\ Launcher \
+      ${xcode_notary_root}/keepvault-after-cdhash.swift XcodeNotaryKeepVault ${xcode_slices[@]}
+    generate_cdhash_pins ${original_scanner}/Contents/MacOS/QR-Scanner \
+      ${xcode_notary_root}/scanner-after-cdhash.swift XcodeNotaryScanner ${xcode_slices[@]}
+    if ! cmp -s ${xcode_notary_root}/keepvault-before-cdhash.swift ${xcode_notary_root}/keepvault-after-cdhash.swift \
+        || ! cmp -s ${xcode_notary_root}/scanner-before-cdhash.swift ${xcode_notary_root}/scanner-after-cdhash.swift; then
+      print -u2 'RELEASE GATE: an original app CDHash changed during Xcode notarization.'
+      exit 2
+    fi
+    ${script_dir}/Verify-QR-Scanner-macOS.sh \
+      --app ${original_scanner} --require-notarization --mldsa-public-key ${mldsa_public_key}
+    ${script_dir}/Verify-KeepVault-macOS.sh \
+      --app ${final_app} --require-launcher-signature --require-notarization --mldsa-public-key ${mldsa_public_key}
+    spctl --assess --type execute -vv ${original_scanner}
+  fi
+
+  # The stapled ticket changes the bundle, so rebuild the distribution archive
+  # and its signed manifests from the final app and all five launcher sidecars.
+  rm -f -- ${final_zip} ${final_zip}.sha3 ${final_zip}.skein \
+    ${final_zip}.khsig ${final_zip}.sha3.khsig ${final_zip}.skein.khsig
+  rm -rf -- ${zip_stage}
+  mkdir -p ${zip_stage}
+  ditto ${final_app} ${zip_stage}/Keep\ Vault.app
+  for sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+    ditto ${final_app}.launcher${sidecar_suffix} ${zip_stage}/Keep\ Vault.app.launcher${sidecar_suffix}
+  done
+  if [[ -d ${dist_stage}/QR-Scanner.app ]]; then
+    ditto ${dist_stage}/QR-Scanner.app ${zip_stage}/QR-Scanner.app
+    for sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
+      ditto ${dist_stage}/QR-Scanner.app${sidecar_suffix} ${zip_stage}/QR-Scanner.app${sidecar_suffix}
+    done
+  fi
+  ditto -c -k --sequesterRsrc ${zip_stage} ${final_zip}
+  (
+    cd ${mac_project}
+    run_hybrid_signer ${archive_common[@]}
+  )
+
+  rm -rf -- ${archive_check}
+  mkdir -p ${archive_check}
+  ditto -x -k ${final_zip} ${archive_check}
+  ${script_dir}/Verify-KeepVault-macOS.sh \
+    --app ${archive_check}/Keep\ Vault.app \
+    --require-launcher-signature \
+    --require-notarization \
+    --mldsa-public-key ${mldsa_public_key}
+
+  spctl --assess --type execute -vv ${final_app}
+  notarization_completed=1
+  if (( notarize_in_xcode )); then
+    print 'notarization=stapled (Xcode tickets independently verified on both original apps)'
+  else
+    print "notarization=stapled (${notary_profile})"
+  fi
+fi
+
+# Prepare the publication helpers before the final functional gate as well.
+# Once that gate passes, only copying and publishing the checked bytes remain.
+publish_rename_source=${script_dir}/ReleasePublishRename.c
+publish_delete_source=${script_dir}/InstallerBoundDelete.c
+publish_rename_helper=${build_root}/release-publish-rename
+publish_delete_helper=${build_root}/release-publish-delete
+if [[ ! -f ${publish_rename_source} || -L ${publish_rename_source} \
+    || ! -f ${publish_delete_source} || -L ${publish_delete_source} ]]; then
+  print -u2 'Release publish helper sources are missing or symbolic.'
+  exit 1
+fi
+xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
+  ${publish_rename_source} -o ${publish_rename_helper}
+xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
+  ${publish_delete_source} -o ${publish_delete_helper}
 
 print 'RELEASE GATE: running native slice KATs across architectures...'
 native_kats_source=${packaging_dir}/NativeKats.c
@@ -1724,12 +2012,66 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     exit 2
   fi
   parallel_test_workers=$(( logical_processors > 8 ? 8 : logical_processors ))
-  if (( parallel_test_workers < 2 )); then
-    print -u2 'RELEASE GATE: production worker equivalence requires at least two logical processors.'
+
+  # The suite exercises the real ZPAQ path, and v12 executes ZPAQ only from the
+  # root-owned anchor the installer provisions. A second build cannot recreate
+  # the first build's CMS signing time. Explicit installation must therefore
+  # install this exact candidate and resume these tests without rebuilding it.
+  zpaq_anchor_executable='/Library/Application Support/Keep Vault/v12/zpaq'
+  staged_zpaq=${private_tests_artifacts}/bin/KeepVaultMac.Tests/release_osx-arm64/Native/zpaq
+  if [[ ! -f ${staged_zpaq} || -L ${staged_zpaq} ]]; then
+    print -u2 'RELEASE GATE: the staged test ZPAQ is missing; staging did not complete.'
     exit 2
   fi
+  publish_for_anchor_install() {
+    local reason=$1
+    # Preserve prior diagnostics. Never recursively remove a predictable path
+    # in a writable checkout merely to prepare an installation prerequisite.
+    local staging
+    print -u2 "RELEASE GATE: ${reason}"
+    # The installer deliberately accepts sources only within this checkout.
+    # Use an exclusive private child, without weakening that installer gate.
+    if [[ ${dist_dir:a} != ${dist_dir:A} || -L ${dist_dir} || ! -d ${dist_dir} \
+        || $(stat -f '%u' ${dist_dir}) != ${EUID} ]]; then
+      print -u2 'RELEASE GATE: the anchor-install parent is unsafe.'
+      exit 2
+    fi
+    staging=$(${mktemp_path} -d "${dist_dir}/.anchor-install.XXXXXXXX") || exit 2
+    if [[ ${staging:a} != ${staging:A} || -L ${staging} || ! -d ${staging} \
+        || $(stat -f '%u:%Lp' ${staging}) != ${EUID}:700 ]]; then
+      print -u2 'RELEASE GATE: the exclusive anchor-install staging directory is unsafe.'
+      exit 2
+    fi
+    if ! ditto ${dist_stage}/ ${staging}/; then
+      print -u2 '  The verified bundle could not be staged for installation.'
+      exit 2
+    fi
+    print -u2 "  Preserved candidate: ${staging}/Keep Vault.app"
+    if (( ! install_for_tests )); then
+      print -u2 '  Run with --install-for-tests to authorize installation and testing of one identical candidate.'
+      print -u2 '  Rebuilding after a separate installation would change the signed bytes again.'
+      exit 2
+    fi
+    local -a installer_arguments=(--app "${staging}/Keep Vault.app" --no-desktop-alias)
+    if [[ ${identity_label} == 'Apple Development:'* ]]; then
+      installer_arguments+=(--development)
+    fi
+    print -u2 '  Installing this candidate through the regular installer; confirm macOS authorization locally.'
+    ${script_dir}/Install-KeepVault-macOS.sh ${installer_arguments[@]}
+  }
+  if [[ ! -f ${zpaq_anchor_executable} || -L ${zpaq_anchor_executable} ]] \
+      || ! cmp -s -- ${zpaq_anchor_executable} ${staged_zpaq}; then
+    publish_for_anchor_install \
+      'the root-owned v12 ZPAQ anchor is absent or differs from this signed candidate.'
+  fi
+  if [[ ! -f ${zpaq_anchor_executable} || -L ${zpaq_anchor_executable} ]] \
+      || ! cmp -s -- ${zpaq_anchor_executable} ${staged_zpaq}; then
+    print -u2 'RELEASE GATE: the installer did not establish the exact signed ZPAQ anchor. Tests were not started.'
+    exit 2
+  fi
+  print 'zpaq_anchor=matches this build'
 
-  print 'RELEASE GATE: running the complete suite with one test worker...'
+  print "RELEASE GATE: running the complete suite with ${parallel_test_workers} test workers..."
   KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
     run_dotnet_clean run \
       --project ${test_project} \
@@ -1740,23 +2082,10 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
       --disable-build-servers \
       -- \
       --full \
-      --parallel 1 \
+      --parallel ${parallel_test_workers} \
       --dump-key-sheets "${test_sheet_dir}"
 
   if (( release_mode )); then
-    print "RELEASE GATE: running the complete suite with ${parallel_test_workers} test workers..."
-    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
-        --project ${test_project} \
-        --artifacts-path ${private_tests_artifacts} \
-        -c Release \
-        --no-build \
-        --no-restore \
-        --disable-build-servers \
-        -- \
-        --full \
-        --parallel ${parallel_test_workers}
-
     print 'RELEASE GATE: explicitly running the production worker-1-vs-N container KAT...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
       run_dotnet_clean run \
@@ -1861,71 +2190,43 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         --performance \
         --only performance.cipher-suites \
         --parallel 1
+
+    print 'RELEASE GATE: running the 256-MiB Paranoia production-KDF end-to-end gate...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --performance \
+        --only performance.paranoia-256mib-e2e \
+        --parallel 1
+
+    # This must remain the last functional execution. The installed candidate,
+    # notarized bundle, ZIP and hybrid manifests already have their final bytes.
+    print 'RELEASE GATE: running the final complex-tree Paranoia end-to-end gate...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_dotnet_clean run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --performance \
+        --only performance.paranoia-complex-tree-e2e \
+        --parallel 1
   fi
 )
-
-# Notarization. Apple must see the build before Gatekeeper will accept it on
-# another Mac. Credentials are never passed on the command line or stored in
-# this repository: create a keychain profile once with
-#
-#     xcrun notarytool store-credentials "Keep Vault v12" \
-#       --apple-id <your-apple-id> --team-id <your-team-id>
-#
-# Enter the app-specific password only at notarytool's protected prompt, then
-# pass --notary-profile "Keep Vault v12". The profile name is all this script
-# ever sees; the secrets stay in the login keychain.
-if [[ -z ${notary_profile} ]]; then
-  print 'notarization=not_performed (pass --notary-profile NAME once a Developer ID certificate and a notarytool profile exist)'
-else
-  if [[ ${identity_details} != *'Developer ID Application'* ]]; then
-    print -u2 'Notarization requires a Developer ID Application identity; an Apple Development certificate is rejected by the notary service.'
-    exit 1
-  fi
-
-  xcrun notarytool submit ${final_zip} --keychain-profile ${notary_profile} --wait
-  xcrun stapler staple ${final_app}
-  xcrun stapler validate ${final_app}
-
-  # The stapled ticket changes the bundle, so the distribution archive and its
-  # signed manifests have to be rebuilt from the stapled app including all 5 launcher sidecars.
-  rm -f -- ${final_zip} ${final_zip}.sha3 ${final_zip}.skein \
-    ${final_zip}.khsig ${final_zip}.sha3.khsig ${final_zip}.skein.khsig
-  rm -rf -- ${zip_stage}
-  mkdir -p ${zip_stage}
-  ditto ${final_app} ${zip_stage}/Keep\ Vault.app
-  for sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-    ditto ${final_app}.launcher${sidecar_suffix} ${zip_stage}/Keep\ Vault.app.launcher${sidecar_suffix}
-  done
-  if [[ -d ${dist_stage}/QR-Scanner.app ]]; then
-    ditto ${dist_stage}/QR-Scanner.app ${zip_stage}/QR-Scanner.app
-    for sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
-      ditto ${dist_stage}/QR-Scanner.app${sidecar_suffix} ${zip_stage}/QR-Scanner.app${sidecar_suffix}
-    done
-  fi
-  ditto -c -k --sequesterRsrc ${zip_stage} ${final_zip}
-  (
-    cd ${mac_project}
-    run_hybrid_signer ${archive_common[@]}
-  )
-
-  # Re-verify the unzipped post-notarization bundle
-  rm -rf -- ${archive_check}
-  mkdir -p ${archive_check}
-  ditto -x -k ${final_zip} ${archive_check}
-  ${script_dir}/Verify-KeepVault-macOS.sh \
-    --app ${archive_check}/Keep\ Vault.app \
-    --require-launcher-signature \
-    --require-notarization \
-    --mldsa-public-key ${mldsa_public_key}
-
-  spctl --assess --type execute -vv ${final_app}
-  print "notarization=stapled (${notary_profile})"
-fi
 
 # ATOMIC PUBLISH: Only official, Developer-ID-signed and notarized release artifacts
 # land in dist/. Development and local builds land in build/dev/ to avoid accidental distribution.
 publish_target_dir=''
-if (( release_mode )) && [[ -n ${notary_profile:-} && ${identity_details} == *'Developer ID Application'* ]]; then
+if (( release_mode && notarization_completed )) && [[ ${identity_details} == *'Developer ID Application'* ]]; then
   publish_target_dir=${repo_root}/dist/Keep\ Vault-macOS
 else
   publish_target_dir=${repo_root}/build/dev/Keep\ Vault-macOS
@@ -1958,21 +2259,11 @@ publish_quarantine=$(mktemp -d "${publish_parent}/.publish_cleanup.XXXXXXXX")
 chmod 0700 ${publish_quarantine}
 publish_quarantine_identity=$(stat -f '%d:%i' ${publish_quarantine} 2>/dev/null || true)
 
-publish_rename_source=${script_dir}/ReleasePublishRename.c
-publish_delete_source=${script_dir}/InstallerBoundDelete.c
-publish_rename_helper=${build_root}/release-publish-rename
-publish_delete_helper=${build_root}/release-publish-delete
-if [[ ! -f ${publish_rename_source} || -L ${publish_rename_source} \
-    || ! -f ${publish_delete_source} || -L ${publish_delete_source} \
-    || ! ${publish_stage_identity} =~ '^[0-9]+:[0-9]+$' \
+if [[ ! ${publish_stage_identity} =~ '^[0-9]+:[0-9]+$' \
     || ! ${publish_quarantine_identity} =~ '^[0-9]+:[0-9]+$' ]]; then
-  print -u2 'Release publish helpers or private staging identities are invalid; staged objects were preserved.'
+  print -u2 'Release publish staging identities are invalid; staged objects were preserved.'
   exit 1
 fi
-xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
-  ${publish_rename_source} -o ${publish_rename_helper}
-xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
-  ${publish_delete_source} -o ${publish_delete_helper}
 
 delete_old_publish_tree() {
   local object_name=$1

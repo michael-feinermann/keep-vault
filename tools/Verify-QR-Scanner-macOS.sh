@@ -446,6 +446,7 @@ expected_bundle='de.michael-feinermann.qr-scanner'
 app_path=''
 allow_development=0
 require_notarization=0
+allow_pre_notarization=0
 tool_path_self_test=0
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
 expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF39407EB6BA5EB'
@@ -453,6 +454,7 @@ expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF
 usage() {
   print -u2 'Usage: Verify-QR-Scanner-macOS.sh --app "QR-Scanner.app" [--allow-development]'
   print -u2 '       [--require-notarization] [--mldsa-public-key FILE] [--tool-path-self-test]'
+  print -u2 '       [--allow-pre-notarization (Developer ID only; exclusive with other signing modes)]'
   exit 64
 }
 
@@ -471,6 +473,10 @@ while (( $# != 0 )); do
       require_notarization=1
       shift
       ;;
+    --allow-pre-notarization)
+      allow_pre_notarization=1
+      shift
+      ;;
     --mldsa-public-key)
       (( $# >= 2 )) || usage
       mldsa_public_key=$2
@@ -483,6 +489,11 @@ while (( $# != 0 )); do
     *) usage ;;
   esac
 done
+
+if (( allow_pre_notarization && (allow_development || require_notarization) )); then
+  print -u2 'QR VERIFY GATE: --allow-pre-notarization cannot be combined with --allow-development or --require-notarization.'
+  exit 64
+fi
 
 if (( tool_path_self_test )); then
   require_managed_injection_environment_cleared
@@ -542,6 +553,10 @@ if ! codesign -v --strict ${app_path}; then
 fi
 
 app_signature=$(codesign -dvvv ${app_path} 2>&1)
+if (( allow_pre_notarization )) && [[ ${app_signature} != *'Authority=Developer ID Application:'* ]]; then
+  print -u2 'QR VERIFY GATE: pre-notarization verification requires a Developer ID Application signature.'
+  exit 1
+fi
 if [[ ${app_signature} == *'Authority=Developer ID Application:'* ]]; then
   if [[ ${app_signature} == *"TeamIdentifier=${expected_team}"* ]]; then
     print "team_id=${expected_team}"
@@ -695,11 +710,18 @@ else
   exit 1
 fi
 
-if spctl --assess --type execute --verbose=4 ${app_path}; then
+gatekeeper_result=''
+if gatekeeper_result=$(spctl --assess --type execute --verbose=4 ${app_path} 2>&1); then
+  print -r -- ${gatekeeper_result}
   print 'scanner_gatekeeper=accepted'
 else
+  print -ru2 -- ${gatekeeper_result}
   if (( allow_development )) && [[ ${app_signature} == *'Authority=Apple Development:'* ]]; then
     print 'scanner_gatekeeper=not_accepted (expected for local Apple Development signing)'
+  elif (( allow_pre_notarization )) \
+      && [[ ${app_signature} == *'Authority=Developer ID Application:'* \
+        && ${gatekeeper_result} == *'source=Unnotarized Developer ID'* ]]; then
+    print 'scanner_gatekeeper=awaiting-notarization (explicit preparation mode only)'
   else
     print -u2 'Gatekeeper did not accept the QR-Scanner bundle.'
     exit 1
@@ -709,6 +731,10 @@ fi
 if (( require_notarization )); then
   stapler validate ${app_path}
   print 'scanner_notarization=stapled-and-valid'
+fi
+
+if (( allow_pre_notarization )); then
+  print 'scanner_verification_scope=pre-notarization (Apple and hybrid signatures verified; final notarization gate remains required)'
 fi
 
 print "scanner_verified=${app_path}"

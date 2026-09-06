@@ -164,9 +164,9 @@ static int zpaq_printf(const char* fmt, ...) {
 #include <dirent.h>
 #include <utime.h>
 #include <errno.h>
-static int g_verified_archive_fd=-1;
+#include "../../native/verified_archive_staging.hpp"
+static std::unique_ptr<keepvault::VerifiedArchiveStaging> g_verified_archive;
 static int64_t g_verified_archive_size=0;
-static std::string g_keepvault_verified_shm_name;
 static int g_keepvault_output_root_fd=-1;
 static uint64_t g_keepvault_expected_root_device=0;
 static uint64_t g_keepvault_expected_root_inode=0;
@@ -639,12 +639,27 @@ static size_t keepvault_read_creation_input(
     errno=EIO;
     error("creation input read failed");
   }
+#ifdef unix
+  if (ferror(input)) error("creation input read failed");
+  if (feof(input)) return 0;
+#endif
   const size_t count=fread(buffer, 1, size, input);
 #ifdef unix
-  if (count==0 && ferror(input)) error("creation input read failed");
+  // fread may return a partial block and set the error indicator together.
+  // Never submit those bytes to the compression pipeline after an I/O error.
+  if (ferror(input)) error("creation input read failed");
 #endif
   return count;
 }
+
+#if defined(__APPLE__) && defined(__MACH__)
+static int keepvault_partial_read_error(void* cookie, char* output, int count) {
+  int& calls=*static_cast<int*>(cookie);
+  if (calls++==0 && count>0) { output[0]='x'; return 1; }
+  errno=EIO;
+  return -1;
+}
+#endif
 
 static int keepvault_checked_fclose(FP file) {
   const int actual=fclose(file);
@@ -840,7 +855,7 @@ public:
   ~ArchiveBase() {
     if (aes) delete aes;
     if (fp!=FPNULL && !stdio) fclose(fp);
-  }  
+  }
   bool isopen() {
     return fp!=FPNULL || stdio
 #ifdef unix
@@ -872,24 +887,25 @@ public:
 #ifdef unix
     if (bound_descriptor) {
       if (len<=0 || off>=g_verified_archive_size) return 0;
-      if (off<0 || g_verified_archive_fd<0)
-        error("verified archive descriptor identity is invalid");
+      if (off<0 || !g_verified_archive)
+        error("verified archive staging identity is invalid");
       const size_t count=size_t(min<int64_t>(int64_t(len),
           g_verified_archive_size-off));
-      size_t completed=0;
-      while (completed<count) {
-        const ssize_t result=pread(g_verified_archive_fd, obuf+completed,
-            count-completed, off_t(off+int64_t(completed)));
-        if (result<0 && errno==EINTR) continue;
-        if (result<=0) error("cannot read bound verified archive staging object");
-        completed+=size_t(result);
-      }
-      off+=int64_t(completed);
-      return int(completed);
+      memcpy(obuf, g_verified_archive->data()+size_t(off), count);
+      off+=int64_t(count);
+      return int(count);
     }
 #endif
     if (stdio) {
+#ifdef unix
+      if (ferror(fp)) error("archive input read failed");
+#endif
       const int nr=fread(obuf, 1, len, fp);
+#ifdef unix
+      // A short or zero read is EOF only when the stream has no I/O error.
+      // Reject partial data too: the pipe terminator requires proven EOF.
+      if (ferror(fp)) error("archive input read failed");
+#endif
       if (nr>0) off+=nr;
       return nr;
     }
@@ -980,7 +996,7 @@ InputArchive::InputArchive(const char* filename, const char* password):
 #ifdef unix
   if (g_verified_archive_stdin && !strcmp(filename, "-")) {
     if (password) error("verified stdin does not support zpaq -key");
-    if (g_verified_archive_fd<0 || g_verified_archive_size<1)
+    if (!g_verified_archive || g_verified_archive_size<1)
       error("verified archive stdin was not staged");
     bound_descriptor=true;
     sz.push_back(g_verified_archive_size);
@@ -1252,118 +1268,11 @@ static bool keepvault_valid_verified_shm_name(const char* name) {
   return true;
 }
 
-static void keepvault_wipe_verified_shm_name() {
-  if (!g_keepvault_verified_shm_name.empty()) {
-    volatile char* wipe=&g_keepvault_verified_shm_name[0];
-    for (size_t i=0; i<g_keepvault_verified_shm_name.size(); ++i) wipe[i]=0;
-    g_keepvault_verified_shm_name.clear();
-    g_keepvault_verified_shm_name.shrink_to_fit();
-  }
-}
-
-static int keepvault_create_verified_shm(int& writer) {
-  if (!keepvault_valid_verified_shm_name(g_keepvault_verified_shm_name.c_str()))
-    error("missing bound verified archive staging identity");
-  writer=-1;
-  const char* name=g_keepvault_verified_shm_name.c_str();
-  writer=shm_open(name, O_CREAT|O_EXCL|O_RDWR, S_IRUSR|S_IWUSR);
-  if (writer<0) error("cannot create bound verified archive staging object");
-  int reader=-1;
-  struct stat writer_stat;
-  struct stat reader_stat;
-  const bool protected_writer=fcntl(writer, F_SETFD, FD_CLOEXEC)==0;
-  const bool valid_writer=protected_writer && fstat(writer, &writer_stat)==0
-      && S_ISREG(writer_stat.st_mode) && writer_stat.st_uid==geteuid()
-      && (writer_stat.st_mode&0777)==0600 && writer_stat.st_nlink==1;
-  if (valid_writer) reader=shm_open(name, O_RDONLY, 0);
-  const bool protected_reader=reader>=0
-      && fcntl(reader, F_SETFD, FD_CLOEXEC)==0;
-  const bool same_object=protected_reader && fstat(reader, &reader_stat)==0
-      && S_ISREG(reader_stat.st_mode) && reader_stat.st_uid==geteuid()
-      && (reader_stat.st_mode&0777)==0600 && reader_stat.st_nlink==1
-      && writer_stat.st_dev==reader_stat.st_dev
-      && writer_stat.st_ino==reader_stat.st_ino;
-  const bool unlinked=shm_unlink(name)==0;
-  if (!same_object || !unlinked) {
-    if (!unlinked) shm_unlink(name);
-    if (reader>=0) ::close(reader);
-    ::close(writer);
-    writer=-1;
-    error("cannot protect bound verified archive staging object");
-  }
-  keepvault_wipe_verified_shm_name();
-  return reader;
-}
-
 static void stage_verified_archive_stdin() {
-  int writer=-1;
-  int reader=keepvault_create_verified_shm(writer);
-  std::unique_ptr<unsigned char[]> buffer(
-      new unsigned char[KEEPVAULT_VERIFIED_STAGING_WINDOW]);
-  uint64_t total=0;
-  try {
-    while (true) {
-      if (total==KEEPVAULT_MAX_VERIFIED_ARCHIVE_BYTES) {
-        const int trailing=fgetc(stdin);
-        if (trailing!=EOF)
-          error("verified archive stdin exceeds the v12 size limit");
-        if (ferror(stdin)) error("cannot read verified archive stdin");
-        break;
-      }
-      const size_t request=size_t(min<uint64_t>(KEEPVAULT_VERIFIED_STAGING_WINDOW,
-          KEEPVAULT_MAX_VERIFIED_ARCHIVE_BYTES-total));
-      const size_t count=fread(buffer.get(), 1, request, stdin);
-      if (count<request && ferror(stdin))
-        error("cannot read verified archive stdin");
-      if (count==0) break;
-      const uint64_t next_size=total+uint64_t(count);
-      if (next_size>uint64_t(INT64_MAX)
-          || ftruncate(writer, off_t(next_size))!=0)
-        error("cannot size verified archive staging object");
-      size_t completed=0;
-      while (completed<count) {
-        const ssize_t result=pwrite(writer, buffer.get()+completed,
-            count-completed, off_t(total+uint64_t(completed)));
-        if (result<0 && errno==EINTR) continue;
-        if (result<=0) error("cannot write verified archive staging object");
-        completed+=size_t(result);
-      }
-      total=next_size;
-      if (count<request) break;
-    }
-    if (total<1) error("verified archive stdin is empty");
-    struct stat reader_status;
-    if (fstat(reader, &reader_status)!=0 || !S_ISREG(reader_status.st_mode)
-        || reader_status.st_uid!=geteuid() || reader_status.st_nlink!=0
-        || uint64_t(reader_status.st_size)!=total)
-      error("verified archive staging descriptor changed while in use");
-    const int closing_writer=writer;
-    writer=-1;
-    if (::close(closing_writer)!=0)
-      error("cannot close verified archive staging writer");
-    if (g_verified_archive_fd>=0)
-      error("verified archive staging descriptor is already installed");
-    g_verified_archive_fd=reader;
-    reader=-1;
-    g_verified_archive_size=int64_t(total);
-  }
-  catch (...) {
-    volatile unsigned char* wipe_buffer=buffer.get();
-    for (size_t i=0; i<KEEPVAULT_VERIFIED_STAGING_WINDOW; ++i)
-      wipe_buffer[i]=0;
-    if (writer>=0) ftruncate(writer, 0);
-    if (writer>=0) ::close(writer);
-    if (reader>=0) ::close(reader);
-    if (g_verified_archive_fd>=0) {
-      ::close(g_verified_archive_fd);
-      g_verified_archive_fd=-1;
-      g_verified_archive_size=0;
-    }
-    throw;
-  }
-  volatile unsigned char* wipe_buffer=buffer.get();
-  for (size_t i=0; i<KEEPVAULT_VERIFIED_STAGING_WINDOW; ++i)
-    wipe_buffer[i]=0;
+  if (g_verified_archive) error("verified archive staging is already installed");
+  g_verified_archive=keepvault::VerifiedArchiveStaging::Read(
+      stdin, KEEPVAULT_MAX_VERIFIED_ARCHIVE_BYTES);
+  g_verified_archive_size=int64_t(g_verified_archive->size());
 }
 #endif
 
@@ -2260,7 +2169,6 @@ int Jidac::doCommand(int argc, const char** argv) {
   keepvault_max_extracted_bytes=KEEPVAULT_MAX_EXTRACTED_BYTES;
   keepvault_max_single_file_bytes=KEEPVAULT_MAX_SINGLE_FILE_BYTES;
   keepvault_max_extracted_files=KEEPVAULT_MAX_EXTRACTED_FILES;
-  bool keepvault_explicit_file_list=false;
   version=DEFAULT_VERSION;
   date=0;
 
@@ -2319,25 +2227,10 @@ int Jidac::doCommand(int argc, const char** argv) {
     }
     else if (opt=="--pipe" || opt=="--verified-stdin") {}
     else if (opt=="--") {
-      if (command!='a' || keepvault_explicit_file_list || files.size())
+      if (command!='a' || files.size())
         error("invalid explicit v12 archive file list");
-      keepvault_explicit_file_list=true;
       while (++i<argc) files.push_back(argv[i]);
       break;
-    }
-    else if (opt=="-kv-shm-name" && i<argc-1) {
-#ifdef unix
-      if (!g_keepvault_verified_shm_name.empty()
-          || !keepvault_valid_verified_shm_name(argv[i+1]))
-        error("invalid bound verified archive staging identity");
-      const char* supplied_name=argv[++i];
-      g_keepvault_verified_shm_name=supplied_name;
-      const size_t supplied_name_size=strlen(supplied_name);
-      volatile char* wipe=const_cast<char*>(supplied_name);
-      for (size_t j=0; j<supplied_name_size; ++j) wipe[j]=0;
-#else
-      error("bound verified archive staging is available only on POSIX");
-#endif
     }
     else if (opt.size()<2 || opt[0]!='-') usage();
     else if (opt=="-all") {
@@ -2514,20 +2407,13 @@ int Jidac::doCommand(int argc, const char** argv) {
 #ifdef unix
     if ((command!='x' && command!='l') || archive!="-" || password || repack
         || index || files.size() || tofiles.size() || onlyfiles.size()
-        || notfiles.size() || all || force || dotest || method!=""
-        || !keepvault_valid_verified_shm_name(
-            g_keepvault_verified_shm_name.c_str()))
+        || notfiles.size() || all || force || dotest || method!="")
       error("--verified-stdin accepts only an unfiltered extract or list of archive -");
     stage_verified_archive_stdin();
 #else
     error("--verified-stdin is available only in the macOS v12 native build");
 #endif
   }
-#ifdef unix
-  else if (!g_keepvault_verified_shm_name.empty()) {
-    error("bound verified archive staging is accepted only with --verified-stdin");
-  }
-#endif
 
   // Adjust negative version
   if (version<0) {
@@ -3051,14 +2937,19 @@ void print_progress(int64_t ts, int64_t td, int sum) {
 // them. A writeThread waits for COMPRESSED buffers at the front
 // of the queue and writes and removes them.
 
+// Armed only by the native scheduling self-test; -1 disables observation.
+static std::atomic<int64_t> g_keepvault_test_waiting_pipe_sequence(-1);
+
 class KeepVaultMemoryBudget {
   std::mutex mutex;
   std::condition_variable changed;
   uint64_t used;
   const uint64_t limit;
+  uint64_t next_sequence;
   bool stopped;
 public:
-  explicit KeepVaultMemoryBudget(uint64_t maximum): used(0), limit(maximum), stopped(false) {
+  explicit KeepVaultMemoryBudget(uint64_t maximum):
+      used(0), limit(maximum), next_sequence(0), stopped(false) {
     if (maximum<1) error("invalid native processing-memory budget");
   }
   void acquire(uint64_t amount) {
@@ -3070,6 +2961,25 @@ public:
     });
     if (stopped) error("native processing-memory budget was stopped");
     used+=amount;
+  }
+  void acquire_ordered(uint64_t amount, uint64_t sequence) {
+    if (amount<1 || amount>limit || sequence==UINT64_MAX)
+      error("invalid native ordered memory reservation");
+    std::unique_lock<std::mutex> lock(mutex);
+    if (g_keepvault_test_waiting_pipe_sequence.load(std::memory_order_relaxed)!=-1
+        && !stopped && sequence>=next_sequence
+        && (sequence!=next_sequence || used>limit-amount))
+      g_keepvault_test_waiting_pipe_sequence.store(int64_t(sequence));
+    changed.wait(lock, [this, amount, sequence]() {
+      return stopped || sequence<next_sequence
+          || (sequence==next_sequence && used<=limit-amount);
+    });
+    if (stopped) error("native processing-memory budget was stopped");
+    if (sequence!=next_sequence)
+      error("duplicate native ordered memory reservation");
+    used+=amount;
+    ++next_sequence;
+    changed.notify_all();
   }
   void release_bytes(uint64_t amount) {
     std::lock_guard<std::mutex> lock(mutex);
@@ -3097,6 +3007,12 @@ public:
   KeepVaultMemoryReservation(KeepVaultMemoryBudget& owner, uint64_t amount):
       budget(0), bytes(0) {
     owner.acquire(amount);
+    budget=&owner;
+    bytes=amount;
+  }
+  KeepVaultMemoryReservation(KeepVaultMemoryBudget& owner, uint64_t amount,
+      uint64_t sequence): budget(0), bytes(0) {
+    owner.acquire_ordered(amount, sequence);
     budget=&owner;
     bytes=amount;
   }
@@ -3269,7 +3185,6 @@ ThreadReturn writeThread(void* arg) {
           release(job.mutex);
           if (!pipe_header_written) {
             job.out->write(KEEPVAULT_PIPE_MAGIC, sizeof(KEEPVAULT_PIPE_MAGIC));
-            pipe_header_written=true;
           }
           write_keepvault_pipe_u64(job.out, 0);
           lock(job.mutex);
@@ -3594,6 +3509,22 @@ int Jidac::add() {
   if (method[0]=='s') {
     StringBuffer sb(blocksize+4096-128);
     try {
+      // vf intentionally contains only regular files. Streaming has no later
+      // journaling directory table, so emit explicit zero-data directory
+      // members first. Otherwise empty directories silently disappear.
+      // edt is ordered by name, which puts each parent before its children.
+      for (DTMap::iterator p=edt.begin(); p!=edt.end(); ++p) {
+        if (!p->second.date || p->first.empty() || p->first.back()!='/') continue;
+        string filename=rename(p->first);
+        string comment=itos(p->second.date);
+        if ((p->second.attr&255)>0) {
+          comment+=" ";
+          comment+=char(p->second.attr&255);
+          comment+=itos(p->second.attr>>8);
+        }
+        job.write(sb, filename.c_str(), method, comment.c_str());
+        assert(sb.size()==0);
+      }
       for (unsigned fi=0; fi<vf.size(); ++fi) {
         DTMap::iterator p=vf[fi];
         print_progress(total_size, total_done, summary);
@@ -4679,9 +4610,13 @@ static void keepvault_decompress_frame(
   if (!(memory>=0 && memory<=KEEPVAULT_PIPE_MAX_MODEL_MEMORY))
     throw std::runtime_error("v12 pipe block requires too much model memory");
   const uint64_t model_bytes=uint64_t(memory)+uint64_t(memory!=uint64_t(memory));
+  // Admit reservations in writer order. Otherwise later completed frames can
+  // hold the whole budget while the missing front frame waits for memory that
+  // only that same ordered writer can release. Decoding remains parallel once
+  // each bounded reservation has been admitted.
   frame.processing_memory.reset(new KeepVaultMemoryReservation(
       processing_memory,
-      model_bytes+KEEPVAULT_PIPE_MAX_UNCOMPRESSED+(16ull<<20)));
+      model_bytes+KEEPVAULT_PIPE_MAX_UNCOMPRESSED+(16ull<<20), frame.sequence));
 
   StringWriter filename(KEEPVAULT_MAX_ARCHIVE_MEMBER_NAME_BYTES);
   StringWriter comment(KEEPVAULT_MAX_ARCHIVE_COMMENT_BYTES);
@@ -4724,6 +4659,93 @@ static void keepvault_decompress_frame(
   const size_t exact_consumed=input.position-size_t(buffered);
   if (segments!=1 || exact_consumed!=frame.compressed.size())
     throw std::runtime_error("v12 pipe frame is truncated or has trailing bytes");
+}
+
+// This test uses the production frame decoder and a budget that admits one
+// frame. An observed wait makes the reversed arrival order deterministic.
+static int keepvault_pipe_memory_order_self_test() {
+  StringBuffer plain;
+  StringBuffer encoded;
+  plain.put('Q');
+  libzpaq::compressBlock(&plain, &encoded, "0", "fixture.bin", "0");
+  const uint64_t test_budget=64ull<<20;
+  KeepVaultMemoryBudget budget(test_budget);
+  KeepVaultPipeFrame first(0);
+  KeepVaultPipeFrame later(1);
+  first.compressed.assign(encoded.c_str(), encoded.c_str()+encoded.size());
+  later.compressed=first.compressed;
+  std::atomic<bool> finished(false);
+  std::exception_ptr worker_failure;
+  g_keepvault_test_waiting_pipe_sequence.store(-2);
+  std::thread worker([&]() {
+    try { keepvault_decompress_frame(later, budget); }
+    catch (...) { worker_failure=std::current_exception(); }
+    finished.store(true);
+  });
+  const auto wait_for = [](const auto& condition) {
+    const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+    while (!condition()) {
+      if (std::chrono::steady_clock::now()>=deadline) return false;
+      std::this_thread::yield();
+    }
+    return true;
+  };
+  try {
+    if (!wait_for([&]() {
+          return finished.load() || g_keepvault_test_waiting_pipe_sequence.load()==1;
+        }) || finished.load())
+      error("later frame did not wait for ordered memory admission");
+    keepvault_decompress_frame(first, budget);
+    if (finished.load() || first.segments.size()!=1
+        || first.segments[0]->data.size()!=1 || first.segments[0]->data[0]!='Q')
+      error("front frame failed or later frame exceeded the one-frame budget");
+    first.segments.clear();
+    first.processing_memory.reset(); // the ordered writer consumes frame 0
+    if (!wait_for([&]() { return finished.load(); }))
+      error("later frame did not progress after the front reservation was released");
+    worker.join();
+    if (worker_failure) std::rethrow_exception(worker_failure);
+    if (later.segments.size()!=1 || later.segments[0]->data.size()!=1
+        || later.segments[0]->data[0]!='Q')
+      error("later frame content changed during ordered memory admission");
+    later.segments.clear();
+    later.processing_memory.reset();
+    budget.acquire(test_budget); // every reservation must have been returned
+    budget.release_bytes(test_budget);
+  }
+  catch (...) {
+    budget.stop();
+    if (worker.joinable()) worker.join();
+    g_keepvault_test_waiting_pipe_sequence.store(-1);
+    throw;
+  }
+
+  KeepVaultMemoryBudget cancelled_budget(test_budget);
+  KeepVaultPipeFrame future(2);
+  future.compressed=first.compressed;
+  std::atomic<bool> cancelled_finished(false);
+  bool cancelled=false;
+  g_keepvault_test_waiting_pipe_sequence.store(-2);
+  std::thread cancelled_worker([&]() {
+    try { keepvault_decompress_frame(future, cancelled_budget); }
+    catch (const std::exception& e) {
+      cancelled=string(e.what())=="native processing-memory budget was stopped";
+    }
+    cancelled_finished.store(true);
+  });
+  const bool waiting=wait_for([&]() {
+    return cancelled_finished.load() || g_keepvault_test_waiting_pipe_sequence.load()==2;
+  }) && !cancelled_finished.load();
+  cancelled_budget.stop();
+  cancelled_worker.join();
+  g_keepvault_test_waiting_pipe_sequence.store(-1);
+  if (!waiting || !cancelled || future.processing_memory)
+    error("stopped ordered memory admission did not release its waiter");
+  fprintf(stderr,
+      "pipe_memory_order_reversed_arrival=progress\n"
+      "pipe_memory_order_budget=bounded\n"
+      "pipe_memory_order_stop=joined\n");
+  return 0;
 }
 
 // Extract or list a Keep Vault v12 streaming archive from stdin. Compression
@@ -5966,19 +5988,6 @@ static bool keepvault_canary_denied_spawn(const char* executable) {
   return keepvault_expected_sandbox_denial(result);
 }
 
-static bool keepvault_canary_allowed_exact_shm(const char* name) {
-  if (!keepvault_valid_verified_shm_name(name)) return false;
-  const int fd=shm_open(name, O_CREAT|O_EXCL|O_RDWR, S_IRUSR|S_IWUSR);
-  if (fd<0) return false;
-  struct stat status;
-  const bool valid=fcntl(fd, F_SETFD, FD_CLOEXEC)==0
-      && fstat(fd, &status)==0 && S_ISREG(status.st_mode)
-      && status.st_uid==geteuid() && (status.st_mode&0777)==0600
-      && status.st_nlink==1;
-  const bool removed=shm_unlink(name)==0;
-  const bool closed=::close(fd)==0;
-  return valid && removed && closed;
-}
 
 static bool keepvault_canary_denied_other_shm(const char* name) {
   if (!keepvault_valid_verified_shm_name(name)) return false;
@@ -6012,7 +6021,7 @@ static int keepvault_sandbox_canary(int argc, const char** argv) {
   if (!keepvault_parse_canary_number(argv[9], 1, 65535, port)
       || !keepvault_parse_canary_number(argv[15], 3, 1048575, inherited_fd)
       || strcmp(argv[13], "/usr/bin/true")
-      || (strcmp(argv[17], "exact") && strcmp(argv[17], "none"))
+      || strcmp(argv[17], "none")
       || !keepvault_valid_verified_shm_name(argv[19])
       || !keepvault_valid_verified_shm_name(argv[21])
       || !strcmp(argv[19], argv[21])) {
@@ -6030,9 +6039,7 @@ static int keepvault_sandbox_canary(int argc, const char** argv) {
       && keepvault_canary_denied_unix_connect(argv[11])
       && keepvault_canary_denied_fork()
       && keepvault_canary_denied_spawn(argv[13])
-      && (!strcmp(argv[17], "exact")
-          ? keepvault_canary_allowed_exact_shm(argv[19])
-          : keepvault_canary_denied_other_shm(argv[19]))
+      && keepvault_canary_denied_other_shm(argv[19])
       && keepvault_canary_denied_other_shm(argv[21]);
   if (!verified) {
     fprintf(stderr, "keepvault sandbox canary enforcement failed\n");
@@ -6122,6 +6129,8 @@ int main(int argc, const char** argv) {
     return 126;
   }
 #endif
+  if (argc==2 && !strcmp(argv[1], "--kv-self-test-pipe-memory-order"))
+    return keepvault_pipe_memory_order_self_test();
   if (argc==2 && !strcmp(argv[1], "--kv-self-test-root-identity-mismatch"))
     return keepvault_root_identity_mismatch_self_test();
   if (argc==2 && !strcmp(argv[1], "--kv-self-test-secure-output"))
@@ -6142,6 +6151,70 @@ int main(int argc, const char** argv) {
     g_keepvault_test_close_error.store(EIO);
     if (keepvault_checked_fclose(input)==0)
       error("injected close failure was accepted");
+#if defined(__APPLE__) && defined(__MACH__)
+    int partial_calls=0;
+    FILE* partial=funopen(&partial_calls, keepvault_partial_read_error, NULL, NULL, NULL);
+    if (!partial) error("cannot create partial-read self-test stream");
+    bool partial_rejected=false;
+    char partial_bytes[8]={0};
+    try {
+      keepvault_read_creation_input(partial_bytes, sizeof(partial_bytes), partial);
+    }
+    catch (const std::exception&) { partial_rejected=true; }
+    const bool partial_was_read=partial_bytes[0]=='x' && ferror(partial);
+    fclose(partial);
+    if (!partial_rejected || !partial_was_read)
+      error("partial creation read failure was accepted or not exercised");
+    fprintf(stderr, "creation_partial_fread_failure=fail_closed\n");
+
+    // Exercise the production archive reader, including the exact zero-read
+    // case used to prove EOF after the framed pipe terminator.
+    class ArchiveReadTestInput: public InputArchive {
+    public:
+      explicit ArchiveReadTestInput(FILE* stream): InputArchive("-", 0) {
+        fp=stream;
+      }
+    };
+    const bool previous_pipe_mode=g_pipe_archive;
+    g_pipe_archive=true;
+    for (int initial_calls=0; initial_calls<=1; ++initial_calls) {
+      int archive_calls=initial_calls;
+      FILE* archive_stream=funopen(&archive_calls, keepvault_partial_read_error,
+          NULL, NULL, NULL);
+      if (!archive_stream) error("cannot create archive-read self-test stream");
+      bool rejected=false;
+      char archive_bytes[8]={0};
+      {
+        ArchiveReadTestInput archive_input(archive_stream);
+        try { archive_input.read(archive_bytes, sizeof(archive_bytes)); }
+        catch (const std::exception&) { rejected=true; }
+      }
+      const bool exercised=ferror(archive_stream) && !feof(archive_stream)
+          && (initial_calls==1 || archive_bytes[0]=='x');
+      const bool closed=fclose(archive_stream)==0;
+      if (!rejected || !exercised || !closed)
+        error("archive read error was accepted or not exercised");
+    }
+    FILE* clean=tmpfile();
+    if (!clean || fputc('k', clean)==EOF || fseek(clean, 0, SEEK_SET)!=0)
+      error("cannot prepare clean archive-read control");
+    bool clean_eof=false;
+    {
+      ArchiveReadTestInput archive_input(clean);
+      char clean_bytes[8]={0};
+      clean_eof=archive_input.read(clean_bytes, sizeof(clean_bytes))==1
+          && clean_bytes[0]=='k' && archive_input.read(clean_bytes, 1)==0
+          && feof(clean) && !ferror(clean);
+    }
+    const bool clean_closed=fclose(clean)==0;
+    g_pipe_archive=previous_pipe_mode;
+    if (!clean_eof || !clean_closed)
+      error("clean archive EOF control failed");
+    fprintf(stderr,
+        "archive_partial_fread_failure=fail_closed\n"
+        "archive_terminal_fread_failure=fail_closed\n"
+        "archive_clean_eof=accepted\n");
+#endif
     fprintf(stderr,
         "creation_fread_failure=fail_closed\n"
         "output_fclose_failure=fail_closed\n");
@@ -6193,18 +6266,14 @@ int main() {
     errorcode=2;
   }
 #ifdef unix
-  if (g_verified_archive_fd>=0) {
-    if (::close(g_verified_archive_fd)!=0 && errorcode<2) errorcode=2;
-    g_verified_archive_fd=-1;
-    g_verified_archive_size=0;
-  }
+  g_verified_archive.reset();
+  g_verified_archive_size=0;
   if (g_keepvault_output_root_fd>=0) {
     ::close(g_keepvault_output_root_fd);
     g_keepvault_output_root_fd=-1;
     g_keepvault_output_directories.clear();
     g_keepvault_output_files.clear();
   }
-  keepvault_wipe_verified_shm_name();
 #endif
   fflush(stdout);
   fprintf(stderr, "%1.3f seconds %s\n", (mtime()-global_start)/1000.0,

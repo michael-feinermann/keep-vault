@@ -9,6 +9,18 @@ internal static class SecurityHardeningTests
     internal static IReadOnlyList<TestCase> Tests =>
     [
         new(
+            "security.pipeline-worker-policy",
+            "v12 chunk worker policy scales across CPU and memory boundaries without overflow",
+            TestPipelineWorkerPolicyAsync,
+            TestResource.Light,
+            "Security"),
+        new(
+            "security.pipeline-native-concurrency",
+            "bounded native teams join on cancellation and release every concurrency permit",
+            TestPipelineNativeConcurrencyAsync,
+            TestResource.ProcessGlobal,
+            "Security"),
+        new(
             "security.secure-memory-unlock-accounting",
             "mlock rollback and failed munlock preserve exact secure-memory accounting",
             TestSecureMemoryUnlockFailureAsync,
@@ -87,6 +99,79 @@ internal static class SecurityHardeningTests
             TestResource.Light,
             "Packaging"),
     ];
+
+    private static Task TestPipelineWorkerPolicyAsync()
+    {
+        foreach (int cpus in new[] { int.MinValue, -1, 0, 1, 2, 3, 4, 7, 8, 10, 16, 63, 64, 255, 256, 1024, int.MaxValue })
+        {
+            int expected = Math.Clamp(cpus / 4, 1, 64);
+            int nativeTeams = KalynaContainerService.CalculateNativeTransformConcurrency(cpus);
+            long effectiveProcessors = Math.Max(1, cpus);
+            Require(nativeTeams is >= 1 and <= 64
+                && nativeTeams * Math.Min(effectiveProcessors, 64) <= 2L * effectiveProcessors,
+                "Nested native teams exceed their CPU-derived concurrency bound.");
+            Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, long.MaxValue) == expected,
+                "The CPU-based chunk limit no longer follows the bounded 1:4 policy.");
+            foreach (long memory in new[] { long.MinValue, -1L, 0L, 1L, 256L * 1024 * 1024 })
+            {
+                Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, memory) == 1,
+                    "Missing or small memory must conservatively select one chunk slot.");
+            }
+            const long bytesPerSlotBudget = 16L * (32L * 1024 * 1024 + 512);
+            for (int slots = 1; slots <= 64; slots++)
+            {
+                long boundary = bytesPerSlotBudget * slots;
+                Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, boundary) == Math.Min(expected, slots),
+                    "The chunk policy crossed its locked-memory budget.");
+                Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, boundary - 1) == Math.Min(expected, Math.Max(1, slots - 1)),
+                    "The chunk policy rounds up past its memory budget.");
+            }
+        }
+        return Task.CompletedTask;
+    }
+
+    private static async Task TestPipelineNativeConcurrencyAsync()
+    {
+        int limit = KalynaContainerService.CalculateNativeTransformConcurrency(Environment.ProcessorCount);
+        int workers = Math.Min(64, limit + 3);
+        using var release = new ManualResetEventSlim();
+        using var cancellation = new CancellationTokenSource();
+        var occupied = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int active = 0, started = 0, finished = 0;
+        Task operation = KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(workers, _ =>
+        {
+            int current = Interlocked.Increment(ref active);
+            Interlocked.Increment(ref started);
+            try
+            {
+                Require(current <= limit, "Native chunk teams exceeded their concurrency limit.");
+                if (current == Math.Min(workers, limit)) occupied.TrySetResult();
+                Require(release.Wait(TimeSpan.FromSeconds(15)), "Native concurrency test timed out.");
+            }
+            finally
+            {
+                Interlocked.Decrement(ref active);
+                Interlocked.Increment(ref finished);
+            }
+        }, cancellation.Token);
+        try
+        {
+            await occupied.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            cancellation.Cancel();
+        }
+        finally
+        {
+            release.Set();
+            try { await operation; }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        }
+        Require(active == 0 && finished == started && started <= limit,
+            "Cancellation failed to join active native teams or started queued work.");
+        int subsequent = 0;
+        await KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(
+            64, _ => Interlocked.Increment(ref subsequent), CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
+        Require(subsequent == 64, "Native-team permits leaked after cancellation.");
+    }
 
     private static Task TestSecureMemoryUnlockFailureAsync()
     {
@@ -975,6 +1060,10 @@ internal static class SecurityHardeningTests
                 "--kv-self-test-stdio-failures",
                 expectedExitCode: 0,
                 "creation_fread_failure=fail_closed",
+                "creation_partial_fread_failure=fail_closed",
+                "archive_partial_fread_failure=fail_closed",
+                "archive_terminal_fread_failure=fail_closed",
+                "archive_clean_eof=accepted",
                 "output_fclose_failure=fail_closed").ConfigureAwait(false);
             await RequireNativeSelfTestAsync(
                 executable,
@@ -983,6 +1072,14 @@ internal static class SecurityHardeningTests
                 expectedExitCode: 0,
                 "creation_pipeline_fread_failure=joined",
                 "creation_pipeline_fclose_failure=joined").ConfigureAwait(false);
+            await RequireNativeSelfTestAsync(
+                executable,
+                root,
+                "--kv-self-test-pipe-memory-order",
+                expectedExitCode: 0,
+                "pipe_memory_order_reversed_arrival=progress",
+                "pipe_memory_order_budget=bounded",
+                "pipe_memory_order_stop=joined").ConfigureAwait(false);
             await RequireNativeSelfTestAsync(
                 executable,
                 root,

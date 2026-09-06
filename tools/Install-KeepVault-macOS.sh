@@ -291,7 +291,7 @@ release_lock() {
   if [[ -n ${bound_delete_helper_identity} ]]; then
     if [[ -f ${bound_delete_helper} && ! -L ${bound_delete_helper} \
         && $(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${bound_delete_helper} 2>/dev/null || print invalid) == ${bound_delete_helper_identity} ]]; then
-      rm -- ${bound_delete_helper}
+      rm -f -- ${bound_delete_helper}
       bound_delete_helper_identity=''
     elif [[ ! -e ${bound_delete_helper} && ! -L ${bound_delete_helper} ]]; then
       bound_delete_helper_identity=''

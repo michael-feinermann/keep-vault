@@ -510,13 +510,19 @@ a 512 MiB index and 2^26 fragments. Encrypted container extraction does not use
 this whole-archive staging route: its decrypted `KVP12ZP1` frames remain in the
 bounded forward pipe.
 
-The container layer keeps exactly two 16 MiB slots. Reading, cascade encryption
-or decryption, and ordered output overlap, but every slot owns its counters,
-nonces, tag and locked scratch memory. Cascade layers stay sequential because
-each consumes the preceding layer's output; inside a layer, the native CTR and
-ChaCha20 drivers split disjoint counter ranges across cores. Reordering is
-rejected, all workers are joined on every exit path, and a failed operation
-publishes no partial container.
+The container layer processes bounded batches of 16 MiB chunks. Its slot limit
+starts at one per four logical processors, with at least one and at most 64,
+and is further limited by a memory budget derived from one sixteenth of reported
+available memory, retaining a minimum of one slot. Slots are allocated as needed;
+each owns two locked 16 MiB buffers plus its counters, nonce and tag storage.
+After reading a batch, the chunk workers run concurrently and all join before
+the writer emits that batch in canonical order. The writer finishes before the
+next batch is read. Native transform teams are bounded across simultaneous
+container operations, and each team uses at most 64 workers. Cascade layers stay
+sequential because each consumes the preceding layer's output; inside a layer,
+the native CTR and ChaCha20 drivers split disjoint counter ranges across workers.
+Reordering is rejected, all started workers are joined on every exit path, and
+a failed operation publishes no partial container.
 
 Poly1305 is parallel too. For requests of at least 1 MiB, up to 64 workers
 evaluate contiguous 16-byte-aligned portions of the exact RFC 8439 transcript.

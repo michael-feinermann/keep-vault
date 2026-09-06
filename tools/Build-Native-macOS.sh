@@ -563,7 +563,15 @@ build_architecture() {
     ${cryptopp_archive} \
     ${link_flags[@]}
 
+  # zpaq.cpp prints __DATE__ in its banner, which puts the build day into the
+  # executable. That alone makes two builds of one unchanged source differ,
+  # and the root-owned v12 anchor pins ZPAQ by its exact bytes: every build on
+  # a new day would invalidate the installed anchor and force a reinstall.
+  # Fixing the macro keeps the banner honest about the version and keeps the
+  # bytes a function of the source only. The upstream file stays untouched, so
+  # its hash in external/NATIVE_SOURCE_SHA256SUMS still matches.
   ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} -DNOJIT -DBSD -fPIE -pthread \
+    -Wno-builtin-macro-redefined '-D__DATE__="from pinned sources"' \
     -o ${output_dir}/zpaq \
     ${repo_root}/external/zpaq/zpaq.cpp \
     ${repo_root}/external/zpaq/libzpaq.cpp \

@@ -10,12 +10,113 @@ internal static class HybridKeyProtectionTests
     internal static IReadOnlyList<TestCase> Tests =>
     [
         new(
+            "packaging.usb-wrapping-key-input",
+            "explicit USB key input rejects malformed, noncanonical, linked and nonprivate files",
+            TestUsbWrappingKeysAsync,
+            TestResource.ProcessGlobal,
+            "Packaging"),
+        new(
             "packaging.hybrid-key-separation",
             "RSA and ML-DSA use independent Keychain identities, ACLs and v12 envelopes",
             TestHybridKeySeparationAsync,
             TestResource.ProcessGlobal,
             "Packaging"),
     ];
+
+    private static Task TestUsbWrappingKeysAsync()
+    {
+        MacBoundSecretFile.ValidatePrivateVolumeFlags(0x00001000);
+        MacBoundSecretFile.ValidatePrivateVolumeFlags(0x00001001);
+        foreach (uint flags in new uint[] { 0, 0x00200000, 0x00201000, uint.MaxValue })
+            RequireThrows<IOException>(() => MacBoundSecretFile.ValidatePrivateVolumeFlags(flags),
+                "A remote or ownership-ignoring secret volume was accepted.");
+        string root = MacSafeFileSystem.ResolveExistingRealPath(
+            Directory.CreateTempSubdirectory("keep-vault-usb-key-test-").FullName);
+        File.SetUnixFileMode(root, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        string path = Path.Combine(root, "synthetic-wrapping-key.b64");
+        byte[] expected = Enumerable.Range(0, 32).Select(value => (byte)value).ToArray();
+        string encoded = Convert.ToBase64String(expected); // synthetic fixture only
+        try
+        {
+            foreach (string newline in new[] { "", "\n", "\r\n" })
+            {
+                WriteFixture(encoded + newline);
+                using LockedSensitiveBuffer actual = UsbWrappingKey.Read(path);
+                Require(CryptographicOperations.FixedTimeEquals(actual.Bytes, expected),
+                    "The USB key reader changed a valid synthetic value.");
+            }
+
+            WriteFixture(encoded);
+            // Exercise the real descriptor-bound reader. On the pinned .NET
+            // runtime a default FileStream buffer alone allocates more than
+            // 4096 managed bytes and retains the short input after disposal.
+            // Warm up first, then measure this synchronous path on its thread;
+            // no source-text assertion or production-only test hook is needed.
+            byte[] syntheticEncoded = Encoding.ASCII.GetBytes(encoded);
+            for (int attempt = 0; attempt < 12; attempt++)
+            {
+                long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
+                LockedSensitiveBuffer actual = MacBoundSecretFile.ReadPrivateBytes(
+                    path, 44, 44, "synthetic short secret");
+                long allocated = GC.GetAllocatedBytesForCurrentThread() - allocationBefore;
+                byte[] returnedBytes = actual.Bytes;
+                try
+                {
+                    Require(returnedBytes.AsSpan().SequenceEqual(syntheticEncoded),
+                        "The unbuffered secret reader changed the synthetic input.");
+                }
+                finally
+                {
+                    actual.Dispose();
+                }
+                Require(returnedBytes.All(value => value == 0),
+                    "The short secret result was not erased during disposal.");
+                if (attempt >= 4)
+                {
+                    Require(allocated < 4096,
+                        $"The short secret reader allocated {allocated} managed bytes; an ordinary read buffer may retain the key.");
+                }
+            }
+
+            foreach (string invalid in new[]
+            {
+                "", encoded + " ", encoded + "\r", " " + encoded,
+                encoded[..42] + "9=", // nonzero unused padding bits
+                encoded[..43] + "?", new string('A', 1000),
+            })
+            {
+                WriteFixture(invalid);
+                RequireThrows<Exception>(() => { using var ignored = UsbWrappingKey.Read(path); },
+                    "Malformed or noncanonical USB key input was accepted.");
+            }
+
+            WriteFixture(encoded);
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead);
+            RequireThrows<IOException>(() => { using var ignored = UsbWrappingKey.Read(path); },
+                "Group-readable USB key input was accepted.");
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            string link = Path.Combine(root, "linked-key.b64");
+            File.CreateSymbolicLink(link, path);
+            RequireThrows<IOException>(() => { using var ignored = UsbWrappingKey.Read(link); },
+                "A symbolic-link USB key was accepted.");
+            string hardLink = Path.Combine(root, "hard-linked-key.b64");
+            Require(CreateHardLinkNative(path, hardLink) == 0, "Synthetic hard-link creation failed.");
+            RequireThrows<IOException>(() => { using var ignored = UsbWrappingKey.Read(path); },
+                "A multiply linked USB key was accepted.");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(expected);
+            Directory.Delete(root, recursive: true);
+        }
+        return Task.CompletedTask;
+
+        void WriteFixture(string value)
+        {
+            File.WriteAllText(path, value, new UTF8Encoding(false));
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+    }
 
     private static async Task TestHybridKeySeparationAsync()
     {
@@ -343,7 +444,10 @@ internal static class HybridKeyProtectionTests
                     && signerSource.Contains("pfx-wrapping-key-keychain-service", StringComparison.Ordinal)
                     && signerSource.Contains("RequireDistinctWrappingKeyIdentities", StringComparison.Ordinal)
                     && !signerSource.Contains("leg" + "acy", StringComparison.OrdinalIgnoreCase)
-                    && !signerSource.Contains("wrapping-key-file", StringComparison.Ordinal)
+                    && !signerSource.Contains("\"wrapping-key-file\"", StringComparison.Ordinal)
+                    && signerSource.Contains("\"mldsa-wrapping-key-file\"", StringComparison.Ordinal)
+                    && signerSource.Contains("\"pfx-wrapping-key-file\"", StringComparison.Ordinal)
+                    && signerSource.Contains("UsbWrappingKey.Read(path)", StringComparison.Ordinal)
                     && !signerSource.Contains("pfx-password-env", StringComparison.Ordinal)
                     && !signerSource.Contains("LoadPkcs12FromFile", StringComparison.Ordinal)
                     && signerSource.Contains("X509CertificateLoader.LoadPkcs12(", StringComparison.Ordinal)
@@ -411,6 +515,20 @@ internal static class HybridKeyProtectionTests
                         "bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159",
                         StringComparison.Ordinal),
                 "The macOS v12 release default or fixed system-tool gate regressed.");
+            foreach (string appleBuildScript in new[] { keepVaultBuildScript, qrBuildScript })
+            {
+                Require(appleBuildScript.Contains("KEEPVAULT_APPLE_KEYCHAIN", StringComparison.Ordinal)
+                    && appleBuildScript.Contains("apple_keychain_codesign_args=(--keychain", StringComparison.Ordinal)
+                    && appleBuildScript.Contains("find-identity -v -p codesigning ${apple_keychain_search[@]}", StringComparison.Ordinal)
+                    && appleBuildScript.Contains("${EUID}:600:1", StringComparison.Ordinal)
+                    && appleBuildScript.Contains("${EUID}:700", StringComparison.Ordinal),
+                    "An explicit Apple signing keychain lost its identity routing or private-file gate.");
+            }
+            Require(keepVaultBuildScript.Contains("install_for_tests=0", StringComparison.Ordinal)
+                && keepVaultBuildScript.Contains("${dist_dir}/.anchor-install.XXXXXXXX", StringComparison.Ordinal)
+                && keepVaultBuildScript.Contains("${script_dir}/Install-KeepVault-macOS.sh ${installer_arguments[@]}", StringComparison.Ordinal)
+                && keepVaultBuildScript.Contains("cmp -s -- ${zpaq_anchor_executable} ${staged_zpaq}", StringComparison.Ordinal),
+                "The same-candidate installation opt-in or exact native-anchor gate regressed.");
             Require(
                 HasIsolatedDotnetBuildPath(portableBuildScript)
                     && portableBuildScript.Contains(

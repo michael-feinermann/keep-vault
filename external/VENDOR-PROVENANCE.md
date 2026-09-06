@@ -26,9 +26,12 @@ Generated: 2026-08-15T15:46:48Z
   erases its local configuration/key-derivation union, each final/output helper
   erases its local chaining-state copy, and each block helper erases its
   transient tweak schedule, key schedule, working state, and message words
-  through a volatile byte loop before returning. This does not alter Skein or
-  Threefish outputs; it prevents key-derived stack residues from surviving a
-  one-shot MAC/KDF operation. Official Skein KATs and the independent Bouncy
+  through volatile stores of complete 64-bit words before returning. The
+  element type, full array coverage, and deletion points are unchanged; bounded
+  ARM64/x64 tests check zeroing and adjacent canaries. This does not alter Skein or
+  Threefish outputs; it clears these explicit local arrays after a
+  one-shot MAC/KDF operation. It does not establish complete register or
+  compiler-spill erasure. Official Skein KATs and the independent Bouncy
   Castle differential gate cover output equivalence.
 
 ## cryptopp

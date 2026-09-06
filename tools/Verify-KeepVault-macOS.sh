@@ -494,6 +494,7 @@ expected_team='2T6K9PGS55'
 expected_bundle='de.michael-feinermann.keep-vault'
 app_path=''
 allow_development=0
+allow_pre_notarization=0
 require_notarization=0
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
 require_launcher_signature=0
@@ -503,6 +504,7 @@ expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF
 usage() {
   print -u2 'Usage: Verify-KeepVault-macOS.sh --app "Keep Vault.app" [--allow-development]'
   print -u2 '       [--require-notarization] [--mldsa-public-key FILE] [--tool-path-self-test]'
+  print -u2 '       [--allow-pre-notarization (Developer ID only; exclusive with other signing modes)]'
   exit 64
 }
 
@@ -521,6 +523,10 @@ while (( $# != 0 )); do
       require_notarization=1
       shift
       ;;
+    --allow-pre-notarization)
+      allow_pre_notarization=1
+      shift
+      ;;
     --mldsa-public-key)
       (( $# >= 2 )) || usage
       mldsa_public_key=$2
@@ -537,6 +543,11 @@ while (( $# != 0 )); do
     *) usage ;;
   esac
 done
+
+if (( allow_pre_notarization && (allow_development || require_notarization) )); then
+  print -u2 'KEEP VAULT VERIFY GATE: --allow-pre-notarization cannot be combined with --allow-development or --require-notarization.'
+  exit 64
+fi
 
 if (( tool_path_self_test )); then
   require_managed_injection_environment_cleared
@@ -713,6 +724,11 @@ for native_entry in ${native_entries[@]}; do
 done
 
 codesign --verify --deep --strict --verbose=4 ${app_path}
+app_signature=$(codesign -dvvv ${app_path} 2>&1)
+if (( allow_pre_notarization )) && [[ ${app_signature} != *'Authority=Developer ID Application:'* ]]; then
+  print -u2 'KEEP VAULT VERIFY GATE: pre-notarization verification requires a Developer ID Application signature.'
+  exit 1
+fi
 outer_requirement="identifier \"${expected_bundle}\" and anchor apple generic and certificate leaf[subject.OU] = \"${expected_team}\""
 core_requirement="identifier \"${expected_bundle}.core\" and anchor apple generic and certificate leaf[subject.OU] = \"${expected_team}\""
 supervisor_requirement="identifier \"${expected_bundle}.supervisor\" and anchor apple generic and certificate leaf[subject.OU] = \"${expected_team}\""
@@ -1003,12 +1019,18 @@ else
   exit 1
 fi
 
-if spctl --assess --type execute --verbose=4 ${app_path}; then
+gatekeeper_result=''
+if gatekeeper_result=$(spctl --assess --type execute --verbose=4 ${app_path} 2>&1); then
+  print -r -- ${gatekeeper_result}
   print 'gatekeeper=accepted'
 else
-  app_signature=$(codesign -dvvv ${app_path} 2>&1)
+  print -ru2 -- ${gatekeeper_result}
   if (( allow_development )) && [[ ${app_signature} == *'Authority=Apple Development:'* ]]; then
     print 'gatekeeper=not_accepted (expected for local Apple Development signing)'
+  elif (( allow_pre_notarization )) \
+      && [[ ${app_signature} == *'Authority=Developer ID Application:'* \
+        && $'\n'${gatekeeper_result}$'\n' == *$'\nsource=Unnotarized Developer ID\n'* ]]; then
+    print 'gatekeeper=awaiting-notarization (explicit preparation mode only)'
   else
     print -u2 'Gatekeeper did not accept the app bundle.'
     exit 1
@@ -1018,6 +1040,8 @@ fi
 if (( require_notarization )); then
   stapler validate ${app_path}
   print 'notarization=stapled-and-valid'
+elif (( allow_pre_notarization )); then
+  print 'notarization=awaiting-required-final-check (Apple and hybrid signatures verified in explicit preparation mode)'
 else
   print 'notarization=not-required-by-this-local-verification'
 fi

@@ -49,6 +49,7 @@ internal static class MacGuiTests
         new("gui.control-inventory", "GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
         new("gui.factor-normalization", "GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
         new("gui.secret-clearing", "GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
+        new("gui.streaming-thread-boundary", "GUI streaming callbacks execute off-thread without accessing controls", () => RunOnUiThread(TestStreamingThreadBoundary), TestResource.Gui, "GUI"),
         new("gui.create-failure-secret-clearing", "GUI create handler wipes credentials after an adversarial failure", () => RunOnUiThread(TestCreateFailureSecretClearing), TestResource.Gui, "GUI"),
         new("gui.extract-list-failure-secret-clearing", "GUI extract/list handlers wipe credentials after adversarial failures", () => RunOnUiThread(TestExtractListFailureSecretClearing), TestResource.Gui, "GUI"),
         new("gui.recovery-failure-secret-clearing", "GUI recovery handler wipes credentials after an adversarial failure", () => RunOnUiThread(TestRecoveryFailureSecretClearing), TestResource.Gui, "GUI"),
@@ -892,6 +893,44 @@ internal static class MacGuiTests
                 && english.Contains("spool", StringComparison.OrdinalIgnoreCase)
                 && english.Contains("outside the app", StringComparison.Ordinal),
             $"English CUPS spool warning is incomplete: {english}");
+
+        string englishPdf = (string?)translate.Invoke(window, ["testPdfWarning"]) ?? string.Empty;
+        MacComprehensiveTests.Require(englishPdf.Contains("two separate PDFs", StringComparison.Ordinal)
+            && englishPdf.Contains("one factor per file", StringComparison.Ordinal), "English test-PDF separation warning is inaccurate.");
+        SelectLanguage(language, "de");
+        string germanPdf = (string?)translate.Invoke(window, ["testPdfWarning"]) ?? string.Empty;
+        MacComprehensiveTests.Require(germanPdf.Contains("zwei getrennte PDFs", StringComparison.Ordinal)
+            && germanPdf.Contains("einen Faktor pro Datei", StringComparison.Ordinal), "German test-PDF separation warning is inaccurate.");
+    }
+
+    private static void TestStreamingThreadBoundary(MainWindow window)
+    {
+        // The service's null-stream guard must be reached from a real worker.
+        // Reading a TextBox in a returned callback fails before that guard with
+        // Avalonia's cross-thread exception, reproducing the installed-GUI bug.
+        AssertWorkerReachesStreamGuard(window.CaptureEncryptionConsumer(
+            "/unused-test-target.kzpaq", EncryptionSuite.Kalyna512_512, prepared: null));
+        AssertWorkerReachesStreamGuard(window.CaptureDecryptionProducer(
+            "/unused-test-input.kzpaq", creationCredentials: false));
+        AssertWorkerReachesStreamGuard(window.CaptureDecryptionProducer(
+            "/unused-test-input.kzpaq", creationCredentials: true));
+    }
+
+    private static void AssertWorkerReachesStreamGuard(Func<Stream, CancellationToken, Task> operation)
+    {
+        Task.Run(async () =>
+        {
+            MacComprehensiveTests.Require(!Dispatcher.UIThread.CheckAccess(), "Streaming regression must run on a worker.");
+            try
+            {
+                await operation(null!, CancellationToken.None).ConfigureAwait(false);
+                throw new InvalidOperationException("The service did not reject a null stream.");
+            }
+            catch (ArgumentNullException)
+            {
+                // Correct: service validation, not a cross-thread GUI access.
+            }
+        }).GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -1246,6 +1285,12 @@ internal static class MacGuiTests
         MacComprehensiveTests.Require(!string.IsNullOrEmpty(factorA.Text) && factorA.Text.Length == 256, "Factor A was not generated as 256 hex chars.");
         MacComprehensiveTests.Require(!string.IsNullOrEmpty(factorB.Text) && factorB.Text.Length == 256, "Factor B was not generated as 256 hex chars.");
         MacComprehensiveTests.Require(!string.Equals(factorA.Text, factorB.Text, StringComparison.Ordinal), "Factor A and Factor B must be distinct.");
+
+        var prepared = (GeneratedArchiveEntropy?)typeof(MainWindow).GetField("_generatedEntropy",
+            BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window)
+            ?? throw new InvalidOperationException("Prepared GUI entropy is missing.");
+        AssertWorkerReachesStreamGuard(window.CaptureEncryptionConsumer(
+            "/unused-test-target.kzpaq", EncryptionSuite.Kalyna512_512, prepared));
 
         // 3. Set password and PIN
         TextBox password = Control<TextBox>(window, "CreatePasswordBox");

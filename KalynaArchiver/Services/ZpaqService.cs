@@ -420,7 +420,7 @@ public sealed partial class ZpaqService
                     staging.StagingIdentity,
                     "--verified-stdin", "extract", "-", "-threads", EffectiveWorkerCountArgument),
                 staging.StagingPath,
-                archive.CopyToAsync,
+                archive.CopyToVerifiedStagingAsync,
                 progress,
                 cancellationToken,
                 monitorStagingDirectory: staging.StagingPath,
@@ -507,7 +507,7 @@ public sealed partial class ZpaqService
             executable.Path,
             new[] { "--verified-stdin", "list", "-", "-threads", EffectiveWorkerCountArgument },
             Environment.CurrentDirectory,
-            archive.CopyToAsync,
+            archive.CopyToVerifiedStagingAsync,
             progress,
             cancellationToken,
             macTrustedExecutable: executable).ConfigureAwait(false);

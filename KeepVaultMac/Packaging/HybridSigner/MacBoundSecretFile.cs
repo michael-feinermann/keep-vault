@@ -100,6 +100,7 @@ internal sealed class MacBoundSecretFile : IDisposable
         Exception? operationFailure = null;
         try
         {
+            RequireOwnershipEnforced(handle);
             FileIdentity before = RequirePrivateReadIdentity(GetIdentity(handle), description);
             FileIdentity pathBefore = GetPathIdentity(fullPath);
             if (!before.SameReadSnapshot(pathBefore))
@@ -117,7 +118,10 @@ internal sealed class MacBoundSecretFile : IDisposable
             stream = new FileStream(
                 handle,
                 FileAccess.Read,
-                bufferSize: 4096,
+                // A buffered FileStream would retain short plaintext inputs
+                // (including USB wrapping keys) in its ordinary managed array.
+                // Read directly into the locked, explicitly erased result.
+                bufferSize: 1,
                 isAsync: false);
             handle = null;
             stream.ReadExactly(result.Bytes);
@@ -130,6 +134,7 @@ internal sealed class MacBoundSecretFile : IDisposable
                 GetIdentity(stream.SafeFileHandle),
                 description);
             FileIdentity pathAfter = GetPathIdentity(fullPath);
+            RequireOwnershipEnforced(stream.SafeFileHandle);
             if (!before.SameReadSnapshot(after)
                 || !after.SameReadSnapshot(pathAfter))
             {
@@ -410,6 +415,37 @@ internal sealed class MacBoundSecretFile : IDisposable
         return identity;
     }
 
+    internal static void ValidatePrivateVolumeFlags(uint flags)
+    {
+        const uint local = 0x00001000;
+        const uint ignoreOwnership = 0x00200000;
+        if ((flags & local) == 0 || (flags & ignoreOwnership) != 0)
+            throw new IOException("Signing secrets require a local volume with ownership enforcement enabled.");
+    }
+
+    private static void RequireOwnershipEnforced(SafeFileHandle handle)
+    {
+        // Darwin's statfs64 ABI: verified against the platform SDK in the
+        // native regression fixture. Query the open object, never a mount path.
+        bool added = false;
+        try
+        {
+            handle.DangerousAddRef(ref added);
+            int descriptor = checked((int)handle.DangerousGetHandle());
+            DarwinStatFs status;
+            int result = RuntimeInformation.ProcessArchitecture == Architecture.X64
+                ? FStatFsX64(descriptor, out status)
+                : FStatFs(descriptor, out status);
+            if (result != 0)
+                throw NativeIOException("The signing-secret volume could not be inspected.");
+            ValidatePrivateVolumeFlags(status.Flags);
+        }
+        finally
+        {
+            if (added) handle.DangerousRelease();
+        }
+    }
+
     private static string ResolveExistingPath(string path)
     {
         nint result = RealPath(Path.GetFullPath(path), 0);
@@ -574,6 +610,12 @@ internal sealed class MacBoundSecretFile : IDisposable
         internal long Reserved1;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 2168)]
+    private struct DarwinStatFs
+    {
+        [FieldOffset(64)] internal uint Flags;
+    }
+
     private readonly record struct FileIdentity(
         int Device,
         ulong Inode,
@@ -635,6 +677,12 @@ internal sealed class MacBoundSecretFile : IDisposable
 
     [DllImport("libSystem.B.dylib", EntryPoint = "fstat", SetLastError = true)]
     private static extern int FStat(int descriptor, out DarwinStat status);
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "fstatfs", SetLastError = true)]
+    private static extern int FStatFs(int descriptor, out DarwinStatFs status);
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "fstatfs$INODE64", SetLastError = true)]
+    private static extern int FStatFsX64(int descriptor, out DarwinStatFs status);
 
     [DllImport("libSystem.B.dylib", EntryPoint = "fstatat", SetLastError = true)]
     private static extern int FStatAt(

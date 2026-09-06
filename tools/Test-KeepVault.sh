@@ -15,6 +15,13 @@ unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
 test_project=${repo_root}/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj
+test_release_root=${KEEPVAULT_TEST_RELEASE_ROOT:-/Applications}
+test_performance_baseline=${KEEPVAULT_PERF_BASELINE:-}
+if [[ ${test_release_root:a} != ${test_release_root:A} || ! -d ${test_release_root} ]]; then
+  print -u2 'The test release root must be an existing physical directory.'
+  exit 64
+fi
+test_release_root=${test_release_root:A}
 private_root=$(/usr/bin/mktemp -d /private/tmp/keep-vault-test-runner.XXXXXXXX)
 /bin/chmod 0700 ${private_root}
 private_root_identity=$(/usr/bin/stat -f '%d:%i' ${private_root})
@@ -23,6 +30,19 @@ cleanup() {
   if [[ -d ${private_root:-} && ! -L ${private_root:-} \
       && ${private_root} == /private/tmp/keep-vault-test-runner.* \
       && $(/usr/bin/stat -f '%d:%i' ${private_root} 2>/dev/null || print invalid) == ${private_root_identity:-invalid} ]]; then
+    # Keep evidence outside the disposable SDK/cache tree even on test failure.
+    local result_root=${private_root}/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64
+    if [[ -f ${result_root}/.test-results.json && ! -L ${result_root}/.test-results.json ]]; then
+      local evidence_root
+      evidence_root=$(/usr/bin/mktemp -d /private/tmp/keep-vault-test-evidence.XXXXXXXX)
+      if [[ -n ${evidence_root} && -d ${evidence_root} && ! -L ${evidence_root} ]]; then
+        /bin/cp ${result_root}/.test-results.json ${evidence_root}/results.json
+        if [[ -f ${result_root}/.test-timings.json && ! -L ${result_root}/.test-timings.json ]]; then
+          /bin/cp ${result_root}/.test-timings.json ${evidence_root}/timings.json
+        fi
+        print "test_evidence=${evidence_root}"
+      fi
+    fi
     /bin/rm -rf -- ${private_root}
   fi
 }
@@ -56,6 +76,8 @@ run_dotnet_clean() {
     DOTNET_ADD_GLOBAL_TOOLS_TO_PATH=false \
     MSBUILDDISABLENODEREUSE=1 \
     KEEPVAULT_TEST_REPOSITORY_ROOT=${repo_root} \
+    KEEPVAULT_TEST_RELEASE_ROOT=${test_release_root} \
+    KEEPVAULT_PERF_BASELINE=${test_performance_baseline} \
     ${dotnet_command} "$@"
 }
 
@@ -68,12 +90,21 @@ done
 
 run_dotnet_clean restore ${test_project} --artifacts-path ${private_artifacts} \
   --locked-mode --force --force-evaluate --no-http-cache \
-  --disable-build-servers --nologo
+  --disable-build-servers --nologo || exit $?
 run_dotnet_clean build ${test_project} -c Release --no-restore --no-incremental \
   --artifacts-path ${private_artifacts} --disable-build-servers \
-  -p:UseSharedCompilation=false --nologo
+  -p:UseSharedCompilation=false --nologo || exit $?
 
-# Pass all arguments through to runner
+# Build first, then stage the exact signed bytes associated with the installed
+# root anchor. A project build afterwards would overwrite these test natives.
+${script_dir}/Stage-TestNatives-macOS.sh \
+  --app "${test_release_root}/Keep Vault.app" \
+  --destination ${private_artifacts}/bin/KeepVaultMac.Tests/release_osx-arm64/Native
+
+# Guard shell-function failures explicitly: zsh ERR_EXIT inside a function can
+# otherwise skip the EXIT trap. Preserve the runner's original exit status.
+test_exit=0
 run_dotnet_clean run --project ${test_project} -c Release \
   --artifacts-path ${private_artifacts} --no-build --no-restore \
-  --disable-build-servers -- "$@"
+  --disable-build-servers -- "$@" || test_exit=$?
+exit ${test_exit}
