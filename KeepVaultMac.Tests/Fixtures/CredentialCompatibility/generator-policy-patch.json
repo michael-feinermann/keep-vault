@@ -1,0 +1,21 @@
+{
+  "base_commit": "e52159e7a569a8b77fe7732006388c4401c4009f",
+  "purpose": "NURTEST synthetic static fixtures; no product escape hatch; no KDF or native changes",
+  "changes": [
+    {
+      "file": "KalynaArchiver/Services/KalynaContainerService.cs",
+      "removed": "PasswordKeyService.ValidateUserPasswordForCreation(userPassword, firstGeneratedPassword, secondGeneratedPassword);",
+      "replacement": "// NURTEST: static compatibility fixture builder omits creation password selection policy."
+    },
+    {
+      "file": "KalynaArchiver/Services/KalynaContainerService.cs",
+      "removed": "ContainerKeyDerivation.ValidatePinForCreation(pin);",
+      "replacement": "// NURTEST: static compatibility fixture builder omits creation PIN selection policy."
+    },
+    {
+      "file": "KalynaArchiver/Services/ContainerKeyDerivation.cs",
+      "removed": "ValidatePin(pin);",
+      "replacement": "// NURTEST: static compatibility fixture builder admits supplied raw ASCII PIN bytes."
+    }
+  ]
+}

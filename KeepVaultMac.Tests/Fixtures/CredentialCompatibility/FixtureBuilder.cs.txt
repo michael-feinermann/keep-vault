@@ -1,0 +1,96 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using KalynaArchiver.Services;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Macs;
+using Org.BouncyCastle.Crypto.Parameters;
+
+// NURTEST. Independent frozen 5.0.1 fixture producer. Never included in product.
+string destination = Path.GetFullPath(args[0]);
+Directory.CreateDirectory(destination);
+string work = Path.Combine(destination, ".generation-work");
+Directory.CreateDirectory(work);
+const string plain = "Synthetic credential compatibility fixture. No user information or real secrets.\n";
+string source = Path.Combine(work, "canary.txt");
+await File.WriteAllTextAsync(source, plain, new UTF8Encoding(false));
+using var packed = new MemoryStream();
+var zpaq = new ZpaqService();
+var packedResult = await zpaq.AddStreamingAsync([source], 0, (stream, ct) => stream.CopyToAsync(packed, ct), null, CancellationToken.None);
+if (!packedResult.Succeeded) throw new InvalidOperationException("Synthetic ZPAQ creation failed.");
+byte[] payload = packed.ToArray();
+byte[] factorA = Enumerable.Range(0, 128).Select(i => (byte)(3 + 17 * i)).ToArray();
+byte[] factorB = Enumerable.Range(0, 128).Select(i => (byte)(7 + 29 * i)).ToArray();
+string a = Convert.ToHexString(factorA), b = Convert.ToHexString(factorB);
+const string strong = "qX7!rN9#vT2$yP5%kS8&zW3*mH6@uJ4^";
+var cases = new[] {
+    new Case("empty", "", "", EncryptionSuite.Aes256, ["empty-password", "empty-pin"]),
+    new Case("short", "x", "7", EncryptionSuite.Aes256, ["short-password", "short-pin"]),
+    new Case("oversized-raw", "  A\u0308" + string.Concat(Enumerable.Repeat(strong, 8)) + "  ", "08472950619384725", EncryptionSuite.Aes256, ["password-over-256", "pin-over-16", "untrimmed-nfd", "leading-zero-pin"]),
+    new Case("pin-substring", strong + "084729" + strong, "084729", EncryptionSuite.ParanoiaCascade, ["pin-is-password-substring"]),
+    new Case("date-2026-09-06", strong + "X9!", "06092026", EncryptionSuite.Aes256, ["creation-date-2026-09-06"]),
+    new Case("model-and-old-pattern", "SommerWieseMondVulkanFlussOrangeWolke2026!", "123456", EncryptionSuite.Aes256, ["model-known-phrase", "old-ascending-pin-pattern"]),
+};
+var items = new List<object>();
+var container = new KalynaContainerService();
+var recovery = new RecoveryService();
+int index = 0;
+foreach (var item in cases) {
+    string algorithm = EncryptionSuiteCatalog.Get(item.Suite).Algorithm;
+    byte[] qs = Sha3Reference(algorithm, item.Password, item.Pin, factorA, factorB);
+    byte[] qk = SkeinReference(algorithm, item.Password, item.Pin, factorA, factorB);
+    if (!qs.SequenceEqual(V12MasterKdf.DeriveSha3CredentialHash(algorithm, item.Password, item.Pin, factorA, factorB)) ||
+        !qk.SequenceEqual(V12MasterKdf.DeriveSkeinCredentialHash(algorithm, item.Password, item.Pin, factorA, factorB)))
+        throw new InvalidOperationException("Independent credential framing oracle disagrees.");
+    string archive = Path.Combine(destination, item.Id + ".kzpaq");
+    Console.WriteLine("creating=" + item.Id);
+    using GeneratedArchiveEntropy entropy = Entropy(a, b, index++);
+    using (var input = new MemoryStream(payload, false))
+        await container.EncryptZpaqStreamWithPreparedEntropyAsync(input, archive, item.Password, item.Pin, a, b, item.Suite, entropy, "SYNTHETIC NURTEST compatibility fixture", null, CancellationToken.None);
+    string sidecar = await recovery.CreateAuthenticatedAsync(archive, item.Password, item.Pin, a, b, null, CancellationToken.None);
+    var info = await container.ReadContainerInfoAsync(archive, CancellationToken.None);
+    if (await recovery.TryReadProtectionModeAsync(archive, CancellationToken.None) != RecoveryProtectionMode.DualAuthenticatedEncrypted)
+        throw new InvalidOperationException("Fixture is not dual authenticated KPAR2.");
+    items.Add(new { item.Id, item.Password, item.Pin, Suite = item.Suite.ToString(), Algorithm = algorithm, item.Violations,
+        PasswordUtf8Hex = Convert.ToHexString(Encoding.UTF8.GetBytes(item.Password)), PinAsciiHex = Convert.ToHexString(Encoding.ASCII.GetBytes(item.Pin)),
+        Sha3CredentialHex = Convert.ToHexString(qs), SkeinCredentialHex = Convert.ToHexString(qk),
+        ArchiveSha256 = HashFile(archive), SidecarSha256 = HashFile(sidecar), ArchiveBytes = new FileInfo(archive).Length, SidecarBytes = new FileInfo(sidecar).Length });
+    Console.WriteLine("created=" + item.Id);
+}
+var manifest = new { Schema = "keep-vault-credential-compatibility-v1", BaseCommit = "e52159e7a569a8b77fe7732006388c4401c4009f",
+    SyntheticOnly = true, ProductionArgonParameters = true, ArgonIterations = 4, ArgonParallelism = 4, MemoryOverrideUsed = false,
+    ContainerVersion = 12, KparVersion = 4, FrozenCreationDate = "2026-09-06", FactorAHex = a, FactorBHex = b,
+    PlainFileName = "canary.txt", PlainUtf8Hex = Convert.ToHexString(Encoding.UTF8.GetBytes(plain)), PackedPayloadSha256 = Convert.ToHexString(SHA256.HashData(payload)),
+    IndependentOracle = "Explicit little-endian length framing; BouncyCastle 2.6.2 SHA3-512 and keyed/personalised SkeinMac-1024-1024; no product framing or digest helper",
+    Fixtures = items };
+await File.WriteAllTextAsync(Path.Combine(destination, "manifest.json"), JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }) + "\n");
+Directory.Delete(work, true);
+Console.WriteLine("fixtures_complete=6");
+
+static string HashFile(string path) { using var input = File.OpenRead(path); return Convert.ToHexString(SHA256.HashData(input)); }
+static byte[] Frame(params byte[][] fields) {
+    using var stream = new MemoryStream();
+    foreach (byte[] field in fields) { byte[] length = new byte[4]; BinaryPrimitives.WriteInt32LittleEndian(length, field.Length); stream.Write(length); stream.Write(field); }
+    return stream.ToArray();
+}
+static byte[] Digest(byte[] message) { var d = new Sha3Digest(512); d.BlockUpdate(message); byte[] result = new byte[64]; d.DoFinal(result); return result; }
+static byte[] Sha3Reference(string algorithm, string password, string pin, byte[] a, byte[] b) {
+    byte[] p = Encoding.UTF8.GetBytes(password), n = Encoding.ASCII.GetBytes(pin);
+    return [..Digest(Frame(Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v12/{algorithm}/SHA3-512/User+PIN+Factors-A1+B1"), p, n, a[..64], b[..64])),
+            ..Digest(Frame(Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v12/{algorithm}/SHA3-512/User+PIN+Factors-A2+B2"), p, n, a[64..], b[64..]))];
+}
+static byte[] SkeinReference(string algorithm, string password, string pin, byte[] a, byte[] b) {
+    var mac = new SkeinMac(1024, 1024);
+    mac.Init(new SkeinParameters.Builder().SetKey([..a, ..b]).SetPersonalisation(Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v12/{algorithm}/Skein-MAC-1024-1024/User+PIN/Factors-A+B-Key")).Build());
+    mac.BlockUpdate(Frame(Encoding.UTF8.GetBytes(password), Encoding.ASCII.GetBytes(pin)));
+    byte[] result = new byte[128]; mac.DoFinal(result); return result;
+}
+static GeneratedArchiveEntropy Entropy(string a, string b, int index) {
+    var salt1 = LockedSensitiveBuffer.Create(EntropyMixer.SaltPairBytes); var nonce1 = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+    var salt2 = LockedSensitiveBuffer.Create(EntropyMixer.SaltPairBytes); var nonce2 = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+    Fill(salt1.Bytes, 17 + index, 29); Fill(nonce1.Bytes, 43 + index, 43); Fill(salt2.Bytes, 161 + index, 61); Fill(nonce2.Bytes, 211 + index, 73);
+    return new GeneratedArchiveEntropy(a, b, salt1, nonce1, salt2, nonce2);
+}
+static void Fill(byte[] bytes, int seed, int multiplier) { for (int i=0; i<bytes.Length; i++) bytes[i] = (byte)(seed+i*multiplier); }
+internal sealed record Case(string Id, string Password, string Pin, EncryptionSuite Suite, string[] Violations);

@@ -12,11 +12,10 @@
       project's own dependencies: run "dotnet restore" from KeepVaultMac.Tests
       with the force-evaluate switch, which rewrites this project's lockfile.
 
-      That switch belongs to the test harness alone. The shipped app is a
-      separate project with its own lockfile, and Build-KeepVault-macOS.sh and
-      Verify-KeepVault-macOS.sh both refuse to proceed unless that lockfile
-      still hashes to the pinned SHA-256, so a release can never be produced
-      from an unreviewed package set no matter what happens in this directory.
+      Normal test and release scripts must not pass that switch: it overrides
+      locked mode even when both options are present. They explicitly disable
+      ForceEvaluate and verify unchanged lockfile hashes. The shipped app has
+      its own reviewed lockfile and independent release-verifier hash pin.
     -->
     <RestoreLockedMode Condition="'$(RestoreLockedMode)' == ''">true</RestoreLockedMode>
   </PropertyGroup>

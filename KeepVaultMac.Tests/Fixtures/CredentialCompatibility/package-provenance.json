@@ -1,0 +1,397 @@
+{
+  "Note": "Final verified generation. Official fresh private NuGet restore; exact direct version pins, then successful locked restore and no-restore build. AOT-only dependencies excluded in this JIT-only test graph.",
+  "Packages": [
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia",
+      "Resolved": "12.1.1",
+      "ContentHash": "o8pZ1oE9AQ6gklpGM0lnOBp/JlVH0J/0mYszBf0GsSAcEnzHNCLM9NnrPZwKu4j2q9oNbVHYzzEPkszQeuqaKw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.Desktop",
+      "Resolved": "12.1.1",
+      "ContentHash": "qZIw0njeXs1ziGJBz2WNduPI38zm9UqOksNrl2lALO2JkuzzMElYGQ3+4+Nl7VEnZSvmcbAZnOdvNYfnXGlOSw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.Fonts.Inter",
+      "Resolved": "12.1.1",
+      "ContentHash": "V2d7OM1jybcl31KThdhf8XSl5SjQ6Ll/tXIfwQ00kMeWuPegRcOx8DLVpECHOOEKO9JZelXW0enuUu1D7Svikg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.Themes.Fluent",
+      "Resolved": "12.1.1",
+      "ContentHash": "7vdtZsM9o8I8LpU9dyiB/Ah7WB8a5V3JHLsExe4T433ynn5x57F+DBskctZuNOxml8hbe1GmtNUNkBDsqSVKVg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "BouncyCastle.Cryptography",
+      "Resolved": "2.6.2",
+      "ContentHash": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "PDFsharp",
+      "Resolved": "6.2.4",
+      "ContentHash": "GhTr9F1uOYXHCIEOB5PXIgqn5a8WLsJL2m0eewTA0IvY1j6N4HGXHKKmEyB90/N6vrjmYamf41V9zbmdW2HY3g==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "QRCoder",
+      "Resolved": "1.8.0",
+      "ContentHash": "RuvX3PEXU6pbY/I5ItAk800jm62r+YnoPLgyS2WTgwxkOnGkOfU9ORiipHUF0LkLyqM8rlroUCA319JjRYfRFQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.Angle.Windows.Natives",
+      "Resolved": "2.1.27548.20260419",
+      "ContentHash": "l17nI3XVDN3oMnpjf2pnmJg0YTwK4m6NLsn/itAjDMdObTFxN77D5F1M9sRMSfViSY3KKcse1ROczwgoWLJsnA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.BuildServices",
+      "Resolved": "11.3.2",
+      "ContentHash": "qHDToxto1e3hci5YqbG9n0Ty8mlp3zBUN5wT66wKqaDVzXyQ0do3EnRILd4Ke9jpvsktaPpgE0YjEk7hornryQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.FreeDesktop",
+      "Resolved": "12.1.1",
+      "ContentHash": "dMMW6vJGsaUD+3e5lA3dGYyNu+Tv/yl0sSrUQLlOQ2RVhmNLkybWdgebHx94lznV3RF9cRGUd9Q+J5XpJ7xfJw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.FreeDesktop.AtSpi",
+      "Resolved": "12.1.1",
+      "ContentHash": "BJ2oGBM6pSayLvjhliMPph4LYhPmzDCRjyXQ4jdttrK7cetTViyniW0gMVpNAPNjr4sn6rbN4EHiWknPQq2pLg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.HarfBuzz",
+      "Resolved": "12.1.1",
+      "ContentHash": "vgd/Fl4bIXgv3QtYk6WCd6iGAag4i3OOAozo6/DW3xPr5dWjpi1MmJaeE9MYoZBEDJ4egD0gfHz6nYhkDADz9g==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.Native",
+      "Resolved": "12.1.1",
+      "ContentHash": "jbgCUIhgQGD7d9mLN1oe4J8EpzDa0aY9PS77PZuRUDcNyr/V+vFNdyYXSJs3imrm0NOzTsCcFtK2NSXGDmJ1dw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.Remote.Protocol",
+      "Resolved": "12.1.1",
+      "ContentHash": "0u77tnOwJnHtVLu+WBY7T56fN9W8n7++Uq9kHW6J+bfv5y13WZUMVS+PBzoBe32taYvz/oSomDGO1V41AHaFcQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.Skia",
+      "Resolved": "12.1.1",
+      "ContentHash": "Q0jRMXb212RYIZNV7p6L/zWx8lyPck9dFFW+l86moeN4dNxHjPBdJS3nLdLvAd20Eno7JC4gwRa5Fewg52td8g==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.Win32",
+      "Resolved": "12.1.1",
+      "ContentHash": "W7FKmHqoyI09dlCnrt0T9QSLk92qVJwXEHPwMI4zIM09Q6H5NzKfvwoadwxIc8S5gydvFypop3DfKX8x9SILug==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Avalonia.X11",
+      "Resolved": "12.1.1",
+      "ContentHash": "s7eRJO+QHTmuyGZ7ZClljdgOVTT2OhfEc+Hk5hTgsjI7y84uM5skTvnm+M+Qzlmr1Ru6MLeFUQaTlFA4Aea35Q==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "HarfBuzzSharp",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "NGZ2+ZVNPM+NdHB/asW0/ykWngyHWwcqjrbN2nDeH1B/aptPGlCUl8wkQ2cSJxw5fdWgdmIPmNuTPWpLwNVXWg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "HarfBuzzSharp.NativeAssets.Linux",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "RI6A1LgmooU30+4QIyFt5rmBCzP0VzTR+587IJSGvYIsHHWlahFufihYxtraLfsIhW7I8dn6+xX+DZGygOPKWQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "HarfBuzzSharp.NativeAssets.macOS",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "KPTq0xnslkI6nAo0jh3ptcQPJvZZr7MWYXa2jUe4SnHc9q+JlHElmNXp0sfFoiTgoCX7WOYpYsurypuH9Gehxw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "HarfBuzzSharp.NativeAssets.WebAssembly",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "w2QfdNm9Uz/sUa0B5D+OnVQhyq3G/fBq6ibQMdWBlQqqwh0g0/5j3RFvYqZAmRZ5+RzvjVe8o8SFFnWYUSkuxA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "HarfBuzzSharp.NativeAssets.Win32",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "bx8CE8Js+XGX8PUxAHCBDEORt5aaBYtMN4Hr9QFs57Xithh6yjUyYqksizH6eRDhJkwsGI+SXWmPmMm8lZC9Pw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "MicroCom.Runtime",
+      "Resolved": "0.11.6",
+      "ContentHash": "NdNWGDiZ6eS/Mf/9+QHR91cj1K7Hy+PX9yrHI/zM7xFYuj9IWT2uxtB6sCHjrnxAeLV9fut1R6zHDUGKX6f9lQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "Resolved": "8.0.2",
+      "ContentHash": "3iE7UF7MQkCv1cxzCahz+Y/guQbTqieyxyaWKhrRO91itI9cOKO76OHeQDahqG4MmW5umr3CcCvGmK92lWNlbg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Microsoft.Extensions.Logging.Abstractions",
+      "Resolved": "8.0.3",
+      "ContentHash": "dL0QGToTxggRLMYY4ZYX5AMwBb+byQBd/5dMiZE07Nv73o6I5Are3C7eQTh7K2+A4ct0PVISSr7TZANbiNb2yQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Microsoft.Win32.SystemEvents",
+      "Resolved": "6.0.0",
+      "ContentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "SkiaSharp",
+      "Resolved": "3.119.4",
+      "ContentHash": "53NOSUZ1Us+91Sm0uCkIivh/k7jOowRErZT2sIWwPFN9mLUvdxnE6rS4sWo4255+Rd2MWUSF+j0NMZHD6Cke+Q==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "SkiaSharp.NativeAssets.Linux",
+      "Resolved": "3.119.4",
+      "ContentHash": "UAyVzbqNfZsZbKbzj68zXLyUyF/SbTKmzTfOO6qDu++dtIUMMTzPBe8oOuzU/DiewpfKoUUlOSsJmqWc6blxBw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "SkiaSharp.NativeAssets.macOS",
+      "Resolved": "3.119.4",
+      "ContentHash": "fgBOWEqbY012x7gMfJU4ezgz6dfhJb30Z6YdW35h85Zoe39+a8YNbAAwL29ihPfWoppg5AjvyKNzD1oCvlqWwA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "SkiaSharp.NativeAssets.WebAssembly",
+      "Resolved": "3.119.4",
+      "ContentHash": "S1HOxtBbD4bYDtA2e9WH5TX+lxqRrTPvKjrjttRhxnHNNu7YY8VFo/LeCP7tNqoTA6PV+8vsvNbmRUEC2ip8RQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "SkiaSharp.NativeAssets.Win32",
+      "Resolved": "3.119.4",
+      "ContentHash": "XOpbx/4CReO2wYsq2s6rbvdauc6dntG4Zv499sHGTJ87bwZaFXszFkwql3+FIZMc8kUPeaj3Mx2ezIJmo8a1Kg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "System.Drawing.Common",
+      "Resolved": "6.0.0",
+      "ContentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "System.Security.Cryptography.Pkcs",
+      "Resolved": "8.0.1",
+      "ContentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0",
+      "Name": "Tmds.DBus.Protocol",
+      "Resolved": "0.94.1",
+      "ContentHash": "11YMr7FnAbL83bQmVxlhbIKHvSLxjO81D12Ej0QMSGXMDTxNA9MTOa4MQxx43nv5el/efuPHwzyrj6a5ha2gug==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "Avalonia.Angle.Windows.Natives",
+      "Resolved": "2.1.27548.20260419",
+      "ContentHash": "l17nI3XVDN3oMnpjf2pnmJg0YTwK4m6NLsn/itAjDMdObTFxN77D5F1M9sRMSfViSY3KKcse1ROczwgoWLJsnA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "Avalonia.Native",
+      "Resolved": "12.1.1",
+      "ContentHash": "jbgCUIhgQGD7d9mLN1oe4J8EpzDa0aY9PS77PZuRUDcNyr/V+vFNdyYXSJs3imrm0NOzTsCcFtK2NSXGDmJ1dw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "HarfBuzzSharp.NativeAssets.Linux",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "RI6A1LgmooU30+4QIyFt5rmBCzP0VzTR+587IJSGvYIsHHWlahFufihYxtraLfsIhW7I8dn6+xX+DZGygOPKWQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "HarfBuzzSharp.NativeAssets.macOS",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "KPTq0xnslkI6nAo0jh3ptcQPJvZZr7MWYXa2jUe4SnHc9q+JlHElmNXp0sfFoiTgoCX7WOYpYsurypuH9Gehxw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "HarfBuzzSharp.NativeAssets.Win32",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "bx8CE8Js+XGX8PUxAHCBDEORt5aaBYtMN4Hr9QFs57Xithh6yjUyYqksizH6eRDhJkwsGI+SXWmPmMm8lZC9Pw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "Microsoft.Win32.SystemEvents",
+      "Resolved": "6.0.0",
+      "ContentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "SkiaSharp.NativeAssets.Linux",
+      "Resolved": "3.119.4",
+      "ContentHash": "UAyVzbqNfZsZbKbzj68zXLyUyF/SbTKmzTfOO6qDu++dtIUMMTzPBe8oOuzU/DiewpfKoUUlOSsJmqWc6blxBw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "SkiaSharp.NativeAssets.macOS",
+      "Resolved": "3.119.4",
+      "ContentHash": "fgBOWEqbY012x7gMfJU4ezgz6dfhJb30Z6YdW35h85Zoe39+a8YNbAAwL29ihPfWoppg5AjvyKNzD1oCvlqWwA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "SkiaSharp.NativeAssets.Win32",
+      "Resolved": "3.119.4",
+      "ContentHash": "XOpbx/4CReO2wYsq2s6rbvdauc6dntG4Zv499sHGTJ87bwZaFXszFkwql3+FIZMc8kUPeaj3Mx2ezIJmo8a1Kg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "System.Drawing.Common",
+      "Resolved": "6.0.0",
+      "ContentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-arm64",
+      "Name": "System.Security.Cryptography.Pkcs",
+      "Resolved": "8.0.1",
+      "ContentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "Avalonia.Angle.Windows.Natives",
+      "Resolved": "2.1.27548.20260419",
+      "ContentHash": "l17nI3XVDN3oMnpjf2pnmJg0YTwK4m6NLsn/itAjDMdObTFxN77D5F1M9sRMSfViSY3KKcse1ROczwgoWLJsnA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "Avalonia.Native",
+      "Resolved": "12.1.1",
+      "ContentHash": "jbgCUIhgQGD7d9mLN1oe4J8EpzDa0aY9PS77PZuRUDcNyr/V+vFNdyYXSJs3imrm0NOzTsCcFtK2NSXGDmJ1dw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "HarfBuzzSharp.NativeAssets.Linux",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "RI6A1LgmooU30+4QIyFt5rmBCzP0VzTR+587IJSGvYIsHHWlahFufihYxtraLfsIhW7I8dn6+xX+DZGygOPKWQ==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "HarfBuzzSharp.NativeAssets.macOS",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "KPTq0xnslkI6nAo0jh3ptcQPJvZZr7MWYXa2jUe4SnHc9q+JlHElmNXp0sfFoiTgoCX7WOYpYsurypuH9Gehxw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "HarfBuzzSharp.NativeAssets.Win32",
+      "Resolved": "8.3.1.3",
+      "ContentHash": "bx8CE8Js+XGX8PUxAHCBDEORt5aaBYtMN4Hr9QFs57Xithh6yjUyYqksizH6eRDhJkwsGI+SXWmPmMm8lZC9Pw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "Microsoft.Win32.SystemEvents",
+      "Resolved": "6.0.0",
+      "ContentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "SkiaSharp.NativeAssets.Linux",
+      "Resolved": "3.119.4",
+      "ContentHash": "UAyVzbqNfZsZbKbzj68zXLyUyF/SbTKmzTfOO6qDu++dtIUMMTzPBe8oOuzU/DiewpfKoUUlOSsJmqWc6blxBw==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "SkiaSharp.NativeAssets.macOS",
+      "Resolved": "3.119.4",
+      "ContentHash": "fgBOWEqbY012x7gMfJU4ezgz6dfhJb30Z6YdW35h85Zoe39+a8YNbAAwL29ihPfWoppg5AjvyKNzD1oCvlqWwA==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "SkiaSharp.NativeAssets.Win32",
+      "Resolved": "3.119.4",
+      "ContentHash": "XOpbx/4CReO2wYsq2s6rbvdauc6dntG4Zv499sHGTJ87bwZaFXszFkwql3+FIZMc8kUPeaj3Mx2ezIJmo8a1Kg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "System.Drawing.Common",
+      "Resolved": "6.0.0",
+      "ContentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+      "Matches501LockedIdentityAndHash": true
+    },
+    {
+      "Framework": "net10.0/osx-x64",
+      "Name": "System.Security.Cryptography.Pkcs",
+      "Resolved": "8.0.1",
+      "ContentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "Matches501LockedIdentityAndHash": true
+    }
+  ]
+}

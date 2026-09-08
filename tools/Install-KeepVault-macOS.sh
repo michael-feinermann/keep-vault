@@ -36,6 +36,17 @@ unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE DOTNET_ROO
   RestoreConfigFile
 export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
 
+# Package selection is deliberately parsed before any SDK/toolchain discovery.
+# The signed installer entry always supplies this as the first option.
+package_mode=0
+package_root=''
+if [[ ${1:-} == --package-root ]]; then
+  (( $# >= 2 )) || { print -u2 '--package-root requires an absolute package directory.'; exit 64; }
+  package_mode=1
+  package_root=$2
+  shift 2
+fi
+
 xcrun_path=/usr/bin/xcrun
 codesign_path=/usr/bin/codesign
 stat_path=/usr/bin/stat
@@ -75,13 +86,52 @@ require_root_system_tool() {
 }
 
 for fixed_tool in \
-    ${xcrun_path} ${codesign_path} ${stat_path} ${shlock_path} \
+    ${codesign_path} ${stat_path} ${shlock_path} \
     ${osascript_path} ${file_path} ${mktemp_path} ${ditto_path} \
     ${rm_path} ${chmod_path} ${mkdir_path} ${mv_path} ${rmdir_path} \
     ${find_path} ${env_path} ${shasum_path} ${awk_path} \
     ${plist_buddy_path} ${launch_services_path}; do
   require_root_system_tool ${fixed_tool}
 done
+
+if (( package_mode )); then
+  for package_system_tool in /usr/bin/syspolicy_check /usr/sbin/spctl /usr/bin/plutil; do
+    require_root_system_tool ${package_system_tool}
+  done
+  package_script=${0:a}
+  package_installer=${package_root}/Keep\ Vault\ Installer.app
+  if [[ ${package_root} != /* || ${package_root:a} != ${package_root:A} \
+      || ! -d ${package_root} || -L ${package_root} \
+      || ${package_script} != ${package_script:A} \
+      || ${package_script:h} != ${package_installer}/Contents/Resources/tools \
+      || ! -d ${package_installer} || -L ${package_installer} ]]; then
+    print -u2 'INSTALLATION PACKAGE GATE: package root or sealed script location is invalid.'
+    exit 2
+  fi
+  # The signed native entry stages an authenticated package as root, then
+  # grants the installing user read/search/execute-only access. A user-owned
+  # download is never an operational script or native-execution source.
+  if [[ $(/usr/bin/stat -f %u -- ${package_root}) != 0 ]] \
+      || /usr/bin/find ${package_root} \( ! -user root -o -perm -022 \) -print -quit | /usr/bin/grep -q .; then
+    print -u2 'INSTALLATION PACKAGE GATE: operational package must be immutable and root-owned.'
+    exit 2
+  fi
+  package_requirement='identifier "de.michael-feinermann.keep-vault.installer" and anchor apple generic and certificate leaf[subject.OU] = "2T6K9PGS55"'
+  /usr/bin/codesign --verify --deep --strict --all-architectures -R=${package_requirement} ${package_installer}
+  package_signature=$(/usr/bin/codesign -dvvv ${package_installer} 2>&1)
+  [[ ${package_signature} == *'Authority=Developer ID Application:'* \
+      && ${package_signature} == *'flags='*'runtime'* ]] || {
+    print -u2 'INSTALLATION PACKAGE GATE: the installer requires Developer ID and Hardened Runtime.'
+    exit 2
+  }
+  if /usr/bin/find ${package_installer} \( -type l -o -type f -links +1 -o -perm -022 \) -print -quit | /usr/bin/grep -q .; then
+    print -u2 'INSTALLATION PACKAGE GATE: installer contains linked or writable objects.'
+    exit 2
+  fi
+  source ${package_installer}/Contents/Resources/tools/PackageRuntime-macOS.sh
+fi
+
+(( package_mode )) || require_root_system_tool ${xcrun_path}
 
 xcrun() { ${xcrun_path} "$@"; }
 codesign() { ${codesign_path} "$@"; }
@@ -100,6 +150,7 @@ sha256_file() { ${env_path} -i PATH='/usr/bin:/bin:/usr/sbin:/sbin' ${shasum_pat
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
+(( package_mode )) && repo_root=${package_root}
 source_app=''
 applications_dir='/Applications'
 create_desktop_alias=1
@@ -110,6 +161,7 @@ deferred_test_failure=''
 tool_path_self_test=0
 
 usage() {
+  print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'
   print -u2 'Usage: Install-KeepVault-macOS.sh [--app "Keep Vault.app"] [--development]'
   print -u2 '       [--applications-dir /Applications] [--no-desktop-alias]'
   print -u2 '       [--test-root PRIVATE_MKTEMP_ROOT --inject-failure NAME]'
@@ -154,6 +206,14 @@ while (( $# != 0 )); do
     *) usage ;;
   esac
 done
+
+if (( package_mode )); then
+  if (( allow_development || tool_path_self_test )) || [[ -n ${source_app} ]]; then
+    print -u2 'Package mode rejects development, tool-path tests and alternate app sources.'
+    exit 64
+  fi
+  source_app=${package_root}/Keep\ Vault.app
+fi
 
 if (( tool_path_self_test )); then
   print 'installer_tool_paths=verified'
@@ -411,7 +471,7 @@ fi
 source_app=${source_app:A}
 if [[ ${source_app} != ${repo_root}/* ]]; then
   release_lock
-  print -u2 "The install source must remain inside the Keep Vault workspace: ${source_app}"
+  print -u2 "The install source must remain inside the bound Keep Vault source root: ${source_app}"
   exit 1
 fi
 # The installation root must be validated as the caller named it. Resolving the
@@ -468,6 +528,10 @@ if (( create_desktop_alias )); then
   fi
 fi
 
+if (( package_mode )); then
+  package_require_identity
+  bound_delete_packaged_sha=$(sha256_file ${package_bound_delete})
+else
 bound_delete_source=${script_dir}/InstallerBoundDelete.c
 bound_delete_compiler=$(xcrun --find clang 2>/dev/null || true)
 if [[ ! -f ${bound_delete_source} || -L ${bound_delete_source} ]] \
@@ -475,6 +539,8 @@ if [[ ! -f ${bound_delete_source} || -L ${bound_delete_source} ]] \
   release_lock
   print -u2 'The trusted installer rollback helper source or Apple clang is unavailable.'
   exit 1
+fi
+
 fi
 
 install_root=$(mktemp -d "${applications_dir}/.keep-vault-install.XXXXXXXX")
@@ -508,12 +574,24 @@ rollback_quarantine_device=${rollback_quarantine_identity%%:*}
 rollback_quarantine_inode=${rollback_quarantine_identity#*:}
 
 bound_delete_helper=${lock_directory}/installer-bound-delete
+if (( package_mode )); then
+  package_require_identity
+  if ! ditto ${package_bound_delete} ${bound_delete_helper} \
+      || ! chmod 0500 ${bound_delete_helper} \
+      || [[ $(sha256_file ${bound_delete_helper}) != ${bound_delete_packaged_sha} ]]; then
+    release_lock
+    print -u2 'The authenticated rollback helper could not be copied without changing its bytes.'
+    exit 1
+  fi
+  package_require_identity
+else
 if ! xcrun clang -std=c17 -Wall -Wextra -Werror -O2 \
     ${bound_delete_source} -o ${bound_delete_helper} \
     || ! chmod 0500 ${bound_delete_helper}; then
   release_lock
   print -u2 "The object-bound rollback helper could not be built; the private roots were preserved: ${install_root}"
   exit 1
+fi
 fi
 bound_delete_helper_identity=$(stat -f '%d:%i:%u:%Lp:%z:%m:%c:%l' ${bound_delete_helper} 2>/dev/null || true)
 if [[ ! -f ${bound_delete_helper} || -L ${bound_delete_helper} \
@@ -561,6 +639,159 @@ staged_app_identity=''
 staged_scanner_identity=''
 typeset -A staged_launcher_sidecar_identities
 typeset -A staged_scanner_sidecar_identities
+typeset -A package_prior_fingerprints
+typeset -A package_prior_bundle_identities
+
+# A rollback restores the authenticated previous release, whose notices and
+# notarization ticket legitimately differ from this installation package.
+# Preserve a complete prior-state fingerprint in this process, and keep the
+# Apple/hybrid checks independent of the new release's resource inventory.
+package_prior_sidecar_base() {
+  case ${1:t} in
+    'Keep Vault.app') REPLY=${1}.launcher ;;
+    'QR-Scanner.app') REPLY=$1 ;;
+    *) return 1 ;;
+  esac
+}
+
+package_prior_fingerprint() {
+  local app=$1 sidecar_base fingerprint
+  package_prior_sidecar_base ${app} || return 1
+  sidecar_base=${REPLY}
+  fingerprint=$(package_run_verifier fingerprint-preserved-app \
+    --app ${app} --sidecar-base ${sidecar_base}) || return 1
+  [[ ${#fingerprint} == 64 && ${fingerprint} != *[^0-9a-fA-F]* ]] || return 1
+  REPLY=${fingerprint}
+}
+
+package_prior_entitlements() {
+  local macho=$1 scanner=$2 xml key escaped_key value
+  xml=$(codesign -d --entitlements :- --xml ${macho} 2>/dev/null) || return 1
+  [[ -n ${xml} ]] || xml='<?xml version="1.0"?><plist version="1.0"><dict/></plist>'
+  print -r -- ${xml} | /usr/bin/plutil -lint - >/dev/null || return 1
+  local -a disallowed=(
+    com.apple.security.get-task-allow
+    com.apple.security.cs.allow-jit
+    com.apple.security.cs.allow-unsigned-executable-memory
+    com.apple.security.cs.disable-library-validation
+    com.apple.security.cs.disable-executable-page-protection
+    com.apple.security.cs.allow-dyld-environment-variables
+    com.apple.security.cs.allow-relative-library-loads
+    com.apple.security.cs.debugger
+    com.apple.security.network.client
+    com.apple.security.network.server
+    com.apple.security.device.audio-input
+    com.apple.security.device.usb
+    com.apple.security.device.bluetooth
+    com.apple.security.automation.apple-events
+  )
+  if (( scanner )); then
+    for key in com.apple.security.app-sandbox com.apple.security.device.camera; do
+      escaped_key=${key//./\\.}
+      value=$(print -r -- ${xml} | /usr/bin/plutil -extract ${escaped_key} raw -o - - 2>/dev/null) || return 1
+      [[ ${value} == true ]] || return 1
+    done
+  else
+    disallowed+=(com.apple.security.app-sandbox com.apple.security.inherit com.apple.security.device.camera)
+  fi
+  for key in ${disallowed[@]}; do
+    escaped_key=${key//./\\.}
+    if print -r -- ${xml} | /usr/bin/plutil -extract ${escaped_key} xml1 -o - - >/dev/null 2>&1; then
+      print -u2 "The previous app declares a disallowed entitlement: ${key}"
+      return 1
+    fi
+  done
+}
+
+package_verify_prior_bundle() {
+  local app=$1 identifier executable scanner=0 macho details required architectures sidecar_base
+  local -a hybrid_arguments macho_files required_files
+  case ${app:t} in
+    'Keep Vault.app')
+      identifier=de.michael-feinermann.keep-vault
+      executable='Keep Vault Launcher'
+      required_files=('Keep Vault Launcher' 'Keep Vault' 'Keep Vault Supervisor')
+      ;;
+    'QR-Scanner.app')
+      identifier=de.michael-feinermann.qr-scanner
+      executable=QR-Scanner
+      scanner=1
+      required_files=(QR-Scanner)
+      ;;
+    *) return 1 ;;
+  esac
+  [[ ${app:a} == ${app:A} && -d ${app} && ! -L ${app} ]] || return 1
+  [[ $(${plist_buddy_path} -c 'Print :CFBundleIdentifier' ${app}/Contents/Info.plist) == ${identifier} \
+      && $(${plist_buddy_path} -c 'Print :CFBundleExecutable' ${app}/Contents/Info.plist) == ${executable} ]] || return 1
+  local requirement="identifier \"${identifier}\" and anchor apple generic and certificate leaf[subject.OU] = \"2T6K9PGS55\""
+  codesign --verify --deep --strict --all-architectures -R=${requirement} ${app} || return 1
+  for required in ${required_files[@]}; do
+    [[ -f ${app}/Contents/MacOS/${required} && ! -L ${app}/Contents/MacOS/${required} ]] || return 1
+  done
+  architectures=$(package_run_verifier inspect-macho --file ${app}/Contents/MacOS/${executable}) || return 1
+  hybrid_arguments=(verify --payload-root ${app}/Contents/MacOS \
+    --signature-root ${app}/Contents/Resources/HybridSignatures)
+  macho_files=()
+  for macho in ${app}/**/*(.DN); do
+    if [[ $(file -b ${macho}) != *Mach-O* ]]; then continue; fi
+    [[ ${macho} == ${app}/Contents/MacOS/* ]] || return 1
+    macho_files+=(${macho})
+    codesign --verify --strict --all-architectures ${macho} || return 1
+    details=$(codesign -dvvv ${macho} 2>&1) || return 1
+    [[ ${details} == *'Authority=Developer ID Application:'* \
+        && ${details} == *'TeamIdentifier=2T6K9PGS55'* \
+        && ${details} == *'flags='*'runtime'* ]] || return 1
+    package_run_verifier inspect-macho --file ${macho} --require-architectures ${architectures} >/dev/null || return 1
+    package_prior_entitlements ${macho} ${scanner} || return 1
+    if (( ! scanner )) && [[ ${macho} != ${app}/Contents/MacOS/${executable} ]]; then
+      hybrid_arguments+=(--target ${macho})
+    fi
+  done
+  (( ${#macho_files[@]} >= ${#required_files[@]} )) || return 1
+  if (( scanner )); then
+    (( ${#macho_files[@]} == 1 )) || return 1
+  else
+    codesign --verify --strict --all-architectures \
+      -R='identifier "de.michael-feinermann.keep-vault.core" and anchor apple generic and certificate leaf[subject.OU] = "2T6K9PGS55"' \
+      ${app}/Contents/MacOS/Keep\ Vault || return 1
+    codesign --verify --strict --all-architectures \
+      -R='identifier "de.michael-feinermann.keep-vault.supervisor" and anchor apple generic and certificate leaf[subject.OU] = "2T6K9PGS55"' \
+      ${app}/Contents/MacOS/Keep\ Vault\ Supervisor || return 1
+    package_run_verifier ${hybrid_arguments[@]} || return 1
+  fi
+  package_prior_sidecar_base ${app} || return 1
+  sidecar_base=${REPLY}
+  package_run_verifier verify-artifact --payload ${app}/Contents/MacOS/${executable} \
+    --sidecar-base ${sidecar_base} --require-all-sidecars || return 1
+  # Match the original rollback contract: current Apple execution assessment
+  # plus strict Apple/hybrid authentication. The old ticket is preserved by
+  # the complete snapshot, not compared with the different new-release ticket.
+  /usr/sbin/spctl --assess --type execute --verbose=4 ${app} || return 1
+}
+
+package_capture_prior_bundle() {
+  local app=$1 before
+  package_prior_fingerprint ${app} || return 1
+  before=${REPLY}
+  package_verify_prior_bundle ${app} || return 1
+  package_prior_fingerprint ${app} || return 1
+  [[ ${REPLY} == ${before} ]] || return 1
+  package_prior_fingerprints[${app:t}]=${before}
+  package_prior_bundle_identities[${app:t}]=$(stat -f '%d:%i' ${app}) || return 1
+  print "prior_release_authenticated=${app:t}"
+}
+
+package_verify_restored_bundle() {
+  local app=$1 expected=${package_prior_fingerprints[${1:t}]:-}
+  [[ -n ${expected} \
+      && $(stat -f '%d:%i' ${app} 2>/dev/null || print invalid) == ${package_prior_bundle_identities[${app:t}]:-missing} ]] || return 1
+  package_prior_fingerprint ${app} || return 1
+  [[ ${REPLY} == ${expected} ]] || return 1
+  package_verify_prior_bundle ${app} || return 1
+  package_prior_fingerprint ${app} || return 1
+  [[ ${REPLY} == ${expected} ]] || return 1
+  print "prior_release_restored_exactly=${app:t}"
+}
 
 verify_installed_object_identity() {
   local installed_path=$1
@@ -990,7 +1221,11 @@ APPLESCRIPT
     fi
 
     # Re-verify restored state if we had an existing installation
-    if (( has_existing_installation )) && [[ -d ${destination} ]]; then
+    if (( package_mode && has_existing_installation )); then
+      if ! package_verify_restored_bundle ${destination}; then
+        rollback_errors+=("Restored Keep Vault app does not match its authenticated pre-transaction state.")
+      fi
+    elif (( has_existing_installation )) && [[ -d ${destination} ]]; then
       rollback_kv_flags=(--app ${destination} --require-launcher-signature)
       (( allow_development )) && rollback_kv_flags+=(--allow-development)
       if ! ${script_dir}/Verify-KeepVault-macOS.sh ${rollback_kv_flags[@]} >/dev/null 2>&1; then
@@ -998,7 +1233,11 @@ APPLESCRIPT
       fi
     fi
 
-    if (( has_existing_scanner )) && [[ -d ${scanner_destination} ]]; then
+    if (( package_mode && has_existing_scanner )); then
+      if ! package_verify_restored_bundle ${scanner_destination}; then
+        rollback_errors+=("Restored QR-Scanner app does not match its authenticated pre-transaction state.")
+      fi
+    elif (( has_existing_scanner )) && [[ -d ${scanner_destination} ]]; then
       rollback_scanner_flags=(--app ${scanner_destination})
       (( allow_development )) && rollback_scanner_flags+=(--allow-development)
       if ! ${script_dir}/Verify-QR-Scanner-macOS.sh ${rollback_scanner_flags[@]} >/dev/null 2>&1; then
@@ -1120,6 +1359,7 @@ else
 fi
 
 kv_verify_flags=(--app ${staged_app} --require-launcher-signature)
+(( package_mode )) && kv_verify_flags=(--package-root ${package_root} ${kv_verify_flags[@]})
 (( allow_development )) && kv_verify_flags+=(--allow-development)
 (( installation_requires_notarization )) && kv_verify_flags+=(--require-notarization)
 ${script_dir}/Verify-KeepVault-macOS.sh ${kv_verify_flags[@]}
@@ -1164,6 +1404,10 @@ fi
 
 # 3. STAGE AND VERIFY QR-SCANNER
 scanner_source=${source_app:h}/QR-Scanner.app
+if (( package_mode )) && [[ ! -d ${scanner_source} || -L ${scanner_source} ]]; then
+  print -u2 'The signed installation package requires its matching QR-Scanner companion.'
+  exit 1
+fi
 install_scanner=0
 if [[ -d ${scanner_source} && ! -L ${scanner_source} ]]; then
   install_scanner=1
@@ -1194,6 +1438,7 @@ if [[ -d ${scanner_source} && ! -L ${scanner_source} ]]; then
     fi
 
     scanner_verify_flags=(--app ${install_root}/QR-Scanner.app)
+    (( package_mode )) && scanner_verify_flags=(--package-root ${package_root} ${scanner_verify_flags[@]})
     (( allow_development )) && scanner_verify_flags+=(--allow-development)
     (( installation_requires_notarization )) && scanner_verify_flags+=(--require-notarization)
     ${script_dir}/Verify-QR-Scanner-macOS.sh ${scanner_verify_flags[@]}
@@ -1244,6 +1489,11 @@ if [[ -e ${destination} || -L ${destination} ]]; then
   fi
   has_existing_installation=1
 
+  if (( package_mode )) && ! package_capture_prior_bundle ${destination}; then
+    print -u2 'The previous Keep Vault release could not be authenticated for safe rollback.'
+    exit 1
+  fi
+
   for launcher_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
     existing_sidecar=${applications_dir}/Keep\ Vault.app.launcher${launcher_sidecar_suffix}
     if [[ -f ${existing_sidecar} && ! -L ${existing_sidecar} ]]; then
@@ -1264,10 +1514,31 @@ if (( install_scanner )) && [[ -e ${scanner_destination} || -L ${scanner_destina
   fi
   has_existing_scanner=1
 
+  if (( package_mode )) && ! package_capture_prior_bundle ${scanner_destination}; then
+    print -u2 'The previous QR-Scanner release could not be authenticated for safe rollback.'
+    exit 1
+  fi
+
   for scanner_sidecar_suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
     existing_scanner_sidecar=${applications_dir}/QR-Scanner.app${scanner_sidecar_suffix}
     if [[ -f ${existing_scanner_sidecar} && ! -L ${existing_scanner_sidecar} ]]; then
       ditto ${existing_scanner_sidecar} ${backup_dir}/QR-Scanner.app${scanner_sidecar_suffix}
+    fi
+  done
+fi
+
+if (( package_mode )); then
+  package_run_verifier verify-installation --root ${package_root} --require-root-owned || {
+    print -u2 'The authenticated installation inventory changed before a privileged transaction phase.'
+    exit 1
+  }
+  for prior_app in ${destination} ${scanner_destination}; do
+    [[ -n ${package_prior_fingerprints[${prior_app:t}]:-} ]] || continue
+    if ! package_prior_fingerprint ${prior_app} \
+        || [[ ${REPLY} != ${package_prior_fingerprints[${prior_app:t}]} \
+          || $(stat -f '%d:%i' ${prior_app} 2>/dev/null || print invalid) != ${package_prior_bundle_identities[${prior_app:t}]} ]]; then
+      print -u2 'A previous app changed after its rollback proof was captured. No transaction was started.'
+      exit 1
     fi
   done
 fi
@@ -1431,6 +1702,7 @@ fi
 # Verify complete installation transaction
 main_verification_passed=0
 final_kv_verify_flags=(--app ${destination} --require-launcher-signature)
+(( package_mode )) && final_kv_verify_flags=(--package-root ${package_root} ${final_kv_verify_flags[@]})
 (( allow_development )) && final_kv_verify_flags+=(--allow-development)
 (( installation_requires_notarization )) && final_kv_verify_flags+=(--require-notarization)
 if ${script_dir}/Verify-KeepVault-macOS.sh ${final_kv_verify_flags[@]}; then
@@ -1441,6 +1713,7 @@ fi
 scanner_verification_passed=1
 if (( install_scanner )); then
   final_scanner_flags=(--app ${scanner_destination})
+  (( package_mode )) && final_scanner_flags=(--package-root ${package_root} ${final_scanner_flags[@]})
   (( allow_development )) && final_scanner_flags+=(--allow-development)
   (( installation_requires_notarization )) && final_scanner_flags+=(--require-notarization)
   if ! ${script_dir}/Verify-QR-Scanner-macOS.sh ${final_scanner_flags[@]}; then
@@ -1474,6 +1747,13 @@ installed_version=${candidate_version}
 update_anchor=0
 if (( ! had_existing_anchor )) || (( installed_version > recorded_version )) || [[ ! -f ${anchor_path} ]]; then
   update_anchor=1
+fi
+
+if (( package_mode )); then
+  package_run_verifier verify-installation --root ${package_root} --require-root-owned || {
+    print -u2 'The authenticated installation inventory changed before a privileged transaction phase.'
+    exit 1
+  }
 fi
 
 if (( update_anchor )); then

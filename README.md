@@ -20,6 +20,20 @@ cryptographic audit, an HSM, or operating-system hardening.
 
 ## Install
 
+Keep Vault 5.0.2 (build 13) has completed technical acceptance for macOS.
+All 153 test groups, additional release checks, real installer and German/English
+GUI checks, and the final installed Paranoia/KPAR2 workflow passed. Apple accepted
+all three apps; stapling, Gatekeeper and exact final-package checks passed.
+A fresh complete production-core workflow also passed with Wi-Fi disabled and
+independent IPv4/IPv6 monitoring. Core and real GUI evidence are documented
+separately in the [macOS audit](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.md).
+
+This source snapshot records technical acceptance before publication. The planned
+stable [v5.0.2 release](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2)
+must contain the six tested assets and resolve to the reviewed commit; its actual
+public status and upload bytes are verified separately. Version 5.0.1 remains a
+separate historical draft.
+
 Prebuilt packages are on the
 [Releases](https://github.com/michael-feinermann/keep-vault/releases) page.
 Requires macOS 14 or newer, Apple silicon or Intel (universal binary).
@@ -36,17 +50,25 @@ second mutable copy. The same tree contains the separately built and signed
 `QR-Scanner\QR-Scanner.exe`; Keep Vault verifies that companion at startup, and
 the scanner remains the only Windows process in the release that uses a camera.
 
-The package contains **two applications**: `Keep Vault.app` and
-`QR-Scanner.app`. The second one reads the QR codes from the printed key sheets;
+The macOS package contains `Keep Vault.app`, `QR-Scanner.app`, and the separate
+`Keep Vault Installer.app`. The scanner reads the QR codes from the printed key sheets;
 it is a separate, sandboxed program with its own bundle identifier. Keep Vault
 itself never requests camera access and declares no hardware capability at all.
 
-1. Download and unpack `Keep Vault-portable-macOS.zip`.
-2. Check it before launching anything — see [Verify a download](#verify-a-download).
-3. Run `tools/Install-KeepVault-macOS.sh`. It verifies the signatures, installs
-   to `/Applications`, installs the scanner alongside when the scanner's own
-   signature is present, and puts an alias on the Desktop. It must **not** be
-   run with `sudo`.
+1. Download and unpack the complete `Keep Vault-macOS-universal.zip` release.
+2. Check the installer with the macOS tools described below.
+3. Open `Keep Vault Installer.app`, choose Install, and approve the local macOS
+   administrator prompts. Run it as your signed-in user, without `sudo`.
+   If a folder picker appears, select the complete extracted installation
+   folder. The installer applies the same full verification to that folder.
+4. Use Keep Vault and QR-Scanner from `/Applications` after installation.
+
+The installer authenticates the complete package, protects its installation
+files against replacement, and installs both apps and the required root-owned
+ZPAQ component. Dragging only the apps into Applications does not establish
+that component. The target Mac needs no .NET SDK, Xcode or compiler. Apple's
+distribution checks during installation can require network access; archive
+credentials and archive content are not sent to Apple.
 
 The files named `Keep Vault.app.launcher.*` belong **beside** `Keep Vault.app`
 and have to stay there: the launcher checks its own dual signature at every
@@ -58,23 +80,24 @@ it does not start.
 
 ### Verify a download
 
-The package ships with the verifier that produced it:
+Before opening the installer, macOS can verify its signed identity and current
+distribution policy. Run these commands in the extracted package directory:
 
 ```sh
-"./Keep Vault Release Verifier" "Keep Vault-portable-macOS"
+/usr/bin/codesign --verify --strict --deep \
+  -R='identifier "de.michael-feinermann.keep-vault.installer" and anchor apple generic and certificate leaf[subject.OU] = "2T6K9PGS55" and certificate leaf[field.1.2.840.113635.100.6.1.13] exists' \
+  "Keep Vault Installer.app"
+/usr/bin/syspolicy_check distribution "Keep Vault Installer.app"
 ```
 
-Point it at the whole folder — that covers the app, the scanner, the verifier
-itself and every hash manifest:
-
-```
-verified_artifacts=51
-RESULT: TRUSTED - RSA-PSS/SHA-512 and ML-DSA-87 verification passed.
-```
-
-It also accepts a single bundle, a single file, or the ZIP. Exit codes are `0`
-for TRUSTED, `2` for NOT COVERED (a real artifact that these keys never signed),
-`3` for BLOCKED, and `1` for a usage error.
+The installer then requires both RSA-PSS and ML-DSA-87 signatures on its complete
+installation inventory. It binds every payload path, file type, mode, size and
+digest, including the exact tickets validated by Apple's stapler during the
+release build. System distribution policy alone is not described as a
+byte-integrity check for a stapled ticket. Missing or altered package files stop
+installation before either app or its protected runtime component is replaced.
+Keep `installation-manifest.json` and all five signature/hash companions in the
+package. The signed native verifier is inside the installer bundle.
 
 A verifier that travels with the thing it vouches for can only tell you the
 package is internally consistent. To make it evidence against a determined
@@ -171,9 +194,11 @@ one key leaks the XOR of two plaintexts.
 
 ### The master key derivation
 
-v12 asks for four credentials, and all four are mandatory: a passphrase of 24 to
-256 characters, a PIN of 6 to 16 digits, and the two 1024-bit factors from the
-printed key sheets. There is no reduced mode and no suite that skips one.
+v12 derives keys from four credential inputs: the user passphrase, the PIN and
+the two 1024-bit factors from the printed key sheets. New archives require
+24 to 256 UTF-16 code units for the passphrase and a PIN of 6 to 16 digits
+(ASCII only). These selection limits are not applied when reading existing v12 archives.
+There is no reduced KDF mode and no suite that skips a credential input.
 
 Two credential paths are built first, each a different shape of construction.
 The SHA3 path splits each factor into its two 512-bit binary halves and pairs
@@ -346,8 +371,8 @@ selection has no influence on it.
 
 Extraction requires all four credentials:
 
-1. A user passphrase of 24 to 256 characters.
-2. A PIN of 6 to 16 decimal digits.
+1. The original user passphrase, with its unchanged UTF-8 encoding.
+2. The original ASCII-digit PIN, including leading zeros.
 3. Factor A: 256 hex characters = 128 bytes = 1024 bits.
 4. Factor B: 256 hex characters = 128 bytes = 1024 bits.
 
@@ -358,7 +383,7 @@ published in the header. The optional hint is public, must not contain password
 material, and is shown explicitly as unauthenticated header text until both MACs
 succeed.
 
-### User-password policy
+### User-password policy for creating archives
 
 - at least 24 and at most 256 characters
 - at least 3 character groups
@@ -368,9 +393,23 @@ succeed.
 - not equal to factor A or B, and A and B must differ from each other
 - at least 128 bits by a conservative local estimate
 
-The estimate caps the assumed alphabet and penalises repetition, sequences,
-keyboard patterns and known words. It is a pessimistic policy, not a proof of
-entropy for human passwords.
+The existing calculation and all previous rejection rules remain active. In
+5.0.2, complete offline language, wordlist and pattern models can only lower
+that score. The final score still has to reach 128. EFF English (7,776 words),
+dys2p German (7,776 words) and the original English BIP39 indices (2,048 words,
+including checksum validation) are bundled as analysis data. Neither list spaces
+nor an uncalibrated model score prove entropy of human choice.
+
+The complete PIN must not occur literally in the raw password and must not be
+today's local date in DDMMYY, DDMMYYYY, MMDDYY or MMDDYYYY form. Final creation
+rechecks both values and the local date. Existing PIN rules remain unchanged.
+
+Extraction, listing and recovery do not run these old or new choice rules and
+do not require password-model data. Only the original encoding, factor formats,
+a separate technical limit of 1,048,576 UTF-16 code units per user credential,
+and cryptographic verification apply. No runtime network lookup is used.
+See the [v12 credential policy and Windows contract](docs/KEEP_VAULT_V12_CREDENTIAL_POLICY.md)
+for exact boundaries, data provenance, uncertainty and required evidence.
 
 ### The four credentials
 
@@ -743,8 +782,8 @@ through `KEEPVAULT_HYBRID_PFX`,
 
 ```sh
 ./tools/Build-Native-macOS.sh          # reference ciphers, Argon2, ZPAQ
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.0 --build-number 12
-./tools/Build-KeepVault-macOS.sh --version 5.0.0 --build-number 12
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.2 --build-number 13
+./tools/Build-KeepVault-macOS.sh --version 5.0.2 --build-number 13
 ./tools/Build-Portable-macOS.sh        # portable folder and ZIP
 ./tools/Install-KeepVault-macOS.sh     # verify and install to /Applications
 ./tools/Verify-KeepVault-macOS.sh      # check an installed or built bundle
@@ -752,8 +791,15 @@ through `KEEPVAULT_HYBRID_PFX`,
 ```
 
 A publicly distributable build additionally requires an explicit Developer-ID
-identity, the stored `Keep Vault v12` notary profile and `--release`; an Apple
-Development build is local test evidence only.
+identity, `--release`, and either `--notary-profile PROFILE` for credentials
+stored in Keychain or `--notarize-in-xcode`. These alternatives cannot be
+combined. The latter preserves the complete signed candidate and pauses the
+build so that its exact ZIP can be submitted separately with Xcode's
+`notarytool`. It also creates Xcode archives for inspection. After Apple
+accepts the complete candidate, enter `NOTARIZED` in the waiting build.
+Do not re-sign or replace the original apps with an Xcode export. The build
+independently staples and validates tickets for all three original apps before
+continuing. An Apple Development build is local test evidence only.
 
 The QR scanner and Keep Vault must be built with the same marketing version and
 build number. The portable release gate requires the scanner, checks both

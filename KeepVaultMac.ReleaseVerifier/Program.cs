@@ -14,14 +14,22 @@ using Microsoft.Win32.SafeHandles;
 // signed? It carries the same compiled pins as the app and needs no
 // installation, no runtime and no network.
 
-if (args.Length != 1)
+if (args.Length == 0)
 {
-    Console.Error.WriteLine("Usage: \"Keep Vault Release Verifier\" <file-or-app-bundle-or-directory>");
+    Console.Error.WriteLine("Usage: \"Keep Vault Release Verifier\" <file-or-app-bundle-or-directory> | verify | verify-artifact | inspect-macho");
     return 1;
 }
 
 try
 {
+    if (InstallationVerifierCommands.TryRun(args, out int commandResult))
+    {
+        return commandResult;
+    }
+    if (args.Length != 1)
+    {
+        throw new ArgumentException("The legacy verification command accepts exactly one path.");
+    }
     string target = Path.GetFullPath(args[0]);
     HybridSignaturePolicy policy = SigningTrustPolicy.HybridPolicy
         ?? throw new InvalidOperationException("The compiled hybrid signing policy is unavailable.");
@@ -124,6 +132,23 @@ static string? ResolvePayloadPath(string sidecarBase)
     return null;
 }
 
+static void VerifyPasswordModelNotice(string bundleDirectory)
+{
+    const string expectedSha256 =
+        "FCC48F7F9D123570230F6E0FDB45A9E172C9ADDEA17A619081392A3D8EC57EA2";
+    const int expectedBytes = 72_883;
+    BoundNoticeFile notice = BoundNoticeFile.Read(
+        Path.Combine(bundleDirectory, "Contents", "Resources", "PASSWORD-MODEL-NOTICES.txt"),
+        minimumBytes: 1_000,
+        maximumBytes: 200_000);
+    if (notice.ByteLength != expectedBytes
+        || !CryptographicOperations.FixedTimeEquals(notice.Sha256, Convert.FromHexString(expectedSha256)))
+    {
+        throw new InvalidDataException(
+            "PASSWORD-MODEL-NOTICES.txt does not match the reviewed whole-file length and digest.");
+    }
+}
+
 static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
 {
     const string ExpectedThirdPartyNoticesSha256 =
@@ -178,6 +203,7 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
             "Contents/MacOS/Native/libshacal2_ref.dylib",
             "Contents/MacOS/Native/libchachapoly_ref.dylib",
             "Contents/Resources/THIRD-PARTY-NOTICES.txt",
+            "Contents/Resources/PASSWORD-MODEL-NOTICES.txt",
             "Contents/Info.plist",
         ];
         foreach (string relative in required)
@@ -218,6 +244,7 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
                     $"THIRD-PARTY-NOTICES.txt is incomplete; missing section: {section}");
             }
         }
+        VerifyPasswordModelNotice(directory);
     }
 
     // A portable folder exposes the same legally required notice at its root so
@@ -238,6 +265,7 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
             throw new InvalidDataException(
                 "The portable root notice and the in-app notice are not the exact reviewed file.");
         }
+        VerifyPasswordModelNotice(nestedKeepVault);
     }
 
     List<string> files = EnumerateWithoutSymlinks(directory);
@@ -553,7 +581,7 @@ internal sealed class OutOfScopeException : Exception
 }
 
 /// <summary>
-/// One stable macOS read of the shipped third-party notice. The file is opened
+/// One stable macOS read of a shipped notice. The file is opened
 /// once with O_NOFOLLOW_ANY, bounded from fstat, read through that descriptor,
 /// and checked against the same descriptor plus the final namespace identity.
 /// </summary>
@@ -568,28 +596,35 @@ internal sealed class BoundNoticeFile
     private const int MinimumBytes = 300_000;
     private const int MaximumBytes = 2_000_000;
 
-    private BoundNoticeFile(string text, byte[] sha256)
+    private BoundNoticeFile(string text, byte[] sha256, int byteLength)
     {
         Text = text;
         Sha256 = sha256;
+        ByteLength = byteLength;
     }
 
     internal string Text { get; }
     internal byte[] Sha256 { get; }
+    internal int ByteLength { get; }
 
-    internal static BoundNoticeFile Read(string path)
+    internal static BoundNoticeFile Read(
+        string path, int minimumBytes = MinimumBytes, int maximumBytes = MaximumBytes)
     {
+        if (minimumBytes < 0 || maximumBytes < minimumBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minimumBytes), "Invalid notice length bounds.");
+        }
         string fullPath = Path.GetFullPath(path);
         int descriptor = Open(fullPath, OpenReadOnly | OpenCloseOnExec | OpenNoFollowAny);
         if (descriptor < 0)
         {
             throw NativeIOException(
-                $"THIRD-PARTY-NOTICES.txt could not be opened without symbolic links: {fullPath}");
+                $"The notice could not be opened without symbolic links: {fullPath}");
         }
 
         using var handle = new SafeFileHandle((nint)descriptor, ownsHandle: true);
         FileIdentity before = GetIdentity(handle);
-        RequireNoticeIdentity(before);
+        RequireNoticeIdentity(before, minimumBytes, maximumBytes);
         FileIdentity pathBefore = GetPathIdentity(fullPath);
         if (!before.SameSnapshot(pathBefore))
         {
@@ -606,14 +641,14 @@ internal sealed class BoundNoticeFile
             stream.ReadExactly(bytes);
             if (stream.ReadByte() != -1)
             {
-                throw new IOException("THIRD-PARTY-NOTICES.txt grew during its bounded read.");
+                throw new IOException("The notice grew during its bounded read.");
             }
 
             FileIdentity after = GetIdentity(stream.SafeFileHandle);
             FileIdentity pathAfter = GetPathIdentity(fullPath);
             if (!before.SameSnapshot(after) || !after.SameSnapshot(pathAfter))
             {
-                throw new IOException("THIRD-PARTY-NOTICES.txt changed during its descriptor-bound read.");
+                throw new IOException("The notice changed during its descriptor-bound read.");
             }
         }
 
@@ -631,19 +666,19 @@ internal sealed class BoundNoticeFile
             throw;
         }
         Array.Clear(bytes);
-        return new BoundNoticeFile(text, digest);
+        return new BoundNoticeFile(text, digest, bytes.Length);
     }
 
-    private static void RequireNoticeIdentity(FileIdentity identity)
+    private static void RequireNoticeIdentity(FileIdentity identity, int minimumBytes, int maximumBytes)
     {
         if ((identity.Mode & FileTypeMask) != RegularFile
             || (identity.Mode & GroupOrOtherWrite) != 0
             || identity.LinkCount != 1
-            || identity.Size < MinimumBytes
-            || identity.Size > MaximumBytes)
+            || identity.Size < minimumBytes
+            || identity.Size > maximumBytes)
         {
             throw new InvalidDataException(
-                "THIRD-PARTY-NOTICES.txt is not a protected single-link regular file with a plausible length.");
+                "The notice is not a protected single-link regular file with a plausible length.");
         }
     }
 
@@ -757,8 +792,28 @@ internal sealed class BoundNoticeFile
     private static extern int Open(string path, int flags);
 
     [DllImport("libSystem.B.dylib", EntryPoint = "fstat", SetLastError = true)]
-    private static extern int FStat(int descriptor, out DarwinStat status);
+    private static extern int FStatArm64(int descriptor, out DarwinStat status);
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "fstat$INODE64", SetLastError = true)]
+    private static extern int FStatX64(int descriptor, out DarwinStat status);
 
     [DllImport("libSystem.B.dylib", EntryPoint = "lstat", SetLastError = true)]
-    private static extern int LStat(string path, out DarwinStat status);
+    private static extern int LStatArm64(string path, out DarwinStat status);
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "lstat$INODE64", SetLastError = true)]
+    private static extern int LStatX64(string path, out DarwinStat status);
+
+    private static int FStat(int descriptor, out DarwinStat status) => RuntimeInformation.ProcessArchitecture switch
+    {
+        Architecture.Arm64 => FStatArm64(descriptor, out status),
+        Architecture.X64 => FStatX64(descriptor, out status),
+        _ => throw new PlatformNotSupportedException("Unsupported macOS stat ABI.")
+    };
+
+    private static int LStat(string path, out DarwinStat status) => RuntimeInformation.ProcessArchitecture switch
+    {
+        Architecture.Arm64 => LStatArm64(path, out status),
+        Architecture.X64 => LStatX64(path, out status),
+        _ => throw new PlatformNotSupportedException("Unsupported macOS stat ABI.")
+    };
 }

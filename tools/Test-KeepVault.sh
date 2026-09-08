@@ -88,12 +88,33 @@ for arg in "$@"; do
   fi
 done
 
+# ForceEvaluate overrides locked mode, including on SDKs that do not warn.
+# Keep the exact project locks unchanged across restore and compilation.
+test_lock_files=(${repo_root}/KeepVaultMac/packages.lock.json ${repo_root}/KeepVaultMac.Tests/packages.lock.json)
+test_lock_hashes=()
+for test_lock in ${test_lock_files[@]}; do
+  [[ -f ${test_lock} && ! -L ${test_lock} ]] || exit 2
+  test_lock_hashes+=($(/usr/bin/shasum -a 256 ${test_lock} | /usr/bin/awk '{print $1}'))
+done
+verify_test_locks() {
+  local lock_index
+  for (( lock_index = 1; lock_index <= ${#test_lock_files}; lock_index++ )); do
+    local test_lock=${test_lock_files[lock_index]}
+    if [[ ! -f ${test_lock} || -L ${test_lock} \
+        || $(/usr/bin/shasum -a 256 ${test_lock} | /usr/bin/awk '{print $1}') != ${test_lock_hashes[lock_index]} ]]; then
+      print -u2 "The reviewed test dependency lock changed: ${test_lock}"
+      return 2
+    fi
+  done
+}
 run_dotnet_clean restore ${test_project} --artifacts-path ${private_artifacts} \
-  --locked-mode --force --force-evaluate --no-http-cache \
+  --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache \
   --disable-build-servers --nologo || exit $?
+verify_test_locks || exit $?
 run_dotnet_clean build ${test_project} -c Release --no-restore --no-incremental \
   --artifacts-path ${private_artifacts} --disable-build-servers \
   -p:UseSharedCompilation=false --nologo || exit $?
+verify_test_locks || exit $?
 
 # Build first, then stage the exact signed bytes associated with the installed
 # root anchor. A project build afterwards would overwrite these test natives.

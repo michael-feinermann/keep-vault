@@ -10,6 +10,8 @@
     <RootNamespace>KalynaArchiver</RootNamespace>
     <Product>Keep Vault</Product>
     <AssemblyTitle>Keep Vault</AssemblyTitle>
+    <Version>5.0.2</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -72,6 +74,7 @@
 
   <ItemGroup>
     <Compile Remove="Packaging/**" />
+    <EmbeddedResource Include="../KalynaArchiver/Resources/PasswordModel/**/*" Exclude="../KalynaArchiver/Resources/PasswordModel/**/*.py" LogicalName="KeepVault.PasswordModel.%(Filename)%(Extension)" />
     <Compile Include="../KalynaArchiver/Services/AppSettingsStore.cs" Link="Services/AppSettingsStore.cs" />
     <Compile Include="../KalynaArchiver/Services/ArchiveIntegrityService.cs" Link="Services/ArchiveIntegrityService.cs" />
     <Compile Include="../KalynaArchiver/Services/CryptographicEraseService.cs" Link="Services/CryptographicEraseService.cs" />
@@ -82,6 +85,8 @@
     <Compile Include="../KalynaArchiver/Services/NativeCascadeCiphers.cs" Link="Services/NativeCascadeCiphers.cs" />
     <Compile Include="../KalynaArchiver/Services/NativeArgon2id.cs" Link="Services/NativeArgon2id.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordKeyService.cs" Link="Services/PasswordKeyService.cs" />
+    <Compile Include="../KalynaArchiver/Services/PasswordGuessabilityService.cs" Link="Services/PasswordGuessabilityService.cs" />
+    <Compile Include="../KalynaArchiver/Services/PasswordModelData.cs" Link="Services/PasswordModelData.cs" />
     <Compile Include="../KalynaArchiver/Services/PrivateSnapshotRandomAccess.cs" Link="Services/PrivateSnapshotRandomAccess.cs" />
     <Compile Include="../KalynaArchiver/Services/ProcessResult.cs" Link="Services/ProcessResult.cs" />
     <Compile Include="../KalynaArchiver/Services/RecoveryService.cs" Link="Services/RecoveryService.cs" />
@@ -92,6 +97,7 @@
     <Compile Include="../KalynaArchiver/Services/KdfSalts.cs" Link="Services/KdfSalts.cs" />
     <Compile Include="../KalynaArchiver/Services/V12MasterKdf.cs" Link="Services/V12MasterKdf.cs" />
     <Compile Include="../KalynaArchiver/Services/ContainerKeyDerivation.cs" Link="Services/ContainerKeyDerivation.cs" />
+    <Compile Include="../KalynaArchiver/Services/PinCreationPolicy.cs" Link="Services/PinCreationPolicy.cs" />
     <Compile Include="../KalynaArchiver/Services/ZpaqService.cs" Link="Services/ZpaqService.cs" />
     <Compile Include="../KalynaArchiver/Services/SigningTrustPolicy.cs" Link="Services/SigningTrustPolicy.cs" />
     <Compile Include="../KalynaArchiver.Signing/HybridSignatureService.cs" Link="Signing/HybridSignatureService.cs" />

@@ -219,9 +219,9 @@ public sealed partial class KalynaContainerService
         EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.Get(suite);
         EnsureNativeAvailable(suite);
         PasswordKeyService.ValidateUserPasswordForCreation(userPassword, firstGeneratedPassword, secondGeneratedPassword);
-        // Checked before any work starts. The derivation would refuse it too,
-        // but only after the archive has been compressed and streamed.
-        ContainerKeyDerivation.ValidatePinForCreation(pin);
+        // Recheck the final pair and current local date at archive creation.
+        // Derivation and recovery enforce encoding limits only, never choice rules.
+        ContainerKeyDerivation.ValidatePinForCreation(pin, userPassword);
         PasswordKeyService.ValidateArgon2Profile(argon2Profile);
         ValidateHintForCreation(hint);
 

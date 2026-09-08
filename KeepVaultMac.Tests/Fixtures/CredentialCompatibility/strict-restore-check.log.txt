@@ -1,0 +1,9 @@
+{
+  "Properties": {
+    "RestoreLockedMode": "true",
+    "RestoreForceEvaluate": "false"
+  }
+}
+  Wiederherzustellende Projekte werden ermittelt...
+  "/Users/michael/Developer/GPT-Codex/Kalyna/build/audit/credential-compatibility-501-e52159e/KeepVaultMac/KeepVaultMac.csproj" wiederhergestellt (in 435 ms.).
+  "/Users/michael/Developer/GPT-Codex/Kalyna/build/audit/credential-compatibility-501-e52159e/KeepVaultMac.Tests/FixtureBuilder.csproj" wiederhergestellt (in 435 ms.).

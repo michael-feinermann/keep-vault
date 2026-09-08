@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/PasswordModel/**/*" Exclude="Resources/PasswordModel/**/*.py" LogicalName="KeepVault.PasswordModel.%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>

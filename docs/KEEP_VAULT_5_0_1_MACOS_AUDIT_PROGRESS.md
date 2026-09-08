@@ -1,6 +1,13 @@
 # Keep Vault 5.0.1: macOS-Prüfprotokoll
 
-Stand: 2026-09-06. Dies ist ein laufendes Prüfprotokoll, keine Freigabe. Die früheren Abschnitte dokumentieren den jeweiligen damaligen Stand; für offene Arbeiten ist der letzte Abschnitt maßgeblich.
+Historisches Prüfprotokoll vom 6. September 2026, mit Abschlussvermerk vom
+8. September 2026. Die technische Abnahme von 5.0.1 ist abgeschlossen;
+der GitHub-Eintrag bleibt ein Entwurf und ist keine öffentliche Freigabe.
+Die früheren Abschnitte dokumentieren ihren jeweiligen damaligen Stand.
+Der Nachfolger 5.0.2, Build 13 besitzt seine eigene inzwischen abgeschlossene
+[technische macOS-Abnahme](KEEP_VAULT_5_0_2_MACOS_AUDIT.md). Nur dieser neue Stand
+wird für die anschließende stabile öffentliche Veröffentlichung vorbereitet;
+der historische 5.0.1-Entwurf wird dadurch nicht veröffentlicht.
 
 ## Ausgangslage
 
@@ -186,3 +193,21 @@ Eine endliche Prüfung kann weder die Abwesenheit sämtlicher Schwachstellen noc
 - Nach allen Produkt-, Installer-, Signatur-, Installations- und GUI-Änderungen wurde ausschließlich `performance.paranoia-complex-tree-e2e` mit dem regulären frischen Teststarter ausgeführt. Exit 0, eine von einer Gruppe bestanden, 72,3 Sekunden Testzeit. Reales Argon2id t=4/p=4, Paranoia, Kompressionsstufe 5, 18 Dateien, 20 Verzeichnisse, 221327790 Eingabebytes.
 - Archivieren/Verschlüsseln 27,216 s, KPAR2-Erstellung 4,272 s, KPAR2-Prüfung 3,918 s, gezielte Beschädigung und erfolgreiche Reparatur eines Shards 4,040 s, Entschlüsseln/Entpacken 32,276 s. Die vollständige Pfad-, Typ-, Größen- und SHA-256-Menge einschließlich der tiefen, leeren, versteckten und Unicode-Struktur stimmt überein. Workflow 71,891 s. Belege: `final-paranoia-complex-tree.log` und `final-paranoia-complex-tree-evidence/`.
 - Danach erfolgen für 5.0.1 nur unverändernde Quell-/Paket-/Git-Prüfungen sowie die Dokumentation der Ergebnisse, Commit, Push und ein GitHub-Entwurf. 5.0.2 beginnt erst nach Abschluss dieses getrennten Standes.
+
+## Abschlussvermerk: technisch abgeschlossen, GitHub-Entwurf erhalten
+
+Die oben dokumentierte technische Abnahme von 5.0.1 ist abgeschlossen. Der
+geprüfte Quellstand wurde als
+[`e52159e7a569a8b77fe7732006388c4401c4009f`](https://github.com/michael-feinermann/keep-vault/commit/e52159e7a569a8b77fe7732006388c4401c4009f)
+committet und gepusht. Eine erneute lesende Remoteabfrage am 8. September
+2026 bestätigt diesen Commit auf `origin/master` und als aufgelösten Commit
+des annotierten Tags `v5.0.1`. Das Tagobjekt selbst hat die ID
+`90f93cbc97cff147a891ddf5addd234c55ae74bb`.
+
+Die gleichzeitige GitHub-Abfrage mit `gh release view v5.0.1` bestätigt
+`isDraft = true`, `isPrerelease = false` und `publishedAt = null`.
+5.0.1 ist damit technisch abgeschlossen und als Entwurf vorbereitet, aber
+nicht öffentlich veröffentlicht. Der Entwurf 5.0.0 bleibt ebenfalls
+unverändert; zum Zeitpunkt dieser Abfrage ist 4.0.2 das öffentliche neueste
+Release. Nur die spätere Version 5.0.2 soll nach ihrer eigenen vollständigen
+Abnahme als stabiles neuestes Release öffentlich freigegeben werden.

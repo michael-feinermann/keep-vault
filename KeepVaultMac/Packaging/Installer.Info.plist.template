@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>de.michael-feinermann.keep-vault.installer</string>
+<key>CFBundleName</key><string>Keep Vault Installer</string>
+<key>CFBundleDisplayName</key><string>Keep Vault Installer</string>
+<key>CFBundleExecutable</key><string>Keep Vault Installer</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleShortVersionString</key><string>@@MARKETING_VERSION@@</string>
+<key>CFBundleVersion</key><string>@@BUILD_VERSION@@</string>
+<key>LSMinimumSystemVersion</key><string>14.0</string>
+<key>NSHighResolutionCapable</key><true/>
+<key>NSAppleEventsUsageDescription</key><string>Keep Vault requests local macOS administrator authorization to install its verified applications and protected archive component.</string>
+</dict></plist>

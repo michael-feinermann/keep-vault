@@ -10,7 +10,7 @@ unset CCC_OVERRIDE_OPTIONS COMPILER_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH
   SWIFT_DRIVER_TOOLCHAIN_CASPLUGIN_LIB DYLD_INSERT_LIBRARIES DYLD_LIBRARY_PATH \
   DYLD_FRAMEWORK_PATH DYLD_FALLBACK_LIBRARY_PATH DYLD_FALLBACK_FRAMEWORK_PATH
 
-xcrun_path=/usr/bin/xcrun
+plutil_path=/usr/bin/plutil
 stat_path=/usr/bin/stat
 plistbuddy_path=/usr/libexec/PlistBuddy
 
@@ -28,27 +28,11 @@ require_root_system_tool() {
   fi
 }
 
-for fixed_tool in ${xcrun_path} ${stat_path} ${plistbuddy_path}; do
+for fixed_tool in ${plutil_path} ${stat_path} ${plistbuddy_path}; do
   require_root_system_tool ${fixed_tool}
 done
 
-plutil_path=$(${xcrun_path} --find plutil)
-plutil_path=${plutil_path:A}
-require_root_system_tool ${plutil_path}
-
-sdk_root=$(${xcrun_path} --sdk macosx --show-sdk-path)
-sdk_root=${sdk_root:A}
-if [[ ! -d ${sdk_root} || -L ${sdk_root} \
-    || $(${stat_path} -f %u -- ${sdk_root}) != 0 ]]; then
-  print -u2 'RELEASE PAIR VERIFY GATE: the selected macOS SDK is not a root-owned physical directory.'
-  exit 2
-fi
-sdk_mode=$(( 8#$(${stat_path} -f %Lp -- ${sdk_root}) ))
-if (( (sdk_mode & 8#022) != 0 )); then
-  print -u2 'RELEASE PAIR VERIFY GATE: the selected macOS SDK is group/other writable.'
-  exit 2
-fi
-
+# Plist inspection uses the macOS system tools; it needs no SDK or developer-tool shim.
 plutil() { ${plutil_path} "$@"; }
 plistbuddy() { ${plistbuddy_path} "$@"; }
 

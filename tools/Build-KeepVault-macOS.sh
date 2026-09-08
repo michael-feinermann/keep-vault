@@ -459,8 +459,8 @@ bundle_identifier='de.michael-feinermann.keep-vault'
 core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
-marketing_version='5.0.1'
-build_version='12'
+marketing_version='5.0.2'
+build_version='13'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
@@ -635,6 +635,8 @@ private_signer_artifacts=''
 private_signer_artifacts_identity=''
 private_tests_artifacts=''
 private_tests_artifacts_identity=''
+private_verifier_artifacts=''
+private_verifier_artifacts_identity=''
 verified_dotnet_root=''
 verified_dotnet_root_identity=''
 dotnet_command_identity=''
@@ -663,6 +665,7 @@ require_private_nuget_cache_identity() {
     && require_private_directory_identity ${private_app_artifacts} ${private_app_artifacts_identity} \
     && require_private_directory_identity ${private_signer_artifacts} ${private_signer_artifacts_identity} \
     && require_private_directory_identity ${private_tests_artifacts} ${private_tests_artifacts_identity} \
+    && require_private_directory_identity ${private_verifier_artifacts} ${private_verifier_artifacts_identity} \
     && { [[ -z ${verified_dotnet_root} ]] \
       || { require_private_directory_identity ${verified_dotnet_root} ${verified_dotnet_root_identity} \
         && [[ -f ${dotnet_command} && ! -L ${dotnet_command} && -x ${dotnet_command} \
@@ -683,10 +686,11 @@ create_private_nuget_cache() {
   private_app_artifacts=${private_artifacts_root}/app
   private_signer_artifacts=${private_artifacts_root}/signer
   private_tests_artifacts=${private_artifacts_root}/tests
+  private_verifier_artifacts=${private_artifacts_root}/verifier
   mkdir -m 0700 ${private_nuget_root} ${private_nuget_packages} \
     ${private_nuget_http_cache} ${private_nuget_scratch} \
     ${private_dotnet_cli_home} ${private_dotnet_tmp} ${private_artifacts_root} \
-    ${private_app_artifacts} ${private_signer_artifacts} ${private_tests_artifacts}
+    ${private_app_artifacts} ${private_signer_artifacts} ${private_tests_artifacts} ${private_verifier_artifacts}
   private_nuget_root_identity=$(stat -f '%d:%i' ${private_nuget_root})
   private_nuget_packages_identity=$(stat -f '%d:%i' ${private_nuget_packages})
   private_nuget_http_cache_identity=$(stat -f '%d:%i' ${private_nuget_http_cache})
@@ -697,6 +701,7 @@ create_private_nuget_cache() {
   private_app_artifacts_identity=$(stat -f '%d:%i' ${private_app_artifacts})
   private_signer_artifacts_identity=$(stat -f '%d:%i' ${private_signer_artifacts})
   private_tests_artifacts_identity=$(stat -f '%d:%i' ${private_tests_artifacts})
+  private_verifier_artifacts_identity=$(stat -f '%d:%i' ${private_verifier_artifacts})
   require_private_nuget_cache_identity || {
     print -u2 'RELEASE GATE: failed to create the identity-bound private NuGet cache.'
     exit 2
@@ -954,25 +959,30 @@ fi
 main_lock=${mac_project}/packages.lock.json
 signer_lock=${packaging_dir}/HybridSigner/packages.lock.json
 tests_lock=${repo_root}/KeepVaultMac.Tests/packages.lock.json
-lock_files=("${main_lock}" "${signer_lock}" "${tests_lock}")
+lock_files=("${main_lock}" "${signer_lock}" "${tests_lock}" "${repo_root}/KeepVaultMac.ReleaseVerifier/packages.lock.json")
 expected_lock_hashes=(
   ${expected_main_lock_sha256}
   ${expected_signer_lock_sha256}
   ${expected_tests_lock_sha256}
+  DD7A30A838AECF6060B4FC28F84392A09D864290E6F5A0A596535B0A40EBEAF8
 )
-for (( lock_index = 1; lock_index <= ${#lock_files}; lock_index++ )); do
-  lock_file=${lock_files[lock_index]}
-  expected_lock_hash=${expected_lock_hashes[lock_index]}
-  if [[ ! -f ${lock_file} || -L ${lock_file} ]]; then
-    print -u2 "RELEASE GATE: reviewed NuGet lockfile is missing or a symbolic link: ${lock_file}"
-    exit 2
-  fi
-  actual_lock_hash=$(shasum -a 256 ${lock_file} | awk '{print toupper($1)}')
-  if [[ ${actual_lock_hash} != ${expected_lock_hash} ]]; then
-    print -u2 "RELEASE GATE: reviewed NuGet lockfile digest changed: ${lock_file}"
-    exit 2
-  fi
-done
+verify_reviewed_locks() {
+  local lock_index lock_file expected_lock_hash actual_lock_hash
+  for (( lock_index = 1; lock_index <= ${#lock_files}; lock_index++ )); do
+    lock_file=${lock_files[lock_index]}
+    expected_lock_hash=${expected_lock_hashes[lock_index]}
+    if [[ ! -f ${lock_file} || -L ${lock_file} ]]; then
+      print -u2 "RELEASE GATE: reviewed NuGet lockfile is missing or a symbolic link: ${lock_file}"
+      exit 2
+    fi
+    actual_lock_hash=$(shasum -a 256 ${lock_file} | awk '{print toupper($1)}')
+    if [[ ${actual_lock_hash} != ${expected_lock_hash} ]]; then
+      print -u2 "RELEASE GATE: reviewed NuGet lockfile digest changed: ${lock_file}"
+      exit 2
+    fi
+  done
+}
+verify_reviewed_locks
 
 if (( preflight_only )); then
   print "preflight=passed"
@@ -983,13 +993,15 @@ fi
 
 (
   cd ${mac_project}
-  run_dotnet_clean restore KeepVaultMac.csproj --artifacts-path ${private_app_artifacts} --locked-mode --force --force-evaluate --no-http-cache --disable-build-servers --nologo
-  run_dotnet_clean restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj --artifacts-path ${private_signer_artifacts} --locked-mode --force --force-evaluate --no-http-cache --disable-build-servers --nologo
+  run_dotnet_clean restore KeepVaultMac.csproj --artifacts-path ${private_app_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
+  run_dotnet_clean restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj --artifacts-path ${private_signer_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
 )
 (
   cd ${repo_root}
-  run_dotnet_clean restore KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path ${private_tests_artifacts} --locked-mode --force --force-evaluate --no-http-cache --disable-build-servers --nologo
+  run_dotnet_clean restore KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path ${private_tests_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
+  run_dotnet_clean restore KeepVaultMac.ReleaseVerifier/KeepVaultMac.ReleaseVerifier.csproj --artifacts-path ${private_verifier_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
 )
+verify_reviewed_locks
 
 hybrid_keychain_tmp=${build_root}/hybrid-keychain-tmp
 mkdir -m 0700 ${hybrid_keychain_tmp}
@@ -1077,6 +1089,7 @@ publish_runtime() {
       --self-contained true \
       --nologo \
       -p:PublishAot=true \
+      -p:Version=${marketing_version} \
       -p:PublishTrimmed=true \
       -p:StripSymbols=true \
       -p:UseSharedCompilation=false \
@@ -1187,6 +1200,7 @@ if find ${merged_publish} -name '*.dSYM' -print -quit | grep -q .; then
   exit 1
 fi
 
+verify_reviewed_locks
 native_dir=${merged_publish}/Native
 if [[ -d ${native_dir} && ${native_dir} == ${build_root}/* ]]; then
   rm -rf -- ${native_dir}
@@ -1269,6 +1283,38 @@ finalize_bound_notice_output \
   ${third_party_notices} 300000 2000000 ${expected_third_party_notices_sha256}
 print "third_party_notices_sha256=${third_party_notice_sha256}"
 
+# Offline model provenance and licenses are readable inside the sealed bundle.
+model_notice_root=${repo_root}/KalynaArchiver/Resources/PasswordModel
+model_notices=${resources_dir}/PASSWORD-MODEL-NOTICES.txt
+create_bound_notice_output ${model_notices}
+copy_pinned_notice_source 'password model attribution header' \
+  ${packaging_dir}/PasswordModelNoticesHeader.txt ae08b5e2c47647263b7af645eb99aeb3761b8d010853a8b6bc12d1c091e2afaa 0
+append_pinned_notice 'Password model manifest' \
+  ${model_notice_root}/manifest.json 2f6ec374c19496eb548e4270a972bde0bc3146748d20c72781c0a34c03a8f0e4
+append_pinned_notice 'LICENSE-CC-BY-4.0.txt' \
+  ${model_notice_root}/LICENSE-CC-BY-4.0.txt d557539df68e771cc1eedcc91d13f70fca930e508d11eedcafa4b15db49e3744
+append_pinned_notice 'LICENSE-CC0-1.0.txt' \
+  ${model_notice_root}/LICENSE-CC0-1.0.txt a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499
+append_pinned_notice 'LICENSE-ODC-BY.txt' \
+  ${model_notice_root}/LICENSE-ODC-BY.txt b1c4de4bf91c95eec945ea7cbe0575fd52e7ee8fa430acb01d323d8214b1c482
+append_pinned_notice 'LICENSE-bip39.txt' \
+  ${model_notice_root}/LICENSE-bip39.txt d5e3c7c62a84e80073201e2f6e5130e9e6804fa05f8ac4f8b26a13c7d3969697
+append_pinned_notice 'LICENSE-curated-lists.txt' \
+  ${model_notice_root}/LICENSE-curated-lists.txt 5b05d0fb68640a3df1c04a2d57b0c4b5ef890f1f83ce8a824038ff5dbc5de92d
+append_pinned_notice 'LICENSE-dys2p.txt' \
+  ${model_notice_root}/LICENSE-dys2p.txt 16f1adc35b7e56ed32f5200cb2bac7609ba8ece28bce50cc35597bb39227fccc
+append_pinned_notice 'LICENSE-zxcvbn-ts.txt' \
+  ${model_notice_root}/LICENSE-zxcvbn-ts.txt c376f457b9569b2a88506f78fe420511a3ca3be5819b69dda405b988b784735f
+append_pinned_notice 'LICENSE-zxcvbn.txt' \
+  ${model_notice_root}/LICENSE-zxcvbn.txt 8fd6c9ffe44291acd207a4d3cf7d6db5ac05f585ee1cf45db9fc6b153b08990f
+append_pinned_notice 'NOTICE-OPUS-de.md' \
+  ${model_notice_root}/NOTICE-OPUS-de.md 7e0d37cbb4ce3541cc4447ab3fa1c836cf87729572490f421bc0599885b311f0
+append_pinned_notice 'NOTICE-OPUS-en.md' \
+  ${model_notice_root}/NOTICE-OPUS-en.md 7e0d37cbb4ce3541cc4447ab3fa1c836cf87729572490f421bc0599885b311f0
+finalize_bound_notice_output \
+  ${model_notices} 1000 200000 fcc48f7f9d123570230f6e0fdb45a9e172c9addea17a619081392a3d8ec57ea2
+print "password_model_notices_sha256=${third_party_notice_sha256}"
+
 sed \
   -e "s/@@MARKETING_VERSION@@/${marketing_version}/g" \
   -e "s/@@BUILD_VERSION@@/${build_version}/g" \
@@ -1319,6 +1365,7 @@ signer_project=${packaging_dir}/HybridSigner/KeepVaultMac.HybridSigner.csproj
   cd ${mac_project}
   run_dotnet_clean build Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj -c Release --no-restore --no-incremental --artifacts-path ${private_signer_artifacts} --disable-build-servers -p:UseSharedCompilation=false --nologo
 )
+verify_reviewed_locks
 signer_dll=${private_signer_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll
 if [[ ! -f ${signer_dll} || -L ${signer_dll} ]]; then
   print -u2 'The reviewed hybrid signer did not produce its managed entry assembly.'
@@ -1661,6 +1708,10 @@ fi
 # have to be inside the distribution archive as well. Archiving the contents of
 # a staging directory (rather than --keepParent on the bundle) keeps the app at
 # the archive root and puts the sidecars beside it, exactly as installed.
+source ${script_dir}/Build-InstallerKit-macOS.zsh
+build_installer_kit
+verify_reviewed_locks
+
 zip_stage=${build_root}/zip-stage
 rm -rf -- ${zip_stage}
 mkdir -p ${zip_stage}
@@ -1676,6 +1727,7 @@ if [[ -d ${dist_stage}/QR-Scanner.app ]]; then
   done
 fi
 
+stage_installation_kit ${zip_stage}
 ditto -c -k --sequesterRsrc ${zip_stage} ${final_zip}
 
 archive_common=(
@@ -1699,6 +1751,7 @@ archive_check=${build_root}/archive-check
 rm -rf -- ${archive_check}
 mkdir -p ${archive_check}
 ditto -x -k ${final_zip} ${archive_check}
+${installer_app}/Contents/MacOS/Keep\ Vault\ Release\ Verifier verify-installation --root ${archive_check}
 if [[ ! -d ${archive_check}/Keep\ Vault.app || -L ${archive_check}/Keep\ Vault.app ]]; then
   print -u2 'The distribution archive did not reproduce the Keep Vault app bundle.'
   exit 1
@@ -1808,10 +1861,15 @@ else
 
     xcode_keepvault_archive=${xcode_notary_root}/Keep\ Vault.xcarchive
     xcode_scanner_archive=${xcode_notary_root}/QR-Scanner.xcarchive
+    xcode_installer_archive=${xcode_notary_root}/Keep\ Vault\ Installer.xcarchive
     create_xcode_notary_archive ${final_app} ${xcode_keepvault_archive} 'Keep Vault'
     create_xcode_notary_archive ${original_scanner} ${xcode_scanner_archive} 'QR-Scanner'
+    create_xcode_notary_archive ${installer_app} ${xcode_installer_archive} 'Keep Vault Installer'
     capture_xcode_app_hashes ${final_app} ${xcode_notary_root}/keepvault-before.sha256
     capture_xcode_app_hashes ${original_scanner} ${xcode_notary_root}/scanner-before.sha256
+    capture_xcode_app_hashes ${installer_app} ${xcode_notary_root}/installer-before.sha256
+    capture_xcode_app_hashes ${xcode_candidate_root}/Keep\ Vault\ Installer.app ${xcode_notary_root}/installer-preserved.sha256
+    capture_xcode_app_hashes ${xcode_installer_archive}/Products/Applications/Keep\ Vault\ Installer.app ${xcode_notary_root}/installer-archive.sha256
     capture_xcode_app_hashes ${xcode_candidate_root}/Keep\ Vault.app ${xcode_notary_root}/keepvault-preserved.sha256
     capture_xcode_app_hashes ${xcode_candidate_root}/QR-Scanner.app ${xcode_notary_root}/scanner-preserved.sha256
     capture_xcode_app_hashes ${xcode_keepvault_archive}/Products/Applications/Keep\ Vault.app ${xcode_notary_root}/keepvault-archive.sha256
@@ -1819,6 +1877,7 @@ else
     for copied_state in preserved archive; do
       cmp -s ${xcode_notary_root}/keepvault-before.sha256 ${xcode_notary_root}/keepvault-${copied_state}.sha256
       cmp -s ${xcode_notary_root}/scanner-before.sha256 ${xcode_notary_root}/scanner-${copied_state}.sha256
+      cmp -s ${xcode_notary_root}/installer-before.sha256 ${xcode_notary_root}/installer-${copied_state}.sha256
     done
     xcode_slices=(arm64)
     [[ ${architecture} != universal ]] || xcode_slices+=(x86_64)
@@ -1826,11 +1885,14 @@ else
       ${xcode_notary_root}/keepvault-before-cdhash.swift XcodeNotaryKeepVault ${xcode_slices[@]}
     generate_cdhash_pins ${original_scanner}/Contents/MacOS/QR-Scanner \
       ${xcode_notary_root}/scanner-before-cdhash.swift XcodeNotaryScanner ${xcode_slices[@]}
+    generate_cdhash_pins ${installer_app}/Contents/MacOS/Keep\ Vault\ Installer \
+      ${xcode_notary_root}/installer-before-cdhash.swift XcodeNotaryInstaller ${xcode_slices[@]}
     print "xcode_keepvault_archive=${xcode_keepvault_archive}"
     print "xcode_scanner_archive=${xcode_scanner_archive}"
-    print 'Open both archives in Xcode Organizer and upload them for Developer ID notarization.'
+    print "xcode_installer_archive=${xcode_installer_archive}"
+    print 'Submit the complete preserved candidate ZIP with all three apps to Apple notarization. The Xcode archives are also available for inspection.'
     print 'Do not replace this candidate with an Xcode export. Only tickets valid for the original signed apps will be accepted.'
-    if ! read -r 'xcode_upload_confirmation?After both uploads succeed, type NOTARIZED and press Return: '; then
+    if ! read -r 'xcode_upload_confirmation?After Apple accepts this complete candidate, type NOTARIZED and press Return: '; then
       print -u2 "Xcode upload wait ended without confirmation. Candidate preserved at: ${xcode_candidate_root}"
       exit 2
     fi
@@ -1840,28 +1902,37 @@ else
     fi
     capture_xcode_app_hashes ${final_app} ${xcode_notary_root}/keepvault-after-wait.sha256
     capture_xcode_app_hashes ${original_scanner} ${xcode_notary_root}/scanner-after-wait.sha256
+    capture_xcode_app_hashes ${installer_app} ${xcode_notary_root}/installer-after-wait.sha256
     if ! cmp -s ${xcode_notary_root}/keepvault-before.sha256 ${xcode_notary_root}/keepvault-after-wait.sha256 \
-        || ! cmp -s ${xcode_notary_root}/scanner-before.sha256 ${xcode_notary_root}/scanner-after-wait.sha256; then
+        || ! cmp -s ${xcode_notary_root}/scanner-before.sha256 ${xcode_notary_root}/scanner-after-wait.sha256 \
+        || ! cmp -s ${xcode_notary_root}/installer-before.sha256 ${xcode_notary_root}/installer-after-wait.sha256; then
       print -u2 'RELEASE GATE: an original app changed while waiting for Xcode. No exported replacement is accepted.'
       exit 2
     fi
     # Xcode may re-sign its copies. Its UI success is not proof for our originals:
     # both originals must independently obtain a ticket or the build stops here.
-    xcrun stapler staple ${original_scanner}
-    xcrun stapler validate ${original_scanner}
   else
     xcrun notarytool submit ${final_zip} --keychain-profile ${notary_profile} --wait
   fi
+  xcrun stapler staple ${dist_stage}/QR-Scanner.app
+  xcrun stapler validate ${dist_stage}/QR-Scanner.app
   xcrun stapler staple ${final_app}
   xcrun stapler validate ${final_app}
+  xcrun stapler staple ${installer_app}
+  xcrun stapler validate ${installer_app}
+  codesign --verify --strict --deep ${installer_app}
+  spctl --assess --type execute -vv ${installer_app}
 
   if (( notarize_in_xcode )); then
     generate_cdhash_pins ${final_app}/Contents/MacOS/Keep\ Vault\ Launcher \
       ${xcode_notary_root}/keepvault-after-cdhash.swift XcodeNotaryKeepVault ${xcode_slices[@]}
     generate_cdhash_pins ${original_scanner}/Contents/MacOS/QR-Scanner \
       ${xcode_notary_root}/scanner-after-cdhash.swift XcodeNotaryScanner ${xcode_slices[@]}
+    generate_cdhash_pins ${installer_app}/Contents/MacOS/Keep\ Vault\ Installer \
+      ${xcode_notary_root}/installer-after-cdhash.swift XcodeNotaryInstaller ${xcode_slices[@]}
     if ! cmp -s ${xcode_notary_root}/keepvault-before-cdhash.swift ${xcode_notary_root}/keepvault-after-cdhash.swift \
-        || ! cmp -s ${xcode_notary_root}/scanner-before-cdhash.swift ${xcode_notary_root}/scanner-after-cdhash.swift; then
+        || ! cmp -s ${xcode_notary_root}/scanner-before-cdhash.swift ${xcode_notary_root}/scanner-after-cdhash.swift \
+        || ! cmp -s ${xcode_notary_root}/installer-before-cdhash.swift ${xcode_notary_root}/installer-after-cdhash.swift; then
       print -u2 'RELEASE GATE: an original app CDHash changed during Xcode notarization.'
       exit 2
     fi
@@ -1888,6 +1959,7 @@ else
       ditto ${dist_stage}/QR-Scanner.app${sidecar_suffix} ${zip_stage}/QR-Scanner.app${sidecar_suffix}
     done
   fi
+  stage_installation_kit ${zip_stage}
   ditto -c -k --sequesterRsrc ${zip_stage} ${final_zip}
   (
     cd ${mac_project}
@@ -1897,6 +1969,7 @@ else
   rm -rf -- ${archive_check}
   mkdir -p ${archive_check}
   ditto -x -k ${final_zip} ${archive_check}
+  ${installer_app}/Contents/MacOS/Keep\ Vault\ Release\ Verifier verify-installation --root ${archive_check}
   ${script_dir}/Verify-KeepVault-macOS.sh \
     --app ${archive_check}/Keep\ Vault.app \
     --require-launcher-signature \
@@ -1906,7 +1979,7 @@ else
   spctl --assess --type execute -vv ${final_app}
   notarization_completed=1
   if (( notarize_in_xcode )); then
-    print 'notarization=stapled (Xcode tickets independently verified on both original apps)'
+    print 'notarization=stapled (Apple tickets independently verified on all three original apps)'
   else
     print "notarization=stapled (${notary_profile})"
   fi
@@ -1953,6 +2026,7 @@ print 'RELEASE GATE: building the test project before staging any signed test-na
     --nologo
 )
 
+verify_reviewed_locks
 print 'RELEASE GATE: staging test natives after the final project build...'
 ${script_dir}/Stage-TestNatives-macOS.sh \
   --app ${final_app} \
@@ -1973,6 +2047,26 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     -- \
     --list)
   required_test_ids=(
+    security.password-model-data
+    security.password-model-phrases
+    security.password-model-bip39
+    security.password-model-boundaries
+    security.password-model-isolation
+    security.password-model-bounded
+    security.pin-password-pair
+    security.pin-local-dates
+    security.pin-pattern-monotonicity
+    security.credential-encoding-only
+    credentials.static-fixture-provenance
+    credentials.creation-still-rejects
+    credentials.read-empty
+    credentials.read-short
+    credentials.read-oversized-raw
+    credentials.read-pin-substring
+    credentials.read-date-2026-09-06
+    credentials.read-model-and-old-pattern
+    gui.credential-policy-boundary
+    gui.erase-completion-status
     crypto.v12-parallel-mac-kat
     crypto.chacha20-poly1305-rfc8439
     containers.v12-production-worker-equivalence

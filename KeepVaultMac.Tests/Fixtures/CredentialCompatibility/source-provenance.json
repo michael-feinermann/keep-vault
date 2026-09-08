@@ -1,0 +1,64 @@
+{
+  "BaseCommit": "e52159e7a569a8b77fe7732006388c4401c4009f",
+  "FixtureProducer": "Private source snapshot, not a released executable",
+  "GeneratorSdk": "10.0.400",
+  "NativeBundleVersion": "12",
+  "NativeMarketingVersion": "5.0.1",
+  "Sources": [
+    {
+      "Path": "KalynaArchiver/Services/V12MasterKdf.cs",
+      "BaseSha256": "E8E550C7B8265831F453AB8911BECD54CFD7DFF8F83B5E0BF88BF67A20B7C8A3",
+      "BuilderSha256": "E8E550C7B8265831F453AB8911BECD54CFD7DFF8F83B5E0BF88BF67A20B7C8A3",
+      "Unchanged": true
+    },
+    {
+      "Path": "KalynaArchiver/Services/KdfPrimitives.cs",
+      "BaseSha256": "060B2F19DBAC01FC22B5ACA83D3D7D1F35FA1029D09354FE3A5350D489D34964",
+      "BuilderSha256": "060B2F19DBAC01FC22B5ACA83D3D7D1F35FA1029D09354FE3A5350D489D34964",
+      "Unchanged": true
+    },
+    {
+      "Path": "KalynaArchiver/Services/SuiteKeySchedule.cs",
+      "BaseSha256": "E9C2D8967425E033E27A492C20F93E85BC462574AE3468352839247E6D3B5ED1",
+      "BuilderSha256": "E9C2D8967425E033E27A492C20F93E85BC462574AE3468352839247E6D3B5ED1",
+      "Unchanged": true
+    },
+    {
+      "Path": "KalynaArchiver/Services/RecoveryService.cs",
+      "BaseSha256": "BA717629FD2593D64B21E86E7C49BCE2B0129446D2E2056BF95B3B47889EB30C",
+      "BuilderSha256": "BA717629FD2593D64B21E86E7C49BCE2B0129446D2E2056BF95B3B47889EB30C",
+      "Unchanged": true
+    },
+    {
+      "Path": "KalynaArchiver/Services/KalynaContainerService.cs",
+      "BaseSha256": "8F22089AE7622C43D099C9B3513A92F8F4F07DF72361213A8B36C58E804FE039",
+      "BuilderSha256": "F82ADC42303F48A1C1749EE19D1219ED62E1166F3517CE3D55B04408F3F2370E",
+      "Unchanged": false
+    },
+    {
+      "Path": "KalynaArchiver/Services/ContainerKeyDerivation.cs",
+      "BaseSha256": "C56F33433EE86763464A941715A94C46FDC9258F19ACB551B18884ABBCECA03C",
+      "BuilderSha256": "D0C8ECAD8C1ABBCD8B5F56969140207C14E6CE53F165BF9F5D98C93A8DD553AA",
+      "Unchanged": false
+    }
+  ],
+  "GeneratorSdkExecutable": "/private/tmp/keep-vault-credential-verified.xgd06uas/dotnet-sdk/dotnet",
+  "GeneratorSdkCommit": "14fbf8d527",
+  "GeneratorRuntime": "10.0.11",
+  "VerifiedReleaseSdkBootstrapUsed": true,
+  "GeneratorBuildOverrides": [
+    "PublishAot=false",
+    "PublishTrimmed=false"
+  ],
+  "ValidationLimit": "Verified-SDK JIT-only synthetic fixture producer from private 5.0.1 source; not a released executable. Current reader validation runs separately in tools/Test-KeepVault.sh.",
+  "VerifiedSdkProvisioner": "tools/Provision-VerifiedDotnet-macOS.sh",
+  "VerifiedSdkProvisionerSha256": "BDF9B70F87B55D104E13CB29FEA0A70AE8C0558C2EC9E3B01B0F32FA075DDF2E",
+  "VerifiedSdkArchiveSha512": "e440e9a58d4ff7741c8342ac3e086fa9ee2dadc25e01c0449a88317a74cfbd63625b8092c3b2a131ae14b16ab3401e9cc470e578e4c65a72a0b5786bd2308cde",
+  "PrivatePackageFlow": "Exact direct version pins; fresh private NuGet feed restore creates private lockfiles; subsequent locked restore and build --no-restore; clean env/private HOME and caches",
+  "SourceInputsBeforeSha256": "547572ECF0BD6D08147C866FFC16D7D719A6981172C977CD787D33BD47ADA668",
+  "SourceInputsAfterSha256": "547572ECF0BD6D08147C866FFC16D7D719A6981172C977CD787D33BD47ADA668",
+  "SourceInputFilesUnchanged": 87,
+  "GeneratorAssemblySha256": "AC5173F08C5E23BFE2C7731E95C84704838E8F56DF8A98FCA30BED808D9CAFF3",
+  "ProductAssemblySha256": "B841D38451471F4229076F584C2328EA884F59123E1A17529FA8ACDBADE563B9",
+  "SupersededAttempt": "Initial ambient Homebrew SDK generation was fully replaced by this verified generation. Subsequent ambient reader restore stopped with NU1004 then NU1403; no mismatching package accepted and no root lockfile/cache mutation."
+}

@@ -407,15 +407,15 @@ internal sealed class MacOriginalDeletionService
     }
 
     /// <summary>
-    /// Deletes exactly the files that were verified, then removes the folders
-    /// they came from if those folders are empty.
+    /// Deletes exactly the files that were verified. Their original directories
+    /// remain, including directories that are empty after deleting the files.
     /// </summary>
     /// <remarks>
     /// Deliberately not <c>Directory.Delete(recursive: true)</c>. That call
     /// deletes whatever it finds, which is not necessarily what was verified —
     /// and the difference is a file that was never archived. Naming each file
-    /// makes the deletion exactly as wide as the proof behind it, and a folder
-    /// that turns out not to be empty is left standing rather than emptied.
+    /// makes the deletion exactly as wide as the proof behind it. Only the
+    /// private deletion quarantine is removed during cleanup.
     /// </remarks>
     private static IReadOnlyList<string> DeleteVerifiedFiles(
         IReadOnlyList<string> originals,

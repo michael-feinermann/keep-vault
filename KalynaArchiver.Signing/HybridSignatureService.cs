@@ -154,8 +154,6 @@ public static class HybridSignatureService
         }
 
         byte[] encoded = [];
-        HybridSignatureEnvelope? envelope = null;
-        byte[]? payload = null;
         try
         {
             using (var signature = new FileStream(
@@ -175,6 +173,42 @@ public static class HybridSignatureService
                 signature.ReadExactly(encoded);
             }
 
+            return VerifyDigest(fileLength, sha512Digest, encoded.AsSpan(), policy);
+        }
+        catch (Exception ex) when (ex is CryptographicException or InvalidDataException or ArgumentException or IOException)
+        {
+            return HybridSignatureVerificationResult.Invalid($"Hybrid signature is invalid: {ex.Message}");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(encoded);
+        }
+    }
+
+    public static HybridSignatureVerificationResult VerifyDigest(
+        long fileLength,
+        ReadOnlySpan<byte> sha512Digest,
+        ReadOnlySpan<byte> encodedSignature,
+        HybridSignaturePolicy policy)
+    {
+        ArgumentNullException.ThrowIfNull(policy);
+        if (fileLength < 0 || sha512Digest.Length != Sha512DigestBytes)
+        {
+            return HybridSignatureVerificationResult.Invalid("Invalid file length or SHA-512 digest supplied to hybrid verification.");
+        }
+
+        if (encodedSignature.Length is <= 0 or > MaximumSidecarBytes)
+        {
+            return HybridSignatureVerificationResult.Invalid("Hybrid signature has an invalid length.");
+        }
+
+        // Take a bounded private copy so the caller cannot change the envelope
+        // while the two independent signature algorithms inspect it.
+        byte[] encoded = encodedSignature.ToArray();
+        HybridSignatureEnvelope? envelope = null;
+        byte[]? payload = null;
+        try
+        {
             envelope = DecodeSidecar(encoded);
             bool lengthMatches = envelope.FileLength == fileLength;
             bool digestMatches = CryptographicOperations.FixedTimeEquals(envelope.Sha512Digest, sha512Digest);

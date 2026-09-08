@@ -1,0 +1,46 @@
+{
+  "Source": "/Applications/Keep Vault.app/Contents/MacOS/Native",
+  "Modification": "None; byte-identical copies; no signing performed",
+  "Components": [
+    {
+      "Name": "libargon2_ref.dylib",
+      "Sha256": "3E3D10CE121CD0C8E6D3BAC5E515AB2B8DEFDF49BC20ECDEA960F9F9BD519FB8"
+    },
+    {
+      "Name": "argon2",
+      "Sha256": "DB6D862E5CCF0A0239BAFDADC25C977A604D9703E5EC29200477C57D774CA6E1"
+    },
+    {
+      "Name": "libshacal2_ref.dylib",
+      "Sha256": "D2318858BC48C71AC9CBF8906A72E19B27A9A2BF3BC0E703A4E7463EEBC485AA"
+    },
+    {
+      "Name": "libkalyna_v12.dylib",
+      "Sha256": "D90DD510489120E33B4648B93EA9845944B172E8920E6DE3FC1F59FEC233131F"
+    },
+    {
+      "Name": "libthreefish_ref.dylib",
+      "Sha256": "BA4B3C9DC77A58D9F492840962CB02B541E0353BE88AD87412C137E34E61A0E3"
+    },
+    {
+      "Name": "zpaq",
+      "Sha256": "F2DB42F954F964C60030DB9EC32FD0430F2535731F9467A5FB56CE3AB21D642A"
+    },
+    {
+      "Name": "libchachapoly_ref.dylib",
+      "Sha256": "04A7366D7ACFC1B7F3B6908B1225D39F1500148D3091D243A9DF696E193D8EF6"
+    },
+    {
+      "Name": "libmars_ref.dylib",
+      "Sha256": "C20607E9EE3A0E7123EDA8BD7164254563A9DE607AB9FDC02A942AADD89FCC5C"
+    },
+    {
+      "Name": "libaes_ref.dylib",
+      "Sha256": "AD743E90A5F890E46558C03C0D96411BD4BF1A73E4B78095A1124218ECC5B2BB"
+    }
+  ],
+  "VerifiedStagingScript": "tools/Stage-TestNatives-macOS.sh",
+  "StagingScriptSha256": "F236A7DA3CC638F390359BC2D490A6923C00687D0D68798931F61D4D339B760D",
+  "VerifiedSourceAndStagedBytesEqual": true,
+  "SignatureVerification": "Stage-TestNatives verifies original and copied helper signatures/team and empty sandbox/inherit entitlements; no re-signing"
+}

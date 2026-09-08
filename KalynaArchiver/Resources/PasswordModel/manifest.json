@@ -1,0 +1,222 @@
+{
+  "version": "keep-vault-password-model-2026-09-06-v1",
+  "schema": 1,
+  "retrievedUtc": "2026-09-06",
+  "referenceYear": 2026,
+  "calibration": "No empirical calibration or entropy claim; finite search families and inherited conservative score.",
+  "blocklistCoverage": "First 30000 public aggregated zxcvbn password candidates plus six public examples. Not HIBP, not a complete breach corpus. Exact whole-input comparison, no dictionary-word ban.",
+  "files": [
+    {
+      "file": "eff-en.txt",
+      "kind": "list",
+      "language": "en",
+      "count": 7776,
+      "sha256": "6d557f0693958fb5e650b68b5bee585eb82cf4da32965505c789e924743bc522",
+      "source": "https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt",
+      "sourceSha256": "addd35536511597a02fa0a9ff1e5284677b8883b83e986e43f15a3db996b903e",
+      "sourceEntries": 7776,
+      "normalizationDuplicates": 0,
+      "license": "CC-BY-4.0",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; dice",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "diceware-de.txt",
+      "kind": "list",
+      "language": "de",
+      "count": 7776,
+      "sha256": "440fa02c65591328d6351435d3824c27b483a049f4eca0b13456d8c5090442e7",
+      "source": "https://raw.githubusercontent.com/dys2p/wordlists-de/6ef31b9aefb8735a7b066592393d12843ec502cd/de-7776-v1.txt",
+      "sourceSha256": "440fa02c65591328d6351435d3824c27b483a049f4eca0b13456d8c5090442e7",
+      "sourceEntries": 7776,
+      "normalizationDuplicates": 0,
+      "license": "CC0-1.0",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; lines",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "bip39-en.txt",
+      "kind": "bip39",
+      "language": "en",
+      "count": 2048,
+      "sha256": "2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda",
+      "source": "https://raw.githubusercontent.com/bitcoin/bips/09e21036a4001fe6c9ba65c1d3a39b737768132f/bip-0039/english.txt",
+      "sourceSha256": "2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda",
+      "sourceEntries": 2048,
+      "normalizationDuplicates": 0,
+      "license": "MIT",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; lines",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "rank-de.txt",
+      "kind": "rank",
+      "language": "de",
+      "count": 21993,
+      "sha256": "697bd1c6660d6bbc59c2d703affe37e4ffb8cd95c641900523b0f34f2b4089b3",
+      "source": "https://raw.githubusercontent.com/zxcvbn-ts/zxcvbn/642ef8f0c40d8267e9fc2d4de29ab2691e87a10e/packages/languages/de/src/commonWords.json",
+      "sourceSha256": "78a153c3e2773b5a6f1468d2994dd404617d2ef9d02a74afbf115749c5f5a647",
+      "sourceEntries": 21998,
+      "normalizationDuplicates": 5,
+      "license": "ODC-BY-1.0",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; json",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "rank-en.txt",
+      "kind": "rank",
+      "language": "en",
+      "count": 55830,
+      "sha256": "c40875d15ba8089f52f53936e562d3527fc59ce6558dfbdea7a728e975e4255a",
+      "source": "https://raw.githubusercontent.com/zxcvbn-ts/zxcvbn/642ef8f0c40d8267e9fc2d4de29ab2691e87a10e/packages/languages/en/src/commonWords.json",
+      "sourceSha256": "184d8cd7ffa3a1727a1448766090daa98001d92f8e6436a7c8a8fca39cc3d441",
+      "sourceEntries": 55830,
+      "normalizationDuplicates": 0,
+      "license": "ODC-BY-1.0",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; json",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "names-de.txt",
+      "kind": "names",
+      "language": "de",
+      "count": 1158,
+      "sha256": "df9e336606bcb3a3d3d12c52892fdb1977cd088cc3d2708df442ecbb2f60da5d",
+      "source": "https://raw.githubusercontent.com/zxcvbn-ts/zxcvbn/642ef8f0c40d8267e9fc2d4de29ab2691e87a10e/packages/languages/de/src/firstnames.json",
+      "sourceSha256": "d5f1a3d91b12f1b407fbe6ecfd1c0ac4b1c9316b169aeb611a238310035e463a",
+      "sourceEntries": 1158,
+      "normalizationDuplicates": 0,
+      "license": "MIT",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; json",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "names-en-female.txt",
+      "kind": "names",
+      "language": "en",
+      "count": 4275,
+      "sha256": "9067937d9acdafb6c92683ce343dff785db5224b40df05723964adb3d41055ae",
+      "source": "https://raw.githubusercontent.com/dropbox/zxcvbn/67c4ece9efc40c9d0a1d7d995b2b22a91be500c2/data/female_names.txt",
+      "sourceSha256": "9067937d9acdafb6c92683ce343dff785db5224b40df05723964adb3d41055ae",
+      "sourceEntries": 4275,
+      "normalizationDuplicates": 0,
+      "license": "MIT",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; lines",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "names-en-male.txt",
+      "kind": "names",
+      "language": "en",
+      "count": 1219,
+      "sha256": "cc68490c2ef895961f568833130f90f43a41f0a4fffb1990d84bbadd0b405c63",
+      "source": "https://raw.githubusercontent.com/dropbox/zxcvbn/67c4ece9efc40c9d0a1d7d995b2b22a91be500c2/data/male_names.txt",
+      "sourceSha256": "cc68490c2ef895961f568833130f90f43a41f0a4fffb1990d84bbadd0b405c63",
+      "sourceEntries": 1219,
+      "normalizationDuplicates": 0,
+      "license": "MIT",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; lines",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "passwords.txt",
+      "kind": "blocklist",
+      "language": "und",
+      "count": 30000,
+      "sha256": "6b2fb873ce7ecd512c395b523a52e8c3d30051003654bfeefb053b4537e8cf45",
+      "source": "https://raw.githubusercontent.com/dropbox/zxcvbn/67c4ece9efc40c9d0a1d7d995b2b22a91be500c2/data/passwords.txt",
+      "sourceSha256": "6313cc5ef683a0461416318ee3b16f3d771a3cd10ea2aae54571d27ff95d951f",
+      "sourceEntries": 30000,
+      "normalizationDuplicates": 0,
+      "license": "MIT",
+      "transform": "UTF-8 NFC lowercase, unique first occurrence, LF; passwords",
+      "normalizationCollisionPolicy": "retain cheapest matching analysis form at runtime; original list/count/order unchanged"
+    },
+    {
+      "file": "phrases.txt",
+      "kind": "phrases",
+      "language": "en-de",
+      "count": 15,
+      "sha256": "88bf6b251221fe5e4b1ea720b2c29a7811df5826d0780a931e9b88ee9e620ec5",
+      "source": "Keep Vault 5.0.2 finite public-example enumeration; README.md",
+      "sourceSha256": "88bf6b251221fe5e4b1ea720b2c29a7811df5826d0780a931e9b88ee9e620ec5",
+      "sourceEntries": 15,
+      "normalizationDuplicates": 0,
+      "license": "MIT",
+      "transform": "local authored enumeration, UTF-8 NFC lowercase LF",
+      "normalizationCollisionPolicy": "exact line entries; variants are analysis only"
+    },
+    {
+      "file": "curated-blocklist.txt",
+      "kind": "blocklist",
+      "language": "en-de",
+      "count": 6,
+      "sha256": "c2b95138d29ad8e6c70f9ce6b7ac81b266704bb464210a4903677b3ecf7da7bb",
+      "source": "Keep Vault 5.0.2 finite public-example enumeration; README.md",
+      "sourceSha256": "c2b95138d29ad8e6c70f9ce6b7ac81b266704bb464210a4903677b3ecf7da7bb",
+      "sourceEntries": 6,
+      "normalizationDuplicates": 0,
+      "license": "MIT",
+      "transform": "local authored enumeration, UTF-8 NFC lowercase LF",
+      "normalizationCollisionPolicy": "exact line entries; variants are analysis only"
+    }
+  ],
+  "bip39LicensedMirror": {
+    "source": "https://raw.githubusercontent.com/trezor/python-mnemonic/b57a5ad77a981e743f4167ab2f7927a55c1e82a8/src/mnemonic/wordlist/english.txt",
+    "sha256": "2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda",
+    "licenseSource": "https://raw.githubusercontent.com/trezor/python-mnemonic/b57a5ad77a981e743f4167ab2f7927a55c1e82a8/LICENSE",
+    "byteIdenticalToCanonicalBitcoinBips": true
+  },
+  "licenseFiles": [
+    {
+      "file": "LICENSE-CC-BY-4.0.txt",
+      "sha256": "d557539df68e771cc1eedcc91d13f70fca930e508d11eedcafa4b15db49e3744",
+      "source": "https://raw.githubusercontent.com/spdx/license-list-data/3ac5a9c241d97f95b22a5e366c9c841404a35639/text/CC-BY-4.0.txt"
+    },
+    {
+      "file": "LICENSE-CC0-1.0.txt",
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "source": "https://raw.githubusercontent.com/spdx/license-list-data/3ac5a9c241d97f95b22a5e366c9c841404a35639/text/CC0-1.0.txt"
+    },
+    {
+      "file": "LICENSE-ODC-BY.txt",
+      "sha256": "b1c4de4bf91c95eec945ea7cbe0575fd52e7ee8fa430acb01d323d8214b1c482",
+      "source": "https://raw.githubusercontent.com/spdx/license-list-data/3ac5a9c241d97f95b22a5e366c9c841404a35639/text/ODC-By-1.0.txt"
+    },
+    {
+      "file": "LICENSE-bip39.txt",
+      "sha256": "d5e3c7c62a84e80073201e2f6e5130e9e6804fa05f8ac4f8b26a13c7d3969697",
+      "source": "https://raw.githubusercontent.com/trezor/python-mnemonic/b57a5ad77a981e743f4167ab2f7927a55c1e82a8/LICENSE"
+    },
+    {
+      "file": "LICENSE-curated-lists.txt",
+      "sha256": "5b05d0fb68640a3df1c04a2d57b0c4b5ef890f1f83ce8a824038ff5dbc5de92d",
+      "source": "https://github.com/michael-feinermann/keep-vault/blob/codex/keep-vault-5.0.2/KalynaArchiver/Resources/PasswordModel/LICENSE-curated-lists.txt"
+    },
+    {
+      "file": "LICENSE-dys2p.txt",
+      "sha256": "16f1adc35b7e56ed32f5200cb2bac7609ba8ece28bce50cc35597bb39227fccc",
+      "source": "https://raw.githubusercontent.com/dys2p/wordlists-de/6ef31b9aefb8735a7b066592393d12843ec502cd/LICENSE"
+    },
+    {
+      "file": "LICENSE-zxcvbn-ts.txt",
+      "sha256": "c376f457b9569b2a88506f78fe420511a3ca3be5819b69dda405b988b784735f",
+      "source": "https://raw.githubusercontent.com/zxcvbn-ts/zxcvbn/642ef8f0c40d8267e9fc2d4de29ab2691e87a10e/LICENSE.txt"
+    },
+    {
+      "file": "LICENSE-zxcvbn.txt",
+      "sha256": "8fd6c9ffe44291acd207a4d3cf7d6db5ac05f585ee1cf45db9fc6b153b08990f",
+      "source": "https://raw.githubusercontent.com/dropbox/zxcvbn/67c4ece9efc40c9d0a1d7d995b2b22a91be500c2/LICENSE.txt"
+    },
+    {
+      "file": "NOTICE-OPUS-de.md",
+      "sha256": "7e0d37cbb4ce3541cc4447ab3fa1c836cf87729572490f421bc0599885b311f0",
+      "source": "https://raw.githubusercontent.com/zxcvbn-ts/zxcvbn/642ef8f0c40d8267e9fc2d4de29ab2691e87a10e/packages/languages/de/NOTICE.md"
+    },
+    {
+      "file": "NOTICE-OPUS-en.md",
+      "sha256": "7e0d37cbb4ce3541cc4447ab3fa1c836cf87729572490f421bc0599885b311f0",
+      "source": "https://raw.githubusercontent.com/zxcvbn-ts/zxcvbn/642ef8f0c40d8267e9fc2d4de29ab2691e87a10e/packages/languages/en/NOTICE.md"
+    }
+  ]
+}

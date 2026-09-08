@@ -21,7 +21,7 @@ namespace KalynaArchiver.Services;
 /// older role schedule: a version that is not <see cref="ContainerVersion"/>
 /// never reaches this class.
 /// </remarks>
-internal static class ContainerKeyDerivation
+internal static partial class ContainerKeyDerivation
 {
     /// <summary>
     /// The one container generation this build derives keys for.
@@ -61,8 +61,12 @@ internal static class ContainerKeyDerivation
 
     public const int MinDistinctPinDigits = 4;
 
-    public static void ValidatePin(string? pin) => ValidatePinSyntax(pin);
+    public static void ValidatePin(string? pin) => ValidatePinEncoding(pin);
 
+    /// <summary>
+    /// The historical syntax rules for choosing a new PIN. Extraction and
+    /// shared key derivation use ValidatePinEncoding instead.
+    /// </summary>
     public static void ValidatePinSyntax(string? pin)
     {
         if (string.IsNullOrEmpty(pin))
@@ -85,7 +89,7 @@ internal static class ContainerKeyDerivation
         }
     }
 
-    public static PinPolicyAnalysis AnalyzePinForCreation(string? pin)
+    private static PinPolicyAnalysis AnalyzePinBaselineForCreation(string? pin)
     {
         string raw = pin ?? string.Empty;
         var violations = new List<PinPolicyViolation>();
@@ -393,8 +397,8 @@ internal static class ContainerKeyDerivation
     {
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(salts);
-        ArgumentNullException.ThrowIfNull(userPassword);
-        ValidatePin(pin);
+        ValidatePasswordEncoding(userPassword);
+        ValidatePinEncoding(pin);
         bool paranoia = parameters.UsesTwoKdfRounds;
         salts.Validate(paranoia);
 
@@ -565,6 +569,11 @@ public enum PinPolicyViolation
     SequentialAscending,
     SequentialDescending,
     Blocklisted,
+    ContainedInPassword,
+    CurrentDate,
+    PlausibleDate,
+    PredictablePattern,
+    PasswordRequiredForPairCheck,
 }
 
 public sealed record PinPolicyAnalysis(
@@ -573,6 +582,8 @@ public sealed record PinPolicyAnalysis(
     IReadOnlyList<PinPolicyViolation> Violations)
 {
     public bool IsAccepted => Violations.Count == 0;
+    public bool PairCheckComplete { get; init; }
+    public PinPattern Patterns { get; init; }
 }
 
 public sealed class PinPolicyException : ArgumentException

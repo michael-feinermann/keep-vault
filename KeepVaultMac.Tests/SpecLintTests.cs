@@ -192,6 +192,9 @@ internal static class SpecLintTests
         [
             .. Directory.EnumerateFiles(root, "packages*.lock.json", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
+                // The root build tree contains disposable/private audit copies,
+                // not projects used by any production project graph.
+                .Where(relative => !relative.StartsWith("build/", StringComparison.Ordinal))
                 .Where(relative => !relative.Split('/').Any(segment =>
                     segment is ".git" or ".claude" or "bin" or "obj" or "obj_alt" or "build-obj")),
         ];
@@ -212,6 +215,7 @@ internal static class SpecLintTests
         [
             .. Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
+                .Where(relative => !relative.StartsWith("build/", StringComparison.Ordinal))
                 .Where(relative => !relative.Split('/').Any(segment =>
                     segment is ".git" or ".claude" or "bin" or "obj" or "obj_alt" or "build-obj"))
                 .Where(path => !expectedProjectFiles.Contains(path))

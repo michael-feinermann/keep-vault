@@ -112,18 +112,19 @@
   <Grid Margin="22" RowDefinitions="Auto,*,180">
     <Border Grid.Row="0" Classes="card" Padding="22,18">
       <Grid ColumnDefinitions="*,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="16">
+        <Grid ColumnDefinitions="78,*" ColumnSpacing="16">
           <Image x:Name="HeaderLogoImage"
                  Width="78"
                  Height="78"
                  VerticalAlignment="Center" />
-          <StackPanel Spacing="5" VerticalAlignment="Center">
+          <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
             <TextBlock x:Name="TitleText" Text="Keep Vault" FontSize="30" FontWeight="Bold" />
             <TextBlock x:Name="SubtitleText"
                        Text="Sichere, wiederherstellbare Archive für macOS"
-                       Classes="muted" />
+                       Classes="muted" TextWrapping="Wrap" />
+            <TextBlock x:Name="VersionText" FontSize="15" TextWrapping="Wrap" />
           </StackPanel>
-        </StackPanel>
+        </Grid>
         <Grid Grid.Column="1" ColumnDefinitions="Auto,210" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6">
           <TextBlock x:Name="LanguageLabel" Text="Sprache" Classes="muted" VerticalAlignment="Center" />
           <ComboBox x:Name="LanguageBox" Grid.Column="1" SelectedIndex="0" SelectionChanged="LanguageBox_SelectionChanged">
@@ -247,6 +248,12 @@
                              Classes="muted" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock x:Name="PasswordEntropyStatusText" Text="Passwortstärke-Schätzwert: 0 / 128 Bit" Foreground="#F2BD55" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock x:Name="PasswordPolicyStatusText" Text="Passwortanforderungen noch nicht erfüllt." Foreground="#F29AA6" FontSize="12" TextWrapping="Wrap" />
+                  <Expander x:Name="CredentialPolicyHelp" HorizontalAlignment="Stretch">
+                    <Expander.Header>
+                      <TextBlock x:Name="CredentialPolicyHelpTitle" FontSize="13" TextWrapping="Wrap" />
+                    </Expander.Header>
+                    <TextBlock x:Name="CredentialPolicyHelpText" FontSize="13" TextWrapping="Wrap" />
+                  </Expander>
 
                   <Border Classes="card" Padding="13">
                     <StackPanel Spacing="8">
@@ -347,9 +354,9 @@
                     <TextBlock x:Name="ExtractHintText" Text="Noch kein Containerhinweis geladen." Foreground="#F2BD55" FontSize="12" TextWrapping="Wrap" />
                   </Border>
                   <TextBlock x:Name="ExtractPasswordLabel" Text="Userpasswort" Classes="label" Margin="0" />
-                  <TextBox x:Name="ExtractPasswordBox" MaxLength="256" PasswordChar="●" />
+                  <TextBox x:Name="ExtractPasswordBox" MaxLength="1048576" PasswordChar="●" />
                   <TextBlock x:Name="ExtractPinLabel" Text="PIN" Classes="label" Margin="0" />
-                  <TextBox x:Name="ExtractPinBox" MaxLength="16" PasswordChar="●" />
+                  <TextBox x:Name="ExtractPinBox" MaxLength="1048576" PasswordChar="●" />
                   <TextBlock x:Name="ExtractGeneratedPasswordFirstLabel" Text="Faktor A vom Schlüsselzettel" Classes="label" Margin="0" />
                   <TextBox x:Name="ExtractGeneratedPasswordFirstBox" MaxLength="320" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Menlo" MinHeight="62" />
                   <TextBlock x:Name="ExtractGeneratedPasswordSecondLabel" Text="Faktor B vom Schlüsselzettel" Classes="label" Margin="0" />

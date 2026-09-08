@@ -45,7 +45,9 @@ internal static class MacGuiTests
         new("gui.destination-folder-target", "GUI destination picker keeps the archive inside its retained folder", () => RunOnUiThread(TestDestinationFolderTargetSuggestion), TestResource.Gui, "GUI"),
         new("gui.archive-picker-filter-reset", "GUI archive picker does not poison the shared macOS folder panel", () => RunOnUiThread(TestArchivePickerFilterReset), TestResource.Gui, "GUI"),
         new("gui.password-policy", "GUI password policy feedback", () => RunOnUiThread(TestPasswordPolicyFeedback), TestResource.Gui, "GUI"),
+        new("gui.credential-policy-boundary", "GUI creation pair policy and extraction without model evaluation in both languages", () => RunOnUiThread(TestCredentialPolicyBoundary), TestResource.Gui, "GUI"),
         new("gui.original-deletion-localization", "GUI verified-original-deletion localization", () => RunOnUiThread(TestDeleteOriginalsLocalization), TestResource.Gui, "GUI"),
+        new("gui.erase-completion-status", "GUI erase completion survives deferred text events and language changes", () => RunOnUiThread(TestEraseCompletionSurvivesDeferredTextChange), TestResource.Gui, "GUI"),
         new("gui.control-inventory", "GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
         new("gui.factor-normalization", "GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
         new("gui.secret-clearing", "GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
@@ -417,6 +419,89 @@ internal static class MacGuiTests
     /// Typing into the user-password box has to drive the live policy readout,
     /// which is the only feedback a user gets before the archive is created.
     /// </summary>
+    private static void TestCredentialPolicyBoundary(MainWindow window)
+    {
+        ComboBox language = Control<ComboBox>(window, "LanguageBox");
+        TextBox createPassword = Control<TextBox>(window, "CreatePasswordBox");
+        TextBox createPin = Control<TextBox>(window, "CreatePinBox");
+        TextBox confirmPin = Control<TextBox>(window, "CreatePinConfirmBox");
+        TextBlock pinStatus = Control<TextBlock>(window, "PinPolicyStatusText");
+        MethodInfo extraction = typeof(MainWindow).GetMethod("EnsureExtractionFactors", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Missing real extraction input gate.");
+        foreach (string locale in new[] { "de", "en" })
+        {
+            SelectLanguage(language, locale);
+            string version = Control<TextBlock>(window, "VersionText").Text ?? string.Empty;
+            MacComprehensiveTests.Require(version == "Version 5.0.2", "The visible release version differs from the expected app build.");
+            createPassword.Text = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce428317";
+            createPin.Text = "428317";
+            confirmPin.Text = "428317";
+            Dispatcher.UIThread.RunJobs();
+            MacComprehensiveTests.Require((pinStatus.Text ?? string.Empty).Contains(
+                locale == "de" ? "nicht im Passwort" : "not be contained", StringComparison.Ordinal),
+                "Changing the final pair did not show the localized PIN-substring rejection.");
+
+            TextBox password = Control<TextBox>(window, "ExtractPasswordBox");
+            TextBox pin = Control<TextBox>(window, "ExtractPinBox");
+            Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = new string('A', 256);
+            Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox").Text = new string('B', 256);
+            int evaluationAttempts = 0;
+            using (PasswordGuessabilityService.ForbidEvaluationForTesting(() => evaluationAttempts++))
+            {
+                foreach ((string rawPassword, string rawPin) in new[]
+                {
+                    (string.Empty, string.Empty),
+                    ("x", "1"),
+                    ("428317", "428317"),
+                    ("Sommer Wiese Mond Vulkan Fluss Orange Wolke 2026!", "060926"),
+                    (new string('x', 300), "42831795016283740"),
+                })
+                {
+                    password.Text = rawPassword;
+                    pin.Text = rawPin;
+                    Dispatcher.UIThread.RunJobs();
+                    MacComprehensiveTests.Require(password.Text == rawPassword && pin.Text == rawPin,
+                        "Extraction controls truncated original credential data using creation limits.");
+                    extraction.Invoke(window, null);
+                }
+                foreach (string nonAsciiPin in new[] { "１２３４５６", "428 317", "42831x" })
+                {
+                    pin.Text = nonAsciiPin;
+                    try
+                    {
+                        extraction.Invoke(window, null);
+                        throw new InvalidOperationException("Extraction accepted a PIN that cannot retain ASCII credential bytes.");
+                    }
+                    catch (TargetInvocationException error) when (error.InnerException is InvalidOperationException)
+                    {
+                        MacComprehensiveTests.Require(error.InnerException.Message == (locale == "de"
+                            ? "Die PIN mit den ursprünglichen ASCII-Ziffern 0 bis 9 eingeben."
+                            : "Enter the PIN using the original ASCII digits 0 to 9."),
+                            "The extraction encoding error was not correctly localized.");
+                    }
+                }
+                pin.Text = string.Empty;
+                Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = "invalid";
+                try
+                {
+                    extraction.Invoke(window, null);
+                    throw new InvalidOperationException("Extraction accepted an invalid key-sheet factor.");
+                }
+                catch (TargetInvocationException error) when (error.InnerException is InvalidOperationException)
+                {
+                    MacComprehensiveTests.Require(error.InnerException.Message == (locale == "de"
+                        ? "Beide Faktoren vom Schlüsselzettel müssen jeweils aus 256 Hexadezimalzeichen bestehen."
+                        : "Both key-sheet factors must contain 256 hexadecimal characters each."),
+                        "The factor-format error was not correctly localized.");
+                }
+            }
+            MacComprehensiveTests.Require(evaluationAttempts == 0, "Extraction attempted to run the password model.");
+            window.ClearExtractSecrets();
+        }
+        window.ClearCreateSecrets();
+        SelectLanguage(language, "de");
+    }
+
     private static void TestPasswordPolicyFeedback(MainWindow window)
     {
         TextBox password = Control<TextBox>(window, "CreatePasswordBox");
@@ -532,6 +617,86 @@ internal static class MacGuiTests
                 "The archive is then extracted again and compared byte-for-byte with the original files. Files are deleted only after a complete match.",
                 StringComparison.Ordinal),
             "The verified-original-deletion explanation is not localized in English.");
+    }
+
+    /// <summary>
+    /// Reproduces the successful erase handler's path clear followed by its
+    /// completion status before Avalonia delivers the queued TextChanged event.
+    /// No archive is opened or erased; only the post-operation UI state is seeded.
+    /// </summary>
+    private static void TestEraseCompletionSurvivesDeferredTextChange(MainWindow window)
+    {
+        TextBox path = Control<TextBox>(window, "ErasePathBox");
+        CheckBox confirm = Control<CheckBox>(window, "EraseConfirmBox");
+        TextBlock status = Control<TextBlock>(window, "EraseStatusText");
+        ComboBox language = Control<ComboBox>(window, "LanguageBox");
+        MethodInfo setStatus = typeof(MainWindow).GetMethod(
+            "SetEraseStatus", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("MainWindow erase status method was not found.");
+        const string germanCompleted = "Vorhandene zugehörige KPAR2-Daten wurden unbrauchbar gemacht und gelöscht, danach dieser lokale verschlüsselte Container beschädigt und gelöscht. Backups, Snapshots und SSD-Datenreste können weiterhin vorhanden sein. Gespeicherte oder gedruckte Schlüsselzettel separat vernichten.";
+        const string englishCompleted = "Any associated KPAR2 data was invalidated and deleted, then this local encrypted container was corrupted and deleted. Backups, snapshots and SSD data remnants may still exist. Destroy saved or printed key sheets separately.";
+
+        foreach (string initialLanguage in new[] { "de", "en" })
+        {
+            SelectLanguage(language, initialLanguage);
+            string completed = initialLanguage == "de" ? germanCompleted : englishCompleted;
+            string notAnalyzed = initialLanguage == "de" ? "Noch keine Datei analysiert." : "No file analyzed yet.";
+            path.Text = "/unused-keep-vault-gui-test/erased.kzpaq";
+            Dispatcher.UIThread.RunJobs();
+            confirm.IsChecked = true;
+            int deliveredTextChanges = 0;
+            EventHandler<TextChangedEventArgs> observe = (_, _) => deliveredTextChanges++;
+            path.TextChanged += observe;
+            try
+            {
+                path.Text = string.Empty;
+                setStatus.Invoke(window, ["eraseCompleted"]);
+                MacComprehensiveTests.Require(deliveredTextChanges == 0,
+                    "The regression did not exercise Avalonia's deferred TextChanged delivery.");
+                MacComprehensiveTests.Require(status.Text == completed,
+                    "The erase completion was not rendered before the deferred event.");
+                Dispatcher.UIThread.RunJobs();
+                MacComprehensiveTests.Require(deliveredTextChanges > 0,
+                    "The genuine TextChanged event was not delivered by the dispatcher.");
+                MacComprehensiveTests.Require(path.Text == string.Empty && confirm.IsChecked == false,
+                    "The completed erase left a path or a reusable destructive confirmation.");
+                MacComprehensiveTests.Require(status.Text == completed,
+                    "Deferred TextChanged replaced the completed erase status.");
+            }
+            finally
+            {
+                path.TextChanged -= observe;
+            }
+
+            SelectLanguage(language, initialLanguage == "de" ? "en" : "de");
+            MacComprehensiveTests.Require(status.Text == (initialLanguage == "de" ? englishCompleted : germanCompleted),
+                "The completed erase status did not follow the language switch.");
+            SelectLanguage(language, initialLanguage);
+            MacComprehensiveTests.Require(status.Text == completed,
+                "Switching back lost the completed erase status.");
+
+            foreach (string replacement in new[] { "/unused-keep-vault-gui-test/new.kzpaq", " " })
+            {
+                confirm.IsChecked = true;
+                path.Text = replacement;
+                Dispatcher.UIThread.RunJobs();
+                MacComprehensiveTests.Require(status.Text == notAnalyzed && confirm.IsChecked == false,
+                    "New nonempty path text retained a previous erase result or confirmation.");
+                path.Text = string.Empty;
+                setStatus.Invoke(window, ["eraseCompleted"]);
+                Dispatcher.UIThread.RunJobs();
+                MacComprehensiveTests.Require(status.Text == completed,
+                    "A subsequent deferred path clear replaced the completed erase status.");
+            }
+
+            path.Text = "/unused-keep-vault-gui-test/analysis.kzpaq";
+            Dispatcher.UIThread.RunJobs();
+            setStatus.Invoke(window, ["eraseEncrypted"]);
+            path.Text = string.Empty;
+            Dispatcher.UIThread.RunJobs();
+            MacComprehensiveTests.Require(status.Text == notAnalyzed && confirm.IsChecked == false,
+                "Clearing a path retained an analysis status that was not a completed erase.");
+        }
     }
 
     private static void SelectLanguage(ComboBox language, string expectedTag)

@@ -39,6 +39,17 @@ unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE DOTNET_ROO
   RestoreConfigFile
 export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
 
+# Package selection is deliberately parsed before any SDK/toolchain discovery.
+# The signed installer entry always supplies this as the first option.
+package_mode=0
+package_root=''
+if [[ ${1:-} == --package-root ]]; then
+  (( $# >= 2 )) || { print -u2 '--package-root requires an absolute package directory.'; exit 64; }
+  package_mode=1
+  package_root=$2
+  shift 2
+fi
+
 xcrun_path=/usr/bin/xcrun
 codesign_path=/usr/bin/codesign
 find_path=/usr/bin/find
@@ -73,28 +84,69 @@ require_root_system_tool() {
 }
 
 for fixed_tool in \
-    ${xcrun_path} ${codesign_path} ${find_path} ${grep_path} ${mktemp_path} \
+    ${codesign_path} ${find_path} ${grep_path} ${mktemp_path} \
     ${stat_path} ${plistbuddy_path} ${shasum_path} ${awk_path} \
     ${ditto_path} ${spctl_path} ${rm_path} ${env_path} ${id_path} \
     ${mkdir_path} ${chmod_path} ${mv_path} ${rmdir_path}; do
   require_root_system_tool ${fixed_tool}
 done
 
-stapler_path=$(${xcrun_path} --find stapler)
-stapler_path=${stapler_path:A}
-require_root_system_tool ${stapler_path}
-
-sdk_root=$(${xcrun_path} --sdk macosx --show-sdk-path)
-sdk_root=${sdk_root:A}
-if [[ ! -d ${sdk_root} || -L ${sdk_root} \
-    || $(${stat_path} -f %u -- ${sdk_root}) != 0 ]]; then
-  print -u2 'QR VERIFY GATE: the selected macOS SDK is not a root-owned physical directory.'
-  exit 2
+if (( package_mode )); then
+  for package_system_tool in /usr/bin/syspolicy_check /usr/sbin/spctl; do
+    require_root_system_tool ${package_system_tool}
+  done
+  package_script=${0:a}
+  package_installer=${package_root}/Keep\ Vault\ Installer.app
+  if [[ ${package_root} != /* || ${package_root:a} != ${package_root:A} \
+      || ! -d ${package_root} || -L ${package_root} \
+      || ${package_script} != ${package_script:A} \
+      || ${package_script:h} != ${package_installer}/Contents/Resources/tools \
+      || ! -d ${package_installer} || -L ${package_installer} ]]; then
+    print -u2 'INSTALLATION PACKAGE GATE: package root or sealed script location is invalid.'
+    exit 2
+  fi
+  # The signed native entry stages an authenticated package as root, then
+  # grants the installing user read/search/execute-only access. A user-owned
+  # download is never an operational script or native-execution source.
+  if [[ $(/usr/bin/stat -f %u -- ${package_root}) != 0 ]] \
+      || /usr/bin/find ${package_root} \( ! -user root -o -perm -022 \) -print -quit | /usr/bin/grep -q .; then
+    print -u2 'INSTALLATION PACKAGE GATE: operational package must be immutable and root-owned.'
+    exit 2
+  fi
+  package_requirement='identifier "de.michael-feinermann.keep-vault.installer" and anchor apple generic and certificate leaf[subject.OU] = "2T6K9PGS55"'
+  /usr/bin/codesign --verify --deep --strict --all-architectures -R=${package_requirement} ${package_installer}
+  package_signature=$(/usr/bin/codesign -dvvv ${package_installer} 2>&1)
+  [[ ${package_signature} == *'Authority=Developer ID Application:'* \
+      && ${package_signature} == *'flags='*'runtime'* ]] || {
+    print -u2 'INSTALLATION PACKAGE GATE: the installer requires Developer ID and Hardened Runtime.'
+    exit 2
+  }
+  if /usr/bin/find ${package_installer} \( -type l -o -type f -links +1 -o -perm -022 \) -print -quit | /usr/bin/grep -q .; then
+    print -u2 'INSTALLATION PACKAGE GATE: installer contains linked or writable objects.'
+    exit 2
+  fi
+  source ${package_installer}/Contents/Resources/tools/PackageRuntime-macOS.sh
 fi
-sdk_mode=$(( 8#$(${stat_path} -f %Lp -- ${sdk_root}) ))
-if (( (sdk_mode & 8#022) != 0 )); then
-  print -u2 'QR VERIFY GATE: the selected macOS SDK is group/other writable.'
-  exit 2
+
+if (( ! package_mode )); then
+  require_root_system_tool ${xcrun_path}
+  stapler_path=$(${xcrun_path} --find stapler)
+  stapler_path=${stapler_path:A}
+  require_root_system_tool ${stapler_path}
+
+  sdk_root=$(${xcrun_path} --sdk macosx --show-sdk-path)
+  sdk_root=${sdk_root:A}
+  if [[ ! -d ${sdk_root} || -L ${sdk_root} \
+      || $(${stat_path} -f %u -- ${sdk_root}) != 0 ]]; then
+    print -u2 'QR VERIFY GATE: the selected macOS SDK is not a root-owned physical directory.'
+    exit 2
+  fi
+  sdk_mode=$(( 8#$(${stat_path} -f %Lp -- ${sdk_root}) ))
+  if (( (sdk_mode & 8#022) != 0 )); then
+    print -u2 'QR VERIFY GATE: the selected macOS SDK is group/other writable.'
+    exit 2
+  fi
+
 fi
 
 codesign() { ${codesign_path} "$@"; }
@@ -435,15 +487,19 @@ require_private_temp_parent_identity || {
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
-dotnet_provisioner=${script_dir}/Provision-VerifiedDotnet-macOS.sh
-require_repository_executable ${dotnet_provisioner} || {
-  print -u2 'QR VERIFY GATE: verified SDK provisioner is missing or unsafe.'
-  exit 2
-}
-dotnet_provisioner_identity=$(${stat_path} -f '%d:%i:%u:%p:%z:%m:%c:%l' -- ${dotnet_provisioner})
+(( package_mode )) && repo_root=${package_root}
+if (( ! package_mode )); then
+  dotnet_provisioner=${script_dir}/Provision-VerifiedDotnet-macOS.sh
+  require_repository_executable ${dotnet_provisioner} || {
+    print -u2 'QR VERIFY GATE: verified SDK provisioner is missing or unsafe.'
+    exit 2
+  }
+  dotnet_provisioner_identity=$(${stat_path} -f '%d:%i:%u:%p:%z:%m:%c:%l' -- ${dotnet_provisioner})
+fi
 expected_team='2T6K9PGS55'
 expected_bundle='de.michael-feinermann.qr-scanner'
 app_path=''
+custom_public_key=0
 allow_development=0
 require_notarization=0
 allow_pre_notarization=0
@@ -452,6 +508,7 @@ mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packagi
 expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF39407EB6BA5EB'
 
 usage() {
+  print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'
   print -u2 'Usage: Verify-QR-Scanner-macOS.sh --app "QR-Scanner.app" [--allow-development]'
   print -u2 '       [--require-notarization] [--mldsa-public-key FILE] [--tool-path-self-test]'
   print -u2 '       [--allow-pre-notarization (Developer ID only; exclusive with other signing modes)]'
@@ -479,6 +536,7 @@ while (( $# != 0 )); do
       ;;
     --mldsa-public-key)
       (( $# >= 2 )) || usage
+      custom_public_key=1
       mldsa_public_key=$2
       shift 2
       ;;
@@ -489,6 +547,14 @@ while (( $# != 0 )); do
     *) usage ;;
   esac
 done
+
+if (( package_mode )); then
+  if (( allow_development || allow_pre_notarization || tool_path_self_test || custom_public_key )); then
+    print -u2 'Package mode rejects development, pre-notarization, public-key overrides and tool-path test modes.'
+    exit 64
+  fi
+  require_notarization=1
+fi
 
 if (( allow_pre_notarization && (allow_development || require_notarization) )); then
   print -u2 'QR VERIFY GATE: --allow-pre-notarization cannot be combined with --allow-development or --require-notarization.'
@@ -656,7 +722,12 @@ for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
   fi
 done
 
-if [[ -f ${mldsa_public_key} ]]; then
+if (( package_mode )); then
+  package_run_verifier inspect-macho --file ${scanner_binary} --require-architectures 'arm64 x86_64'
+  package_run_verifier verify-artifact --payload ${scanner_binary} \
+    --sidecar-base ${app_path} --require-all-sidecars
+  print 'scanner_hybrid_signature=verified'
+elif [[ -f ${mldsa_public_key} ]]; then
   signer_lock=${repo_root}/KeepVaultMac/Packaging/HybridSigner/packages.lock.json
   if [[ ! -f ${signer_lock} || -L ${signer_lock} \
       || $(shasum -a 256 ${signer_lock} | awk '{print toupper($1)}') != ${expected_signer_lock_sha256} ]]; then
@@ -729,8 +800,13 @@ else
 fi
 
 if (( require_notarization )); then
-  stapler validate ${app_path}
-  print 'scanner_notarization=stapled-and-valid'
+  if (( package_mode )); then
+    package_validate_distribution ${app_path}
+    print 'scanner_notarization=ticket-matches-signed-release-inventory; current-macos-distribution-accepted'
+  else
+    stapler validate ${app_path}
+    print 'scanner_notarization=stapled-and-valid'
+  fi
 fi
 
 if (( allow_pre_notarization )); then

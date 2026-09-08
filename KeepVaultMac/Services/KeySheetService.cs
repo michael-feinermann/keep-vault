@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -27,6 +28,27 @@ public sealed class KeySheetService
 
     private const string ProductName = "Keep Vault";
     private static readonly object FontResolverGate = new();
+
+    private static string VersionedProductName
+    {
+        get
+        {
+            Assembly assembly = typeof(KeySheetService).Assembly;
+            string? version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                version = assembly.GetName().Version?.ToString(3);
+            }
+
+            return !string.IsNullOrWhiteSpace(version)
+                ? $"{ProductName} {version}"
+                : throw new InvalidOperationException("The app version is unavailable for the key-sheet title.");
+        }
+    }
+
+    private static string KeySheetTitle(bool english, KeySheetFactor factor) => english
+        ? $"{VersionedProductName} Key Sheet {(factor == KeySheetFactor.First ? "A" : "B")}"
+        : $"{VersionedProductName} Schlüsselzettel {(factor == KeySheetFactor.First ? "A" : "B")}";
 
     /// <summary>
     /// Explicitly writes a persistent test PDF. The normal print path never calls
@@ -256,10 +278,12 @@ public sealed class KeySheetService
     }
 
     /// <summary>
-    /// Sends page A, an actually empty PDF page, and page B to a verified physical
-    /// printer. The generated PDF remains in locked process memory until it is
-    /// streamed into the Apple-signed /usr/bin/lp process. CUPS and the printer
-    /// driver necessarily remain outside Keep Vault's memory-control boundary.
+    /// Submits two separate two-page jobs to a verified physical printer, each
+    /// containing one factor sheet followed by the public installation page.
+    /// Each PDF remains in locked process memory until it is streamed into the
+    /// Apple-signed /usr/bin/lp process. Successful submission does not confirm
+    /// completed paper output. CUPS and the printer driver necessarily remain
+    /// outside Keep Vault's memory-control boundary.
     /// </summary>
     public async Task<KeySheetPrintResult> PrintKeySheetsAsync(
         string printerName,
@@ -519,7 +543,7 @@ public sealed class KeySheetService
     private const string ProjectUrl = "https://github.com/michael-feinermann/keep-vault";
 
     /// <summary>
-    /// No text on a key sheet is ever smaller than this.
+    /// Body type size for the public installation page.
     /// </summary>
     /// <remarks>
     /// These sheets are read under stress, often years later and often by
@@ -533,9 +557,8 @@ public sealed class KeySheetService
     /// Type size for the printed factor.
     /// </summary>
     /// <remarks>
-    /// Smaller than the rest of the sheet on purpose: eight lines of 32
-    /// hexadecimal characters have to fit above the QR codes with the writing
-    /// lines still present, and at the body size they did not.
+    /// The complete factor uses seven grouped rows. Its type size is fixed;
+    /// long archive metadata must not shrink this transcription reference.
     /// </remarks>
     private const double FactorFontSize = 14;
 
@@ -612,21 +635,27 @@ public sealed class KeySheetService
     private static PdfDocument CreateSingleSheetDocument(ValidatedKeySheetData data, KeySheetFactor factor)
     {
         var document = new PdfDocument();
-        document.Info.Title = data.English
-            ? $"{ProductName} key sheet {(factor == KeySheetFactor.First ? "A" : "B")}"
-            : $"{ProductName} Schlüsselzettel {(factor == KeySheetFactor.First ? "A" : "B")}";
-        document.Info.Author = ProductName;
-        DrawPdfSheet(document.AddPage(), data, factor, separatedByBlankPage: false);
-        DrawInstallationPage(document.AddPage(), data.English);
-        return document;
+        try
+        {
+            document.Info.Title = KeySheetTitle(data.English, factor);
+            document.Info.Author = ProductName;
+            DrawPdfSheet(document.AddPage(), data, factor, separatedByBlankPage: false);
+            DrawInstallationPage(document.AddPage(), data.English);
+            return document;
+        }
+        catch
+        {
+            document.Dispose();
+            throw;
+        }
     }
 
     private static PdfDocument CreatePdfDocument(ValidatedKeySheetData data)
     {
         var document = new PdfDocument();
         document.Info.Title = data.English
-            ? $"{ProductName} separated key sheets"
-            : $"{ProductName} getrennte Schlüsselzettel";
+            ? $"{VersionedProductName} separated key sheets"
+            : $"{VersionedProductName} getrennte Schlüsselzettel";
         document.Info.Author = ProductName;
         DrawPdfSheet(document.AddPage(), data, KeySheetFactor.First, separatedByBlankPage: true);
 
@@ -663,33 +692,23 @@ public sealed class KeySheetService
         bool en = data.English;
 
         using XGraphics graphics = XGraphics.FromPdfPage(page);
-        var titleFont = new XFont("Arial", 24, XFontStyleEx.Bold);
-        var headingFont = new XFont("Arial", MinimumFontSize, XFontStyleEx.Bold);
-        var normalFont = new XFont("Arial", MinimumFontSize);
-        var warningFont = new XFont("Arial", MinimumFontSize, XFontStyleEx.Bold);
-        var shoutFont = new XFont("Arial", 19, XFontStyleEx.Bold);
-
-        // The factor is formatted in 32 groups of 8 characters (256 hex chars),
-        // arranged across 8 lines with 4 groups per line.
-        // Rendered in Courier New Bold at MinimumFontSize (16 pt) for optimal legibility.
-        var monoFont = new XFont("Courier New", MinimumFontSize, XFontStyleEx.Bold);
+        var titleFont = new XFont("Arial", 22, XFontStyleEx.Bold);
+        var headingFont = new XFont("Arial", 14, XFontStyleEx.Bold);
+        var normalFont = new XFont("Arial", 12);
+        var warningFont = new XFont("Arial", 13, XFontStyleEx.Bold);
+        var shoutFont = new XFont("Arial", 16, XFontStyleEx.Bold);
+        var passwordFont = new XFont("Arial", 16, XFontStyleEx.Bold);
+        var pinWarningFont = new XFont("Arial", 14, XFontStyleEx.Bold);
+        var factorFont = new XFont("Courier New", FactorFontSize, XFontStyleEx.Bold);
         var formatter = new XTextFormatter(graphics);
 
-        const double margin = 42;
-        const double bodyWidth = 500;
-        double y = margin;
+        const double margin = 36;
+        double bodyWidth = page.Width.Point - (2 * margin);
+        double y = 40;
 
-        graphics.DrawString(
-            en ? $"{ProductName} key sheet {factorName}" : $"{ProductName} Schlüsselzettel {factorName}",
-            titleFont,
-            XBrushes.Black,
-            new XPoint(margin, y));
-        y += 30;
-
-        // Flowed rather than clipped into a fixed rectangle: the two variants
-        // differ in length and translate differently, and a warning that loses
-        // its last line is worse than no warning at all.
-        y += 4;
+        DrawWrappedValue(graphics, titleFont, KeySheetTitle(en, factor),
+            margin, bodyWidth, ref y, lineHeight: titleFont.GetHeight() + 2);
+        y += 5;
         DrawWrappedValue(
             graphics,
             warningFont,
@@ -698,161 +717,134 @@ public sealed class KeySheetService
                     ? "Keep this key sheet separate from the other one. The page between A and B separates the two factors on purpose."
                     : "Diesen Schlüsselzettel getrennt vom anderen aufbewahren. Die Seite zwischen A und B trennt beide Faktoren absichtlich.")
                 : (en
-                    ? "Keep this key sheet separate from the other one. The other factor is in its own file."
-                    : "Diesen Schlüsselzettel getrennt vom anderen aufbewahren. Der andere Faktor liegt in einer eigenen Datei."),
-            margin,
-            bodyWidth,
-            ref y,
-            XBrushes.DarkRed);
-        y += 10;
-
+                    ? "Keep this key sheet separate from the other one. Each sheet contains only one factor."
+                    : "Diesen Schlüsselzettel getrennt vom anderen aufbewahren. Jeder Zettel enthält nur einen Faktor."),
+            margin, bodyWidth, ref y, XBrushes.DarkRed, warningFont.GetHeight() + 2);
+        y += 3;
         graphics.DrawString(
             en ? "DO NOT THROW AWAY!" : "NICHT WEGSCHMEISSEN!",
-            shoutFont,
-            XBrushes.Red,
-            new XPoint(margin, y));
-        y += 30;
+            shoutFont, XBrushes.Red, new XPoint(margin, y));
+        y += 25;
 
-        DrawLabelAndValue(graphics, headingFont, normalFont,
-            en ? "Encryption suite" : "Verschlüsselungssuite",
-            data.SuiteDisplayName, margin, bodyWidth, ref y);
-        DrawLabelAndValue(graphics, headingFont, normalFont,
-            en ? "Archive file" : "Archivdatei",
-            Path.GetFileName(data.CanonicalArchivePath), margin, bodyWidth, ref y);
-        DrawLabelAndValue(graphics, headingFont, normalFont,
-            en ? "Created on device" : "Erstellt auf Gerät",
-            data.DeviceName, margin, bodyWidth, ref y);
-        DrawLabelAndValue(graphics, headingFont, normalFont,
-            en ? "Storage location" : "Speicherort",
-            Path.GetDirectoryName(data.CanonicalArchivePath) ?? data.CanonicalArchivePath,
-            margin, bodyWidth, ref y);
-
-        // Everything from the QR codes down is measured up from the bottom
-        // edge. The fields above vary in height with the archive path, and the
-        // codes and the download address are exactly the parts that must not be
-        // the ones squeezed off the page when a path runs long.
+        // Fixed reservations keep all three handwriting rows, the complete
+        // 14-point factor and both full-size QR symbols independent of metadata.
         const double qrSize = 132;
         const double qrGap = 28;
-        double footerBaseline = page.Height.Point - 24;
-        double urlBaseline = footerBaseline - 26;
-        double urlLabelBaseline = urlBaseline - 21;
-        double qrTop = urlLabelBaseline - 22 - qrSize;
-        double qrHeadingBaseline = qrTop - 10;
-
-        // The password is written by hand and comes first: it is the part the
-        // owner supplies, and reading the sheet top to bottom should follow the
-        // order the factors are actually entered in.
-        //
-        // The factor block below is reserved first and the writing lines take
-        // what is left. A suite name or a storage path that runs to an extra
-        // line then shortens the lines instead of pushing the factor across the
-        // QR codes — and the factor is the one thing on this sheet that must
-        // never be the part that gets squeezed.
-        // Measured once and used twice: to reserve the space here, and to size
-        // the rectangle the block is actually drawn into further down. When
-        // these two disagree the sheet loses lines without saying so, which is
-        // exactly what the constant this replaced did.
+        double footerBaseline = page.Height.Point - 28;
+        double urlBaseline = footerBaseline - 24;
+        double urlLabelBaseline = urlBaseline - 17;
+        double qrTop = urlLabelBaseline - 20 - qrSize;
+        double qrHeadingBaseline = qrTop - 11;
         string groupedFactor = GroupGeneratedPasswordForSheet(generatedPassword);
-        XFont factorFont = new XFont("Courier New", FactorFontSize, XFontStyleEx.Bold);
         double factorBlockHeight = FactorBlockHeight(factorFont, groupedFactor);
-        // The trailing term is the QR heading's own height, not a guess. Its
-        // baseline is what qrHeadingBaseline names, and a baseline sits below
-        // the glyphs, so reserving a flat 14 left the last line of the factor
-        // touching the heading above it.
-        double factorBlockReservation = 22 + factorBlockHeight + headingFont.GetHeight() + 8;
-        double writingHeadingBaseline = y;
-        double writingTop = y + 4;
-        double writingBottom = qrHeadingBaseline - factorBlockReservation;
+        double factorBlockTop = qrHeadingBaseline - headingFont.GetHeight() - 12 - factorBlockHeight;
+        double factorHeadingBaseline = factorBlockTop - 22;
 
-        // Three lines if they fit, then two, then one. A long suite name or
-        // storage path eats into this space, and a sheet with one line to write
-        // the password on is still usable where a sheet with none is not.
-        const double minimumWritingSpacing = 12;
-        int writingLines = 0;
-        double writingSpacing = 0;
-        for (int candidate = 3; candidate >= 1; candidate--)
+        const int writingLines = 3;
+        double writingSpacing = XUnit.FromMillimeter(9).Point;
+        double writingBottom = factorHeadingBaseline - 24;
+        double writingTop = writingBottom - (writingLines * writingSpacing);
+        double writingHeadingBaseline = writingTop - 34;
+
+        (string Label, string Value)[] metadata =
+        [
+            (en ? "Encryption suite:" : "Verschlüsselungssuite:", data.SuiteDisplayName),
+            (en ? "Archive file:" : "Archivdatei:", Path.GetFileName(data.CanonicalArchivePath)),
+            (en ? "Created on device:" : "Erstellt auf Gerät:", data.DeviceName),
+            (en ? "Storage location:" : "Speicherort:",
+                Path.GetDirectoryName(data.CanonicalArchivePath) ?? data.CanonicalArchivePath),
+        ];
+        XFont? metadataFont = null;
+        XFont? metadataLabelFont = null;
+        List<(string Label, List<string> ValueLines)>? metadataLines = null;
+        double metadataLineHeight = 0;
+        foreach (double fontSize in new[] { 13.0, 12.0 })
         {
-            double spacing = Math.Min(22, (writingBottom - writingTop) / (candidate + 1));
-            if (spacing >= minimumWritingSpacing)
+            var candidateFont = new XFont("Arial", fontSize);
+            var candidateLabelFont = new XFont("Arial", fontSize, XFontStyleEx.Bold);
+            var candidateLines = metadata
+                .Select(item => (item.Label, ValueLines: WrapToWidth(
+                    graphics, candidateFont, item.Value, bodyWidth,
+                    bodyWidth - graphics.MeasureString(item.Label, candidateLabelFont).Width
+                        - graphics.MeasureString(" ", candidateFont).Width)))
+                .ToList();
+            double candidateLineHeight = Math.Max(candidateFont.GetHeight(), candidateLabelFont.GetHeight()) + 2;
+            double requiredHeight = candidateLines.Sum(item => item.ValueLines.Count * candidateLineHeight + 5);
+            if (y + requiredHeight <= writingHeadingBaseline - 18)
             {
-                writingLines = candidate;
-                writingSpacing = spacing;
+                metadataFont = candidateFont;
+                metadataLabelFont = candidateLabelFont;
+                metadataLines = candidateLines;
+                metadataLineHeight = candidateLineHeight;
                 break;
             }
         }
 
-        // The heading is drawn only when there is somewhere to write. It used
-        // to be drawn unconditionally, so once the lines no longer fit, the
-        // sheet showed a field label with the factor heading printed across it.
-        if (writingLines > 0)
+        if (metadataFont is null || metadataLabelFont is null || metadataLines is null)
         {
-            graphics.DrawString(
-                en
-                    ? "User password (write by hand, never store digitally)"
-                    : "Benutzerpasswort (von Hand eintragen, nicht digital speichern)",
-                headingFont,
-                XBrushes.Black,
-                new XPoint(margin, writingHeadingBaseline));
-
-            for (int index = 0; index < writingLines; index++)
-            {
-                double lineY = writingTop + (writingSpacing * (index + 1));
-                graphics.DrawLine(XPens.Black, margin, lineY, page.Width.Point - margin, lineY);
-            }
+            // Reject an unprintable layout instead of omitting metadata,
+            // removing handwriting rows or obscuring any factor/QR content.
+            throw new InvalidOperationException(en
+                ? "The archive name, storage location or device name is too long for a fully readable key sheet with three password lines. Use shorter names or a shorter storage location."
+                : "Archivname, Speicherort oder Gerätename ist zu lang für einen vollständig lesbaren Schlüsselzettel mit drei Passwortzeilen. Verwende kürzere Namen oder einen kürzeren Speicherort.");
         }
 
-        // Never above where the fields before it ended, so the factor cannot be
-        // printed across them when the page is tight.
-        y = Math.Max(writingBottom, writingHeadingBaseline);
-
-        // A storage path long enough to wrap three times can still push the
-        // block into the QR heading below it. The factor may not be shortened
-        // and the codes may not be covered, so the last thing to give is the
-        // type size. It is a fallback, not the normal path: at FactorFontSize
-        // the block fits with room to spare unless the path is extreme.
-        double factorSpace = (qrHeadingBaseline - headingFont.GetHeight() - 8) - (y + 22);
-        for (double size = FactorFontSize - 1; factorBlockHeight > factorSpace && size >= 9; size -= 1)
+        foreach ((string label, List<string> valueLines) in metadataLines)
         {
-            factorFont = new XFont("Courier New", size, XFontStyleEx.Bold);
-            factorBlockHeight = FactorBlockHeight(factorFont, groupedFactor);
+            for (int lineIndex = 0; lineIndex < valueLines.Count; lineIndex++)
+            {
+                double valueX = margin;
+                if (lineIndex == 0)
+                {
+                    graphics.DrawString(label, metadataLabelFont, XBrushes.Black, new XPoint(margin, y));
+                    valueX += graphics.MeasureString(label, metadataLabelFont).Width
+                        + graphics.MeasureString(" ", metadataFont).Width;
+                }
+                graphics.DrawString(valueLines[lineIndex], metadataFont, XBrushes.Black, new XPoint(valueX, y));
+                y += metadataLineHeight;
+            }
+            y += 5;
+        }
+
+        graphics.DrawString(en ? "User password" : "Benutzerpasswort",
+            passwordFont, XBrushes.Black, new XPoint(margin, writingHeadingBaseline));
+        string pinWarning = en ? "Do not write down the PIN" : "PIN nicht eintragen";
+        double pinWarningWidth = graphics.MeasureString(pinWarning, pinWarningFont).Width;
+        graphics.DrawString(pinWarning, pinWarningFont, XBrushes.DarkRed,
+            new XPoint(page.Width.Point - margin - pinWarningWidth, writingHeadingBaseline));
+        graphics.DrawString(en ? "Write by hand, never store digitally." : "Von Hand eintragen, nicht digital speichern.",
+            normalFont, XBrushes.Black, new XPoint(margin, writingHeadingBaseline + 18));
+        for (int index = 1; index <= writingLines; index++)
+        {
+            double lineY = writingTop + (writingSpacing * index);
+            graphics.DrawLine(XPens.Black, margin, lineY, page.Width.Point - margin, lineY);
         }
 
         graphics.DrawString(
             en
                 ? $"Generated hexadecimal 1024-bit factor {factorName}"
                 : $"Generierter hexadezimaler 1024-Bit-Faktor {factorName}",
-            headingFont,
-            XBrushes.Black,
-            new XPoint(margin, y));
-        y += 22;
-        formatter.DrawString(
-            groupedFactor,
-            factorFont,
-            XBrushes.Black,
-            new XRect(margin, y, bodyWidth, factorBlockHeight));
-        y += factorBlockHeight + 8;
+            headingFont, XBrushes.Black, new XPoint(margin, factorHeadingBaseline));
+        formatter.DrawString(groupedFactor, factorFont, XBrushes.Black,
+            new XRect(margin, factorBlockTop, bodyWidth, factorBlockHeight));
 
         graphics.DrawString(
             en
-                ? $"Both QR codes contain factor {factorName} only (error correction Q)"
-                : $"Beide QR-Codes enthalten ausschließlich Faktor {factorName} (Fehlerkorrektur Q)",
-            headingFont,
-            XBrushes.Black,
-            new XPoint(margin, qrHeadingBaseline));
+                ? $"Both QR codes: factor {factorName} only (error correction Q)"
+                : $"Beide QR-Codes: ausschließlich Faktor {factorName} (Fehlerkorrektur Q)",
+            warningFont, XBrushes.Black, new XPoint(margin, qrHeadingBaseline));
 
-        // Printed twice side by side: a single smudged, creased or faded code
-        // would otherwise force the whole factor to be typed by hand.
+        // Two identical symbols preserve the existing redundant scan path.
+        // Their payload still contains only this sheet's normalized factor.
         string qrPayload = PasswordKeyService.NormalizeGeneratedPassword(generatedPassword);
-        DrawQrCode(graphics, qrPayload, margin, qrTop, qrSize);
-        DrawQrCode(graphics, qrPayload, margin + qrSize + qrGap, qrTop, qrSize);
+        double qrLeft = margin + ((bodyWidth - (2 * qrSize) - qrGap) / 2);
+        DrawQrCode(graphics, qrPayload, qrLeft, qrTop, qrSize);
+        DrawQrCode(graphics, qrPayload, qrLeft + qrSize + qrGap, qrTop, qrSize);
 
         graphics.DrawString(
             en ? "Download and verify the app at:" : "App herunterladen und prüfen unter:",
-            normalFont,
-            XBrushes.Black,
-            new XPoint(margin, urlLabelBaseline));
+            normalFont, XBrushes.Black, new XPoint(margin, urlLabelBaseline));
         graphics.DrawString(ProjectUrl, normalFont, XBrushes.DarkBlue, new XPoint(margin, urlBaseline));
-
         string footer = en
             ? $"Created: {data.CreatedAt:yyyy-MM-dd HH:mm:ss}    Keep offline and physically protected."
             : $"Erstellt: {data.CreatedAt:yyyy-MM-dd HH:mm:ss}    Offline und physisch geschützt aufbewahren.";
@@ -860,11 +852,11 @@ public sealed class KeySheetService
     }
 
     /// <summary>
-    /// Draws the page that separates factor A from factor B.
+    /// Draws the public installation guidance page for each separate key sheet.
     /// </summary>
     /// <remarks>
     /// Nothing here depends on the archive or on either factor: this method
-    /// deliberately takes no key-sheet data at all, so the separating page
+    /// deliberately takes no key-sheet data at all, so the guidance page
     /// cannot leak anything even if it is later edited carelessly.
     /// </remarks>
     private static void DrawInstallationPage(PdfPage page, bool en)
@@ -890,8 +882,8 @@ public sealed class KeySheetService
             graphics,
             normalFont,
             en
-                ? "This page separates factor A from factor B and contains no key material."
-                : "Diese Seite trennt Faktor A von Faktor B und enthält kein Schlüsselmaterial.",
+                ? "This page contains only public installation guidance and no key material."
+                : "Diese Seite enthält nur öffentliche Installationshinweise und kein Schlüsselmaterial.",
             margin,
             bodyWidth,
             ref y);
@@ -932,15 +924,15 @@ public sealed class KeySheetService
             ? [
                 "1. Download the macOS release from the page above.",
                 "2. Extract the ZIP file. The .khsig files belong next to Keep Vault.app and must stay there.",
-                "3. Run tools/Install-KeepVault-macOS.sh; it installs the app and creates a Desktop alias.",
-                "4. QR-Scanner.app in the same package reads the codes above. Keep Vault never uses the camera.",
+                "3. Follow that release's instructions to verify the signatures and install the app.",
+                "4. QR-Scanner.app in the same package reads the factor QR codes on the key sheets. Keep Vault never uses the camera.",
                 "5. The app checks Apple's signature and its own dual signature at every start.",
             ]
             : [
                 "1. macOS-Release von der oben genannten Seite herunterladen.",
                 "2. Die ZIP-Datei entpacken. Die .khsig-Dateien gehören neben Keep Vault.app und müssen dort bleiben.",
-                "3. tools/Install-KeepVault-macOS.sh ausführen; es installiert die App und legt ein Alias an.",
-                "4. QR-Scanner.app aus demselben Paket liest die Codes oben. Keep Vault nutzt die Kamera nie.",
+                "3. Installation und Signaturprüfung nach der Anleitung des jeweiligen Releases durchführen.",
+                "4. QR-Scanner.app aus demselben Paket liest die Faktor-QR-Codes auf den Schlüsselzetteln. Keep Vault nutzt die Kamera nie.",
                 "5. Die App prüft bei jedem Start Apples Signatur und ihre eigene duale Signatur.",
             ]);
 
@@ -1008,9 +1000,9 @@ public sealed class KeySheetService
         double x,
         double width,
         ref double y,
-        XBrush? brush = null)
+        XBrush? brush = null,
+        double lineHeight = 20)
     {
-        const double lineHeight = 20;
         XBrush ink = brush ?? XBrushes.Black;
         foreach (string line in WrapToWidth(graphics, font, value, width))
         {
@@ -1019,7 +1011,8 @@ public sealed class KeySheetService
         }
     }
 
-    private static List<string> WrapToWidth(XGraphics graphics, XFont font, string value, double width)
+    private static List<string> WrapToWidth(
+        XGraphics graphics, XFont font, string value, double width, double? firstLineWidth = null)
     {
         var lines = new List<string>();
         if (string.IsNullOrEmpty(value))
@@ -1030,6 +1023,7 @@ public sealed class KeySheetService
 
         var current = new StringBuilder();
         int lastBreak = -1;
+        double availableWidth = firstLineWidth ?? width;
         foreach (char character in value)
         {
             current.Append(character);
@@ -1038,7 +1032,7 @@ public sealed class KeySheetService
                 lastBreak = current.Length;
             }
 
-            if (graphics.MeasureString(current.ToString(), font).Width <= width)
+            if (graphics.MeasureString(current.ToString(), font).Width <= availableWidth)
             {
                 continue;
             }
@@ -1052,6 +1046,7 @@ public sealed class KeySheetService
             }
 
             lines.Add(current.ToString(0, cut).TrimEnd());
+            availableWidth = width;
             string remainder = current.ToString(cut, current.Length - cut).TrimStart();
             current.Clear();
             current.Append(remainder);

@@ -39,6 +39,17 @@ unset DOTNET_STARTUP_HOOKS DOTNET_ADDITIONAL_DEPS DOTNET_SHARED_STORE DOTNET_ROO
   RestoreConfigFile
 export DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0
 
+# Package selection is deliberately parsed before any SDK/toolchain discovery.
+# The signed installer entry always supplies this as the first option.
+package_mode=0
+package_root=''
+if [[ ${1:-} == --package-root ]]; then
+  (( $# >= 2 )) || { print -u2 '--package-root requires an absolute package directory.'; exit 64; }
+  package_mode=1
+  package_root=$2
+  shift 2
+fi
+
 xcrun_path=/usr/bin/xcrun
 codesign_path=/usr/bin/codesign
 plutil_path=/usr/bin/plutil
@@ -78,7 +89,7 @@ require_root_system_tool() {
 }
 
 for fixed_tool in \
-    ${xcrun_path} ${codesign_path} ${plutil_path} ${file_path} ${find_path} \
+    ${codesign_path} ${plutil_path} ${file_path} ${find_path} \
     ${grep_path} ${tr_path} ${sort_path} ${xargs_path} ${awk_path} \
     ${mktemp_path} ${shasum_path} ${ditto_path} ${stat_path} \
     ${plistbuddy_path} ${spctl_path} ${rm_path} ${env_path} ${id_path} \
@@ -86,27 +97,68 @@ for fixed_tool in \
   require_root_system_tool ${fixed_tool}
 done
 
-lipo_path=$(${xcrun_path} --sdk macosx --find lipo)
-lipo_path=${lipo_path:A}
-otool_path=$(${xcrun_path} --sdk macosx --find otool)
-otool_path=${otool_path:A}
-stapler_path=$(${xcrun_path} --find stapler)
-stapler_path=${stapler_path:A}
-for developer_tool in ${lipo_path} ${otool_path} ${stapler_path}; do
-  require_root_system_tool ${developer_tool}
-done
-
-sdk_root=$(${xcrun_path} --sdk macosx --show-sdk-path)
-sdk_root=${sdk_root:A}
-if [[ ! -d ${sdk_root} || -L ${sdk_root} \
-    || $(${stat_path} -f %u -- ${sdk_root}) != 0 ]]; then
-  print -u2 'KEEP VAULT VERIFY GATE: the selected macOS SDK is not a root-owned physical directory.'
-  exit 2
+if (( package_mode )); then
+  for package_system_tool in /usr/bin/syspolicy_check /usr/sbin/spctl; do
+    require_root_system_tool ${package_system_tool}
+  done
+  package_script=${0:a}
+  package_installer=${package_root}/Keep\ Vault\ Installer.app
+  if [[ ${package_root} != /* || ${package_root:a} != ${package_root:A} \
+      || ! -d ${package_root} || -L ${package_root} \
+      || ${package_script} != ${package_script:A} \
+      || ${package_script:h} != ${package_installer}/Contents/Resources/tools \
+      || ! -d ${package_installer} || -L ${package_installer} ]]; then
+    print -u2 'INSTALLATION PACKAGE GATE: package root or sealed script location is invalid.'
+    exit 2
+  fi
+  # The signed native entry stages an authenticated package as root, then
+  # grants the installing user read/search/execute-only access. A user-owned
+  # download is never an operational script or native-execution source.
+  if [[ $(/usr/bin/stat -f %u -- ${package_root}) != 0 ]] \
+      || /usr/bin/find ${package_root} \( ! -user root -o -perm -022 \) -print -quit | /usr/bin/grep -q .; then
+    print -u2 'INSTALLATION PACKAGE GATE: operational package must be immutable and root-owned.'
+    exit 2
+  fi
+  package_requirement='identifier "de.michael-feinermann.keep-vault.installer" and anchor apple generic and certificate leaf[subject.OU] = "2T6K9PGS55"'
+  /usr/bin/codesign --verify --deep --strict --all-architectures -R=${package_requirement} ${package_installer}
+  package_signature=$(/usr/bin/codesign -dvvv ${package_installer} 2>&1)
+  [[ ${package_signature} == *'Authority=Developer ID Application:'* \
+      && ${package_signature} == *'flags='*'runtime'* ]] || {
+    print -u2 'INSTALLATION PACKAGE GATE: the installer requires Developer ID and Hardened Runtime.'
+    exit 2
+  }
+  if /usr/bin/find ${package_installer} \( -type l -o -type f -links +1 -o -perm -022 \) -print -quit | /usr/bin/grep -q .; then
+    print -u2 'INSTALLATION PACKAGE GATE: installer contains linked or writable objects.'
+    exit 2
+  fi
+  source ${package_installer}/Contents/Resources/tools/PackageRuntime-macOS.sh
 fi
-sdk_mode=$(( 8#$(${stat_path} -f %Lp -- ${sdk_root}) ))
-if (( (sdk_mode & 8#022) != 0 )); then
-  print -u2 'KEEP VAULT VERIFY GATE: the selected macOS SDK is group/other writable.'
-  exit 2
+
+if (( ! package_mode )); then
+  require_root_system_tool ${xcrun_path}
+  lipo_path=$(${xcrun_path} --sdk macosx --find lipo)
+  lipo_path=${lipo_path:A}
+  otool_path=$(${xcrun_path} --sdk macosx --find otool)
+  otool_path=${otool_path:A}
+  stapler_path=$(${xcrun_path} --find stapler)
+  stapler_path=${stapler_path:A}
+  for developer_tool in ${lipo_path} ${otool_path} ${stapler_path}; do
+    require_root_system_tool ${developer_tool}
+  done
+
+  sdk_root=$(${xcrun_path} --sdk macosx --show-sdk-path)
+  sdk_root=${sdk_root:A}
+  if [[ ! -d ${sdk_root} || -L ${sdk_root} \
+      || $(${stat_path} -f %u -- ${sdk_root}) != 0 ]]; then
+    print -u2 'KEEP VAULT VERIFY GATE: the selected macOS SDK is not a root-owned physical directory.'
+    exit 2
+  fi
+  sdk_mode=$(( 8#$(${stat_path} -f %Lp -- ${sdk_root}) ))
+  if (( (sdk_mode & 8#022) != 0 )); then
+    print -u2 'KEEP VAULT VERIFY GATE: the selected macOS SDK is group/other writable.'
+    exit 2
+  fi
+
 fi
 
 codesign() { ${codesign_path} "$@"; }
@@ -484,15 +536,19 @@ require_private_temp_parent_identity || {
 
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
-dotnet_provisioner=${script_dir}/Provision-VerifiedDotnet-macOS.sh
-require_repository_executable ${dotnet_provisioner} || {
-  print -u2 'KEEP VAULT VERIFY GATE: verified SDK provisioner is missing or unsafe.'
-  exit 2
-}
-dotnet_provisioner_identity=$(${stat_path} -f '%d:%i:%u:%p:%z:%m:%c:%l' -- ${dotnet_provisioner})
+(( package_mode )) && repo_root=${package_root}
+if (( ! package_mode )); then
+  dotnet_provisioner=${script_dir}/Provision-VerifiedDotnet-macOS.sh
+  require_repository_executable ${dotnet_provisioner} || {
+    print -u2 'KEEP VAULT VERIFY GATE: verified SDK provisioner is missing or unsafe.'
+    exit 2
+  }
+  dotnet_provisioner_identity=$(${stat_path} -f '%d:%i:%u:%p:%z:%m:%c:%l' -- ${dotnet_provisioner})
+fi
 expected_team='2T6K9PGS55'
 expected_bundle='de.michael-feinermann.keep-vault'
 app_path=''
+custom_public_key=0
 allow_development=0
 allow_pre_notarization=0
 require_notarization=0
@@ -502,6 +558,7 @@ tool_path_self_test=0
 expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF39407EB6BA5EB'
 
 usage() {
+  print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'
   print -u2 'Usage: Verify-KeepVault-macOS.sh --app "Keep Vault.app" [--allow-development]'
   print -u2 '       [--require-notarization] [--mldsa-public-key FILE] [--tool-path-self-test]'
   print -u2 '       [--allow-pre-notarization (Developer ID only; exclusive with other signing modes)]'
@@ -529,6 +586,7 @@ while (( $# != 0 )); do
       ;;
     --mldsa-public-key)
       (( $# >= 2 )) || usage
+      custom_public_key=1
       mldsa_public_key=$2
       shift 2
       ;;
@@ -543,6 +601,15 @@ while (( $# != 0 )); do
     *) usage ;;
   esac
 done
+
+if (( package_mode )); then
+  if (( allow_development || allow_pre_notarization || tool_path_self_test || custom_public_key )); then
+    print -u2 'Package mode rejects development, pre-notarization, public-key overrides and tool-path test modes.'
+    exit 64
+  fi
+  require_notarization=1
+  require_launcher_signature=1
+fi
 
 if (( allow_pre_notarization && (allow_development || require_notarization) )); then
   print -u2 'KEEP VAULT VERIFY GATE: --allow-pre-notarization cannot be combined with --allow-development or --require-notarization.'
@@ -676,6 +743,40 @@ if [[ ${third_party_notice_after} != ${third_party_notice_before} \
   exit 1
 fi
 exec {third_party_notice_fd}<&-
+
+# The separate model notice is part of the same signed payload. It has its own
+# reviewed digest and size bounds; the existing third-party gate stays intact.
+model_notices=${app_path}/Contents/Resources/PASSWORD-MODEL-NOTICES.txt
+model_notice_fd=-1
+if ! sysopen -r -o nofollow -u model_notice_fd ${model_notices}; then
+  print -u2 'PASSWORD-MODEL-NOTICES.txt is missing or unsafe.'
+  exit 1
+fi
+model_notice_before=$(bound_verifier_notice_identity ${model_notice_fd}) || exit 1
+model_notice_fields=("${(@s.:.)model_notice_before}")
+model_notice_mode=${model_notice_fields[4]}
+if (( (model_notice_mode & 8#170000) != 8#100000 \
+    || (model_notice_mode & 8#022) != 0 || model_notice_fields[5] != 1 \
+    || model_notice_fields[6] < 1000 || model_notice_fields[6] > 200000 )) \
+    || [[ ${model_notice_fields[3]} != 0 && ${model_notice_fields[3]} != ${EUID} ]]; then
+  print -u2 'PASSWORD-MODEL-NOTICES.txt is not a protected single-link regular file within its size bounds.'
+  exit 1
+fi
+hash_verifier_notice_fd ${model_notice_fd} || exit 1
+if [[ ${REPLY} != fcc48f7f9d123570230f6e0fdb45a9e172c9addea17a619081392a3d8ec57ea2 ]]; then
+  print -u2 'PASSWORD-MODEL-NOTICES.txt does not match the reviewed whole-file digest.'
+  exit 1
+fi
+model_notice_after=$(bound_verifier_notice_identity ${model_notice_fd}) || exit 1
+typeset -A model_notice_path_stat
+if ! zstat -L -H model_notice_path_stat ${model_notices} 2>/dev/null \
+    || [[ ${model_notice_before} != ${model_notice_after} \
+      || ${model_notice_path_stat[device]}:${model_notice_path_stat[inode]} != ${model_notice_fields[1]}:${model_notice_fields[2]} ]] \
+    || (( (model_notice_path_stat[mode] & 8#170000) != 8#100000 )); then
+  print -u2 'PASSWORD-MODEL-NOTICES.txt changed identity while it was verified.'
+  exit 1
+fi
+exec {model_notice_fd}<&-
 required_native=(
   zpaq
   libkalyna_v12.dylib
@@ -748,7 +849,11 @@ minimum_macho_count=$(( 3 + ${#required_native[@]} ))
   exit 1
 }
 
-expected_architectures=$(lipo ${launcher} -archs | tr ' ' '\n' | sort | xargs)
+if (( package_mode )); then
+  expected_architectures=$(package_run_verifier inspect-macho --file ${launcher} --require-architectures 'arm64 x86_64')
+else
+  expected_architectures=$(lipo ${launcher} -archs | tr ' ' '\n' | sort | xargs)
+fi
 for macho in ${macho_files[@]}; do
   codesign --verify --strict --verbose=2 ${macho}
   signature_details=$(codesign -dvvv ${macho} 2>&1)
@@ -760,7 +865,11 @@ for macho in ${macho_files[@]}; do
     print -u2 "Hardened Runtime is absent: ${macho}"
     exit 1
   }
-  architectures=$(lipo ${macho} -archs)
+  if (( package_mode )); then
+    architectures=$(package_run_verifier inspect-macho --file ${macho} --require-architectures ${expected_architectures})
+  else
+    architectures=$(lipo ${macho} -archs)
+  fi
   [[ " ${architectures} " == *' arm64 '* ]] || {
     print -u2 "arm64 slice is absent: ${macho}"
     exit 1
@@ -770,6 +879,7 @@ for macho in ${macho_files[@]}; do
     print -u2 "Mach-O architecture set differs from the launcher: ${macho}"
     exit 1
   }
+  if (( ! package_mode )); then
   # Enumerate real load-time dependencies straight from the Mach-O load
   # commands instead of parsing "otool -L". That listing repeats an unindented
   # header for every universal slice, and for a library its first entry is the
@@ -790,6 +900,7 @@ for macho in ${macho_files[@]}; do
     /^ *cmd LC_(LOAD_DYLIB|LOAD_WEAK_DYLIB|REEXPORT_DYLIB|LAZY_LOAD_DYLIB|LOAD_UPWARD_DYLIB)$/ { want = 1; next }
     /^ *cmd / { want = 0 }
     want && /^ *name / { print $2; want = 0 }')
+  fi
 done
 
 core_details=$(codesign -dvvv ${core} 2>&1)
@@ -935,7 +1046,16 @@ if find ${macos_root} -type f \( -name '*.sha3' -o -name '*.skein' -o -name '*.k
   exit 1
 fi
 
-if [[ -f ${mldsa_public_key} ]]; then
+if (( package_mode )); then
+  package_verify_arguments=(verify --payload-root ${macos_root} --signature-root ${signature_root})
+  for target in ${hybrid_targets[@]}; do
+    package_verify_arguments+=(--target ${target})
+  done
+  package_run_verifier ${package_verify_arguments[@]}
+  package_run_verifier verify-artifact --payload ${launcher} \
+    --sidecar-base ${app_path}.launcher --require-all-sidecars
+  print 'launcher_self_signature=verified'
+elif [[ -f ${mldsa_public_key} ]]; then
   signer_lock=${repo_root}/KeepVaultMac/Packaging/HybridSigner/packages.lock.json
   if [[ ! -f ${signer_lock} || -L ${signer_lock} \
       || $(shasum -a 256 ${signer_lock} | awk '{print toupper($1)}') != ${expected_signer_lock_sha256} ]]; then
@@ -1038,8 +1158,13 @@ else
 fi
 
 if (( require_notarization )); then
-  stapler validate ${app_path}
-  print 'notarization=stapled-and-valid'
+  if (( package_mode )); then
+    package_validate_distribution ${app_path}
+    print 'notarization=ticket-matches-signed-release-inventory; current-macos-distribution-accepted'
+  else
+    stapler validate ${app_path}
+    print 'notarization=stapled-and-valid'
+  fi
 elif (( allow_pre_notarization )); then
   print 'notarization=awaiting-required-final-check (Apple and hybrid signatures verified in explicit preparation mode)'
 else

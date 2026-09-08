@@ -501,7 +501,8 @@ internal static class HybridKeyProtectionTests
                     && protectionScript.Contains("hybrid_protection_tool_paths=verified", StringComparison.Ordinal),
                 "The provisioning script no longer enforces distinct services and accounts.");
             Require(
-                keepVaultBuildScript.Contains("build_version='12'", StringComparison.Ordinal)
+                keepVaultBuildScript.Contains("build_version='13'", StringComparison.Ordinal)
+                    && keepVaultBuildScript.Contains("marketing_version='5.0.2'", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("require_root_system_tool", StringComparison.Ordinal)
                     && HasIsolatedDotnetBuildPath(keepVaultBuildScript)
                     && keepVaultBuildScript.Contains("sysopen -r -o nofollow", StringComparison.Ordinal)
@@ -515,6 +516,14 @@ internal static class HybridKeyProtectionTests
                         "bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159",
                         StringComparison.Ordinal),
                 "The macOS v12 release default or fixed system-tool gate regressed.");
+            foreach (string lockedBuildScript in new[] { keepVaultBuildScript, portableBuildScript,
+                RepositoryLayout.ReadText(Path.Combine(root, "tools", "Test-KeepVault.sh")) })
+            {
+                Require(lockedBuildScript.Contains("--locked-mode", StringComparison.Ordinal)
+                    && lockedBuildScript.Contains("-p:RestoreForceEvaluate=false", StringComparison.Ordinal)
+                    && !lockedBuildScript.Contains("--force-evaluate", StringComparison.Ordinal),
+                    "A build/test restore can override the reviewed dependency lock.");
+            }
             foreach (string appleBuildScript in new[] { keepVaultBuildScript, qrBuildScript })
             {
                 Require(appleBuildScript.Contains("KEEPVAULT_APPLE_KEYCHAIN", StringComparison.Ordinal)
@@ -641,7 +650,12 @@ internal static class HybridKeyProtectionTests
                     && releasePairVerifierScript.Contains("PATH='/usr/bin:/bin:/usr/sbin:/sbin'", StringComparison.Ordinal)
                     && releasePairVerifierScript.Contains("unset DEVELOPER_DIR SDKROOT TOOLCHAINS", StringComparison.Ordinal)
                     && releasePairVerifierScript.Contains("require_root_system_tool", StringComparison.Ordinal)
-                    && releasePairVerifierScript.Contains("sdk_root=$(${xcrun_path}", StringComparison.Ordinal)
+                    && releasePairVerifierScript.Contains("plutil_path=/usr/bin/plutil", StringComparison.Ordinal)
+                    && releasePairVerifierScript.Contains("plistbuddy_path=/usr/libexec/PlistBuddy", StringComparison.Ordinal)
+                    && releasePairVerifierScript.Contains("for fixed_tool in ${plutil_path} ${stat_path} ${plistbuddy_path}", StringComparison.Ordinal)
+                    && releasePairVerifierScript.Contains("plutil() { ${plutil_path}", StringComparison.Ordinal)
+                    && releasePairVerifierScript.Contains("plistbuddy() { ${plistbuddy_path}", StringComparison.Ordinal)
+                    && !releasePairVerifierScript.Contains("xcrun", StringComparison.Ordinal)
                     && releasePairVerifierScript.Contains("release_pair_verifier_tool_paths=verified", StringComparison.Ordinal)
                     && !releasePairVerifierScript.Contains("command -v", StringComparison.Ordinal),
                 "The release-pair metadata verifier regained a PATH, shell-startup or Xcode-selector substitution path.");

@@ -1,0 +1,40 @@
+Keep Vault for macOS
+
+Deutsch
+
+1. Das vollständige ZIP entpacken. Beide Apps, der Keep Vault Installer,
+   alle Signaturdateien und das Installationsinventar müssen zusammenbleiben.
+2. Den Download nach der Anleitung des veröffentlichten Releases prüfen.
+3. Keep Vault Installer.app öffnen und „Installieren“ wählen. Den Installer
+   als angemeldeter Benutzer starten, nicht mit sudo.
+   Falls eine Ordnerauswahl erscheint, den vollständigen entpackten
+   Installationsordner auswählen. Auch dieser wird vollständig geprüft.
+4. Die lokale macOS-Administratorfreigabe bestätigen. Sie schützt zunächst
+   den geprüften Installationssatz und richtet anschließend beide Apps und
+   die geschützte Archivkomponente ein. Passwörter nur im macOS-Dialog eingeben.
+5. Keep Vault und QR-Scanner anschließend unter Programme verwenden.
+
+Die Archivierung benötigt die geschützte Laufzeitkomponente. Die Apps deshalb
+nicht lediglich aus dem ZIP nach Programme ziehen. Auf dem Ziel-Mac sind
+weder .NET noch Xcode oder ein Compiler erforderlich. Die Apple-Prüfung bei
+der Installation kann einen Internetzugang benötigen. Archivierungsdaten,
+Passwort und PIN werden dabei nicht übermittelt.
+
+English
+
+1. Extract the complete ZIP. Keep both apps, Keep Vault Installer, all
+   signature files and the installation inventory together.
+2. Verify the download using the published release instructions.
+3. Open Keep Vault Installer.app and choose Install. Run it as your signed-in
+   user, not with sudo.
+   If a folder picker appears, select the complete extracted installation
+   folder. The same full verification applies to that folder.
+4. Approve the local macOS administrator prompt. This first protects the
+   verified installation kit and then sets up both apps and the protected
+   archive component. Enter passwords only in the macOS authorization dialog.
+5. Launch Keep Vault and QR-Scanner from Applications after installation.
+
+Archiving requires the protected runtime component. Do not merely drag the
+apps from the ZIP into Applications. The target Mac does not require .NET,
+Xcode or a compiler. Apple's installation policy checks may need an internet
+connection. They do not transmit archive data, your password or your PIN.

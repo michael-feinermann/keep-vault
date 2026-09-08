@@ -209,6 +209,14 @@ internal static partial class MacComprehensiveTests
         .. ContainerSuiteCases(),
         .. RecoverySuiteCases(),
         .. MacGuiTests.Tests,
+        .. PinCreationPolicyTests.Tests,
+        .. CredentialCompatibilityTests.Tests,
+        new("security.password-model-data", "offline model integrity, completeness and fail-closed resources", TestPasswordModelDataAsync, TestResource.Light, "Security"),
+        new("security.password-model-phrases", "complete phrase, case, Unicode, morphology and unknown-rest models", TestPasswordModelPhrasesAsync, TestResource.Light, "Security"),
+        new("security.password-model-bip39", "independent BIP39 checksums and exact word-list search spaces", TestPasswordModelBip39Async, TestResource.Light, "Security"),
+        new("security.password-model-boundaries", "old password rejections and monotone 128-bit model boundaries", TestPasswordModelBoundariesAsync, TestResource.Light, "Security"),
+        new("security.password-model-isolation", "async isolation and creation-only model access", TestPasswordModelIsolationAsync, TestResource.Light, "Security"),
+        new("security.password-model-bounded", "bounded evaluation at the 256-code-unit limit", TestPasswordModelBoundedAsync, TestResource.Light, "Security"),
     ];
 
     /// <summary>
@@ -410,6 +418,7 @@ internal static partial class MacComprehensiveTests
         }
 
         string signedTarget = ResolveSignedComponent("zpaq.exe");
+        TestHeldHybridSignatureBytes(signedTarget, policy);
         string root = CreateTempRoot("keep-vault-hybrid-tamper-");
         try
         {
@@ -1036,8 +1045,10 @@ internal static partial class MacComprehensiveTests
             try { ContainerKeyDerivation.ValidatePinForCreation(pin); } catch (PinPolicyException) { threw = true; }
             Require(threw, $"ValidatePinForCreation did not throw PinPolicyException for weak PIN '{pin}'.");
 
-            // Extraction syntax validation must pass for these weak PINs (so existing archives can still be opened)
+            // Historical creation syntax remains separate from strength rules.
             ContainerKeyDerivation.ValidatePinSyntax(pin);
+            // Actual extraction enforces only the independent encoding bound.
+            ContainerKeyDerivation.ValidatePinEncoding(pin);
         }
 
         // 13..16 digit strong PINs: valid for both syntax and creation

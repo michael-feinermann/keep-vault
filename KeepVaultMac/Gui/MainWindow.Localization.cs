@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using KalynaArchiver.Services;
+using System.Reflection;
 
 namespace KalynaArchiver;
 
@@ -20,6 +21,8 @@ public sealed partial class MainWindow
         Title = "Keep Vault";
         TitleText.Text = "Keep Vault";
         SubtitleText.Text = T("subtitle");
+        string? version = typeof(MainWindow).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        VersionText.Text = $"Version {version ?? typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}";
         LanguageLabel.Text = T("language");
         PopulateSuites();
         ArchiveTab.Header = T("archiveTab");
@@ -36,6 +39,7 @@ public sealed partial class MainWindow
         ClearInputsButton.Content = T("clearSelection");
         InputDropHintText.Text = T("inputDropHint");
         TargetArchiveLabel.Text = T("targetArchive");
+        ArchivePathBox.PlaceholderText = IsEnglish ? "/path/to/archive(1).kzpaq" : "/Pfad/zu/archiv(1).kzpaq";
         TargetArchiveDropHintText.Text = T("targetArchiveDropHint");
         BrowseArchiveButton.Content = T("browse");
         CompressionLabel.Text = T("compression");
@@ -53,6 +57,8 @@ public sealed partial class MainWindow
         CreatePinConfirmLabel.Text = T("repeatPin");
         PinHelpText.Text = T("pinHelp");
         PasswordHelpText.Text = T("passwordHelp");
+        CredentialPolicyHelpTitle.Text = T("credentialPolicyHelpTitle");
+        CredentialPolicyHelpText.Text = T("credentialPolicyHelp");
         PasswordGeneratorTitle.Text = T("generatorTitle");
         PasswordGeneratorHelpText.Text = T("generatorHelp");
         GeneratedPasswordFirstLabel.Text = T("factorA");
@@ -68,9 +74,11 @@ public sealed partial class MainWindow
         ExtractSubtitleText.Text = T("extractSubtitle");
         RecoveryPolicyText.Text = T("recoveryPolicy");
         ArchiveFileLabel.Text = T("archiveFile");
+        ExtractArchiveBox.PlaceholderText = IsEnglish ? "/path/to/archive.kzpaq" : "/Pfad/zum/Archiv.kzpaq";
         ExtractArchiveDropHintText.Text = T("extractDropHint");
         BrowseExtractArchiveButton.Content = T("browse");
         OutputFolderLabel.Text = T("outputFolder");
+        OutputFolderBox.PlaceholderText = IsEnglish ? "/path/to/new/output-folder" : "/Pfad/zum/neuen/Zielordner";
         OutputFolderDropHintText.Text = T("outputDropHint");
         BrowseOutputFolderButton.Content = T("browse");
         ExtractArchiveButton.Content = T("extract");
@@ -89,15 +97,11 @@ public sealed partial class MainWindow
         EraseTitleText.Text = T("eraseTitle");
         EraseSubtitleText.Text = T("eraseSubtitle");
         EraseFileLabel.Text = T("eraseFile");
+        ErasePathBox.PlaceholderText = IsEnglish ? "/path/to/container.kzpaq" : "/Pfad/zum/Container.kzpaq";
         EraseDropHintText.Text = T("eraseDropHint");
         BrowseEraseButton.Content = T("browse");
         AnalyzeEraseButton.Content = T("analyze");
-        if (EraseStatusText.Text is "Noch keine Datei analysiert." or "No file analyzed yet.")
-        {
-            EraseStatusText.Text = T("eraseNotAnalyzed");
-        }
-
-        EraseHardwareNoticeText.Text = T("eraseHardwareNotice");
+        RenderEraseStatus();
         EraseConfirmBox.Content = T("eraseConfirm");
         EraseContainerButton.Content = T("eraseButton");
         LogTitleText.Text = T("securityLog");
@@ -161,7 +165,7 @@ public sealed partial class MainWindow
             "userPassword" => en ? "User password" : "Userpasswort",
             "repeatPassword" => en ? "Repeat user password" : "Userpasswort wiederholen",
             "passwordHelp" => en
-                ? "24 to 256 characters, at least 3 character groups, 12 distinct and 12 non-hex characters, no hex run of 8+, and at least 128 conservative entropy bits."
+                ? "24 to 256 characters, at least 3 character groups, 12 distinct and 12 non-hex characters, no hex run of 8+, and a conservative strength estimate of at least 128."
                 : "24 bis 256 Zeichen, mindestens 3 Zeichengruppen, 12 verschiedene und 12 Nicht-Hex-Zeichen, keine Hex-Folge ab 8 Zeichen und mindestens 128 Bit konservative Bewertung.",
             "generatorTitle" => en ? "Two independent 1024-bit factors" : "Zwei unabhängige 1024-Bit-Faktoren",
             "generatorHelp" => en
@@ -169,6 +173,7 @@ public sealed partial class MainWindow
                 : $"Neun getrennte Entropiepools benötigen je mindestens {EntropyMixer.RequiredMouseSamplesPerPurpose} Maus-Samples. Generieren erzeugt die Faktoren A und B, beide Salts und alle drei Nonce-Teile atomar und verbraucht danach alle Quellpools.",
             "factorA" => en ? "Generated factor A" : "Generierter Faktor A",
             "factorB" => en ? "Generated factor B" : "Generierter Faktor B",
+            "generatedFactorInvalid" => en ? "Both key-sheet factors must contain 256 hexadecimal characters each." : "Beide Faktoren vom Schlüsselzettel müssen jeweils aus 256 Hexadezimalzeichen bestehen.",
             "printKeySheets" => en ? "Print separately" : "Getrennt drucken",
             "saveTestPdf" => en ? "Save test PDF" : "Test-PDF speichern",
             "clearSecrets" => en ? "Clear secrets" : "Geheimwerte leeren",
@@ -200,6 +205,11 @@ public sealed partial class MainWindow
             "pinSequentialAscending" => en ? "Do not use 3 or more ascending consecutive digits." : "Keine 3 aufsteigenden Ziffernfolgen verwenden.",
             "pinSequentialDescending" => en ? "Do not use 3 or more descending consecutive digits." : "Keine 3 absteigenden Ziffernfolgen verwenden.",
             "pinBlocklisted" => en ? "This PIN pattern is too predictable." : "Dieses PIN-Muster ist leicht erratbar.",
+            "pinContainedInPassword" => en ? "The PIN must not be contained in the password. Choose a different PIN or password." : "Die PIN darf nicht im Passwort enthalten sein. Wähle eine andere PIN oder ein anderes Passwort.",
+            "pinCurrentDate" => en ? "The PIN must not be today's date, including American date formats." : "Die PIN darf nicht dem heutigen Datum entsprechen, auch nicht in amerikanischer Schreibweise.",
+            "pinPlausibleDate" => en ? "Do not use a complete calendar date as the PIN." : "Kein vollständiges Kalenderdatum als PIN verwenden.",
+            "pinPredictablePattern" => en ? "Avoid predictable number patterns, repetitions and mirrored sequences." : "Vorhersehbare Zahlenmuster, Wiederholungen und Spiegelungen vermeiden.",
+            "pinPasswordRequired" => en ? "Enter the password to check the final password and PIN combination." : "Das Passwort eingeben, damit die endgültige Kombination aus Passwort und PIN geprüft werden kann.",
             "entropyCollecting" => en
                 ? "Collecting: total {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; salt-SHA3 {5}/{10}; salt-Skein {6}/{10}; nonce 1 {7}/{10}; nonce 2 {8}/{10}; nonce 3 {9}/{10}"
                 : "Sammlung: gesamt {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; Salt-SHA3 {5}/{10}; Salt-Skein {6}/{10}; Nonce 1 {7}/{10}; Nonce 2 {8}/{10}; Nonce 3 {9}/{10}",
@@ -209,7 +219,7 @@ public sealed partial class MainWindow
             "entropyRetry" => en
                 ? "Factors remain valid; a retry needs fresh salts and nonces: total {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; salt-SHA3 {5}/{10}; salt-Skein {6}/{10}; nonce 1 {7}/{10}; nonce 2 {8}/{10}; nonce 3 {9}/{10}"
                 : "Faktoren bleiben gültig; ein Wiederholungsversuch benötigt frische Salts und Nonces: gesamt {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; Salt-SHA3 {5}/{10}; Salt-Skein {6}/{10}; Nonce 1 {7}/{10}; Nonce 2 {8}/{10}; Nonce 3 {9}/{10}",
-            "passwordEntropy" => en ? "Password strength estimate: {0:0.0} / {1:0} bits" : "Passwortstärke-Schätzwert: {0:0.0} / {1:0} Bit",
+            "passwordEntropy" => en ? "Conservative model score: {0:0} / {1:0} bits (estimate)" : "Konservativer Modellwert: {0:0} / {1:0} Bit (Schätzung)",
             "passwordAccepted" => en ? "All user-password requirements are met." : "Alle Anforderungen an das Userpasswort sind erfüllt.",
             "passwordTooShort" => en ? "Use at least {0} characters." : "Mindestens {0} Zeichen verwenden.",
             "passwordTooLong" => en ? "Use no more than {0} characters." : "Höchstens {0} Zeichen verwenden.",
@@ -222,6 +232,13 @@ public sealed partial class MainWindow
             "passwordMatchesFactor" => en ? "Do not reuse either generated factor." : "Keinen generierten Faktor als Userpasswort verwenden.",
             "passwordLowEntropy" => en ? "Increase the password strength estimate to at least 128." : "Passwortstärke-Schätzwert auf mindestens 128 erhöhen.",
             "passwordInvalid" => en ? "The user password is not accepted." : "Das Userpasswort wird nicht akzeptiert.",
+            "passwordListed" => en ? "This complete password is in the bundled local blocklist. Choose another password." : "Dieses vollständige Passwort steht in der mitgelieferten lokalen Sperrliste. Wähle ein anderes Passwort.",
+            "passwordModelUnavailableShort" => en ? "Password assessment unavailable." : "Passwortbewertung nicht verfügbar.",
+            "passwordModelUnavailable" => en ? "The local password model could not be verified. Reinstall a verified app copy before creating archives. Extraction remains available." : "Das lokale Passwortmodell konnte nicht geprüft werden. Vor dem Archivieren eine geprüfte App-Kopie erneut installieren. Entpacken bleibt möglich.",
+            "credentialPolicyHelpTitle" => en ? "How password and PIN checks work" : "So werden Passwort und PIN geprüft",
+            "credentialPolicyHelp" => en
+                ? "You choose your password and PIN. When creating an archive, all existing rules and the minimum score of 128 still apply. The bundled offline model can only lower the score. It considers German and English word combinations, common patterns and a limited password blocklist. It does not measure actual entropy or guarantee how long guessing would take. Unrecognized patterns may remain.\n\nThe PIN must contain 6 to 16 ASCII digits, must not occur as a complete substring of your password and must not be today's date. Further number-pattern rules also apply. No input or input hash is sent to a server.\n\nExtraction, listing and recovery use your original credentials without these selection checks or the password model. Keep the original password, PIN and both key sheets."
+                : "Du wählst Passwort und PIN selbst. Beim Archivieren gelten weiterhin alle bisherigen Regeln und der Mindestwert 128. Das mitgelieferte Offline-Modell kann den Wert nur absenken. Es berücksichtigt deutsche und englische Wortkombinationen, häufige Muster und eine begrenzte Passwortsperrliste. Es misst keine tatsächliche Entropie und garantiert keine Dauer eines Rateangriffs. Muster können unerkannt bleiben.\n\nDie PIN muss aus 6 bis 16 ASCII-Ziffern bestehen, darf nicht als vollständiger Teilstring im Passwort vorkommen und darf nicht das heutige Datum sein. Weitere Zahlenmusterregeln gelten ebenfalls. Keine Eingabe und kein Eingabehash werden an einen Server gesendet.\n\nEntpacken, Auflisten und Wiederherstellen verwenden die ursprünglichen Geheimnisse ohne diese Auswahlprüfungen und ohne Passwortmodell. Bewahre das ursprüngliche Passwort, die PIN und beide Schlüsselzettel auf.",
             "keySheetMissing" => en
                 ? "The two key sheets have not been physically printed or explicitly exported for testing."
                 : "Die zwei Schlüsselzettel wurden noch nicht physisch gedruckt oder ausdrücklich zum Test exportiert.",
@@ -229,6 +246,9 @@ public sealed partial class MainWindow
                 ? "The key sheets were handled for this exact archive path, suite and factor pair."
                 : "Die Schlüsselzettel wurden für exakt diesen Archivpfad, dieses Verfahren und dieses Faktorenpaar behandelt.",
             "extractTitle" => en ? "Extract archive" : "Archiv entpacken",
+            "extractPasswordTechnicalLimit" => en ? "The password exceeds the technical input limit of 1,048,576 UTF-16 code units." : "Das Passwort überschreitet die technische Eingabegrenze von 1.048.576 UTF-16-Codeeinheiten.",
+            "extractPinTechnicalLimit" => en ? "The PIN exceeds the technical input limit of 1,048,576 digits." : "Die PIN überschreitet die technische Eingabegrenze von 1.048.576 Ziffern.",
+            "extractPinAscii" => en ? "Enter the PIN using the original ASCII digits 0 to 9." : "Die PIN mit den ursprünglichen ASCII-Ziffern 0 bis 9 eingeben.",
             "extractSubtitle" => en ? "Select a ZPAQ archive or encrypted Keep Vault container." : "ZPAQ-Archiv oder verschlüsselten Keep-Vault-Container auswählen.",
             "recoveryPolicy" => en
                 ? "KPAR2 authenticates encrypted archives with two keyed MACs. For plain archives it only provides error correction. Emergency recovery always writes a new file."
@@ -261,6 +281,15 @@ public sealed partial class MainWindow
             "eraseDropHint" => en ? "Drop an encrypted .kzpaq container here." : "Verschlüsselten .kzpaq-Container hier ablegen.",
             "analyze" => en ? "Analyze" : "Analysieren",
             "eraseNotAnalyzed" => en ? "No file analyzed yet." : "Noch keine Datei analysiert.",
+            "eraseEncrypted" => en
+                ? "Encrypted container detected. Its recovery data will be destroyed first, followed by the container."
+                : "Verschlüsselter Container erkannt. Zuerst werden seine Wiederherstellungsdaten vernichtet, danach der Container.",
+            "erasePlain" => en
+                ? "This file is not a valid encrypted container and cannot be cryptographically erased here."
+                : "Diese Datei ist kein gültiger verschlüsselter Container und kann hier nicht kryptografisch gelöscht werden.",
+            "eraseCompleted" => en
+                ? "Any associated KPAR2 data was invalidated and deleted, then this local encrypted container was corrupted and deleted. Backups, snapshots and SSD data remnants may still exist. Destroy saved or printed key sheets separately."
+                : "Vorhandene zugehörige KPAR2-Daten wurden unbrauchbar gemacht und gelöscht, danach dieser lokale verschlüsselte Container beschädigt und gelöscht. Backups, Snapshots und SSD-Datenreste können weiterhin vorhanden sein. Gespeicherte oder gedruckte Schlüsselzettel separat vernichten.",
             "eraseHardwareNotice" => en
                 ? "This invalidates the current local container file only. APFS snapshots, Time Machine backups, cloud copies, and physical SSD flash remanence are not removed."
                 : "Dies macht nur die aktuelle lokale Containerdatei unbrauchbar. APFS-Snapshots, Time-Machine-Backups, Cloud-Versionen und SSD-Flash-Remanenz werden dadurch nicht gelöscht.",
@@ -303,7 +332,7 @@ public sealed partial class MainWindow
             "archiveTargetOverwritesInput" => en ? "The target archive would overwrite an input file." : "Das Zielarchiv würde eine Eingabedatei überschreiben.",
             "archiveTargetInsideInput" => en ? "The target archive must not be inside an input folder." : "Das Zielarchiv darf nicht innerhalb eines Eingabeordners liegen.",
             "passwordMismatch" => en ? "The user-password entries do not match." : "Die Userpasswort-Eingaben stimmen nicht überein.",
-            "passwordLength" => en ? "The user password must contain 24 to 128 characters." : "Das Userpasswort muss 24 bis 128 Zeichen lang sein.",
+            "passwordLength" => en ? "The user password must contain 24 to 256 characters when creating an archive." : "Das Userpasswort muss beim Archivieren 24 bis 256 Zeichen lang sein.",
             "entropyNotReady" => en
                 ? "Insufficient mouse entropy. Required: {0}; current: {1}; missing: {2}. Move the pointer over the window."
                 : "Nicht genug Maus-Entropie. Erforderlich: {0}; aktuell: {1}; fehlend: {2}. Bewege den Zeiger über dem Fenster.",
@@ -356,7 +385,7 @@ public sealed partial class MainWindow
             "integrityBlockedLog" => en ? "Integrity policy did not pass. Archive, extraction and erase operations remain disabled." : "Die Integritätsrichtlinie wurde nicht erfüllt. Archivierung, Entpacken und Löschen bleiben deaktiviert.",
             "generatedPasswordLog" => en ? "Generated factors A/B and prepared fresh salt/nonces in locked memory; source pools were consumed." : "Faktoren A/B erzeugt und frischen Salt/Nonces im gesperrten Speicher vorbereitet; Quellpools wurden verbraucht.",
             "keySheetTestPdfSavedLog" => en ? "Separate test PDF containing one factor saved: {0}" : "Getrennte Test-PDF mit einem Faktor gespeichert: {0}",
-            "keySheetPrintedLog" => en ? "Three-page key-sheet job streamed to physical CUPS queue {0}; no app PDF was created." : "Dreiseitiger Schlüsselzettelauftrag an physische CUPS-Warteschlange {0} gestreamt; keine App-PDF wurde erzeugt.",
+            "keySheetPrintedLog" => en ? "Two separate key-sheet jobs (two pages each) sent to physical CUPS queue {0}; no app PDF file was created." : "Zwei getrennte Schlüsselzettelaufträge (je zwei Seiten) an physische CUPS-Warteschlange {0} übermittelt; keine App-PDF-Datei wurde erzeugt.",
             "cipherSuiteSelected" => en ? "Cipher suite selected: {0}" : "Verschlüsselungsverfahren gewählt: {0}",
             "selectedSuiteMissing" => en ? "The signed, manifest-verified native reference library for {0} is unavailable." : "Die signierte und manifestgeprüfte native Referenzbibliothek für {0} ist nicht verfügbar.",
             "kalynaAvailable" => en ? "Kalyna reference library: available" : "Kalyna-Referenzbibliothek: verfügbar",

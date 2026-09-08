@@ -2,9 +2,10 @@
 # Builds the portable Keep Vault release for macOS, the counterpart of
 # tools/Build-Portable.ps1 on Windows.
 #
-# "Portable" means the result runs from wherever it is unpacked — a USB stick,
-# an external disk, a home directory — without an installer, without a .NET
-# runtime, and without touching /Applications. The folder carries the signed
+# This supplementary copy needs the matching native release installed first:
+# v12 archive operations require its exact protected machine-wide ZPAQ anchor.
+# It needs no .NET runtime and does not itself touch /Applications. It is not
+# a first-installation package. The folder carries the signed
 # app bundle, a standalone release verifier, and a README naming the pins that
 # were compiled in. The ZIP and both hash manifests are signed with the same
 # hybrid RSA-PSS + ML-DSA-87 pair as everything else, so the download can be
@@ -723,6 +724,23 @@ publish_exclusively() {
   }
 }
 
+# Locks are reviewed independently of restoring them. ForceEvaluate must stay
+# disabled; otherwise NuGet silently overrides locked mode on older SDKs.
+portable_lock_files=(${repo_root}/KeepVaultMac.ReleaseVerifier/packages.lock.json ${packaging_dir}/HybridSigner/packages.lock.json)
+portable_lock_hashes=(dd7a30a838aecf6060b4fc28f84392a09d864290e6f5a0a596535b0a40ebeaf8 b07635b8b5cf158644267cbb99e6483d6f947f37d3b9918b4ff39407eb6ba5eb)
+verify_portable_locks() {
+  local lock_index lock_file
+  for (( lock_index = 1; lock_index <= ${#portable_lock_files}; lock_index++ )); do
+    lock_file=${portable_lock_files[lock_index]}
+    if [[ ! -f ${lock_file} || -L ${lock_file} \
+        || $(/usr/bin/env -i PATH=${PATH} /usr/bin/shasum -a 256 ${lock_file} | /usr/bin/awk '{print $1}') != ${portable_lock_hashes[lock_index]} ]]; then
+      print -u2 "The reviewed portable dependency lock changed: ${lock_file}"
+      return 2
+    fi
+  done
+}
+verify_portable_locks
+
 # --- Standalone release verifier -------------------------------------------
 verifier_slices=()
 verifier_runtimes=(osx-arm64)
@@ -736,7 +754,7 @@ verifier_runtimes=(osx-arm64)
     --artifacts-path ${private_verifier_artifacts} \
     --locked-mode \
     --force \
-    --force-evaluate \
+    -p:RestoreForceEvaluate=false \
     --no-http-cache \
     --disable-build-servers \
     --nologo
@@ -744,11 +762,12 @@ verifier_runtimes=(osx-arm64)
     --artifacts-path ${private_signer_artifacts} \
     --locked-mode \
     --force \
-    --force-evaluate \
+    -p:RestoreForceEvaluate=false \
     --no-http-cache \
     --disable-build-servers \
     --nologo
 )
+verify_portable_locks
 for runtime in ${verifier_runtimes[@]}; do
   publish_dir=${build_root}/verifier-${runtime}
   (
@@ -859,9 +878,11 @@ Reading the printed QR codes:
   QR-Scanner.app — a separate, sandboxed program. Keep Vault itself never
   touches the camera and declares no hardware capability at all.
 
-This folder is self-contained for macOS ${architecture} and requires no
-installer and no .NET runtime. Keep the app bundle, the verifier, and the
-.sha3, .skein and .khsig files together.
+This supplementary folder is for macOS ${architecture} and needs no .NET
+runtime. Before using it on a Mac, install the matching complete native
+release with Keep Vault Installer.app. v12 archive operations require that
+release's exact protected machine-wide ZPAQ component; this folder does not
+install it. Keep the app, verifier and all .sha3/.skein/.khsig files together.
 
 Check the download before launching anything:
   From the directory that contains both the portable folder and its ZIP:
@@ -918,6 +939,7 @@ if [[ $(stat -f '%u:%l' ${signer_dll} 2>/dev/null || print invalid) != ${EUID}:1
   print -u2 'The private HybridSigner assembly is not a single-link caller-owned file.'
   exit 2
 fi
+verify_portable_locks
 keychain_temp=${build_root}/keychain-temp
 mkdir -m 0700 ${keychain_temp}
 keychain_temp_identity=$(stat -f '%d:%i' ${keychain_temp})

@@ -45,6 +45,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private GeneratedArchiveEntropy? _generatedEntropy;
     private string? _keySheetFingerprint;
     private string? _extractHint;
+    private string _eraseStatusKey = "eraseNotAnalyzed";
     private string? _integrityStatusKey = "integrityChecking";
     private string? _integrityRawMessage;
     private IBrush _integrityBrush = Brush.Parse("#F2BD55");
@@ -644,7 +645,14 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             Log(exception.ToString());
-            await ErrorAsync(exception.Message);
+            await ErrorAsync(exception switch
+            {
+                PasswordPolicyException passwordFailure => string.Join(Environment.NewLine,
+                    passwordFailure.Analysis.Violations.Select(PasswordViolationText)),
+                PinPolicyException pinFailure => string.Join(Environment.NewLine,
+                    pinFailure.Analysis.Violations.Select(PinViolationText)),
+                _ => exception.Message,
+            });
         }
         finally
         {
@@ -1275,7 +1283,10 @@ public sealed partial class MainWindow : Window, IDisposable
         if (_componentsReady)
         {
             EraseConfirmBox.IsChecked = false;
-            EraseStatusText.Text = T("eraseNotAnalyzed");
+            if (_eraseStatusKey != "eraseCompleted" || !string.IsNullOrEmpty(ErasePathBox.Text))
+            {
+                SetEraseStatus("eraseNotAnalyzed");
+            }
             ReleaseEraseAccessIfMismatched(ErasePathBox.Text ?? string.Empty);
         }
     }
@@ -1316,11 +1327,10 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, _lifetime.Token);
-            EraseStatusText.Text = analysis.Message;
-            EraseHardwareNoticeText.Text = analysis.HardwareNotice;
+            SetEraseAnalysis(analysis);
             if (!analysis.IsEncryptedContainer)
             {
-                await WarnAsync(analysis.Message);
+                await WarnAsync(T(_eraseStatusKey));
                 return;
             }
 
@@ -1330,11 +1340,11 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             CryptoEraseResult result = await _erase.EraseEncryptedContainerAsync(path, Progress(), _lifetime.Token);
-            EraseStatusText.Text = result.Message;
             ErasePathBox.Text = string.Empty;
             EraseConfirmBox.IsChecked = false;
+            SetEraseStatus("eraseCompleted");
             Log(result.Message);
-            await InfoAsync(result.Message);
+            await InfoAsync(T("eraseCompleted"));
         }
         catch (Exception exception)
         {
@@ -1371,8 +1381,7 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, _lifetime.Token);
-            EraseStatusText.Text = analysis.Message;
-            EraseHardwareNoticeText.Text = analysis.HardwareNotice;
+            SetEraseAnalysis(analysis);
             Log(analysis.Message);
             Log(analysis.HardwareNotice);
         }
@@ -1424,8 +1433,8 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         string first = GeneratedPasswordFirstBox.Text ?? string.Empty;
         string second = GeneratedPasswordSecondBox.Text ?? string.Empty;
-        EnsureGeneratedPassword(first);
-        EnsureGeneratedPassword(second);
+        EnsureGeneratedPassword(first, T("generatedFactorInvalid"));
+        EnsureGeneratedPassword(second, T("generatedFactorInvalid"));
         PasswordKeyService.ValidateUserPasswordForCreation(CreatePasswordBox.Text ?? string.Empty, first, second);
         if (!string.Equals(CreatePasswordBox.Text, CreatePasswordConfirmBox.Text, StringComparison.Ordinal))
         {
@@ -1434,7 +1443,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         string pin = CreatePinBox.Text ?? string.Empty;
         string pinConfirm = CreatePinConfirmBox.Text ?? string.Empty;
-        ContainerKeyDerivation.ValidatePinForCreation(pin);
+        ContainerKeyDerivation.ValidatePinForCreation(pin, CreatePasswordBox.Text ?? string.Empty);
         if (!string.Equals(pin, pinConfirm, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(T("pinMismatch"));
@@ -1444,26 +1453,47 @@ public sealed partial class MainWindow : Window, IDisposable
     private void EnsureExtractionFactors()
     {
         string password = ExtractPasswordBox.Text ?? string.Empty;
-        if (password.Length < PasswordKeyService.MinPasswordLength || password.Length > PasswordKeyService.MaxPasswordLength)
+        try
         {
-            throw new InvalidOperationException(T("passwordLength"));
+            ContainerKeyDerivation.ValidatePasswordEncoding(password);
+        }
+        catch (ArgumentException)
+        {
+            throw new InvalidOperationException(T("extractPasswordTechnicalLimit"));
         }
 
         string pin = ExtractPinBox.Text ?? string.Empty;
-        ContainerKeyDerivation.ValidatePinSyntax(pin);
+        try
+        {
+            ContainerKeyDerivation.ValidatePinEncoding(pin);
+        }
+        catch (ArgumentException)
+        {
+            throw new InvalidOperationException(T(pin.Length > ContainerKeyDerivation.MaxCredentialCodeUnits
+                ? "extractPinTechnicalLimit" : "extractPinAscii"));
+        }
 
         string first = ExtractGeneratedPasswordFirstBox.Text ?? string.Empty;
         string second = ExtractGeneratedPasswordSecondBox.Text ?? string.Empty;
-        EnsureGeneratedPassword(first);
-        EnsureGeneratedPassword(second);
+        EnsureGeneratedPassword(first, T("generatedFactorInvalid"));
+        EnsureGeneratedPassword(second, T("generatedFactorInvalid"));
     }
 
-    internal static string EnsureGeneratedPassword(string generatedPassword)
+    internal static string EnsureGeneratedPassword(string generatedPassword,
+        string errorMessage = "Both key-sheet factors must contain 256 hexadecimal characters each.")
     {
-        string normalized = PasswordKeyService.NormalizeGeneratedPassword(generatedPassword);
+        string normalized;
+        try
+        {
+            normalized = PasswordKeyService.NormalizeGeneratedPassword(generatedPassword);
+        }
+        catch (ArgumentException)
+        {
+            throw new InvalidOperationException(errorMessage);
+        }
         if (normalized.Length != PasswordKeyService.GeneratedPasswordLength)
         {
-            throw new InvalidOperationException("Both 1024-bit factors from the key sheet are required.");
+            throw new InvalidOperationException(errorMessage);
         }
         return normalized;
     }
@@ -1542,13 +1572,13 @@ public sealed partial class MainWindow : Window, IDisposable
             CreatePasswordBox.Text ?? string.Empty,
             GeneratedPasswordFirstBox.Text ?? string.Empty,
             GeneratedPasswordSecondBox.Text ?? string.Empty);
-        PasswordEntropyStatusText.Text = string.Format(
-            CultureInfo.InvariantCulture,
-            T("passwordEntropy"),
-            analysis.ConservativeEntropyBits,
-            PasswordKeyService.MinimumConservativeEntropyBits);
-        PasswordEntropyStatusText.Foreground = Brush.Parse(
-            analysis.ConservativeEntropyBits >= PasswordKeyService.MinimumConservativeEntropyBits ? "#7EE2B8" : "#F2BD55");
+        bool modelUnavailable = analysis.Guessability?.Status == PasswordModelStatus.Unavailable;
+        PasswordEntropyStatusText.Text = modelUnavailable
+            ? T("passwordModelUnavailableShort")
+            : string.Format(CultureInfo.InvariantCulture, T("passwordEntropy"),
+                Math.Floor(analysis.ConservativeEntropyBits), PasswordKeyService.MinimumConservativeEntropyBits);
+        PasswordEntropyStatusText.Foreground = Brush.Parse(modelUnavailable ? "#F29AA6"
+            : analysis.ConservativeEntropyBits >= PasswordKeyService.MinimumConservativeEntropyBits ? "#7EE2B8" : "#F2BD55");
         PasswordPolicyStatusText.Text = analysis.IsAccepted
             ? T("passwordAccepted")
             : string.Join(Environment.NewLine, analysis.Violations.Select(PasswordViolationText));
@@ -1571,7 +1601,7 @@ public sealed partial class MainWindow : Window, IDisposable
         string confirm = CreatePinConfirmBox.Text ?? string.Empty;
         string? failure = null;
 
-        PinPolicyAnalysis analysis = ContainerKeyDerivation.AnalyzePinForCreation(pin);
+        PinPolicyAnalysis analysis = ContainerKeyDerivation.AnalyzePinForCreation(pin, CreatePasswordBox.Text ?? string.Empty);
         if (!analysis.IsAccepted)
         {
             failure = PinViolationText(analysis.Violations[0]);
@@ -1595,6 +1625,11 @@ public sealed partial class MainWindow : Window, IDisposable
         PinPolicyViolation.SequentialAscending => T("pinSequentialAscending"),
         PinPolicyViolation.SequentialDescending => T("pinSequentialDescending"),
         PinPolicyViolation.Blocklisted => T("pinBlocklisted"),
+        PinPolicyViolation.ContainedInPassword => T("pinContainedInPassword"),
+        PinPolicyViolation.CurrentDate => T("pinCurrentDate"),
+        PinPolicyViolation.PlausibleDate => T("pinPlausibleDate"),
+        PinPolicyViolation.PredictablePattern => T("pinPredictablePattern"),
+        PinPolicyViolation.PasswordRequiredForPairCheck => T("pinPasswordRequired"),
         _ => T("pinInvalid"),
     };
 
@@ -1610,13 +1645,15 @@ public sealed partial class MainWindow : Window, IDisposable
         PasswordPolicyViolation.HexadecimalRunTooLong => T("passwordHexRun"),
         PasswordPolicyViolation.MatchesGeneratedPassword => T("passwordMatchesFactor"),
         PasswordPolicyViolation.InsufficientConservativeEntropy => T("passwordLowEntropy"),
+        PasswordPolicyViolation.ListedPassword => T("passwordListed"),
+        PasswordPolicyViolation.ModelUnavailable => T("passwordModelUnavailable"),
         _ => T("passwordInvalid"),
     };
 
     private MacKeySheetData BuildKeySheetData()
     {
-        EnsureGeneratedPassword(GeneratedPasswordFirstBox.Text ?? string.Empty);
-        EnsureGeneratedPassword(GeneratedPasswordSecondBox.Text ?? string.Empty);
+        EnsureGeneratedPassword(GeneratedPasswordFirstBox.Text ?? string.Empty, T("generatedFactorInvalid"));
+        EnsureGeneratedPassword(GeneratedPasswordSecondBox.Text ?? string.Empty, T("generatedFactorInvalid"));
         string archive = NormalizeTargetArchivePath(ArchivePathBox.Text?.Trim() ?? string.Empty, encrypted: true);
         if (archive.Length == 0)
         {
@@ -1953,7 +1990,23 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         ErasePathBox.Text = path;
         EraseConfirmBox.IsChecked = false;
-        EraseStatusText.Text = T("eraseNotAnalyzed");
+        SetEraseStatus("eraseNotAnalyzed");
+    }
+
+    private void SetEraseAnalysis(CryptoEraseAnalysis analysis) =>
+        SetEraseStatus(!analysis.Exists ? "eraseMissing"
+            : analysis.IsEncryptedContainer ? "eraseEncrypted" : "erasePlain");
+
+    private void SetEraseStatus(string key)
+    {
+        _eraseStatusKey = key;
+        RenderEraseStatus();
+    }
+
+    private void RenderEraseStatus()
+    {
+        EraseStatusText.Text = T(_eraseStatusKey);
+        EraseHardwareNoticeText.Text = T("eraseHardwareNotice");
     }
 
     private bool TryBeginProtectedOperation()

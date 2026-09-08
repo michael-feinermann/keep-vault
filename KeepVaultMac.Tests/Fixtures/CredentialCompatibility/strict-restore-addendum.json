@@ -1,0 +1,33 @@
+{
+  "Schema": "keep-vault-fixture-strict-restore-addendum-v1",
+  "ArchivedManifestSha256": "5FBFFFB598B233953B5482EADC38B7E615EE7D31C1898CBE5FAACA7C6DEA6DB5",
+  "HistoricalCorrection": "The original verified-run.sh.txt used --locked-mode together with --force-evaluate. That command is not evidence of effective locked mode. Its historical source-provenance.json PrivatePackageFlow and package-provenance.json Note prose is superseded by this strict-restore addendum; historical files remain unchanged.",
+  "EffectiveRestoreLockedMode": true,
+  "EffectiveRestoreForceEvaluate": false,
+  "StrictRestoreExitCode": 0,
+  "FreshLockGenerationUsed": false,
+  "FixtureRegenerationUsed": false,
+  "SourceInputFilesUnchanged": 87,
+  "Sdk": "Original verified 10.0.400 tree recorded in the archived source provenance",
+  "Environment": "Clean env, same private HOME/NuGet/cache/scratch, explicit official NuGet.Config; no global cache or repository lockfile mutation",
+  "Locks": [
+    {
+      "PrivatePath": "KeepVaultMac/packages.lock.json",
+      "ArchivedName": "private-app-packages.lock.json",
+      "BeforeSha256": "3DC54287C79BB2457A7B3B6DE382C1C085A747FDC396DAF3E89D292D2D57E94C",
+      "AfterSha256": "3DC54287C79BB2457A7B3B6DE382C1C085A747FDC396DAF3E89D292D2D57E94C",
+      "ArchivedSha256": "3DC54287C79BB2457A7B3B6DE382C1C085A747FDC396DAF3E89D292D2D57E94C"
+    },
+    {
+      "PrivatePath": "KeepVaultMac.Tests/packages.lock.json",
+      "ArchivedName": "private-generator-packages.lock.json",
+      "BeforeSha256": "7A55D2066C0FE4845BB72EE9F39D16765891EC23045F178D6CF629DEE6246072",
+      "AfterSha256": "7A55D2066C0FE4845BB72EE9F39D16765891EC23045F178D6CF629DEE6246072",
+      "ArchivedSha256": "7A55D2066C0FE4845BB72EE9F39D16765891EC23045F178D6CF629DEE6246072"
+    }
+  ],
+  "EvidenceFiles": {
+    "strict-restore-check.sh.txt": "9100A5D99246FA2EC84FFE5C32495971FD5FDE9E5BFA1708FFFD33D1081E4063",
+    "strict-restore-check.log.txt": "F53A601E496102529B90029A49E0F135092AEAEB88444ED8CA745AD56649CFA7"
+  }
+}

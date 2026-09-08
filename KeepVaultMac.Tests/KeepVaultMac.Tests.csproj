@@ -19,6 +19,7 @@
     <Compile Include="../KeepVaultMac/Packaging/HybridSigner/LockedBufferTransfer.cs" Link="Packaging/LockedBufferTransfer.cs" />
     <Compile Include="../KeepVaultMac/Packaging/HybridSigner/UsbWrappingKey.cs" Link="Packaging/UsbWrappingKey.cs" />
     <Compile Include="../KeepVaultMac/Packaging/HybridSigner/MacBoundSecretFile.cs" Link="Packaging/MacBoundSecretFile.cs" />
+    <Compile Include="../KeepVaultMac.ReleaseVerifier/MacBoundFile.cs" Link="Packaging/MacBoundFile.cs" />
     <!-- Test-only windowing backend so the real MainWindow can be driven without
          a display. It is referenced by this harness alone and never reaches the
          signed app, whose package set stays pinned by its own lockfile hash. -->

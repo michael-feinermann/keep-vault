@@ -175,6 +175,18 @@ public sealed class PasswordKeyService
         }
 
         double entropyBits = EstimateConservativeEntropyBits(password, characterClasses, distinctCharacters);
+        PasswordGuessabilityAnalysis supplementary = PasswordGuessabilityAnalysis.Skipped(entropyBits);
+        if (password.Length is >= MinPasswordLength and <= MaxPasswordLength
+            && !violations.Contains(PasswordPolicyViolation.ControlCharacter)
+            && !violations.Contains(PasswordPolicyViolation.InvalidUnicode))
+        {
+            supplementary = PasswordGuessabilityService.Evaluate(password, entropyBits);
+            entropyBits = supplementary.CorrectedBits;
+            if (supplementary.Status == PasswordModelStatus.Unavailable)
+                violations.Add(PasswordPolicyViolation.ModelUnavailable);
+            if (supplementary.ExactBlocklistMatch)
+                violations.Add(PasswordPolicyViolation.ListedPassword);
+        }
         if (entropyBits < MinimumConservativeEntropyBits)
         {
             violations.Add(PasswordPolicyViolation.InsufficientConservativeEntropy);
@@ -187,7 +199,7 @@ public sealed class PasswordKeyService
             nonHexCharacters,
             longestHexRun,
             entropyBits,
-            violations);
+            violations) { Guessability = supplementary };
     }
 
     public static bool UserPasswordMatchesAnyGeneratedPassword(string? userPassword, params string?[] generatedPasswords)
@@ -479,6 +491,8 @@ public enum PasswordPolicyViolation
     HexadecimalRunTooLong,
     MatchesGeneratedPassword,
     InsufficientConservativeEntropy,
+    ListedPassword,
+    ModelUnavailable,
 }
 
 public sealed record PasswordPolicyAnalysis(
@@ -491,6 +505,7 @@ public sealed record PasswordPolicyAnalysis(
     IReadOnlyList<PasswordPolicyViolation> Violations)
 {
     public bool IsAccepted => Violations.Count == 0;
+    public PasswordGuessabilityAnalysis? Guessability { get; init; }
 }
 
 public sealed class PasswordPolicyException : ArgumentException

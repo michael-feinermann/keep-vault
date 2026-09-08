@@ -1,0 +1,27 @@
+#!/bin/zsh -f
+set -euo pipefail
+umask 077
+PATH='/usr/bin:/bin:/usr/sbin:/sbin'
+export PATH
+fixture_private=/private/tmp/keep-vault-credential-verified.xgd06uas
+fixture_source=/Users/michael/Developer/GPT-Codex/Kalyna/build/audit/credential-compatibility-501-e52159e
+fixture_repo=/Users/michael/Developer/GPT-Codex/Kalyna
+fixture_project=${fixture_source}/KeepVaultMac.Tests/FixtureBuilder.csproj
+run_clean() {
+  /usr/bin/env -i HOME=${fixture_private}/home PATH=${PATH} TMPDIR=${fixture_private}/tmp \
+    DOTNET_CLI_HOME=${fixture_private}/home NUGET_PACKAGES=${fixture_private}/packages \
+    NUGET_HTTP_CACHE_PATH=${fixture_private}/http-cache NUGET_SCRATCH=${fixture_private}/scratch \
+    DOTNET_EnableDiagnostics=0 COMPlus_EnableDiagnostics=0 DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE=1 \
+    DOTNET_GENERATE_ASPNET_CERTIFICATE=false DOTNET_ADD_GLOBAL_TOOLS_TO_PATH=false MSBUILDDISABLENODEREUSE=1 \
+    ${fixture_private}/dotnet-sdk/dotnet "$@"
+}
+run_clean restore ${fixture_project} --artifacts-path ${fixture_private}/artifacts --configfile ${fixture_private}/NuGet.Config \
+  --force --force-evaluate --no-http-cache --disable-build-servers -p:RestoreLockedMode=false -p:PublishAot=false -p:PublishTrimmed=false --nologo
+run_clean restore ${fixture_project} --artifacts-path ${fixture_private}/artifacts --configfile ${fixture_private}/NuGet.Config \
+  --locked-mode --force --force-evaluate --no-http-cache --disable-build-servers -p:PublishAot=false -p:PublishTrimmed=false --nologo
+run_clean build ${fixture_project} -c Release --no-restore --no-incremental --artifacts-path ${fixture_private}/artifacts \
+  --disable-build-servers -p:UseSharedCompilation=false -p:PublishAot=false -p:PublishTrimmed=false --nologo
+${fixture_repo}/tools/Stage-TestNatives-macOS.sh --app '/Applications/Keep Vault.app' \
+  --destination ${fixture_private}/artifacts/bin/FixtureBuilder/release_osx-arm64/Native
+run_clean ${fixture_private}/artifacts/bin/FixtureBuilder/release_osx-arm64/KeepVaultMac.Tests.dll ${fixture_private}/fixtures

@@ -1,0 +1,350 @@
+[
+  {
+    "Path": "Directory.Build.props",
+    "Sha256": "7A09792E4D68DD9A2CB81C829835CFD214A96CBD9F5E2DEE63A8A40A1DBD6A0B"
+  },
+  {
+    "Path": "KalynaArchiver/App.xaml.cs",
+    "Sha256": "E7F2C7199EEA2250CFA2AF35F4B132B62E99118160609F45B701883975167AA2"
+  },
+  {
+    "Path": "KalynaArchiver/AssemblyInfo.cs",
+    "Sha256": "6B1AE0962BA05350C7B01CEF6D3FF7977482E8EC5E9842296902B2DA2CCC8233"
+  },
+  {
+    "Path": "KalynaArchiver/AssemblyInternals.cs",
+    "Sha256": "CD1950F9A286960DB041FAD2BD3D81C6BFA18C9A44B6510A9D4F933A3B1B9D4E"
+  },
+  {
+    "Path": "KalynaArchiver/KalynaArchiver.csproj",
+    "Sha256": "D6FE0E90E574D24DDC0EF74B16BA38A25BD4C4661D7C202BC8F5F2255DA513BF"
+  },
+  {
+    "Path": "KalynaArchiver/MainWindow.xaml.cs",
+    "Sha256": "B4E2A6EF2F4BA0A6173A3864DACAF5183D667B6565DCAE4E1835CFC580C0CFE9"
+  },
+  {
+    "Path": "KalynaArchiver/ProductInfo.cs",
+    "Sha256": "28E859C98E27EE0EA76EEF8DD5C01145623FB708EBEF2FD90C1EA812734B3DA0"
+  },
+  {
+    "Path": "KalynaArchiver/Services/AppSettingsStore.cs",
+    "Sha256": "772E1112F2CBB54B6BFC235DEE36AF82AD38DCA23CC03DD3E08556DD7240553E"
+  },
+  {
+    "Path": "KalynaArchiver/Services/ArchiveIntegrityService.cs",
+    "Sha256": "2F3D0D25D6415B51F01AB014F76D04D58D7FD444DF0F3D2DBC61EFF19AE049DC"
+  },
+  {
+    "Path": "KalynaArchiver/Services/BoundFileTransaction.cs",
+    "Sha256": "244EF239A937BC9D571812E7339245606F1F8890FF0BC84CF0A9AA8D7FA02871"
+  },
+  {
+    "Path": "KalynaArchiver/Services/ContainerKeyDerivation.cs",
+    "Sha256": "D0C8ECAD8C1ABBCD8B5F56969140207C14E6CE53F165BF9F5D98C93A8DD553AA"
+  },
+  {
+    "Path": "KalynaArchiver/Services/CryptographicEraseService.cs",
+    "Sha256": "2B219896F07DCE7F3FFA4EB971F48F9B4779FD35016E7C846571EC1CE6D5CA1E"
+  },
+  {
+    "Path": "KalynaArchiver/Services/EncryptionSuite.cs",
+    "Sha256": "1B65766481179BE1901A77B78D519724D159D9EBE06330BF4BEC4CCEAE2D4021"
+  },
+  {
+    "Path": "KalynaArchiver/Services/EntropyMixer.cs",
+    "Sha256": "F6A0D8BCF729BE76CC2A93F93048DC49C5FFFAB83A1CA069A27D2B9C6801B0E4"
+  },
+  {
+    "Path": "KalynaArchiver/Services/IntegrityService.cs",
+    "Sha256": "8A782E51EB522E21B0DA2BDF69144D31833B4F0BE47158B8FDEC30C4A75D2471"
+  },
+  {
+    "Path": "KalynaArchiver/Services/KalynaContainerService.cs",
+    "Sha256": "F82ADC42303F48A1C1749EE19D1219ED62E1166F3517CE3D55B04408F3F2370E"
+  },
+  {
+    "Path": "KalynaArchiver/Services/KdfPrimitives.cs",
+    "Sha256": "060B2F19DBAC01FC22B5ACA83D3D7D1F35FA1029D09354FE3A5350D489D34964"
+  },
+  {
+    "Path": "KalynaArchiver/Services/KdfSalts.cs",
+    "Sha256": "086B363FADB1B463322B9BE0FAF2068959D5A76C28299C213FDE0416DA4C4154"
+  },
+  {
+    "Path": "KalynaArchiver/Services/KeySheetService.cs",
+    "Sha256": "40D49109DB247270178906754323E668A5E7272E2D6414FA4EDE9F77B7B9A2AB"
+  },
+  {
+    "Path": "KalynaArchiver/Services/NativeArgon2id.cs",
+    "Sha256": "DF85902868E6CE2404351EA305C185CB03E0A2C970A217BFFD9F9FEFB54E7F52"
+  },
+  {
+    "Path": "KalynaArchiver/Services/NativeCascadeCiphers.cs",
+    "Sha256": "0A9532736E585DC2029795DBE1C7388562DC7463627CE70E5AC8CE86832C1C25"
+  },
+  {
+    "Path": "KalynaArchiver/Services/ParallelContainerAuthenticator.cs",
+    "Sha256": "EDFC5C05A84ACBB5CCFBEAF0F588E88A8C840F6779A77973C8F8F4B382525160"
+  },
+  {
+    "Path": "KalynaArchiver/Services/PasswordKeyService.cs",
+    "Sha256": "6B6180002300F5C2E35C073FBB788C4E276123795AB6B93FE5410AA7294D552F"
+  },
+  {
+    "Path": "KalynaArchiver/Services/PrivateSnapshotRandomAccess.cs",
+    "Sha256": "9B96B18F1C46C8374AE05C4A34B45B4DC84929F7C96D83B37B7D080A1CE26420"
+  },
+  {
+    "Path": "KalynaArchiver/Services/ProcessHardening.cs",
+    "Sha256": "20BB313121E67CC3513833C1C97F97392C20A1C0C26AA4F64C62AE7EB166D60E"
+  },
+  {
+    "Path": "KalynaArchiver/Services/ProcessResult.cs",
+    "Sha256": "6DDDC6F71A4FFA7FFF5635E8DBF9BFF286885FB8E0793C92CF37F721B8FCC380"
+  },
+  {
+    "Path": "KalynaArchiver/Services/RecoveryService.cs",
+    "Sha256": "BA717629FD2593D64B21E86E7C49BCE2B0129446D2E2056BF95B3B47889EB30C"
+  },
+  {
+    "Path": "KalynaArchiver/Services/RecoverySidecarTransaction.cs",
+    "Sha256": "A2A75DF8C474006794A426B44D88DA54A4B35CF17F27346C5AF51D37CCD7169F"
+  },
+  {
+    "Path": "KalynaArchiver/Services/SecureFile.cs",
+    "Sha256": "E0BE44026F00795D9D5612D86AC7B27F3F0F7ABC8CC5C7345A19EA61084EC447"
+  },
+  {
+    "Path": "KalynaArchiver/Services/SecureMemory.cs",
+    "Sha256": "78BAD22E1DB00105C5C11D601BC3C23ED3E13CC0EB7467F2E08F42BB1F373F5E"
+  },
+  {
+    "Path": "KalynaArchiver/Services/SigningTrustPolicy.cs",
+    "Sha256": "D3385DBF67BB53D30D63DA2CEF62FE243116211430C0C5A52E9674DB9890B571"
+  },
+  {
+    "Path": "KalynaArchiver/Services/Skein1024Service.cs",
+    "Sha256": "4AEE152745F969CD7C7C2508D1644A73F40974A5C73FBEF4E6F786F2249F386F"
+  },
+  {
+    "Path": "KalynaArchiver/Services/SuiteKeySchedule.cs",
+    "Sha256": "E9C2D8967425E033E27A492C20F93E85BC462574AE3468352839247E6D3B5ED1"
+  },
+  {
+    "Path": "KalynaArchiver/Services/V12MasterKdf.cs",
+    "Sha256": "E8E550C7B8265831F453AB8911BECD54CFD7DFF8F83B5E0BF88BF67A20B7C8A3"
+  },
+  {
+    "Path": "KalynaArchiver/Services/WindowProtection.cs",
+    "Sha256": "3E4D8BF3D6B855533D617917743B87133912C2190CD9F4305960A9F9F9E64E2A"
+  },
+  {
+    "Path": "KalynaArchiver/Services/WindowsCompanionVerification.cs",
+    "Sha256": "48D260D0E4476EA7CB70940C9B00361C312E7330807440C2AD2CA87D21F223D6"
+  },
+  {
+    "Path": "KalynaArchiver/Services/WindowsExtractionStaging.cs",
+    "Sha256": "6F202293018F45199A7D07077E581D09DF7BB3D35080D8AC45C91C870D829C1C"
+  },
+  {
+    "Path": "KalynaArchiver/Services/WindowsOriginalDeletionService.cs",
+    "Sha256": "55C3B2DDABD0CCAC8ED82A46EA7B1E0B85AA29E9E40AA3AFF455B7AE75CFE3D0"
+  },
+  {
+    "Path": "KalynaArchiver/Services/WindowsSafeFileSystem.cs",
+    "Sha256": "68B5078AD178F41BB2C12A3058A30CE324CF76F97F8C334AE680B6EDD0F92FBF"
+  },
+  {
+    "Path": "KalynaArchiver/Services/ZpaqService.cs",
+    "Sha256": "665FFE07BE08C1381D315F4AB55872F12DCC106AAAA463C964452266F5FD593E"
+  },
+  {
+    "Path": "KalynaArchiver.Signing/HybridSignatureService.cs",
+    "Sha256": "9F2B16352D1A8C784B22BF3C9E6D531D6FFC341AB3C1885D62E96A2B22F4A988"
+  },
+  {
+    "Path": "KalynaArchiver.Signing/KalynaArchiver.Signing.csproj",
+    "Sha256": "AA9564435791E61416888C6CD2643BDBFF63D461C774C36DFE8F15430D04F31E"
+  },
+  {
+    "Path": "KalynaArchiver.Signing/Mldsa87.cs",
+    "Sha256": "31DF5FFAF5413CD7E18287CFC4E160FE08758ECF13EE11F8E3F8A04920C68BFB"
+  },
+  {
+    "Path": "KalynaArchiver.Signing/Mldsa87Reference.cs",
+    "Sha256": "5C76B4EF8A5337596772D3951BF57D49E36CE067DA755F80DAC10103ED8AD1A9"
+  },
+  {
+    "Path": "KalynaArchiver.Signing/MldsaKeyStore.cs",
+    "Sha256": "0136141C1000A3A9EEFDAF95C813473B4AD9EB7526C5E330825E25C271C871BC"
+  },
+  {
+    "Path": "KalynaArchiver.Signing/Sha3_512Compat.cs",
+    "Sha256": "9B5EEBA37BBA7BAC94E10C67FCE3C709491BDFF38509289E137CAB39E6286BF6"
+  },
+  {
+    "Path": "KalynaArchiver.Signing/Sha512Compat.cs",
+    "Sha256": "B3D296C617FAC9C11A86641B9D022B4932A0139EBAEAEF1CD25EE01D50A1B6E0"
+  },
+  {
+    "Path": "KeepVaultMac/App.axaml",
+    "Sha256": "F44F795EFFD2A9FD66B617F8F07F33E4A3E76B2F91760B65E80FFE310052E0FF"
+  },
+  {
+    "Path": "KeepVaultMac/App.axaml.cs",
+    "Sha256": "8AEAD18359F11B2481D89323C6B3901EDA6208F101ABD1CF498FE6256013FB6C"
+  },
+  {
+    "Path": "KeepVaultMac/AssemblyInfo.cs",
+    "Sha256": "F58E5499016CA33C7A7228D09E5BB93D87DC94E8E60B3257A642C25686A1BB9C"
+  },
+  {
+    "Path": "KeepVaultMac/Directory.Build.props",
+    "Sha256": "ADC6EAE6601D18E349D67DEF0C24E39E9F11341AF999A1D54057393D406610F5"
+  },
+  {
+    "Path": "KeepVaultMac/Gui/MacKeySheetService.cs",
+    "Sha256": "AAD5C918FF834BA7B83F36E4875029A73C7E7CF8E577859CA3A5A67760EBE17A"
+  },
+  {
+    "Path": "KeepVaultMac/Gui/MacSecurityScopedResourceLease.cs",
+    "Sha256": "FBAA571835A13DAA287A4F7111F61CB417794BB2552DCCDCC08BE3CE54607376"
+  },
+  {
+    "Path": "KeepVaultMac/Gui/MainWindow.Localization.cs",
+    "Sha256": "09CEDA5F138699E72A1D3B11415CD052B11C5268C0DE675331ACD62902F6CB80"
+  },
+  {
+    "Path": "KeepVaultMac/Gui/MainWindow.PathsAndDrop.cs",
+    "Sha256": "A2B98F945C7AD09A93CBBE76CFA6AD446816A85310198617A1FCFB67DF619024"
+  },
+  {
+    "Path": "KeepVaultMac/Gui/MainWindow.StorageAccess.cs",
+    "Sha256": "DDE6B768557730B95EDD8B1365C402E233F44DAA3F77694E1ECBF760B3C36DF6"
+  },
+  {
+    "Path": "KeepVaultMac/Gui/PrinterSelectionDialog.cs",
+    "Sha256": "27268601FFF4138D7458668F401BD303A469391A46607364AAB2AF5BEFA52777"
+  },
+  {
+    "Path": "KeepVaultMac/Gui/SecurityDialog.cs",
+    "Sha256": "C4E8A8E2B2957D61A501AEB724998E9EA18201D8F0BFE4E38F2B054E563BBDDA"
+  },
+  {
+    "Path": "KeepVaultMac/KeepVaultMac.csproj",
+    "Sha256": "71C985B4CB3A772A29848D6FC2D3A23FE10D36037104793B5D0B7D443BB1E7C7"
+  },
+  {
+    "Path": "KeepVaultMac/MainWindow.axaml",
+    "Sha256": "56F3F7F72025BD78EAD38745EF6F1B39A3BAD4121EE90B12E43897BFC96B0923"
+  },
+  {
+    "Path": "KeepVaultMac/MainWindow.axaml.cs",
+    "Sha256": "85F077F072CC4928DDAFA8EA31D6EB6AC92D7A4F084F64A2916AAC928D0E6561"
+  },
+  {
+    "Path": "KeepVaultMac/Packaging/HybridSigner/HybridKeyEnvelope.cs",
+    "Sha256": "6D93B2B8439AE52DF902C83EB3522FC4070B235AF3CB386D217C0D9697796BC1"
+  },
+  {
+    "Path": "KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj",
+    "Sha256": "24D639BF8279E0B98C18CF46FBD7D73900BAE820584DB901FA25D6184AA536AC"
+  },
+  {
+    "Path": "KeepVaultMac/Packaging/HybridSigner/LockedBufferTransfer.cs",
+    "Sha256": "FA1B9235AE1BD8B052981E61765E4C6E4A92BA0D29A9CD501FFCB5BA42763721"
+  },
+  {
+    "Path": "KeepVaultMac/Packaging/HybridSigner/MacBoundSecretFile.cs",
+    "Sha256": "41A373983334F3A1F9CE7F6F3EFC9B55C4FA893AA6B95B340AC7767D36DDDDE3"
+  },
+  {
+    "Path": "KeepVaultMac/Packaging/HybridSigner/Program.cs",
+    "Sha256": "69D888043EC44D203E6FC133D43D543952E3B021D366CDC351578B71F7041852"
+  },
+  {
+    "Path": "KeepVaultMac/Packaging/HybridSigner/UsbWrappingKey.cs",
+    "Sha256": "080179D72DA950D9F6C90B7DA2BB98D4C4470FB0E604DE2444D21E5A59A926C2"
+  },
+  {
+    "Path": "KeepVaultMac/Program.cs",
+    "Sha256": "19FE1DD58D7364879367AA4156D4599C8CE4AC4409ADFC5A6ADA81BDF430C40A"
+  },
+  {
+    "Path": "KeepVaultMac/Services/BoundFileTransaction.cs",
+    "Sha256": "68391508ABFCAB8913AAC18DC4ABCE1D313A93B3582B226724F7EEC70172DDC6"
+  },
+  {
+    "Path": "KeepVaultMac/Services/KeySheetService.cs",
+    "Sha256": "7B866DD3D98D9614C30893C95E9BC22C82651298D49F15EB6CDBF66A8338DA83"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacCompanionVerification.cs",
+    "Sha256": "D88FDD2109F4C108CAA394B79F7F5615B780EAC948A8C8B632DF6D7ED63243B8"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacIntegrityService.cs",
+    "Sha256": "713F5A72486EA837DAA3A3A6E558FEC187C74AB6525D18CDF2B8FFDB7BCA1C68"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacNativeAlert.cs",
+    "Sha256": "A595052A927E4219E3E9288D21EF1E4809D469739689F53C15D607AEB3ED25DE"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacOriginalDeletionService.cs",
+    "Sha256": "749B05B4FD601349CEA7019E4EC014C54B7CFA0547FC804160A717FE3D860AEC"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacPlatformSecurity.cs",
+    "Sha256": "578B6A6AC6BD6D6A5DB15DD9F6474F83CC25BDDB2EB7DA0EAF378E1BBC977D8C"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacPrivateFileSnapshot.cs",
+    "Sha256": "79A74A21BE8C1CBD10A4FD1CFAF40E563ACA661D96F5A28B9C1D653691C3C7C8"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacProcessHardening.cs",
+    "Sha256": "7AE1D182739BBFEB945EE05E91D6A6CE0FC8A2657E00256615892A91CE6C1729"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacSecureFile.cs",
+    "Sha256": "4352D1841F233822FD299E4C8CE2BEFA8A20FF57A783D57F5B0D66A31425D47C"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacZpaqRootAnchor.cs",
+    "Sha256": "5945A4DDA2577919B7AF696138145C0A5B451F47731DAEDB0B1A592987500A6A"
+  },
+  {
+    "Path": "KeepVaultMac/Services/MacZpaqSeatbelt.cs",
+    "Sha256": "EB1DDA763BE0782FCBD80EFBD716F2C0BCE7A2AAFBAB72FDB841626E3B92D838"
+  },
+  {
+    "Path": "KeepVaultMac/Services/RecoverySidecarTransaction.cs",
+    "Sha256": "06955D862AD32917ACE2699DF8CED60393A66696AC2F349094B4A1E9C3F6F9A5"
+  },
+  {
+    "Path": "KeepVaultMac/app.manifest",
+    "Sha256": "5B650958A9ED6FB26FB6F52B70A2E578F4589E389841E0DE3A75FEBAC0A3923F"
+  },
+  {
+    "Path": "KeepVaultMac/global.json",
+    "Sha256": "C39786AB1A147662BBE4DB015F900165178875EC4A872DDAE53BC0C90771AC34"
+  },
+  {
+    "Path": "KeepVaultMac.Tests/Directory.Build.props",
+    "Sha256": "9D65987BB0C108B27CB820B30C656A5244C93CE220E82BD86F783AADA446123A"
+  },
+  {
+    "Path": "KeepVaultMac.Tests/FixtureBuilder.csproj",
+    "Sha256": "9FA2410ACA1552A2FB0BC49BCC5C8B96F6CF9118A9523E50AD20795F927CE5F3"
+  },
+  {
+    "Path": "KeepVaultMac.Tests/Program.cs",
+    "Sha256": "BB47E8FBD9D4E67B3E33AAAB45D7E8D8EDE659C4C4617C2FFB57C549D9B48757"
+  },
+  {
+    "Path": "global.json",
+    "Sha256": "C39786AB1A147662BBE4DB015F900165178875EC4A872DDAE53BC0C90771AC34"
+  }
+]
