@@ -173,6 +173,16 @@ median of three 256 MiB runs, in MiB/s (1 MiB = 1,048,576 bytes).
 | AES-256 | 23,194.1 | 146.91 | 135.57 |
 | ChaCha20-Poly1305 | 2,551.5 | 96.93 | 94.92 |
 
+For small payloads, fixed key-derivation (KDF) overhead can dominate elapsed
+time. This limiting effect is intentional: Argon2id requires time and memory
+for each derivation attempt,
+making credential guessing more expensive. This cost is incurred for every
+encryption or decryption operation and, for the same suite and KDF profile,
+does not grow with file size. It is included in “Container encryption” and “Verify + decrypt” and contributes
+substantially to their much lower MiB/s values compared with crypto alone.
+For larger payloads, the KDF cost is spread over more bytes; other processing
+steps can then limit throughput.
+
 Crypto only measures the cipher or cascade in RAM after a 16 MiB warm-up,
 without Argon2id or the two global container MACs. Container measurements
 include production Argon2id (`t=4`, `p=4`) and both MACs. Encryption includes

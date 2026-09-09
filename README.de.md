@@ -179,6 +179,18 @@ Median aus drei Durchläufen mit 256 MiB, in MiB/s (1 MiB = 1.048.576 Byte).
 | AES-256 | 23.194,1 | 146,91 | 135,57 |
 | ChaCha20-Poly1305 | 2.551,5 | 96,93 | 94,92 |
 
+Bei kleinen Datenmengen kann der feste Aufwand der Schlüsselableitung (KDF)
+die Laufzeit dominieren. Dieser begrenzende Effekt ist beabsichtigt:
+Argon2id verlangt bei jedem Ableitungsversuch
+Zeit und Arbeitsspeicher und verteuert dadurch das Durchprobieren von
+Zugangsdaten. Dieser Aufwand fällt für jeden Ver- oder Entschlüsselungsvorgang
+an und wächst bei gleicher Suite und gleichem KDF-Profil nicht mit der
+Dateigröße. Er ist in „Container verschlüsseln“ und
+„Prüfen + entschlüsseln“ enthalten und trägt wesentlich dazu bei, dass diese
+MiB/s-Werte deutlich unter der reinen Kryptografieleistung liegen. Bei größeren
+Datenmengen verteilt sich der KDF-Aufwand auf mehr Bytes; andere
+Verarbeitungsschritte können dann den Durchsatz begrenzen.
+
 Reine Kryptografie misst die Chiffre oder Kaskade im RAM nach einem
 16-MiB-Aufwärmlauf, ohne Argon2id oder die beiden globalen Container-MACs.
 Die Containermessungen schließen das produktive Argon2id (`t=4`, `p=4`) und
