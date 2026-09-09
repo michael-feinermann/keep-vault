@@ -1,5 +1,7 @@
 # Keep Vault macOS Release
 
+[Deutsch](README.md) · [English](README.en.md) · [Dokumentationsverzeichnis](../../docs/README.md)
+
 Diese Infrastruktur erzeugt kein unsicheres Ersatz-Release. Ein Build wird nur
 veroeffentlicht, wenn alle folgenden Vertrauenskettenglieder vorhanden und
 erfolgreich geprueft sind:
@@ -33,10 +35,11 @@ Bestandteil der aeusseren Apple-Signatur.
 
 ## Entitlements
 
-Core und Launcher laufen in der App Sandbox. Erlaubt sind nur:
-
-- durch den Benutzer ausgewaehlte Dateien mit Lese- und Schreibzugriff,
-- Drucken fuer die Schluesselblaetter.
+Core und Launcher verwenden keine App Sandbox und deklarieren keine
+Entitlements. Beide laufen mit Hardened Runtime und aktiver Library Validation.
+Dateiauswahl und Druck erfolgen über die regulären macOS-Dialoge. Die leeren
+Entitlement-Dateien für Core, Launcher und native Helfer sind im Quellstand
+festgelegt. Der separate QR-Scanner besitzt seine eigene Kamera-Sandbox.
 
 Es gibt keine Netzwerk-, Kamera-, Mikrofon-, USB-, Bluetooth-, Apple-Events-,
 Debug-, JIT-, Unsigned-Memory- oder Library-Validation-Ausnahme. ZPAQ und das
@@ -124,9 +127,11 @@ vor und nach dem Entpacken gegen den fest gepinnten SHA-512-Wert und verwendet
 fuer jeden Einstiegspunkt einen frischen privaten SDK-Baum. Der Host muss
 zusaetzlich Microsofts Developer-ID-Signatur tragen.
 
-Vor jedem Release werden Hauptprojekt und HybridSigner mit `--locked-mode`,
-`--force-evaluate` und deaktiviertem HTTP-Cache in einen neuen privaten
-NuGet-Cache restauriert. Alle .NET-Aufrufe erhalten per `env -i` nur eine feste
+Vor jedem Release werden Hauptprojekt, HybridSigner, Tests und Release-Verifier
+mit `--locked-mode`, `--force`, `-p:RestoreForceEvaluate=false` und deaktiviertem
+HTTP-Cache in einen neuen privaten NuGet-Cache restauriert. `--force` erzwingt
+die erneute Restore-Prüfung; `--force-evaluate` wird nicht verwendet, weil es
+den gesperrten Abhängigkeitsmodus aufheben würde. Alle .NET-Aufrufe erhalten per `env -i` nur eine feste
 Allowlist; Publish und Signer-Build laufen danach mit `--no-restore` und ohne
 persistente Buildserver. `obj`, `bin` und Publish-Ausgaben aller Projekte und
 ProjectReferences liegen dabei ausschließlich in projektgetrennten Unterbaeumen
@@ -178,20 +183,21 @@ Eine Notarisierung dieser Exportkopie begruendet keine Freigabe der
 unveraenderten Originale. Deren strengere Signaturanforderung bleibt erhalten.
 
 Die vorhandene Option `--notarize-in-xcode` erstellt getrennte Standardarchive
-fuer beide Apps und bewahrt den signierten Kandidaten in einem privaten
+fuer Keep Vault, QR-Scanner und Keep Vault Installer und bewahrt den signierten Kandidaten in einem privaten
 Verzeichnis. Sie schliesst `--notary-profile` aus und wartet am Terminal auf
 `NOTARIZED`. Diese Eingabe und eine Organizer-Erfolgsmeldung sind keine
 Freigabe: Das Skript verlangt unveraenderte Originaldateien sowie eigenstaendig
-gueltige Tickets auf beiden Original-Apps und bricht andernfalls ab. Der
+gueltige Tickets auf allen drei Original-Apps und bricht andernfalls ab. Der
 Organizer-Weg ist auf diesem Xcode deshalb kein nachgewiesener erfolgreicher
 Notarisierungspfad fuer den unveraenderten Kandidaten.
 
-Nach erfolgreicher Einreichung sind Keep Vault und QR-Scanner jeweils separat
-am Original mit `stapler staple` und `stapler validate` zu behandeln. Beide
+Nach erfolgreicher Einreichung sind Keep Vault, QR-Scanner und Keep Vault Installer
+jeweils separat
+am Original mit `stapler staple` und `stapler validate` zu behandeln. Alle drei
 Original-Apps muessen anschliessend die Apple- und Hybrid-Signaturpruefungen,
 die erforderlichen CDHash-Abgleiche und die finale Verifikation mit
 `--require-notarization` und Gatekeeper bestehen. Ein Xcode-Export ersetzt
-keines der Originale. Danach wird das ZIP mit Tickets neu erstellt und
+keines der drei Originale. Danach wird das ZIP mit Tickets neu erstellt und
 signiert; `--install-for-tests` installiert exakt diesen Kandidaten vor den
 Tests mit dem root-eigenen ZPAQ-Anker.
 
@@ -199,7 +205,7 @@ Eine oeffentliche Veroeffentlichung benoetigt zusaetzlich:
 
 - ein gueltiges `Developer ID Application`-Zertifikat desselben Teams,
 - erfolgreiche Notarisierung ueber das gewaehlte Verfahren,
-- gueltige angeheftete Tickets fuer beide Apps,
+- gueltige angeheftete Tickets fuer alle drei Apps,
 - die abschliessenden Pruefungen mit `--require-notarization` und `spctl`,
 - alle vorgeschriebenen funktionalen, GUI- und Performancegates sowie die
   genaue Zuordnung von Commit, Tag und Distributionsartefakten.

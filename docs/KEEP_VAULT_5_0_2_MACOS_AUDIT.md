@@ -1,5 +1,7 @@
 # Keep Vault 5.0.2: macOS-Prüfbericht
 
+Deutsch | [English](KEEP_VAULT_5_0_2_MACOS_AUDIT.en.md)
+
 Technische Abnahme am 8. September 2026 abgeschlossen: Keep Vault 5.0.2,
 Build 13 ist im dokumentierten Prüfumfang zur Veröffentlichung vorbereitet.
 Container v12 und KPAR2 v4 bleiben unverändert. Maßgeblich ist ausschließlich
@@ -1182,3 +1184,11 @@ Endartefakte werden zusätzlich unabhängig geprüft.
 
 Windows wird anhand des [aktualisierten Portierungsvertrags](KEEP_VAULT_V12_WINDOWS_UPDATE.md)
 später auf Windows-Hardware geprüft. macOS-Ergebnisse sind kein Windows-Test.
+
+## Öffentliche Veröffentlichung am 9. September 2026
+
+Die stabile [GitHub-Veröffentlichung v5.0.2](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2) wurde am 09.09.2026 um 08:16:58 UTC öffentlich freigegeben und als neueste Version bestätigt. Sie ist weder Entwurf noch Vorabversion. Der Tag zeigt unverändert auf den geprüften Commit `8df29a9e13eb65c0769666c3835b4cf0b96dad20`.
+
+Alle sechs hochgeladenen Dateien wurden erneut heruntergeladen und mit den geprüften Originalen bytegenau verglichen. Das ZIP umfasst 43.685.318 Byte und besitzt SHA-256 `c4f069e0091259a0c6a1f76d880879facec689625b059e5d5659b70e5af112e1`. Release-ID: `385333020`. Die Apple-Annahme und die funktionalen Nachweise beziehen sich auf die oben dokumentierten unveränderten Programmdateien.
+
+Die anschließende Ergänzung der deutschen und englischen Dokumentation ändert weder Release-Tag noch Programmdateien. Sie ist kein erneuter Build und kein neuer Funktionstest. Historische Entwürfe, insbesondere 5.0.1, behalten ihren bisherigen Veröffentlichungsstatus. Die vollständigen Sprachfassungen sind im [Dokumentationsverzeichnis](README.md) verknüpft.

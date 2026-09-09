@@ -1,5 +1,7 @@
 # Vendored third-party sources
 
+[Deutsch](VENDOR-PROVENANCE.de.md) | English
+
 These directories are vendored **with local modifications** required for the macOS port.
 The upstream git metadata is intentionally not tracked; provenance is recorded here.
 

@@ -1,5 +1,7 @@
 # Keep Vault v12 unter Windows aktualisieren
 
+Deutsch | [English](KEEP_VAULT_V12_WINDOWS_UPDATE.en.md)
+
 Dieses Dokument ist die Arbeitsanleitung für den späteren Windows-Port. Die
 macOS-Umsetzung 5.0.2 ist die normative v12-Zielreferenz. Der
 [Passwort-/PIN-Vertrag](KEEP_VAULT_V12_CREDENTIAL_POLICY.md) gehört vollständig

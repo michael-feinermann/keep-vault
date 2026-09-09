@@ -1,5 +1,7 @@
 # Keep Vault 5.0.2: PIN-Modell und Annahmemenge
 
+Deutsch | [English](KEEP_VAULT_5_0_2_PIN_MODEL_AUDIT.en.md)
+
 Stand: 6. September 2026. Modellversion `keep-vault-pin-patterns-2026-09-v1`. Diese Regeln gelten für die Archivierung. Sie liefern keine empirischen Rateversuche, keine Entropiezusage für menschliche Auswahl und keinen zusätzlichen Bit-Schwellenwert.
 
 Die technische macOS-Abnahme des endgültigen 5.0.2-Kandidaten ist am

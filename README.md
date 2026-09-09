@@ -1,5 +1,7 @@
 # Keep Vault
 
+[Deutsch](README.de.md) · [English](README.md) · [Documentation index](docs/README.en.md)
+
 Archiving, extraction and cryptographic erasure of ZPAQ archives. The current
 release target is **macOS** and uses container format **v12**: a chosen cascade of up to six
 independent ciphers over the compressed stream, keys from two Argon2id branches
@@ -20,18 +22,19 @@ cryptographic audit, an HSM, or operating-system hardening.
 
 ## Install
 
-Keep Vault 5.0.2 (build 13) has completed technical acceptance for macOS.
+Keep Vault 5.0.2 (build 13) is published as a stable macOS release.
 All 153 test groups, additional release checks, real installer and German/English
 GUI checks, and the final installed Paranoia/KPAR2 workflow passed. Apple accepted
 all three apps; stapling, Gatekeeper and exact final-package checks passed.
 A fresh complete production-core workflow also passed with Wi-Fi disabled and
 independent IPv4/IPv6 monitoring. Core and real GUI evidence are documented
-separately in the [macOS audit](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.md).
+separately in the [macOS audit](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.en.md).
 
-This source snapshot records technical acceptance before publication. The planned
-stable [v5.0.2 release](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2)
-must contain the six tested assets and resolve to the reviewed commit; its actual
-public status and upload bytes are verified separately. Version 5.0.1 remains a
+The stable [v5.0.2 release](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2)
+has been public since 9 September 2026 and contains the six tested assets. Its tag
+resolves to reviewed commit `8df29a9e13eb65c0769666c3835b4cf0b96dad20`; the uploaded
+assets were downloaded again and verified byte for byte. Later documentation-only
+changes do not change this tag or the notarized programs. Version 5.0.1 remains a
 separate historical draft.
 
 Prebuilt packages are on the
@@ -42,7 +45,7 @@ The following commands concern the separate, unreleased Windows development
 tree and are not part of the macOS v12 release. For a local Windows x64 build, run
 `tools/Build-Portable.ps1` and then `tools/Install-KeepVaultShortcuts.ps1`.
 The normative port checklist is in
-[`docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md`](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md);
+[`docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md`](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.en.md);
 it must be completed on real Windows hardware before any Windows release claim.
 The shortcuts point at the verified portable tree inside this workspace, so a
 new successful portable build becomes the locally installed version without a
@@ -115,8 +118,8 @@ release, and the reader says so by name rather than failing as a wrong password.
 That is a deliberate choice, not an oversight. A second, older derivation kept
 alive for compatibility is a second construction to attack, a second set of
 domains to get wrong, and a permanent argument for whichever of the two is
-weaker. The application is still in development and there are no archives worth
-carrying forward, so there is nothing to weigh against removing it.
+weaker. This format decision was made during development, when no archives needed to be
+carried forward to weigh against removing it.
 
 The key-derivation domain separators carry `v12`, and the header carries an
 explicit `KdfMode` string naming the construction. A version number alone turned
@@ -263,7 +266,7 @@ container that fills it in. KPAR2 does not carry it either.
 
 #### Paranoia runs the whole thing twice
 
-The Paranoia cascade runs a second round whose Argon2id **secret** input is the
+The Paranoia cascade runs a second round whose Argon2id `secret` input is the
 first round's complete 1024-bit master:
 
 ```
@@ -408,7 +411,7 @@ Extraction, listing and recovery do not run these old or new choice rules and
 do not require password-model data. Only the original encoding, factor formats,
 a separate technical limit of 1,048,576 UTF-16 code units per user credential,
 and cryptographic verification apply. No runtime network lookup is used.
-See the [v12 credential policy and Windows contract](docs/KEEP_VAULT_V12_CREDENTIAL_POLICY.md)
+See the [v12 credential policy and Windows contract](docs/KEEP_VAULT_V12_CREDENTIAL_POLICY.en.md)
 for exact boundaries, data provenance, uncertainty and required evidence.
 
 ### The four credentials
@@ -483,18 +486,23 @@ factors must be printed or deliberately exported as a test PDF.
 
 - Physical printing without a file is the default path.
 - Obvious virtual PDF/XPS/fax printers are blocked.
-- Page order: factor A, a genuinely blank separator page carrying the
-  installation instructions, factor B.
+- On macOS, two separate print jobs are produced: factor A with a public
+  installation page, then factor B with its own public installation page. Each
+  job has two pages. The separate Windows development implementation retains
+  its three-page A / public separator / B layout and needs its own release checks.
 - Each secret page names the suite, the device name, the archive path, exactly
   one 1024-bit factor in 32 groups of eight hex characters, a blank handwritten
-  field for the user password, and that factor's QR code twice.
+  field for the user password, and that factor's QR code twice. In macOS 5.0.2,
+  its title includes the Keep Vault version and the password field has at least
+  three lines. Labels through the colon are bold in both language editions.
 - The PIN is deliberately **not** on the sheet, and the sheet says so. The
   handwriting field for the passphrase is already a compromise; a sheet carrying
   the passphrase, the PIN and a factor would hold three of the four credentials
   at once.
 - A and B are meant to be stored separately and offline.
-- **Save test PDF** deliberately writes both factors to the chosen volume
-  permanently and is not a safe default path.
+- **Save test PDF** on macOS deliberately writes two separate files, one for
+  each factor, each with its public installation page. Both factors are thus
+  stored permanently on the chosen volume; this is not a safe default path.
 
 The platform companion (`QR-Scanner.app` on macOS, `QR-Scanner.exe` on Windows)
 from the same release reads the codes back. Printer spoolers,
@@ -538,12 +546,15 @@ many 384 MiB compression or 592 MiB regular jobs as fit; the requested worker
 count is additionally capped at 64. Truncated, reordered, non-canonical or
 checksum-invalid frames are rejected without resynchronising past damage.
 
-An already authenticated regular `.zpaq` supplied on standard input is copied
-to a randomly named POSIX shared-memory object opened with mode 0600. A separate
-read-only descriptor is acquired and the name is unlinked before any archive
-bytes are copied; after the copy, workers receive only a read-only mapping. This
-allows position-independent parallel reads without leaving a pathname another
-same-UID process could reopen for writing. The verified-input limit is 512 GiB.
+An already authenticated regular `.zpaq` supplied on standard input is carried
+in an internal `KV12VM` envelope with two null bytes and a big-endian 64-bit
+length. The native process checks magic, bounds, exact length and EOF, then holds
+the archive in anonymous private VM memory. Before parser access, both current
+and maximum protection become read-only, so the parser cannot restore write
+access with `mprotect`. This supports position-independent parallel reads without
+a named shared-memory object; named POSIX SHM is prohibited by the profiles.
+The verified-input limit is 512 GiB. This does not promise unlimited physical
+RAM or exclusion of operating-system swap.
 Extraction is also bounded to 500 GiB total, 500 GiB per file, 500,000 entries,
 a 512 MiB index and 2^26 fragments. Encrypted container extraction does not use
 this whole-archive staging route: its decrypted `KVP12ZP1` frames remain in the
@@ -655,7 +666,7 @@ conflict-free file name and the damaged original is left untouched.
 
 The separate **emergency mode** skips KPAR2 metadata authentication, always
 writes a new file and never modifies the original. For an encrypted archive all
-all four credentials are still required and the finished candidate must pass
+four credentials are still required and the finished candidate must pass
 the container's own two MACs. There is no automatic fallback from the normal
 mode into emergency mode.
 
@@ -663,10 +674,12 @@ mode into emergency mode.
 
 ## Integrity and signing
 
-Every executable in the package carries two independent signatures: Apple's, and
-a detached pair of RSA-PSS/SHA-512 (RSA-4096) and ML-DSA-87 (NIST FIPS 204).
-**Both** must verify; there is no OR fallback. Seventeen Mach-O files are
-covered:
+The package combines Apple's code signatures with hybrid RSA-PSS/SHA-512
+(RSA-4096) and ML-DSA-87 (NIST FIPS 204) signatures. Both hybrid components must
+verify; there is no OR fallback. The main app, scanner and installer helpers have
+component signatures. The installer entry's hybrid binding comes from the signed
+complete release ZIP; Apple's bundle seal protects its code identity. The final
+5.0.2 macOS package contains nineteen Mach-O files (38 architecture slices):
 
 - `Keep Vault`, `Keep Vault Launcher`, `Keep Vault Supervisor`
 - `zpaq`, `argon2`
@@ -675,10 +688,11 @@ covered:
 - `libAvaloniaNative`, `libHarfBuzzSharp`, `libSkiaSharp`
 - `Keep Vault Release Verifier`
 - `QR-Scanner`
+- `Keep Vault Installer`, `InstallerBoundDelete`
 
-The signing targets are enumerated from the bundle rather than listed by hand,
-and both the launcher and the standalone verifier refuse any Mach-O in the tree
-that has no signature. A hand-written list only ever covers what somebody
+The main app's signing targets are enumerated from its bundle rather than listed
+by hand. Both the launcher and the standalone verifier refuse any Mach-O in that
+app bundle that has no signature. A hand-written list only ever covers what somebody
 remembered to add: the three Avalonia and Skia libraries were once signed by
 Apple and left out of the dual signature, running inside the process that holds
 the archive keys on Apple's signature alone — the single layer this app is built
@@ -722,8 +736,8 @@ included reference files.
 A hybrid signature is one decision: it counts only when RSA-PSS and ML-DSA-87
 both verify. Their at-rest protection is nevertheless independent: the
 ML-DSA-87 private key and the RSA PFX password use two separately generated
-32-byte wrapping keys, two different Keychain services, two different accounts
-and two separately created access lists. The signer also rejects two differently
+32-byte wrapping keys. In the default Keychain mode, these use two different
+services, two different accounts and two separately created access lists. The signer also rejects two differently
 named items if their key bytes are equal.
 
 The two AES-256-GCM formats are deliberately incompatible. `KVMDSA12` accepts
@@ -732,7 +746,8 @@ password. The type, version and canonical payload length are authenticated as
 associated data, and each type has its own read and write path. Neither a legacy
 envelope nor a role-swapped envelope is accepted.
 
-Each wrapping key lives in the login Keychain in its own item created with no
+In the default Keychain mode, each wrapping key lives in the login Keychain in
+its own item created with no
 trusted application, so every signing invocation causes two independent
 confirmation prompts. An extra prompt is a use nobody started. Answer *Allow*,
 never *Always Allow*: the latter writes the asking binary into that item's
@@ -741,11 +756,21 @@ lists without reading either secret and rejects a trusted application, a role
 mismatch, a shared identity or a missing item.
 
 `tools/Protect-HybridKeys-macOS.sh` provisions or verifies this v12-only state.
-Security.framework generates each wrapping key independently; no wrapping key
-is accepted from an environment variable, command line, removable file or
-shared fallback. The script wraps and unwraps through the signer's own
+In Keychain mode, Security.framework generates each wrapping key independently.
+Raw wrapping-key values are never accepted from environment variables or the
+command line, and there is no shared fallback. The script wraps and unwraps through the signer's own
 role-specific code and proves each round trip from the same exclusively created
 mode-0600 file descriptor before a no-replace publish.
+
+An explicit alternative selects two protected local key files together through
+`KEEPVAULT_MLDSA_WRAPPING_KEY_FILE` and `KEEPVAULT_PFX_WRAPPING_KEY_FILE`.
+Only their paths are configuration values. Each contains a canonical Base64
+encoding of 32 bytes; the keys must differ, belong to the current user, be
+single-link mode-0600 files in private mode-0700 directories on local volumes
+with ownership enforcement. Symlinks are rejected. There is no silent fallback
+between file and Keychain modes. File mode does not provide the two Keychain
+confirmation prompts. Existing envelopes must match the selected keys.
+See the [packaging guide](KeepVaultMac/Packaging/README.en.md).
 
 Secret inputs are opened with `O_NOFOLLOW_ANY`, bounded from `fstat`, read from
 the held descriptor and revalidated by device, inode, owner, mode, link count,
@@ -759,10 +784,11 @@ copies are outside the caller's control. Apple's external `security` process
 and native PKCS#12 importer are likewise unavoidable opaque platform
 boundaries whose internal native copies the signer cannot erase.
 
-Encryption at rest stops the files from being useful once they leave the
-machine: a Time Machine backup, a cloned disk, a tar of the home directory. It
-does not stop malware running as the same user, which can ask the Keychain the
-way the signer does. What raises that bar is the prompt.
+Encryption at rest protects copied envelopes only while their wrapping keys
+remain separately protected. A backup or copied volume containing both envelopes
+and usable wrapping keys does not have that protection. It does not stop malware
+running as the same user, which can ask the Keychain the way the signer does. In Keychain mode, the prompt raises that bar; file mode instead relies on the
+protection of the selected local volume and files.
 
 A root-owned rollback anchor at
 `/Library/Application Support/Keep Vault/minimum-version` records the lowest
@@ -847,8 +873,8 @@ driven through Avalonia's headless backend.
 ## Security boundaries
 
 - Sensitive managed buffers are zeroed and locked against paging. A lock failure
-  aborts the operation. The same applies to the entire native 1 GiB Argon2
-  matrix.
+  aborts the operation. The same applies to the entire native Argon2
+  matrix of at least 1 GiB.
 - The app runs with the hardened runtime and no entitlements, so library
   validation is active. A public macOS release is accepted only after every
   Mach-O has been signed with Developer ID Application, Apple has notarized the
@@ -893,16 +919,18 @@ driven through Avalonia's headless backend.
   only after both domain-separated recovery MACs verify. The unencrypted profile
   and emergency mode offer error correction only.
 - `KPAR2` is an app-specific format and is not compatible with standard PAR2
-  tooling. At 1 TB, 15 percent redundancy needs roughly 150 GiB of sidecar
-  storage and several full read/write passes.
+  tooling. At 1 TiB, parity alone at 15 percent requires 153.6 GiB of sidecar
+  storage, plus metadata, and several full read/write passes.
 - Per-file overwriting guarantees no physical erasure on SSDs. Real ATA/NVMe
   Secure Erase and Crypto Erase are whole-drive firmware actions.
 - Cloud versioning, backups, snapshots and existing PDF or print-spooler files
   can still contain deleted archives or key sheets.
-- ZPAQ is a large native C++ parser and does not currently run in a separate
-  sandbox. Path tests, a deterministic mutation corpus and process limits reduce
-  the risk but replace neither continuous fuzzing nor an independent audit of the
-  parser.
+- ZPAQ is a large native C++ parser. On macOS it runs through operation-specific
+  Seatbelt profiles with deny-by-default policy, no network access and no
+  process forking. This separate process restriction is not an App Sandbox
+  entitlement on the main application. Path tests, a deterministic mutation
+  corpus and process limits reduce risk but replace neither continuous fuzzing
+  nor an independent audit of the parser.
 - A physical 1 TB end-to-end test, a formal security proof and an independent
   external cryptographic audit have not been carried out.
 

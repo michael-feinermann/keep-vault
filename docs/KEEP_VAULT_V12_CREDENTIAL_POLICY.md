@@ -1,5 +1,7 @@
 # Keep Vault 5.0.2: Passwort- und PIN-Vertrag für Container v12
 
+Deutsch | [English](KEEP_VAULT_V12_CREDENTIAL_POLICY.en.md)
+
 Diese Spezifikation ergänzt den bestehenden v12-Vertrag. Die macOS-App erhält
 Marketingversion 5.0.2 und Buildnummer 13. Container v12 und KPAR2 v4 bleiben
 unverändert. Die getrennt geprüfte Version 5.0.1 ist im Tag `v5.0.1` erhalten.

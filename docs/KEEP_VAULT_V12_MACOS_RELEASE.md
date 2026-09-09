@@ -1,12 +1,15 @@
 # Keep Vault v12 für macOS: normative Releaseanforderungen
 
+Deutsch | [English](KEEP_VAULT_V12_MACOS_RELEASE.en.md)
+
 Status: verbindliche Spezifikation und Releasecheckliste für die macOS-Ausgabe von Keep Vault 5.0.2, Build 13. Windows ist nicht Bestandteil dieses Releases und wird in einem eigenen Arbeitsschritt aktualisiert.
 
 Der [Prüfbericht für 5.0.2](KEEP_VAULT_5_0_2_MACOS_AUDIT.md) hält den
 tatsächlich nachgewiesenen Stand und verbleibende Grenzen fest. Die technische
 Abnahme des endgültigen macOS-Kandidaten ist am 8. September 2026 abgeschlossen;
 der letzte reguläre installierte Komplextest besteht in 70,532 Sekunden.
-Die nachfolgende öffentliche Veröffentlichung ist separat zu bestätigen.
+Die öffentliche Freigabe wurde am 9. September 2026 separat bestätigt;
+siehe den [Veröffentlichungsnachweis](KEEP_VAULT_5_0_2_MACOS_AUDIT.md#öffentliche-veröffentlichung-am-9-september-2026).
 
 ## Formatgrenze
 

@@ -1,5 +1,7 @@
 # Synthetic v12 credential compatibility fixtures
 
+[Deutsch](README.de.md) | English
+
 These files contain only public, deliberately synthetic credentials and a fixed text canary. They are not archives created by a released application. Never use their factors, credentials, salts or nonces for real data.
 
 The purpose is to keep archive readability separate from the rules for selecting new credentials. All six `.kzpaq` files are real v12 containers with a real, dual-authenticated/encrypted KPAR2 v4 sidecar bound to ContainerVersion 12. The producer used production PMI-derived Argon2id memory, t=4 and p=4. No memory-cost override was enabled. The PIN-substring case uses the two-round Paranoia suite; the other cases use AES-256.

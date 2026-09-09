@@ -1,5 +1,7 @@
 # QR-Scanner
 
+Deutsch | [English](README.en.md)
+
 Eigenstaendige macOS-App, die einen QR-Code ueber die Kamera liest, den Inhalt
 in einem Textfeld anzeigt und ihn auf Wunsch in die Zwischenablage legt. Der
 Inhalt wird **nicht** in eine Datei geschrieben.

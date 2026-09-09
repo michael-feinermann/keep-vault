@@ -1,5 +1,7 @@
 # Keep Vault v11 — Codex Iteration 3, aktualisierte Vollprüfung für Windows und macOS
 
+Deutsch | [English](KEEP_VAULT_V11_MACOS_CODEX_AUDIT.en.md)
+
 **Repository:** `michael-feinermann/keep-vault`
 **Branch:** `master`
 **Geprüfter HEAD:** `0ddcd83922bca0a07da36440882c44622268d8ef`
@@ -3736,7 +3738,7 @@ NOT APPLICABLE
 | Split | exakt 64/64 |
 | Q_S1 | P+PIN+A1+B1 |
 | Q_S2 | P+PIN+A2+B2 |
-| Q_K | full A||B |
+| Q_K | full A\|\|B |
 | PMI | BE16 deterministisch |
 | Memory | 1,048,576 + 16×PMI |
 | Argon | t=4 p=4 out=64 |

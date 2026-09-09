@@ -1,5 +1,7 @@
 # Keep Vault v12: Recheck mit GPT-5.6-sol
 
+Deutsch | [English](KEEP_VAULT_V12_GPT56SOL_RECHECK.en.md)
+
 Historisches Protokoll des Auftrags vom 2. September 2026. Die folgenden
 Statusangaben und Auftragsgrenzen beziehen sich auf diesen damaligen Lauf.
 Für die Ausgabe 5.0.2 gelten die aktuellen

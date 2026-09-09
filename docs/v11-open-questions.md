@@ -1,5 +1,7 @@
 # Historical v11 review notes
 
+[Deutsch](v11-open-questions.de.md) | English
+
 Status: historical and non-normative. This file records the state of the
 superseded v11 development branch. Keep Vault v12 neither implements nor reads
 v11 and no release decision may be based on this document. Current macOS v12

@@ -1,5 +1,7 @@
 # QR-Scanner (Windows)
 
+[Deutsch](README.de.md) | English
+
 Standalone Windows app that reads a QR code through the camera, shows the
 content in a text box and puts it on the clipboard on request. The content is
 **not** written to a file.
