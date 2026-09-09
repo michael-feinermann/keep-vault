@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "application": {
+    "name": "Keep Vault",
+    "version": "5.0.2",
+    "build": 13,
+    "sourceCommit": "8df29a9e13eb65c0769666c3835b4cf0b96dad20"
+  },
+  "resultCapturedAtUtc": "2026-09-08T13:16:28.293283+00:00",
+  "testId": "performance.cipher-suites",
+  "status": "PASS",
+  "host": {
+    "operatingSystem": "macOS 26.6.2",
+    "operatingSystemVersion": "26.6.2",
+    "operatingSystemBuild": "25G83",
+    "osArchitecture": "Arm64",
+    "processArchitecture": "Arm64",
+    "logicalProcessors": 10,
+    "cpuDescriptor": "Apple M5",
+    "memoryGiB": 16
+  },
+  "method": {
+    "payloadBytes": 268435456,
+    "measurementRuns": 3,
+    "statistic": "median",
+    "rateUnit": "MiB/s",
+    "rawWarmupBytes": 16777216,
+    "containerSeparateWarmupRuns": 0,
+    "productionArgon2id": {
+      "t": 4,
+      "p": 4
+    },
+    "kdfSaltsFixedWithinSuite": true,
+    "kdfSaltsDifferBetweenSuites": true,
+    "containerEncryptionIncludesFileOutput": true,
+    "containerDecryptionIncludesInputSnapshotAndSha256Sink": true,
+    "containerDecryptionIncludesPlaintextFileOutput": false,
+    "includesZpaqCompressionOrExtraction": false,
+    "includesKpar2": false
+  },
+  "sourceEvidence": {
+    "buildLogSha256": "70565812c52227e8bdc0b0e633a98a6ebe47199b240f182351c075e54e99da42",
+    "testResultsSha256": "525a3ee25b3aed8ec0433c36f3f381ab3c13c42b67b4c52346b88e15693f2d2d",
+    "benchmarkSource": "KalynaArchiver.Tests/CipherSuitePerformanceTests.cs",
+    "benchmarkSourceSha256": "936bb5879084d59f02bb4ce2db18b117a4a977c2dc9261151036194a1245885e",
+    "committedSourceProofSha256": "e06788454e77a31a08f72a827f55d49b443883de129b70e79e6fa4f6278e393e"
+  },
+  "suites": [
+    {
+      "id": "ThreefishOverKalyna",
+      "rawMiBPerSecond": 987.9706850573293,
+      "encryptMiBPerSecond": 111.16156804160501,
+      "verifyAndDecryptMiBPerSecond": 106.65918719116489
+    },
+    {
+      "id": "ChaChaOverAes",
+      "rawMiBPerSecond": 2438.8129459050333,
+      "encryptMiBPerSecond": 93.87753111334241,
+      "verifyAndDecryptMiBPerSecond": 90.0021498560405
+    },
+    {
+      "id": "MixedCascade",
+      "rawMiBPerSecond": 1289.262058629192,
+      "encryptMiBPerSecond": 142.50389700842572,
+      "verifyAndDecryptMiBPerSecond": 135.6856849588284
+    },
+    {
+      "id": "ParanoiaCascade",
+      "rawMiBPerSecond": 384.5832589705547,
+      "encryptMiBPerSecond": 46.73835307627093,
+      "verifyAndDecryptMiBPerSecond": 45.08577630582894
+    },
+    {
+      "id": "Threefish1024",
+      "rawMiBPerSecond": 3194.349993449087,
+      "encryptMiBPerSecond": 105.75889838226479,
+      "verifyAndDecryptMiBPerSecond": 104.903630034401
+    },
+    {
+      "id": "Kalyna512_512",
+      "rawMiBPerSecond": 1705.0048552677324,
+      "encryptMiBPerSecond": 155.4985596642203,
+      "verifyAndDecryptMiBPerSecond": 146.6924127131438
+    },
+    {
+      "id": "Shacal2_512",
+      "rawMiBPerSecond": 1802.398034259644,
+      "encryptMiBPerSecond": 103.74764875812038,
+      "verifyAndDecryptMiBPerSecond": 101.5514160571433
+    },
+    {
+      "id": "Mars448",
+      "rawMiBPerSecond": 1546.9371550738028,
+      "encryptMiBPerSecond": 116.56179140903171,
+      "verifyAndDecryptMiBPerSecond": 115.00148558559698
+    },
+    {
+      "id": "Aes256",
+      "rawMiBPerSecond": 23194.07826189376,
+      "encryptMiBPerSecond": 146.91257766209176,
+      "verifyAndDecryptMiBPerSecond": 135.56762189766604
+    },
+    {
+      "id": "ChaCha20Poly1305",
+      "rawMiBPerSecond": 2551.4602625014077,
+      "encryptMiBPerSecond": 96.93202565972466,
+      "verifyAndDecryptMiBPerSecond": 94.92022548299563
+    }
+  ]
+}

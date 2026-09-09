@@ -154,6 +154,41 @@ Names are shown in the app and on the printed sheets in bracket notation, in
 German or English depending on the selected language — for example
 `Paranoia: ChaCha20-Poly1305(Threefish 1024(Kalyna 512/512(SHACAL-2 512(MARS 448(AES 256(Data))))))`.
 
+#### Measured performance on Apple M5 (macOS)
+
+Keep Vault 5.0.2, build 13, measured on 8 September 2026: Apple M5,
+10 logical CPUs, 16 GiB RAM, macOS 26.6.2, native arm64. Each value is the
+median of three 256 MiB runs, in MiB/s (1 MiB = 1,048,576 bytes).
+
+| Option | Crypto only (MiB/s) | Container encryption (MiB/s) | Verify + decrypt (MiB/s) |
+|---|---:|---:|---:|
+| Standard | 988.0 | 111.16 | 106.66 |
+| Fast | 2,438.8 | 93.88 | 90.00 |
+| Mixed | 1,289.3 | 142.50 | 135.69 |
+| Paranoia | 384.6 | 46.74 | 45.09 |
+| Threefish-1024 | 3,194.3 | 105.76 | 104.90 |
+| Kalyna-512/512 | 1,705.0 | 155.50 | 146.69 |
+| SHACAL-2-512 | 1,802.4 | 103.75 | 101.55 |
+| MARS-448 | 1,546.9 | 116.56 | 115.00 |
+| AES-256 | 23,194.1 | 146.91 | 135.57 |
+| ChaCha20-Poly1305 | 2,551.5 | 96.93 | 94.92 |
+
+Crypto only measures the cipher or cascade in RAM after a 16 MiB warm-up,
+without Argon2id or the two global container MACs. Container measurements
+include production Argon2id (`t=4`, `p=4`) and both MACs. Encryption includes
+writing the encrypted file; verification and decryption include the private
+input snapshot and a SHA-256 output sink, without writing extracted files.
+ZPAQ compression/extraction and KPAR2 are outside these measurements.
+
+The KDF salts stay fixed within each suite's three runs but differ between
+suites, so the derived Argon2id memory cost may differ. Container rates describe
+these test cases and payload size; they are not an isolated cipher ranking or
+a guarantee of complete archiving speed. [Recorded values and provenance](docs/benchmarks/keep-vault-5.0.2-m5.json),
+[benchmark implementation](KalynaArchiver.Tests/CipherSuitePerformanceTests.cs)
+and [release audit](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.en.md).
+
+A Windows overview measured on an Intel Core i9-13900K will be added later.
+
 ### How a cascade works
 
 Each layer gets its own key and its own slice of the nonce. For the standard

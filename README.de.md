@@ -160,6 +160,43 @@ Die App und die ausgedruckten Zettel zeigen die Namen in Klammernotation, je nac
 ausgewählter Sprache auf Deutsch oder Englisch, zum Beispiel
 `Paranoia: ChaCha20-Poly1305(Threefish 1024(Kalyna 512/512(SHACAL-2 512(MARS 448(AES 256(Data))))))`.
 
+#### Gemessene Leistung auf Apple M5 (macOS)
+
+Keep Vault 5.0.2, Build 13, gemessen am 8. September 2026: Apple M5,
+10 logische CPUs, 16 GiB RAM, macOS 26.6.2, nativ arm64. Jeder Wert ist der
+Median aus drei Durchläufen mit 256 MiB, in MiB/s (1 MiB = 1.048.576 Byte).
+
+| Option | Reine Kryptografie (MiB/s) | Container verschlüsseln (MiB/s) | Prüfen + entschlüsseln (MiB/s) |
+|---|---:|---:|---:|
+| Standard | 988,0 | 111,16 | 106,66 |
+| Schnell | 2.438,8 | 93,88 | 90,00 |
+| Gemischt | 1.289,3 | 142,50 | 135,69 |
+| Paranoia | 384,6 | 46,74 | 45,09 |
+| Threefish-1024 | 3.194,3 | 105,76 | 104,90 |
+| Kalyna-512/512 | 1.705,0 | 155,50 | 146,69 |
+| SHACAL-2-512 | 1.802,4 | 103,75 | 101,55 |
+| MARS-448 | 1.546,9 | 116,56 | 115,00 |
+| AES-256 | 23.194,1 | 146,91 | 135,57 |
+| ChaCha20-Poly1305 | 2.551,5 | 96,93 | 94,92 |
+
+Reine Kryptografie misst die Chiffre oder Kaskade im RAM nach einem
+16-MiB-Aufwärmlauf, ohne Argon2id oder die beiden globalen Container-MACs.
+Die Containermessungen schließen das produktive Argon2id (`t=4`, `p=4`) und
+beide MACs ein. Verschlüsseln umfasst das Schreiben der verschlüsselten Datei;
+Prüfen und Entschlüsseln umfassen den privaten Eingabesnapshot und das
+laufende SHA-256-Hashen der Ausgabe, ohne entpackte Dateien zu schreiben. ZPAQ-Kompression,
+Entpackung und KPAR2 liegen außerhalb dieser Messungen.
+
+Die KDF-Salts bleiben innerhalb der drei Durchläufe einer Suite gleich,
+unterscheiden sich aber zwischen Suites. Der abgeleitete Argon2id-Speicherbedarf
+kann deshalb abweichen. Die Containerwerte beschreiben diese Testfälle und
+Datengröße; sie sind keine isolierte Chiffrenrangliste und keine Zusage für die
+Geschwindigkeit einer vollständigen Archivierung. [Messwerte und Herkunft](docs/benchmarks/keep-vault-5.0.2-m5.json),
+[Benchmarkimplementierung](KalynaArchiver.Tests/CipherSuitePerformanceTests.cs)
+und [Release-Prüfbericht](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.md).
+
+Eine Windows-Übersicht mit Messungen auf einem Intel Core i9-13900K wird später ergänzt.
+
 ### Funktionsweise einer Kaskade
 
 Jede Schicht erhält einen eigenen Schlüssel und einen eigenen Abschnitt der Nonce.
