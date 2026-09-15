@@ -49,6 +49,11 @@ if ($sha256Pins.Count -ne $sha3Pins.Count -or $sha256Pins.Count -ne $skeinPins.C
     throw "The ML-DSA SHA-256, SHA3-512, and Skein-1024 source manifests cover different file counts."
 }
 
+$platformSha3Supported = [Security.Cryptography.SHA3_512]::IsSupported
+if (-not $platformSha3Supported) {
+    Write-Host "Platform SHA3-512 cross-check unavailable; the portable managed SHA3-512 fingerprint must still match every reviewed source pin."
+}
+
 & dotnet build $signingProject -c Release --nologo
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $signingTool -PathType Leaf)) {
     throw "KalynaSigningTool build failed before ML-DSA source-pin verification."
@@ -74,18 +79,21 @@ foreach ($manifestRelative in $sha256Pins.Keys) {
     $toolSha3 = ($fingerprints | Where-Object { $_ -like "sha3_512=*" }).Substring(9)
     $actualSkein = ($fingerprints | Where-Object { $_ -like "skein1024=*" }).Substring(10)
     $actualSha256 = (Get-FileHash -LiteralPath $sourcePath -Algorithm SHA256).Hash
-    $sourceBytes = [IO.File]::ReadAllBytes($sourcePath)
-    try {
-        $actualSha3 = [Convert]::ToHexString([Security.Cryptography.SHA3_512]::HashData($sourceBytes))
-    }
-    finally {
-        [Array]::Clear($sourceBytes, 0, $sourceBytes.Length)
+    $actualSha3 = $null
+    if ($platformSha3Supported) {
+        $sourceBytes = [IO.File]::ReadAllBytes($sourcePath)
+        try {
+            $actualSha3 = [Convert]::ToHexString([Security.Cryptography.SHA3_512]::HashData($sourceBytes))
+        }
+        finally {
+            [Array]::Clear($sourceBytes, 0, $sourceBytes.Length)
+        }
     }
 
     if ($actualSha256 -cne $sha256Pins[$manifestRelative] -or
         $toolSha256 -cne $actualSha256 -or
-        $actualSha3 -cne $sha3Pins[$manifestRelative] -or
-        $toolSha3 -cne $actualSha3 -or
+        $toolSha3 -cne $sha3Pins[$manifestRelative] -or
+        ($platformSha3Supported -and $toolSha3 -cne $actualSha3) -or
         $actualSkein -cne $skeinPins[$manifestRelative]) {
         throw "Pinned ML-DSA reference source changed (SHA-256/SHA3-512/Skein-1024): $relative"
     }
