@@ -14,8 +14,10 @@ zunächst zurückgeschrieben; dessen dauerhafte Übernahme erfordert zusätzlich
 die Aktualisierung nach regulärem Desktop-Ende. Der Snapshot-Regressionslauf bestätigt sowohl
 die Ablehnung persönlicher, geschäftlicher und benutzerdefinierter OneDrive-
 Pfade als auch die Ablage aller neuen Snapshots unter dem aktiven Repository.
-Die macOS-Referenz ist `origin/master` bei
-`7ff2eda764ad321ed25c88f862ee20a8a9822690`. Der bestehende öffentliche Tag
+Die verbindliche GUI-Referenz ist der veröffentlichte macOS-Tag `v5.0.2` bei
+`8df29a9e13eb65c0769666c3835b4cf0b96dad20`. Seine UI-Quellen sind gegenüber
+dem zuvor geprüften macOS-Stand `7ff2eda764ad321ed25c88f862ee20a8a9822690`
+unverändert. Der bestehende öffentliche Tag
 `v5.0.2` gehört zum macOS-Commit und wird durch die Windows-Ergänzung nicht
 verschoben. Die sechs vorhandenen macOS-Dateien bleiben unverändert.
 
@@ -90,6 +92,42 @@ Die bereits signierten neun übrigen Native-Tools sind Arbeitskandidaten;
 sie ersetzen keinen neu gebauten vollständigen Satz aus einem unveränderlichen
 finalen Quell-Commit.
 
+### Unabhängiger geschützter Build auf GitHub
+
+Der zusätzliche Workflow `Windows native Defender evidence` aktiviert den
+Microsoft-Defender-Schutz ausschließlich auf einem kurzlebigen GitHub-Runner,
+bevor der Checkout erfolgt. Er entfernt dort die voreingestellten Ausnahmen,
+verlangt aktive Schutzfunktionen, Normalmodus, aktuelle Definitionen und eine
+leere aktuelle Erkennungsliste. Er führt keine erzeugte Produkt-DLL/EXE aus,
+verwendet keine Release-Schlüssel und lädt ausschließlich Text-/JSON-Nachweise
+hoch. Diese Prüfung hebt die offene Bitdefender-Erkennung nicht auf.
+
+Der erste Lauf
+[`35003540412`](https://github.com/michael-feinermann/keep-vault/actions/runs/35003540412)
+bestand die Schutzvorprüfung, scheiterte aber vor der nativen Kompilierung:
+Windows Server 2022 unterstützt den zusätzlich verwendeten System-SHA3-Aufruf
+nicht. `Verify-MldsaReference.ps1` prüft nun unabhängig davon jeden portablen
+SHA3-Fingerprint gegen den unveränderten Quellenpin. Wo die Plattform SHA3
+unterstützt, bleibt deren zusätzliche Gegenprüfung erhalten. Der unabhängige
+SHA-256-Vergleich und alle Skein-Pins bleiben verpflichtend. Sechs synthetische
+Positiv-/Manipulationsfälle mit dem tatsächlichen Skript bestanden.
+
+Im zweiten Lauf
+[`35004359038`](https://github.com/michael-feinermann/keep-vault/actions/runs/35004359038)
+bestanden Quellenprüfung und frische Kompilierung aller zehn nativen Komponenten
+einschließlich `kalyna_v12.dll` mit MSVC `19.44.35228`. Defender war vor und nach
+dem Build aktiv, seine aktuelle Erkennungsliste blieb leer. Der Job scheiterte
+anschließend am geforderten Zusammenhang zwischen Scan-Start, Pfad, Scan-ID und
+Abschlussereignis. Dieser Lauf ist daher kein bestandener Scan. Die Diagnose
+speichert inzwischen auch auf diesem Fehlerpfad sämtliche abgefragten Ereignisse
+mit Original-XML, Schutzstatus und Dateihashes; die Annahmekriterien bleiben gleich.
+
+Die zugehörigen Workflow-, Build- und Kompatibilitätsänderungen sind als
+`0e043e9`, `646bb00` und `232a6bc` auf `codex/windows-v12-5.0.2` gepusht.
+41 synthetische Schutz-/Inventarprüfungen und fünf zusätzliche Ereignis- und
+Fehlerpfadfälle bestanden. Ein vollständiger signierter Release-Build und die
+nativen Funktions-/Ende-zu-Ende-Prüfungen werden dadurch nicht ersetzt.
+
 ## GUI und macOS-Referenz
 
 Die Windows-Oberfläche übernimmt die Referenzstruktur aus `KeepVaultMac`:
@@ -120,6 +158,41 @@ Alle 16 aktuellen Haupt-/Installer-/Scanner-Ansichten wurden zusätzlich
 unabhängig gesichtet; in diesen Ansichten wurde kein verbleibender konkreter
 Darstellungsfehler gefunden. Das ist keine Prüfung aller Hover-, DPI- oder
 physischer Kamerazustände.
+
+Der weitere Abgleich der tatsächlichen Meldungen fand noch eine konkrete
+Abweichung: Die Hauptanwendung verwendete native `MessageBox`-Fenster statt der
+dunklen macOS-Referenzdialoge. Information, Warnung, Fehler und Bestätigung
+verwenden nun `Gui/SecurityDialog.cs` mit Referenzfarben, Akzentbalken, Inter,
+Abständen und runden Schaltflächen. Der vorhandene dunkle Scrollleistenstil
+wird über `Gui/ReferenceScrollBar.xaml` von Hauptfenster und Dialog gemeinsam
+verwendet. Lange Meldungen bleiben vollständig lesbar und auswählbar, während
+die Schaltflächen sichtbar bleiben. Die bisherige Credential-Testhook- und
+`MessageBoxResult`-Semantik bleibt erhalten.
+
+Ein frischer isolierter Managed-Build mit SDK `10.0.401` bestand ohne Warnungen
+und Fehler; 209 Eingabehashes blieben während dieses Builds stabil und keine
+native Produktkomponente wurde in seine Ausgabe kopiert. Die beiden erneut
+ausgeführten Gruppen `gui.v502-reference-parity` und `gui.reference-render`
+bestanden. Zwölf Dialogansichten in DE/EN, einschließlich langer Meldungen und
+420 × 300 bei 150 Prozent Render-DPI, sowie acht Hauptansichten wurden geprüft.
+Sechs echte WPF-`ShowDialog`-Komponententests bestätigten unter Runtime `10.0.12`
+den tatsächlichen initialen Tastaturfokus auf Abbrechen, die Sperre und spätere
+Freigabe des Elternfensters sowie `No` bei Close/Cancel und `Yes` ausschließlich
+bei ausdrücklichem Accept-Button-Event. Der dabei geprüfte App-Assembly-SHA-256
+lautet `FFF1DCC9B97AD197925A9A8725DD7CC5B361170246F602E7BEEB6EE345415A78`.
+
+Ein zusätzlicher Bedienversuch über das unterstützte Windows-Automationswerkzeug
+konnte die aufnahmegeschützten modalen Fenster nicht zuverlässig adressieren.
+Auslesbare Bedienelemente sind kein erfolgreicher Eingabenachweis. Der Schutz
+wurde nicht abgeschaltet; echte OS-Tastaturzustellung und die abschließende
+installierte GUI sind damit weiterhin nicht als bestanden ausgewiesen.
+
+Weitere 14 bewusst ausgewählte verwaltete Gruppen zu Runner/SHA3/Quellabdeckung,
+Lokalisierung, Passwortmodell, PIN und technischen v12-Credentialbytes bestanden
+im vorherigen isolierten Build desselben Abends. Ihr Test-Assembly-Hash
+`6971B3748FCC46DA409857D2C2E27CEA88632C999546E00ACEA2A615A6E4FE18` bleibt von
+dem nach den Scrollleisten- und Modaltest-Ergänzungen neu gebauten Testprogramm
+getrennt. Dies ist weiterhin eine Teilprüfung und keine volle Kryptosuite.
 
 Die Schlüsselzettel verwenden das Referenzlayout mit getrennten Faktoren A/B,
 je zwei identischen QR-Codes, drei PIN-Schreibzeilen und einer separaten

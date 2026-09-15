@@ -67,6 +67,7 @@ internal static class WindowsGuiV502Tests
 
     internal static void Run()
     {
+        SecurityDialogReferenceTests.Run();
         using var window = new MainWindow(new MemoryAppSettingsStore());
         Require(window.Width == 1220 && window.Height == 860
             && window.MinWidth == 980 && window.MinHeight == 720, "Reference window dimensions changed.");
