@@ -174,6 +174,9 @@ var comprehensiveTests = new List<TestCase>
     new("crypto.kalyna-parallel-ctr", "Kalyna-512/512 parallel CTR equivalence",
         Sync(RunKalynaParallelCtrEquivalenceTest), TestResource.CpuHeavy, "Crypto"),
 
+    new("crypto.kalyna-join-failure-kat", "Kalyna-512/512 injected worker-join failure cleanup and scalar equivalence",
+        Sync(RunKalynaJoinFailureKat), TestResource.CpuHeavy, "Crypto"),
+
     new("crypto.kalyna-table-differential", "Kalyna-512/512 scalar-versus-parallel v12 path over 256 MiB",
         Sync(RunKalynaDifferentialTests), TestResource.CpuHeavy, "Crypto"),
 
@@ -1183,6 +1186,22 @@ static void RunKalynaParallelCtrEquivalenceTest()
 static long BlocksForLengthForTest(int length)
 {
     return (length + 63L) / 64L;
+}
+
+static void RunKalynaJoinFailureKat()
+{
+    nint library = NativeToolIntegrity.LoadTrustedLibrary("kalyna_v12.dll");
+    try
+    {
+        nint entryPoint = NativeLibrary.GetExport(library, "keepvault_v12_kalyna_join_failure_kat");
+        var kat = Marshal.GetDelegateForFunctionPointer<KalynaJoinFailureKatDelegate>(entryPoint);
+        int result = kat();
+        Assert(result == 0, $"Kalyna injected worker-join failure KAT succeeds (native status {result})");
+    }
+    finally
+    {
+        NativeLibrary.Free(library);
+    }
 }
 
 static void RunThreefishReferenceAndIndependentTests()
@@ -6633,3 +6652,6 @@ internal static class TestConstants
     // has refused since the geometric rule was added.
     public const string TestPin = "29471608";
 }
+
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+internal delegate int KalynaJoinFailureKatDelegate();

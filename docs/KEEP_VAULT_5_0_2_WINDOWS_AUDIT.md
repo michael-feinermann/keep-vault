@@ -162,6 +162,13 @@ Ein tatsächlicher Papierausdruck mit anschließendem Kamerascan ist noch offen.
   aus und bestätigt den Ausschluss solcher Objekte, das Ersetzen alter Listen
   und den Abbruch bei beiden möglichen Schreibfehlern. Ein neuer nativer
   Produktbuild nach dieser Korrektur steht wegen der Erkennung noch aus.
+- Die Windows-Suite ruft den vorhandenen nativen
+  `keepvault_v12_kalyna_join_failure_kat` nun ausdrücklich als eigene Gruppe
+  `crypto.kalyna-join-failure-kat` auf. Der Test verwendet den regulären
+  signaturprüfenden Bibliothekslader und gibt sein zusätzliches Lade-Handle
+  auch bei Fehlern frei. Die native Laufzeitprüfung dieser neuen Gruppe ist
+  noch offen; eine Registrierung oder erfolgreiche Kompilierung zählt nicht
+  als bestandener KAT.
 - Die Argon2-Fehlerbereinigung wartet auf die kumulativ gestarteten Worker.
   Zuvor wurde der kumulative Abschlusszähler mit der nach erfolgreichen Joins
   sinkenden Aktivzahl verglichen. Bei einem späten Create-/Joinfehler konnte
