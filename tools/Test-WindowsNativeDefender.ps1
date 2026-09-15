@@ -71,13 +71,27 @@ function Get-EventScanId {
     return ''
 }
 
+function Test-EventScanPath {
+    param([Parameter(Mandatory)] $Event, [Parameter(Mandatory)][string] $ScanPath)
+    foreach ($key in $Event.data.Keys) {
+        if (($key -replace '[^a-zA-Z]', '') -eq 'ScanResources') {
+            $resource = [string]$Event.data[$key]
+            # Defender 4.18 records a directory as "folder:_<absolute path>".
+            # Decode only that observed type marker, never a path list or URI.
+            if ($resource.StartsWith('folder:_', [StringComparison]::Ordinal)) {
+                $resource = $resource.Substring('folder:_'.Length)
+            }
+            return $resource.TrimEnd('\') -ieq $ScanPath.TrimEnd('\')
+        }
+    }
+    return $false
+}
+
 function Assert-ScanCompleted {
     param([Parameter(Mandatory)][AllowEmptyCollection()][object[]] $Events,
         [Parameter(Mandatory)][string] $ScanPath)
     $starts = @($Events | Where-Object {
-        $_.id -eq 1000 -and @($_.data.Values | Where-Object {
-            ([string]$_).TrimEnd('\') -ieq $ScanPath.TrimEnd('\')
-        }).Count -gt 0
+        $_.id -eq 1000 -and (Test-EventScanPath $_ $ScanPath)
     })
     foreach ($start in $starts) {
         $scanId = Get-EventScanId $start
