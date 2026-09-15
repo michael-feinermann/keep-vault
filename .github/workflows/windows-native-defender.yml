@@ -55,8 +55,8 @@ jobs:
             runnerImage = $env:ImageVersion; error = $null
           }
           try {
-            $report.beforeStatus = Get-MpComputerStatus
-            $report.beforePreference = Get-MpPreference
+            $report.beforeStatus = Get-MpComputerStatus | Select-Object * -ExcludeProperty CimClass, CimInstanceProperties, CimSystemProperties
+            $report.beforePreference = Get-MpPreference | Select-Object * -ExcludeProperty CimClass, CimInstanceProperties, CimSystemProperties
             $report.previousDetections = @(Get-MpThreatDetection)
             # NeverSend already exists in the published image. Require it;
             # this workflow never uploads binaries, including automatic samples.
@@ -74,8 +74,8 @@ jobs:
             Update-MpSignature -UpdateSource MicrosoftUpdateServer
             $status = Get-MpComputerStatus
             $preference = Get-MpPreference
-            $report.afterStatus = $status
-            $report.afterPreference = $preference
+            $report.afterStatus = $status | Select-Object * -ExcludeProperty CimClass, CimInstanceProperties, CimSystemProperties
+            $report.afterPreference = $preference | Select-Object * -ExcludeProperty CimClass, CimInstanceProperties, CimSystemProperties
             foreach ($name in @('AMServiceEnabled', 'AntivirusEnabled', 'RealTimeProtectionEnabled',
                 'BehaviorMonitorEnabled', 'IoavProtectionEnabled', 'OnAccessProtectionEnabled')) {
               if ($status.$name -ne $true) { throw "Defender is not healthy: $name." }

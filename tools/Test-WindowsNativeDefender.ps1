@@ -59,6 +59,7 @@ function Convert-DefenderEvent {
         id = $Event.Id
         utc = $Event.TimeCreated.ToUniversalTime().ToString('o')
         data = $data
+        xml = $xml.OuterXml
     }
 }
 
@@ -152,7 +153,8 @@ function Test-ProtectionCheckpoint {
     $preference = Get-MpPreference
     $report.states.Add([pscustomobject]@{
         name = $Name; utc = [DateTime]::UtcNow.ToString('o')
-        status = $status; preference = $preference
+        status = ($status | Select-Object * -ExcludeProperty CimClass, CimInstanceProperties, CimSystemProperties)
+        preference = ($preference | Select-Object * -ExcludeProperty CimClass, CimInstanceProperties, CimSystemProperties)
     })
     Assert-DefenderHealth $status $preference
     $history = @(Get-MpThreatDetection)
@@ -205,11 +207,14 @@ try {
     if (-not $log.IsEnabled) { throw 'Defender operational event logging is unavailable.' }
     $lastRecord = (Get-WinEvent -LogName $logName -MaxEvents 1).RecordId
     $report.scanStartedUtc = [DateTime]::UtcNow.ToString('o')
-    # This synchronous custom scan retains ordinary Defender remediation and logging.
-    Start-MpScan -ScanType CustomScan -ScanPath $output
-    # The synchronous scan can return just before the event channel flushes.
-    # Allow at most ten seconds for the matching completion record to appear.
+    # Request an ordinary custom scan. Only matching events prove completion;
+    # successful return from the cmdlet alone is not accepted as scan evidence.
     $events = @()
+    Save-Json 'scan-events.json' $events
+    Start-MpScan -ScanType CustomScan -ScanPath $output
+    $report.scanCallReturnedUtc = [DateTime]::UtcNow.ToString('o')
+    # Keep the same ten-second event observation limit, including on failure.
+    $report.scanCompletionObserved = $false
     for ($attempt = 0; $attempt -le 10; $attempt++) {
         try {
             $events = @(Get-WinEvent -LogName $logName -FilterXPath "*[System[EventRecordID > $lastRecord]]" |
@@ -219,23 +224,31 @@ try {
             if ($_.FullyQualifiedErrorId -notlike 'NoMatchingEventsFound*') { throw }
             $events = @()
         }
-        try { Assert-ScanCompleted $events $output; break } catch {
-            if ($attempt -eq 10) { throw }
+        # Preserve the actual records before validation, even when matching
+        # fails. The XML and normalized fields diagnose provider differences.
+        Save-Json 'scan-events.json' $events
+        $report.scanEventCounts = @($events | Group-Object id | ForEach-Object {
+            [pscustomobject]@{ id = [int]$_.Name; count = $_.Count }
+        })
+        try {
+            Assert-ScanCompleted $events $output
+            $report.scanCompletionObserved = $true
+            break
+        }
+        catch {
+            if ($attempt -eq 10) { break }
         }
         Start-Sleep -Seconds 1
     }
-    $report.scanFinishedUtc = [DateTime]::UtcNow.ToString('o')
-    $report.scanEventCounts = @($events | Group-Object id | ForEach-Object {
-        [pscustomobject]@{ id = [int]$_.Name; count = $_.Count }
-    })
-    Save-Json 'scan-events.json' $events
+    $report.scanEvidenceCollectedUtc = [DateTime]::UtcNow.ToString('o')
+    # Collect final health and byte evidence on a matching failure as well.
+    Test-ProtectionCheckpoint 'after-scan-call'
+    $after = @(Get-NativeOutputInventory $output)
+    Save-Json 'native-hashes-after.json' $after
     if (@($events | Where-Object { $_.id -in @(1002, 1006, 1007, 1008, 1116, 1117, 1118, 1119, 5001, 5008, 5010, 5012) }).Count) {
         throw 'Defender recorded a cancellation, detection, remediation, or protection failure.'
     }
     Assert-ScanCompleted $events $output
-    Test-ProtectionCheckpoint 'after-scan'
-    $after = @(Get-NativeOutputInventory $output)
-    Save-Json 'native-hashes-after.json' $after
     if ((ConvertTo-Json -InputObject $before -Compress) -cne (ConvertTo-Json -InputObject $after -Compress)) {
         throw 'Native output bytes changed or disappeared during the scan.'
     }
