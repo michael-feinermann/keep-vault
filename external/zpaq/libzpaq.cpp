@@ -27,6 +27,7 @@ See libzpaq.h for additional documentation.
 #include <string>
 #include <vector>
 #include <memory>
+#include <cstddef>
 #include <stdexcept>
 #include <limits.h>
 #include <stdio.h>
@@ -2962,7 +2963,9 @@ bool Compressor::compress(int n) {
   assert(state==SEG2);
 
   const int BUFSIZE=1<<14;
-  char buf[BUFSIZE];  // input buffer
+  StringBuffer storage(BUFSIZE);  // destructor wipes plaintext on every exit
+  storage.write(0, BUFSIZE);
+  char* const buf=reinterpret_cast<char*>(storage.data());
   while (n) {
     int nbuf=BUFSIZE;  // bytes read into buf
     if (n>=0 && n<nbuf) nbuf=n;
@@ -5027,7 +5030,7 @@ static INLINE
 int *
 ss_pivot(const unsigned char *Td, const int *PA, int *first, int *last) {
   int *middle;
-  int t;
+  std::ptrdiff_t t;
 
   t = last - first;
   middle = first + t / 2;
@@ -5689,7 +5692,7 @@ static INLINE
 int *
 tr_pivot(const int *ISAd, int *first, int *last) {
   int *middle;
-  int t;
+  std::ptrdiff_t t;
 
   t = last - first;
   middle = first + t / 2;
@@ -6566,6 +6569,10 @@ class LZBuffer: public libzpaq::Reader {
 
 public:
   LZBuffer(StringBuffer& inbuf, int args[], const unsigned* sap=0);
+  ~LZBuffer() {
+    volatile unsigned char* wipe=buf;
+    for (size_t index=0; index<BUFSIZE; ++index) wipe[index]=0;
+  }
 
   // return 1 byte of compressed output (overrides Reader)
   int get() {
@@ -7696,7 +7703,7 @@ void compressBlock(StringBuffer* in, Writer* out, const char* method_,
       // Analyze the data
       const int NR=1<<12;
       int pt[256]={0};  // position of last occurrence
-      int r[NR]={0};    // count repetition gaps of length r
+      std::vector<int> r(NR, 0);  // count repetition gaps of length r
       const unsigned char* p=in->data();
       if (level>0) {
         for (unsigned i=0; i<n; ++i) {
@@ -7748,8 +7755,8 @@ void compressBlock(StringBuffer* in, Writer* out, const char* method_,
   if (comment) cs=cs+" "+comment;
   co->startSegment(filename, cs.c_str());
   if (args[1]>=1 && args[1]<=7 && args[1]!=4) {  // LZ77 or BWT
-    LZBuffer lz(*in, args);
-    co->setInput(&lz);
+    std::unique_ptr<LZBuffer> lz(new LZBuffer(*in, args));
+    co->setInput(lz.get());
     co->compress();
   }
   else {  // compress with e8e9 or no preprocessing

@@ -20,6 +20,8 @@ try
     }
     else if (File.Exists(target))
     {
+        using var targetLease = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read);
+        target = NativePathResolver.RequireCanonicalFilePath(targetLease.SafeFileHandle, target, "Release verification");
         VerifyFile(target, policy);
         VerifyExternalHashManifestsWhenPresent(target, policy);
     }
@@ -39,6 +41,8 @@ catch (Exception ex)
 
 static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
 {
+    using var inventory = new VerifiedReleaseInventory(directory, policy);
+    ReleaseExecutablePolicy.RequireProductVersions(directory);
     // The native half is taken from the application's own required set rather
     // than listed again. Listed again, it went stale: this array named five
     // libraries while the application refused to start without nine, so a
@@ -49,6 +53,8 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
     [
         "Keep Vault.exe",
         "Keep Vault Release Verifier.exe",
+        "Keep Vault Setup.exe",
+        "QR-Scanner/QR-Scanner.exe",
         .. IntegrityService.RequiredNativeTools,
         "PORTABLE_README.txt",
     ];
@@ -130,6 +136,7 @@ static void VerifyFile(string path, HybridSignaturePolicy policy)
 
     if (IsPortableExecutable(path))
     {
+        ReleaseExecutablePolicy.RequireTimestampedPe(path);
         ToolIntegrityStatus status = IntegrityService.CheckFile(path, requireManifest: true);
         if (!status.IsTrusted)
         {

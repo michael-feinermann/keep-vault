@@ -23,97 +23,96 @@ using WpfSize = System.Windows.Size;
 
 namespace KalynaArchiver.Services;
 
-public sealed class KeySheetService
+public sealed partial class KeySheetService
 {
     private static readonly object FontResolverGate = new();
     private static readonly string[] VirtualPrinterMarkers = ["pdf", "xps", "onenote", "fax", "send to"];
 
-    // This method exists solely for explicit test/export use. It intentionally writes both
-    // generated factors to a persistent file and is never used by the normal print flow.
-    public void SaveTestPdf(KeySheetData data, string pdfPath)
+    // Explicit export uses one file per factor. Physical printing never writes a PDF.
+    public void SaveTestPdf(KeySheetData data, string firstPdfPath, string secondPdfPath)
     {
-        ArgumentNullException.ThrowIfNull(data);
-        ArgumentException.ThrowIfNullOrWhiteSpace(pdfPath);
+        ValidatedKeySheetData validated = Validate(data);
+        ArgumentException.ThrowIfNullOrWhiteSpace(firstPdfPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(secondPdfPath);
+        string firstPath = Path.GetFullPath(firstPdfPath);
+        string secondPath = Path.GetFullPath(secondPdfPath);
+        if (string.Equals(firstPath, secondPath, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("The two factors require separate files.", nameof(secondPdfPath));
         EnsurePdfFontResolver();
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(pdfPath)) ?? Environment.CurrentDirectory);
-
-        using var document = new PdfDocument();
-        document.Info.Title = "Kalyna and Threefish ZPAQ Vault two-factor key sheets";
-        document.Info.Author = "Kalyna and Threefish ZPAQ Vault";
-        DrawPdfSheet(document.AddPage(), data, KeySheetFactor.First);
-
-        // A truly blank page prevents the two secret sheets from ending up front/back on a
-        // duplex printer. It contains no text, metadata, QR code, or key material.
-        PdfPage blank = document.AddPage();
-        blank.Width = XUnit.FromMillimeter(210);
-        blank.Height = XUnit.FromMillimeter(297);
-
-        DrawPdfSheet(document.AddPage(), data, KeySheetFactor.Second);
-        document.Save(pdfPath);
+        // Validate both layouts before writing either factor to persistent storage.
+        using PdfDocument firstDocument = CreateSingleSheetDocument(validated, KeySheetFactor.First);
+        using PdfDocument secondDocument = CreateSingleSheetDocument(validated, KeySheetFactor.Second);
+        BoundFileTransaction? first = null;
+        BoundFileTransaction? second = null;
+        try
+        {
+            first = BoundFileTransaction.CreateNew(firstPath, 4096, FileOptions.WriteThrough);
+            second = BoundFileTransaction.CreateNew(secondPath, 4096, FileOptions.WriteThrough);
+            firstDocument.Save(first.Stream, closeStream: false);
+            first.Stream.Flush(flushToDisk: true);
+            secondDocument.Save(second.Stream, closeStream: false);
+            second.Stream.Flush(flushToDisk: true);
+        }
+        catch (Exception failure)
+        {
+            var errors = new List<Exception> { failure };
+            foreach (BoundFileTransaction? partial in new[] { second, first })
+            {
+                if (partial is null) continue;
+                try
+                {
+                    partial.Stream.Position = 0;
+                    byte[] zeros = new byte[4096];
+                    long remaining = partial.Stream.Length;
+                    while (remaining > 0)
+                    {
+                        int count = (int)Math.Min(zeros.Length, remaining);
+                        partial.Stream.Write(zeros, 0, count);
+                        remaining -= count;
+                    }
+                    partial.Stream.Flush(flushToDisk: true);
+                    partial.DeleteBound();
+                }
+                catch (Exception cleanup) { errors.Add(cleanup); }
+            }
+            if (errors.Count > 1) throw new AggregateException("Key-sheet export and cleanup failed.", errors);
+            throw;
+        }
+        finally { second?.Dispose(); first?.Dispose(); }
     }
 
-    public FixedDocument CreatePrintDocument(KeySheetData data, WpfSize printableArea)
+    public FixedDocument CreatePrintDocument(KeySheetData data, WpfSize printableArea,
+        KeySheetFactor factor = KeySheetFactor.First)
     {
-        ArgumentNullException.ThrowIfNull(data);
         WpfSize pageSize = NormalizePageSize(printableArea);
         var document = new FixedDocument();
         document.DocumentPaginator.PageSize = pageSize;
-        document.Pages.Add(CreatePage(CreatePrintVisual(data, KeySheetFactor.First), pageSize));
-        document.Pages.Add(CreateBlankPage(pageSize));
-        document.Pages.Add(CreatePage(CreatePrintVisual(data, KeySheetFactor.Second), pageSize));
+        document.Pages.Add(CreatePage(CreatePrintVisual(data, factor), pageSize));
+        document.Pages.Add(CreatePage(CreateInstallationVisual(data.English), pageSize));
         return document;
     }
 
     public FrameworkElement CreatePrintVisual(KeySheetData data, KeySheetFactor factor = KeySheetFactor.First)
     {
-        ArgumentNullException.ThrowIfNull(data);
-        string generatedPassword = GetGeneratedPassword(data, factor);
-        byte[] qrPng = CreateQrPng(generatedPassword);
-        IDisposable? qrLock = null;
-        try
-        {
-            qrLock = SecureMemory.TryLock(qrPng);
-            string factorName = factor == KeySheetFactor.First ? "A" : "B";
-            var root = new Border
-            {
-                Background = WpfBrushes.White,
-                Padding = new Thickness(48),
-                Child = new StackPanel
-                {
-                    Orientation = WpfOrientation.Vertical,
-                    Children =
-                    {
-                        new TextBlock { Text = $"{ProductInfo.Name} key sheet {factorName}", FontSize = 24, FontWeight = FontWeights.Bold, Foreground = WpfBrushes.Black, Margin = new Thickness(0, 0, 0, 16) },
-                        new TextBlock { Text = "Store this sheet separately from the other key sheet. A deliberately blank page is printed between A and B for duplex separation.", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = WpfBrushes.DarkRed, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 20) },
-                        Label("Cipher suite"),
-                        Value(EncryptionSuiteCatalog.Get(data.Suite).DisplayName),
-                        Label("Archive file"),
-                        Value(Path.GetFileName(data.ArchivePath)),
-                        Label("Storage location"),
-                        Value(Path.GetDirectoryName(data.ArchivePath) ?? data.ArchivePath),
-                        Label($"Generated 1024-bit hexadecimal factor {factorName}"),
-                        new TextBlock { Text = GroupGeneratedPasswordForSheet(generatedPassword), FontFamily = new WpfFontFamily("Consolas"), FontSize = 11, TextWrapping = TextWrapping.Wrap, Foreground = WpfBrushes.Black, Margin = new Thickness(0, 4, 0, 18) },
-                        Label("User password field (write by hand; do not store it digitally)"),
-                        FieldLine(),
-                        FieldLine(),
-                        FieldLine(),
-                        FieldLine(),
-                        Label($"QR code contains only generated password {factorName}"),
-                        new WpfImage { Source = CreateBitmap(qrPng), Width = 220, Height = 220, HorizontalAlignment = WpfHorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 16) },
-                        new TextBlock { Text = $"Created: {data.CreatedAt:yyyy-MM-dd HH:mm:ss}    Keep this sheet offline and physically protected.", FontSize = 11, Foreground = WpfBrushes.DimGray, TextWrapping = TextWrapping.Wrap },
-                    },
-                },
-            };
-
-            return root;
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(qrPng);
-            qrLock?.Dispose();
-        }
+        ValidatedKeySheetData validated = Validate(data);
+        return CreateSheetVisual(page => DrawPdfSheet(page, validated, factor, false));
     }
 
+    private static FrameworkElement CreateInstallationVisual(bool english) =>
+        CreateSheetVisual(page => DrawInstallationPage(page, english));
+
+    private static FrameworkElement CreateSheetVisual(Action<SheetPage> draw)
+    {
+        EnsurePdfFontResolver();
+        var group = new DrawingGroup();
+        using (DrawingContext context = group.Open())
+        {
+            using var page = new SheetPage(context);
+            context.DrawRectangle(WpfBrushes.White, null, new Rect(0, 0, page.Width.Point, page.Height.Point));
+            draw(page);
+        }
+        return new WpfImage { Source = new DrawingImage(group), Stretch = Stretch.Uniform };
+    }
     public static void EnsurePhysicalPrinter(PrintQueue? printQueue)
     {
         if (printQueue is null)
@@ -176,7 +175,7 @@ public sealed class KeySheetService
         return null;
     }
 
-    // Prints the two key sheets (plus a blank separator page) through the classic GDI print
+    // Prints each factor and its public guidance as a separate job through the classic GDI print
     // path (System.Drawing.Printing) instead of WPF's System.Printing pipeline. Some printer
     // drivers (e.g. the Microsoft IPP Class Driver) fail every PrintTicket<->DEVMODE
     // conversion with HRESULT 0x80004005, which breaks WPF's PrintDialog/PrintDocument even
@@ -185,65 +184,48 @@ public sealed class KeySheetService
     public void PrintKeySheets(PrinterSettings printerSettings, KeySheetData data)
     {
         ArgumentNullException.ThrowIfNull(printerSettings);
+        if (printerSettings.PrintToFile)
+            throw new InvalidOperationException("Print-to-file is blocked for key sheets. Use the explicit PDF export instead.");
         if (!printerSettings.IsValid)
         {
             throw new InvalidOperationException(
                 $"Der ausgewählte Drucker '{printerSettings.PrinterName}' meldet eine ungültige Konfiguration (Treiber-/DEVMODE-Problem). Bitte einen anderen Drucker wählen oder den Druckertreiber neu installieren.");
         }
 
-        var pageSize = new WpfSize(793.7, 1122.5); // A4 at WPF's 96 DPI unit.
+        EnsurePhysicalPrinter(printerSettings.PrinterName);
+        if (printerSettings.Copies != 1 || printerSettings.PrintRange != PrintRange.AllPages)
+            throw new InvalidOperationException("Print all pages exactly once for each separate key sheet.");
+        var pageSize = new WpfSize(793.7, 1122.5);
         const double renderDpi = 200.0;
-        var pages = new List<System.Drawing.Bitmap?>();
-        try
-        {
-            pages.Add(RenderVisualToGdiBitmap(CreatePrintVisual(data, KeySheetFactor.First), pageSize, renderDpi));
-            pages.Add(null); // deliberately blank duplex-separation page
-            pages.Add(RenderVisualToGdiBitmap(CreatePrintVisual(data, KeySheetFactor.Second), pageSize, renderDpi));
-
-            using var printDocument = new PrintDocument
-            {
-                PrinterSettings = printerSettings,
-                DocumentName = "Kalyna and Threefish ZPAQ separate key sheets",
-            };
-            printDocument.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
-
-            int pageIndex = 0;
-            printDocument.PrintPage += (_, printPageEventArgs) =>
-            {
-                System.Drawing.Bitmap? bitmap = pages[pageIndex];
-                if (bitmap is not null)
-                {
-                    System.Drawing.Rectangle destination = FitPreservingAspect(bitmap.Size, printPageEventArgs.PageBounds);
-                    printPageEventArgs.Graphics!.DrawImage(bitmap, destination);
-                }
-
-                pageIndex++;
-                printPageEventArgs.HasMorePages = pageIndex < pages.Count;
-            };
-
-            try
-            {
-                printDocument.Print();
-            }
-            catch (Exception ex) when (ex is System.Drawing.Printing.InvalidPrinterException
-                or System.ComponentModel.Win32Exception
-                or System.Runtime.InteropServices.ExternalException)
-            {
-                // Some printer drivers (notably the generic "Microsoft IPP Class Driver") cannot
-                // produce a valid DEVMODE and reject every print job across all desktop print APIs.
-                throw new InvalidOperationException(
-                    $"Der Drucker '{printerSettings.PrinterName}' konnte den Druckauftrag nicht annehmen (Treiber-/DEVMODE-Problem). Bitte einen anderen physischen Drucker wählen oder für dieses Gerät den passenden Herstellertreiber statt des generischen \"Microsoft IPP Class Driver\" installieren.", ex);
-            }
-        }
-        finally
-        {
-            foreach (System.Drawing.Bitmap? bitmap in pages)
-            {
-                bitmap?.Dispose();
-            }
-        }
+        // Render all pages before submitting either job, so a layout error cannot
+        // leave the user with just one of the two factors printed.
+        using var first = RenderVisualToGdiBitmap(CreatePrintVisual(data, KeySheetFactor.First), pageSize, renderDpi);
+        using var second = RenderVisualToGdiBitmap(CreatePrintVisual(data, KeySheetFactor.Second), pageSize, renderDpi);
+        using var guidance = RenderVisualToGdiBitmap(CreateInstallationVisual(data.English), pageSize, renderDpi);
+        PrintSingleFactor(first, guidance, printerSettings, KeySheetTitle(data.English, KeySheetFactor.First));
+        PrintSingleFactor(second, guidance, printerSettings, KeySheetTitle(data.English, KeySheetFactor.Second));
     }
 
+    private static void PrintSingleFactor(System.Drawing.Bitmap factor, System.Drawing.Bitmap guidance,
+        PrinterSettings settings, string title)
+    {
+        using var document = new PrintDocument { PrinterSettings = settings, DocumentName = title };
+        document.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
+        document.DefaultPageSettings.Landscape = false;
+        document.DefaultPageSettings.PaperSize = settings.PaperSizes.Cast<PaperSize>()
+            .FirstOrDefault(size => size.Kind == PaperKind.A4) ?? new PaperSize("A4", 827, 1169);
+        int index = 0;
+        document.PrintPage += (_, args) =>
+        {
+            System.Drawing.Bitmap page = index == 0 ? factor : guidance;
+            // GDI starts at the printable origin. Translate back to paper coordinates
+            // so the common A4 layout retains its approved margins on real printers.
+            args.Graphics!.TranslateTransform(-args.PageSettings.HardMarginX, -args.PageSettings.HardMarginY);
+            args.Graphics.DrawImage(page, FitPreservingAspect(page.Size, args.PageBounds));
+            args.HasMorePages = ++index < 2;
+        };
+        document.Print();
+    }
     private static System.Drawing.Bitmap RenderVisualToGdiBitmap(FrameworkElement visual, WpfSize pageSize, double dpi)
     {
         visual.Width = pageSize.Width;
@@ -300,7 +282,8 @@ public sealed class KeySheetService
         using var generator = new QRCodeGenerator();
         using QRCodeData data = generator.CreateQrCode(normalized, QRCodeGenerator.ECCLevel.Q);
         using var png = new PngByteQRCode(data);
-        return png.GetGraphic(6);
+        try { return png.GetGraphic(6); }
+        finally { foreach (BitArray row in data.ModuleMatrix) row.SetAll(false); }
     }
 
     /// <summary>
@@ -356,80 +339,6 @@ public sealed class KeySheetService
     {
         string normalized = PasswordKeyService.NormalizeGeneratedPassword(generatedPassword);
         return string.Join(" ", Enumerable.Range(0, normalized.Length / 8).Select(i => normalized.Substring(i * 8, 8)));
-    }
-
-    private static void DrawPdfSheet(PdfPage page, KeySheetData data, KeySheetFactor factor)
-    {
-        page.Width = XUnit.FromMillimeter(210);
-        page.Height = XUnit.FromMillimeter(297);
-        string generatedPassword = GetGeneratedPassword(data, factor);
-        string factorName = factor == KeySheetFactor.First ? "A" : "B";
-
-        using XGraphics gfx = XGraphics.FromPdfPage(page);
-        var titleFont = new XFont("Segoe UI", 20, XFontStyleEx.Bold);
-        var headingFont = new XFont("Segoe UI", 11, XFontStyleEx.Bold);
-        var normalFont = new XFont("Segoe UI", 10);
-        var warningFont = new XFont("Segoe UI", 9, XFontStyleEx.Bold);
-        // Only the factor block uses this, and it is the one thing on the sheet
-        // that gets typed in by hand, so it is set larger than the body rather
-        // than smaller.
-        var monoFont = new XFont("Consolas", 14);
-        var formatter = new XTextFormatter(gfx);
-
-        double margin = 42;
-        double y = margin;
-        gfx.DrawString($"{ProductInfo.Name} key sheet {factorName}", titleFont, XBrushes.Black, new XPoint(margin, y));
-        y += 24;
-        formatter.DrawString("Store this sheet separately from the other key sheet. A deliberately blank page is inserted between A and B for duplex separation.", warningFont, XBrushes.DarkRed, new XRect(margin, y, 500, 28));
-        y += 42;
-        gfx.DrawString("Cipher suite", headingFont, XBrushes.Black, new XPoint(margin, y));
-        y += 15;
-        gfx.DrawString(EncryptionSuiteCatalog.Get(data.Suite).DisplayName, normalFont, XBrushes.Black, new XPoint(margin, y));
-        y += 30;
-        gfx.DrawString("Archive file", headingFont, XBrushes.Black, new XPoint(margin, y));
-        y += 15;
-        formatter.DrawString(Path.GetFileName(data.ArchivePath), normalFont, XBrushes.Black, new XRect(margin, y, 500, 28));
-        y += 36;
-        gfx.DrawString("Storage location", headingFont, XBrushes.Black, new XPoint(margin, y));
-        y += 15;
-        formatter.DrawString(Path.GetDirectoryName(data.ArchivePath) ?? data.ArchivePath, normalFont, XBrushes.Black, new XRect(margin, y, 500, 38));
-        y += 48;
-        gfx.DrawString($"Generated 1024-bit hexadecimal factor {factorName}", headingFont, XBrushes.Black, new XPoint(margin, y));
-        y += 15;
-        // A factor clipped at the bottom of its box is a sheet that cannot open
-        // its own archive, and the formatter drops such lines without a word.
-        // So the box is measured from the font and the line count, not sized by
-        // eye.
-        string groupedFactor = GroupGeneratedPasswordForSheet(generatedPassword);
-        double factorBlockHeight = FactorBlockHeight(monoFont, groupedFactor);
-        formatter.DrawString(groupedFactor, monoFont, XBrushes.Black, new XRect(margin, y, 500, factorBlockHeight));
-        y += factorBlockHeight + 16;
-        gfx.DrawString("User password field (write by hand; do not store it digitally)", headingFont, XBrushes.Black, new XPoint(margin, y));
-        y += 24;
-        for (int i = 0; i < 3; i++)
-        {
-            gfx.DrawLine(XPens.Black, margin, y, page.Width.Point - margin, y);
-            y += 28;
-        }
-
-        y += 4;
-        // Deliberately no field for the PIN. The password field is already a
-        // compromise; a sheet carrying the passphrase, the PIN and a factor
-        // would hold three of the four credentials at once.
-        formatter.DrawString(
-            "The PIN is not written on this sheet. Memorise it; without it this factor cannot open the archive.",
-            warningFont,
-            XBrushes.DarkRed,
-            new XRect(margin, y, 500, 28));
-        y += 26;
-
-        y += 12;
-        gfx.DrawString($"QR code contains only generated password {factorName}", headingFont, XBrushes.Black, new XPoint(margin, y));
-        y += 12;
-        DrawQrCode(gfx, generatedPassword, margin, y, 190);
-
-        string footer = $"Created: {data.CreatedAt:yyyy-MM-dd HH:mm:ss}    Keep this sheet offline and physically protected.";
-        gfx.DrawString(footer, normalFont, XBrushes.DarkSlateGray, new XPoint(margin, page.Height.Point - 36));
     }
 
     private static string GetGeneratedPassword(KeySheetData data, KeySheetFactor factor)
@@ -511,33 +420,6 @@ public sealed class KeySheetService
         return image;
     }
 
-    private static void DrawQrCode(XGraphics gfx, string generatedPassword, double x, double y, double size)
-    {
-        string normalized = PasswordKeyService.NormalizeGeneratedPassword(generatedPassword);
-        using var generator = new QRCodeGenerator();
-        using QRCodeData data = generator.CreateQrCode(normalized, QRCodeGenerator.ECCLevel.Q);
-        int moduleCount = data.ModuleMatrix.Count;
-        double moduleSize = size / moduleCount;
-        gfx.DrawRectangle(XBrushes.White, x, y, size, size);
-
-        for (int row = 0; row < moduleCount; row++)
-        {
-            BitArray rowData = data.ModuleMatrix[row];
-            for (int column = 0; column < moduleCount; column++)
-            {
-                if (rowData[column])
-                {
-                    gfx.DrawRectangle(
-                        XBrushes.Black,
-                        x + (column * moduleSize),
-                        y + (row * moduleSize),
-                        moduleSize + 0.05,
-                        moduleSize + 0.05);
-                }
-            }
-        }
-    }
-
     /// <remarks>
     /// Internal rather than private so the suite can measure the factor block
     /// without drawing a sheet first, as the macOS side already does.
@@ -565,7 +447,9 @@ public sealed record KeySheetData(
     EncryptionSuite Suite,
     string FirstGeneratedPassword,
     string SecondGeneratedPassword,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool English = false,
+    string DeviceName = "");
 
 internal sealed class WindowsFontResolver : IFontResolver
 {
@@ -581,6 +465,8 @@ internal sealed class WindowsFontResolver : IFontResolver
         ["consolab"] = "consolab.ttf",
         ["arial"] = "arial.ttf",
         ["arialbd"] = "arialbd.ttf",
+        ["cour"] = "cour.ttf",
+        ["courbd"] = "courbd.ttf",
     };
 
     private WindowsFontResolver()
@@ -590,6 +476,8 @@ internal sealed class WindowsFontResolver : IFontResolver
     public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic)
     {
         string family = familyName.Trim();
+        if (family.Contains("courier", StringComparison.OrdinalIgnoreCase))
+            return new FontResolverInfo(bold ? "courbd" : "cour", false, italic);
         if (family.Contains("consol", StringComparison.OrdinalIgnoreCase))
         {
             return new FontResolverInfo(bold ? "consolab" : "consola", false, italic);

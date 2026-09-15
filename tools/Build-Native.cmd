@@ -17,7 +17,12 @@ call "%VSDEVCMD%" -arch=x64 -host_arch=x64
 if errorlevel 1 exit /b 1
 
 cd /d "%ROOT%"
-if not exist tools mkdir tools
+set "NATIVEOUTPUT=tools"
+if not "%~1"=="" set "NATIVEOUTPUT=%~1"
+if not exist "%NATIVEOUTPUT%" mkdir "%NATIVEOUTPUT%"
+
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools\Verify-NativeSources.ps1
+if errorlevel 1 exit /b 1
 
 pwsh -NoProfile -ExecutionPolicy Bypass -File tools\Verify-MldsaReference.ps1
 if errorlevel 1 exit /b 1
@@ -33,12 +38,12 @@ if not exist "%NATIVEOBJ%" mkdir "%NATIVEOBJ%"
 set "HARDEN_COMPILE=/O2 /MT /GS /sdl /guard:cf /Fo%NATIVEOBJ%\"
 set "HARDEN_LINK=/link /guard:cf /CETCOMPAT"
 
-cl %HARDEN_COMPILE% /DNOJIT /EHsc /Fetools\zpaq.exe external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
+cl %HARDEN_COMPILE% /DNOJIT /EHsc /Fe"%NATIVEOUTPUT%\zpaq.exe" external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
 cl %HARDEN_COMPILE% /LD /D_CRT_SECURE_NO_WARNINGS ^
   /Iexternal\Skein-reference\NIST\CD\Reference_Implementation ^
-  /Fetools\threefish_ref.dll ^
+  /Fe"%NATIVEOUTPUT%\threefish_ref.dll" ^
   native\threefish_ref_export.c ^
   external\Skein-reference\NIST\CD\Reference_Implementation\skein.c ^
   external\Skein-reference\NIST\CD\Reference_Implementation\skein_block.c ^
@@ -47,7 +52,7 @@ if errorlevel 1 exit /b 1
 
 cl %HARDEN_COMPILE% /LD /D_CRT_SECURE_NO_WARNINGS /DDILITHIUM_MODE=5 ^
   /Iexternal\ML-DSA-reference\ref ^
-  /Fetools\mldsa87_ref.dll ^
+  /Fe"%NATIVEOUTPUT%\mldsa87_ref.dll" ^
   native\mldsa87_ref_export.c ^
   external\ML-DSA-reference\ref\sign.c ^
   external\ML-DSA-reference\ref\packing.c ^
@@ -67,7 +72,7 @@ if exist external\phc-winner-argon2 (
     /Iexternal\phc-winner-argon2\include ^
     /Iexternal\phc-winner-argon2\src ^
     /Iexternal\phc-winner-argon2\src\blake2 ^
-    /Fetools\argon2_ref.dll ^
+    /Fe"%NATIVEOUTPUT%\argon2_ref.dll" ^
     native\argon2_ref_export.c ^
     external\phc-winner-argon2\src\argon2.c ^
     external\phc-winner-argon2\src\core.c ^
@@ -82,7 +87,7 @@ if exist external\phc-winner-argon2 (
     /Iexternal\phc-winner-argon2\include ^
     /Iexternal\phc-winner-argon2\src ^
     /Iexternal\phc-winner-argon2\src\blake2 ^
-    /Fetools\argon2.exe ^
+    /Fe"%NATIVEOUTPUT%\argon2.exe" ^
     external\phc-winner-argon2\src\run.c ^
     external\phc-winner-argon2\src\argon2.c ^
     external\phc-winner-argon2\src\core.c ^
@@ -159,7 +164,7 @@ for %%A in (aes mars shacal2 chachapoly) do (
   cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
     /I"%CRYPTOPP%" ^
     /Fo"%CPPOBJ%\adapters\\" ^
-    /Fetools\%%A_ref.dll ^
+    /Fe"%NATIVEOUTPUT%\%%A_ref.dll" ^
     native\%%A_ref_export.cpp ^
     "%CPPOBJ%\cryptopp.lib" ^
     %HARDEN_LINK%
@@ -169,7 +174,7 @@ for %%A in (aes mars shacal2 chachapoly) do (
 cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
   /I"%CRYPTOPP%" ^
   /Fo"%CPPOBJ%\adapters\\" ^
-  /Fetools\kalyna_v12.dll ^
+  /Fe"%NATIVEOUTPUT%\kalyna_v12.dll" ^
   native\kalyna_v12_export.cpp ^
   "%CPPOBJ%\cryptopp.lib" ^
   %HARDEN_LINK%

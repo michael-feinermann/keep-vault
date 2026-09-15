@@ -100,10 +100,18 @@ var smokeTests = new List<TestCase>
     new("smoke.chacha20-poly1305-rfc8439", "ChaCha20-Poly1305 framing against RFC 8439", Sync(RunAeadFramingTests), TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.release-native-tool-coverage", "release scripts cover the required native tool set", Sync(RunReleaseScriptToolCoverageTests), TestResource.Light, "Smoke", IsSmoke: true),
     new("smoke.localization-defaults", "MainWindow design-time text against the installed strings", Sync(RunLocalizationDefaultsTests), TestResource.Light, "Smoke", IsSmoke: true),
+    new("smoke.release-signing", "release key source and signer policy", Sync(ReleaseSigningTests.Run), TestResource.Light, "Smoke", IsSmoke: true),
 };
 
 var comprehensiveTests = new List<TestCase>
 {
+    new("gui.installer-reference", "installer reference flow, localized status and bounded selectable details",
+        () => Sta(InstallerGuiReferenceTests.Run), TestResource.Gui, "Gui"),
+    new("gui.key-sheet-v502", "separate v5.0.2 key sheets and physical layout", () => Sta(KeySheetV502Tests.Run), TestResource.Gui, "Gui"),
+    new("gui.v502-reference-parity", "macOS reference design, credentials and worker callbacks",
+        () => Sta(WindowsGuiV502Tests.Run), TestResource.Gui, "Gui"),
+    new("gui.reference-render", "render actual WPF controls in German and English without opening a native window",
+        () => Sta(WindowsGuiV502Tests.RenderReferenceViews), TestResource.Gui, "Gui"),
     // WPF wants a single-threaded apartment, and one at a time: the window
     // reads and writes the same isolated-storage settings and the same static
     // entropy mixer.
@@ -127,6 +135,9 @@ var comprehensiveTests = new List<TestCase>
     new("files.object-bound-reads", "object-bound reads: reparse points, hard links and directories",
         Sync(RunObjectBoundReadTests), TestResource.Light, "Files"),
 
+    new("files.inspection-sharing-cleanup", "inspection sharing exclusions and extraction cleanup failure handles",
+        Sync(WindowsFileSystemSecurityTests.Run), TestResource.Light, "Files"),
+
         new("files.original-deletion-verification", "verified original deletion and quarantine safety",
         RunWindowsOriginalDeletionTestsAsync, TestResource.Light, "Files"),
 
@@ -135,6 +146,12 @@ var comprehensiveTests = new List<TestCase>
 
     new("zpaq.input-binding", "ZPAQ input binding: reparse points, post-check insertion, leases",
         RunZpaqInputBindingTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
+
+    new("zpaq.windows-bound-output", "Windows native output identity, junction, precreation and Unicode boundaries",
+        WindowsFileSystemSecurityTests.RunNativeAsync, TestResource.ZpaqGlobal, "Zpaq"),
+
+    new("zpaq.streaming-metadata", "streaming file and directory timestamps, attributes and supplementary Unicode",
+        WindowsFileSystemSecurityTests.RunStreamingMetadataAsync, TestResource.ZpaqGlobal, "Zpaq"),
 
     new("zpaq.malformed-pipe-corpus", "mutated ZPAQ pipe-parser crash and hang corpus",
         RunMalformedZpaqCorpusTestsAsync, TestResource.ZpaqGlobal, "Zpaq"),
@@ -184,6 +201,17 @@ var comprehensiveTests = new List<TestCase>
         Cost = new TestCost(4, 3072, true, TestConstraint.HostExclusive),
     },
 
+    new("release.paranoia-256mib-level5", "exact 256 MiB, level 5, full Paranoia release workflow",
+        ReleaseEndToEndPerformanceTests.RunExact256MiBAsync, TestResource.CpuHeavy, "Performance", IsPerformance: true)
+    {
+        Cost = new TestCost(4, 3072, true, TestConstraint.HostExclusive),
+    },
+    new("release.paranoia-complex-tree-level5-repair", "complex tree, level 5, full Paranoia and repair release workflow",
+        ReleaseEndToEndPerformanceTests.RunComplexTreeAsync, TestResource.CpuHeavy, "Performance", IsPerformance: true)
+    {
+        Cost = new TestCost(4, 3072, true, TestConstraint.HostExclusive),
+    },
+
     new("containers.pdf-dual-suite", "PDF ZPAQ and dual-suite encrypted containers",
         RunPdfRoundTripTestsAsync, TestResource.EntropyGlobal, "Containers"),
 
@@ -203,6 +231,9 @@ var comprehensiveTests = new List<TestCase>
         RunCryptographicEraseTestsAsync, TestResource.EntropyGlobal, "Erase"),
 };
 
+comprehensiveTests.AddRange(PasswordModelReferenceTests.Tests);
+comprehensiveTests.AddRange(PinCreationPolicyTests.Tests);
+comprehensiveTests.AddRange(CredentialCompatibilityTests.Tests);
 return await TestRunner.RunAsync(args, smokeTests, comprehensiveTests);
 
 // Wraps a synchronous group so it can be registered beside the asynchronous
@@ -264,8 +295,8 @@ static void RunSettingsPersistenceTests()
         Assert(firstWindow.LanguageBox.SelectedIndex == 1, "missing language preference defaults to English");
         Assert(firstWindow.Title == "Keep Vault" && firstWindow.TitleText.Text == "Keep Vault", "GUI uses the Keep Vault product name");
         Assert(
-            firstWindow.SubtitleText.Text == "Create, extract, and cryptographically erase encrypted ZPAQ archives.",
-            "GUI rename preserves the existing subtitle");
+            firstWindow.SubtitleText.Text == "Secure, recoverable archives for Windows",
+            "GUI uses the current reference subtitle with the Windows platform name");
         Assert(typeof(MainWindow).Assembly.GetName().Name == "Keep Vault", "application assembly and executable identity use the product name");
         englishArgon2Profile = firstWindow.Argon2ProfileText.Text;
         Assert(
@@ -405,8 +436,8 @@ static void RunSettingsPersistenceTests()
         Assert(restartedWindow.LanguageBox.SelectedIndex == 0, "restarted GUI restores German");
         Assert(restartedWindow.Title == "Keep Vault" && restartedWindow.TitleText.Text == "Keep Vault", "German GUI keeps the language-independent product name");
         Assert(
-            restartedWindow.SubtitleText.Text == "Verschlüsselte ZPAQ-Archive erstellen, entpacken und kryptografisch löschen.",
-            "German GUI keeps its existing localized subtitle");
+            restartedWindow.SubtitleText.Text == "Sichere, wiederherstellbare Archive für Windows",
+            "German GUI uses the current reference subtitle with the Windows platform name");
         Assert(
             restartedWindow.Argon2ProfileText.Text.Contains("1 GiB", StringComparison.Ordinal)
             && restartedWindow.Argon2ProfileText.Text.Contains("knapp 2 GiB", StringComparison.Ordinal)
@@ -527,7 +558,7 @@ static void RunDropTests()
                 "GUI offers every catalogued suite in display order and preselects the factory default");
             window.SetExtractArchivePath(hintedArchive);
             WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
-            Assert(window.ExtractHintLabel.Text == "Optional hint from archive", "extract GUI labels the optional archive hint");
+            Assert(window.ExtractHintLabel.Text == "Public archive hint", "extract GUI labels the untrusted public archive hint");
             Assert(
                 window.ExtractHintText.Text.Contains("blue notebook in the safe", StringComparison.Ordinal),
                 "selecting an encrypted archive immediately displays its public optional hint");
@@ -553,7 +584,7 @@ static void RunDropTests()
                 "archive target suggestion skips a directory with the candidate archive name");
 
             Assert(window.ApplyDroppedPaths([output], DropTarget.OutputFolder) == DropResult.OutputFolderSet, "output folder drop");
-            Assert(window.OutputFolderBox.Text == output, "output folder box");
+            Assert(window.OutputFolderBox.Text == Path.Combine(output, "archive(1)"), "output parent drop proposes a fresh child folder");
 
             Assert(window.ApplyDroppedPaths([output], DropTarget.TargetArchive) == DropResult.TargetArchiveSet, "target archive folder drop");
             Assert(window.ArchivePathBox.Text == Path.Combine(root, "output(1).zpaq"), "folder dropped as target suggests an archive beside it, named after it");
@@ -638,19 +669,19 @@ static void RunDropTests()
             RaiseFileDrop(window.ExtractArchiveBox, archive);
             Assert(window.ExtractArchiveBox.Text == archive, "preview drop on extract archive box");
             WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
-            Assert(window.OutputFolderBox.Text == Path.Combine(root, "archive(3)"), "preview drop on extract archive box suggests output");
+            Assert(window.OutputFolderBox.Text == Path.Combine(output, "archive(1)"), "preview archive drop preserves the selected output parent");
 
             RaiseFileDragOver(window.ExtractPasswordBox, archive);
             RaiseFileDrop(window.ExtractPasswordBox, archive);
             Assert(window.ExtractArchiveBox.Text == archive, "preview drop on extract password area");
             WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
-            Assert(window.OutputFolderBox.Text == Path.Combine(root, "archive(3)"), "preview drop on extract password area suggests output");
+            Assert(window.OutputFolderBox.Text == Path.Combine(output, "archive(1)"), "preview drop on extract password area preserves output parent");
 
             RaiseFileDragOver(window.ExtractPanel, misnamedEncryptedArchive);
             RaiseFileDrop(window.ExtractPanel, misnamedEncryptedArchive);
             Assert(window.ExtractArchiveBox.Text == misnamedEncryptedArchive, "misnamed encrypted archive with KZPAQ header can be dropped for extraction");
             WaitForDispatcherTask(window.ExtractHintLoadTaskForTests);
-            Assert(window.OutputFolderBox.Text == Path.Combine(root, "misnamed(1)"), "misnamed archive drop suggests output");
+            Assert(window.OutputFolderBox.Text == Path.Combine(output, "misnamed(1)"), "misnamed archive drop suggests output under selected parent");
             Assert(
                 MainWindow.HasEncryptedArchiveExtension("damaged.KZPAQ")
                 && !MainWindow.HasEncryptedArchiveExtension("plain.zpaq"),
@@ -658,7 +689,7 @@ static void RunDropTests()
 
             RaiseFileDragOver(window.OutputFolderBox, output);
             RaiseFileDrop(window.OutputFolderBox, output);
-            Assert(window.OutputFolderBox.Text == output, "preview drop on output folder box");
+            Assert(window.OutputFolderBox.Text == Path.Combine(output, "misnamed(1)"), "preview output parent drop proposes a child folder");
 
             RaiseFileDragOver(window.ErasePathBox, misnamedEncryptedArchive);
             RaiseFileDrop(window.ErasePathBox, misnamedEncryptedArchive);
@@ -851,9 +882,10 @@ static void RunKeySheetTests()
         var service = new KeySheetService();
         var data = new KeySheetData(archive, EncryptionSuite.Threefish1024, firstGeneratedPassword, secondGeneratedPassword, new DateTime(2026, 7, 8, 12, 0, 0, DateTimeKind.Local));
 
-        service.SaveTestPdf(data, pdf);
+        string secondPdf = Path.Combine(root, "key-sheet-b.pdf");
+        service.SaveTestPdf(data, pdf, secondPdf);
         Assert(File.Exists(pdf) && new FileInfo(pdf).Length > 1024, "key sheet PDF was written");
-        AssertPdfReadableAsync(pdf, "key sheet PDF", expectedPages: 3).GetAwaiter().GetResult();
+        AssertPdfReadableAsync(pdf, "key sheet PDF", expectedPages: 2).GetAwaiter().GetResult();
         using (FileStream stream = File.OpenRead(pdf))
         {
             byte[] header = new byte[5];
@@ -868,7 +900,7 @@ static void RunKeySheetTests()
         Assert(KeySheetService.GroupGeneratedPassword(firstGeneratedPassword).Contains(' '), "generated password is grouped for print");
         Assert(service.CreatePrintVisual(data, KeySheetFactor.First) is FrameworkElement, "first in-memory print visual can be created");
         Assert(service.CreatePrintVisual(data, KeySheetFactor.Second) is FrameworkElement, "second in-memory print visual can be created");
-        Assert(service.CreatePrintDocument(data, new System.Windows.Size(793.7, 1122.5)).Pages.Count == 3, "print document has key sheet A, blank duplex page, and key sheet B");
+        Assert(service.CreatePrintDocument(data, new System.Windows.Size(793.7, 1122.5)).Pages.Count == 2, "each print document has one factor and public installation guidance");
 
         // The sheet has to carry the whole factor. It did not: the macOS sheet
         // printed the first 224 of its 256 hexadecimal characters, because
@@ -1501,6 +1533,10 @@ static void RunReleaseScriptToolCoverageTests()
 
     string portableBuilderPath = Path.Combine(repositoryRoot, "tools", "Build-Portable.ps1");
     string portableBuilder = File.ReadAllText(portableBuilderPath);
+    Assert(portableBuilder.Contains("New-ReleaseSourceSnapshot", StringComparison.Ordinal)
+        && portableBuilder.Contains("Build-PortableCore.ps1", StringComparison.Ordinal),
+        "portable packaging delegates to its committed source snapshot");
+    portableBuilder += File.ReadAllText(Path.Combine(repositoryRoot, "tools", "Build-PortableCore.ps1"));
     foreach (string forbiddenClaim in new[]
     {
         "Encrypted containers use format 7",
@@ -3971,16 +4007,11 @@ static string TestGeneratedPassword(char digit = 'A')
 
 static async Task RunPdfRoundTripTestsAsync()
 {
-    string sourcePdf = ResolveSamplePdfPath();
     const string password = TestConstants.TestUserPassword;
     const string pin = TestConstants.TestPin;
     string firstGeneratedPassword = TestGeneratedPassword();
     string secondGeneratedPassword = TestGeneratedPassword('B');
 
-    Assert(File.Exists(sourcePdf), "sample PDF exists");
-    Console.WriteLine($"Sample PDF under test: {sourcePdf}");
-    await AssertPdfReadableAsync(sourcePdf, "source PDF is readable");
-    byte[] originalHash = await Sha3FileAsync(sourcePdf);
     string root = Path.Combine(Path.GetTempPath(), $"kalyna-pdf-e2e-{Guid.NewGuid():N}");
     DateTime tempAuditStart = DateTime.UtcNow;
     // The nine mouse pools are locked for the life of the process and are
@@ -3992,6 +4023,11 @@ static async Task RunPdfRoundTripTestsAsync()
 
     try
     {
+        string sourcePdf = ResolveSamplePdfPath(root);
+        Assert(File.Exists(sourcePdf), "sample PDF exists");
+        Console.WriteLine($"Sample PDF under test: {sourcePdf}");
+        await AssertPdfReadableAsync(sourcePdf, "source PDF is readable");
+        byte[] originalHash = await Sha3FileAsync(sourcePdf);
         var zpaq = new ZpaqService();
         var kalyna = new KalynaContainerService();
         var archiveIntegrity = new ArchiveIntegrityService();
@@ -5476,7 +5512,7 @@ static async Task AssertExtractedPdfHashAsync(string directory, string fileName,
     Assert(CryptographicOperations.FixedTimeEquals(expectedHash, actualHash), message);
 }
 
-static string ResolveSamplePdfPath()
+static string ResolveSamplePdfPath(string testRoot)
 {
     string? configured = Environment.GetEnvironmentVariable("KALYNA_SAMPLE_PDF");
     if (!string.IsNullOrWhiteSpace(configured))
@@ -5484,26 +5520,19 @@ static string ResolveSamplePdfPath()
         return Path.GetFullPath(configured);
     }
 
-    string desktop = @"C:\Users\Michael\OneDrive - tu-dortmund.de\Desktop";
-    string[] preferred =
-    [
-        Path.Combine(desktop, "Aushang_Studienassistenz_2.pdf"),
-        Path.Combine(desktop, "Aushang_Studienassistenz_2 - Kopie.pdf"),
-        @"C:\Users\Michael\Downloads\Aushang_Studienassistenz_2.pdf",
-    ];
-
-    foreach (string path in preferred)
+    string path = Path.Combine(testRoot, "synthetic-sample.pdf");
+    KeySheetService.EnsurePdfFontResolver();
+    using var document = new PdfSharp.Pdf.PdfDocument();
+    for (int pageIndex = 0; pageIndex < 2; pageIndex++)
     {
-        if (File.Exists(path))
-        {
-            return path;
-        }
+        var page = document.AddPage();
+        using var graphics = PdfSharp.Drawing.XGraphics.FromPdfPage(page);
+        graphics.DrawString($"Keep Vault synthetic PDF fixture, page {pageIndex + 1} — Grüße aus Dortmund.",
+            new PdfSharp.Drawing.XFont("Arial", 12), PdfSharp.Drawing.XBrushes.Black, new PdfSharp.Drawing.XPoint(40, 60));
+        graphics.DrawRectangle(PdfSharp.Drawing.XBrushes.DarkBlue, 40, 100, 360, 180);
     }
-
-    string? discovered = Directory.Exists(desktop)
-        ? Directory.EnumerateFiles(desktop, "*Studienassistenz*.pdf").FirstOrDefault()
-        : null;
-    return discovered ?? preferred[0];
+    document.Save(path);
+    return path;
 }
 
 static async Task AssertPdfReadableAsync(string pdfPath, string message, int? expectedPages = null)

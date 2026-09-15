@@ -34,8 +34,9 @@ function Get-NativeToolNames {
 }
 
 function Get-NativeToolTargets {
-    param([Parameter(Mandatory = $true)][string] $Root)
+    param([Parameter(Mandatory = $true)][string] $Root, [string] $NativeToolDirectory)
 
     $names = @(Get-NativeToolNames) + @("mldsa87_ref.dll")
-    return $names | ForEach-Object { Join-Path $Root "tools\$_" }
+    if (-not $NativeToolDirectory) { $NativeToolDirectory = Join-Path $Root 'tools' }
+    return $names | ForEach-Object { Join-Path $NativeToolDirectory $_ }
 }

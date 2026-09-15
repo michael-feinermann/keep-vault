@@ -855,7 +855,7 @@ extern const int compsize[256];      // number of bytes to encode a component
 extern const char* opcodelist[272];  // list of ZPAQL instructions
 
 // Callback for error handling
-extern void error(const char* msg);
+[[noreturn]] extern void error(const char* msg);
 
 // Virtual base classes for input and output
 // get() and put() must be overridden to read or write 1 byte.

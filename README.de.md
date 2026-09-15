@@ -3,7 +3,7 @@
 [Deutsch](README.de.md) · [English](README.md) · [Dokumentationsverzeichnis](docs/README.md)
 
 Archivierung, Entpackung und kryptografische Löschung von ZPAQ-Archiven. Die aktuelle
-Veröffentlichung richtet sich an macOS und verwendet das Containerformat v12:
+macOS-Referenz und die Windows-Zielversion 5.0.2 verwenden das Containerformat v12:
 eine wählbare Kaskade aus bis zu sechs unabhängigen Chiffren über dem komprimierten
 Datenstrom, Schlüssel aus zwei Argon2id-Zweigen, deren Speicherbedarf aus deinen
 Zugangsdaten abgeleitet wird, zwei getrennte MACs und vier Zugangsfaktoren:
@@ -12,12 +12,11 @@ eine Passphrase, eine PIN und zwei von der App erzeugte 1024-Bit-Faktoren.
 Die Anwendung wird weiterentwickelt. Sie ersetzt weder ein externes
 kryptografisches Audit noch ein HSM oder die Absicherung des Betriebssystems.
 
-> Die Plattformen werden getrennt geprüft. macOS-Versionen werden auf echter
-> Apple-Hardware gebaut und getestet. Die Windows-WPF-Anwendung und ihr eigener
-> QR-Scanner werden in einem späteren, getrennten Schritt auf v12 portiert und
-> veröffentlicht. Der aktuelle Windows-Entwicklungsstand gehört nicht zu dieser
-> v12-Veröffentlichung; bestandene macOS-Tests gelten niemals als Windows-Nachweis.
-
+> Die Plattformen werden getrennt geprüft. macOS und Windows werden auf ihrer
+> jeweiligen Hardware gebaut und getestet. Windows 5.0.2 folgt der macOS-v12-
+> Referenz. Windows-Nachweise und offene Freigabeprüfungen stehen im
+> [Windows-Prüfbericht](docs/KEEP_VAULT_5_0_2_WINDOWS_AUDIT.md); macOS-Ergebnisse
+> gelten niemals als Windows-Nachweis.
 ---
 
 ## Installation
@@ -32,7 +31,7 @@ WLAN und unabhängiger IPv4/IPv6-Überwachung bestanden. Die Nachweise für Kern
 echte GUI sind im [macOS-Audit](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.md) getrennt dokumentiert.
 
 Die stabile [Veröffentlichung v5.0.2](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2)
-ist seit dem 9. September 2026 öffentlich und enthält die sechs geprüften Dateien.
+ist seit dem 9. September 2026 öffentlich; ihre sechs macOS-Dateien wurden getrennt geprüft.
 Der Release-Tag zeigt auf den geprüften Commit `8df29a9e13eb65c0769666c3835b4cf0b96dad20`;
 die hochgeladenen Dateien wurden erneut heruntergeladen und bytegenau verifiziert.
 Spätere reine Dokumentationsänderungen ändern diesen Tag und die notarisierten
@@ -42,19 +41,35 @@ Fertige Pakete findest du auf der
 [Releases-Seite](https://github.com/michael-feinermann/keep-vault/releases).
 Voraussetzung: macOS 14 oder neuer, Apple Silicon oder Intel (Universal Binary).
 
-Die folgenden Befehle betreffen den getrennten, unveröffentlichten
-Windows-Entwicklungsstand und gehören nicht zur macOS-Veröffentlichung von v12.
-Für einen lokalen Windows-x64-Build führst du `tools/Build-Portable.ps1` und danach
-`tools/Install-KeepVaultShortcuts.ps1` aus. Die verbindliche Portierungscheckliste steht in
-[`docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md`](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md);
-sie muss auf echter Windows-Hardware vollständig abgearbeitet werden, bevor eine
-Windows-Veröffentlichung behauptet werden darf. Die Verknüpfungen zeigen auf den
-verifizierten portablen Verzeichnisbaum in diesem Workspace. Ein neuer erfolgreicher
-portabler Build wird damit ohne zweite veränderbare Kopie zur lokal installierten
-Version. Derselbe Baum enthält den separat gebauten und signierten
-`QR-Scanner\QR-Scanner.exe`; Keep Vault prüft dieses Begleitprogramm beim Start.
-Der Scanner bleibt der einzige Windows-Prozess des Releases mit Kamerazugriff.
+Windows 5.0.2 wird als eigenständiges x64-Paket für Windows 10 2004 oder neuer
+gebaut. `Keep Vault Setup.exe` prüft das signierte Vollinventar und sämtliche
+Programme, kopiert in ein neues Anwendungsverzeichnis des Benutzerkontos und
+prüft die installierte Kopie vor dem Anlegen der Verknüpfungen. SDK, Compiler,
+eine PowerShell-Installation oder eine separat installierte .NET-Laufzeit sind
+nicht erforderlich. Bei bereits vorhandenen Verknüpfungen bricht der Installer
+vor der Installation mit einer klaren Meldung ab; alte Installationen werden
+nicht stillschweigend ersetzt. Der getrennte `QR-Scanner\QR-Scanner.exe` bleibt
+der einzige Prozess mit Kamerazugriff. Das entpackte Paket muss vollständig
+zusammenbleiben, einschließlich aller `.khsig`-, `.sha3`-, `.skein`-Dateien und
+`RELEASE-INVENTORY.json`.
 
+Für einen Quellbuild dient `tools/Build-Portable.ps1 -ReleaseKeyDirectory <Schlüsselverzeichnis>`
+mit dem exakten SDK aus `global.json` und der dokumentierten nativen Toolchain.
+Das Skript verlangt committete, unveränderte Quelldateien und baut eine unabhängige
+Kopie unter `%USERPROFILE%\.codex\release-builds\<commit>-<eindeutig>\src`.
+Quelldateien und Eingabeverzeichnisse bleiben während des Builds gesperrt. Native
+Werkzeuge werden unter `work\native-tools` dieses Snapshots neu gebaut; Änderungen
+an versionierten nativen Ausgaben ersetzen diesen Build nicht. Geprüfte Pakete
+bleiben im vom Skript ausgegebenen `dist`-Verzeichnis des Snapshots. Die Paketierung
+prüft native Tests, das vollständige signierte Inventar, exakte Produktversionen
+5.0.2, SHA-512-Authenticode, RFC-3161-Zeitstempel und das ZIP nach dem Entpacken
+in ein neues Verzeichnis.
+Die [Windows-Checkliste](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md) und der
+[Windows-Prüfbericht](docs/KEEP_VAULT_5_0_2_WINDOWS_AUDIT.md) enthalten die getrennten
+Freigabeprüfungen. Das Release-Zertifikat ist selbstsigniert und wird über die
+fest eingebauten öffentlichen RSA- und ML-DSA-Schlüssel geprüft. Dadurch wird
+seine Zertifikatskette nicht allgemein von Windows als vertrauenswürdig eingestuft.
+Es wird kein Stammzertifikat installiert.
 Das macOS-Paket enthält `Keep Vault.app`, `QR-Scanner.app` und die separate
 `Keep Vault Installer.app`. Der Scanner liest die QR-Codes der ausgedruckten
 Schlüsselzettel. Er ist ein eigenständiges Programm in einer Sandbox mit eigener
@@ -554,22 +569,21 @@ beiden Faktoren gedruckt oder ausdrücklich als Test-PDF exportiert werden.
 
 - Physischer Druck ohne Datei ist der Standardweg.
 - Offensichtliche virtuelle PDF-/XPS-/Faxdrucker werden gesperrt.
-- Unter macOS entstehen zwei getrennte Druckaufträge: Faktor A mit öffentlicher
+- Es entstehen zwei getrennte Druckaufträge: Faktor A mit öffentlicher
   Installationsseite, danach Faktor B mit eigener öffentlicher Installationsseite.
-  Jeder Auftrag hat zwei Seiten. Die getrennte Windows-Entwicklungsimplementierung
-  behält ihr dreiseitiges Layout A / öffentliche Trennseite / B und benötigt
-  eigene Release-Prüfungen.
+  Jeder Auftrag hat zwei Seiten. Die Windows-Implementierung 5.0.2 folgt diesem
+  Referenzlayout; ihre tatsächliche Druckprüfung wird getrennt im Windows-Prüfbericht geführt.
 - Jede geheime Seite nennt Suite, Gerätename, Archivpfad, genau einen
   1024-Bit-Faktor in 32 Gruppen aus acht Hexzeichen, ein leeres handschriftliches
-  Feld für das Benutzerpasswort und zweimal den QR-Code dieses Faktors. Unter
-  macOS 5.0.2 enthält der Titel die Keep-Vault-Version und das Passwortfeld
+  Feld für das Benutzerpasswort und zweimal den QR-Code dieses Faktors. In
+  Version 5.0.2 enthält der Titel die Keep-Vault-Version und das Passwortfeld
   mindestens drei Zeilen. Bezeichnungen einschließlich Doppelpunkt sind in beiden
   Sprachfassungen fett gesetzt.
 - Die PIN steht bewusst nicht auf dem Zettel; der Zettel weist darauf hin.
   Schon das Handschriftfeld für die Passphrase ist ein Kompromiss. Ein Zettel
   mit Passphrase, PIN und einem Faktor enthielte drei der vier Zugangsfaktoren.
 - A und B sollen getrennt und offline aufbewahrt werden.
-- Test-PDF speichern schreibt unter macOS bewusst zwei getrennte Dateien, eine
+- Test-PDF speichern schreibt bewusst zwei getrennte Dateien, eine
   je Faktor mit zugehöriger öffentlicher Installationsseite. Beide Faktoren liegen
   damit dauerhaft auf dem gewählten Datenträger; das ist kein sicherer Standardweg.
 

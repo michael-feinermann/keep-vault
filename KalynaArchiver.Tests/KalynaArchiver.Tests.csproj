@@ -1,14 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\KeepVaultInstaller\InstallerWindow.cs" Link="InstallerWindow.cs" />
     <ProjectReference Include="..\KalynaArchiver\KalynaArchiver.csproj" />
     <ProjectReference Include="..\KalynaArchiver.Signing\KalynaArchiver.Signing.csproj" />
   </ItemGroup>
@@ -18,19 +19,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\tools\zpaq.exe" Link="zpaq.exe" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\argon2.exe" Link="argon2.exe" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\kalyna_v12.dll" Link="kalyna_v12.dll" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\threefish_ref.dll" Link="threefish_ref.dll" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\argon2_ref.dll" Link="argon2_ref.dll" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\aes_ref.dll" Link="aes_ref.dll" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\mars_ref.dll" Link="mars_ref.dll" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\shacal2_ref.dll" Link="shacal2_ref.dll" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\chachapoly_ref.dll" Link="chachapoly_ref.dll" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\*.sha3" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\*.skein" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\*.khsig" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
-    <None Include="..\tools\mldsa87_ref.dll" Link="mldsa87_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\zpaq.exe" Link="zpaq.exe" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\argon2.exe" Link="argon2.exe" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\kalyna_v12.dll" Link="kalyna_v12.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\threefish_ref.dll" Link="threefish_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\argon2_ref.dll" Link="argon2_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\aes_ref.dll" Link="aes_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\mars_ref.dll" Link="mars_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\shacal2_ref.dll" Link="shacal2_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\chachapoly_ref.dll" Link="chachapoly_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\*.sha3" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\*.skein" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\*.khsig" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\mldsa87_ref.dll" Link="mldsa87_ref.dll" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
 </Project>

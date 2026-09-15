@@ -324,26 +324,32 @@ static void wait_for_completed(const uint32_t *completed, uint32_t target)
 
 /* Multi-threaded version for p > 1 case */
 static int fill_memory_blocks_mt(argon2_instance_t *instance) {
+    const uint32_t lanes = instance->lanes;
+    const uint32_t threads = instance->threads;
     uint32_t r, s;
     argon2_thread_handle_t *thread = NULL;
     argon2_thread_data *thr_data = NULL;
     uint8_t *started = NULL;
     int rc = ARGON2_OK;
 
+    if (lanes == 0 || threads == 0 || threads > lanes) {
+        return ARGON2_INCORRECT_PARAMETER;
+    }
+
     /* 1. Allocating space for threads */
-    thread = calloc(instance->lanes, sizeof(argon2_thread_handle_t));
+    thread = calloc(lanes, sizeof(argon2_thread_handle_t));
     if (thread == NULL) {
         rc = ARGON2_MEMORY_ALLOCATION_ERROR;
         goto fail;
     }
 
-    thr_data = calloc(instance->lanes, sizeof(argon2_thread_data));
+    thr_data = calloc(lanes, sizeof(argon2_thread_data));
     if (thr_data == NULL) {
         rc = ARGON2_MEMORY_ALLOCATION_ERROR;
         goto fail;
     }
 
-    started = calloc(instance->lanes, sizeof(uint8_t));
+    started = calloc(lanes, sizeof(uint8_t));
     if (started == NULL) {
         rc = ARGON2_MEMORY_ALLOCATION_ERROR;
         goto fail;
@@ -354,20 +360,21 @@ static int fill_memory_blocks_mt(argon2_instance_t *instance) {
             uint32_t l;
             uint32_t completed = 0;
             uint32_t active = 0;
+            uint32_t created = 0;
 
-            memset(started, 0, instance->lanes * sizeof(uint8_t));
+            memset(started, 0, lanes * sizeof(uint8_t));
 
             /* 2. Calling threads */
-            for (l = 0; l < instance->lanes; ++l) {
+            for (l = 0; l < lanes; ++l) {
                 argon2_position_t position;
 
                 /* 2.1 Join a thread if limit is exceeded */
-                if (l >= instance->threads) {
-                    if (argon2_thread_join(thread[l - instance->threads])) {
+                if (l >= threads) {
+                    if (argon2_thread_join(thread[l - threads])) {
                         rc = ARGON2_THREAD_FAIL;
                         goto phase_fail;
                     }
-                    started[l - instance->threads] = 0;
+                    started[l - threads] = 0;
                     --active;
                 }
 
@@ -388,15 +395,18 @@ static int fill_memory_blocks_mt(argon2_instance_t *instance) {
                 }
                 started[l] = 1;
                 ++active;
+                ++created;
 
                 /* fill_segment(instance, position); */
                 /*Non-thread equivalent of the lines above */
             }
 
             /* 3. Joining remaining threads */
-            for (l = instance->lanes - instance->threads; l < instance->lanes;
-                 ++l) {
-                if (started[l] && argon2_thread_join(thread[l])) {
+            for (l = 0; l < lanes; ++l) {
+                if (!started[l]) {
+                    continue;
+                }
+                if (argon2_thread_join(thread[l])) {
                     rc = ARGON2_THREAD_FAIL;
                     goto phase_fail;
                 }
@@ -418,8 +428,10 @@ static int fill_memory_blocks_mt(argon2_instance_t *instance) {
              * not release the stack-backed completion counter, job table or
              * Argon2 instance until every worker in this slice has published
              * its completion. */
-            wait_for_completed(&completed, active);
-            for (l = 0; l < instance->lanes; ++l) {
+            /* completed is cumulative, including workers already joined in
+             * the rolling window. Only total created is a valid wait target. */
+            wait_for_completed(&completed, created);
+            for (l = 0; l < lanes; ++l) {
                 if (started[l]) {
                     if (argon2_thread_join(thread[l])) {
                         (void)argon2_thread_detach(thread[l]);

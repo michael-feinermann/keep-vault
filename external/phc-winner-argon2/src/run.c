@@ -68,6 +68,11 @@ static void usage(const char *cmd) {
     printf("\t-h\t\tPrint %s usage\n", cmd);
 }
 
+#if defined(_MSC_VER)
+__declspec(noreturn)
+#else
+__attribute__((noreturn))
+#endif
 static void fatal(const char *error) {
     fprintf(stderr, "Error: %s\n", error);
     exit(1);

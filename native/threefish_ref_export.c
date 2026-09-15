@@ -702,18 +702,25 @@ static int threefish_1024_ctr_xcrypt_internal(
         : choose_thread_count(length, total_blocks);
     if (thread_count > 1) {
 #if defined(_WIN32)
-        HANDLE handles[THREEFISH_MAX_THREADS];
+        HANDLE* handles = (HANDLE*)calloc(thread_count, sizeof(HANDLE));
 #else
-        pthread_t handles[THREEFISH_MAX_THREADS];
-        int started[THREEFISH_MAX_THREADS];
+        pthread_t* handles = (pthread_t*)calloc(thread_count, sizeof(pthread_t));
+        int* started = (int*)calloc(thread_count, sizeof(int));
 #endif
-        threefish_ctr_job jobs[THREEFISH_MAX_THREADS];
-        threefish_ctr_shared shared;
-        memset(handles, 0, sizeof(handles));
+        threefish_ctr_job* jobs = (threefish_ctr_job*)calloc(thread_count, sizeof(threefish_ctr_job));
+        if (handles == NULL || jobs == NULL
 #if !defined(_WIN32)
-        memset(started, 0, sizeof(started));
+            || started == NULL
 #endif
-        memset(jobs, 0, sizeof(jobs));
+        ) {
+            free(handles);
+            free(jobs);
+#if !defined(_WIN32)
+            free(started);
+#endif
+            return 2;
+        }
+        threefish_ctr_shared shared;
         memset(&shared, 0, sizeof(shared));
         shared.key = key;
         shared.tweak = tweak;
@@ -793,10 +800,13 @@ static int threefish_1024_ctr_xcrypt_internal(
             }
         }
 
-        secure_zero(jobs, sizeof(jobs));
-        secure_zero(handles, sizeof(handles));
+        secure_zero(jobs, thread_count * sizeof(*jobs));
+        secure_zero(handles, thread_count * sizeof(*handles));
+        free(jobs);
+        free(handles);
 #if !defined(_WIN32)
-        secure_zero(started, sizeof(started));
+        secure_zero(started, thread_count * sizeof(*started));
+        free(started);
 #endif
         return result;
     }

@@ -260,14 +260,12 @@ static X509Certificate2 LoadCertificate(Dictionary<string, string> options)
 
     if (options.TryGetValue("pfx", out string? pfxPath))
     {
-        string password = options.TryGetValue("pfx-password-env", out string? environmentName)
-            ? Environment.GetEnvironmentVariable(environmentName)
-                ?? throw new CryptographicException($"PFX password environment variable is not set: {environmentName}")
-            : string.Empty;
-        return X509CertificateLoader.LoadPkcs12FromFile(
-            pfxPath,
-            password,
-            X509KeyStorageFlags.EphemeralKeySet);
+        if (options.ContainsKey("pfx-password-env"))
+        {
+            throw new ArgumentException("PFX passwords cannot be transported through environment variables.");
+        }
+        return ReleaseSigningOperations.LoadCertificate(pfxPath,
+            Require(options, "pfx-password-encrypted"), Require(options, "pfx-wrapping-key-file"));
     }
 
     throw new ArgumentException("Provide --certificate-thumbprint or --pfx.");

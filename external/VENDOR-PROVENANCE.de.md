@@ -125,16 +125,43 @@ Verwendet für:
 
 - Ursprung: https://github.com/P-H-C/phc-winner-argon2
 - Basis-Commit: `f57e61e19229e23c4445b85494dbf7c07de721cb`
-- Lokale Änderungen ohne reine Zeilenendendifferenzen: 1 Datei geändert,
-  16 Einfügungen(+)
+- Die lokalen Patches sind durch `NATIVE_SOURCE_SHA256SUMS` an die exakten
+  Quelldateien gebunden. Der Windows-5.0.2-Review korrigiert die Bereinigung
+  nach späten Threadfehlern, übernimmt validierte Lane-/Threadgrenzen
+  unveränderlich und annotiert den nicht rückkehrenden CLI-Fehlerhandler.
+  Der isolierte Windows-Fehlerpfadtest weist die vorzeitige Freigabe in der
+  Negativkontrolle nach und besteht mit dem korrigierten Completion-Ziel.
 
 ## zpaq
 
 - Ursprung: https://github.com/zpaq/zpaq
 - Basis-Commit: `9ab539f644e364f0d92e2918b90ce2534c75653f`
-- Lokale Änderungen ohne reine Zeilenendendifferenzen: 3 Dateien geändert,
-  2213 Einfügungen(+), 366 Löschungen(-)
-  (`zpaq.cpp` +2181/-350, `libzpaq.cpp` +8/-8, `libzpaq.h` +24/-8).
+- Lokale Patches sind nachfolgend beschrieben und durch
+  `NATIVE_SOURCE_SHA256SUMS` an die exakten Quelldateien gebunden.
+
+Windows 5.0.2 ergänzt die eigene Extraktionshärtung in
+`native/windows_zpaq_output.hpp` (gepinnt in `native/WINDOWS_SOURCE_SHA256SUMS`):
+relative Ausgabe mit `NtCreateFile`, exklusive Neuerstellung, No-Follow-Prüfung,
+gehaltene Datei-/Verzeichnishandles, objektgebundene Metadaten und die vom
+Aufrufer vorgegebene Root-Identität. Die Windows-UTF-Konvertierung erhält auch
+Zeichen außerhalb der BMP und verwirft ungültige Kodierungen. Die vorhandenen
+v12-Stream-Kommentarfelder reichen Original-Zeitstempel und Attribute an den
+parallelen Windows-Writer weiter; Wire-Format und macOS-Reader bleiben gleich.
+Bei Windows-Thread-/Synchronisationsfehlern endet der gesamte native Prozess,
+bevor laufende Worker freigegebene Jobtabellen erreichen könnten. Native
+Selbsttests decken Junctions, Vorab-Erstellung, Aliase, Fragment-Reopens,
+Metadatengrenzen sowie Thread-Create-/Wait-Fehler ab.
+
+Der native Review vom 15. September verlagert außerdem große begrenzte
+Puffer vom Stack, erhält die Klartextlöschung bei Freigabe, verwendet
+`ptrdiff_t` für Pivotabstände und bildet den vorhandenen Vertrag des
+nicht rückkehrenden Fehlercallbacks ab. Der eigene Threefish-Adapter
+allokiert Workertabellen vor dem ersten Threadstart und löscht sie nach
+dem Completion-Nachweis. Argon2 wartet nach späten Threadfehlern auf alle
+erfolgreich gestarteten Worker und verwendet validierte, unveränderliche
+Lane-/Threadgrenzen. Geprüfte Bytes, isolierte Fehlerpfadtests, Prüfumfang
+und verbleibende sichtbare Meldungen stehen in
+[`WINDOWS_NATIVE_ANALYSIS_5.0.2.md`](../docs/WINDOWS_NATIVE_ANALYSIS_5.0.2.md).
 
 Jeder native Build des Projekts prüft vor der Kompilation das geprüfte
 Inventar der Drittanbieterquellen in `NATIVE_SOURCE_SHA256SUMS`. Das Manifest

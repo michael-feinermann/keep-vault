@@ -7,7 +7,7 @@ $sha256ManifestPath = Join-Path $referenceRoot "SOURCE_SHA256SUMS"
 $sha3ManifestPath = Join-Path $referenceRoot "SOURCE_SHA3_512SUMS"
 $skeinManifestPath = Join-Path $referenceRoot "SOURCE_SKEIN1024SUMS"
 $signingProject = Join-Path $root "KalynaSigningTool\KalynaSigningTool.csproj"
-$signingTool = Join-Path $root "KalynaSigningTool\bin\Release\net9.0-windows\KalynaSigningTool.dll"
+$signingTool = Join-Path $root "KalynaSigningTool\bin\Release\net10.0-windows\KalynaSigningTool.dll"
 $expectedCommit = "d35ba3fe5449bee3e6d43e1f296c3ca818bd36be"
 
 if ((Get-Content -LiteralPath $commitPath -Raw).Trim() -cne $expectedCommit) {

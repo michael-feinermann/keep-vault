@@ -86,6 +86,18 @@ public sealed partial class ZpaqService
         "-kv-root-ino",
         expectedRoot.Inode.ToString(CultureInfo.InvariantCulture),
     ];
+#else
+    private static string[] WithNativeExtractionLimits(
+        WindowsFileIdentity expectedRoot,
+        params string[] arguments) =>
+    [
+        .. WithNativeExtractionLimits(arguments),
+        "-kv-root-dev",
+        expectedRoot.VolumeSerialNumber.ToString(CultureInfo.InvariantCulture),
+        "-kv-root-ino",
+        (((ulong)expectedRoot.FileIndexHigh << 32) | expectedRoot.FileIndexLow)
+            .ToString(CultureInfo.InvariantCulture),
+    ];
 #endif
 
 #if KEEPVAULT_MACOS
@@ -459,6 +471,7 @@ public sealed partial class ZpaqService
             ProcessResult result = await RunTextProcessAsync(
                 executable.Path,
                 WithNativeExtractionLimits(
+                    target.StagingIdentity,
                     "extract", archive.Path, "-threads", EffectiveWorkerCountArgument),
                 target.StagingPath,
                 progress,
@@ -626,6 +639,7 @@ public sealed partial class ZpaqService
             ProcessResult result = await RunStdinPipeAsync(
                 executable.Path,
                 WithNativeExtractionLimits(
+                    target.StagingIdentity,
                     "--pipe", "extract", "-", "-threads", EffectiveWorkerCountArgument),
                 target.StagingPath,
                 writeArchive,
@@ -3172,6 +3186,7 @@ public sealed partial class ZpaqService
         {
             Directory.CreateDirectory(destinationDirectory);
             var pending = new Stack<(string Source, string Destination)>();
+            var directoryMetadata = new List<(string Destination, DateTime Modified)>();
             pending.Push((sourceDirectory, destinationDirectory));
             while (pending.Count > 0)
             {
@@ -3182,6 +3197,9 @@ public sealed partial class ZpaqService
                 // prove it is a real, non-reparse directory reachable under the
                 // name we walked to.
                 using SafeFileHandle directory = OpenDirectoryNoFollow(currentSource);
+                ByHandleFileInformation directoryInformation = GetFileInformationOrThrow(directory, currentSource);
+                directoryMetadata.Add((currentDestination,
+                    FileTimeToUtc(directoryInformation.LastWriteTimeHigh, directoryInformation.LastWriteTimeLow)));
                 foreach (string entry in Directory.EnumerateFileSystemEntries(currentSource))
                 {
                     string name = Path.GetFileName(entry);
@@ -3209,6 +3227,17 @@ public sealed partial class ZpaqService
                         MirrorFile(entry, destinationEntry);
                     }
                 }
+            }
+
+            // Creating children changes directory mtimes. Preserve the source
+            // metadata only after the entire mirror exists, through a verified
+            // no-follow handle rather than resolving a mutable path to write it.
+            for (int index = directoryMetadata.Count - 1; index >= 0; index--)
+            {
+                (string destination, DateTime modified) = directoryMetadata[index];
+                using SafeFileHandle directory = WindowsSafeFileSystem.OpenDirectoryBound(
+                    destination, denyRename: true, requestWriteAttributes: true);
+                File.SetLastWriteTimeUtc(directory, modified);
             }
         }
 

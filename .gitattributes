@@ -1,0 +1,17 @@
+# These cryptographically pinned, cross-platform fixtures must retain exact bytes.
+KeepVaultMac.Tests/Fixtures/CredentialCompatibility/** -text
+KalynaArchiver/Resources/PasswordModel/** -text
+external/Skein-reference/NIST/CD/Reference_Implementation/skein_debug.c -text
+external/cryptopp/aes_armv4.S -text
+external/cryptopp/sha1_armv4.S -text
+external/cryptopp/sha256_armv4.S -text
+external/cryptopp/sha512_armv4.S -text
+external/zpaq/zpaq.cpp -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+native/windows_zpaq_output.hpp -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+external/zpaq/libzpaq.cpp -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+external/zpaq/libzpaq.h -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+external/phc-winner-argon2/src/core.c -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+external/phc-winner-argon2/src/run.c -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# This Windows-only pin expects CRLF; retain LF Git blobs and deterministic checkout bytes.
+native/threefish_ref_export.c text eol=crlf whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+native/argon2_thread_lifecycle_test.c -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

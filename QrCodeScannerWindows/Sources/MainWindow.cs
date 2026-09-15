@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Automation;
+using System.Windows.Markup;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -23,29 +25,27 @@ namespace QrScanner;
 /// </remarks>
 internal sealed class MainWindow : Window
 {
-    private static readonly Brush PageBackground = Brush("#0B1422");
-    private static readonly Brush Panel = Brush("#111C2E");
-    private static readonly Brush Ink = Brush("#E8EEF6");
-    private static readonly Brush Muted = Brush("#94A3B8");
-    private static readonly Brush Good = Brush("#B7F7DE");
-    private static readonly Brush Warn = Brush("#FBBF24");
-    private static readonly Brush Bad = Brush("#FCA5A5");
+    private static Brush Muted => SystemColors.GrayTextBrush;
+    private static Brush Good => SystemParameters.HighContrast ? SystemColors.ControlTextBrush : Brushes.ForestGreen;
+    private static Brush Warn => SystemParameters.HighContrast ? SystemColors.ControlTextBrush : Brushes.DarkOrange;
+    private static Brush Bad => SystemParameters.HighContrast ? SystemColors.ControlTextBrush : Brushes.Firebrick;
 
-    private readonly ComboBox _languageBox = new() { Width = 130 };
+    private readonly RadioButton _germanButton = new() { Content = Strings.OwnName(AppLanguage.German), Width = 84, GroupName = "Language" };
+    private readonly RadioButton _englishButton = new() { Content = Strings.OwnName(AppLanguage.English), Width = 84, GroupName = "Language" };
     private readonly TextBlock _languageLabel = new()
     {
         Foreground = Muted,
         VerticalAlignment = VerticalAlignment.Center,
-        Margin = new Thickness(0, 0, 8, 0),
+        FontSize = 11,
+        Margin = new Thickness(0, 0, 10, 0),
     };
-    private readonly Image _preview = new() { Stretch = Stretch.Uniform, MinHeight = 240 };
-    private readonly TextBlock _statusText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Muted };
-    private readonly TextBlock _captureProtectionText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Bad };
-    private readonly TextBlock _noticesText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Warn };
-    private readonly TextBlock _valueLabel = new() { Foreground = Muted, Margin = new Thickness(0, 12, 0, 4) };
+    private readonly Image _preview = new() { Stretch = Stretch.Uniform };
+    private readonly TextBlock _statusText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Muted, FontSize = 13, FontWeight = FontWeights.Medium };
+    private readonly TextBlock _captureProtectionText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Bad, FontSize = 11 };
+    private readonly TextBlock _noticesText = new() { TextWrapping = TextWrapping.Wrap, Foreground = Warn, FontSize = 11 };
     private readonly TextBox _valueBox;
-    private readonly Button _copyButton = new() { MinWidth = 120, IsEnabled = false };
-    private readonly Button _rescanButton = new() { MinWidth = 120, IsEnabled = false };
+    private readonly Button _copyButton = new() { MinWidth = 80, Padding = new Thickness(10, 4, 10, 4), IsEnabled = false, IsDefault = true };
+    private readonly Button _rescanButton = new() { MinWidth = 100, Padding = new Thickness(10, 4, 10, 4), IsEnabled = false };
     private readonly VolatileClipboard _clipboard = new();
 
     private ScanSession? _session;
@@ -67,12 +67,12 @@ internal sealed class MainWindow : Window
             IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
-            MinHeight = 96,
+            Height = 120,
+            Padding = new Thickness(6),
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 14,
-            Background = Panel,
-            Foreground = Ink,
-            BorderBrush = Brush("#334155"),
+            FontSize = 12,
 
             // The checker writes learned words into the user's dictionary, and
             // undo keeps its own copy of everything that was ever in the box.
@@ -84,24 +84,20 @@ internal sealed class MainWindow : Window
         DataObject.AddCopyingHandler(_valueBox, OnValueBoxCopying);
 
         Title = Strings.For(_language).WindowTitle;
-        Width = 720;
-        Height = 720;
+        Width = 760;
+        Height = 800;
         MinWidth = 520;
         MinHeight = 560;
-        Background = PageBackground;
+        FontFamily = SystemFonts.MessageFontFamily;
+        FontSize = 13;
+        SetResourceReference(BackgroundProperty, SystemColors.ControlBrushKey);
+        SetResourceReference(ForegroundProperty, SystemColors.ControlTextBrushKey);
+        _valueBox.SetResourceReference(Control.BackgroundProperty, SystemColors.WindowBrushKey);
+        _valueBox.SetResourceReference(Control.ForegroundProperty, SystemColors.WindowTextBrushKey);
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-        _languageBox.Items.Add(new ComboBoxItem { Content = Strings.OwnName(AppLanguage.German), Tag = AppLanguage.German });
-        _languageBox.Items.Add(new ComboBoxItem { Content = Strings.OwnName(AppLanguage.English), Tag = AppLanguage.English });
-        _languageBox.SelectedIndex = _language == AppLanguage.German ? 0 : 1;
-        _languageBox.SelectionChanged += (_, _) =>
-        {
-            if (_languageBox.SelectedItem is ComboBoxItem { Tag: AppLanguage selected })
-            {
-                _language = selected;
-                ApplyLanguage();
-            }
-        };
+        _germanButton.Checked += (_, _) => { _language = AppLanguage.German; ApplyLanguage(); };
+        _englishButton.Checked += (_, _) => { _language = AppLanguage.English; ApplyLanguage(); };
 
         _copyButton.Click += (_, _) => CopyPayload();
         _rescanButton.Click += (_, _) => Rescan();
@@ -121,45 +117,69 @@ internal sealed class MainWindow : Window
 
     private UIElement BuildLayout()
     {
-        var languageRow = new DockPanel { LastChildFill = false, Margin = new Thickness(0, 0, 0, 12) };
-        DockPanel.SetDock(_languageLabel, Dock.Left);
-        DockPanel.SetDock(_languageBox, Dock.Left);
-        languageRow.Children.Add(_languageLabel);
-        languageRow.Children.Add(_languageBox);
-
-        var buttons = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Margin = new Thickness(0, 12, 0, 0),
-        };
-        _copyButton.Margin = new Thickness(0, 0, 8, 0);
+        // AppKit uses rounded, mutually exclusive 84-point language segments.
+        // The WPF equivalent retains radio-button keyboard and UIA semantics.
+        var segmentStyle = (Style)XamlReader.Parse("""
+            <Style xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" TargetType="RadioButton">
+              <Setter Property="Padding" Value="6,4"/>
+              <Setter Property="HorizontalContentAlignment" Value="Center"/>
+              <Setter Property="VerticalContentAlignment" Value="Center"/>
+              <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
+                <Border x:Name="Frame" CornerRadius="4" BorderThickness="1"
+                    Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                    BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" Padding="{TemplateBinding Padding}">
+                  <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <ControlTemplate.Triggers>
+                  <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="Frame" Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                  </Trigger>
+                  <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/></Trigger>
+                  <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderThickness" Value="2"/></Trigger>
+                  <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger>
+                </ControlTemplate.Triggers>
+              </ControlTemplate></Setter.Value></Setter>
+            </Style>
+            """);
+        _germanButton.Style = _englishButton.Style = segmentStyle;
+        var languageRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        languageRow.Children.Add(_languageLabel); languageRow.Children.Add(_germanButton); languageRow.Children.Add(_englishButton);
+        var buttons = new Grid { Margin = new Thickness(0, 12, 0, 0) };
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        _copyButton.Margin = new Thickness(0, 0, 10, 0);
         buttons.Children.Add(_copyButton);
+        Grid.SetColumn(_rescanButton, 1);
         buttons.Children.Add(_rescanButton);
+        Grid.SetColumn(languageRow, 2); buttons.Children.Add(languageRow);
 
-        var stack = new StackPanel { Margin = new Thickness(18) };
-        stack.Children.Add(languageRow);
+        var stack = new StackPanel();
         stack.Children.Add(new Border
         {
-            Background = Panel,
+            Background = Brushes.Black,
             CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(6),
+            Height = 430,
             Child = _preview,
         });
-        _statusText.Margin = new Thickness(0, 12, 0, 0);
-        stack.Children.Add(_statusText);
-        _captureProtectionText.Margin = new Thickness(0, 6, 0, 0);
-        stack.Children.Add(_captureProtectionText);
-        _noticesText.Margin = new Thickness(0, 6, 0, 0);
-        stack.Children.Add(_noticesText);
-        stack.Children.Add(_valueLabel);
+        stack.Children.Add(new ScrollViewer { Content = _statusText, MaxHeight = 40, Margin = new Thickness(0, 12, 0, 0),
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        _valueBox.Margin = new Thickness(0, 12, 0, 0);
         stack.Children.Add(_valueBox);
-        stack.Children.Add(buttons);
-
-        return new ScrollViewer
-        {
+        _noticesText.Margin = new Thickness(0, 12, 0, 0);
+        stack.Children.Add(_noticesText);
+        _captureProtectionText.Margin = new Thickness(0, 12, 0, 0);
+        stack.Children.Add(_captureProtectionText);
+        var root = new DockPanel { Margin = new Thickness(16) };
+        DockPanel.SetDock(buttons, Dock.Bottom); root.Children.Add(buttons);
+        root.Children.Add(new ScrollViewer {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Content = stack,
-        };
+        });
+        return root;
     }
 
     private async Task StartAsync()
@@ -318,10 +338,15 @@ internal sealed class MainWindow : Window
         _languageLabel.Text = strings.LanguageLabel;
         _copyButton.Content = strings.CopyButton;
         _rescanButton.Content = strings.RescanButton;
-        _valueLabel.Text = strings.ScannedValueLabel;
+        AutomationProperties.SetName(_valueBox, strings.ScannedValueLabel);
+        AutomationProperties.SetName(_germanButton, strings.LanguageLabel + ": " + Strings.OwnName(AppLanguage.German));
+        AutomationProperties.SetName(_englishButton, strings.LanguageLabel + ": " + Strings.OwnName(AppLanguage.English));
+        _germanButton.IsChecked = _language == AppLanguage.German;
+        _englishButton.IsChecked = _language == AppLanguage.English;
         _captureProtectionText.Text = _captureProtectionAttempted && !_captureProtected
             ? strings.ScreenCaptureUnavailable
             : string.Empty;
+        _captureProtectionText.Visibility = _captureProtectionText.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
 
         if (_failure is { } failure)
         {
@@ -330,6 +355,7 @@ internal sealed class MainWindow : Window
                 : failure.Message(strings);
             _statusText.Foreground = Bad;
             _noticesText.Text = string.Empty;
+            _noticesText.Visibility = Visibility.Collapsed;
             return;
         }
 
@@ -341,7 +367,7 @@ internal sealed class MainWindow : Window
         else if (_cleared)
         {
             _statusText.Text = strings.ClipboardCleared;
-            _statusText.Foreground = Warn;
+            _statusText.Foreground = Muted;
         }
         else if (_copied)
         {
@@ -354,7 +380,7 @@ internal sealed class MainWindow : Window
             _statusText.Foreground = outcome.Kind switch
             {
                 ScanOutcomeKind.Accepted => Good,
-                ScanOutcomeKind.Conflict => Bad,
+                ScanOutcomeKind.Conflict => Warn,
                 _ => Muted,
             };
         }
@@ -367,12 +393,6 @@ internal sealed class MainWindow : Window
         _noticesText.Text = _payload is { Length: > 0 } payload
             ? string.Join(" ", PayloadInspector.Notices(payload).Select(notice => notice.Message(strings)))
             : string.Empty;
-    }
-
-    private static Brush Brush(string color)
-    {
-        var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(color)!;
-        brush.Freeze();
-        return brush;
+        _noticesText.Visibility = _noticesText.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 }

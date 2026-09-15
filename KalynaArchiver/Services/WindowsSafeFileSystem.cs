@@ -15,6 +15,7 @@ internal static partial class WindowsSafeFileSystem
     private const uint GenericWrite = 0x40000000;
     private const uint DeleteAccess = 0x00010000;
     private const uint FileReadAttributes = 0x00000080;
+    private const uint FileWriteAttributes = 0x00000100;
     private const uint FileListDirectory = 0x00000001;
     private const uint FileAddFile = 0x00000002;
     private const uint FileAddSubdirectory = 0x00000004;
@@ -38,14 +39,16 @@ internal static partial class WindowsSafeFileSystem
     internal static SafeFileHandle OpenDirectoryBound(
         string path,
         bool denyRename,
-        bool requestDeleteAccess = false)
+        bool requestDeleteAccess = false,
+        bool requestWriteAttributes = false,
+        bool requestCreateAccess = true)
     {
         string fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
         uint desiredAccess = FileListDirectory
-            | FileAddFile
-            | FileAddSubdirectory
+            | (requestCreateAccess ? FileAddFile | FileAddSubdirectory : 0u)
             | FileTraverse
-            | FileReadAttributes;
+            | FileReadAttributes
+            | (requestWriteAttributes ? FileWriteAttributes : 0u);
         if (requestDeleteAccess)
         {
             desiredAccess |= DeleteAccess;
@@ -172,8 +175,12 @@ internal static partial class WindowsSafeFileSystem
         bool requestReadAccess = false)
     {
         string fullPath = Path.GetFullPath(path);
+        // Windows does not enforce data-sharing exclusions for a metadata-only
+        // handle. Request read-data access whenever this inspection must deny
+        // writers or renames; otherwise a concurrent write/delete open still
+        // succeeds despite the restrictive shareMode below.
         uint desiredAccess = FileReadAttributes
-            | (requestReadAccess ? GenericRead : 0u)
+            | (requestReadAccess || !allowWriters || denyRename ? GenericRead : 0u)
             | (requestDeleteAccess ? DeleteAccess : 0u);
         uint shareMode = ShareRead
             | (allowWriters ? ShareWrite : 0u)
@@ -212,7 +219,7 @@ internal static partial class WindowsSafeFileSystem
         string fullPath = Path.GetFullPath(path);
         SafeFileHandle handle = CreateFile(
             fullPath,
-            FileReadAttributes | DeleteAccess,
+            FileReadAttributes | FileWriteAttributes | DeleteAccess,
             ShareRead | ShareWrite,
             nint.Zero,
             OpenExisting,
@@ -396,6 +403,18 @@ internal static partial class WindowsSafeFileSystem
         {
             Marshal.FreeHGlobal(buffer);
         }
+    }
+
+    internal static void ClearReadOnlyForExtractionCleanup(SafeFileHandle handle)
+    {
+        ByHandleFileInformation information = GetInformation(handle, "extraction cleanup entry");
+        if ((information.FileAttributes & (uint)FileAttributes.ReadOnly) == 0)
+        {
+            return;
+        }
+
+        FileAttributes attributes = (FileAttributes)information.FileAttributes & ~FileAttributes.ReadOnly;
+        File.SetAttributes(handle, attributes == 0 ? FileAttributes.Normal : attributes);
     }
 
     private enum FileInformationClass

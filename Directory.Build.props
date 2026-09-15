@@ -1,5 +1,10 @@
 <Project>
   <PropertyGroup>
+    <Version>5.0.2</Version>
+    <KalynaNativeToolDirectory Condition="'$(KalynaNativeToolDirectory)' == ''">$(MSBuildThisFileDirectory)tools</KalynaNativeToolDirectory>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <AssemblyVersion>5.0.2.0</AssemblyVersion>
+    <FileVersion>5.0.2.0</FileVersion>
     <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)\build-obj\</BaseIntermediateOutputPath>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)\obj\**;$(MSBuildProjectDirectory)\obj_alt\**;$(MSBuildProjectDirectory)\build-obj\**;$(MSBuildProjectDirectory)\bin\**</DefaultItemExcludes>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>

@@ -107,13 +107,38 @@ Used for:
 ## phc-winner-argon2
 - Upstream: https://github.com/P-H-C/phc-winner-argon2
 - Base commit: `f57e61e19229e23c4445b85494dbf7c07de721cb`
-- Local changes (line-ending noise excluded): 1 file changed, 16 insertions(+)
+- Local patches are bound by `NATIVE_SOURCE_SHA256SUMS`. The Windows 5.0.2
+  review corrects late rolling-worker failure cleanup to wait for every
+  successfully created worker, snapshots validated lane/thread bounds, and
+  annotates the CLI's non-returning fatal handler. The isolated Windows
+  fault regression detects premature reclamation in the negative control
+  and passes with the corrected completion target.
 
 ## zpaq
 - Upstream: https://github.com/zpaq/zpaq
 - Base commit: `9ab539f644e364f0d92e2918b90ce2534c75653f`
-- Local changes (line-ending noise excluded): 3 files changed, 2213 insertions(+), 366 deletions(-)
-  (`zpaq.cpp` +2181/-350, `libzpaq.cpp` +8/-8, `libzpaq.h` +24/-8).
+- Local patches are described below and bound by `NATIVE_SOURCE_SHA256SUMS`.
+
+Windows 5.0.2 adds first-party extraction hardening in
+`native/windows_zpaq_output.hpp` (pinned in `native/WINDOWS_SOURCE_SHA256SUMS`):
+relative `NtCreateFile` output with exclusive creation and no-follow checks,
+retained file/directory handles, object-bound metadata, and caller-supplied
+root identity. Windows UTF conversion now preserves supplementary characters
+and rejects malformed encodings. The existing v12 streaming comment fields
+carry original timestamps and attributes through the Windows parallel writer;
+the wire format and macOS reader are unchanged. Windows thread/synchronization
+infrastructure failures terminate the complete native helper before any unsafe
+job-table unwind. Native self-tests cover junctions, precreation, aliases,
+fragment reopening, metadata bounds, and thread create/wait failures.
+
+The 15 September native analysis review additionally moves bounded large
+buffers off the stack, preserves plaintext wiping on disposal, keeps pivot
+distances in `ptrdiff_t`, and records the existing non-returning error
+callback contract. The first-party Threefish wrapper allocates worker
+tables before starting any worker and wipes/releases them after completion.
+The exact reviewed bytes, fault-test evidence, analysis coverage, and
+remaining visible diagnostics are recorded in
+[`WINDOWS_NATIVE_ANALYSIS_5.0.2.md`](../docs/WINDOWS_NATIVE_ANALYSIS_5.0.2.md).
 
 Every first-party native build verifies the reviewed vendor-source inventory in
 `NATIVE_SOURCE_SHA256SUMS` before compiling. The manifest also prevents a newly

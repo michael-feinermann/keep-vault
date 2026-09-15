@@ -2,7 +2,9 @@ param(
     [string[]] $Path,
     [string] $Configuration = "Release",
     [string] $PfxPath,
-    [string] $PfxPassword,
+    [string] $PfxPasswordEncryptedPath,
+    [string] $PfxWrappingKeyPath,
+    [System.Security.Cryptography.X509Certificates.X509Certificate2] $SigningCertificate,
     [string] $CertificateThumbprint,
     [string] $ExpectedSignerSha256,
     [string] $ExpectedSignerSha3_512,
@@ -69,30 +71,28 @@ function Get-SignerPins {
     }
 
     $spki = $rsa.ExportSubjectPublicKeyInfo()
-    $temporarySpki = Join-Path $env:TEMP "kalyna-signer-spki-$([Guid]::NewGuid().ToString('N')).bin"
+    $stream = [IO.MemoryStream]::new($spki, $false)
+    $fingerprints = $null
     try {
-        [System.IO.File]::WriteAllBytes($temporarySpki, $spki)
-        & pwsh -NoProfile -ExecutionPolicy Bypass -File $skeinManifestScript `
-            -ExecutablePath $temporarySpki `
-            -ProviderPath (Join-Path $root "tools\threefish_ref.dll") | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            throw "Skein-1024 signer fingerprint generation failed."
-        }
-
+        $fingerprints = [KalynaArchiver.Signing.HybridSignatureService]::Fingerprint($stream)
         return [pscustomobject]@{
             Thumbprint = Normalize-Hex $Certificate.Thumbprint 40 "Signer thumbprint"
-            Sha256 = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($spki))
-            Sha3 = [Convert]::ToHexString([System.Security.Cryptography.SHA3_512]::HashData($spki))
-            Skein = (Get-Content -LiteralPath "$temporarySpki.skein" -Raw).Trim().ToUpperInvariant()
+            Sha256 = [Convert]::ToHexString($fingerprints.Item1)
+            Sha3 = [Convert]::ToHexString($fingerprints.Item2)
+            Skein = [Convert]::ToHexString($fingerprints.Item3)
         }
     }
     finally {
-        [Array]::Clear($spki, 0, $spki.Length)
+        if ($fingerprints) {
+            [Array]::Clear($fingerprints.Item1)
+            [Array]::Clear($fingerprints.Item2)
+            [Array]::Clear($fingerprints.Item3)
+        }
+        $stream.Dispose()
+        [Array]::Clear($spki)
         $rsa.Dispose()
-        Remove-Item -LiteralPath $temporarySpki, "$temporarySpki.skein" -Force -ErrorAction SilentlyContinue
     }
 }
-
 function Find-SignTool {
     $kitsRoot = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\bin"
     if (-not (Test-Path -LiteralPath $kitsRoot)) {
@@ -180,7 +180,7 @@ function Assert-DevelopmentRootNotTrusted {
 function Get-DefaultTargets {
     $candidates = [System.Collections.Generic.List[string]](Get-NativeToolTargets -Root $root)
 
-    $applicationDirectory = Join-Path $root "KalynaArchiver\bin\$Configuration\net9.0-windows"
+    $applicationDirectory = Join-Path $root "KalynaArchiver\bin\$Configuration\net10.0-windows"
     if (Test-Path -LiteralPath $applicationDirectory) {
         Get-ChildItem -LiteralPath $applicationDirectory -File |
             Where-Object { $_.Extension -in @(".exe", ".dll") } |
@@ -196,39 +196,39 @@ function Invoke-SignTool {
     param(
         [string] $SignTool,
         [string] $Target,
-        [string[]] $CredentialArgs
+        [System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate
     )
-
     $existingSignature = Get-AuthenticodeSignature -LiteralPath $Target
-    if ($existingSignature.Status -ne "NotSigned") {
-        & $SignTool remove "/s" "/q" $Target
-        if ($LASTEXITCODE -ne 0) {
-            throw "signtool could not remove the existing signature from $Target."
-        }
+    if ($existingSignature.Status -ne 'NotSigned') {
+        & $SignTool remove '/s' '/q' $Target
+        if ($LASTEXITCODE -ne 0) { throw "Cannot remove the previous signature: $Target" }
     }
-
-    $commonArgs = @("sign", "/fd", "SHA512")
+    # SignerSignEx2 receives the ephemeral certificate and CALG_SHA_512 directly.
+    # The PFX password/private key never enters signtool arguments or disk.
+    [KalynaArchiver.Signing.ReleaseAuthenticodeSigner]::SignSha512($Target, $Certificate)
+    $signed = Get-AuthenticodeSignature -LiteralPath $Target
+    if (-not $signed.SignerCertificate -or $signed.Status -in @('NotSigned', 'HashMismatch')) {
+        throw "In-memory Authenticode signing failed: $Target ($($signed.Status))"
+    }
+    $trustStatus = [KalynaArchiver.Signing.ReleaseAuthenticode]::Verify($Target)
+    if ($trustStatus -notin @(0, 0x800B0109u)) {
+        throw ("Authenticode failed Windows digest verification: 0x{0:X8}" -f $trustStatus)
+    }
     if ($TimestampUrl) {
-        $timestampArgs = $commonArgs + @("/td", "SHA512", "/tr", $TimestampUrl) + $CredentialArgs + @($Target)
-        & $SignTool @timestampArgs
-        if ($LASTEXITCODE -eq 0) {
-            return
+        & $SignTool timestamp '/td' 'SHA512' '/tr' $TimestampUrl $Target
+        if ($LASTEXITCODE -ne 0 -and -not $AllowUntimestamped) {
+            throw "RFC3161 timestamping failed: $Target"
         }
-
-        if (-not $AllowUntimestamped) {
-            throw "Timestamped signing failed for $Target. Untimestamped fallback is disabled."
+        $timestamped = Get-AuthenticodeSignature -LiteralPath $Target
+        if (-not $timestamped.TimeStamperCertificate -and -not $AllowUntimestamped) {
+            throw "The requested RFC3161 timestamp is missing: $Target"
         }
-
-        Write-Warning "Timestamped signing failed for $Target. Explicitly allowed untimestamped fallback is being used."
     }
-
-    $args = $commonArgs + $CredentialArgs + @($Target)
-    & $SignTool @args
-    if ($LASTEXITCODE -ne 0) {
-        throw "signtool failed for $Target with exit code $LASTEXITCODE."
+    elseif (-not $AllowUntimestamped) {
+        throw 'A timestamp server is mandatory unless AllowUntimestamped is explicitly set.'
     }
+    [KalynaArchiver.Signing.ReleaseAuthenticodePolicy]::RequireSha512($Target)
 }
-
 if (-not $Path -or $Path.Count -eq 0) {
     $Path = Get-DefaultTargets
 }
@@ -237,34 +237,57 @@ if (-not $Path -or $Path.Count -eq 0) {
     throw "No binaries found to sign."
 }
 
-$signTool = Find-SignTool
-$credentialArgs = @()
-
-if ($PfxPath) {
-    $resolvedPfx = Resolve-Path -LiteralPath $PfxPath
-    $credentialArgs = @("/f", $resolvedPfx)
-    if ($PfxPassword) {
-        $credentialArgs += @("/p", $PfxPassword)
+# Hybrid signing loads the ML-DSA reference DLL into this process. Sign that
+# binary first, while it is still writable, and never sign an alias twice.
+$resolvedPaths = [System.Collections.Generic.List[string]]::new()
+$seenPaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+foreach ($target in $Path) {
+    $fullPath = [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $target).Path)
+    if ($seenPaths.Add($fullPath)) { $resolvedPaths.Add($fullPath) }
+}
+if ($MldsaReferencePath) {
+    $referenceFullPath = [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $MldsaReferencePath).Path)
+    for ($targetIndex = 0; $targetIndex -lt $resolvedPaths.Count; $targetIndex++) {
+        if ([StringComparer]::OrdinalIgnoreCase.Equals($resolvedPaths[$targetIndex], $referenceFullPath)) {
+            $resolvedPaths.RemoveAt($targetIndex)
+            $resolvedPaths.Insert(0, $referenceFullPath)
+            break
+        }
     }
 }
-elseif ($CertificateThumbprint) {
-    $normalizedCertificateThumbprint = $CertificateThumbprint -replace "\s", ""
-    $selectedCertificate = Get-ChildItem "Cert:\CurrentUser\My\$normalizedCertificateThumbprint" -ErrorAction Stop
-    Assert-DevelopmentRootNotTrusted $selectedCertificate
-    $credentialArgs = @("/sha1", $normalizedCertificateThumbprint, "/s", "My")
-}
-elseif ($CreateDevelopmentCertificate) {
-    $cert = Get-DevelopmentCertificate
-    Assert-DevelopmentRootNotTrusted $cert
-    $credentialArgs = @("/sha1", $cert.Thumbprint, "/s", "My")
-}
-else {
-    throw "Provide -PfxPath, -CertificateThumbprint, or -CreateDevelopmentCertificate."
-}
+$Path = $resolvedPaths.ToArray()
 
+$signTool = Find-SignTool
+. (Join-Path $PSScriptRoot 'Import-SigningRuntime.ps1')
+Import-SigningRuntime -NoBuild
+$ownedCertificate = $null
+if (-not $SigningCertificate) {
+    if ($PfxPath) {
+        if (-not $PfxPasswordEncryptedPath -or -not $PfxWrappingKeyPath) {
+            throw 'PFX signing requires the v12 password envelope and its separate wrapping-key file.'
+        }
+        $ownedCertificate = [KalynaArchiver.Signing.ReleaseSigningOperations]::LoadCertificate(
+            (Resolve-Path -LiteralPath $PfxPath).Path, $PfxPasswordEncryptedPath, $PfxWrappingKeyPath)
+    }
+    elseif ($CertificateThumbprint) {
+        $normalizedCertificateThumbprint = Normalize-Hex $CertificateThumbprint 40 'Certificate thumbprint'
+        $ownedCertificate = Get-Item -LiteralPath "Cert:\CurrentUser\My\$normalizedCertificateThumbprint"
+    }
+    elseif ($CreateDevelopmentCertificate) {
+        $ownedCertificate = Get-DevelopmentCertificate
+    }
+    else { throw 'Provide PfxPath, CertificateThumbprint, or CreateDevelopmentCertificate.' }
+    $SigningCertificate = $ownedCertificate
+}
+try {
+Assert-DevelopmentRootNotTrusted $SigningCertificate
+$pins = Get-SignerPins $SigningCertificate
+if ($pins.Sha256 -cne $expectedSha256 -or $pins.Sha3 -cne $expectedSha3 -or $pins.Skein -cne $expectedSkein) {
+    throw 'The selected signing certificate does not match the mandatory RSA pins.'
+}
 foreach ($target in $Path) {
     $resolvedTarget = Resolve-Path -LiteralPath $target
-    Invoke-SignTool -SignTool $signTool -Target $resolvedTarget -CredentialArgs $credentialArgs
+    Invoke-SignTool -SignTool $signTool -Target $resolvedTarget -Certificate $SigningCertificate
     $signature = Get-AuthenticodeSignature -LiteralPath $resolvedTarget
     if ($signature.Status -eq "NotSigned" -or -not $signature.SignerCertificate) {
         throw "Signing did not produce an Authenticode signer certificate for $resolvedTarget."
@@ -292,13 +315,7 @@ foreach ($target in $Path) {
         ExpectedMldsa87Skein1024 = $expectedMldsaSkein
         NoBuild = $true
     }
-    if ($PfxPath) {
-        $hybridParameters.PfxPath = $PfxPath
-        $hybridParameters.PfxPassword = $PfxPassword
-    }
-    else {
-        $hybridParameters.CertificateThumbprint = $signature.SignerCertificate.Thumbprint
-    }
+    $hybridParameters.SigningCertificate = $SigningCertificate
     if ($MldsaPrivateKeyPath) { $hybridParameters.MldsaPrivateKeyPath = $MldsaPrivateKeyPath }
     if ($MldsaPrivateKeyEncryptedPath) { $hybridParameters.MldsaPrivateKeyEncryptedPath = $MldsaPrivateKeyEncryptedPath }
     if ($WrappingKeyPath) { $hybridParameters.WrappingKeyPath = $WrappingKeyPath }
@@ -310,4 +327,9 @@ foreach ($target in $Path) {
     }
 
     Write-Host "Signed $resolvedTarget [$($signature.Status)] $signer [RSA-4096/SHA-512 + ML-DSA-87 valid]"
+}
+
+}
+finally {
+    if ($ownedCertificate) { $ownedCertificate.Dispose() }
 }

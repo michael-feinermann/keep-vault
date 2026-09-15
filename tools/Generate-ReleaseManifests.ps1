@@ -1,8 +1,10 @@
 param(
+    [string] $NativeToolDirectory,
     [string] $Configuration = "Release",
     [string] $CertificateThumbprint,
     [string] $PfxPath,
-    [string] $PfxPassword,
+    [string] $PfxPasswordEncryptedPath,
+    [string] $PfxWrappingKeyPath,
     [string] $ExpectedSignerSha256,
     [string] $ExpectedSignerSha3_512,
     [string] $ExpectedSignerSkein1024,
@@ -10,6 +12,8 @@ param(
     [string] $ExpectedMldsa87Sha3_512,
     [string] $ExpectedMldsa87Skein1024,
     [string] $MldsaPrivateKeyPath,
+    [string] $MldsaPrivateKeyEncryptedPath,
+    [string] $WrappingKeyPath,
     [string] $MldsaPublicKeyPath,
     [string] $MldsaReferencePath
 )
@@ -26,9 +30,9 @@ if (-not $CertificateThumbprint -and -not $PfxPath) {
     $CertificateThumbprint = $buildProperties.Project.PropertyGroup.SelectSingleNode("KalynaSigningCertificateThumbprint").InnerText
 }
 
-$targets = [System.Collections.Generic.List[string]](Get-NativeToolTargets -Root $root)
+$targets = [System.Collections.Generic.List[string]](Get-NativeToolTargets -Root $root -NativeToolDirectory $NativeToolDirectory)
 
-$applicationDirectory = Join-Path $root "KalynaArchiver\bin\$Configuration\net9.0-windows"
+$applicationDirectory = Join-Path $root "KalynaArchiver\bin\$Configuration\net10.0-windows"
 if (Test-Path -LiteralPath $applicationDirectory) {
     Get-ChildItem -LiteralPath $applicationDirectory -File |
         Where-Object { $_.Extension -in @(".exe", ".dll") } |
@@ -53,12 +57,15 @@ foreach ($target in ($targets | Select-Object -Unique)) {
         }
         if ($PfxPath) {
             $hybridParameters.PfxPath = $PfxPath
-            $hybridParameters.PfxPassword = $PfxPassword
+            $hybridParameters.PfxPasswordEncryptedPath = $PfxPasswordEncryptedPath
+            $hybridParameters.PfxWrappingKeyPath = $PfxWrappingKeyPath
         }
         else {
             $hybridParameters.CertificateThumbprint = $CertificateThumbprint
         }
         if ($MldsaPrivateKeyPath) { $hybridParameters.MldsaPrivateKeyPath = $MldsaPrivateKeyPath }
+        if ($MldsaPrivateKeyEncryptedPath) { $hybridParameters.MldsaPrivateKeyEncryptedPath = $MldsaPrivateKeyEncryptedPath }
+        if ($WrappingKeyPath) { $hybridParameters.WrappingKeyPath = $WrappingKeyPath }
         if ($MldsaPublicKeyPath) { $hybridParameters.MldsaPublicKeyPath = $MldsaPublicKeyPath }
         if ($MldsaReferencePath) { $hybridParameters.MldsaReferencePath = $MldsaReferencePath }
         if ($ExpectedSignerSha256) { $hybridParameters.ExpectedSignerSha256 = $ExpectedSignerSha256 }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <EmbeddedResource Include="Resources/PasswordModel/**/*" Exclude="Resources/PasswordModel/**/*.py" LogicalName="KeepVault.PasswordModel.%(Filename)%(Extension)" />
@@ -6,7 +6,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -19,29 +19,32 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\tools\zpaq.exe" Link="zpaq.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\argon2.exe" Link="argon2.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\kalyna_v12.dll" Link="kalyna_v12.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\threefish_ref.dll" Link="threefish_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\argon2_ref.dll" Link="argon2_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\aes_ref.dll" Link="aes_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\mars_ref.dll" Link="mars_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\shacal2_ref.dll" Link="shacal2_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\chachapoly_ref.dll" Link="chachapoly_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="..\tools\*.sha3"
-          Exclude="..\tools\mldsa87_ref.dll.sha3"
+    <Resource Include="..\KeepVaultMac\Assets\KeepVaultLogo.png" Link="Assets\KeepVaultLogo.png" />
+    <Resource Include="Assets\Fonts\*.ttf" />
+    <Resource Include="Assets\Fonts\OFL.txt" />
+    <None Include="$(KalynaNativeToolDirectory)\zpaq.exe" Link="zpaq.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\argon2.exe" Link="argon2.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\kalyna_v12.dll" Link="kalyna_v12.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\threefish_ref.dll" Link="threefish_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\argon2_ref.dll" Link="argon2_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\aes_ref.dll" Link="aes_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\mars_ref.dll" Link="mars_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\shacal2_ref.dll" Link="shacal2_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\chachapoly_ref.dll" Link="chachapoly_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\*.sha3"
+          Exclude="$(KalynaNativeToolDirectory)\mldsa87_ref.dll.sha3"
           Link="%(Filename)%(Extension)"
           CopyToOutputDirectory="Always"
           CopyToPublishDirectory="Always"
           ExcludeFromSingleFile="true" />
-    <None Include="..\tools\*.skein"
-          Exclude="..\tools\mldsa87_ref.dll.skein"
+    <None Include="$(KalynaNativeToolDirectory)\*.skein"
+          Exclude="$(KalynaNativeToolDirectory)\mldsa87_ref.dll.skein"
           Link="%(Filename)%(Extension)"
           CopyToOutputDirectory="Always"
           CopyToPublishDirectory="Always"
           ExcludeFromSingleFile="true" />
-    <None Include="..\tools\*.khsig"
-          Exclude="..\tools\mldsa87_ref.dll.khsig;..\tools\mldsa87_ref.dll.sha3.khsig;..\tools\mldsa87_ref.dll.skein.khsig"
+    <None Include="$(KalynaNativeToolDirectory)\*.khsig"
+          Exclude="$(KalynaNativeToolDirectory)\mldsa87_ref.dll.khsig;$(KalynaNativeToolDirectory)\mldsa87_ref.dll.sha3.khsig;$(KalynaNativeToolDirectory)\mldsa87_ref.dll.skein.khsig"
           Link="%(Filename)%(Extension)"
           CopyToOutputDirectory="Always"
           CopyToPublishDirectory="Always"
@@ -57,7 +60,6 @@
   <ItemGroup>
     <ProjectReference Include="..\KalynaArchiver.Signing\KalynaArchiver.Signing.csproj" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.0" />
     <PackageReference Include="PDFsharp" Version="6.2.4" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
   </ItemGroup>

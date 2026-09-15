@@ -24,6 +24,8 @@ internal sealed class WindowsExtractionStaging : IDisposable
 
     internal static Action? TestHookBeforeInstallRename { get; set; }
 
+    internal static Action<string>? TestHookBeforeCleanupDirectoryDelete { get; set; }
+
     internal WindowsExtractionStaging(string outputFolder)
     {
         DestinationPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(outputFolder));
@@ -324,14 +326,22 @@ internal sealed class WindowsExtractionStaging : IDisposable
                     // FileCount is the common extraction entry budget and
                     // deliberately includes directories.
                     fileCount = checked(fileCount + 1);
-                    SafeFileHandle directory = WindowsSafeFileSystem.OpenDirectoryBound(entry, denyRename: true);
-                    fingerprintEntries.Add(new TreeFingerprintEntry(
-                        Path.GetRelativePath(rootPath, entry),
-                        IsDirectory: true,
-                        WindowsSafeFileSystem.GetIdentity(directory),
-                        Length: 0,
-                        Directory.GetLastWriteTimeUtc(entry).Ticks));
-                    frames.Push(new DirectoryFrame(entry, directory, ownsHandle: true));
+                    SafeFileHandle? directory = WindowsSafeFileSystem.OpenDirectoryBound(entry, denyRename: true);
+                    try
+                    {
+                        fingerprintEntries.Add(new TreeFingerprintEntry(
+                            Path.GetRelativePath(rootPath, entry),
+                            IsDirectory: true,
+                            WindowsSafeFileSystem.GetIdentity(directory),
+                            Length: 0,
+                            Directory.GetLastWriteTimeUtc(entry).Ticks));
+                        frames.Push(new DirectoryFrame(entry, directory, ownsHandle: true));
+                        directory = null;
+                    }
+                    finally
+                    {
+                        directory?.Dispose();
+                    }
                     continue;
                 }
 
@@ -405,30 +415,42 @@ internal sealed class WindowsExtractionStaging : IDisposable
                 if (frame.Entries.MoveNext())
                 {
                     string entry = frame.Entries.Current;
-                    SafeFileHandle entryHandle = WindowsSafeFileSystem.OpenEntryForDeletion(entry);
-                    WindowsSafeFileSystem.ByHandleFileInformation information =
-                        WindowsSafeFileSystem.GetInformation(entryHandle, entry);
-                    bool isDirectory = (information.FileAttributes & (uint)FileAttributes.Directory) != 0;
-                    bool isReparse = (information.FileAttributes & (uint)FileAttributes.ReparsePoint) != 0;
-                    if (isDirectory && !isReparse)
+                    SafeFileHandle? entryHandle = WindowsSafeFileSystem.OpenEntryForDeletion(entry);
+                    try
                     {
-                        frames.Push(new DeletionFrame(entry, entryHandle));
-                    }
-                    else
-                    {
-                        using (entryHandle)
+                        WindowsSafeFileSystem.ByHandleFileInformation information =
+                            WindowsSafeFileSystem.GetInformation(entryHandle, entry);
+                        bool isDirectory = (information.FileAttributes & (uint)FileAttributes.Directory) != 0;
+                        bool isReparse = (information.FileAttributes & (uint)FileAttributes.ReparsePoint) != 0;
+                        if (isDirectory && !isReparse)
                         {
+                            frames.Push(new DeletionFrame(entry, entryHandle));
+                            entryHandle = null;
+                        }
+                        else
+                        {
+                            WindowsSafeFileSystem.ClearReadOnlyForExtractionCleanup(entryHandle);
                             WindowsSafeFileSystem.MarkForDeletion(entryHandle);
                         }
+                    }
+                    finally
+                    {
+                        entryHandle?.Dispose();
                     }
 
                     continue;
                 }
 
-                frames.Pop();
-                frame.Entries.Dispose();
-                WindowsSafeFileSystem.MarkForDeletion(frame.Handle);
-                frame.Dispose();
+                // Once popped, this frame is no longer covered by the outer
+                // finally. Release its rename-denying handle even when the
+                // directory becomes non-empty or delete disposition fails.
+                using (frames.Pop())
+                {
+                    frame.Entries.Dispose();
+                    TestHookBeforeCleanupDirectoryDelete?.Invoke(frame.Path);
+                    WindowsSafeFileSystem.ClearReadOnlyForExtractionCleanup(frame.Handle);
+                    WindowsSafeFileSystem.MarkForDeletion(frame.Handle);
+                }
             }
         }
         finally
@@ -551,9 +573,12 @@ internal sealed class WindowsExtractionStaging : IDisposable
     {
         internal DeletionFrame(string path, SafeFileHandle handle)
         {
+            Path = path;
             Handle = handle;
             Entries = Directory.EnumerateFileSystemEntries(path).GetEnumerator();
         }
+
+        internal string Path { get; }
 
         internal SafeFileHandle Handle { get; }
 

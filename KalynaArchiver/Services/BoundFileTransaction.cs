@@ -1,4 +1,5 @@
 using System.IO;
+using System.Runtime.ExceptionServices;
 using Microsoft.Win32.SafeHandles;
 
 namespace KalynaArchiver.Services;
@@ -32,6 +33,59 @@ internal sealed class BoundFileTransaction : IDisposable
         ?? throw new ObjectDisposedException(nameof(BoundFileTransaction));
 
     internal bool IsCommitted { get; private set; }
+
+    /// <summary>Creates a set of new files and rolls back only the held originals on failure.</summary>
+    internal static void WriteNewBatch(IEnumerable<(string Path, byte[] Contents)> files)
+    {
+        var parents = new List<SafeFileHandle>();
+        var created = new List<BoundFileTransaction>();
+        Exception? failure = null;
+        var cleanupFailures = new List<Exception>();
+        try
+        {
+            foreach ((string path, byte[] contents) in files)
+            {
+                // Keep every ancestor and every created file through the final
+                // member, so a later failure cannot target a substituted name.
+                var ancestors = new Stack<string>();
+                for (string? current = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path));
+                     !string.IsNullOrEmpty(current); current = System.IO.Path.GetDirectoryName(current))
+                    ancestors.Push(current);
+                while (ancestors.Count != 0)
+                    parents.Add(WindowsSafeFileSystem.OpenDirectoryBound(ancestors.Pop(), denyRename: true, requestCreateAccess: false));
+                BoundFileTransaction output = CreateNew(path, 4096, FileOptions.WriteThrough);
+                created.Add(output);
+                output.Stream.Write(contents);
+                output.Stream.Flush(true);
+            }
+        }
+        catch (Exception exception)
+        {
+            failure = exception;
+            for (int index = created.Count - 1; index >= 0; index--)
+            {
+                try { created[index].DeleteBound(); }
+                catch (Exception cleanupFailure) { cleanupFailures.Add(cleanupFailure); }
+            }
+        }
+        finally
+        {
+            for (int index = created.Count - 1; index >= 0; index--)
+            {
+                try { created[index].Dispose(); }
+                catch (Exception cleanupFailure) { cleanupFailures.Add(cleanupFailure); }
+            }
+            for (int index = parents.Count - 1; index >= 0; index--)
+            {
+                try { parents[index].Dispose(); }
+                catch (Exception cleanupFailure) { cleanupFailures.Add(cleanupFailure); }
+            }
+        }
+        if (failure is not null && cleanupFailures.Count == 0) ExceptionDispatchInfo.Capture(failure).Throw();
+        if (failure is not null) cleanupFailures.Insert(0, failure);
+        if (cleanupFailures.Count != 0)
+            throw new AggregateException("The new-file batch or its bound cleanup failed.", cleanupFailures);
+    }
 
     internal static BoundFileTransaction CreateNew(
         string path,
@@ -194,7 +248,7 @@ internal sealed class BoundFileTransaction : IDisposable
 
     public void Dispose()
     {
-        Interlocked.Exchange(ref _stream, null)?.Dispose();
-        _parentHandle.Dispose();
+        try { Interlocked.Exchange(ref _stream, null)?.Dispose(); }
+        finally { _parentHandle.Dispose(); }
     }
 }

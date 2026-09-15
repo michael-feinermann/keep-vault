@@ -178,7 +178,14 @@ static bool g_keepvault_has_expected_root_inode=false;
 
 #else  // Assume Windows
 #include <windows.h>
+#include <winternl.h>
 #include <io.h>
+static uint64_t g_keepvault_expected_root_device=0;
+static uint64_t g_keepvault_expected_root_inode=0;
+static bool g_keepvault_has_expected_root_device=false;
+static bool g_keepvault_has_expected_root_inode=false;
+static bool g_keepvault_windows_output_active=false;
+static std::atomic<bool> g_keepvault_windows_output_failed(false);
 #endif
 
 // For testing -Dunix in Windows
@@ -364,35 +371,81 @@ static int keepvault_semaphore_spurious_wakeup_self_test() {
 #else  // Windows
 typedef DWORD ThreadReturn;
 typedef HANDLE ThreadID;
+static std::atomic<bool> g_keepvault_test_windows_create_failure(false);
+static std::atomic<bool> g_keepvault_test_windows_wait_failure(false);
+[[noreturn]] static void keepvault_windows_fatal_thread_error(const char* operation, DWORD code) {
+  fprintf(stderr, "windows_thread_fatal=%s; error=%lu\n", operation, (unsigned long)code);
+  fflush(stderr);
+  // Infrastructure errors can leave previously started workers running.
+  // Never unwind their jobs/output owners or close a still-live thread handle.
+  // Terminate this standalone helper and all its workers together; the managed
+  // parent then cleans its bound staging tree after observing process exit.
+  TerminateProcess(GetCurrentProcess(), 70);
+  _Exit(70);
+}
 void run(ThreadID& tid, ThreadReturn(*f)(void*), void* arg) {
+  if (g_keepvault_test_windows_create_failure.exchange(false))
+    keepvault_windows_fatal_thread_error("CreateThread", ERROR_NOT_ENOUGH_MEMORY);
   tid=CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)f, arg, 0, NULL);
-  if (tid==NULL) error("CreateThread failed");
+  if (tid==NULL) keepvault_windows_fatal_thread_error("CreateThread", GetLastError());
 }
 void join(ThreadID& tid) {
-  if (tid==NULL) throw std::runtime_error("invalid thread handle");
+  if (tid==NULL) keepvault_windows_fatal_thread_error("join-null", ERROR_INVALID_HANDLE);
+  if (g_keepvault_test_windows_wait_failure.exchange(false))
+    keepvault_windows_fatal_thread_error("WaitForSingleObject", ERROR_INVALID_HANDLE);
   const DWORD wait_result=WaitForSingleObject(tid, INFINITE);
-  const BOOL close_result=CloseHandle(tid);
+  if (wait_result!=WAIT_OBJECT_0)
+    keepvault_windows_fatal_thread_error("WaitForSingleObject", GetLastError());
+  if (!CloseHandle(tid)) keepvault_windows_fatal_thread_error("CloseThreadHandle", GetLastError());
   tid=NULL;
-  if (wait_result!=WAIT_OBJECT_0 || !close_result)
-    error("thread join failed");
 }
 typedef HANDLE Mutex;
-void init_mutex(Mutex& m) {m=CreateMutex(NULL, FALSE, NULL);}
-void lock(Mutex& m) {WaitForSingleObject(m, INFINITE);}
-void release(Mutex& m) {ReleaseMutex(m);}
-void destroy_mutex(Mutex& m) {CloseHandle(m);}
+void init_mutex(Mutex& m) {
+  m=CreateMutex(NULL, FALSE, NULL);
+  if (!m) keepvault_windows_fatal_thread_error("CreateMutex", GetLastError());
+}
+void lock(Mutex& m) {
+  if (WaitForSingleObject(m, INFINITE)!=WAIT_OBJECT_0)
+    keepvault_windows_fatal_thread_error("WaitMutex", GetLastError());
+}
+void release(Mutex& m) {
+  if (!ReleaseMutex(m)) keepvault_windows_fatal_thread_error("ReleaseMutex", GetLastError());
+}
+void destroy_mutex(Mutex& m) {
+  if (!CloseHandle(m)) keepvault_windows_fatal_thread_error("CloseMutex", GetLastError());
+  m=NULL;
+}
 
 class Semaphore {
 public:
   enum {MAXCOUNT=2000000000};
   Semaphore(): h(NULL) {}
-  void init(int n) {assert(!h); h=CreateSemaphore(NULL, n, MAXCOUNT, NULL);}
-  void destroy() {assert(h); CloseHandle(h);}
-  int wait() {assert(h); return WaitForSingleObject(h, INFINITE);}
-  void signal() {assert(h); ReleaseSemaphore(h, 1, NULL);}
+  void init(int n) {
+    if (h) keepvault_windows_fatal_thread_error("ReinitializeSemaphore", ERROR_INVALID_HANDLE);
+    h=CreateSemaphore(NULL, n, MAXCOUNT, NULL);
+    if (!h) keepvault_windows_fatal_thread_error("CreateSemaphore", GetLastError());
+  }
+  void destroy() {
+    if (!h || !CloseHandle(h)) keepvault_windows_fatal_thread_error("CloseSemaphore", GetLastError());
+    h=NULL;
+  }
+  int wait() {
+    if (!h || WaitForSingleObject(h, INFINITE)!=WAIT_OBJECT_0)
+      keepvault_windows_fatal_thread_error("WaitSemaphore", GetLastError());
+    return 0;
+  }
+  void signal() {
+    if (!h || !ReleaseSemaphore(h, 1, NULL))
+      keepvault_windows_fatal_thread_error("ReleaseSemaphore", GetLastError());
+  }
 private:
   HANDLE h;  // Windows semaphore
 };
+
+static ThreadReturn keepvault_windows_thread_failure_waiter(void*) {
+  Sleep(INFINITE);
+  return 0;
+}
 
 #endif
 
@@ -402,37 +455,32 @@ int64_t global_start=0;  // set to mtime() at start of main()
 // In Windows, convert 16-bit wide string to UTF-8 and \ to /
 #ifndef unix
 string wtou(const wchar_t* s) {
-  assert(sizeof(wchar_t)==2);  // Not true in Linux
-  assert((wchar_t)(-1)==65535);
-  string r;
-  if (!s) return r;
-  for (; *s; ++s) {
-    if (*s=='\\') r+='/';
-    else if (*s<128) r+=*s;
-    else if (*s<2048) r+=192+*s/64, r+=128+*s%64;
-    else r+=224+*s/4096, r+=128+*s/64%64, r+=128+*s%64;
-  }
-  return r;
+  if (!s) return string();
+  const int size=WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
+      s, -1, NULL, 0, NULL, NULL);
+  if (size<=0) error("Windows path is not valid UTF-16");
+  string result(size, '\0');
+  if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
+      s, -1, &result[0], size, NULL, NULL)!=size)
+    error("cannot encode Windows path as UTF-8");
+  result.resize(size-1);
+  std::replace(result.begin(), result.end(), '\\', '/');
+  return result;
 }
 
-// In Windows, convert UTF-8 string to wide string ignoring
-// invalid UTF-8 or >64K. Convert "/" to slash (default "\").
+// Decode strictly, including supplementary Unicode characters. Silently
+// dropping invalid sequences can turn an archive name into a different path;
+// overlong encodings must never introduce a separator after path validation.
 std::wstring utow(const char* ss, char slash='\\') {
-  assert(sizeof(wchar_t)==2);
-  assert((wchar_t)(-1)==65535);
-  std::wstring r;
-  if (!ss) return r;
-  const unsigned char* s=(const unsigned char*)ss;
-  for (; s && *s; ++s) {
-    if (s[0]=='/') r+=slash;
-    else if (s[0]<128) r+=s[0];
-    else if (s[0]>=192 && s[0]<224 && s[1]>=128 && s[1]<192)
-      r+=(s[0]-192)*64+s[1]-128, ++s;
-    else if (s[0]>=224 && s[0]<240 && s[1]>=128 && s[1]<192
-             && s[2]>=128 && s[2]<192)
-      r+=(s[0]-224)*4096+(s[1]-128)*64+s[2]-128, s+=2;
-  }
-  return r;
+  if (!ss) return std::wstring();
+  const int size=MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, ss, -1, NULL, 0);
+  if (size<=0) error("archive path is not valid UTF-8");
+  std::wstring result(size, L'\0');
+  if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, ss, -1, &result[0], size)!=size)
+    error("cannot decode archive path as UTF-16");
+  result.resize(size-1);
+  std::replace(result.begin(), result.end(), L'/', wchar_t(slash));
+  return result;
 }
 #endif
 
@@ -556,9 +604,23 @@ typedef HANDLE FP;
 const FP FPNULL=INVALID_HANDLE_VALUE;
 typedef enum {RB, WB, RBPLUS, WBPLUS} MODE;  // fopen modes
 
+static FP keepvault_windows_open_output(const string& path, bool create_new);
+static void keepvault_windows_makepath(const string& path, int64_t date, int64_t attr);
+static void keepvault_windows_close(const string& path, int64_t date, int64_t attr, FP fp);
+
 // Open file. Only modes "rb", "wb", "rb+" and "wb+" are supported.
 FP fopen(const char* filename, MODE mode) {
   assert(filename);
+  if (g_keepvault_windows_output_active && mode!=RB) {
+    try {
+      return keepvault_windows_open_output(filename, mode==WB || mode==WBPLUS);
+    }
+    catch (const std::exception& exception) {
+      g_keepvault_windows_output_failed.store(true);
+      fprintf(stderr, "bound Windows output open failed: %s\n", exception.what());
+      return FPNULL;
+    }
+  }
   DWORD access=0;
   if (mode!=WB) access=GENERIC_READ;
   if (mode!=RB) access|=GENERIC_WRITE;
@@ -739,6 +801,10 @@ void close(const char* filename, int64_t date, int64_t attr, FP fp=FPNULL) {
   if ((attr&255)=='u')
     chmod(filename, attr>>8);
 #else
+  if (g_keepvault_windows_output_active) {
+    keepvault_windows_close(filename, date, attr, fp);
+    return;
+  }
   const bool ads=strstr(filename, ":$DATA")!=0;  // alternate data stream?
   if (date>0 && !ads) {
     if (fp==FPNULL)
@@ -777,6 +843,21 @@ void ioerr(const char* msg) {
 // then create directories /, /tmp, and /tmp/foo unless they exist.
 // Set date and attributes if not 0.
 void makepath(string path, int64_t date=0, int64_t attr=0) {
+#ifndef unix
+  if (g_keepvault_windows_output_active) {
+    try {
+      keepvault_windows_makepath(path, date, attr);
+    }
+    catch (const std::exception& exception) {
+      // The regular extraction writer calls makepath outside its decoding
+      // catch. Record failure and make every later open fail closed, while
+      // allowing the worker's normal close/join path to run.
+      g_keepvault_windows_output_failed.store(true);
+      fprintf(stderr, "bound Windows output directory failed: %s\n", exception.what());
+    }
+    return;
+  }
+#endif
   for (unsigned i=0; i<path.size(); ++i) {
     if (path[i]=='\\' || path[i]=='/') {
       path[i]=0;
@@ -1587,6 +1668,10 @@ static string keepvault_canonical_output_path(string name) {
   return name;
 }
 
+#ifndef unix
+#include "../../native/windows_zpaq_output.hpp"
+#endif
+
 #ifdef unix
 struct KeepVaultPathIdentity {
   dev_t device;
@@ -2307,7 +2392,6 @@ int Jidac::doCommand(int argc, const char** argv) {
       keepvault_max_extracted_files=uint64_t(value);
     }
     else if (opt=="-kv-root-dev" && i<argc-1) {
-#ifdef unix
       errno=0;
       char* end=0;
       const unsigned long long value=strtoull(argv[++i], &end, 10);
@@ -2316,12 +2400,8 @@ int Jidac::doCommand(int argc, const char** argv) {
         error("invalid v12 output-root device identity");
       g_keepvault_expected_root_device=uint64_t(value);
       g_keepvault_has_expected_root_device=true;
-#else
-      error("v12 output-root identity is available only on POSIX");
-#endif
     }
     else if (opt=="-kv-root-ino" && i<argc-1) {
-#ifdef unix
       errno=0;
       char* end=0;
       const unsigned long long value=strtoull(argv[++i], &end, 10);
@@ -2330,9 +2410,6 @@ int Jidac::doCommand(int argc, const char** argv) {
         error("invalid v12 output-root inode identity");
       g_keepvault_expected_root_inode=uint64_t(value);
       g_keepvault_has_expected_root_inode=true;
-#else
-      error("v12 output-root identity is available only on POSIX");
-#endif
     }
     else if (opt=="-until" && i+1<argc) {  // read date
 
@@ -2399,6 +2476,13 @@ int Jidac::doCommand(int argc, const char** argv) {
   }
   else if (g_keepvault_has_expected_root_device
       || g_keepvault_has_expected_root_inode) {
+    error("v12 output-root identity is accepted only for extraction");
+  }
+#else
+  if (command=='x' && !dotest) {
+    keepvault_windows_initialize_output_root();
+  }
+  else if (g_keepvault_has_expected_root_device || g_keepvault_has_expected_root_inode) {
     error("v12 output-root identity is accepted only for extraction");
   }
 #endif
@@ -2752,7 +2836,7 @@ endblock:;
   }  // end while !done
   if (in.tell()>32*(password!=0) && !found_data)
     error("archive contains no data");
-  printf("%d versions, %u files, %u fragments, %1.6f MB\n", 
+  printf("%d versions, %u files, %u fragments, %1.6f MB\n",
       int(ver.size()-1), files, unsigned(ht.size())-1,
       block_offset/1000000.0);
 
@@ -3072,7 +3156,7 @@ public:
     empty.destroy();
     destroy_mutex(mutex);
     delete[] q;
-  }      
+  }
   void write(StringBuffer& s, const char* filename, string method,
              const char* comment=0);
   vector<int> csize;  // compressed block sizes
@@ -3296,7 +3380,7 @@ public:
       }
       ++htsize;
     }
-  }    
+  }
 };
 
 // Sort by sortkey, then by full path
@@ -4830,11 +4914,16 @@ int Jidac::extract_pipe_streaming(bool list_only) {
 	    std::map<string, string> output_entries;
 	    uint64_t archive_total_bytes=0;
 	    uint64_t current_file_bytes=0;
+#ifndef unix
+        int64_t member_date=0;
+        int64_t member_attr=0;
+        vector<std::pair<string, std::pair<int64_t, int64_t> > > directory_metadata;
+#endif
 	    bool first_segment=true;
 	    bool selected=false;
 	    uint64_t next=0;
 	    const auto close_output = [this](FP& stream,
-	        const string& path, int64_t output_date) {
+	        const string& path, int64_t output_date, int64_t output_attr=0) {
 	      if (stream==FPNULL) return;
 #ifdef unix
 	      if (g_keepvault_output_root_fd>=0) {
@@ -4844,7 +4933,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
 #endif
 	      FP closing=stream;
 	      stream=FPNULL;
-	      close(path.c_str(), output_date, 0, closing);
+	      close(path.c_str(), output_date, output_attr, closing);
 	    };
 	    try {
       for (;;) {
@@ -4870,8 +4959,16 @@ int Jidac::extract_pipe_streaming(bool list_only) {
           KeepVaultPipeSegment& segment=*frame->segments[si];
 	          if (segment.filename!="" || first_segment) {
 	            if (outf!=FPNULL) {
+#ifdef unix
 	              close_output(outf, output_name, date);
+#else
+                      close_output(outf, output_name, member_date, member_attr);
+#endif
 	            }
+#ifndef unix
+                keepvault_windows_parse_stream_metadata(segment.comment,
+                    segment.data.size(), true, member_date, member_attr);
+#endif
             if (segment.filename=="")
               throw std::runtime_error("first streaming segment has no filename");
             for (unsigned i=0; i<segment.filename.size(); ++i)
@@ -4905,7 +5002,13 @@ int Jidac::extract_pipe_streaming(bool list_only) {
                     keepvault_secure_makepath(output_name, date, 0);
                   else
 #endif
+#ifdef unix
                     makepath(output_name, date, 0);
+#else
+                    makepath(output_name);
+                    directory_metadata.push_back(std::make_pair(output_name,
+                        std::make_pair(member_date, member_attr)));
+#endif
                 }
                 else {
 #ifdef unix
@@ -4929,6 +5032,12 @@ int Jidac::extract_pipe_streaming(bool list_only) {
               ++files_extracted;
             }
           }
+#ifndef unix
+          else {
+            keepvault_windows_parse_stream_metadata(segment.comment,
+                segment.data.size(), false, member_date, member_attr);
+          }
+#endif
 
           if (selected && output_name[output_name.size()-1]=='/'
               && !segment.data.empty())
@@ -4959,8 +5068,20 @@ int Jidac::extract_pipe_streaming(bool list_only) {
         }
 	      }
 	      if (outf!=FPNULL) {
+#ifdef unix
 	        close_output(outf, output_name, date);
+#else
+            close_output(outf, output_name, member_date, member_attr);
+#endif
 	      }
+#ifndef unix
+          // Descendant creation changes directory mtimes. Restore their own
+          // recorded metadata only after every data segment has been written.
+          for (size_t i=directory_metadata.size(); i>0; --i) {
+            const auto& entry=directory_metadata[i-1];
+            keepvault_windows_close(entry.first, entry.second.first, entry.second.second, FPNULL);
+          }
+#endif
     }
     catch (const std::exception& e) {
       if (outf!=FPNULL) fclose(outf);
@@ -5166,7 +5287,7 @@ int Jidac::extract() {
         printf("at %1.0f\n", ver[i].offset+.0);
         error("C block in weird format");
       }
-      memcpy(hdr+hsize-34, 
+      memcpy(hdr+hsize-34,
           "\x00\x00\x00\x00\x00\x00\x00\x00"  // csize = 0
           "\x00\x00\x00\x00"  // compressed data terminator
           "\xfd"  // start of hash marker
@@ -5769,7 +5890,7 @@ int Jidac::list() {
       "%1.6f MB of %1.6f MB (%d files) shown\n"
       "  -> %1.6f MB (%u refs to %u of %u frags) after dedupe\n"
       "  -> %1.6f MB compressed.\n",
-       usize/1000000.0, allsize/1000000.0, nfiles, 
+       usize/1000000.0, allsize/1000000.0, nfiles,
        ddsize/1000000.0, refs, nfrags, unsigned(ht.size())-1,
        (csize+dhsize-dcsize)/1000000.0);
   if (unknown_frags)
@@ -6252,6 +6373,29 @@ int main() {
     argp[i]=args[i].c_str();
   }
   const char** argv=&argp[0];
+  if (argc==2 && (!strcmp(argv[1], "--kv-self-test-windows-create-failure")
+      || !strcmp(argv[1], "--kv-self-test-windows-wait-failure"))) {
+    ThreadID first=NULL;
+    run(first, keepvault_windows_thread_failure_waiter, NULL);
+    if (!strcmp(argv[1], "--kv-self-test-windows-create-failure")) {
+      g_keepvault_test_windows_create_failure.store(true);
+      ThreadID second=NULL;
+      run(second, keepvault_windows_thread_failure_waiter, NULL);
+    }
+    else {
+      g_keepvault_test_windows_wait_failure.store(true);
+      join(first);
+    }
+    keepvault_windows_fatal_thread_error("fault-was-not-injected", ERROR_INVALID_FUNCTION);
+  }
+  if (argc==2 && !strcmp(argv[1], "--kv-self-test-windows-output")) {
+    try { return keepvault_windows_output_self_test(); }
+    catch (const std::exception& exception) {
+      fprintf(stderr, "Windows output self-test failed: %s\n", exception.what());
+      keepvault_windows_release_output();
+      return 2;
+    }
+  }
 #endif
 
   global_start=mtime();  // get start time
@@ -6274,6 +6418,9 @@ int main() {
     g_keepvault_output_directories.clear();
     g_keepvault_output_files.clear();
   }
+#else
+  if (g_keepvault_windows_output_failed.load()) errorcode=2;
+  keepvault_windows_release_output();
 #endif
   fflush(stdout);
   fprintf(stderr, "%1.3f seconds %s\n", (mtime()-global_start)/1000.0,
