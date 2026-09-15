@@ -1,0 +1,147 @@
+name: Windows native Defender evidence
+
+on:
+  push:
+    branches: [codex/windows-v12-5.0.2]
+    paths:
+      - .github/workflows/windows-native-defender.yml
+      - tools/Build-Native.cmd
+      - tools/Test-WindowsNativeDefender.ps1
+      - tools/Verify-NativeSources.ps1
+      - tools/Verify-MldsaReference.ps1
+      - tools/LocalWorkspacePolicy.ps1
+      - external/**
+      - native/**
+      - KalynaArchiver.Signing/**
+      - KalynaSigningTool/**
+      - Directory.Build.*
+      - global.json
+      - NuGet.Config
+      - .gitattributes
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-defender-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-defender:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      # The standard runner image disables Defender and excludes C:\ and D:\.
+      # Strengthen only this disposable hosted VM, before even checking out the
+      # historical binaries in tools/. Never defeat passive mode or policy.
+      - name: Activate and verify Defender before checkout
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          if (-not $IsWindows -or $env:GITHUB_ACTIONS -cne 'true' -or
+              $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows') {
+            throw 'Protection setup is restricted to a disposable GitHub-hosted Windows runner.'
+          }
+          $evidence = Join-Path $env:RUNNER_TEMP 'keepvault-native-defender-evidence'
+          if (Test-Path -LiteralPath $evidence) { throw 'Evidence directory must be new.' }
+          New-Item -ItemType Directory -Path $evidence | Out-Null
+          $report = [ordered]@{
+            schema = 1; result = 'FAIL'; commit = $env:GITHUB_SHA
+            startedUtc = [DateTime]::UtcNow.ToString('o')
+            runnerImage = $env:ImageVersion; error = $null
+          }
+          try {
+            $report.beforeStatus = Get-MpComputerStatus
+            $report.beforePreference = Get-MpPreference
+            $report.previousDetections = @(Get-MpThreatDetection)
+            # NeverSend already exists in the published image. Require it;
+            # this workflow never uploads binaries, including automatic samples.
+            if ([int]$report.beforePreference.SubmitSamplesConsent -ne 2) {
+              throw 'Automatic sample submission must already be NeverSend.'
+            }
+            Set-MpPreference -DisableRealtimeMonitoring $false -DisableBehaviorMonitoring $false -DisableIOAVProtection $false -DisableScriptScanning $false -DisableArchiveScanning $false -DisableAutoExclusions $true
+            foreach ($name in @('ExclusionPath', 'ExclusionProcess', 'ExclusionExtension')) {
+              $values = @($report.beforePreference.$name | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+              if ($values.Count) {
+                $parameters = @{ $name = $values; ErrorAction = 'Stop' }
+                Remove-MpPreference @parameters
+              }
+            }
+            Update-MpSignature -UpdateSource MicrosoftUpdateServer
+            $status = Get-MpComputerStatus
+            $preference = Get-MpPreference
+            $report.afterStatus = $status
+            $report.afterPreference = $preference
+            foreach ($name in @('AMServiceEnabled', 'AntivirusEnabled', 'RealTimeProtectionEnabled',
+                'BehaviorMonitorEnabled', 'IoavProtectionEnabled', 'OnAccessProtectionEnabled')) {
+              if ($status.$name -ne $true) { throw "Defender is not healthy: $name." }
+            }
+            if ($status.AMRunningMode -cne 'Normal') { throw 'Defender must run in Normal mode; no passive-mode workaround is allowed.' }
+            foreach ($name in @('DisableRealtimeMonitoring', 'DisableBehaviorMonitoring',
+                'DisableIOAVProtection', 'DisableScriptScanning', 'DisableArchiveScanning')) {
+              if ($preference.$name -ne $false) { throw "Defender protection is disabled: $name." }
+            }
+            if ($preference.DisableAutoExclusions -ne $true) { throw 'Automatic server-role exclusions remain enabled.' }
+            foreach ($name in @('ExclusionPath', 'ExclusionProcess', 'ExclusionExtension')) {
+              if (@($preference.$name | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count) {
+                throw "Defender exclusions remain: $name."
+              }
+            }
+            if ([int]$preference.SubmitSamplesConsent -ne 2) { throw 'Unexpected sample-submission setting.' }
+            $age = [DateTime]::UtcNow - ([DateTime]$status.AntivirusSignatureLastUpdated).ToUniversalTime()
+            if ([string]::IsNullOrWhiteSpace($status.AntivirusSignatureVersion) -or $age.TotalHours -gt 24 -or $age.TotalMinutes -lt -5) {
+              throw 'Defender definitions must be dated within the last 24 hours.'
+            }
+            if (@(Get-MpThreat | Where-Object IsActive).Count) { throw 'The runner already has an active threat.' }
+            $report.result = 'PASS'
+          }
+          catch {
+            $report.error = $_.Exception.Message
+            throw
+          }
+          finally {
+            $report.finishedUtc = [DateTime]::UtcNow.ToString('o')
+            ConvertTo-Json -InputObject $report -Depth 20 |
+              Set-Content -LiteralPath (Join-Path $evidence 'preflight.json') -Encoding utf8
+          }
+
+      - name: Checkout exact event source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+
+      - name: Install exact managed fingerprint SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.401
+
+      - name: Build pinned native sources and scan with active Defender
+        run: ./tools/Test-WindowsNativeDefender.ps1
+
+      # Fixed text/JSON allowlist. Never upload work/native-scan, .exe, .dll,
+      # compiler objects, source archives, private keys, or signing outputs.
+      - name: Upload evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-defender-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/keepvault-native-defender-evidence/preflight.json
+            ${{ runner.temp }}/keepvault-native-defender-evidence/scan-result.json
+            ${{ runner.temp }}/keepvault-native-defender-evidence/detections.json
+            ${{ runner.temp }}/keepvault-native-defender-evidence/scan-events.json
+            ${{ runner.temp }}/keepvault-native-defender-evidence/native-hashes-before.json
+            ${{ runner.temp }}/keepvault-native-defender-evidence/native-hashes-after.json
+            ${{ runner.temp }}/keepvault-native-defender-evidence/source-pins.log
+            ${{ runner.temp }}/keepvault-native-defender-evidence/build.log
+          if-no-files-found: error
+          retention-days: 7
+          include-hidden-files: false

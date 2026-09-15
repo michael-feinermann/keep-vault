@@ -8,6 +8,11 @@ if not exist "%VSDEVCMD%" (
   set "VSDEVCMD=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
 )
 
+REM GitHub-hosted windows-2022 uses the Enterprise installation.
+if not exist "%VSDEVCMD%" (
+  set "VSDEVCMD=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+
 if not exist "%VSDEVCMD%" (
   echo Visual Studio Developer Command Prompt was not found.
   exit /b 1
