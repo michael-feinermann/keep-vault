@@ -6,6 +6,9 @@ external/cryptopp/aes_armv4.S -text
 external/cryptopp/sha1_armv4.S -text
 external/cryptopp/sha256_armv4.S -text
 external/cryptopp/sha512_armv4.S -text
+# Windows MASM inputs use deterministic CRLF bytes for their source pins.
+external/cryptopp/x64dll.asm text eol=crlf
+external/cryptopp/x64masm.asm text eol=crlf
 external/zpaq/zpaq.cpp -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 native/windows_zpaq_output.hpp -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 external/zpaq/libzpaq.cpp -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot 'LocalWorkspacePolicy.ps1')
 $ErrorActionPreference = 'Stop'
 if (-not ('KeepVaultBuild.SourceSnapshotLease' -as [type])) {
     Add-Type -Path (Join-Path $PSScriptRoot 'ReleaseSourceSnapshot.cs')
@@ -13,6 +14,7 @@ function Invoke-SnapshotGit {
 function New-ReleaseSourceSnapshot {
     param([Parameter(Mandatory)][string] $RepositoryRoot)
     $repository = [IO.Path]::GetFullPath($RepositoryRoot)
+    Assert-LocalReleaseWorkspace $repository
     $gitRoot = Invoke-SnapshotGit $repository @('rev-parse', '--show-toplevel')
     if ([IO.Path]::GetFullPath($gitRoot) -ine $repository) { throw 'Release must start at the repository root.' }
     if (Get-UncommittedReleaseSources $repository) {
@@ -26,9 +28,8 @@ function New-ReleaseSourceSnapshot {
         if ($LASTEXITCODE -notin @(0, 1)) { throw "Cannot read checkout setting $name." }
         $settings[$name] = if ($value) { $value } elseif ($name -eq 'core.eol') { 'native' } else { 'false' }
     }
-    # Keep compiler/archiver paths short even when the checkout lives below
-    # a long OneDrive directory. This is independent, disposable build storage.
-    $snapshotParent = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.codex\release-builds'
+    # Independent source copies remain inside the canonical local workspace.
+    $snapshotParent = Join-Path $repository 'work\release-builds'
     [IO.Directory]::CreateDirectory($snapshotParent) | Out-Null
     $container = Join-Path $snapshotParent ($commit.Substring(0, 12) + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 16))
     [IO.Directory]::CreateDirectory($container) | Out-Null

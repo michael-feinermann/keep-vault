@@ -124,8 +124,12 @@ set "CPPFLAGS=/nologo /c /MT /GS /guard:cf /EHsc /std:c++17 /D_CRT_SECURE_NO_WAR
 
 REM The library, its test drivers and its validation suites live in one
 REM directory; the drivers carry a main() and the suites are not shipped.
-del /q "%CPPOBJ%\cryptopp-sources.rsp" 2>nul
-pushd "%CRYPTOPP%"
+REM BEGIN CRYPTOPP RESPONSE INPUTS
+REM Reset both lists before generating them. The object list is the exact
+REM compilation set; unrelated or stale .obj files must never enter the library.
+type nul >"%CPPOBJ%\cryptopp-sources.rsp" || exit /b 1
+type nul >"%CPPOBJ%\cryptopp-objects.rsp" || exit /b 1
+pushd "%CRYPTOPP%" || exit /b 1
 for %%F in (*.cpp) do (
   set "SKIP="
   if /i "%%F"=="test.cpp" set "SKIP=1"
@@ -142,9 +146,17 @@ for %%F in (*.cpp) do (
   REM application uses - they are archived only so the library links.
   if /i "%%F"=="gfpcrypt.cpp" set "SKIP=1"
   if /i "%%F"=="hight.cpp" set "SKIP=1"
-  if not defined SKIP echo %%F>>"..\..\%CPPOBJ%\cryptopp-sources.rsp"
+  if not defined SKIP (
+    echo %%F>>"..\..\%CPPOBJ%\cryptopp-sources.rsp"|| (popd & exit /b 1)
+    echo "%CPPOBJ%\%%~nF.obj">>"..\..\%CPPOBJ%\cryptopp-objects.rsp"|| (popd & exit /b 1)
+  )
 )
 popd
+REM These C++ units use a separate optimization command; MASM emits the other two.
+for %%F in (gfpcrypt hight x64dll x64masm) do (
+  echo "%CPPOBJ%\%%F.obj">>"%CPPOBJ%\cryptopp-objects.rsp"|| exit /b 1
+)
+REM END CRYPTOPP RESPONSE INPUTS
 
 pushd "%CRYPTOPP%"
 cl %CPPFLAGS% /O2 /MP /Fo"..\..\%CPPOBJ%\\" @"..\..\%CPPOBJ%\cryptopp-sources.rsp"
@@ -157,7 +169,7 @@ ml64 /nologo /c /Fo"..\..\%CPPOBJ%\x64masm.obj" x64masm.asm
 if errorlevel 1 (popd & exit /b 1)
 popd
 
-lib /nologo /OUT:"%CPPOBJ%\cryptopp.lib" "%CPPOBJ%\*.obj"
+lib /nologo /OUT:"%CPPOBJ%\cryptopp.lib" @"%CPPOBJ%\cryptopp-objects.rsp"
 if errorlevel 1 exit /b 1
 
 for %%A in (aes mars shacal2 chachapoly) do (

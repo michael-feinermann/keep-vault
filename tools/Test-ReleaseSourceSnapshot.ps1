@@ -11,6 +11,17 @@ function Require-Rejection {
     Write-Host "PASS reject: $Name"
 }
 
+Assert-LocalReleaseWorkspace 'C:\Dev\Kalyna'
+Require-Rejection { Assert-LocalReleaseWorkspace 'C:\Users\Synthetic\OneDrive\Kalyna' } 'personal OneDrive workspace'
+Require-Rejection { Assert-LocalReleaseWorkspace 'C:\Users\Synthetic\OneDrive - University\Kalyna' } 'organization OneDrive workspace'
+$previousSyncRoot = [Environment]::GetEnvironmentVariable('OneDriveCommercial')
+try {
+    [Environment]::SetEnvironmentVariable('OneDriveCommercial', 'C:\SyntheticSync')
+    Require-Rejection { Assert-LocalReleaseWorkspace 'C:\SyntheticSync\Kalyna' } 'configured OneDrive workspace with a custom folder name'
+    Assert-LocalReleaseWorkspace 'C:\SyntheticSync-other\Kalyna'
+}
+finally { [Environment]::SetEnvironmentVariable('OneDriveCommercial', $previousSyncRoot) }
+
 $testRoot = Join-Path (Join-Path $PSScriptRoot '..\work') ('snapshot-regression-' + [Guid]::NewGuid().ToString('N'))
 $repository = Join-Path $testRoot 'repository'
 foreach ($name in @('KalynaArchiver', 'tools', 'external')) { [IO.Directory]::CreateDirectory((Join-Path $repository $name)) | Out-Null }
@@ -43,6 +54,9 @@ Require-Rejection { New-ReleaseSourceSnapshot $repository } 'untracked wildcard 
 $snapshot = New-ReleaseSourceSnapshot $repository
 $snapshotRoot = $snapshot.Root
 try {
+    if (-not $snapshotRoot.StartsWith([IO.Path]::GetFullPath((Join-Path $repository 'work\release-builds\')), [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Release snapshot escaped the active local repository workspace.'
+    }
     if ($snapshot.Commit -cne $commit -or $snapshotRoot -eq $repository) { throw 'Snapshot identity was not bound to a separate exact commit.' }
     if (([IO.File]::ReadAllText((Join-Path $snapshotRoot 'tools\zpaq.exe'))) -ne 'synthetic text output; never executed') {
         throw 'Snapshot copied a dirty generated output from the live source.'

@@ -56,7 +56,10 @@ zusammenbleiben, einschließlich aller `.khsig`-, `.sha3`-, `.skein`-Dateien und
 Für einen Quellbuild dient `tools/Build-Portable.ps1 -ReleaseKeyDirectory <Schlüsselverzeichnis>`
 mit dem exakten SDK aus `global.json` und der dokumentierten nativen Toolchain.
 Das Skript verlangt committete, unveränderte Quelldateien und baut eine unabhängige
-Kopie unter `%USERPROFILE%\.codex\release-builds\<commit>-<eindeutig>\src`.
+Kopie unter `work\release-builds\<commit>-<eindeutig>\src` im aktiven Repository.
+Der verbindliche Windows-Arbeitsordner ist `C:\Dev\Kalyna`. Entwicklung und
+Builds in OneDrive sind verboten; die Release-/Native-Vorprüfung weist diese
+Pfade ab. Siehe [Arbeitsanweisungen](AGENTS.md).
 Quelldateien und Eingabeverzeichnisse bleiben während des Builds gesperrt. Native
 Werkzeuge werden unter `work\native-tools` dieses Snapshots neu gebaut; Änderungen
 an versionierten nativen Ausgaben ersetzen diesen Build nicht. Geprüfte Pakete

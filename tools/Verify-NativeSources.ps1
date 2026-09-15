@@ -1,6 +1,8 @@
 param([string] $Root = (Join-Path $PSScriptRoot '..'))
 $ErrorActionPreference = 'Stop'
 $rootPath = [IO.Path]::GetFullPath($Root)
+. (Join-Path $PSScriptRoot 'LocalWorkspacePolicy.ps1')
+Assert-LocalReleaseWorkspace $rootPath
 $paths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 
 foreach ($manifest in @('external/NATIVE_SOURCE_SHA256SUMS', 'native/WINDOWS_SOURCE_SHA256SUMS')) {

@@ -53,7 +53,10 @@ Keep the complete extracted package together, including every `.khsig`, `.sha3`,
 For a source build use `tools/Build-Portable.ps1 -ReleaseKeyDirectory <key-directory>`
 with the exact SDK from `global.json` and the documented native toolchain. The
 script requires committed, clean source inputs and builds an independent copy
-under `%USERPROFILE%\.codex\release-builds\<commit>-<unique>\src`. Source files
+under the active repository's `work\release-builds\<commit>-<unique>\src`.
+The canonical Windows workspace is `C:\Dev\Kalyna`; development and builds
+inside OneDrive are forbidden and rejected by the release/native preflight.
+See [repository working instructions](AGENTS.md). Source files
 and input directories are leased until the build finishes. Native tools are
 rebuilt into that snapshot's `work\native-tools`; tracked native output changes
 do not substitute for this build. Verified packages remain in the snapshot's

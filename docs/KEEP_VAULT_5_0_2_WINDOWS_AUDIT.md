@@ -2,6 +2,18 @@
 
 Arbeitsstand vom 15. September 2026. Dieser Bericht wird um die tatsächlichen
 Windows-Läufe ergänzt; offene Prüfungen sind keine bestandenen Freigaben.
+Der verbindliche Windows-Arbeitsordner ist seit der ausdrücklichen Korrektur
+des Benutzers `C:\Dev\Kalyna`. Entwicklung und Builds in OneDrive sind verboten.
+Neue Release-Snapshots liegen unter `work\release-builds` dieses lokalen
+Repositories. Frühere OneDrive-/Profilpfade in Prüfprotokollen sind historische
+Nachweise und keine aktuelle Arbeitsanweisung.
+Die GitHub-Regel steht auch im Hauptbranch in `AGENTS.md`. Der gespeicherte
+Codex-App-Server-Projekteintrag und die lokalen Projekt-/Startpfade wurden
+auf `C:\Dev\Kalyna` korrigiert. Der laufende Desktop hat den alten Legacy-Cache
+zunächst zurückgeschrieben; dessen dauerhafte Übernahme erfordert zusätzlich
+die Aktualisierung nach regulärem Desktop-Ende. Der Snapshot-Regressionslauf bestätigt sowohl
+die Ablehnung persönlicher, geschäftlicher und benutzerdefinierter OneDrive-
+Pfade als auch die Ablage aller neuen Snapshots unter dem aktiven Repository.
 Die macOS-Referenz ist `origin/master` bei
 `7ff2eda764ad321ed25c88f862ee20a8a9822690`. Der bestehende öffentliche Tag
 `v5.0.2` gehört zum macOS-Commit und wird durch die Windows-Ergänzung nicht
@@ -13,6 +25,43 @@ verschoben. Die sechs vorhandenen macOS-Dateien bleiben unverändert.
 abgegrenzten Teilprüfungen sind weiter fortgeschritten; ein vollständiger finaler
 Build, die Ende-zu-Ende-Freigabe und die Veröffentlichung sind noch offen.
 
+Der geprüfte Implementierungsstand wurde am 15. September als
+[`e27699ff1495c836088f1b1bd22eef19018b748d`](https://github.com/michael-feinermann/keep-vault/commit/e27699ff1495c836088f1b1bd22eef19018b748d)
+committet und auf `codex/windows-v12-5.0.2` gepusht. Die Remote-Commit-ID wurde
+anschließend zurückgelesen. Private Schlüssel, unvollständige native
+Arbeitskandidaten und die Löschung der quarantänisierten DLL sind nicht Teil
+dieses Commits. Der vorhandene öffentliche macOS-Release wurde nicht verändert.
+
+Der anschließend regulär gestartete `Build-Portable.ps1` verwendete einen
+unabhängigen, während des Builds gegen Änderungen gehaltenen Quell-Snapshot
+dieses Commits und SDK `10.0.401`. Die Quellprüfungen bestanden; alle zehn
+nativen Komponenten wurden frisch kompiliert. Die Signierung von
+`mldsa87_ref.dll` und `zpaq.exe` einschließlich Hybridprüfung und Zeitstempel
+bestand. Beim nächsten Ziel `kalyna_v12.dll` brach die Signierung mit einer
+Dateisperre ab. Eine rein lesende Windows-Restart-Manager-Abfrage identifizierte
+`Bitdefender Virus Shield` / `VSSERV` als Halter.
+
+**Am 15. September 2026 um 18:54:19 Ortszeit wurde auch dieser neue Build als
+`Gen:Variant.Lazy.491499` quarantänisiert.** Die Quarantänemetadaten nennen
+ausdrücklich den neuen Snapshot-Pfad und den 573440 Byte großen Native-Build.
+Der dort gespeicherte 64-stellige Hashwert lautet
+`FBFA0A157A779EE0E558DD2AC3A32977B232215371B4162ACEC8D74E9CF0A432`;
+er konnte wegen Sperre und anschließender Quarantäne nicht unabhängig aus der
+DLL neu berechnet werden. Die Datei fehlt inzwischen am Buildpfad. Der
+vollständige Build endete mit Exitcode 1, bevor Native-Funktionstests, Publish,
+Installerprüfung und ZIP-Erzeugung erreicht wurden. Es gab keinen weiteren
+Neubau zur Umgehung der Erkennung und keine Änderung der Schutzfunktionen.
+
+| Freigabeschritt | Stand nach dem Lauf vom 15. September |
+| --- | --- |
+| Implementierung und macOS-Referenzabgleich | Im gepushten Quell-Commit enthalten; Umfang und GUI-Grenzen unten |
+| Fehler-/Sicherheitskorrekturen | Implementiert; abgegrenzte Regressionen bestanden |
+| Vollständiger signierter Build | Blockiert durch erneute Quarantäne |
+| Vollsuite, Performance und finale Archiv-/Reparaturläufe | Nicht ausgeführt mit einem vollständigen finalen Native-Satz |
+| GUI | Fünf verwaltete GUI-Gruppen, Scannerprüfungen und 16 Renderings bestanden; finale installierte GUI und Papier/Kamera offen |
+| Commit und Push | Implementierungs-Commit auf GitHub bestätigt |
+| Windows-Veröffentlichung | Nicht erfolgt |
+
 Bitdefender hat am 9. September 2026 um 12:35:59 Ortszeit die frisch kompilierte
 Datei `tools/kalyna_v12.dll` als `Gen:Variant.Lazy.491499` quarantänisiert.
 Der in der Quarantänemetadatei protokollierte SHA-256 lautet
@@ -22,6 +71,18 @@ Crypto++-Quellen mit dem festen Upstream-Tag `CRYPTOPP_8_9_0` ergab nur die
 dokumentierte Apple-Anpassung in `cpu.cpp`; das ist kein Nachweis, dass die
 erkannte Binärdatei sicher ist. Es wurde keine Ausnahme eingerichtet, keine
 Quarantänedatei wiederhergestellt und kein Antimalware-Schutz verändert.
+
+Nach dem erneuten Fund wurde das vollständige offizielle Crypto++-8.9.0-
+Quellarchiv heruntergeladen und sein SHA-256 gegen den bereits dokumentierten
+Wert `ab5174b9b5c6236588e15a1aa1aaecb6658cdbe09501c7981ac8db276a24d9ab`
+geprüft. Alle 684 im Repository enthaltenen Dateien wurden verglichen:
+673 sind bytegleich, zehn unterscheiden sich ausschließlich in Zeilenenden,
+und nur `cpu.cpp` enthält die dokumentierte Apple-spezifische Anpassung.
+Es gibt keine zusätzlichen lokalen Dateien in diesem Vendor-Bestand.
+Dieser umfassendere Herkunftsnachweis umfasst auch beide Windows-MASM-Quellen.
+Er klärt die konkrete Antimalware-Erkennung des erzeugten Binärprogramms nicht.
+Der Benutzer teilte anschließend mit, Bitdefender sei ausgeschaltet;
+dies wurde nicht als bestandene Sicherheitsprüfung gewertet.
 
 Ohne diese Bibliothek können die vollständige Kryptografie-, Archiv- und
 Installationsprüfung sowie der finale Release-Build nicht bestanden werden.
@@ -91,6 +152,16 @@ Ein tatsächlicher Papierausdruck mit anschließendem Kamerascan ist noch offen.
   Windows-Änderungen und die vollständige Menge von 202 Crypto++-Übersetzungseinheiten
   vor dem Build. Leere Pfadsegmente und andere mehrdeutige Einträge werden
   zurückgewiesen.
+- Die anschließende Build-Kettenprüfung ergänzt die bisher nicht einzeln
+  gepinnten MASM-Dateien `x64dll.asm` und `x64masm.asm`; der aktuelle Vendor-
+  Prüfumfang beträgt dadurch 433 Dateien. Die Crypto++-Archivierung verwendet
+  eine explizite Liste aus 178 optimierten und zwei separat kompilierten C++-
+  Objekten sowie zwei MASM-Objekten. Ein pauschales `*.obj` konnte bei erneut
+  verwendetem Arbeitsverzeichnis alte oder fremde Objekte aufnehmen. Die
+  Regression führt nur die echte CMD-Listenerzeugung mit synthetischen Dateien
+  aus und bestätigt den Ausschluss solcher Objekte, das Ersetzen alter Listen
+  und den Abbruch bei beiden möglichen Schreibfehlern. Ein neuer nativer
+  Produktbuild nach dieser Korrektur steht wegen der Erkennung noch aus.
 - Die Argon2-Fehlerbereinigung wartet auf die kumulativ gestarteten Worker.
   Zuvor wurde der kumulative Abschlusszähler mit der nach erfolgreichen Joins
   sinkenden Aktivzahl verglichen. Bei einem späten Create-/Joinfehler konnte
@@ -153,7 +224,7 @@ GUI, Installationsablauf, native Sicherheit oder veröffentlichte Artefakte.
 
 ## Schlüssel und Signierung
 
-Private Release-Schlüssel werden direkt vom vom Benutzer angegebenen Medium
+Private Release-Schlüssel werden direkt von dem vom Benutzer angegebenen Medium
 gelesen. Weder Passwort noch Schlüsselinhalt werden als Prozessargument,
 Umgebungsvariable, Logeintrag oder temporäre Klartextdatei weitergereicht.
 Der RSA-PFX-Schlüssel wird mit `EphemeralKeySet` geladen. Passwort-Bytes,
@@ -241,24 +312,42 @@ Verknüpfung bestätigt den beabsichtigten Zielpfad. Es wurde dabei kein Program
 
 ## Reproduzierbare Release-Kommandos
 
-In einem unveränderlichen Snapshot des geprüften Windows-Commits, mit dem
-SDK `10.0.401` als erstem `dotnet` im PATH:
+Erst nach Klärung der erneuten Erkennung: Der Wrapper erstellt selbst einen
+unabhängigen Snapshot des vorher geprüften und committeten Quellstands.
+In einem frischen PowerShell-Prozess muss SDK `10.0.401` das erste `dotnet`
+im PATH sein. Diese Befehle dokumentieren ausstehende Prüfungen, keine bereits
+bestandenen Läufe:
 
 ```powershell
-dotnet restore KalynaArchiver.Tests/KalynaArchiver.Tests.csproj --locked-mode
-dotnet restore KeepVaultInstaller/KeepVaultInstaller.csproj --locked-mode
-dotnet restore KalynaReleaseVerifier/KalynaReleaseVerifier.csproj --locked-mode
-dotnet restore QrCodeScannerWindows/QrScanner.Tests.csproj --locked-mode
-cmd /c tools/Build-Native.cmd
-dotnet build KalynaArchiver.Tests/KalynaArchiver.Tests.csproj -c Release --no-restore
-dotnet run --project KalynaArchiver.Tests -c Release --no-build -- --smoke
-dotnet run --project KalynaArchiver.Tests -c Release --no-build -- --full
-dotnet run --project KalynaArchiver.Tests -c Release --no-build -- --performance
 pwsh -NoProfile -File tools/Build-Portable.ps1 -ReleaseKeyDirectory 'A:\Keep Vault ReleaseKeys v12'
-& 'dist/Keep Vault Release Verifier-win-x64.exe' 'dist/Keep Vault-portable-win-x64'
-& 'dist/Keep Vault Release Verifier-win-x64.exe' 'dist/Keep Vault-portable-win-x64.zip'
-pwsh -NoProfile -File tools/Test-ReleaseTamperResistance.ps1
+# Nur nach Exitcode 0: den vom Wrapper ausgegebenen Snapshot-Pfad verwenden.
+$snapshotRoot = '<verifizierter Snapshot-Pfad>\src'
+$tests = Join-Path $snapshotRoot 'work\native-gate-tests\KalynaArchiver.Tests.dll'
+$dist = Join-Path $snapshotRoot 'dist'
+$verifier = Join-Path $dist 'Keep Vault Release Verifier-win-x64.exe'
+$package = Join-Path $dist 'Keep Vault-portable-win-x64'
+$zip = "$package.zip"
+$env:KEEPVAULT_TEST_REPOSITORY_ROOT = $snapshotRoot
+dotnet $tests --full
+dotnet $tests --performance --only performance.cipher-suites
+dotnet $tests --performance --only release.paranoia-256mib-level5
+& $verifier $package
+& $verifier $zip
+& (Join-Path $package 'Keep Vault Setup.exe') --verify $package
+pwsh -NoProfile -File (Join-Path $snapshotRoot 'tools\Test-ReleaseTamperResistance.ps1') `
+    -ReleaseDirectory $package -ReleaseZip $zip -Verifier $verifier
+# Danach tatsächliche Installation, DE/EN-GUI und Shortcut-Starts prüfen.
+# Den komplexen Archiv-/Reparaturlauf als letzten Funktionstest ausführen:
+dotnet $tests --performance --only release.paranoia-complex-tree-level5-repair
 ```
+
+Nach jedem Testlauf sind Exitcode und `.test-results.json` separat zu sichern;
+der nächste Lauf überschreibt diese Ergebnisdatei. Die volle Standardsuite
+schließt die drei Performance-Gruppen aus. Testausgaben und distributierbare
+Dateien liegen unter dem gemeldeten Snapshot, nicht im `dist` des ursprünglichen
+Arbeitsverzeichnisses. Für die Companion-Prüfung muss der final signierte
+QR-Scanner auch am vom Test verwendeten Companion-Pfad bereitstehen; ein
+unvollständiger Testaufbau ist kein Produktnachweis.
 
 Für das getrennte Signieren neugebauter Native-Tools liefert der überprüfbare
 Helper nur Dateipfade und öffentliche Pins:
