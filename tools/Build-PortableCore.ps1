@@ -63,6 +63,7 @@ $signScript = Join-Path $root "tools\Sign-Binaries.ps1"
 $manifestScript = Join-Path $root "tools\Generate-Sha3Manifest.ps1"
 $skeinManifestScript = Join-Path $root "tools\Generate-SkeinManifest.ps1"
 $hybridSignatureScript = Join-Path $root "tools\New-HybridSignature.ps1"
+. (Join-Path $PSScriptRoot 'Invoke-ReleaseExecutable.ps1')
 
 # Select one complete key-file variant and the committed Windows public identity
 # once. Every native, application and manifest signature uses this same set.
@@ -554,10 +555,8 @@ if (-not $SkipSigning) {
     if ($MldsaReferencePath) { $inventorySigning.MldsaReferencePath = $MldsaReferencePath }
     & $hybridSignatureScript @inventorySigning
 
-    & $packagedVerifier $publishDir
-    if ($LASTEXITCODE -ne 0) { throw 'The complete signed package failed its release verifier.' }
-    & (Join-Path $publishDir 'Keep Vault Setup.exe') --verify $publishDir
-    if ($LASTEXITCODE -ne 0) { throw 'The complete signed package failed its installer verifier.' }
+    Invoke-ReleaseExecutable -Executable $packagedVerifier -Arguments @($publishDir)
+    Invoke-ReleaseExecutable -Executable (Join-Path $publishDir 'Keep Vault Setup.exe') -Arguments @('--verify', $publishDir)
 }
 
 Compress-Archive -LiteralPath $publishDir -DestinationPath $zipPath -CompressionLevel Optimal
@@ -594,17 +593,14 @@ if (-not $SkipSigning) {
     if ($LASTEXITCODE -ne 0) {
         throw "Hybrid signing failed for portable ZIP and manifests."
     }
-    & $packagedVerifier $zipPath
-    if ($LASTEXITCODE -ne 0) { throw 'The final ZIP or its signed hash manifests failed verification.' }
+    Invoke-ReleaseExecutable -Executable $packagedVerifier -Arguments @($zipPath)
     $extractionRoot = Join-Path $root ('work\release-zip-verification-' + [Guid]::NewGuid().ToString('N'))
     Assert-InRoot $extractionRoot
     [IO.Directory]::CreateDirectory($extractionRoot) | Out-Null
     Expand-Archive -LiteralPath $zipPath -DestinationPath $extractionRoot
     $extractedPackage = Join-Path $extractionRoot $OutputName
-    & $packagedVerifier $extractedPackage
-    if ($LASTEXITCODE -ne 0) { throw 'The freshly extracted ZIP failed complete inventory verification.' }
-    & (Join-Path $publishDir 'Keep Vault Setup.exe') --verify $extractedPackage
-    if ($LASTEXITCODE -ne 0) { throw 'The freshly extracted ZIP failed installer/version/timestamp verification.' }
+    Invoke-ReleaseExecutable -Executable $packagedVerifier -Arguments @($extractedPackage)
+    Invoke-ReleaseExecutable -Executable (Join-Path $publishDir 'Keep Vault Setup.exe') -Arguments @('--verify', $extractedPackage)
     $SnapshotLease.Verify()
 
     Copy-Item -LiteralPath $packagedVerifier -Destination $externalVerifierPath

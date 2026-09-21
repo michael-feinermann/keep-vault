@@ -12,5 +12,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\KalynaArchiver\KalynaArchiver.csproj" />
+    <ProjectReference Include="..\KalynaArchiver.Signing\KalynaArchiver.Signing.csproj" />
   </ItemGroup>
 </Project>

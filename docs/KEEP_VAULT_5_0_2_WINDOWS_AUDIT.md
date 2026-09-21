@@ -53,6 +53,31 @@ Der ältere, unabhängige GitHub-Defender-Scan ist unten getrennt dokumentiert.
 Die folgenden Angaben zum 15. September beschreiben den damaligen Abbruch;
 sie sind keine Beschreibung eines bereits abgeschlossenen neuen Release-Laufs.
 
+Der signierte Durchlauf auf `558939a` erzeugte am 21. September zwar ein
+vollständiges Paket und meldete Exit 0, wurde aber durch die anschließende
+Black-Box-Abnahme als **nicht freigabefähig** erkannt: Die eigenständig
+veröffentlichte Setup-EXE konnte `BouncyCastle.Cryptography` nicht laden.
+Der fehlende direkte Projektverweis auf die tatsächlich verwendete
+Signierbibliothek wurde im Installer ergänzt; ein isolierter self-contained
+Publish akzeptierte danach das unveränderte signierte Paket und lehnte eine
+manipulierte Kopie ab. Die Paket-/Versions-/Zeitstempelprüfung selbst bestand
+auf allen 13 Paket-PEs und wurde nicht gelockert.
+
+Zusätzlich wartete PowerShell bei den bisherigen WinExe-Aufrufen nicht
+zuverlässig auf deren Abschluss und konnte einen älteren `$LASTEXITCODE`
+weiterverwenden. Die Release-Gates starten Prozesse nun ausdrücklich mit
+`ProcessStartInfo`, lesen beide Ausgabekanäle, warten begrenzt und prüfen den
+Exitcode genau dieses Prozesses. Acht echte synthetische WinExe-Regressionen
+bestanden, darunter verzögerte Erfolge/Fehler, Argumente, gefüllte Pipes und
+Timeout mit nachgewiesenem Prozessende. Für `558939a` bestanden separat alle
+62 Windows-Funktionsgruppen und die aktuelle NuGet-Abfrage aller acht
+Windows-Projekte meldete keine bekannten direkten/transitiven Schwachstellen.
+Der Performance-Lauf scheiterte an der Pipeline-Skalierungsgrenze; wegen
+paralleler Diagnosearbeiten ist ein kontrollierter Lauf auf ruhigem Host nötig.
+Die korrigierte signierte Ausgabe muss anschließend erneut vollständig
+abgenommen werden. Der interaktive GUI-Test wartet auf eine aktive entsperrte
+Windows-Sitzung; die Sitzung Michael war bei der Prüfung getrennt.
+
 Der geprüfte Implementierungsstand wurde am 15. September als
 [`e27699ff1495c836088f1b1bd22eef19018b748d`](https://github.com/michael-feinermann/keep-vault/commit/e27699ff1495c836088f1b1bd22eef19018b748d)
 committet und auf `codex/windows-v12-5.0.2` gepusht. Die Remote-Commit-ID wurde
