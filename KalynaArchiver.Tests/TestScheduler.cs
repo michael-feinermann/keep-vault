@@ -892,6 +892,10 @@ internal static class TestCoordinator
             Console.WriteLine();
             Console.WriteLine($"FAIL {outcome.Name}");
             Console.WriteLine($"  seed=0x{outcome.Seed:X8}");
+            if (!string.IsNullOrEmpty(outcome.Output))
+            {
+                Console.WriteLine(outcome.Output);
+            }
             Console.WriteLine($"  {outcome.Failure}");
             Console.WriteLine();
             Console.WriteLine("Re-run:");

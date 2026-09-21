@@ -23,9 +23,8 @@ internal static class CipherSuitePerformanceTests
     private const double AllowedBaselineRegression = 0.25;
 
     // How close the shipped slot count has to come to the best measured one.
-    // The divisor in KalynaContainerService is a single integer for every
-    // machine, so it cannot be optimal everywhere; this is the margin within
-    // which one number is still the right compromise.
+    // The platform's production policy cannot be optimal on every machine;
+    // this gate requires it to remain within this margin of the measured best.
     private const double PipelineSlotTolerance = 0.90;
     private const int PipelineScalingBytes = 512 * 1024 * 1024;
     private const uint PipelineScalingArgonMemoryKiB = 8 * 1024;
@@ -325,7 +324,7 @@ internal static class CipherSuitePerformanceTests
 
     /// <summary>
     /// Measures the container pipeline at every plausible slot count, so the
-    /// production divisor is a measured choice and not a guess.
+    /// production policy is a measured choice and not a guess.
     /// </summary>
     /// <remarks>
     /// Argon2id runs at the KAT memory cost here. It is a constant per

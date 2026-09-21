@@ -61,6 +61,7 @@ internal static class KeySheetV502Tests
                             visual.UpdateLayout();
                             var bitmap = new RenderTargetBitmap(1191, 1684, 144, 144, PixelFormats.Pbgra32);
                             bitmap.Render(visual);
+                            RenderEvidenceGuard.RequireUsable(bitmap, $"{language}-{factor}-print-{page + 1}");
                             var encoder = new PngBitmapEncoder();
                             encoder.Frames.Add(BitmapFrame.Create(bitmap));
                             using var file = new FileStream(Path.Combine(root, $"{language}-{factor}-print-{page + 1}.png"), FileMode.CreateNew);

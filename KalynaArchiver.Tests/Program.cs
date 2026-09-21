@@ -105,6 +105,8 @@ var smokeTests = new List<TestCase>
 
 var comprehensiveTests = new List<TestCase>
 {
+    new("pipeline.windows-worker-policy", "Windows pipeline CPU/memory bounds, cancellation and permit recovery",
+        PipelineWorkerPolicyTests.RunAsync, TestResource.ProcessGlobal, "Hardening"),
     new("gui.installer-reference", "installer reference flow, localized status and bounded selectable details",
         () => Sta(InstallerGuiReferenceTests.Run), TestResource.Gui, "Gui"),
     new("gui.key-sheet-v502", "separate v5.0.2 key sheets and physical layout", () => Sta(KeySheetV502Tests.Run), TestResource.Gui, "Gui"),

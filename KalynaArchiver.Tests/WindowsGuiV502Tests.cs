@@ -11,6 +11,7 @@ internal static class WindowsGuiV502Tests
 {
     internal static void RenderReferenceViews()
     {
+        RenderEvidenceGuard.RunSyntheticTests();
         string repository = AppContext.BaseDirectory;
         while (!Directory.Exists(Path.Combine(repository, "KeepVaultMac")))
             repository = Directory.GetParent(repository)?.FullName
@@ -37,6 +38,7 @@ internal static class WindowsGuiV502Tests
                 surface.UpdateLayout();
                 var image = new RenderTargetBitmap(1220, 860, 96, 96, PixelFormats.Pbgra32);
                 image.Render(surface);
+                RenderEvidenceGuard.RequireUsable(image, $"{language}-tab-{tab + 1}");
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(image));
                 using FileStream file = File.Create(Path.Combine(output, $"{language}-tab-{tab + 1}.png"));
@@ -55,6 +57,7 @@ internal static class WindowsGuiV502Tests
             surface.UpdateLayout();
             var helpImage = new RenderTargetBitmap(1220, 860, 96, 96, PixelFormats.Pbgra32);
             helpImage.Render(surface);
+            RenderEvidenceGuard.RequireUsable(helpImage, $"{language}-create-help");
             var helpEncoder = new PngBitmapEncoder();
             helpEncoder.Frames.Add(BitmapFrame.Create(helpImage));
             using (FileStream file = File.Create(Path.Combine(output, $"{language}-create-help.png"))) helpEncoder.Save(file);

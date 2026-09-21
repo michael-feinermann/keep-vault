@@ -25,9 +25,67 @@ verschoben. Die sechs vorhandenen macOS-Dateien bleiben unverändert.
 
 ## Aktueller Freigabestatus
 
-**Noch kein freigegebener Windows-Release.** Die Implementierung und die unten
-abgegrenzten Teilprüfungen sind weiter fortgeschritten; ein vollständiger finaler
-Build, die Ende-zu-Ende-Freigabe und die Veröffentlichung sind noch offen.
+**Noch kein freigegebener oder veröffentlichter Windows-Release.** Der vollständig
+signierte Kandidat `c3658b8361e5be0ed40f5c5314f1b59b846768d3` besteht Build,
+Funktionssuite und EXE-Abnahme. Sein ruhiger Performance-Lauf scheitert jedoch;
+außerdem fehlt die gültige visuelle und installierte GUI-Abnahme in einer aktiven,
+entsperrten Windows-Sitzung. Die dafür begonnenen Korrekturen sind noch nicht
+durch einen neuen vollständigen Release-Lauf belegt. Ein bestandener Teil des
+Kandidaten ist keine Freigabe der inzwischen weiterbearbeiteten Quellen.
+
+Der geprüfte Snapshot liegt unter
+`C:\Dev\Kalyna\work\release-builds\c3658b8361e5-d1b64390020a4edb\src`.
+Paket und ZIP liegen dort unter `dist\Keep Vault-portable-win-x64` beziehungsweise
+`dist\Keep Vault-portable-win-x64.zip`. Die nachstehenden Pfade zu Protokollen
+sind relativ zum kanonischen Repository `C:\Dev\Kalyna`.
+
+| Freigabeschritt | Belegter Stand am 21. September für `c3658b8` |
+| --- | --- |
+| Vollständiger signierter Build | PASS, 19:44:54–19:48:23 Ortszeit, SDK `10.0.401`; frischer Native-Satz, selbständige Programme, tatsächliche Setup-Prüfung vor und nach frischer ZIP-Extraktion |
+| Unveränderliche Quellen | 1378 Quell-Inputs; Vorher-/Nachher-Hashes bei Build und unabhängiger Abnahme unverändert |
+| Funktionstests | 62/62 Gruppen bestanden, einschließlich nativer KATs, Container-, Reparatur- und Kompatibilitätsprüfungen; die visuelle Aussage ist unten ausdrücklich eingeschränkt |
+| QR-Scanner | 151 Prüfungen im tatsächlichen Release-Build bestanden |
+| Fertige EXEs und Manipulationsabwehr | 36/36 Fälle, 70/70 tatsächlich gestartete und abgewartete Verifier-/Setup-Aufrufe bestanden |
+| Signaturen und Paketbestand | 13 Paket-PEs plus identischer externer Verifier geprüft; 12 externe Assets, 80 inventarisierte Dateien plus Inventar/Signatur und 82 ZIP-Dateien stimmen überein |
+| Performance | FAIL auch auf ruhigem Host: Produktionspipeline mit acht Slots erreicht 269,3 MiB/s gegenüber 387,0 MiB/s mit einem Slot (69,6 %) |
+| Aktuelle GUI-Renderings | BLOCKIERT: acht PNGs des Kandidaten sind vollständig transparent; der damalige grüne Teststatus ist kein visueller Nachweis |
+| Installierte GUI, Verknüpfungsstarts, Papier/Kamera | Noch offen; die Windows-Sitzung war getrennt, die EXE-Abnahme installiert keine Benutzerverknüpfungen |
+| Veröffentlichung und Download-Abgleich | Nicht erfolgt; vorhandener macOS-Tag und sechs macOS-Assets bleiben unverändert |
+
+Die EXE-Abnahme prüfte das Originalpaket, eine vollständige Kopie, das signierte
+ZIP, eine frische ZIP-Extraktion und eine echte `--test-copy`-Installation in ein
+neues Testverzeichnis. Manipulierte oder fehlende Dateien/Signaturen, zusätzliche
+Dateien/Verzeichnisse, Junctions, Aliaswege und Hardlinks wurden abgewiesen.
+Vorhandene Installationsziele, Originalpaket, alle sechs ZIP-Dateien,
+Kontrollprogramme, Benutzerverknüpfungen und Quell-Snapshot blieben unverändert.
+Manipulierte EXEs wurden niemals ausgeführt. Das prüft die Kopier- und
+Verifikationspfade, noch nicht den interaktiven Setup-/Shortcut-Ablauf.
+
+Der ruhige Performance-Lauf vom 21. September 19:52:32–19:57:35 bestätigt die
+Skalierungsabweichung aus dem früheren Lauf mit parallelen Diagnosearbeiten.
+Eine Windows-spezifische Korrektur der Slotberechnung ist in Bearbeitung;
+Abbruch-, Speichergrenzen- und erneute Leistungstests stehen noch aus.
+Die anschließende 256-MiB-Gruppe wurde in diesem abgebrochenen Lauf nicht
+erreicht; der separate finale Reparaturlauf steht ebenfalls aus.
+Die neue Render-Schutzprüfung besteht zehn synthetische
+Fälle, lehnt alle acht leeren Kandidatenbilder ab und akzeptiert die früheren
+nichtleeren Bilder. Ein frischer tatsächlicher Render-Versuch bleibt blockiert.
+Die früheren Bilder ersetzen keine visuelle Abnahme dieses Kandidaten.
+
+Nachweise:
+
+- `work/production-release-20260921-194454/result.json` und `build.log`.
+- `work/final-suite-full-20260921-194827/result.json`, `group-1.json` und `group-1.log`.
+- `work/release-executable-acceptance-20260921T174859Z-05b372d0b9244885abb776d0a451c042/summary.json`, `results.json`, `provenance.json`, `preservation.json` und die 70 Prozessprotokolle.
+- `work/final-release-policy-20260921T174910Z-882efca9390842d6b5b24815a6fb9033/result.json` und `work/release-bundle-metadata-c3658b8`.
+- `work/final-suite-performance-20260921-195232/group-1.json` und `result.json`.
+- `work/render-guard-verification-20260921/result.json`.
+
+Der ZIP-SHA-512 dieses noch nicht freigegebenen Kandidaten lautet
+`E01A4852DF3065B038847EAB7B54CEA173566CE6D7632CF0CA0C555D8FC570AF80F1DC3CF8129D001883F32F14DE7D73BF16AC7D5A59539882440A173D331FA2`.
+Ein späterer Neubau erhält eigene Hashes und eigene Freigabenachweise.
+
+### Vorläufe am 21. September
 
 Am 21. September bestanden auf dem festgehaltenen Quellstand `bb37a80` alle
 sechs verwalteten Build-/Publish-Schritte sowie 16 verwaltete Testgruppen.
@@ -50,9 +108,6 @@ dadurch nicht behauptet. Keine quarantänisierten Bytes wurden wiederhergestellt
 oder wiederverwendet. Dieser Einzelversuch führte keine nativen Produkte aus.
 Der ältere, unabhängige GitHub-Defender-Scan ist unten getrennt dokumentiert.
 
-Die folgenden Angaben zum 15. September beschreiben den damaligen Abbruch;
-sie sind keine Beschreibung eines bereits abgeschlossenen neuen Release-Laufs.
-
 Der signierte Durchlauf auf `558939a` erzeugte am 21. September zwar ein
 vollständiges Paket und meldete Exit 0, wurde aber durch die anschließende
 Black-Box-Abnahme als **nicht freigabefähig** erkannt: Die eigenständig
@@ -74,9 +129,15 @@ Timeout mit nachgewiesenem Prozessende. Für `558939a` bestanden separat alle
 Windows-Projekte meldete keine bekannten direkten/transitiven Schwachstellen.
 Der Performance-Lauf scheiterte an der Pipeline-Skalierungsgrenze; wegen
 paralleler Diagnosearbeiten ist ein kontrollierter Lauf auf ruhigem Host nötig.
-Die korrigierte signierte Ausgabe muss anschließend erneut vollständig
-abgenommen werden. Der interaktive GUI-Test wartet auf eine aktive entsperrte
-Windows-Sitzung; die Sitzung Michael war bei der Prüfung getrennt.
+Die korrigierte signierte Ausgabe `c3658b8` bestand anschließend die oben
+aufgeführte erneute Funktions- und EXE-Abnahme. Der erneute ruhige
+Performance-Lauf blieb rot. Die interaktive und visuelle GUI-Abnahme bleibt
+ebenfalls offen.
+
+### Historischer Abbruch am 15. September
+
+Die folgenden Angaben dokumentieren den damaligen Abbruch; sie gelten nicht
+als aktueller Fehlbestand des am 21. September vollständig gebauten Kandidaten.
 
 Der geprüfte Implementierungsstand wurde am 15. September als
 [`e27699ff1495c836088f1b1bd22eef19018b748d`](https://github.com/michael-feinermann/keep-vault/commit/e27699ff1495c836088f1b1bd22eef19018b748d)
@@ -116,6 +177,8 @@ Neubau zur Umgehung der Erkennung und keine Änderung der Schutzfunktionen.
 | Commit und Push | Implementierungs-Commit auf GitHub bestätigt |
 | Windows-Veröffentlichung | Nicht erfolgt |
 
+### Neue Windows-Identität am 21. September
+
 Bei der Wiederaufnahme am 21. September war der externe Schlüsselordner
 `A:\Keep Vault ReleaseKeys v12` nicht erreichbar. Auch der genaue Ordnername
 an den Wurzeln der angeschlossenen Laufwerke wurde nicht gefunden; es fand
@@ -133,6 +196,11 @@ Policy-/Parameter-/MSBuild-Prüfungen bestanden. Ein realer Testfehler durch
 AppData-Virtualisierung wurde behoben: umgeleitete Ordner werden jetzt vor
 der Erzeugung von Geheimnissen abgelehnt. Ein portabler Produktionsexport
 wurde nicht erstellt; der spätere Exportweg wurde nur mit Testschlüsseln geprüft.
+Die öffentlichen Bestandteile sind in `WindowsRelease/Signing` committet;
+der Produktionsnachweis liegt in `work/windows-release-key-receipt-20260921.json`.
+Private Dateien sind weder Bestandteil des Repositories noch der Release-Assets.
+
+### Historische Antimalware-Befunde
 
 Bitdefender hat am 9. September 2026 um 12:35:59 Ortszeit die frisch kompilierte
 Datei `tools/kalyna_v12.dll` als `Gen:Variant.Lazy.491499` quarantänisiert.
@@ -156,11 +224,12 @@ Er klärt die konkrete Antimalware-Erkennung des erzeugten Binärprogramms nicht
 Der Benutzer teilte anschließend mit, Bitdefender sei ausgeschaltet;
 dies wurde nicht als bestandene Sicherheitsprüfung gewertet.
 
-Ohne diese Bibliothek können die vollständige Kryptografie-, Archiv- und
-Installationsprüfung sowie der finale Release-Build nicht bestanden werden.
-Die bereits signierten neun übrigen Native-Tools sind Arbeitskandidaten;
-sie ersetzen keinen neu gebauten vollständigen Satz aus einem unveränderlichen
-finalen Quell-Commit.
+Ohne diese Bibliothek waren die vollständige Kryptografie-, Archiv- und
+Installationsprüfung sowie der finale Release-Build damals blockiert. Die neun
+übrigen signierten Arbeitskandidaten ersetzten keinen vollständigen frischen
+Satz. Der reguläre Neubau vom 21. September und der oben dokumentierte signierte
+Kandidat enthalten wieder alle erforderlichen Komponenten. Das erklärt die
+historische Erkennung anderer Bytes weiterhin nicht.
 
 ### Unabhängiger geschützter Build auf GitHub
 
@@ -226,6 +295,14 @@ Ende-zu-Ende-Prüfungen werden dadurch nicht ersetzt.
 
 ## GUI und macOS-Referenz
 
+Die folgenden früheren Layout-, Komponenten- und Bildprüfungen belegen ihre
+jeweiligen Quellstände. Für `c3658b8` meldete die Funktionssuite zwar auch die
+GUI-Gruppen grün, ihre acht aktuellen Hauptfenster-PNGs sind aber leer.
+`RenderEvidenceGuard` weist solche Ausgaben nun ausdrücklich zurück. Die
+Kompilierung und zehn synthetische Schutzfälle bestehen; die neue Schutzprüfung
+und die interaktive GUI müssen auf einem aktiven Desktop erneut laufen.
+Es gibt damit derzeit keine abschließende visuelle GUI-Freigabe.
+
 Der geschützte WPF-Build fand einen weiteren Buildfehler: Das SDK legt sein
 temporäres Markup-Projekt im gesperrten Quellordner an. `Directory.Build.targets`
 behält die originale SDK-Task und deren NuGet-/RID-Verarbeitung bei, verwendet
@@ -251,7 +328,9 @@ nur ein ausdrückliches `Yes` erreicht Dateiauswahl oder Druckerauswahl und
 Ausgabe. Close/Cancel und andere Rückgaben erzeugen keine Ausgabe oder
 Erfolgsmarkierung. Die vorhandene Archivpfadnormalisierung kann davor erfolgen.
 Die passenden Regressionen sind in `gui.v502-reference-parity` enthalten;
-ihre tatsächliche Ausführung aus dem abschließenden Commit wird separat belegt.
+ihre tatsächliche Ausführung bestand im geschützten `bb37a80`-Testlauf sowie in
+der Funktionssuite des Kandidaten `c3658b8`. Das belegt die Handlersemantik;
+für die Darstellung gilt die oben genannte Einschränkung.
 
 Die Windows-Oberfläche übernimmt die Referenzstruktur aus `KeepVaultMac`:
 1220 × 860 Ausgangsgröße, 980 × 720 Mindestgröße, Hintergrund `#08101D`,
@@ -262,7 +341,7 @@ Fensterrahmen, Datei-/Druckdialoge und die technische Monospace-Schrift sind
 plattformabhängig; eine pixelgenaue Gleichheit sämtlicher Betriebssystemelemente
 wird nicht behauptet.
 
-Fünf GUI-Testgruppen bestehen mit der aktuellen verwalteten Implementierung
+Fünf GUI-Testgruppen bestanden im früheren verwalteten Referenzlauf
 unter Runtime `10.0.12`, einschließlich der Installer-Oberfläche.
 Darunter werden acht Ansichten aus den tatsächlichen WPF-Produktionskontrollen
 gerendert. Dafür wird kein Screenshot-Schutz abgeschaltet. Diese renderbaren
@@ -277,7 +356,7 @@ Vorschaubereich, einen 120 Pixel hohen Ergebnisbereich mit internem Scrollen
 und die Aktionen und Sprachsegmente am unteren Rand. Seine 151 Prüfungen
 bestehen mit null Buildwarnungen/-fehlern. Weitere acht DE/EN-Renderings zeigen
 kurze/lange Installer-Meldungen und den Scanner bei Standard-/Mindestgröße.
-Alle 16 aktuellen Haupt-/Installer-/Scanner-Ansichten wurden zusätzlich
+Alle 16 damaligen Haupt-/Installer-/Scanner-Ansichten wurden zusätzlich
 unabhängig gesichtet; in diesen Ansichten wurde kein verbleibender konkreter
 Darstellungsfehler gefunden. Das ist keine Prüfung aller Hover-, DPI- oder
 physischer Kamerazustände.
@@ -358,14 +437,14 @@ Ein tatsächlicher Papierausdruck mit anschließendem Kamerascan ist noch offen.
   aus und bestätigt den Ausschluss solcher Objekte, das Ersetzen alter Listen
   und den Abbruch bei beiden möglichen Schreibfehlern. Der oben belegte
   unsignierte GitHub-Build nach dieser Korrektur besteht; die vollständige
-  lokale Signierung und native Funktionsprüfung bleiben offen.
+  lokale Signierung und native Funktionsprüfung bestanden später im Kandidaten
+  `c3658b8`.
 - Die Windows-Suite ruft den vorhandenen nativen
   `keepvault_v12_kalyna_join_failure_kat` nun ausdrücklich als eigene Gruppe
   `crypto.kalyna-join-failure-kat` auf. Der Test verwendet den regulären
   signaturprüfenden Bibliothekslader und gibt sein zusätzliches Lade-Handle
-  auch bei Fehlern frei. Die native Laufzeitprüfung dieser neuen Gruppe ist
-  noch offen; eine Registrierung oder erfolgreiche Kompilierung zählt nicht
-  als bestandener KAT.
+  auch bei Fehlern frei. Die native Laufzeitprüfung dieser Gruppe bestand in
+  der vollständigen Funktionssuite des Kandidaten `c3658b8`.
 - Die Argon2-Fehlerbereinigung wartet auf die kumulativ gestarteten Worker.
   Zuvor wurde der kumulative Abschlusszähler mit der nach erfolgreichen Joins
   sinkenden Aktivzahl verglichen. Bei einem späten Create-/Joinfehler konnte
@@ -374,11 +453,12 @@ Ein tatsächlicher Papierausdruck mit anschließendem Kamerascan ist noch offen.
   nach dem Fix das Ende aller Worker vor der Freigabe. Er fängt den gefährlichen
   Vorher-Fall ab, statt selbst einen Use-after-free auszuführen.
 
-Die protokollierten Teilprüfungen umfassen 10/10 Passwortmodell-/PIN-Gruppen,
+Die früher protokollierten Teilprüfungen umfassen 10/10 Passwortmodell-/PIN-Gruppen,
 2/2 Kompatibilitäts-Provenienz-/Ablehnungsgruppen, 3/3 Dateisicherheitsgruppen,
 5/5 GUI-Gruppen und 151 QR-Scanner-Prüfungen. Die sechs tatsächlichen
 Kompatibilitäts-Entschlüsselungs-/Reparaturgruppen und die komplette Suite
-sind damit ausdrücklich nicht als bestanden ausgewiesen.
+sind durch diese Teilprüfungen allein nicht belegt; sie bestanden anschließend
+in der vollständigen 62-Gruppen-Suite des Kandidaten `c3658b8`.
 
 Die sieben ZPAQ-Gruppen bestehen auch mit dem am 15. September nach den
 Analysekorrekturen neu gebauten und signierten Arbeitskandidaten. Beim ersten isolierten Lauf fehlte der Test-Apphost; nach dessen
@@ -428,8 +508,17 @@ GUI, Installationsablauf, native Sicherheit oder veröffentlichte Artefakte.
 
 ## Schlüssel und Signierung
 
-Private Release-Schlüssel werden direkt von dem vom Benutzer angegebenen Medium
-gelesen. Weder Passwort noch Schlüsselinhalt werden als Prozessargument,
+Private Release-Schlüssel werden direkt aus dem ausdrücklich ausgewählten
+privaten Schlüsselordner gelesen. Für den neuen Windows-Kandidaten ist dies
+`C:\Users\Michael\Keep Vault ReleaseKeys v12\Windows-20260921` mit der
+getrennten öffentlichen Identität unter `WindowsRelease/Signing`.
+Der spätere portable Transfer erfolgt ausdrücklich über
+`tools/Export-WindowsReleaseKeys.ps1` im ursprünglichen Windows-Benutzerkonto
+in ein neues privates NTFS-Ziel; bloßes Kopieren der DPAPI-Dateien ist kein
+portables Backup. Das vollständige Exportverzeichnis ermöglicht Signierungen
+und bleibt privat. Ein Produktionsexport wurde noch nicht erstellt; siehe
+[Windows-Schlüsselablage und Transfer](WINDOWS_RELEASE_KEYS.md).
+Weder Passwort noch Schlüsselinhalt werden als Prozessargument,
 Umgebungsvariable, Logeintrag oder temporäre Klartextdatei weitergereicht.
 Der RSA-PFX-Schlüssel wird mit `EphemeralKeySet` geladen. Passwort-Bytes,
 Passwort-Zeichen und temporäre Schlüsselarrays werden nach Gebrauch gelöscht.
@@ -439,7 +528,9 @@ Typ und kanonische Länge sind authentifiziert. Die alte universelle
 getrennte Wrapping-Key-Dateien. Reparse-Pfade, mehrfache Hardlinks und
 abweichend aufgelöste Dateien sind für Release-Geheimnisse gesperrt.
 
-Das vorhandene öffentliche RSA-Zertifikat wurde sicher geladen und geprüft:
+Das frühere öffentliche macOS-RSA-Zertifikat wurde sicher geladen und geprüft;
+es bleibt historische Referenz und ist nicht die Identität des neuen
+Windows-Kandidaten:
 
 - Subject und Issuer: `OU=Keep Vault, O=Michael Feinermann, CN=Keep Vault macOS Hybrid Release`.
 - RSA 4096 Bit; Zertifikatssignatur SHA-512/RSA; EKU Code Signing.
@@ -447,7 +538,17 @@ Das vorhandene öffentliche RSA-Zertifikat wurde sicher geladen und geprüft:
 - SHA-256 des öffentlichen SPKI:
   `BCA8E666BDC632C4A1C4BE0041B8677B820FF6F21C77BA9129E5809598295DE9`.
 
-Das Zertifikat ist selbstsigniert. Die Windows-Zertifikatskette ist damit
+Die neue Windows-Identität hat Subject und Issuer
+`CN=Keep Vault Windows Release 2026-09-21`, den Thumbprint
+`7BA65B5130F34AB9F15C0D074699D46D9BCCD21C` und den öffentlichen RSA-SPKI-SHA-256
+`D0C5454E2C122FFD03D6F265876468E3935537FF6BB312EEEE48D883A889CFBB`.
+Ihr Zertifikat gilt von 21. September 2026 17:21:39 UTC bis
+21. September 2036 17:26:39 UTC. Der ML-DSA-Public-Key-SHA-256 lautet
+`B3CF5B4465033351222AC5D6E1CC20F66432BB18AEC623EF76BB2C7823812219`.
+Diese öffentlichen Werte wurden unabhängig gegen die kompilierten Programme
+des Kandidaten geprüft.
+
+Auch dieses Zertifikat ist selbstsigniert. Die Windows-Zertifikatskette ist damit
 nicht allgemein vertrauenswürdig; weder ein Root-Zertifikat noch ein
 globales Vertrauen wird installiert. Die Programme prüfen die fest
 eingebauten RSA-/ML-DSA-Pins und ihre Authenticode-/Hybrid-Signaturen.
@@ -502,8 +603,9 @@ keinen privilegierten Installerprozess und keine System-Truststore-Änderung.
 Ein fehlgeschlagener Vorgang lässt alte Installationen unverändert. Eine
 angefangene neue, nicht verknüpfte Kopie kann als überprüfbares Restverzeichnis
 zurückbleiben; es wird keine unsichere rekursive Bereinigung fremder Pfade
-versucht. Tatsächliche Installer-Positiv-/Negativfälle und die reale DE/EN-GUI
-sind vor Veröffentlichung zusätzlich zu protokollieren.
+versucht. Die oben protokollierten 36 EXE-Fälle mit 70 Prozessaufrufen bestätigen
+die tatsächlichen Verifikations- und Kopierpfade. Die reale DE/EN-GUI,
+Benutzerverknüpfungen und deren Programmstarts sind noch zu prüfen.
 
 Die synthetische Inventarregression ist bestanden: Originalprüfung und Kopie
 mit identischem Inventardigest, Ablehnung einer zweiten Kopie in ein vorhandenes
@@ -516,14 +618,14 @@ Verknüpfung bestätigt den beabsichtigten Zielpfad. Es wurde dabei kein Program
 
 ## Reproduzierbare Release-Kommandos
 
-Erst nach Klärung der erneuten Erkennung: Der Wrapper erstellt selbst einen
+Der Wrapper erstellt selbst einen
 unabhängigen Snapshot des vorher geprüften und committeten Quellstands.
 In einem frischen PowerShell-Prozess muss SDK `10.0.401` das erste `dotnet`
-im PATH sein. Diese Befehle dokumentieren ausstehende Prüfungen, keine bereits
-bestandenen Läufe:
+im PATH sein. Diese Befehle sind die Vorlage für einen neuen Kandidaten;
+bestandene und offene Läufe sind oben jeweils mit ihrem Quellstand dokumentiert:
 
 ```powershell
-pwsh -NoProfile -File tools/Build-Portable.ps1 -ReleaseKeyDirectory 'A:\Keep Vault ReleaseKeys v12'
+pwsh -NoProfile -File tools/Build-Portable.ps1 -ReleaseKeyDirectory 'C:\Users\Michael\Keep Vault ReleaseKeys v12\Windows-20260921'
 # Nur nach Exitcode 0: den vom Wrapper ausgegebenen Snapshot-Pfad verwenden.
 $snapshotRoot = '<verifizierter Snapshot-Pfad>\src'
 $tests = Join-Path $snapshotRoot 'work\native-gate-tests\KalynaArchiver.Tests.dll'
@@ -535,9 +637,10 @@ $env:KEEPVAULT_TEST_REPOSITORY_ROOT = $snapshotRoot
 dotnet $tests --full
 dotnet $tests --performance --only performance.cipher-suites
 dotnet $tests --performance --only release.paranoia-256mib-level5
-& $verifier $package
-& $verifier $zip
-& (Join-Path $package 'Keep Vault Setup.exe') --verify $package
+. (Join-Path $snapshotRoot 'tools\Invoke-ReleaseExecutable.ps1')
+Invoke-ReleaseExecutable -Executable $verifier -Arguments @($package)
+Invoke-ReleaseExecutable -Executable $verifier -Arguments @($zip)
+Invoke-ReleaseExecutable -Executable (Join-Path $package 'Keep Vault Setup.exe') -Arguments @('--verify', $package)
 pwsh -NoProfile -File (Join-Path $snapshotRoot 'tools\Test-ReleaseTamperResistance.ps1') `
     -ReleaseDirectory $package -ReleaseZip $zip -Verifier $verifier
 # Danach tatsächliche Installation, DE/EN-GUI und Shortcut-Starts prüfen.
@@ -557,7 +660,7 @@ Für das getrennte Signieren neugebauter Native-Tools liefert der überprüfbare
 Helper nur Dateipfade und öffentliche Pins:
 
 ```powershell
-$releaseSigning = & tools/New-ReleaseSigningParameters.ps1 -ReleaseKeyDirectory 'A:\Keep Vault ReleaseKeys v12'
+$releaseSigning = & tools/New-ReleaseSigningParameters.ps1 -ReleaseKeyDirectory 'C:\Users\Michael\Keep Vault ReleaseKeys v12\Windows-20260921'
 . tools/NativeToolTargets.ps1
 $nativeTargets = @(Get-NativeToolTargets -Root $PWD)
 & tools/Sign-Binaries.ps1 -Path $nativeTargets @releaseSigning
@@ -570,8 +673,10 @@ akzeptieren keine Klartext-PFX-Passwortparameter mehr. Ein frischer
 PowerShell-Prozess pro Quell-Snapshot verhindert die Wiederverwendung einer
 bereits geladenen Signierassembly aus einem anderen Verzeichnis.
 
-Zusätzlich erforderlich bleiben die nativen unabhängigen KATs und
-Threadfehlerprüfungen, der echte 256-MiB-Paranoia-Lauf auf Stufe 5, der letzte
-komplexe Ordnerbaum-Rundlauf, reale Installer-/GUI-Prüfungen, ZIP-Entpackprüfung,
-Sicherheitsreview, Quell-/Artefakthashes und Remote-Abgleich. Veröffentlichung
-und heruntergeladene finale Assetbytes werden erst nach diesen Läufen bestätigt.
+Für `c3658b8` bestehen die nativen KATs/Threadfehlerprüfungen, Funktionssuite,
+ZIP-Entpack- und EXE-Abnahme sowie Signatur-/Inventar-/Hashprüfungen. Offen bleiben
+der bestandene Performance-Nachweis, der echte 256-MiB-Paranoia-Lauf auf Stufe 5,
+der abschließende komplexe Ordnerbaum-Rundlauf und die reale Installer-/GUI-Abnahme.
+Nach weiteren Produktkorrekturen müssen Build und betroffene Abnahmen am neuen
+unveränderlichen Quell-Commit wiederholt werden. Veröffentlichung, Remote-Abgleich
+und heruntergeladene finale Assetbytes werden erst nach den Freigabegates bestätigt.

@@ -83,6 +83,7 @@ internal static class InstallerGuiReferenceTests
             ?? throw new InvalidOperationException("Repository was not found for synthetic GUI evidence.");
         string output = Path.Combine(root, "work", "v502-secondary-gui-render"); Directory.CreateDirectory(output);
         var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(surface);
+        RenderEvidenceGuard.RequireUsable(bitmap, name);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var file = File.Create(Path.Combine(output, name + ".png")); encoder.Save(file);
     }

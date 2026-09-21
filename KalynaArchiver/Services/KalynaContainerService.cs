@@ -40,7 +40,16 @@ public sealed partial class KalynaContainerService
     // Outer chunk concurrency, not CPU affinity. Native transforms also use
     // bounded parallelism. The ordered writer runs after the batch joins;
     // there is no overlap between that writer and the next batch here.
+#if KEEPVAULT_MACOS
     private const int LogicalProcessorsPerPipelineWorker = 4;
+#else
+    // Each 16 MiB Windows native transform already uses up to 64 workers.
+    // Additional outer slots multiply the locked working set without overlapping
+    // I/O. Release measurements on 32 logical CPUs found one slot faster than
+    // eight (387 versus 269 MiB/s). Allocate whole native teams on larger hosts;
+    // the separate native semaphore still bounds concurrent archive operations.
+    private const int LogicalProcessorsPerPipelineWorker = 64;
+#endif
 
     // Each slot owns two locked 16 MiB buffers, plus small nonce/tag storage.
     // Also bound the aggregate buffers by 1/16 of reported available memory.

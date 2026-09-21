@@ -196,6 +196,7 @@ internal static class SecurityDialogReferenceTests
         string output = Path.Combine(RepositoryRoot(), "work", "v502-dialog-gui-render"); Directory.CreateDirectory(output);
         var bitmap = new RenderTargetBitmap((int)(surface.Width * scale), (int)(surface.Height * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
         bitmap.Render(surface);
+        RenderEvidenceGuard.RequireUsable(bitmap, name);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var file = File.Create(Path.Combine(output, name + ".png")); encoder.Save(file);
     }
