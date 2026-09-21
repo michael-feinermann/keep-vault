@@ -136,6 +136,7 @@ internal static class WindowsFileSystemSecurityTests
         Directory.CreateDirectory(root);
         try
         {
+            RunCreateValidationRollback(root);
             string path = Path.Combine(root, "payload.bin");
             File.WriteAllBytes(path, [1, 2, 3]);
 
@@ -244,6 +245,86 @@ internal static class WindowsFileSystemSecurityTests
         {
             WindowsExtractionStaging.TestHookBeforeCleanupDirectoryDelete = null;
             Directory.Delete(root, recursive: true);
+        }
+    }
+
+    internal static void RunCreateValidationRollback(string root)
+    {
+        string successful = Path.Combine(root, "created-success.bin");
+        using (SafeFileHandle handle = WindowsSafeFileSystem.CreateRegularFileBound(
+                   successful, asynchronous: false, writeThrough: true, sequential: true))
+        using (var stream = new FileStream(handle, FileAccess.ReadWrite))
+            stream.Write(new byte[] { 1, 2, 3 });
+        Require(File.ReadAllBytes(successful).SequenceEqual(new byte[] { 1, 2, 3 }),
+            "Successful bound creation lost its output.");
+        ExpectIOException(() => WindowsSafeFileSystem.CreateRegularFileBound(
+                successful, asynchronous: false, writeThrough: true, sequential: true).Dispose(),
+            "CREATE_NEW accepted a pre-existing file.");
+        Require(File.ReadAllBytes(successful).SequenceEqual(new byte[] { 1, 2, 3 }),
+            "Failed CREATE_NEW deleted or changed a pre-existing file.");
+
+        string existingDirectory = Path.Combine(root, "pre-existing-directory");
+        Directory.CreateDirectory(existingDirectory);
+        string canary = Path.Combine(existingDirectory, "canary.bin");
+        File.WriteAllBytes(canary, [7, 8, 9]);
+        ExpectIOException(() => WindowsSafeFileSystem.CreateRegularFileBound(
+                existingDirectory, asynchronous: false, writeThrough: true, sequential: true).Dispose(),
+            "CREATE_NEW accepted a pre-existing directory.");
+        Require(File.ReadAllBytes(canary).SequenceEqual(new byte[] { 7, 8, 9 }),
+            "Failed CREATE_NEW changed a pre-existing directory.");
+
+        string alias = Path.Combine(root, "creation-alias");
+        var start = new System.Diagnostics.ProcessStartInfo(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"))
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        start.Arguments = $"/d /c mklink /J \"{alias}\" \"{existingDirectory}\"";
+        try
+        {
+            using (System.Diagnostics.Process process = System.Diagnostics.Process.Start(start)
+                       ?? throw new InvalidOperationException("Could not create the test junction."))
+            {
+                Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+                Task<string> stderr = process.StandardError.ReadToEndAsync();
+                if (!process.WaitForExit(10000))
+                {
+                    process.Kill(entireProcessTree: true);
+                    process.WaitForExit();
+                    throw new InvalidOperationException("Test junction creation timed out.");
+                }
+                Require(process.ExitCode == 0, "Test junction creation failed: "
+                    + stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult());
+            }
+
+            ExpectIOException(() => WindowsSafeFileSystem.CreateRegularFileBound(
+                    Path.Combine(alias, "canary.bin"), asynchronous: false, writeThrough: true, sequential: true).Dispose(),
+                "CREATE_NEW accepted a pre-existing file through an alias.");
+            Require(File.ReadAllBytes(canary).SequenceEqual(new byte[] { 7, 8, 9 }),
+                "Failed alias CREATE_NEW changed a pre-existing file.");
+
+            bool rejected = false;
+            try
+            {
+                using SafeFileHandle unexpected = WindowsSafeFileSystem.CreateRegularFileBound(
+                    Path.Combine(alias, "rejected.bin"), asynchronous: false, writeThrough: true, sequential: true);
+            }
+            catch (InvalidOperationException exception) when (exception.Message.Contains("path resolves through a reparse point or alias", StringComparison.Ordinal))
+            {
+                rejected = true;
+            }
+            Require(rejected, "The bound create accepted an alias instead of rejecting its resolved path.");
+            Require(!File.Exists(Path.Combine(existingDirectory, "rejected.bin")),
+                "A rejected alias creation left a zero-byte file in the resolved directory.");
+            Require(File.ReadAllBytes(canary).SequenceEqual(new byte[] { 7, 8, 9 }),
+                "Rejected alias cleanup changed a pre-existing file.");
+        }
+        finally
+        {
+            if (Directory.Exists(alias)) Directory.Delete(alias);
         }
     }
 

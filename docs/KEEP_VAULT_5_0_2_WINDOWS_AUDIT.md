@@ -26,30 +26,35 @@ verschoben. Die sechs vorhandenen macOS-Dateien bleiben unverändert.
 ## Aktueller Freigabestatus
 
 **Noch kein freigegebener oder veröffentlichter Windows-Release.** Der vollständig
-signierte Kandidat `c3658b8361e5be0ed40f5c5314f1b59b846768d3` besteht Build,
-Funktionssuite und EXE-Abnahme. Sein ruhiger Performance-Lauf scheitert jedoch;
-außerdem fehlt die gültige visuelle und installierte GUI-Abnahme in einer aktiven,
-entsperrten Windows-Sitzung. Die dafür begonnenen Korrekturen sind noch nicht
-durch einen neuen vollständigen Release-Lauf belegt. Ein bestandener Teil des
-Kandidaten ist keine Freigabe der inzwischen weiterbearbeiteten Quellen.
+signierte Kandidat `c5e9e192bab7768f6544cb766c1987c60706b110` besteht Build,
+Signatur-/Paketprüfung und EXE-Abnahme. Die vollständige Funktionssuite meldet
+60 bestandene und drei fehlgeschlagene Gruppen: Alle drei Fehler betreffen die
+nun ausdrücklich abgewiesenen leeren GUI-Renderings vor dem Neustart des
+Desktop-Automationshelfers. Der ruhige Performance-Lauf scheiterte erneut.
+Die tatsächliche Installation über Windows Explorer und der Start der
+Hauptanwendung über die Desktop-Verknüpfung bestanden inzwischen. Weitere
+GUI-Prüfungen laufen; vollständige Performance-/GUI-Freigabe und Veröffentlichung
+bleiben offen. Neue Änderungen an Messmethodik und Fehlerbereinigung benötigen
+einen neuen vollständigen Build und die dazugehörige Abnahme.
 
 Der geprüfte Snapshot liegt unter
-`C:\Dev\Kalyna\work\release-builds\c3658b8361e5-d1b64390020a4edb\src`.
+`C:\Dev\Kalyna\work\release-builds\c5e9e192bab7-48eeae7c256c4873\src`.
 Paket und ZIP liegen dort unter `dist\Keep Vault-portable-win-x64` beziehungsweise
 `dist\Keep Vault-portable-win-x64.zip`. Die nachstehenden Pfade zu Protokollen
 sind relativ zum kanonischen Repository `C:\Dev\Kalyna`.
 
-| Freigabeschritt | Belegter Stand am 21. September für `c3658b8` |
+| Freigabeschritt | Belegter Stand am 21. September für `c5e9e19` |
 | --- | --- |
-| Vollständiger signierter Build | PASS, 19:44:54–19:48:23 Ortszeit, SDK `10.0.401`; frischer Native-Satz, selbständige Programme, tatsächliche Setup-Prüfung vor und nach frischer ZIP-Extraktion |
-| Unveränderliche Quellen | 1378 Quell-Inputs; Vorher-/Nachher-Hashes bei Build und unabhängiger Abnahme unverändert |
-| Funktionstests | 62/62 Gruppen bestanden, einschließlich nativer KATs, Container-, Reparatur- und Kompatibilitätsprüfungen; die visuelle Aussage ist unten ausdrücklich eingeschränkt |
+| Vollständiger signierter Build | PASS, 20:06:27–20:10:03 Ortszeit, SDK `10.0.401`; frischer Native-Satz, selbständige Programme, tatsächliche Setup-Prüfung vor und nach frischer ZIP-Extraktion |
+| Unveränderliche Quellen | 1380 Quell-Inputs; Vorher-/Nachher-Hashes bei Build und unabhängiger Abnahme unverändert |
+| Funktionstests | 60/63 Gruppen bestanden, darunter native KATs, Container-, Reparatur- und Kompatibilitätsprüfungen; drei GUI-Gruppen scheitern ausschließlich an leeren Renderings, Gesamtstatus FAIL |
 | QR-Scanner | 151 Prüfungen im tatsächlichen Release-Build bestanden |
 | Fertige EXEs und Manipulationsabwehr | 36/36 Fälle, 70/70 tatsächlich gestartete und abgewartete Verifier-/Setup-Aufrufe bestanden |
 | Signaturen und Paketbestand | 13 Paket-PEs plus identischer externer Verifier geprüft; 12 externe Assets, 80 inventarisierte Dateien plus Inventar/Signatur und 82 ZIP-Dateien stimmen überein |
-| Performance | FAIL auch auf ruhigem Host: Produktionspipeline mit acht Slots erreicht 269,3 MiB/s gegenüber 387,0 MiB/s mit einem Slot (69,6 %) |
-| Aktuelle GUI-Renderings | BLOCKIERT: acht PNGs des Kandidaten sind vollständig transparent; der damalige grüne Teststatus ist kein visueller Nachweis |
-| Installierte GUI, Verknüpfungsstarts, Papier/Kamera | Noch offen; die Windows-Sitzung war getrennt, die EXE-Abnahme installiert keine Benutzerverknüpfungen |
+| Performance | FAIL, 20:29:51–20:34:46 Ortszeit: ein Produktionsslot erreicht 297,2 MiB/s, bester Vergleich 341,2 MiB/s mit acht Slots (87,1 %; gefordert mindestens 90 %) |
+| GUI-Rendergruppen aus der Vollsuite | FAIL vor Neustart des Automationshelfers: `gui.installer-reference`, `gui.v502-reference-parity` und `gui.reference-render` weisen vollständig transparente Bilder korrekt zurück; Wiederholung offen |
+| Tatsächliche Installation und Desktop-Start | PASS über regulären Windows Explorer; 82 Dateien installiert, Hauptfenster durch echte Desktop-Verknüpfung gestartet, Integritäts- und Aufnahmeschutz aktiv |
+| Weitere GUI, Startmenü-Verknüpfungen, Papier/Kamera | Weitere interaktive GUI-Prüfungen laufen; noch keine vollständige Abnahme |
 | Veröffentlichung und Download-Abgleich | Nicht erfolgt; vorhandener macOS-Tag und sechs macOS-Assets bleiben unverändert |
 
 Die EXE-Abnahme prüfte das Originalpaket, eine vollständige Kopie, das signierte
@@ -59,30 +64,74 @@ Dateien/Verzeichnisse, Junctions, Aliaswege und Hardlinks wurden abgewiesen.
 Vorhandene Installationsziele, Originalpaket, alle sechs ZIP-Dateien,
 Kontrollprogramme, Benutzerverknüpfungen und Quell-Snapshot blieben unverändert.
 Manipulierte EXEs wurden niemals ausgeführt. Das prüft die Kopier- und
-Verifikationspfade, noch nicht den interaktiven Setup-/Shortcut-Ablauf.
+Verifikationspfade. Der danach separat geprüfte interaktive Setup-/Desktop-Start
+ist unten abgegrenzt.
 
-Der ruhige Performance-Lauf vom 21. September 19:52:32–19:57:35 bestätigt die
-Skalierungsabweichung aus dem früheren Lauf mit parallelen Diagnosearbeiten.
-Eine Windows-spezifische Korrektur der Slotberechnung ist in Bearbeitung;
-Abbruch-, Speichergrenzen- und erneute Leistungstests stehen noch aus.
-Die anschließende 256-MiB-Gruppe wurde in diesem abgebrochenen Lauf nicht
-erreicht; der separate finale Reparaturlauf steht ebenfalls aus.
-Die neue Render-Schutzprüfung besteht zehn synthetische
-Fälle, lehnt alle acht leeren Kandidatenbilder ab und akzeptiert die früheren
-nichtleeren Bilder. Ein frischer tatsächlicher Render-Versuch bleibt blockiert.
-Die früheren Bilder ersetzen keine visuelle Abnahme dieses Kandidaten.
+Die vollständige Funktionssuite lief von 20:10:42 bis 20:29:22 Ortszeit.
+Das Systemereignisprotokoll belegt Standby von 20:10:49 bis 20:25:58; dadurch
+verlängerte Einzelzeiten sind keine Performance-Messung. Aus diesem Lauf werden
+keine Leistungsaussagen abgeleitet. Nach Ende von Funktionssuite und EXE-Abnahme
+wurde um 20:29:51 ein eigener ruhiger Performance-Lauf gestartet. Dieser brach
+an der Pipeline-Skalierungsgrenze mit 87,1 Prozent ab; die anschließende
+256-MiB-Gruppe wurde nicht erreicht. Der separate finale Reparaturlauf steht
+ebenfalls aus.
+
+Ein isolierter Diagnoselauf derselben Skalierungsfunktion erreichte später
+92,6 Prozent (345,1 gegenüber 372,7 MiB/s). Er lief ohne die vorausgehenden
+Primitiv-/Container-Matrizen und zählt ausdrücklich nicht als Release-PASS.
+Die überprüfte neue Messmethodik verwendet ein vollständiges Aufwärmen pro
+Kandidat und fünf vorab festgelegte, durchmischte Messrunden. Sämtliche Kandidaten
+und Messwerte sowie die 90-Prozent-Grenze bleiben erhalten; kein Ergebnis wählt
+einen zusätzlichen Versuch oder verwirft einen Messwert. Ein vollständiger
+Release-Lauf mit dieser Änderung steht noch aus.
+
+Die neue Render-Schutzprüfung besteht zehn synthetische Fälle. Sie weist die
+acht leeren Bilder des Vorgängers `c3658b8` und die drei nun tatsächlich
+fehlgeschlagenen GUI-Gruppen zurück; frühere nichtleere Bilder ersetzen keine
+visuelle Abnahme des aktuellen Kandidaten. Die früheren
+`GetCursorPos`-/`0x80070005`-Fehler betrafen einen nach dem Systemstandby veralteten
+Sky-/Node-Automationshelfer. WTS bestätigte `UNLOCKED`; nach dessen Reset waren
+tatsächliche Eingaben wieder möglich. Eine gesperrte Sitzung ist damit kein
+aktueller Blocker mehr. Die fehlgeschlagenen Rendergruppen werden durch den
+späteren Eingabenachweis nicht rückwirkend bestanden.
+
+Die interaktive Setup-Prüfung wies zunächst zwei vorhandene Benutzerverknüpfungen
+korrekt zurück. Diese wurden anschließend mit Hash-Receipts reversibel unter
+`work/gui-acceptance-c5e9e19-20260921/previous-shortcuts` gesichert. Ein aus dem
+Codex-Prozess gestarteter Installationsversuch scheiterte danach korrekt an
+einer geerbten MSIX-Umleitung der neuen Startmenü-Datei. Der Alias-Schutz wurde
+nicht gelockert. Beim regulären Start aus der Windows-Explorer-Dateiliste
+bestand die Installation anschließend nach
+`C:\Users\Michael\AppData\Local\Programs\Keep Vault\5.0.2-6814D3122DC0-66df7cae`
+mit 82 Dateien. Der tatsächliche Desktop-Verknüpfungsstart öffnete die
+Hauptanwendung; Integrität und Aufnahmeschutz zeigten aktiv. Weitere GUI-Abläufe
+werden noch geprüft.
+
+Der gescheiterte umgeleitete Versuch belegte außerdem einen kleinen
+Aufräumfehler: Eine bereits mit `CREATE_NEW` erzeugte, danach bei der
+Pfadvalidierung abgewiesene Datei konnte leer zurückbleiben. Die Korrektur
+entfernt nur dieses selbst erzeugte Objekt über den durchgehend gehaltenen
+DELETE-Handle; bestehende Objekte und die Aliasprüfung bleiben unverändert.
+Fünf synthetische NTFS-Fälle reproduzieren den alten Restdateifehler und bestehen
+nach der Korrektur. Der unabhängige Review ist bestanden; diese Änderung ist
+noch nicht Bestandteil des signierten Kandidaten `c5e9e19`.
 
 Nachweise:
 
-- `work/production-release-20260921-194454/result.json` und `build.log`.
-- `work/final-suite-full-20260921-194827/result.json`, `group-1.json` und `group-1.log`.
-- `work/release-executable-acceptance-20260921T174859Z-05b372d0b9244885abb776d0a451c042/summary.json`, `results.json`, `provenance.json`, `preservation.json` und die 70 Prozessprotokolle.
-- `work/final-release-policy-20260921T174910Z-882efca9390842d6b5b24815a6fb9033/result.json` und `work/release-bundle-metadata-c3658b8`.
-- `work/final-suite-performance-20260921-195232/group-1.json` und `result.json`.
+- `work/production-release-20260921-200627/result.json` und `build.log`.
+- `work/final-suite-full-20260921-201042/result.json`, `group-1.json` und `group-1.log`.
+- `work/release-executable-acceptance-20260921T181046Z-7bb8c35def45418b8b0742702ca13373/summary.json`, `results.json`, `provenance.json`, `preservation.json` und die 70 Prozessprotokolle.
+- `work/final-release-policy-20260921T181043Z-d3b9e40d00804472a778481da0b6a995/result.json` und `work/release-bundle-metadata-c5e9e19`.
+- `work/final-suite-performance-20260921-202951/result.json` und `group-1.json` (`FAIL`).
+- `work/pipeline-diagnostic-c5e9e19-20260921/result.json`, `run.log` und `methodology-static-review.json` (Diagnose, keine Release-Freigabe).
 - `work/render-guard-verification-20260921/result.json`.
+- `work/wts-session-lock-query-20260921/result.json` und `work/gui-acceptance-c5e9e19-20260921/result.json` (weitere GUI-Abnahme noch `IN_PROGRESS`).
+- `work/bound-create-cleanup-20260921/provenance.json`, `before-run.log` und `after-run.log`.
 
-Der ZIP-SHA-512 dieses noch nicht freigegebenen Kandidaten lautet
-`E01A4852DF3065B038847EAB7B54CEA173566CE6D7632CF0CA0C555D8FC570AF80F1DC3CF8129D001883F32F14DE7D73BF16AC7D5A59539882440A173D331FA2`.
+Der ZIP-SHA-256 dieses noch nicht freigegebenen Kandidaten lautet
+`F29B5F9D38893B363E98045BCA75924D5629FADF456728DFBE7B53B09D557CBB`;
+sein SHA-512 ist
+`43D0E41A55C33AEA8CF009C504083AD69C1115F3EA3CA883D3E5C84019250772F1135F9A1070B9CB03DA7AAF6AE3039B0B8CBB157EC3E197D061A87D5304B129`.
 Ein späterer Neubau erhält eigene Hashes und eigene Freigabenachweise.
 
 ### Vorläufe am 21. September
@@ -129,10 +178,17 @@ Timeout mit nachgewiesenem Prozessende. Für `558939a` bestanden separat alle
 Windows-Projekte meldete keine bekannten direkten/transitiven Schwachstellen.
 Der Performance-Lauf scheiterte an der Pipeline-Skalierungsgrenze; wegen
 paralleler Diagnosearbeiten ist ein kontrollierter Lauf auf ruhigem Host nötig.
-Die korrigierte signierte Ausgabe `c3658b8` bestand anschließend die oben
-aufgeführte erneute Funktions- und EXE-Abnahme. Der erneute ruhige
-Performance-Lauf blieb rot. Die interaktive und visuelle GUI-Abnahme bleibt
-ebenfalls offen.
+Die korrigierte signierte Ausgabe `c3658b8` bestand anschließend 62/62
+Funktionsgruppen sowie 36/36 Fälle mit 70/70 EXE-Aufrufen. Die acht dabei
+erzeugten Hauptfenster-PNGs waren jedoch leer und zählen nicht als visuelle
+Freigabe. Der erneute ruhige Performance-Lauf von 19:52:32–19:57:35 blieb rot:
+Die Produktionspipeline mit acht Slots erreichte 269,3 MiB/s gegenüber
+387,0 MiB/s mit einem Slot (69,6 %). Belege liegen unter
+`work/final-suite-full-20260921-194827`,
+`work/release-executable-acceptance-20260921T174859Z-05b372d0b9244885abb776d0a451c042`
+und `work/final-suite-performance-20260921-195232`.
+Darauf folgten die Windows-Slotkorrektur und die Render-Schutzprüfung im neuen
+Kandidaten `c5e9e19`; dessen aktueller Status ist oben abgegrenzt.
 
 ### Historischer Abbruch am 15. September
 
@@ -383,11 +439,12 @@ Freigabe des Elternfensters sowie `No` bei Close/Cancel und `Yes` ausschließlic
 bei ausdrücklichem Accept-Button-Event. Der dabei geprüfte App-Assembly-SHA-256
 lautet `FFF1DCC9B97AD197925A9A8725DD7CC5B361170246F602E7BEEB6EE345415A78`.
 
-Ein zusätzlicher Bedienversuch über das unterstützte Windows-Automationswerkzeug
+Ein früherer zusätzlicher Bedienversuch über das unterstützte Windows-Automationswerkzeug
 konnte die aufnahmegeschützten modalen Fenster nicht zuverlässig adressieren.
 Auslesbare Bedienelemente sind kein erfolgreicher Eingabenachweis. Der Schutz
-wurde nicht abgeschaltet; echte OS-Tastaturzustellung und die abschließende
-installierte GUI sind damit weiterhin nicht als bestanden ausgewiesen.
+wurde nicht abgeschaltet; dieser Versuch belegte noch keine OS-Eingaben.
+Nach dem späteren Reset sind echte Eingaben, die Explorer-Installation und der
+Desktop-Start nachgewiesen; die übrigen finalen GUI-Prüfungen laufen noch.
 
 Weitere 14 bewusst ausgewählte verwaltete Gruppen zu Runner/SHA3/Quellabdeckung,
 Lokalisierung, Passwortmodell, PIN und technischen v12-Credentialbytes bestanden
@@ -604,8 +661,9 @@ Ein fehlgeschlagener Vorgang lässt alte Installationen unverändert. Eine
 angefangene neue, nicht verknüpfte Kopie kann als überprüfbares Restverzeichnis
 zurückbleiben; es wird keine unsichere rekursive Bereinigung fremder Pfade
 versucht. Die oben protokollierten 36 EXE-Fälle mit 70 Prozessaufrufen bestätigen
-die tatsächlichen Verifikations- und Kopierpfade. Die reale DE/EN-GUI,
-Benutzerverknüpfungen und deren Programmstarts sind noch zu prüfen.
+die tatsächlichen Verifikations- und Kopierpfade. Die zusätzliche echte
+Explorer-Installation und der Desktop-Verknüpfungsstart bestanden anschließend;
+weitere DE/EN-GUI-Abläufe und Startmenü-Verknüpfungen sind noch zu prüfen.
 
 Die synthetische Inventarregression ist bestanden: Originalprüfung und Kopie
 mit identischem Inventardigest, Ablehnung einer zweiten Kopie in ein vorhandenes

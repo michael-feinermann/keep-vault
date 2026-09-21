@@ -125,9 +125,22 @@ internal static partial class WindowsSafeFileSystem
             ValidateRegularFile(handle, fullPath, requireSingleLink: true);
             return handle;
         }
-        catch
+        catch (Exception validationFailure)
         {
-            handle.Dispose();
+            try
+            {
+                // CREATE_NEW succeeded, so this is our new object even if its
+                // resolved path failed validation (for example MSIX redirection).
+                // Delete only through its still-held DELETE-capable handle.
+                MarkForDeletion(handle);
+            }
+            catch (Exception cleanupFailure)
+            {
+                throw new AggregateException(
+                    "The newly created file failed validation and bound cleanup.",
+                    validationFailure, cleanupFailure);
+            }
+            finally { handle.Dispose(); }
             throw;
         }
     }

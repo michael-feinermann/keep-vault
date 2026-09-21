@@ -341,6 +341,8 @@ internal static class CipherSuitePerformanceTests
     internal static async Task RunPipelineSlotScalingAsync()
     {
         const EncryptionSuite scalingSuite = EncryptionSuite.ThreefishOverKalyna;
+        const int scalingMeasurementRuns = 5;
+        const int orderSeed = 0x534C4F54;
         int production = KalynaContainerService.ProductionPipelineWorkerCount;
         var candidates = new List<int>();
         foreach (int slots in new[] { 1, 2, 3, 4, 5, 6, 8, 10, 12, 16 })
@@ -376,41 +378,86 @@ internal static class CipherSuitePerformanceTests
             Console.WriteLine(
                 $"    pipeline slot scaling: {PipelineScalingBytes / (1024 * 1024)} MiB through "
                 + $"{EncryptionSuiteCatalog.Get(scalingSuite).DisplayName}, "
-                + $"{MeasurementRuns} runs, KAT Argon2id memory, median; "
+                + $"one full warm-up per candidate, {scalingMeasurementRuns} interleaved rounds, "
+                + $"fixed order seed 0x{orderSeed:X8}, KAT Argon2id memory, median; "
                 + $"{Environment.ProcessorCount} logical CPU(s)");
             using IDisposable memoryScope =
                 V12MasterKdf.UseMemoryCostForTests(PipelineScalingArgonMemoryKiB);
             var containers = new KalynaContainerService();
+
+            // Plan every order before measuring. Consecutive samples in ascending
+            // slot order confound slot count with Windows GC, working-set and I/O
+            // drift. Each fixed round measures every unchanged candidate once;
+            // no result chooses another run, changes the order, or drops a sample.
+            var orderRandom = new Random(orderSeed);
+            var roundOrders = new int[scalingMeasurementRuns][];
+            for (int round = 0; round < roundOrders.Length; round++)
+            {
+                int[] order = candidates.ToArray();
+                for (int index = order.Length - 1; index > 0; index--)
+                {
+                    int other = orderRandom.Next(index + 1);
+                    (order[index], order[other]) = (order[other], order[index]);
+                }
+                roundOrders[round] = order;
+            }
+            var samplesBySlot = candidates.ToDictionary(slots => slots, _ => new double[scalingMeasurementRuns]);
+            var warmupRates = new Dictionary<int, double>();
+            var sampleRecords = new List<object>();
+            int nextRunId = 0;
+
+            async Task<double> MeasureSampleAsync(int slots, int runId)
+            {
+                string containerPath = Path.Combine(root, $"slots-{slots}-run-{runId}.kzpaq");
+                // Warm-ups and measurements share one monotonically increasing
+                // ID, so synthetic nonces are unique even across slot counts.
+                using GeneratedArchiveEntropy entropy = CreateContainerEntropy(scalingSuite, runId);
+                await using var input = new MemoryStream(payload, writable: false);
+                Stopwatch timer = Stopwatch.StartNew();
+                using (KalynaContainerService.UsePipelineWorkerCountForTests(slots))
+                {
+                    await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
+                        input,
+                        containerPath,
+                        ContainerPassword,
+                        ContainerPin,
+                        ContainerFactorA,
+                        ContainerFactorB,
+                        scalingSuite,
+                        entropy,
+                        "v12 pipeline slot scaling",
+                        null,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                timer.Stop();
+                double rate = RateMiBPerSecond(PipelineScalingBytes, timer.Elapsed);
+                File.Delete(containerPath);
+                return rate;
+            }
+
             foreach (int slots in candidates)
             {
-                var samples = new double[MeasurementRuns];
-                for (int run = 0; run < MeasurementRuns; run++)
+                int runId = nextRunId++;
+                double rate = await MeasureSampleAsync(slots, runId).ConfigureAwait(false);
+                warmupRates[slots] = rate;
+                sampleRecords.Add(new { phase = "warmup", round = 0, slots, runId, rateMiBPerSecond = rate });
+                Console.WriteLine($"      warm-up {slots,2} slot(s), run {runId}: {rate:F1} MiB/s (excluded by design)");
+            }
+            for (int round = 0; round < scalingMeasurementRuns; round++)
+            {
+                Console.WriteLine($"      measured round {round + 1}/{scalingMeasurementRuns}, slot order: {string.Join(", ", roundOrders[round])}");
+                foreach (int slots in roundOrders[round])
                 {
-                    string containerPath = Path.Combine(root, $"slots-{slots}-{run}.kzpaq");
-                    using GeneratedArchiveEntropy entropy = CreateContainerEntropy(scalingSuite, run);
-                    await using var input = new MemoryStream(payload, writable: false);
-                    Stopwatch timer = Stopwatch.StartNew();
-                    using (KalynaContainerService.UsePipelineWorkerCountForTests(slots))
-                    {
-                        await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
-                            input,
-                            containerPath,
-                            ContainerPassword,
-                            ContainerPin,
-                            ContainerFactorA,
-                            ContainerFactorB,
-                            scalingSuite,
-                            entropy,
-                            "v12 pipeline slot scaling",
-                            null,
-                            CancellationToken.None).ConfigureAwait(false);
-                    }
-
-                    timer.Stop();
-                    samples[run] = RateMiBPerSecond(PipelineScalingBytes, timer.Elapsed);
-                    File.Delete(containerPath);
+                    int runId = nextRunId++;
+                    double rate = await MeasureSampleAsync(slots, runId).ConfigureAwait(false);
+                    samplesBySlot[slots][round] = rate;
+                    sampleRecords.Add(new { phase = "measured", round = round + 1, slots, runId, rateMiBPerSecond = rate });
+                    Console.WriteLine($"        {slots,2} slot(s), run {runId}: {rate:F1} MiB/s");
                 }
-
+            }
+            foreach (int slots in candidates)
+            {
+                double[] samples = samplesBySlot[slots];
                 double median = Median(samples);
                 measured[slots.ToString(CultureInfo.InvariantCulture)] = median;
                 Console.WriteLine(
@@ -418,6 +465,18 @@ internal static class CipherSuitePerformanceTests
                     + $" {median,9:F1} MiB/s"
                     + $" (runs {string.Join(", ", samples.Select(value => value.ToString("F1")))})");
             }
+
+            Console.WriteLine("    PIPELINE_SCALING_SAMPLES_JSON=" + JsonSerializer.Serialize(new
+            {
+                schemaVersion = 1,
+                payloadBytes = PipelineScalingBytes,
+                warmupsPerCandidate = 1,
+                measurementRounds = scalingMeasurementRuns,
+                orderSeed,
+                roundOrders,
+                warmupRatesMiBPerSecond = warmupRates,
+                samples = sampleRecords,
+            }, JsonOptions));
 
             KeyValuePair<string, double> best = measured.OrderByDescending(pair => pair.Value).First();
             double productionRate = measured[production.ToString(CultureInfo.InvariantCulture)];
