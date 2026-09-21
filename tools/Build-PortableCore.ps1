@@ -43,7 +43,6 @@ if ($OutputName -notmatch '^[A-Za-z0-9](?:[A-Za-z0-9._ -]{0,126}[A-Za-z0-9])?$' 
 $root = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $nativeOutput = Join-Path $root 'work\native-tools'
 $MldsaReferencePath = Join-Path $nativeOutput 'mldsa87_ref.dll'
-$MldsaPublicKeyPath = Join-Path $root 'KeepVaultMac\Packaging\Keys\mldsa87-public.key'
 & (Join-Path $PSScriptRoot 'Verify-NativeSources.ps1') -Root $root
 $distRoot = Join-Path $root "dist"
 $publishDir = Join-Path $distRoot $OutputName
@@ -65,153 +64,68 @@ $manifestScript = Join-Path $root "tools\Generate-Sha3Manifest.ps1"
 $skeinManifestScript = Join-Path $root "tools\Generate-SkeinManifest.ps1"
 $hybridSignatureScript = Join-Path $root "tools\New-HybridSignature.ps1"
 
-if ($ReleaseKeyDirectory) {
-    $releaseKeyRoot = [System.IO.Path]::GetFullPath($ReleaseKeyDirectory)
-    if (-not $PfxPath) {
-        $PfxPath = Join-Path $releaseKeyRoot "hybrid-rsa4096.pfx"
-    }
-    if (-not $PfxPasswordEncryptedPath) {
-        $PfxPasswordEncryptedPath = Join-Path $releaseKeyRoot "hybrid-rsa4096.pfx.password.v12.usb.enc"
-    }
-    if (-not $PfxWrappingKeyPath) {
-        $PfxWrappingKeyPath = Join-Path $releaseKeyRoot "pfx-v12-wrapping-key.b64"
-    }
-    if (-not $MldsaPrivateKeyPath -and -not $MldsaPrivateKeyEncryptedPath) {
-        $MldsaPrivateKeyEncryptedPath = Join-Path $releaseKeyRoot "mldsa87-private.key.v12.enc"
-    }
-    if (-not $WrappingKeyPath) {
-        $WrappingKeyPath = Join-Path $releaseKeyRoot "mldsa-v12-wrapping-key.b64"
-    }
-    if (-not $MldsaPublicKeyPath) {
-        $MldsaPublicKeyPath = Join-Path $root "KeepVaultMac\Packaging\Keys\mldsa87-public.key"
+# Select one complete key-file variant and the committed Windows public identity
+# once. Every native, application and manifest signature uses this same set.
+$releaseSigning = & (Join-Path $PSScriptRoot 'New-ReleaseSigningParameters.ps1') -ReleaseKeyDirectory $ReleaseKeyDirectory
+if ($MldsaPrivateKeyPath) { throw 'Production releases require the v12 encrypted ML-DSA key from ReleaseKeyDirectory.' }
+
+function Assert-ReleaseParameterValue {
+    param([string] $Name, [string] $Actual, [string] $Expected, [switch] $Path)
+    if ([string]::IsNullOrEmpty($Actual)) { return }
+    $normalized = if ($Path) { [IO.Path]::GetFullPath($Actual) } else { ($Actual -replace '\s', '').ToUpperInvariant() }
+    if (-not [string]::Equals($normalized, $Expected, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "The explicit $Name differs from the committed Windows release identity or selected complete key set."
     }
 }
 
-if ($TrustDevelopmentCertificate) {
-    throw "Trusting the development root in CurrentUser\\Root is forbidden. Portable development builds use only the compiled signer pins."
+foreach ($name in @('PfxPath', 'PfxPasswordEncryptedPath', 'PfxWrappingKeyPath',
+    'MldsaPrivateKeyEncryptedPath', 'WrappingKeyPath', 'MldsaPublicKeyPath')) {
+    Assert-ReleaseParameterValue $name (Get-Variable -Name $name -ValueOnly) $releaseSigning[$name] -Path
+    Set-Variable -Name $name -Value $releaseSigning[$name]
 }
-
-function Normalize-Thumbprint {
-    param([string] $Thumbprint)
-    $normalized = $Thumbprint -replace "\s", ""
-    if ($normalized -notmatch '^[0-9A-Fa-f]{40}$') {
-        throw "Certificate thumbprint must contain exactly 40 hexadecimal characters."
-    }
-
-    return $normalized.ToUpperInvariant()
+foreach ($name in @('CertificateThumbprint', 'ExpectedSignerSha256', 'ExpectedSignerSha3_512',
+    'ExpectedSignerSkein1024', 'ExpectedMldsa87Sha256', 'ExpectedMldsa87Sha3_512', 'ExpectedMldsa87Skein1024')) {
+    Assert-ReleaseParameterValue $name (Get-Variable -Name $name -ValueOnly) $releaseSigning[$name]
 }
+$effectiveCertificateThumbprint = $releaseSigning.CertificateThumbprint
+$effectiveSignerSha256 = $releaseSigning.ExpectedSignerSha256
+$effectiveSignerSha3 = $releaseSigning.ExpectedSignerSha3_512
+$effectiveSignerSkein = $releaseSigning.ExpectedSignerSkein1024
+$effectiveMldsaSha256 = $releaseSigning.ExpectedMldsa87Sha256
+$effectiveMldsaSha3 = $releaseSigning.ExpectedMldsa87Sha3_512
+$effectiveMldsaSkein = $releaseSigning.ExpectedMldsa87Skein1024
 
-function Normalize-Digest {
-    param(
-        [string] $Digest,
-        [int] $Length,
-        [string] $Name
-    )
-    $normalized = $Digest -replace "\s", ""
-    if ($normalized -notmatch "^[0-9A-Fa-f]{$Length}$") {
-        throw "$Name must contain exactly $Length hexadecimal characters."
-    }
-
-    return $normalized.ToUpperInvariant()
-}
-
-[xml] $rootBuildProperties = Get-Content -LiteralPath (Join-Path $root "Directory.Build.props")
-$rootPropertyGroup = $rootBuildProperties.Project.PropertyGroup
-$policyPath = if ($ReleaseKeyDirectory) {
-    Join-Path $root "KeepVaultMac\Directory.Build.props"
-}
-else {
-    Join-Path $root "Directory.Build.props"
-}
-[xml] $policyProperties = Get-Content -LiteralPath $policyPath
-$propertyGroup = $policyProperties.Project.PropertyGroup
-$defaultCertificateThumbprint = Normalize-Thumbprint ($rootPropertyGroup.SelectSingleNode("KalynaSigningCertificateThumbprint").InnerText)
-$defaultSignerSha256 = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedSignerSha256").InnerText) 64 "Expected SHA-256 SPKI fingerprint"
-$defaultSignerSha3 = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedSignerSha3_512").InnerText) 128 "Expected SHA3-512 SPKI fingerprint"
-$defaultSignerSkein = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedSignerSkein1024").InnerText) 256 "Expected Skein-1024 SPKI fingerprint"
-$defaultMldsaSha256 = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedMldsa87Sha256").InnerText) 64 "Expected ML-DSA-87 SHA-256 fingerprint"
-$defaultMldsaSha3 = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedMldsa87Sha3_512").InnerText) 128 "Expected ML-DSA-87 SHA3-512 fingerprint"
-$defaultMldsaSkein = Normalize-Digest ($propertyGroup.SelectSingleNode("KalynaExpectedMldsa87Skein1024").InnerText) 256 "Expected ML-DSA-87 Skein-1024 fingerprint"
-
-$effectiveCertificateThumbprint = if ($CertificateThumbprint) {
-    Normalize-Thumbprint $CertificateThumbprint
-}
-else {
-    $defaultCertificateThumbprint
-}
-
-$releaseCertificate = $null
-if (-not $SkipSigning) {
-    . (Join-Path $PSScriptRoot 'Import-SigningRuntime.ps1')
-    Import-SigningRuntime
-    if ($PfxPath) {
-        if (-not $PfxPasswordEncryptedPath -or -not $PfxWrappingKeyPath) {
-            throw 'PFX signing requires the v12 password envelope and its separate wrapping-key file.'
+function Assert-ReleasePublicFingerprints {
+    param([byte[]] $Bytes, [string] $Prefix, [hashtable] $Policy)
+    $stream = [IO.MemoryStream]::new($Bytes, $false)
+    try {
+        $actual = [KalynaArchiver.Signing.HybridSignatureService]::Fingerprint($stream)
+        foreach ($entry in @(
+            @('Sha256', $actual.Item1), @('Sha3_512', $actual.Item2), @('Skein1024', $actual.Item3))) {
+            if ([Convert]::ToHexString($entry[1]) -cne $Policy[$Prefix + $entry[0]]) {
+                throw "The release public key does not match the mandatory $Prefix$($entry[0]) pin."
+            }
         }
-        $releaseCertificate = [KalynaArchiver.Signing.ReleaseSigningOperations]::LoadCertificate(
-            (Resolve-Path -LiteralPath $PfxPath).Path, $PfxPasswordEncryptedPath, $PfxWrappingKeyPath)
-        $effectiveCertificateThumbprint = Normalize-Thumbprint $releaseCertificate.Thumbprint
     }
+    finally { $stream.Dispose() }
 }
+
+. (Join-Path $PSScriptRoot 'Import-SigningRuntime.ps1')
+Import-SigningRuntime
+Assert-ReleasePublicFingerprints ([IO.File]::ReadAllBytes($MldsaPublicKeyPath)) 'ExpectedMldsa87' $releaseSigning
+$releaseCertificate = $null
 try {
-$usingDefaultCertificate = ((-not $PfxPath -and $effectiveCertificateThumbprint -eq $defaultCertificateThumbprint) -or [bool]$ReleaseKeyDirectory)
-$effectiveSignerSha256 = if ($ExpectedSignerSha256) {
-    Normalize-Digest $ExpectedSignerSha256 64 "Expected SHA-256 SPKI fingerprint"
+$releaseCertificate = [KalynaArchiver.Signing.ReleaseSigningOperations]::LoadCertificate(
+    $PfxPath, $PfxPasswordEncryptedPath, $PfxWrappingKeyPath)
+if ($releaseCertificate.Thumbprint -cne $effectiveCertificateThumbprint) {
+    throw 'The selected PFX does not contain the committed Windows release certificate.'
 }
-elseif ($usingDefaultCertificate) {
-    $defaultSignerSha256
+$releaseRsa = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPublicKey($releaseCertificate)
+try {
+    if ($null -eq $releaseRsa -or $releaseRsa.KeySize -ne 4096) { throw 'The Windows release identity must use RSA-4096.' }
+    Assert-ReleasePublicFingerprints $releaseRsa.ExportSubjectPublicKeyInfo() 'ExpectedSigner' $releaseSigning
 }
-else {
-    $null
-}
-
-$effectiveSignerSha3 = if ($ExpectedSignerSha3_512) {
-    Normalize-Digest $ExpectedSignerSha3_512 128 "Expected SHA3-512 SPKI fingerprint"
-}
-elseif ($usingDefaultCertificate) {
-    $defaultSignerSha3
-}
-else {
-    $null
-}
-
-$effectiveSignerSkein = if ($ExpectedSignerSkein1024) {
-    Normalize-Digest $ExpectedSignerSkein1024 256 "Expected Skein-1024 SPKI fingerprint"
-}
-elseif ($usingDefaultCertificate) {
-    $defaultSignerSkein
-}
-else {
-    $null
-}
-
-$effectiveMldsaSha256 = if ($ExpectedMldsa87Sha256) {
-    Normalize-Digest $ExpectedMldsa87Sha256 64 "Expected ML-DSA-87 SHA-256 fingerprint"
-}
-else {
-    $defaultMldsaSha256
-}
-
-$effectiveMldsaSha3 = if ($ExpectedMldsa87Sha3_512) {
-    Normalize-Digest $ExpectedMldsa87Sha3_512 128 "Expected ML-DSA-87 SHA3-512 fingerprint"
-}
-else {
-    $defaultMldsaSha3
-}
-
-$effectiveMldsaSkein = if ($ExpectedMldsa87Skein1024) {
-    Normalize-Digest $ExpectedMldsa87Skein1024 256 "Expected ML-DSA-87 Skein-1024 fingerprint"
-}
-else {
-    $defaultMldsaSkein
-}
-
-if ((-not $PfxPath -and -not $effectiveCertificateThumbprint) -or
-    -not $effectiveSignerSha256 -or -not $effectiveSignerSha3 -or -not $effectiveSignerSkein -or
-    -not $effectiveMldsaSha256 -or -not $effectiveMldsaSha3 -or -not $effectiveMldsaSkein) {
-    throw "Portable builds require SHA-256/SHA3-512/Skein-1024 pins for both RSA and ML-DSA-87."
-}
-
+finally { if ($releaseRsa) { $releaseRsa.Dispose() } }
 function Assert-InRoot {
     param([string] $Path)
     $full = [System.IO.Path]::GetFullPath($Path)
@@ -327,7 +241,7 @@ foreach ($target in $nativeTargets) {
     if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { throw "Fresh native output is missing: $target" }
 }
 $SnapshotLease.Verify()
-$nativeSigning = & (Join-Path $PSScriptRoot 'New-ReleaseSigningParameters.ps1') -ReleaseKeyDirectory $ReleaseKeyDirectory
+$nativeSigning = @{} + $releaseSigning
 $nativeSigning.MldsaReferencePath = $MldsaReferencePath
 & $signScript -Path $nativeTargets @nativeSigning
 & (Join-Path $PSScriptRoot 'Generate-ReleaseManifests.ps1') -NativeToolDirectory $nativeOutput @nativeSigning

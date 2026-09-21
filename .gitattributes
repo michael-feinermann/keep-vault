@@ -1,4 +1,6 @@
 # These cryptographically pinned, cross-platform fixtures must retain exact bytes.
+WindowsRelease/Signing/mldsa87-public.key -text
+WindowsRelease/Signing/hybrid-rsa4096.cer -text
 KeepVaultMac.Tests/Fixtures/CredentialCompatibility/** -text
 KalynaArchiver/Resources/PasswordModel/** -text
 external/Skein-reference/NIST/CD/Reference_Implementation/skein_debug.c -text

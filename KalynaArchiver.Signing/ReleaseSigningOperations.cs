@@ -105,20 +105,24 @@ public static class ReleaseSigningOperations
                 throw new CryptographicException("The release envelope has the wrong secret type, version, or canonical length.");
             }
 
-            encodedKey = ReadBoundedFile(wrappingKeyPath, 1, 1024);
-            Span<char> encodedCharacters = stackalloc char[encodedKey.Length];
-            for (int index = 0; index < encodedKey.Length; index++) encodedCharacters[index] = (char)encodedKey[index];
-            wrappingKey = GC.AllocateUninitializedArray<byte>(32, pinned: true);
-            try
+            bool windowsProtected = wrappingKeyPath.EndsWith(".dpapi", StringComparison.OrdinalIgnoreCase);
+            encodedKey = ReadBoundedFile(wrappingKeyPath, 1,
+                windowsProtected ? WindowsWrappingKey.MaximumEnvelopeBytes : 1024);
+            if (windowsProtected)
             {
-                if (!Convert.TryFromBase64Chars(encodedCharacters, wrappingKey, out int written) || written != 32)
-                {
-                    throw new CryptographicException("The release wrapping key must encode exactly 32 bytes.");
-                }
+                wrappingKey = WindowsWrappingKey.Unprotect(encodedKey, magic);
             }
-            finally
+            else
             {
-                CryptographicOperations.ZeroMemory(MemoryMarshal.AsBytes(encodedCharacters));
+                Span<char> encodedCharacters = stackalloc char[encodedKey.Length];
+                for (int index = 0; index < encodedKey.Length; index++) encodedCharacters[index] = (char)encodedKey[index];
+                wrappingKey = GC.AllocateUninitializedArray<byte>(32, pinned: true);
+                try
+                {
+                    if (!Convert.TryFromBase64Chars(encodedCharacters, wrappingKey, out int written) || written != 32)
+                        throw new CryptographicException("The release wrapping key must encode exactly 32 bytes.");
+                }
+                finally { CryptographicOperations.ZeroMemory(MemoryMarshal.AsBytes(encodedCharacters)); }
             }
 
             plaintext = GC.AllocateUninitializedArray<byte>(checked((int)length), pinned: true);
@@ -138,7 +142,7 @@ public static class ReleaseSigningOperations
         }
     }
 
-    private static byte[] ReadBoundedFile(string path, int minimum, int maximum)
+    internal static byte[] ReadBoundedFile(string path, int minimum, int maximum)
     {
         string fullPath = Path.GetFullPath(path);
         for (string? current = fullPath; current is not null; current = Path.GetDirectoryName(current))

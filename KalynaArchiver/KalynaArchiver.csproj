@@ -52,7 +52,7 @@
     <EmbeddedResource Include="..\tools\mldsa87-public.key"
                       Condition="'$(KalynaReleaseIdentity)' != 'true'"
                       LogicalName="KeepVault.MLDsa87.PublicKey" />
-    <EmbeddedResource Include="..\KeepVaultMac\Packaging\Keys\mldsa87-public.key"
+    <EmbeddedResource Include="..\WindowsRelease\Signing\mldsa87-public.key"
                       Condition="'$(KalynaReleaseIdentity)' == 'true'"
                       LogicalName="KeepVault.MLDsa87.PublicKey" />
   </ItemGroup>

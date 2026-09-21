@@ -18,6 +18,8 @@ static async Task<int> RunAsync(string[] args)
         return command switch
         {
             "KEYGEN" => RunKeygen(options),
+            "RELEASE-KEYGEN" => WindowsReleaseKeyCommands.Generate(Require(options, "directory"), Require(options, "public-directory")),
+            "RELEASE-KEY-EXPORT" => WindowsReleaseKeyCommands.Export(Require(options, "directory"), Require(options, "destination")),
             "SIGN" => await RunSignAsync(options).ConfigureAwait(false),
             "VERIFY" => RunVerify(options),
             "FINGERPRINT" => RunFingerprint(options),
@@ -321,6 +323,6 @@ static byte[] ReadExactFile(string path, int expectedBytes)
 static int Usage(string error)
 {
     Console.Error.WriteLine(error);
-    Console.Error.WriteLine("Commands: keygen, sign, verify, fingerprint, reference-self-test");
+    Console.Error.WriteLine("Commands: keygen, sign, verify, fingerprint, reference-self-test, release-keygen, release-key-export");
     return 1;
 }

@@ -29,6 +29,30 @@ verschoben. Die sechs vorhandenen macOS-Dateien bleiben unverändert.
 abgegrenzten Teilprüfungen sind weiter fortgeschritten; ein vollständiger finaler
 Build, die Ende-zu-Ende-Freigabe und die Veröffentlichung sind noch offen.
 
+Am 21. September bestanden auf dem festgehaltenen Quellstand `bb37a80` alle
+sechs verwalteten Build-/Publish-Schritte sowie 16 verwaltete Testgruppen.
+Die QR-Scanner-Prüfung bestand mit 151 Tests. Die Dialogprüfung umfasst sechs
+echte modale DE/EN-Lebenszyklen; die PDF-/Druckbestätigung akzeptiert nur ein
+ausdrückliches Ja. Diese verwalteten Build-Ausgaben enthalten absichtlich keine
+Vault-Native-Dateien und sind keine veröffentlichbaren Releasepakete.
+
+Ein neuer regulärer nativer Einzelbuild desselben Quellstands bestand am
+21. September von 19:13:25 bis 19:14:12 unter aktivem Bitdefender 30.0.33.163
+mit Antivirus-Update 77834. Alle zehn Ausgaben blieben vorhanden; ihre Hashes
+waren auch um 19:22:46 unverändert. x64, erforderliche Exporte, ASLR, DEP,
+CFG und CET wurden statisch geprüft. Der neue `kalyna_v12.dll`-SHA256 lautet
+`C7FA0A8662E17554CB40FFFDA98CA60B17480590044E2F1F71080A1161ACA253`.
+WSC meldete vor und nach dem Build Bitdefender ON/UP_TO_DATE. Der Build hatte
+33 Iterator-Deprecation- und fünf beabsichtigte `/Fo`-Override-Diagnosen, keine
+Fehler. Das ist ein frischer Build-/Retention-/Static-Nachweis; ein ausdrücklicher
+Bitdefender-Scan und eine Herstellerbewertung der historischen Erkennung sind
+dadurch nicht behauptet. Keine quarantänisierten Bytes wurden wiederhergestellt
+oder wiederverwendet. Dieser Einzelversuch führte keine nativen Produkte aus.
+Der ältere, unabhängige GitHub-Defender-Scan ist unten getrennt dokumentiert.
+
+Die folgenden Angaben zum 15. September beschreiben den damaligen Abbruch;
+sie sind keine Beschreibung eines bereits abgeschlossenen neuen Release-Laufs.
+
 Der geprüfte Implementierungsstand wurde am 15. September als
 [`e27699ff1495c836088f1b1bd22eef19018b748d`](https://github.com/michael-feinermann/keep-vault/commit/e27699ff1495c836088f1b1bd22eef19018b748d)
 committet und auf `codex/windows-v12-5.0.2` gepusht. Die Remote-Commit-ID wurde
@@ -70,8 +94,20 @@ Neubau zur Umgehung der Erkennung und keine Änderung der Schutzfunktionen.
 Bei der Wiederaufnahme am 21. September war der externe Schlüsselordner
 `A:\Keep Vault ReleaseKeys v12` nicht erreichbar. Auch der genaue Ordnername
 an den Wurzeln der angeschlossenen Laufwerke wurde nicht gefunden; es fand
-keine rekursive Suche nach Schlüsselmaterial statt. Die Signierung benötigt
-den erneut angeschlossenen Datenträger oder dessen aktuellen Pfad.
+keine rekursive Suche nach Schlüsselmaterial statt. Der Benutzer beauftragte
+daraufhin ausdrücklich eine neue, lokal unter Windows geschützte Identität
+und eine spätere Übertragung. Die Windows-Identität ist vom macOS-Release
+getrennt; Verfahren und Exportweg stehen in `WINDOWS_RELEASE_KEYS.md`.
+Die neue RSA-4096/ML-DSA-87-Identität wurde am 21. September erfolgreich
+erzeugt und mit beiden Signatur-Roundtrips geprüft. Zertifikat-Thumbprint:
+`7BA65B5130F34AB9F15C0D074699D46D9BCCD21C`. Die privaten Dateien liegen
+außerhalb Git/OneDrive in einem ACL-geschützten direkten Benutzerordner;
+AES-256-GCM-Hüllschlüssel sind an den Windows-Benutzer gebunden durch DPAPI.
+74 synthetische Speicher-/Kryptografieprüfungen und 46 öffentliche
+Policy-/Parameter-/MSBuild-Prüfungen bestanden. Ein realer Testfehler durch
+AppData-Virtualisierung wurde behoben: umgeleitete Ordner werden jetzt vor
+der Erzeugung von Geheimnissen abgelehnt. Ein portabler Produktionsexport
+wurde nicht erstellt; der spätere Exportweg wurde nur mit Testschlüsseln geprüft.
 
 Bitdefender hat am 9. September 2026 um 12:35:59 Ortszeit die frisch kompilierte
 Datei `tools/kalyna_v12.dll` als `Gen:Variant.Lazy.491499` quarantänisiert.

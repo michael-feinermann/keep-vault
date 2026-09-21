@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
     <ProjectReference Include="..\KalynaArchiver.Signing\KalynaArchiver.Signing.csproj" />
   </ItemGroup>
 
