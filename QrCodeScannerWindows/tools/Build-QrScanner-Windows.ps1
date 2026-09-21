@@ -51,8 +51,23 @@ if (-not $SkipTests) {
     }
 }
 
+# The release snapshot pre-creates this output directory before its source
+# directories are leased. Keep the directory itself: recreating it would need
+# permission to add an entry to the protected scanner source directory.
 if (Test-Path -LiteralPath $distribution) {
-    Remove-Item -LiteralPath $distribution -Recurse -Force
+    $outputDirectory = Get-Item -LiteralPath $distribution -Force
+    if (-not $outputDirectory.PSIsContainer -or
+        ($outputDirectory.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw 'The scanner distribution must be an ordinary output directory.'
+    }
+    $outputPrefix = [IO.Path]::GetFullPath($distribution).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    foreach ($entry in Get-ChildItem -LiteralPath $distribution -Force) {
+        $entryPath = [IO.Path]::GetFullPath($entry.FullName)
+        if (-not $entryPath.StartsWith($outputPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Scanner output cleanup escaped its distribution directory.'
+        }
+        Remove-Item -LiteralPath $entryPath -Recurse -Force
+    }
 }
 
 $iconPath = Join-Path $scannerRoot 'build-obj\scanner-assets\QR-Scanner.ico'

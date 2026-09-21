@@ -48,6 +48,9 @@ function New-ReleaseSourceSnapshot {
         throw 'Source identity changed during snapshot creation.'
     }
     $tracked = (Invoke-SnapshotGit $source @('ls-files', '-z', '--')).Split([char]0, [StringSplitOptions]::RemoveEmptyEntries)
+    if (@($tracked | Where-Object { [KeepVaultBuild.SourceSnapshotLease]::IsMarkupOutput($_) }).Count) {
+        throw 'Generated WPF markup projects must never be committed as source.'
+    }
     $inputs = @($tracked | Where-Object { -not [KeepVaultBuild.SourceSnapshotLease]::IsOutput($_) })
     if ($inputs.Count -eq 0) { throw 'The committed source inventory is empty.' }
     foreach ($directory in @('work', 'dist', 'build-analysis')) {

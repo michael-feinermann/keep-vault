@@ -68,6 +68,7 @@ internal static class WindowsGuiV502Tests
     internal static void Run()
     {
         SecurityDialogReferenceTests.Run();
+        CheckKeySheetOutputConfirmations();
         using var window = new MainWindow(new MemoryAppSettingsStore());
         Require(window.Width == 1220 && window.Height == 860
             && window.MinWidth == 980 && window.MinHeight == 720, "Reference window dimensions changed.");
@@ -115,6 +116,85 @@ internal static class WindowsGuiV502Tests
         window.Dispose();
         Require(window.CreatePinBox.Password.Length == 0 && window.CreatePinConfirmBox.Password.Length == 0
             && window.ExtractPinBox.Password.Length == 0, "Disposal retained PIN credentials.");
+    }
+
+    private static void CheckKeySheetOutputConfirmations()
+    {
+        using var window = new MainWindow(new MemoryAppSettingsStore());
+        var previousDialogHook = MainWindow.TestHookShowCredentialMessage;
+        string firstFactor = new('A', PasswordKeyService.GeneratedPasswordLength);
+        string secondFactor = new('B', PasswordKeyService.GeneratedPasswordLength);
+        string archive = Path.Combine(Path.GetTempPath(), "synthetic-key-sheet-confirmation.kzpaq");
+        try
+        {
+            foreach (bool english in new[] { false, true })
+            foreach (bool printing in new[] { false, true })
+            {
+                window.LanguageBox.SelectedIndex = english ? 1 : 0;
+                window.ArchivePathBox.Text = archive;
+                window.GeneratedPasswordFirstBox.Text = firstFactor;
+                window.GeneratedPasswordSecondBox.Text = secondFactor;
+                string expectedMessage = printing
+                    ? english
+                        ? "The Windows print spooler, the printer, or a network print server can retain this secret key-sheet job in a spool, cache, or device memory. Continue only with a trusted physical printer that you control. Keep Vault cannot erase copies outside the app."
+                        : "Der Windows-Druckspooler, der Drucker oder ein Netzwerk-Druckserver kann diesen geheimen Schlüsselzettelauftrag in einer Warteschlange, einem Zwischenspeicher oder Gerätespeicher behalten. Nur mit einem vertrauenswürdigen physischen Drucker fortfahren, den du kontrollierst. Keep Vault kann Kopien außerhalb der App nicht löschen."
+                    : english
+                        ? "This explicit test export permanently writes the secret factors to two separate PDFs, one factor per file. Continue only in a controlled test environment."
+                        : "Dieser ausdrückliche Testexport schreibt die geheimen Faktoren dauerhaft in zwei getrennte PDFs, einen Faktor pro Datei. Nur in einer kontrollierten Testumgebung fortfahren.";
+                int confirmations = 0, outputs = 0;
+                MessageBoxResult response = MessageBoxResult.No;
+                MainWindow.TestHookShowCredentialMessage = (message, title, buttons, image) =>
+                {
+                    Require(message == expectedMessage && title == (english ? "Confirm protected action" : "Geschützte Aktion bestätigen"),
+                        "The pre-output risk confirmation must use the macOS DE/EN text with the Windows spooler name.");
+                    Require(buttons == MessageBoxButton.YesNo && image == MessageBoxImage.Warning,
+                        "Key-sheet output must use the reference safety confirmation with cancellation as its default.");
+                    confirmations++;
+                    return response;
+                };
+                void Output(KeySheetData data)
+                {
+                    Require(confirmations > 0 && response == MessageBoxResult.Yes,
+                        "No output may run before an explicit confirmation.");
+                    Require(data.ArchivePath == archive && data.FirstGeneratedPassword == firstFactor
+                        && data.SecondGeneratedPassword == secondFactor && data.English == english,
+                        "The confirmed output must receive the validated synthetic factors and selected language.");
+                    outputs++;
+                }
+
+                string initialLog = window.LogBox.Text;
+                string initialStatus = window.KeySheetStatusText.Text;
+                foreach (MessageBoxResult cancelled in new[] { MessageBoxResult.None, MessageBoxResult.No, MessageBoxResult.Cancel, MessageBoxResult.OK })
+                {
+                    response = cancelled;
+                    window.RunConfirmedKeySheetOutput(printing, Output);
+                    Require(outputs == 0 && window.LogBox.Text == initialLog && window.KeySheetStatusText.Text == initialStatus,
+                        "Closing or cancelling must not invoke any picker, PDF writer or printer, or mark the key sheets handled.");
+                }
+                Require(confirmations == 4, "Every attempted output must receive its own risk confirmation.");
+                response = MessageBoxResult.Yes;
+                window.RunConfirmedKeySheetOutput(printing, Output);
+                Require(outputs == 1 && confirmations == 5, "An explicit Yes must invoke the output continuation exactly once.");
+
+                foreach ((string first, string second) in new[] { ("", secondFactor), (firstFactor, "") })
+                {
+                    window.GeneratedPasswordFirstBox.Text = first;
+                    window.GeneratedPasswordSecondBox.Text = second;
+                    for (int attempt = 0; attempt < 2; attempt++)
+                    {
+                        bool rejected = false;
+                        try { window.RunConfirmedKeySheetOutput(printing, Output); }
+                        catch (InvalidOperationException) { rejected = true; }
+                        Require(rejected && confirmations == 5 && outputs == 1,
+                            "Missing factors must fail before any confirmation or output, including repeated attempts.");
+                    }
+                }
+            }
+        }
+        finally
+        {
+            MainWindow.TestHookShowCredentialMessage = previousDialogHook;
+        }
     }
 
     private static void CheckPathWatermarks(MainWindow window)

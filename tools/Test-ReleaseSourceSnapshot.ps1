@@ -26,7 +26,7 @@ $testRoot = Join-Path (Join-Path $PSScriptRoot '..\work') ('snapshot-regression-
 $repository = Join-Path $testRoot 'repository'
 foreach ($name in @('KalynaArchiver', 'tools', 'external')) { [IO.Directory]::CreateDirectory((Join-Path $repository $name)) | Out-Null }
 [IO.File]::WriteAllText((Join-Path $repository '.gitignore'), "work/`nbin/`nobj/`nbuild-obj/`nobj_alt/`ndist/`nbuild-analysis/`n")
-[IO.File]::WriteAllText((Join-Path $repository 'KalynaArchiver\Demo.csproj'), '<Project Sdk="Microsoft.NET.Sdk" />')
+[IO.File]::WriteAllText((Join-Path $repository 'KalynaArchiver\KalynaArchiver.csproj'), '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><UseWPF>true</UseWPF></PropertyGroup></Project>')
 [IO.File]::WriteAllText((Join-Path $repository 'KalynaArchiver\Input.cs'), '// committed source')
 [IO.File]::WriteAllText((Join-Path $repository 'external\unit.cpp'), '// reviewed wildcard input')
 [IO.File]::WriteAllText((Join-Path $repository 'tools\Build.ps1'), '# committed script')
@@ -66,6 +66,24 @@ try {
     Require-Rejection { [IO.File]::WriteAllText((Join-Path $snapshotRoot 'KalynaArchiver\Input.cs'), 'mutation') } 'source write while leased'
     Require-Rejection { [IO.File]::WriteAllText((Join-Path $snapshotRoot 'external\new.cpp'), 'insertion') } 'new wildcard input while leased'
     Require-Rejection { [IO.File]::WriteAllText((Join-Path $snapshotRoot 'tools\injected.ps1'), 'insertion') } 'new script while leased'
+    $markupSlot = Join-Path $snapshotRoot ('KalynaArchiver\' + [KeepVaultBuild.SourceSnapshotLease]::MarkupProjectName)
+    if (-not (Test-Path -LiteralPath $markupSlot -PathType Leaf)) { throw 'The exact WPF markup output was not pre-created.' }
+    foreach ($build in 1..2) {
+        [xml]$temporaryProject = "<Project><PropertyGroup><SyntheticBuild>$build</SyntheticBuild></PropertyGroup></Project>"
+        $temporaryProject.Save($markupSlot)
+        if (([xml](Get-Content -LiteralPath $markupSlot -Raw)).Project.PropertyGroup.SyntheticBuild -ne [string]$build) {
+            throw 'A repeated WPF-style XmlDocument.Save did not reuse the same output slot.'
+        }
+    }
+    Require-Rejection { [IO.File]::Delete($markupSlot) } 'retained markup output cannot be removed while leased'
+    Require-Rejection { [IO.File]::Move($markupSlot, "$markupSlot.replaced") } 'retained markup output identity cannot be replaced'
+    Require-Rejection { [IO.File]::WriteAllText((Join-Path $snapshotRoot 'KalynaArchiver\unexpected_wpftmp.csproj'), '<Project/>') } 'random WPF projects are not source-directory exemptions'
+    if ([KeepVaultBuild.SourceSnapshotLease]::IsOutput('KalynaArchiver/unexpected_wpftmp.csproj') -or
+        [KeepVaultBuild.SourceSnapshotLease]::IsOutput('KalynaArchiver/Gui/KeepVault.GeneratedMarkup.wpftmp.csproj') -or
+        [KeepVaultBuild.SourceSnapshotLease]::IsOutput('unknown/KeepVault.GeneratedMarkup.wpftmp.csproj')) {
+        throw 'A broad WPF temporary-project exemption was introduced.'
+    }
+    Write-Host 'PASS exact WPF slot supports repeated XmlDocument.Save while retaining source-insertion and object-identity guards'
     Require-Rejection { [IO.Directory]::Move($snapshotRoot, "$snapshotRoot-renamed") } 'source root rename while leased'
     [IO.File]::WriteAllText((Join-Path $snapshotRoot 'KalynaArchiver\bin\generated.dll'), 'synthetic managed output')
     $nativeOutputs = Join-Path $snapshotRoot 'work\native-tools'
@@ -120,4 +138,30 @@ Require-Rejection { $cleanupLease.Dispose() } 'aggregate cleanup error after all
 [IO.File]::WriteAllText((Join-Path $cleanupTree 'after.cs'), '// ACL restored')
 [IO.Directory]::Move($cleanupTree, "$cleanupTree-released")
 Write-Host 'PASS failed construction and failed ACL restoration do not retain remaining restrictions'
+
+# A writable slot must come from this lease's CreateNew, never from an existing
+# file or a committed/generated project silently omitted from source hashes.
+$slotTree = Join-Path $testRoot 'preexisting-markup'
+[IO.Directory]::CreateDirectory((Join-Path $slotTree 'KalynaArchiver')) | Out-Null
+[IO.File]::WriteAllText((Join-Path $slotTree 'KalynaArchiver\KalynaArchiver.csproj'), '<Project/>')
+$preexistingSlot = Join-Path $slotTree ('KalynaArchiver\' + [KeepVaultBuild.SourceSnapshotLease]::MarkupProjectName)
+[IO.File]::WriteAllText($preexistingSlot, '<Project><Target Name="Unreviewed"/></Project>')
+Require-Rejection {
+    $badLease = [KeepVaultBuild.SourceSnapshotLease]::new($slotTree, $commit,
+        [string[]]@('KalynaArchiver/KalynaArchiver.csproj'), (Join-Path $testRoot 'bad-slot-before.sha256'))
+    $badLease.Dispose()
+} 'preexisting markup project cannot become a mutable output slot'
+Require-Rejection {
+    $badLease = [KeepVaultBuild.SourceSnapshotLease]::new($slotTree, $commit,
+        [string[]]@('KalynaArchiver/KalynaArchiver.csproj', 'KalynaArchiver/KeepVault.GeneratedMarkup.wpftmp.csproj'),
+        (Join-Path $testRoot 'tracked-slot-before.sha256'))
+    $badLease.Dispose()
+} 'markup output cannot enter the source input inventory'
+
+$null = Invoke-SnapshotGit $repository @('restore', '--', 'KalynaArchiver/Input.cs')
+$committedSlot = Join-Path $repository ('KalynaArchiver\' + [KeepVaultBuild.SourceSnapshotLease]::MarkupProjectName)
+[IO.File]::WriteAllText($committedSlot, '<Project/>')
+$null = Invoke-SnapshotGit $repository @('add', '--', 'KalynaArchiver/KeepVault.GeneratedMarkup.wpftmp.csproj')
+$null = Invoke-SnapshotGit $repository @('commit', '--quiet', '-m', 'Synthetic forbidden generated-project commit')
+Require-Rejection { New-ReleaseSourceSnapshot $repository } 'committed markup slot is rejected instead of exempted from source hashing'
 Write-Host "Synthetic evidence directory: $testRoot"

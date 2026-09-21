@@ -23,6 +23,14 @@ public sealed class SourceSnapshotLease : IDisposable
     private readonly List<(string Path, DirectorySecurity Acl)> acls = new();
     private readonly Dictionary<string, (FileStream Stream, string Hash)> inputs = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> sourceDirectories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, SafeFileHandle> markupSlots = new(StringComparer.OrdinalIgnoreCase);
+    public const string MarkupProjectName = "KeepVault.GeneratedMarkup.wpftmp.csproj";
+    private static readonly string[] WpfProjects =
+    [
+        "KalynaArchiver/KalynaArchiver.csproj", "KalynaArchiver.Tests/KalynaArchiver.Tests.csproj",
+        "KeepVaultInstaller/KeepVaultInstaller.csproj", "QrCodeScannerWindows/QrScanner.csproj",
+        "QrCodeScannerWindows/QrScanner.Tests.csproj"
+    ];
     private static readonly string[] ProjectDirectories =
     [
         "KalynaArchiver", "KalynaArchiver.Signing", "KalynaArchiver.Tests",
@@ -63,6 +71,16 @@ public sealed class SourceSnapshotLease : IDisposable
                 leases.Add(stream);
                 inputs.Add(relative.Replace('\\', '/'), (stream, Hash(stream)));
             }
+            foreach (string project in WpfProjects.Where(inputs.ContainsKey))
+            {
+                string path = Path.Combine(Root, Path.GetDirectoryName(project)!, MarkupProjectName);
+                if (markupSlots.ContainsKey(path)) continue; // Scanner projects share one source directory.
+                // Only fresh, non-committed slots are accepted. Existing files,
+                // directories, reparse points and hard links fail CreateNew.
+                SafeFileHandle slot = Open(path, false, writableOutput: true, createNew: true);
+                leases.Add(slot);
+                markupSlots.Add(path, slot);
+            }
             // No path component may be renamed while tools resolve the input.
             SecurityIdentifier sid = WindowsIdentity.GetCurrent().User!;
             foreach (string directory in sourceDirectories.OrderBy(value => value.Length))
@@ -92,6 +110,7 @@ public sealed class SourceSnapshotLease : IDisposable
     public static bool IsOutput(string relative)
     {
         string path = relative.Replace('\\', '/');
+        if (IsMarkupOutput(path)) return true;
         if (path.StartsWith(".git/", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("work/", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("build-analysis/", StringComparison.OrdinalIgnoreCase)
@@ -108,11 +127,22 @@ public sealed class SourceSnapshotLease : IDisposable
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
     }
 
+    public static bool IsMarkupOutput(string relative)
+    {
+        string path = relative.Replace('\\', '/');
+        return WpfProjects.Any(project => string.Equals(
+            project[..project.LastIndexOf('/')] + "/" + MarkupProjectName, path,
+            StringComparison.OrdinalIgnoreCase));
+    }
+
     public void Verify()
     {
         if (disposed) throw new ObjectDisposedException(nameof(SourceSnapshotLease));
         foreach (var input in inputs)
             if (Hash(input.Value.Stream) != input.Value.Hash) throw new IOException("Build source changed: " + input.Key);
+        foreach (var slot in markupSlots)
+            if (!GetFileInformationByHandle(slot.Value, out FileInformation info) || info.Links != 1
+                || (info.Attributes & 0x410) != 0) throw new IOException("Invalid held WPF markup output: " + slot.Key);
         var pending = new Stack<string>();
         pending.Push(Root);
         while (pending.Count != 0)
@@ -121,6 +151,8 @@ public sealed class SourceSnapshotLease : IDisposable
             {
                 string relative = Path.GetRelativePath(Root, path).Replace('\\', '/');
                 FileAttributes attributes = File.GetAttributes(path);
+                if (IsMarkupOutput(relative) && !markupSlots.ContainsKey(path))
+                    throw new IOException("Uncontrolled WPF markup output: " + relative);
                 if (IsOutput(relative + ((attributes & FileAttributes.Directory) != 0 ? "/" : ""))) continue;
                 if ((attributes & FileAttributes.ReparsePoint) != 0) throw new IOException("Source reparse point: " + relative);
                 if ((attributes & FileAttributes.Directory) != 0)
@@ -139,10 +171,10 @@ public sealed class SourceSnapshotLease : IDisposable
         return Convert.ToHexString(SHA256.HashData(stream));
     }
 
-    private static SafeFileHandle Open(string path, bool directory)
+    private static SafeFileHandle Open(string path, bool directory, bool writableOutput = false, bool createNew = false)
     {
-        SafeFileHandle handle = CreateFileW(path, directory ? 0x81u : 0x80000000u, directory ? 3u : 1u,
-            0, 3, directory ? 0x02200000u : 0x00200000u, 0);
+        SafeFileHandle handle = CreateFileW(path, directory ? 0x81u : 0x80000000u, directory || writableOutput ? 3u : 1u,
+            0, createNew ? 1u : 3u, directory ? 0x02200000u : 0x00200000u, 0);
         try
         {
             if (handle.IsInvalid || !GetFileInformationByHandle(handle, out FileInformation info)

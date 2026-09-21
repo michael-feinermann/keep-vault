@@ -1,0 +1,100 @@
+<Project>
+  <!--
+    Scoped replacement of the SDK 10.0.401 GenerateTemporaryTargetAssembly target.
+    Source: dotnet/wpf Microsoft.WinFX.targets; license: tools/licenses/dotnet-wpf-MIT.txt.
+    Preserve the SDK task and NuGet/RID handling; change the exact retained project
+    filename. SourceSnapshotLease creates and binds that output without relaxing
+    source-directory ACLs. Normal builds can create the same ignored file.
+    No SDK installation is modified.
+  -->
+  <Target Name="ConfigureControlledWpfMarkupProject" AfterTargets="MarkupCompilePass1" Condition="'$(UseWPF)' == 'true' And '$(_RequireMCPass2ForMainAssembly)' == 'true'">
+    <PropertyGroup>
+      <_KeepVaultSdkMarkupSteps>$([System.Text.RegularExpressions.Regex]::Replace('$(MarkupCompilePass2ForMainAssemblyDependsOn)', '\s+', ''))</_KeepVaultSdkMarkupSteps>
+    </PropertyGroup>
+    <Error Condition="'$(_KeepVaultSdkMarkupSteps)' != 'GenerateTemporaryTargetAssembly;MarkupCompilePass2;AfterMarkupCompilePass2;CleanupTemporaryTargetAssembly'" Text="The SDK WPF compilation dependency changed; review the controlled markup-project integration before building." />
+    <PropertyGroup>
+      <MarkupCompilePass2ForMainAssemblyDependsOn>KeepVaultGenerateTemporaryTargetAssembly;MarkupCompilePass2;AfterMarkupCompilePass2;CleanupTemporaryTargetAssembly</MarkupCompilePass2ForMainAssemblyDependsOn>
+    </PropertyGroup>
+  </Target>
+  <Target Name="KeepVaultGenerateTemporaryTargetAssembly" Condition="'$(_RequireMCPass2ForMainAssembly)' == 'true'">
+    <Error Condition="'$(IncludePackageReferencesDuringMarkupCompilation)' == 'false'" Text="The controlled WPF build requires the SDK package-reference and source-generator compilation path." />
+    <PropertyGroup>
+      <GenerateTemporaryTargetAssemblyDebuggingInformation>true</GenerateTemporaryTargetAssemblyDebuggingInformation>
+    </PropertyGroup>
+    <Message Text="MSBuildProjectFile is $(MSBuildProjectFile)" Condition="'$(MSBuildTargetsVerbose)' == 'true'" />
+    <!-- Reuse the exact output slot; the lease prevents deletion or replacement. -->
+    <PropertyGroup Condition="'$(IncludePackageReferencesDuringMarkupCompilation)' != 'false'">
+      <_ParentProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('$(MSBuildProjectFullPath)'))</_ParentProjectName>
+      <_ParentProjectExtension>$([System.IO.Path]::GetExtension($(MSBuildProjectFullPath)))</_ParentProjectExtension>
+      <_TemporaryTargetAssemblyProjectNameNoExtension>KeepVault.GeneratedMarkup.wpftmp</_TemporaryTargetAssemblyProjectNameNoExtension>
+      <_TemporaryTargetAssemblyProjectName>KeepVault.GeneratedMarkup.wpftmp.csproj</_TemporaryTargetAssemblyProjectName>
+    </PropertyGroup>
+    <!-- Collect the generated NuGet files from the parent project required to support PackageReferences. -->
+    <!--
+          Note that MSBuildProjectExtensionsPath defaults to BaseIntermediateOutputPath (Microsoft.Common.props)
+          unless it it set prior to importing the .NET SDK. In the WPF temp project, MSBuildProjectExtensionsPath
+          cannot be defined before the .NET SDK is imported, and always defaults to BaseIntermediateOutputPath.
+      -->
+    <ItemGroup Condition="'$(IncludePackageReferencesDuringMarkupCompilation)' != 'false'">
+      <_SourceGeneratedNuGetPropsAndTargets Include="$(MSBuildProjectExtensionsPath)$(_ParentProjectName)$(_ParentProjectExtension).nuget.g.props" />
+      <_SourceGeneratedNuGetPropsAndTargets Include="$(MSBuildProjectExtensionsPath)$(_ParentProjectName)$(_ParentProjectExtension).nuget.g.targets" />
+      <_SourceGeneratedNuGetPropsAndTargets Include="$(MSBuildProjectExtensionsPath)$(_ParentProjectName)$(_ParentProjectExtension).nuget.dgspec.json" />
+      <_DestGeneratedNuGetPropsAndTargets Include="$(BaseIntermediateOutputPath)$(_TemporaryTargetAssemblyProjectName).nuget.g.props" />
+      <_DestGeneratedNuGetPropsAndTargets Include="$(BaseIntermediateOutputPath)$(_TemporaryTargetAssemblyProjectName).nuget.g.targets" />
+      <_DestGeneratedNuGetPropsAndTargets Include="$(BaseIntermediateOutputPath)$(_TemporaryTargetAssemblyProjectName).nuget.dgspec.json" />
+    </ItemGroup>
+    <!-- Project assets and nuget.cache files must also be copied if a custom BaseIntermediateOutputPath is set. -->
+    <ItemGroup Condition="'$(IncludePackageReferencesDuringMarkupCompilation)' != 'false' and '$(_InitialBaseIntermediateOutputPath)' != '$(BaseIntermediateOutputPath)'">
+      <_SourceGeneratedNuGetPropsAndTargets Include="$(MSBuildProjectExtensionsPath)project.assets.json" />
+      <_SourceGeneratedNuGetPropsAndTargets Include="$(MSBuildProjectExtensionsPath)project.nuget.cache" />
+      <_DestGeneratedNuGetPropsAndTargets Include="$(BaseIntermediateOutputPath)project.assets.json" />
+      <_DestGeneratedNuGetPropsAndTargets Include="$(BaseIntermediateOutputPath)project.nuget.cache" />
+    </ItemGroup>
+    <!-- Copy the renamed outer project NuGet props/targets files to the MSBuildProjectExtensionsPath used by NuGet. -->
+    <Copy Condition="'$(IncludePackageReferencesDuringMarkupCompilation)' != 'false'" SourceFiles="@(_SourceGeneratedNuGetPropsAndTargets)" DestinationFiles="@(_DestGeneratedNuGetPropsAndTargets)" />
+    <!--
+        Undo TargetFramework and RID append set in Microsoft.NET.RuntimeIdentifierInference.targets to prevent
+        a duplicate target framework and runtime identifier in the IntermediateOutputPath when the new BuildEngine
+        instance runs.
+
+        'Append $(RuntimeIdentifier) to directory to output and intermediate paths to prevent bin clashes between
+        targets. But do not append the implicit default runtime identifier for .NET Framework apps as that would
+        append a RID the user never mentioned in the path and do so even in the AnyCPU case.'
+       -->
+    <PropertyGroup>
+      <_IntermediateOutputPathNoTargetFrameworkOrRID>$(IntermediateOutputPath)</_IntermediateOutputPathNoTargetFrameworkOrRID>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(IncludePackageReferencesDuringMarkupCompilation)' != 'false' and           '$(AppendRuntimeIdentifierToOutputPath)' == 'true' and '$(RuntimeIdentifier)' != '' and           '$(_UsingDefaultRuntimeIdentifier)' != 'true'">
+      <_IntermediateOutputPathNoTargetFrameworkOrRID>$([System.Text.RegularExpressions.Regex]::Replace($(_IntermediateOutputPathNoTargetFrameworkOrRID), "$(RuntimeIdentifier)\\$",, System.Text.RegularExpressions.RegexOptions.IgnoreCase))</_IntermediateOutputPathNoTargetFrameworkOrRID>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(IncludePackageReferencesDuringMarkupCompilation)' != 'false' and           '$(AppendTargetFrameworkToOutputPath)' == 'true' and '$(TargetFramework)' != '' and           '$(_UnsupportedTargetFrameworkError)' != 'true'">
+      <_IntermediateOutputPathNoTargetFrameworkOrRID>$([System.Text.RegularExpressions.Regex]::Replace($(_IntermediateOutputPathNoTargetFrameworkOrRID), "$(TargetFramework)\\$",, System.Text.RegularExpressions.RegexOptions.IgnoreCase))</_IntermediateOutputPathNoTargetFrameworkOrRID>
+    </PropertyGroup>
+    <!-- Keep the SDK package-reference/source-generator path; legacy mode is rejected above. -->
+    <GenerateTemporaryTargetAssembly
+        CurrentProject="$(MSBuildProjectFullPath)"
+        MSBuildBinPath="$(MSBuildBinPath)"
+        ReferencePathTypeName="ReferencePath"
+        CompileTypeName="Compile"
+        AnalyzerTypeName="Analyzer"
+        GeneratedCodeFiles="@(_GeneratedCodeFiles)"
+        ReferencePath="@(ReferencePath)"
+        BaseIntermediateOutputPath="$(BaseIntermediateOutputPath)"
+        IntermediateOutputPath="$(_IntermediateOutputPathNoTargetFrameworkOrRID)"
+        AssemblyName="$(AssemblyName)"
+        CompileTargetName="$(_CompileTargetNameForLocalType)"
+        GenerateTemporaryTargetAssemblyDebuggingInformation="true"
+        IncludePackageReferencesDuringMarkupCompilation="$(IncludePackageReferencesDuringMarkupCompilation)"
+        Analyzers="@(Analyzer)"
+        TemporaryTargetAssemblyProjectName="KeepVault.GeneratedMarkup.wpftmp.csproj"
+        MSBuildProjectExtensionsPath="$(MSBuildProjectExtensionsPath)"
+        RootNamespace="$(RootNamespace)">
+      <Output TaskParameter="TemporaryAssemblyForLocalTypeReference" PropertyName="_AssemblyForLocalTypeReference" />
+    </GenerateTemporaryTargetAssembly>
+    <CreateItem Include="$(_AssemblyForLocalTypeReference)">
+      <Output TaskParameter="Include" ItemName="AssemblyForLocalTypeReference" />
+    </CreateItem>
+    <!-- Remove generated NuGet props/targets files. -->
+    <Delete Condition="'$(IncludePackageReferencesDuringMarkupCompilation)' != 'false'             and '$(GenerateTemporaryTargetAssemblyDebuggingInformation)' != 'true'" Files="@(_DestGeneratedNuGetPropsAndTargets)" />
+  </Target>
+</Project>

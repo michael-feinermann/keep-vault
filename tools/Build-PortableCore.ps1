@@ -337,7 +337,7 @@ $SnapshotLease.Verify()
 # compiled production identity before staging a distributable application.
 $testOutput = Join-Path $root 'work\native-gate-tests'
 $testProject = Join-Path $root 'KalynaArchiver.Tests\KalynaArchiver.Tests.csproj'
-$testBuildArguments = @('build', $testProject, '-c', $Configuration, '-o', $testOutput, '--nologo', '-p:PublishSingleFile=false')
+$testBuildArguments = @('build', $testProject, '-c', $Configuration, '-o', $testOutput, '--nologo')
 $testBuildArguments += @($publishArgs | Where-Object { $_ -like '-p:Kalyna*' })
 & dotnet @testBuildArguments
 if ($LASTEXITCODE -ne 0) { throw 'The native release-gate harness build failed.' }

@@ -1159,38 +1159,7 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         try
         {
-            KeySheetData data = BuildCurrentKeySheetData();
-            string archiveDirectory = Path.GetDirectoryName(data.ArchivePath) ?? Environment.CurrentDirectory;
-            string archiveStem = Path.GetFileNameWithoutExtension(data.ArchivePath);
-            var dialog = new SaveFileDialog
-            {
-                Title = T("saveTestKeySheetDialog"),
-                Filter = T("pdfFilter"),
-                DefaultExt = ".pdf",
-                InitialDirectory = archiveDirectory,
-                FileName = $"{archiveStem}-key-sheet-A-test-export.pdf",
-            };
-
-            if (dialog.ShowDialog(this) == true)
-            {
-                var secondDialog = new SaveFileDialog
-                {
-                    Title = T("saveSecondTestKeySheetDialog"),
-                    Filter = T("pdfFilter"),
-                    DefaultExt = ".pdf",
-                    InitialDirectory = archiveDirectory,
-                    FileName = $"{archiveStem}-key-sheet-B-test-export.pdf",
-                };
-                if (secondDialog.ShowDialog(this) != true)
-                {
-                    return;
-                }
-
-                _keySheets.SaveTestPdf(data, dialog.FileName, secondDialog.FileName);
-                MarkKeySheetHandled(data);
-                Log(string.Format(T("keySheetTestPdfSavedLog"), dialog.FileName));
-                Log(string.Format(T("keySheetTestPdfSavedLog"), secondDialog.FileName));
-            }
+            RunConfirmedKeySheetOutput(printing: false, SaveKeySheet);
         }
         catch (Exception ex)
         {
@@ -1199,48 +1168,101 @@ public sealed partial class MainWindow : Window, IDisposable
         }
     }
 
+    private void SaveKeySheet(KeySheetData data)
+    {
+        string archiveDirectory = Path.GetDirectoryName(data.ArchivePath) ?? Environment.CurrentDirectory;
+        string archiveStem = Path.GetFileNameWithoutExtension(data.ArchivePath);
+        var dialog = new SaveFileDialog
+        {
+            Title = T("saveTestKeySheetDialog"),
+            Filter = T("pdfFilter"),
+            DefaultExt = ".pdf",
+            InitialDirectory = archiveDirectory,
+            FileName = $"{archiveStem}-key-sheet-A-test-export.pdf",
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            var secondDialog = new SaveFileDialog
+            {
+                Title = T("saveSecondTestKeySheetDialog"),
+                Filter = T("pdfFilter"),
+                DefaultExt = ".pdf",
+                InitialDirectory = archiveDirectory,
+                FileName = $"{archiveStem}-key-sheet-B-test-export.pdf",
+            };
+            if (secondDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            _keySheets.SaveTestPdf(data, dialog.FileName, secondDialog.FileName);
+            MarkKeySheetHandled(data);
+            Log(string.Format(T("keySheetTestPdfSavedLog"), dialog.FileName));
+            Log(string.Format(T("keySheetTestPdfSavedLog"), secondDialog.FileName));
+        }
+    }
+
     private void PrintKeySheet_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            KeySheetData data = BuildCurrentKeySheetData();
-
-            // Use the classic GDI print dialog + GDI printing instead of WPF's
-            // System.Printing pipeline. Some printer drivers (e.g. the Microsoft IPP Class
-            // Driver) fail every PrintTicket<->DEVMODE conversion with 0x80004005, which makes
-            // the WPF PrintDialog unusable even for selecting a different, working printer.
-            using var printDocument = new System.Drawing.Printing.PrintDocument();
-            if (!printDocument.PrinterSettings.IsValid)
-            {
-                string? firstValid = KeySheetService.FirstValidPhysicalPrinter();
-                if (firstValid is not null)
-                {
-                    printDocument.PrinterSettings.PrinterName = firstValid;
-                }
-            }
-
-            using var dialog = new Forms.PrintDialog
-            {
-                Document = printDocument,
-                UseEXDialog = false,
-                AllowPrintToFile = false,
-                AllowSelection = false,
-                AllowSomePages = false,
-            };
-
-            if (dialog.ShowDialog() == Forms.DialogResult.OK)
-            {
-                KeySheetService.EnsurePhysicalPrinter(dialog.PrinterSettings.PrinterName);
-                _keySheets.PrintKeySheets(dialog.PrinterSettings, data);
-                MarkKeySheetHandled(data);
-                Log(T("keySheetPrintedLog"));
-            }
+            RunConfirmedKeySheetOutput(printing: true, PrintKeySheet);
         }
         catch (Exception ex)
         {
             Log(ex.ToString());
             MessageBox.Show(this, ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void PrintKeySheet(KeySheetData data)
+    {
+        // Use the classic GDI print dialog + GDI printing instead of WPF's
+        // System.Printing pipeline. Some printer drivers (e.g. the Microsoft IPP Class
+        // Driver) fail every PrintTicket<->DEVMODE conversion with 0x80004005, which makes
+        // the WPF PrintDialog unusable even for selecting a different, working printer.
+        using var printDocument = new System.Drawing.Printing.PrintDocument();
+        if (!printDocument.PrinterSettings.IsValid)
+        {
+            string? firstValid = KeySheetService.FirstValidPhysicalPrinter();
+            if (firstValid is not null)
+            {
+                printDocument.PrinterSettings.PrinterName = firstValid;
+            }
+        }
+
+        using var dialog = new Forms.PrintDialog
+        {
+            Document = printDocument,
+            UseEXDialog = false,
+            AllowPrintToFile = false,
+            AllowSelection = false,
+            AllowSomePages = false,
+        };
+
+        if (dialog.ShowDialog() == Forms.DialogResult.OK)
+        {
+            KeySheetService.EnsurePhysicalPrinter(dialog.PrinterSettings.PrinterName);
+            _keySheets.PrintKeySheets(dialog.PrinterSettings, data);
+            MarkKeySheetHandled(data);
+            Log(T("keySheetPrintedLog"));
+        }
+    }
+
+    internal void RunConfirmedKeySheetOutput(bool printing, Action<KeySheetData> output)
+    {
+        Dispatcher.VerifyAccess();
+        KeySheetData data = BuildCurrentKeySheetData();
+        // Validate first, then confirm before opening a picker or querying a
+        // printer. Only an explicit Yes may reach any output operation.
+        if (ShowCredentialMessage(T(printing ? "windowsSpoolWarning" : "testPdfWarning"),
+            T("confirmationTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        output(data);
     }
 
     private void ChooseEraseFile_Click(object sender, RoutedEventArgs e)
@@ -2661,6 +2683,12 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "eraseCompleted") => "Vorhandene zugehörige KPAR2-Daten wurden unbrauchbar gemacht und gelöscht, danach dieser lokale verschlüsselte Container beschädigt und gelöscht. Backups, Snapshots und SSD-Datenreste können weiterhin vorhanden sein. Gespeicherte oder gedruckte Schlüsselzettel separat vernichten.",
             ("en", "saveSecondTestKeySheetDialog") => "Save factor B to a separate test PDF (writes secrets to disk)",
             (_, "saveSecondTestKeySheetDialog") => "Faktor B in eine getrennte Test-PDF speichern (schreibt Geheimnisse auf den Datenträger)",
+            ("en", "confirmationTitle") => "Confirm protected action",
+            (_, "confirmationTitle") => "Geschützte Aktion bestätigen",
+            ("en", "testPdfWarning") => "This explicit test export permanently writes the secret factors to two separate PDFs, one factor per file. Continue only in a controlled test environment.",
+            (_, "testPdfWarning") => "Dieser ausdrückliche Testexport schreibt die geheimen Faktoren dauerhaft in zwei getrennte PDFs, einen Faktor pro Datei. Nur in einer kontrollierten Testumgebung fortfahren.",
+            ("en", "windowsSpoolWarning") => "The Windows print spooler, the printer, or a network print server can retain this secret key-sheet job in a spool, cache, or device memory. Continue only with a trusted physical printer that you control. Keep Vault cannot erase copies outside the app.",
+            (_, "windowsSpoolWarning") => "Der Windows-Druckspooler, der Drucker oder ein Netzwerk-Druckserver kann diesen geheimen Schlüsselzettelauftrag in einer Warteschlange, einem Zwischenspeicher oder Gerätespeicher behalten. Nur mit einem vertrauenswürdigen physischen Drucker fortfahren, den du kontrollierst. Keep Vault kann Kopien außerhalb der App nicht löschen.",
             ("en", "privacyShield") => "Secret content is concealed while Keep Vault is not the active application.",
             (_, "privacyShield") => "Geheimnisinhalte werden verdeckt, solange Keep Vault nicht die aktive App ist.",
 

@@ -1,17 +1,19 @@
 # Keep Vault 5.0.2 – Windows-Prüfbericht
 
-Arbeitsstand vom 15. September 2026. Dieser Bericht wird um die tatsächlichen
+Arbeitsstand vom 21. September 2026. Dieser Bericht wird um die tatsächlichen
 Windows-Läufe ergänzt; offene Prüfungen sind keine bestandenen Freigaben.
 Der verbindliche Windows-Arbeitsordner ist seit der ausdrücklichen Korrektur
 des Benutzers `C:\Dev\Kalyna`. Entwicklung und Builds in OneDrive sind verboten.
 Neue Release-Snapshots liegen unter `work\release-builds` dieses lokalen
 Repositories. Frühere OneDrive-/Profilpfade in Prüfprotokollen sind historische
 Nachweise und keine aktuelle Arbeitsanweisung.
-Die GitHub-Regel steht auch im Hauptbranch in `AGENTS.md`. Der gespeicherte
-Codex-App-Server-Projekteintrag und die lokalen Projekt-/Startpfade wurden
-auf `C:\Dev\Kalyna` korrigiert. Der laufende Desktop hat den alten Legacy-Cache
-zunächst zurückgeschrieben; dessen dauerhafte Übernahme erfordert zusätzlich
-die Aktualisierung nach regulärem Desktop-Ende. Der Snapshot-Regressionslauf bestätigt sowohl
+Die GitHub-Regel steht auch im Hauptbranch in `AGENTS.md`. Am 15. September
+wurde die Korrektur des Codex-App-Server-Projekteintrags auf `C:\Dev\Kalyna`
+bestätigt. Der Desktop zeigt am 21. September seinen alten Legacy-Projekteintrag
+weiterhin mit dem historischen OneDrive-Pfad. Der dafür vorgesehene Helfer ist
+nicht mehr aktiv; seine alte Statusdatei ist kein Abschlussnachweis. Sämtliche
+Entwicklung und Ausführung erfolgt ausdrücklich unter `C:\Dev\Kalyna`.
+Der Snapshot-Regressionslauf bestätigt sowohl
 die Ablehnung persönlicher, geschäftlicher und benutzerdefinierter OneDrive-
 Pfade als auch die Ablage aller neuen Snapshots unter dem aktiven Repository.
 Die verbindliche GUI-Referenz ist der veröffentlichte macOS-Tag `v5.0.2` bei
@@ -58,11 +60,18 @@ Neubau zur Umgehung der Erkennung und keine Änderung der Schutzfunktionen.
 | --- | --- |
 | Implementierung und macOS-Referenzabgleich | Im gepushten Quell-Commit enthalten; Umfang und GUI-Grenzen unten |
 | Fehler-/Sicherheitskorrekturen | Implementiert; abgegrenzte Regressionen bestanden |
+| Unsignierter nativer GitHub-Build mit aktivem Defender | Alle zehn Komponenten und der belegte Custom-Scan bestanden; eigener, begrenzter Nachweis |
 | Vollständiger signierter Build | Blockiert durch erneute Quarantäne |
 | Vollsuite, Performance und finale Archiv-/Reparaturläufe | Nicht ausgeführt mit einem vollständigen finalen Native-Satz |
 | GUI | Fünf verwaltete GUI-Gruppen, Scannerprüfungen und 16 Renderings bestanden; finale installierte GUI und Papier/Kamera offen |
 | Commit und Push | Implementierungs-Commit auf GitHub bestätigt |
 | Windows-Veröffentlichung | Nicht erfolgt |
+
+Bei der Wiederaufnahme am 21. September war der externe Schlüsselordner
+`A:\Keep Vault ReleaseKeys v12` nicht erreichbar. Auch der genaue Ordnername
+an den Wurzeln der angeschlossenen Laufwerke wurde nicht gefunden; es fand
+keine rekursive Suche nach Schlüsselmaterial statt. Die Signierung benötigt
+den erneut angeschlossenen Datenträger oder dessen aktuellen Pfad.
 
 Bitdefender hat am 9. September 2026 um 12:35:59 Ortszeit die frisch kompilierte
 Datei `tools/kalyna_v12.dll` als `Gen:Variant.Lazy.491499` quarantänisiert.
@@ -122,13 +131,66 @@ Abschlussereignis. Dieser Lauf ist daher kein bestandener Scan. Die Diagnose
 speichert inzwischen auch auf diesem Fehlerpfad sämtliche abgefragten Ereignisse
 mit Original-XML, Schutzstatus und Dateihashes; die Annahmekriterien bleiben gleich.
 
-Die zugehörigen Workflow-, Build- und Kompatibilitätsänderungen sind als
-`0e043e9`, `646bb00` und `232a6bc` auf `codex/windows-v12-5.0.2` gepusht.
-41 synthetische Schutz-/Inventarprüfungen und fünf zusätzliche Ereignis- und
-Fehlerpfadfälle bestanden. Ein vollständiger signierter Release-Build und die
-nativen Funktions-/Ende-zu-Ende-Prüfungen werden dadurch nicht ersetzt.
+Der dritte Lauf
+[`35005426526`](https://github.com/michael-feinermann/keep-vault/actions/runs/35005426526)
+lieferte beide Custom-Scan-Ereignisse mit gleicher Scan-ID, unveränderte Hashes
+aller zehn Dateien und keine Erkennung. Der Job blieb rot, weil Defender den
+Verzeichnispfad als `folder:_D:\...` meldet. Der korrigierte Prüfer entfernt nur
+dieses beobachtete Präfix im Feld `Scan Resources` und verlangt weiter den
+exakten Einzelpfad sowie geordnete Ereignisse 1000/1001 mit gleicher Scan-ID.
+Der Replay der Originalereignisse belegt die frühere falsche Ablehnung und den
+korrigierten Erfolg; neun manipulierte Ereignisfälle werden weiterhin abgewiesen.
+Auch die 41 Schutz-/Inventarprüfungen und fünf Diagnose-Fehlerpfadfälle bestehen.
+
+**Der abschließende Lauf
+[`35006246507`](https://github.com/michael-feinermann/keep-vault/actions/runs/35006246507)
+für exakt
+[`72fd322d950e7eaeba5c367bb54596869e54f5f0`](https://github.com/michael-feinermann/keep-vault/commit/72fd322d950e7eaeba5c367bb54596869e54f5f0)
+ist vollständig bestanden.** Alle zehn nativen Komponenten wurden mit
+SDK `10.0.401` und MSVC `19.44.35228` frisch gebaut. Die Quellenprüfung bestätigte
+433 Vendor-Dateien, drei Windows-Dateien, 202 Crypto++-Übersetzungseinheiten und
+21 dreifach gepinnte ML-DSA-Quellen. Defender blieb vor und nach Build/Scan gesund,
+im Normalmodus mit Echtzeitschutz und ohne Ausnahmen; Definition `1.459.223.0`
+war aktuell. Erkennungshistorie und aktive Bedrohungen waren leer. Das passende
+Custom-Scan-Ereignispaar 1000/1001 ist mit Original-XML belegt; alle zehn SHA-256-
+und SHA-512-Werte sind vor und nach dem Scan gleich.
+
+Der lokal nachgeprüfte Nachweis liegt unter
+`work/hosted-native-defender-35006246507/review-receipt.json`.
+Es wurden keine Produktprogramme ausgeführt, keine Release-Schlüssel verwendet
+und keine Binärdateien übertragen. Dieser Erfolg betrifft den frischen,
+unsignierten CI-Satz. Die Bitdefender-Erkennung anderer, quarantänisierter Bytes
+bleibt ungeklärt; vollständiger signierter Release-Build und native Funktions-/
+Ende-zu-Ende-Prüfungen werden dadurch nicht ersetzt.
 
 ## GUI und macOS-Referenz
+
+Der geschützte WPF-Build fand einen weiteren Buildfehler: Das SDK legt sein
+temporäres Markup-Projekt im gesperrten Quellordner an. `Directory.Build.targets`
+behält die originale SDK-Task und deren NuGet-/RID-Verarbeitung bei, verwendet
+aber einen exakt benannten, vorher erzeugten Ausgabeslot. Dessen Identität
+bleibt ab `CREATE_NEW` durchgehend gehalten; die Quellordner werden nicht
+für neue Dateien freigegeben. Fünf MSBuild-Schutzfälle und die erweiterte
+Snapshot-Regression bestehen. Der geschützte Kandidaten-Build und Rebuild
+vom 21. September bestanden mit 1366 unveränderten Quellhashes und geprüftem
+eingebettetem Scrollleisten-BAML; dies war noch kein finaler Release-Build.
+Der Scanner erhält außerdem seinen vorab angelegten `dist`-Ordner und leert
+nur dessen Inhalt. Synthetische Prüfungen bestätigen, dass auch direkte und
+verschachtelte Verzeichnisverknüpfungen keine fremden Zielinhalte löschen.
+Beim Release-Testbuild bleibt der normale `PublishSingleFile`-Wert erhalten,
+damit der unveränderte Paket-Lock nicht durch einen abweichenden Override
+ungültig wird; `dotnet build` erzeugt weiter die ausführbare Test-Assembly.
+
+Der letzte Referenzvergleich ergänzt außerdem zwei bisher fehlende
+Bestätigungen: den ausdrücklichen Export geheimer Faktoren in getrennte
+Test-PDFs und mögliche Kopien im Windows-Druckspooler, Drucker oder
+Netzwerk-Druckserver. Die DE/EN-Texte entsprechen der macOS-Referenz mit dem
+Windows-Spoolernamen. Beide Faktoren werden vor der Nachfrage validiert;
+nur ein ausdrückliches `Yes` erreicht Dateiauswahl oder Druckerauswahl und
+Ausgabe. Close/Cancel und andere Rückgaben erzeugen keine Ausgabe oder
+Erfolgsmarkierung. Die vorhandene Archivpfadnormalisierung kann davor erfolgen.
+Die passenden Regressionen sind in `gui.v502-reference-parity` enthalten;
+ihre tatsächliche Ausführung aus dem abschließenden Commit wird separat belegt.
 
 Die Windows-Oberfläche übernimmt die Referenzstruktur aus `KeepVaultMac`:
 1220 × 860 Ausgangsgröße, 980 × 720 Mindestgröße, Hintergrund `#08101D`,
@@ -221,7 +283,7 @@ Ein tatsächlicher Papierausdruck mit anschließendem Kamerascan ist noch offen.
 - Installerprüfung und -kopie halten Quelle und Ziel während der Übergänge;
   unzulässige Pfade, zusätzliche Dateien, Hardlinks, Reparse Points und
   Änderungen während der Kopie werden abgewiesen.
-- Die Native-Quellprüfung kontrolliert 431 Vendor-Dateien, drei zusätzliche
+- Die Native-Quellprüfung kontrolliert 433 Vendor-Dateien, drei zusätzliche
   Windows-Änderungen und die vollständige Menge von 202 Crypto++-Übersetzungseinheiten
   vor dem Build. Leere Pfadsegmente und andere mehrdeutige Einträge werden
   zurückgewiesen.
@@ -233,8 +295,9 @@ Ein tatsächlicher Papierausdruck mit anschließendem Kamerascan ist noch offen.
   verwendetem Arbeitsverzeichnis alte oder fremde Objekte aufnehmen. Die
   Regression führt nur die echte CMD-Listenerzeugung mit synthetischen Dateien
   aus und bestätigt den Ausschluss solcher Objekte, das Ersetzen alter Listen
-  und den Abbruch bei beiden möglichen Schreibfehlern. Ein neuer nativer
-  Produktbuild nach dieser Korrektur steht wegen der Erkennung noch aus.
+  und den Abbruch bei beiden möglichen Schreibfehlern. Der oben belegte
+  unsignierte GitHub-Build nach dieser Korrektur besteht; die vollständige
+  lokale Signierung und native Funktionsprüfung bleiben offen.
 - Die Windows-Suite ruft den vorhandenen nativen
   `keepvault_v12_kalyna_join_failure_kat` nun ausdrücklich als eigene Gruppe
   `crypto.kalyna-join-failure-kat` auf. Der Test verwendet den regulären
