@@ -11,3 +11,7 @@ Neue externe Releaseidentität erzeugt und als öffentliche Pins eingebunden. Pr
 Vor einem Installationsabschluss muss ausdrücklich auf die Inkompatibilität hingewiesen werden: 5.0.3 öffnet keine vorhandenen v12-Archive. Benutzerarchive, KPAR2-Dateien, Schlüsselblätter und alte private Schlüssel bleiben erhalten.
 
 Kein Tag `v5.0.3`, keine fertigen Assets, keine Installationsbehauptung ohne entsprechenden Nachweis. Commit und Push eines geprüften Arbeitsstands sind von Release und Installation getrennt.
+
+## Erster universeller Releasebuild, 28.09.2026
+
+Quellcommit `a2ab34d0706b220664bdc36085b3eafa403655c3` wurde auf dem dedizierten Arbeitsbranch gepusht und remote bestätigt. Native-Neubau beider Architekturen blieb bytegleich zum versionierten Bestand; AOT-App und Hybrid-/Apple-Signierung liefen. Der Build stoppte anschließend im bisherigen Scanner-Skript bei `lipo <file> -verify_arch arm64 x86_64`: Xcode 27 meldet dabei mehr als eine Eingabedatei. Beide getrennten Architekturprüfungen derselben universellen Datei bestehen. Das Skript prüft nun jede verlangte Architektur einzeln. Dieser Versuch installierte und veröffentlichte nichts; er ist kein bestandener Paketlauf. Rohlog: `work/v13-evidence/rev9-release-a2ab34d.log`, Reproduktion: `rev9-lipo-architecture-regression.log`.
