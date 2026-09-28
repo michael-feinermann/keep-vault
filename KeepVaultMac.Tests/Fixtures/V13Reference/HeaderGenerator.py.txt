@@ -1,0 +1,24 @@
+import hashlib,json,base64,struct
+from pathlib import Path
+B=lambda n,m,s:bytes((i*m+s)&255 for i in range(n))
+LP=lambda v:struct.pack('<i',len(v))+v
+F=lambda s:s.encode()
+M='+HMAC-SHA3-512+Skein-MAC-1024'
+suites=[
+('StandardCascade','XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(AES-256-CTR)))'+M,128,232,256,2),
+('XChaChaOverAes','XChaCha20-Poly1305(AES-256-CTR)'+M,64,40,64,None),
+('MixedCascade','XChaCha20-Poly1305(Threefish-1024-CTR(AES-256-CTR))'+M,128,168,192,1),
+('ParanoiaCascade','XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))'+M,128,312,440,6),
+('Threefish1024','Threefish-1024-CTR'+M,128,128,128,0),('Kalyna512_512','Kalyna-512/512-CTR'+M,64,64,64,None),
+('Shacal2_512','SHACAL-2-512-CTR'+M,32,32,64,None),('Mars448','MARS-448-CTR'+M,16,16,56,None),
+('Aes256','AES-256-CTR'+M,16,16,32,None),('Camellia256','Camellia-256-CTR'+M,16,16,32,None),('Serpent256','Serpent-256-CTR'+M,16,16,32,None),('XChaCha20Poly1305','XChaCha20-Poly1305'+M,64,24,32,None)]
+b64=lambda b:base64.b64encode(b).decode()
+for name,algorithm,block,n,k,stage in suites:
+ n=320
+ nonce=B(n,43,0x2B);salt=B(128,29,0x17);salt2=B(128,61,0xA1);two=name=='ParanoiaCascade';tweak=None
+ if stage is not None:tweak=hashlib.sha3_512(LP(F('Kalyna-ZPAQ/v13/Threefish-1024/CTR-Tweak'))+LP(F(algorithm))+struct.pack('<i',stage)+LP(nonce)).digest()[:16]
+ h=dict(Version=13,Algorithm=algorithm,BlockBits=block*8,CounterEndian='BigEndian',EncryptionKeyBits=k*8,Sha3MacKeyBits=512,Sha3TagBits=512,SkeinMacKeyBits=1024,SkeinTagBits=1024,SaltSha3Round1=b64(salt[:64]),SaltSkeinRound1=b64(salt[64:]),SaltSha3Round2=b64(salt2[:64]) if two else None,SaltSkeinRound2=b64(salt2[64:]) if two else None,NonceBits=n*8,Nonce=b64(nonce),NonceDerivationMode='Seed320-Blockwise64-SHA3-512-ActivePrefix-v3',TweakBits=128 if tweak is not None else 0,TweakMode='SHA3-512(LP(Domain)||LP(Algorithm)||LE32(StageIndex)||LP(Nonce))[0..15]' if tweak is not None else 'None',Tweak=b64(tweak) if tweak is not None else None,Hint='v13-production-worker-kat',Argon2MemoryKiB=0,Argon2Iterations=4,Argon2Parallelism=4,KdfBranchOutputBits=512,MasterKeyBits=1024,KdfExecutionMode='Sequential',KdfMemoryMode='PMI16',PasswordMode='UserPassword24to256+PIN6to16+GeneratedHex1024x2',KdfInputMode='DualBranch-v13: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024',GeneratedPasswordBits=1024,GeneratedPasswordFactorCount=2,KdfMode='DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024',SecondNonceBits=n*8 if two else 0,SecondNonce=b64(B(n,73,0xD3)) if two else None)
+ encoded=json.dumps(h,ensure_ascii=True,separators=(',',':')).replace('+','\\u002B').encode()
+ digest=hashlib.sha3_512(b'KZPAQ2\0'+struct.pack('<i',len(encoded))+encoded).hexdigest().upper()
+ print(name+'='+digest)
+ Path('work/v13-reference-vectors/'+name+'.header.json').write_bytes(encoded)

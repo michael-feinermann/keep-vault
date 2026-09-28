@@ -10,7 +10,7 @@ internal static class SecurityHardeningTests
     [
         new(
             "security.pipeline-worker-policy",
-            "v12 chunk worker policy scales across CPU and memory boundaries without overflow",
+            "v13 staging slots and aggregate native permits obey independent CPU and memory bounds",
             TestPipelineWorkerPolicyAsync,
             TestResource.Light,
             "Security"),
@@ -34,7 +34,7 @@ internal static class SecurityHardeningTests
             "Security"),
         new(
             "security.production-secret-cleanup-faults",
-            "early, middle and last unlock failures in v12 KDF and authenticator cleanup",
+            "early, middle and last unlock failures in v13 KDF and authenticator cleanup",
             TestProductionSecretCleanupFaultsAsync,
             TestResource.ProcessGlobal,
             "Security"),
@@ -102,29 +102,35 @@ internal static class SecurityHardeningTests
 
     private static Task TestPipelineWorkerPolicyAsync()
     {
-        foreach (int cpus in new[] { int.MinValue, -1, 0, 1, 2, 3, 4, 7, 8, 10, 16, 63, 64, 255, 256, 1024, int.MaxValue })
+        // Slot counts constrain locked buffers, not native team width. The
+        // shared CpuWorkBudget grants the aggregate CPU permits independently.
+        (int CpuCount, int ExpectedSlots)[] cases =
+        [
+            (int.MinValue, 1), (-1, 1), (0, 1), (1, 1), (2, 1), (3, 1),
+            (4, 1), (7, 1), (8, 2), (10, 2), (16, 4), (32, 8),
+            (63, 15), (64, 16), (65, 16), (96, 24), (127, 31), (128, 32),
+            (255, 63), (256, 64), (259, 64), (260, 65), (1024, 256), (4096, 1024),
+            (4100, 1025), (int.MaxValue, 536870911),
+        ];
+        const long bytesPerSlotBudget = 16L * (32L * 1024 * 1024 + 512);
+        foreach ((int cpus, int expected) in cases)
         {
-            int expected = Math.Clamp(cpus / 4, 1, 64);
-            int nativeTeams = KalynaContainerService.CalculateNativeTransformConcurrency(cpus);
-            long effectiveProcessors = Math.Max(1, cpus);
-            Require(nativeTeams is >= 1 and <= 64
-                && nativeTeams * Math.Min(effectiveProcessors, 64) <= 2L * effectiveProcessors,
-                "Nested native teams exceed their CPU-derived concurrency bound.");
-            Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, long.MaxValue) == expected,
-                "The CPU-based chunk limit no longer follows the bounded 1:4 policy.");
+            int actual = KalynaContainerService.CalculatePipelineWorkerCount(cpus, long.MaxValue);
+            Require(actual == expected, $"The 4:1 staging policy selected {actual} slots for {cpus} CPUs; expected {expected}.");
+            Require(KalynaContainerService.CalculateNativeTransformConcurrency(cpus) == Math.Max(1, cpus),
+                "The native topology bound was capped, overflowed, or conflated with memory slots.");
+            Require(actual >= 1 && actual <= Math.Max(1, cpus),
+                "Staging slots exceeded the independently supplied CPU capacity.");
             foreach (long memory in new[] { long.MinValue, -1L, 0L, 1L, 256L * 1024 * 1024 })
-            {
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, memory) == 1,
                     "Missing or small memory must conservatively select one chunk slot.");
-            }
-            const long bytesPerSlotBudget = 16L * (32L * 1024 * 1024 + 512);
-            for (int slots = 1; slots <= 64; slots++)
+            foreach (int slots in Enumerable.Range(1, 64).Concat(new[] { 65, 96, 128, 1024, 1025, 4096 }))
             {
-                long boundary = bytesPerSlotBudget * slots;
+                long boundary = checked(bytesPerSlotBudget * slots);
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, boundary) == Math.Min(expected, slots),
-                    "The chunk policy crossed its locked-memory budget.");
+                    "The chunk policy admitted a slot outside its exact locked-memory budget.");
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, boundary - 1) == Math.Min(expected, Math.Max(1, slots - 1)),
-                    "The chunk policy rounds up past its memory budget.");
+                    "The chunk policy rounded up past its memory budget.");
             }
         }
         return Task.CompletedTask;
@@ -132,24 +138,29 @@ internal static class SecurityHardeningTests
 
     private static async Task TestPipelineNativeConcurrencyAsync()
     {
-        int limit = KalynaContainerService.CalculateNativeTransformConcurrency(Environment.ProcessorCount);
-        int workers = Math.Min(64, limit + 3);
+        int limit = Math.Min(CpuTopology.AvailableWorkers, ArchiveOperationPolicy.Current.MaxCpuWorkers);
+        int workers = (int)Math.Min(int.MaxValue, (long)limit + 3);
         using var release = new ManualResetEventSlim();
         using var cancellation = new CancellationTokenSource();
         var occupied = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        int active = 0, started = 0, finished = 0;
+        int active = 0, activePermits = 0, started = 0, finished = 0;
         Task operation = KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(workers, _ =>
         {
             int current = Interlocked.Increment(ref active);
+            int grant = NativeCipherWorkerBudget.Current;
+            int grantedTotal = Interlocked.Add(ref activePermits, grant);
             Interlocked.Increment(ref started);
             try
             {
+                Require(grant >= 1 && grantedTotal <= limit && CpuWorkBudget.IsOwnedByCurrentContext,
+                    "A native callback exceeded the aggregate CPU budget or lost its lease context.");
                 Require(current <= limit, "Native chunk teams exceeded their concurrency limit.");
                 if (current == Math.Min(workers, limit)) occupied.TrySetResult();
                 Require(release.Wait(TimeSpan.FromSeconds(15)), "Native concurrency test timed out.");
             }
             finally
             {
+                Interlocked.Add(ref activePermits, -grant);
                 Interlocked.Decrement(ref active);
                 Interlocked.Increment(ref finished);
             }
@@ -165,7 +176,7 @@ internal static class SecurityHardeningTests
             try { await operation; }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
         }
-        Require(active == 0 && finished == started && started <= limit,
+        Require(active == 0 && activePermits == 0 && finished == started && started <= limit,
             "Cancellation failed to join active native teams or started queued work.");
         int subsequent = 0;
         await KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(
@@ -177,7 +188,7 @@ internal static class SecurityHardeningTests
     {
         if (!OperatingSystem.IsMacOS())
         {
-            throw new PlatformNotSupportedException("The v12 release gate currently targets macOS only.");
+            throw new PlatformNotSupportedException("The v13 release gate currently targets macOS only.");
         }
 
         long baselineBytes = SecureMemory.LockedBytesForTests;
@@ -307,7 +318,7 @@ internal static class SecurityHardeningTests
     {
         if (!OperatingSystem.IsMacOS())
         {
-            throw new PlatformNotSupportedException("The v12 release gate currently targets macOS only.");
+            throw new PlatformNotSupportedException("The v13 release gate currently targets macOS only.");
         }
 
         int disposeAttempts = 0;
@@ -479,15 +490,15 @@ internal static class SecurityHardeningTests
     {
         if (!OperatingSystem.IsMacOS())
         {
-            throw new PlatformNotSupportedException("The v12 release gate currently targets macOS only.");
+            throw new PlatformNotSupportedException("The v13 release gate currently targets macOS only.");
         }
 
         byte[] factorA = Enumerable.Repeat((byte)0xA5, ContainerKeyDerivation.FactorBytes).ToArray();
         byte[] factorB = Enumerable.Repeat((byte)0x5A, ContainerKeyDerivation.FactorBytes).ToArray();
-        byte[] sha3Destination = Enumerable.Repeat((byte)0xCC, V12MasterKdf.CredentialHashBytes).ToArray();
-        byte[] skeinDestination = Enumerable.Repeat((byte)0xDD, V12MasterKdf.CredentialHashBytes).ToArray();
+        byte[] sha3Destination = Enumerable.Repeat((byte)0xCC, V13MasterKdf.CredentialHashBytes).ToArray();
+        byte[] skeinDestination = Enumerable.Repeat((byte)0xDD, V13MasterKdf.CredentialHashBytes).ToArray();
         byte[] ciphertext = RandomNumberGenerator.GetBytes(4096);
-        byte[] prefix = "v12-cleanup-auth-prefix"u8.ToArray();
+        byte[] prefix = "v13-cleanup-auth-prefix"u8.ToArray();
         byte[] sha3MacKey = RandomNumberGenerator.GetBytes(64);
         byte[] skeinMacKey = RandomNumberGenerator.GetBytes(128);
         try
@@ -496,10 +507,10 @@ internal static class SecurityHardeningTests
                 "SHA3 credential cleanup, first buffer",
                 failAtBufferOrdinal: 1,
                 expectedBufferDisposals: 4,
-                configureCleanupSeam: callback => V12MasterKdf.BeforeCredentialCleanupForTests = callback,
+                configureCleanupSeam: callback => V13MasterKdf.BeforeCredentialCleanupForTests = callback,
                 operation: () =>
                 {
-                    V12MasterKdf.DeriveSha3CredentialHash(
+                    V13MasterKdf.DeriveSha3CredentialHash(
                         "AES-256",
                         "correct horse battery staple",
                         "583104",
@@ -532,10 +543,10 @@ internal static class SecurityHardeningTests
                 "Skein credential cleanup, last buffer",
                 failAtBufferOrdinal: 4,
                 expectedBufferDisposals: 4,
-                configureCleanupSeam: callback => V12MasterKdf.BeforeCredentialCleanupForTests = callback,
+                configureCleanupSeam: callback => V13MasterKdf.BeforeCredentialCleanupForTests = callback,
                 operation: () =>
                 {
-                    V12MasterKdf.DeriveSkeinCredentialHash(
+                    V13MasterKdf.DeriveSkeinCredentialHash(
                         "AES-256",
                         "correct horse battery staple",
                         "583104",
@@ -548,7 +559,7 @@ internal static class SecurityHardeningTests
         }
         finally
         {
-            V12MasterKdf.BeforeCredentialCleanupForTests = null;
+            V13MasterKdf.BeforeCredentialCleanupForTests = null;
             ParallelContainerAuthenticator.BeforeDerivedKeyCleanupForTests = null;
             SecureMemory.SensitiveBufferBeforeUnlockForTests = null;
             SecureMemory.MacMemoryUnlockOverrideForTests = null;

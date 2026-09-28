@@ -37,7 +37,7 @@ var smokeTests = new List<TestCase>
     new("smoke.native-snapshot-cleanup-identity", "native snapshot cleanup preserves a replacement directory", TestNativeSnapshotCleanupIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
 };
 
-return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests).ConfigureAwait(false);
+return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests.Concat(EntropyRev9Tests.All).Concat(MacPhasePerformanceTests.All).ToArray()).ConfigureAwait(false);
 
 static Task TestSha3Async()
 {

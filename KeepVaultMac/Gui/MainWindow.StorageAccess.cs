@@ -385,6 +385,8 @@ public sealed partial class MainWindow
 
     private void DisposeStorageAccess()
     {
+        _resourceWorkingAccess?.Dispose();
+        _resourceWorkingAccess = null;
         ClearInputStorageAccess();
         _archiveDestinationAccess?.Dispose();
         _archiveDestinationAccess = null;

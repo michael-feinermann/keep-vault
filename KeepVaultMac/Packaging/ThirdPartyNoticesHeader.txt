@@ -1,4 +1,4 @@
-KEEP VAULT v12 THIRD-PARTY NOTICES
+KEEP VAULT v13 THIRD-PARTY NOTICES
 
 This distribution contains third-party software. The complete notices below
 are part of the distribution and must remain with every binary copy.

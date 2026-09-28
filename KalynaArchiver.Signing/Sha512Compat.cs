@@ -70,36 +70,29 @@ public static class Sha512Compat
         }
 
         Span<byte> platform = stackalloc byte[HashSizeInBytes];
-        int platformWritten = SHA512.HashData(source, platform);
-        if (platformWritten != HashSizeInBytes)
-        {
-            throw new CryptographicException("The platform SHA-512 provider returned an invalid digest length.");
-        }
-
         Span<byte> reference = stackalloc byte[HashSizeInBytes];
         var digest = new Sha512Digest();
-        digest.BlockUpdate(source);
-        int referenceWritten = digest.DoFinal(reference);
-        if (referenceWritten != HashSizeInBytes)
+        try
         {
-            throw new CryptographicException("The reference SHA-512 provider returned an invalid digest length.");
+            int platformWritten = SHA512.HashData(source, platform);
+            if (platformWritten != HashSizeInBytes)
+                throw new CryptographicException("The platform SHA-512 provider returned an invalid digest length.");
+            digest.BlockUpdate(source);
+            int referenceWritten = digest.DoFinal(reference);
+            if (referenceWritten != HashSizeInBytes)
+                throw new CryptographicException("The reference SHA-512 provider returned an invalid digest length.");
+            if (!CryptographicOperations.FixedTimeEquals(platform, reference))
+                throw new CryptographicException("The platform and reference SHA-512 implementations disagree; key derivation was stopped.");
+            platform.CopyTo(destination);
+            return HashSizeInBytes;
         }
-
-        // Fixed-time even though both sides are public values. The comparison
-        // guards key derivation, and a length- or content-dependent compare here
-        // would be the one place in this file worth measuring.
-        if (!CryptographicOperations.FixedTimeEquals(platform, reference))
+        catch { CryptographicOperations.ZeroMemory(destination[..HashSizeInBytes]); throw; }
+        finally
         {
             CryptographicOperations.ZeroMemory(platform);
             CryptographicOperations.ZeroMemory(reference);
-            throw new CryptographicException(
-                "The platform and reference SHA-512 implementations disagree; key derivation was stopped.");
+            digest.Reset();
         }
-
-        platform.CopyTo(destination);
-        CryptographicOperations.ZeroMemory(platform);
-        CryptographicOperations.ZeroMemory(reference);
-        return HashSizeInBytes;
     }
 
     /// <summary>

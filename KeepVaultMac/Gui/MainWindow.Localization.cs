@@ -28,6 +28,7 @@ public sealed partial class MainWindow
         ArchiveTab.Header = T("archiveTab");
         ExtractTab.Header = T("extractTab");
         EraseTab.Header = T("eraseTab");
+        ApplyResourceLanguage();
         ApplyIntegrityStatus();
         CaptureText.Text = T("captureUnavailable");
         PrivacyShieldText.Text = T("privacyShield");
@@ -106,6 +107,7 @@ public sealed partial class MainWindow
         EraseContainerButton.Content = T("eraseButton");
         LogTitleText.Text = T("securityLog");
         ClearLogButton.Content = T("clear");
+        CancelOperationButton.Content = T("cancel");
         OperationStatusText.Text = Volatile.Read(ref _operationActive) != 0 ? T("working") : _integrityTrusted ? T("ready") : T("blocked");
         UpdateEntropyStatus(force: true);
         UpdatePasswordPolicyStatus();
@@ -169,8 +171,8 @@ public sealed partial class MainWindow
                 : "24 bis 256 Zeichen, mindestens 3 Zeichengruppen, 12 verschiedene und 12 Nicht-Hex-Zeichen, keine Hex-Folge ab 8 Zeichen und mindestens 128 Bit konservative Bewertung.",
             "generatorTitle" => en ? "Two independent 1024-bit factors" : "Zwei unabhängige 1024-Bit-Faktoren",
             "generatorHelp" => en
-                ? $"Nine separate entropy pools need at least {EntropyMixer.RequiredMouseSamplesPerPurpose} mouse samples each. Generation atomically creates factors A and B, both salts and all three nonce parts, then consumes all source pools."
-                : $"Neun getrennte Entropiepools benötigen je mindestens {EntropyMixer.RequiredMouseSamplesPerPurpose} Maus-Samples. Generieren erzeugt die Faktoren A und B, beide Salts und alle drei Nonce-Teile atomar und verbraucht danach alle Quellpools.",
+                ? $"Eleven randomly assigned entropy pools need at least {EntropyMixer.RequiredMouseSamplesPerPurpose} mouse samples each. Generation atomically creates factors A and B, both salts and all five nonce parts, then consumes all source pools."
+                : $"Elf zufällig befüllte Entropiepools benötigen je mindestens {EntropyMixer.RequiredMouseSamplesPerPurpose} Maus-Samples. Generieren erzeugt die Faktoren A und B, beide Salts und alle fünf Nonce-Teile atomar und verbraucht danach alle Quellpools.",
             "factorA" => en ? "Generated factor A" : "Generierter Faktor A",
             "factorB" => en ? "Generated factor B" : "Generierter Faktor B",
             "generatedFactorInvalid" => en ? "Both key-sheet factors must contain 256 hexadecimal characters each." : "Beide Faktoren vom Schlüsselzettel müssen jeweils aus 256 Hexadezimalzeichen bestehen.",
@@ -210,15 +212,21 @@ public sealed partial class MainWindow
             "pinPlausibleDate" => en ? "Do not use a complete calendar date as the PIN." : "Kein vollständiges Kalenderdatum als PIN verwenden.",
             "pinPredictablePattern" => en ? "Avoid predictable number patterns, repetitions and mirrored sequences." : "Vorhersehbare Zahlenmuster, Wiederholungen und Spiegelungen vermeiden.",
             "pinPasswordRequired" => en ? "Enter the password to check the final password and PIN combination." : "Das Passwort eingeben, damit die endgültige Kombination aus Passwort und PIN geprüft werden kann.",
+            "entropyCollectionFailed" => en ? "Collection failed. Clear secrets to reset and collect again." : "Sammlung fehlgeschlagen. Mit Geheimwerte leeren zurücksetzen und neu sammeln.",
+            "entropyPhase.shuffle1" => en ? "Mixing mouse records: round 1" : "Mausdaten mischen: Runde 1",
+            "entropyPhase.sha3" => en ? "Preparing entropy: SHA3-512" : "Entropie vorbereiten: SHA3-512",
+            "entropyPhase.shuffle2" => en ? "Mixing mouse records: round 2" : "Mausdaten mischen: Runde 2",
+            "entropyPhase.sha512" => en ? "Preparing entropy: SHA-512" : "Entropie vorbereiten: SHA-512",
+            "entropyPhase.cleanup" => en ? "Clearing consumed mouse data" : "Verbrauchte Mausdaten bereinigen",
             "entropyCollecting" => en
-                ? "Collecting: total {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; salt-SHA3 {5}/{10}; salt-Skein {6}/{10}; nonce 1 {7}/{10}; nonce 2 {8}/{10}; nonce 3 {9}/{10}"
-                : "Sammlung: gesamt {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; Salt-SHA3 {5}/{10}; Salt-Skein {6}/{10}; Nonce 1 {7}/{10}; Nonce 2 {8}/{10}; Nonce 3 {9}/{10}",
+                ? "Collecting: total {0}; A {1}+{2}/{12}; B {3}+{4}/{12}; salt-SHA3 {5}/{12}; salt-Skein {6}/{12}; nonce 1 {7}/{12}; nonce 2 {8}/{12}; nonce 3 {9}/{12}; nonce 4 {10}/{12}; nonce 5 {11}/{12}"
+                : "Sammlung: gesamt {0}; A {1}+{2}/{12}; B {3}+{4}/{12}; Salt-SHA3 {5}/{12}; Salt-Skein {6}/{12}; Nonce 1 {7}/{12}; Nonce 2 {8}/{12}; Nonce 3 {9}/{12}; Nonce 4 {10}/{12}; Nonce 5 {11}/{12}",
             "entropyPrepared" => en
-                ? "Ready and source pools consumed. Fresh pools: total {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; salt-SHA3 {5}/{10}; salt-Skein {6}/{10}; nonce 1 {7}/{10}; nonce 2 {8}/{10}; nonce 3 {9}/{10}"
-                : "Bereit und Quellpools verbraucht. Frische Pools: gesamt {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; Salt-SHA3 {5}/{10}; Salt-Skein {6}/{10}; Nonce 1 {7}/{10}; Nonce 2 {8}/{10}; Nonce 3 {9}/{10}",
+                ? "Ready and source pools consumed. Fresh pools: total {0}; A {1}+{2}/{12}; B {3}+{4}/{12}; salt-SHA3 {5}/{12}; salt-Skein {6}/{12}; nonce 1 {7}/{12}; nonce 2 {8}/{12}; nonce 3 {9}/{12}; nonce 4 {10}/{12}; nonce 5 {11}/{12}"
+                : "Bereit und Quellpools verbraucht. Frische Pools: gesamt {0}; A {1}+{2}/{12}; B {3}+{4}/{12}; Salt-SHA3 {5}/{12}; Salt-Skein {6}/{12}; Nonce 1 {7}/{12}; Nonce 2 {8}/{12}; Nonce 3 {9}/{12}; Nonce 4 {10}/{12}; Nonce 5 {11}/{12}",
             "entropyRetry" => en
-                ? "Factors remain valid; a retry needs fresh salts and nonces: total {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; salt-SHA3 {5}/{10}; salt-Skein {6}/{10}; nonce 1 {7}/{10}; nonce 2 {8}/{10}; nonce 3 {9}/{10}"
-                : "Faktoren bleiben gültig; ein Wiederholungsversuch benötigt frische Salts und Nonces: gesamt {0}; A {1}+{2}/{10}; B {3}+{4}/{10}; Salt-SHA3 {5}/{10}; Salt-Skein {6}/{10}; Nonce 1 {7}/{10}; Nonce 2 {8}/{10}; Nonce 3 {9}/{10}",
+                ? "Factors remain valid; a retry needs fresh salts and nonces: total {0}; A {1}+{2}/{12}; B {3}+{4}/{12}; salt-SHA3 {5}/{12}; salt-Skein {6}/{12}; nonce 1 {7}/{12}; nonce 2 {8}/{12}; nonce 3 {9}/{12}; nonce 4 {10}/{12}; nonce 5 {11}/{12}"
+                : "Faktoren bleiben gültig; ein Wiederholungsversuch benötigt frische Salts und Nonces: gesamt {0}; A {1}+{2}/{12}; B {3}+{4}/{12}; Salt-SHA3 {5}/{12}; Salt-Skein {6}/{12}; Nonce 1 {7}/{12}; Nonce 2 {8}/{12}; Nonce 3 {9}/{12}; Nonce 4 {10}/{12}; Nonce 5 {11}/{12}",
             "passwordEntropy" => en ? "Conservative model score: {0:0} / {1:0} bits (estimate)" : "Konservativer Modellwert: {0:0} / {1:0} Bit (Schätzung)",
             "passwordAccepted" => en ? "All user-password requirements are met." : "Alle Anforderungen an das Userpasswort sind erfüllt.",
             "passwordTooShort" => en ? "Use at least {0} characters." : "Mindestens {0} Zeichen verwenden.",
@@ -308,6 +316,8 @@ public sealed partial class MainWindow
             "ok" => en ? "OK" : "OK",
             "continue" => en ? "Continue" : "Fortfahren",
             "cancel" => en ? "Cancel" : "Abbrechen",
+            "cancelling" => en ? "Cancelling and clearing temporary data" : "Abbrechen und temporäre Daten bereinigen",
+            "cancelled" => en ? "Operation cancelled." : "Vorgang abgebrochen.",
             "print" => en ? "Print" : "Drucken",
             "selectPrinter" => en ? "Select a physical printer" : "Physischen Drucker auswählen",
 
@@ -445,10 +455,7 @@ public sealed partial class MainWindow
 
     private EncryptionSuite LoadSuite()
     {
-        string? value = _settingsStore.Read(CipherSuiteSettingsFile)?.Trim();
-        return Enum.TryParse(value, ignoreCase: false, out EncryptionSuite suite) && Enum.IsDefined(suite)
-            ? suite
-            : EncryptionSuiteCatalog.Default;
+        return EncryptionSuiteCatalog.ParsePreference(_settingsStore.Read(CipherSuiteSettingsFile));
     }
 
     private int LoadCompression()

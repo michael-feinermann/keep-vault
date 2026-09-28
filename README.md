@@ -2,8 +2,10 @@
 
 [Deutsch](README.de.md) · [English](README.md) · [Documentation index](docs/README.en.md)
 
+Current work: 5.0.3/v13 is being implemented and verified. This run covers macOS and test data up to 256 MiB, with one explicit Paranoia exception: a 256 MiB directory tree plus an additional 256 MiB file (512 MiB total). It does not include a Windows release or real multi-TiB release runs. The previously published 5.0.2 release described below remains a separate historical evidence baseline. See the [implementation report](docs/KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md).
+
 Archiving, extraction and cryptographic erasure of ZPAQ archives. The current
-macOS reference and Windows 5.0.2 target use container format **v12**: a chosen cascade of up to six
+5.0.3 development version uses container format v13: a chosen cascade of up to eight
 independent ciphers over the compressed stream, keys from two Argon2id branches
 whose memory cost is itself derived from your credentials, two separate MACs,
 and a four-part credential made of a passphrase, a PIN, and two 1024-bit factors
@@ -125,49 +127,32 @@ attacker, obtain the verifier and its pins through a separate, trusted channel.
 
 ## Format policy
 
-The app writes and reads container format **version 12 only**. Every other
-version is refused, including version 11; there is no legacy decryption path and
-none is planned. Archives written with v11 or earlier cannot be opened with this
-release, and the reader says so by name rather than failing as a wrong password.
+The 5.0.3 development version writes and reads container format version 13 only. Version 12 and every other version are explicitly rejected. Existing archives are neither overwritten nor converted. Opening v12 archives requires a suitable previous installation.
 
-That is a deliberate choice, not an oversight. A second, older derivation kept
-alive for compatibility is a second construction to attack, a second set of
-domains to get wrong, and a permanent argument for whichever of the two is
-weaker. This format decision was made during development, when no archives needed to be
-carried forward to weigh against removing it.
+All container-bound domains contain `v13`. Header version, algorithm string, KDF identifier, roles, nonce widths and tweak widths jointly identify one construction. The separate release-key envelope formats remain unchanged. The complete contract is documented in [Container format v13](docs/KEEP_VAULT_V13_FORMAT.md).
 
-The key-derivation domain separators carry `v12`, and the header carries an
-explicit `KdfMode` string naming the construction. A version number alone turned
-out not to be enough: 4.0.0/4.0.1 and 4.0.2 both wrote `"Version": 9` while
-deriving different Paranoia keys. `KdfMode` exists so that a future correction
-changes a value a reader can see, not only a value a reader has to infer.
+Each fresh archive key set has a cryptographic budget of 64 TiB payload and 2^22 chunks, independent of disk approval. The [quantitative rationale and model limits](docs/KEEP_VAULT_V13_CRYPTO_USAGE.md) separate counter overlap, primitive, AEAD and MAC terms.
 
-### The ten options
+### The twelve options
 
 Offered in this order:
 
-| # | Option | Layers, outermost first | Nonce | Cipher key |
+| # | Option | Layers, outermost first | Stage nonce | Cipher key |
 |---|---|---|---|---|
-| 1 | **Standard** | Threefish-1024 → Kalyna-512/512 | 192 B | 192 B |
-| 2 | **Fast** | ChaCha20-Poly1305 → AES-256 | 28 B | 64 B |
-| 3 | **Mixed** | ChaCha20-Poly1305 → Threefish-1024 → AES-256 | 156 B | 192 B |
-| 4 | **Paranoia** | ChaCha20-Poly1305 → Threefish-1024 → Kalyna-512/512 → SHACAL-2-512 → MARS-448 → AES-256 | 268 B | 376 B |
+| 1 | Standard | XChaCha20-Poly1305 → Threefish-1024 → Kalyna-512/512 → AES-256 | 232 B | 256 B |
+| 2 | **Fast** | XChaCha20-Poly1305 → AES-256 | 40 B | 64 B |
+| 3 | **Mixed** | XChaCha20-Poly1305 → Threefish-1024 → AES-256 | 168 B | 192 B |
+| 4 | **Paranoia** | XChaCha20-Poly1305 → Threefish-1024 → Kalyna-512/512 → SHACAL-2-512 → Serpent-256 → Camellia-256 → MARS-448 → AES-256 | 312 B | 440 B |
 | 5 | Threefish-1024 | single cipher | 128 B | 128 B |
 | 6 | Kalyna-512/512 | single cipher | 64 B | 64 B |
 | 7 | SHACAL-2-512 | single cipher | 32 B | 64 B |
 | 8 | MARS-448 | single cipher | 16 B | 56 B |
 | 9 | AES-256 | single cipher | 16 B | 32 B |
-| 10 | ChaCha20-Poly1305 | single cipher | 12 B | 32 B |
+| 10 | Camellia-256 | single cipher | 16 B | 32 B |
+| 11 | Serpent-256 | single cipher | 16 B | 32 B |
+| 12 | XChaCha20-Poly1305 | single cipher | 24 B | 32 B |
 
-The four cascades come first, running from the everyday choice up to the most
-elaborate one. Somebody scanning the list stops at the first entry that fits,
-and the option that costs six passes over the data sits at the end where it gets
-chosen deliberately rather than by accident. The six individual ciphers follow
-in descending key size.
-
-Names are shown in the app and on the printed sheets in bracket notation, in
-German or English depending on the selected language — for example
-`Paranoia: ChaCha20-Poly1305(Threefish 1024(Kalyna 512/512(SHACAL-2 512(MARS 448(AES 256(Data))))))`.
+The four cascades precede eight single ciphers. Paranoia runs eight cipher stages. The table reports stage-IV widths only. All twelve options store a 320-byte archive basis; Paranoia adds a second 320-byte basis. Adding key widths does not establish an aggregate security strength.
 
 #### Measured performance on Apple M5 (macOS)
 
@@ -214,15 +199,15 @@ and [release audit](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.en.md).
 
 A Windows overview measured on an Intel Core i9-13900K will be added later.
 
+
+
 ### How a cascade works
 
-Each layer gets its own key and its own slice of the nonce. For the standard
-cascade that is 64 bytes of key and 64 bytes of nonce for the inner Kalyna
-layer, 128 and 128 for the outer Threefish layer.
+Each layer gets a separately derived key and its own nonce slice. Standard processes AES-256-CTR, Kalyna-512/512-CTR, Threefish-1024-CTR and XChaCha20-Poly1305 from inside to outside. Key widths are 32, 64, 128 and 32 bytes; nonce widths are 16, 64, 128 and 24 bytes. Only Paranoia uses a second complete master round.
 
 An earlier design cut those keys out of one flat Argon2id output, so a layer's key was a
 function of where it happened to sit in that buffer, and the same cipher in two
-positions could share structure. v12 derives each key separately from a
+positions could share structure. v13 derives each key separately from a
 canonical context — algorithm, stage index, cipher, purpose and key width — run
 through two PRF families and combined:
 
@@ -238,29 +223,20 @@ for what it is: a combiner of two 1024-bit PRF outputs under the assumption that
 both families behave as assumed and the contexts are unique — not a robust
 combiner against arbitrary or maliciously correlated primitives.
 
-The order matters. Breaking only the outer layer yields the inner layer's
-ciphertext — not the plaintext, and not the archive's structure. Every payload
-byte, along with file names, sizes and timestamps, lives in the ZPAQ stream
-*inside* all layers. An automated test demonstrates this rather than asserting
-it: it strips the outer layer with the correct key and searches the result for a
-known marker.
-
-All layers except the outermost ChaCha20-Poly1305 are keystream constructions,
-so security holds as long as at least one of them is unbroken.
+The inner CTR stages XOR separate keystreams. The outer AEAD additionally authenticates each chunk. Reading requires both global MACs and then the local tag before releasing that chunk's plaintext. This composition assumes correct primitives, separated roles and respected usage limits; it is not a formal security proof.
 
 ### Per-chunk nonces
 
-For **every** option, each 16 MiB chunk gets its own nonce, derived from the base
-nonce and the chunk index through SHA3-512. A continuous CTR counter over
-arbitrarily large archives eventually repeats, and a repeated counter block under
-one key leaks the XOR of two plaintexts.
+Every chunk of at most 16 MiB uses `Seed320-Blockwise64-SHA3-512-ActivePrefix-v3`. A stage requirement W activates exactly k=ceil(W/64) complete 64-byte blocks of the stored 320/640-byte basis. Each block is SHA3-512 hashed separately with the domain, version, suite, algorithm, capacity, k, W, 64-bit chunk index and block index. Cipher stages directly consume the W-byte prefix of those active digests. There are no additional stage hashes or reserve rotation jobs.
+
+Standard uses four of five blocks; Paranoia uses five of ten. The entire basis, including reserve, remains bound by header MACs and the AAD identity digest computed once per operation. The Threefish tweak uses all 320 bytes of B1. Hashed starts do not guarantee collision-free, disjoint CTR intervals. The [v13 format contract](docs/KEEP_VAULT_V13_FORMAT.md) specifies the exact transcript and separate limits.
 
 ### The master key derivation
 
-v12 derives keys from four credential inputs: the user passphrase, the PIN and
+v13 derives keys from four credential inputs: the user passphrase, the PIN and
 the two 1024-bit factors from the printed key sheets. New archives require
 24 to 256 UTF-16 code units for the passphrase and a PIN of 6 to 16 digits
-(ASCII only). These selection limits are not applied when reading existing v12 archives.
+(ASCII only). These selection limits are not applied when reading existing v13 archives.
 There is no reduced KDF mode and no suite that skips a credential input.
 
 Two credential paths are built first, each a different shape of construction.
@@ -340,7 +316,7 @@ secret and the salts change.
 
 This replaces an earlier arrangement, where both rounds shared one 128-byte
 credential prehash. Because the PHC adapter clears the password it is given,
-4.0.0 and 4.0.1 ran their second round over 128 zero bytes. v12 does not share a
+4.0.0 and 4.0.1 ran their second round over 128 zero bytes. v13 does not share a
 buffer between rounds at all, and the regression is checked by changing one bit
 of round one and observing round two change with it — not by a round-trip, which
 would pass while both sides were equally wrong.
@@ -354,7 +330,7 @@ the machine that wrote it.
 - Magic `KZPAQ2\0`, UTF-8 JSON header, 64-byte HMAC-SHA3-512 tree tag, 128-byte
   Skein-1024 MAC tag, then ciphertext
 - Password mode `UserPassword24to256+PIN6to16+GeneratedHex1024x2`
-- KDF input mode `DualBranch-v12: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024`
+- KDF input mode `DualBranch-v13: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024`
 - KDF mode `DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024`
 - One 1024-bit salt pair per round; Argon2id 0x13 with `t=4`, `p=4` and a memory
   cost derived from the credentials — `Argon2MemoryKiB` is stored as `0`
@@ -367,7 +343,7 @@ MACs cover the same magic, header length, header and the entire ciphertext, and
 both tags are compared in full and without short-circuiting before any plaintext
 reaches the ZPAQ pipe.
 
-The v12 reader accepts only `t=4`, `p=4` and a zero memory field. Deviating
+The v13 reader accepts only `t=4`, `p=4` and a zero memory field. Deviating
 header values are rejected before the KDF, so a manipulated archive can force
 neither weaker nor higher Argon2 cost — and because the cost is not in the header
 at all, there is no field to manipulate. The native adapter enforces its own
@@ -408,7 +384,7 @@ plaintext is written. Extraction only ever goes into a new or empty folder. A
 `.kzpaq` with neither a valid container header nor usable KPAR2 data is refused
 outright and never handed to the native parser as plain ZPAQ.
 
-**Cryptographic erase** — analyse a valid encrypted v12 container, then destroy
+**Cryptographic erase** — analyse a valid encrypted v13 container, then destroy
 the reconstructable recovery sidecar first and afterwards corrupt and delete the
 container itself, through the same exclusive file handle. The button refuses
 until the SSD/APFS limitation is explicitly acknowledged.
@@ -471,7 +447,7 @@ Extraction, listing and recovery do not run these old or new choice rules and
 do not require password-model data. Only the original encoding, factor formats,
 a separate technical limit of 1,048,576 UTF-16 code units per user credential,
 and cryptographic verification apply. No runtime network lookup is used.
-See the [v12 credential policy and Windows contract](docs/KEEP_VAULT_V12_CREDENTIAL_POLICY.en.md)
+See the [historical v12 credential policy and Windows contract](docs/KEEP_VAULT_V12_CREDENTIAL_POLICY.en.md)
 for exact boundaries, data provenance, uncertainty and required evidence.
 
 ### The four credentials
@@ -483,7 +459,7 @@ different shapes. Neither branch can be computed from the other's output.
 
 `Q_S` and `Q_K` go into their own Argon2id branch untruncated, each with its own
 512-bit salt. The app compiles the unmodified PHC Argon2 reference sources; tests
-compare the native adapter against the PHC CLI, and the v12 branch additionally
+compare the native adapter against the PHC CLI, and the v13 branch additionally
 against Bouncy Castle's independent Argon2id implementation.
 
 Every intermediate buffer — the encoding targets, the length frames, both
@@ -506,36 +482,15 @@ memory-hard KDF are what carry the protection here.
 
 ## Randomness, salt, nonce and tweak
 
-Nine separate pools collect mouse samples: A1, A2, B1, B2, the SHA3 salt, the
-Skein salt, and three nonce parts. A 1024-bit factor is drawn from two pools laid
-end to end — A = A1 ‖ A2 — which is defence in depth, not a claim that either
-pool holds 512 bits of real entropy. Each pool needs at least **1024 samples**
-before archive entropy can be produced; with round-robin distribution that is at
-least 9216 mouse events per epoch, and the nine counters differ by at most one.
+Eleven pools retain unchanged mouse records: A1, A2, B1, B2, two salts and five nonce blocks. Independent OS-CSPRNG draws route each event uniformly to IDs 0 through 10 with replacement; rejection sampling avoids modulo bias. Every pool requires at least 1024 records. Actual counters are visible and may differ. A fixed total event count does not guarantee readiness.
 
-The interface shows all nine counters. It groups A1/A2 and B1/B2 visually, but
-there are two user factors, not four.
+Each record retains its original 80 bytes and original sequence in segmented locked RAM. The entropy budget also reserves future permutation-index capacity. Explicit generation atomically detaches one complete snapshot while installing a new live collection. Each pool's indices undergo backward Fisher-Yates using fresh unbiased OS-random draws. Neither original records nor original sequence numbers are rewritten.
 
-That count is not a claim of 512 bits of physical mouse entropy. Security may
-already rest on the operating-system CSPRNG alone; the mouse data is additional
-diversity. Every output is the XOR of two independent things:
+Round 1 starts from a zero 64-byte accumulator and replays every record in shuffled order through SHA3-512, binding its original sequence and purpose. Final hashing binds the pool digest, LE64 epoch, LE32(0) and LE32 purpose. Paranoia alone shuffles that same index order again with fresh OS draws and replays the same original records using SHA-512 from a new zero accumulator. Dependent steps within a pool remain sequential; independent pools share the approved CPU budget.
 
-- `SecRandomCopyBytes` as the primary CSPRNG
-- a domain-separated SHA3-512 expansion of the relevant mouse pool
+Round 1 XORs factors (256 bytes), both salts (64 bytes each) and the entire nonce (320 bytes) with separate OS-random outputs. Round 2 discards factor results and produces fresh salts and a second 320-byte nonce with independent OS contributions. Both 1024-bit user factors come from round 1. All consumed records, indices, random caches and temporary derivations are joined and erased before a result is published. Failure publishes no partial generation.
 
-The factors, both salts and all three nonce parts are generated together and
-atomically from one epoch, each from its own pool. Afterwards every pool is replaced, zeroed
-while locked, and its counter reset to zero — so zero in that state means
-*consumed*, not *insufficient*. Both salts and the full nonce stay in locked
-RAM until encryption begins and are taken exactly once. If that attempt fails
-after they were taken, A and B stay valid, but the retry derives fresh salts and
-fresh nonces from a new epoch, so a nonce is never reused under the same key.
-
-Each round carries a 1024-bit salt pair — 512 bits for the SHA3 branch and 512
-for the Skein branch — and the two are refused if they are ever equal. Paranoia
-carries two such pairs. The public 16-byte Threefish tweak is derived
-deterministically and domain-separated from the nonce and stored in the
-authenticated header. Salt, nonce and tweak do not need to be secret.
+Output widths are not measurements of physical mouse entropy. Security may rest on the OS CSPRNG; mouse records provide additional diversity. Salts, nonces and the deterministic domain-separated 16-byte Threefish tweak are public authenticated parameters. Salts for distinct KDF branches and rounds must differ.
 
 ---
 
@@ -572,7 +527,9 @@ drivers and printers can create their own temporary data outside the app.
 
 ## Streaming and parallelism
 
-ZPAQ lives under `external/zpaq`, the licensed v12 Kalyna implementation in
+Encrypted v13 input uses a private ciphertext spool with a local dual-MAC range index. Each complete 1 MiB range is reverified in a private buffer before consumption. Normal consumers gain access only after both global container MACs pass. A trusted resource policy bounds sizes, memory, CPU workers and queues; archive bytes cannot raise its limits. Regular `.zpaq` input binds the original file and stores only a local authentication index. The normal 256 MiB test cap and the explicit 512 MiB Paranoia structural fixture do not establish real multi-TiB evidence.
+
+ZPAQ lives under `external/zpaq`, the licensed v13 Kalyna implementation in
 Crypto++ 8.9.0 under `external/cryptopp`, and the official Skein 1.3 /
 Threefish source under `external/Skein-reference`. The earlier unlicensed
 Kalyna reference snapshot and every derived table adapter were removed before
@@ -594,7 +551,7 @@ be renamed or deleted from under them; symlink aliases are refused. Archive
 targets may neither equal an input nor lie inside a directory tree being read.
 The native ZPAQ JIT is disabled, and model and index sizes have hard limits.
 
-The encrypted streaming format is v12-only (`KVP12ZP1`). Every independently
+The encrypted streaming format is v13-only (`KVP13ZP1`). Every independently
 compressed ZPAQ block is carried in a canonical frame with its exact compressed
 and uncompressed lengths and checksum. Frames are produced and consumed in
 index order, while bounded worker sets compress or decompress independent
@@ -603,46 +560,26 @@ uncompressed data and a 128 MiB model. At most 512 MiB of compressed pipe data
 may wait for an ordered consumer. Regular archives use a 64 MiB output and
 512 MiB model limit per job. A shared 6 GiB processing budget admits only as
 many 384 MiB compression or 592 MiB regular jobs as fit; the requested worker
-count is additionally capped at 64. Truncated, reordered, non-canonical or
+count also respects the shared operation CPU budget. Truncated, reordered, non-canonical or
 checksum-invalid frames are rejected without resynchronising past damage.
 
-An already authenticated regular `.zpaq` supplied on standard input is carried
-in an internal `KV12VM` envelope with two null bytes and a big-endian 64-bit
-length. The native process checks magic, bounds, exact length and EOF, then holds
-the archive in anonymous private VM memory. Before parser access, both current
-and maximum protection become read-only, so the parser cannot restore write
-access with `mprotect`. This supports position-independent parallel reads without
-a named shared-memory object; named POSIX SHM is prohibited by the profiles.
-The verified-input limit is 512 GiB. This does not promise unlimited physical
-RAM or exclusion of operating-system swap.
-Extraction is also bounded to 500 GiB total, 500 GiB per file, 500,000 entries,
-a 512 MiB index and 2^26 fragments. Encrypted container extraction does not use
-this whole-archive staging route: its decrypted `KVP12ZP1` frames remain in the
-bounded forward pipe.
+Regular `.zpaq` extraction and listing use the bounded duplex `KV13RA` protocol. The parent opens the original archive once, builds a private dual-MAC index over its 1 MiB ranges, and verifies both required whole-archive hash sidecars. The native parser receives no archive file descriptor. It requests bounded ranges by 64-bit offset and a length of at most 1 MiB; the parent verifies each complete source range again in private memory before sending the requested slice. Mutation, truncation, malformed requests and incomplete responses fail closed. Parallel parser readers serialize complete request/response transactions.
 
-The container layer processes bounded batches of 16 MiB chunks. Its slot limit
-starts at one per four logical processors, with at least one and at most 64,
-and is further limited by a memory budget derived from one sixteenth of reported
-available memory, retaining a minimum of one slot. Slots are allocated as needed;
-each owns two locked 16 MiB buffers plus its counters, nonce and tag storage.
-After reading a batch, the chunk workers run concurrently and all join before
-the writer emits that batch in canonical order. The writer finishes before the
-next batch is read. Native transform teams are bounded across simultaneous
-container operations, and each team uses at most 64 workers. Cascade layers stay
-sequential because each consumes the preceding layer's output; inside a layer,
-the native CTR and ChaCha20 drivers split disjoint counter ranges across workers.
-Reordering is rejected, all started workers are joined on every exit path, and
-a failed operation publishes no partial container.
+This route creates neither a plaintext archive copy nor a whole-archive SHM/VM allocation. The global `.sha3` and `.skein` sidecars remain unkeyed corruption checks; an attacker who can replace the source and both sidecars can replace their contents. The ephemeral local MAC index binds the verified bytes throughout the current operation. Parser model, index, output and entry budgets remain enforced by the trusted resource policy.
 
-Poly1305 is parallel too. For requests of at least 1 MiB, up to 64 workers
-evaluate contiguous 16-byte-aligned portions of the exact RFC 8439 transcript.
+Native ZPAQ teams, container cipher teams, MAC leaf workers and Argon2 execution threads share CPU reservations. A ZPAQ process reserves at most the approved budget minus one, preserving a worker for its parent's streaming/authentication work, including when several native children are queued. Streaming operations therefore require a budget of at least two workers. Argon2's four cryptographic lanes remain unchanged when fewer execution threads are granted.
+
+The container processes bounded groups of 16 MiB chunks. Memory slots are separate from CPU workers: each slot owns two locked 16 MiB buffers and small counter/nonce/tag storage. Even one chunk may use multiple approved cipher workers. The shared budget reserves each team including its caller; native ciphers borrow work through the common executor. There is no fixed aggregate cap of 64 or 1024 CPUs. Actual process CPU availability and RAM/queue budgets remain limits. Output is ordered, active work is joined and temporary secrets are erased before publication. Failure publishes no partial container. Numerical many-core tests do not establish measurements on such hardware.
+
+Poly1305 is parallel too. For requests of at least 1 MiB, a team bounded by its CPU grant and available blocks
+evaluates contiguous 16-byte-aligned portions of the exact RFC 8439 transcript.
 Their field elements are recombined in message order with the appropriate
 power of the clamped one-time key. A retained scalar implementation, exhaustive
-padding-boundary comparisons, the RFC vector and a 256 MiB differential test
+padding-boundary comparisons, the XChaCha draft vector and bounded chunk differential tests
 hold the result byte-for-byte against the serial authenticator. Decryption
 checks the tag before writing plaintext into the caller's output buffer.
 
-The two global container authenticators use a v12 domain-separated tree over
+The two global container authenticators use a v13 domain-separated tree over
 1 MiB leaves. Every leaf binds its index and exact length; the ordered root binds
 the total logical length, leaf count, leaf size and both complete leaf tags.
 HMAC-SHA3-512 and Skein-MAC-1024 use separate derived leaf and root keys. Leaves
@@ -686,7 +623,7 @@ affect at most three data shards per stripe. Block-oriented reads treat I/O
 errors reported by the file system as erasures.
 
 Parity generation, shard hashing, verification and reconstruction distribute
-independent stripes and shards over a hardware-bounded worker set capped at 64.
+independent stripes and shards over workers reserved from the shared CPU budget.
 Each worker writes disjoint result ranges; manifest, locator and output ordering
 remain canonical. The one-worker and production-worker paths are compared for
 byte identity in a dedicated recovery gate.
@@ -713,7 +650,7 @@ same schedule. They simply cost the same to attack.
 v4 additionally binds the container version into the authenticated recovery
 context — both into the recovery-key derivation and into the certification
 prefix — so the unkeyed version field in the locator cannot select a different
-key derivation. Since only container version 12 exists, any other value is
+key derivation. Since this reader accepts only container version 13, any other value is
 refused outright.
 
 The Argon2id cost fields are gone from the locator and manifest, and are
@@ -868,8 +805,8 @@ through `KEEPVAULT_HYBRID_PFX`,
 
 ```sh
 ./tools/Build-Native-macOS.sh          # reference ciphers, Argon2, ZPAQ
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.2 --build-number 13
-./tools/Build-KeepVault-macOS.sh --version 5.0.2 --build-number 13
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.3 --build-number 14
+./tools/Build-KeepVault-macOS.sh --version 5.0.3 --build-number 14
 ./tools/Build-Portable-macOS.sh        # portable folder and ZIP
 ./tools/Install-KeepVault-macOS.sh     # verify and install to /Applications
 ./tools/Verify-KeepVault-macOS.sh      # check an installed or built bundle
@@ -919,7 +856,7 @@ SHA3, Skein, Kalyna and Threefish reference vectors; ML-DSA-87 interoperability
 against the compiled reference adapter in both directions; randomised
 differential testing against every reference library; the fixed Argon2id profile
 against PHC and Bouncy Castle; ZPAQ levels, streaming, traversal and a malformed
-corpus; v12 round-trips and manipulation rejection; that the outer cascade layer
+corpus; v13 round-trips and manipulation rejection; that the outer cascade layer
 alone reveals nothing; two-round derivation from one pool consumption; per-chunk
 nonces across a multi-chunk archive; salt and nonce for every single-round suite;
 MARS and SHACAL-2 published vectors; KPAR2 repair, authentication,
@@ -956,9 +893,9 @@ driven through Avalonia's headless backend.
 - A 1024-bit Threefish key and a 1024-bit Skein tag do not mean the whole
   construction has 1024 bits of security. KDF, password material, ciphers, both
   MACs and the implementation jointly bound the real strength; security bits do
-  not add up. Neither does layering six ciphers make the cascade six times
-  stronger — it means an attacker must break every layer, not that the strengths
-  sum.
+  not add up. Eight cipher layers do not imply eight times the security. The
+  full construction has no formal proof that it preserves the strongest layer
+  under every possible weakness in the other layers.
 - Dual unkeyed hashes are not a digital signature. The release manifests gain
   active forgery resistance only from their mandatory RSA-PSS / ML-DSA `.khsig`
   signatures and from both private keys being protected.
@@ -1005,4 +942,4 @@ Sources: [Crypto++ Kalyna](https://github.com/weidai11/cryptopp),
 [pq-crystals/dilithium](https://github.com/pq-crystals/dilithium),
 [Threefish / Skein authors](https://www.schneier.com/academic/skein/threefish/),
 [Skein 1.3 paper](https://www.schneier.com/wp-content/uploads/2015/01/skein.pdf),
-[RFC 8439 / ChaCha20-Poly1305](https://www.rfc-editor.org/rfc/rfc8439).
+[RFC 8439 / ChaCha20-Poly1305 inner construction](https://www.rfc-editor.org/rfc/rfc8439).

@@ -22,6 +22,22 @@ static async Task<int> RunAsync(string[] args)
         }
 
         (Dictionary<string, string> options, List<string> targets) = ParseOptions(args[1..]);
+        if (string.Equals(args[0], "release-keygen", StringComparison.Ordinal))
+        {
+            RequireNoTargets(targets, args[0]);
+            RequireOnlyOptions(options, "directory", "reference-library");
+            string temporaryKeychainDirectory = PrepareMacTemporaryKeychainDirectory();
+            try
+            {
+                return ReleaseKeyGenerator.Generate(Require(options, "directory"), Require(options, "reference-library"));
+            }
+            finally
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                RequireDirectoryEmpty(temporaryKeychainDirectory, "key-generation temporary keychain directory");
+            }
+        }
         if (string.Equals(args[0], "wrap-mldsa-key", StringComparison.OrdinalIgnoreCase))
         {
             RequireNoTargets(targets, args[0]);

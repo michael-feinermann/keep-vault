@@ -60,3 +60,8 @@ QrCodeScannerWindows/Assets/QR-Scanner.ico
 # never be mistaken for tracked sources.
 QrCodeScanner/.qr-build.*
 QrCodeScanner/.qr-publish-helper.*
+
+# Native builder staging and Python reference-model caches are not sources.
+KeepVaultMac/.native-build.*/
+__pycache__/
+*.pyc

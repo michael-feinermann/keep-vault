@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "scope": "Selected completed managed composition and Paranoia role gates from one integration invocation; not a claim that every group in that invocation passed.",
+  "status": "PASS",
+  "tests": [
+    {
+      "id": "v13-std-composition",
+      "description": "V13-STD-COMPOSITION: independent inner CTR stages and outer native oracle",
+      "status": "PASS",
+      "seconds": 0.9283739
+    },
+    {
+      "id": "v13-cascade-independent-composition",
+      "description": "Standard/Paranoia independent intermediate stages and identical libsodium/Go outer AEAD",
+      "status": "PASS",
+      "seconds": 1.6482727
+    },
+    {
+      "id": "v13-par8-rolekeys",
+      "description": "Paranoia eight independent stage contexts, dual PRF values, MAC/recovery roles and tweak index",
+      "status": "PASS",
+      "seconds": 0.1754314
+    }
+  ],
+  "fixture_sha256": "287319CDCF4DE2132370E4CAA5FEFA62315F0B22F2C4F26DEC5256477B6EA6A9",
+  "source_sha256_at_evidence_capture": {
+    "KalynaArchiver.Tests/V13ParanoiaCompositionTests.cs": "B90CCA4F097F9C7639A5550B6AC2DFA8706ED0F44F8442307E797ABBD641E70E",
+    "KeepVaultMac.Tests/Fixtures/V13Reference/cascade_composition_rev9.json": "287319CDCF4DE2132370E4CAA5FEFA62315F0B22F2C4F26DEC5256477B6EA6A9",
+    "KalynaArchiver/Services/NativeCascadeCiphers.cs": "A1FD9137CFBA4997DBF1F6BCBA3FE1EF91A583F1F253B3DC2C6DF251BD3F1D03",
+    "KalynaArchiver/Services/KalynaContainerService.cs": "D109577AFD3E7F0AC2626660BF27F0070657048D73D642720E1EAFD9D8B15063"
+  },
+  "input_evidence": {
+    "work/v13-evidence/rev9-dev-v13-rerun2.log": {
+      "sha256": "63A7570BF87797FB003276D6457AFB481AF9F185C6425DBA7E52769A3589840B"
+    },
+    "work/v13-evidence/rev9-dev-v13-rerun2.json": {
+      "sha256": "DDB1571947E8A92DD78A649CC78A4105C87170F0056FC48E23284F1EAF349CE8"
+    }
+  },
+  "other_groups": "The source invocation included a separate header fuzz duplicate-input failure. That gate is not covered by this evidence and is handled separately."
+}

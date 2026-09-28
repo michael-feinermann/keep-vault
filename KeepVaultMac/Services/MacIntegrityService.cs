@@ -409,11 +409,11 @@ public sealed class IntegrityService : IDisposable
             {
                 length = checked(length + read);
                 int count = read;
-                await Task.WhenAll(
-                    Task.Run(() => sha3.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
-                    Task.Run(() => sha512.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
-                    Task.Run(() => skein.AppendData(buffer.AsSpan(0, count)), CancellationToken.None))
-                    .ConfigureAwait(false);
+                await CpuWorkBudget.RunIndependentAsync(cancellationToken,
+                    () => sha3.AppendData(buffer.AsSpan(0, count)),
+                    () => sha512.AppendData(buffer.AsSpan(0, count)),
+                    () => skein.AppendData(buffer.AsSpan(0, count))).ConfigureAwait(false);
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             return (sha3.GetHashAndReset(), skein.GetHashAndReset(), sha512.GetHashAndReset(), length);
@@ -438,10 +438,11 @@ public sealed class IntegrityService : IDisposable
             {
                 length = checked(length + read);
                 int count = read;
-                Parallel.Invoke(
+                CpuWorkBudget.RunIndependentAsync(CancellationToken.None,
                     () => sha3.AppendData(buffer.AsSpan(0, count)),
                     () => sha512.AppendData(buffer.AsSpan(0, count)),
-                    () => skein.AppendData(buffer.AsSpan(0, count)));
+                    () => skein.AppendData(buffer.AsSpan(0, count))).GetAwaiter().GetResult();
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             return (sha3.GetHashAndReset(), skein.GetHashAndReset(), sha512.GetHashAndReset(), length);
@@ -549,17 +550,19 @@ public enum SignatureState
 internal static class NativeToolIntegrity
 {
     internal static IReadOnlyList<string> RequiredLogicalToolNames { get; } =
-        new[] { "zpaq.exe", "kalyna_v12.dll", "threefish_ref.dll", "mars_ref.dll", "shacal2_ref.dll", "aes_ref.dll", "chachapoly_ref.dll", "argon2_ref.dll", "argon2.exe" };
+        new[] { "zpaq.exe", "kalyna_v13.dll", "threefish_ref.dll", "mars_ref.dll", "camellia_v13.dll", "serpent_v13.dll", "shacal2_ref.dll", "aes_ref.dll", "xchachapoly_v13.dll", "argon2_ref.dll", "argon2.exe" };
 
     private static readonly IReadOnlyDictionary<string, string> MacNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         ["zpaq.exe"] = "zpaq",
-        ["kalyna_v12.dll"] = "libkalyna_v12.dylib",
+        ["kalyna_v13.dll"] = "libkalyna_v13.dylib",
         ["threefish_ref.dll"] = "libthreefish_ref.dylib",
         ["mars_ref.dll"] = "libmars_ref.dylib",
+        ["camellia_v13.dll"] = "libcamellia_v13.dylib",
+        ["serpent_v13.dll"] = "libserpent_v13.dylib",
         ["shacal2_ref.dll"] = "libshacal2_ref.dylib",
         ["aes_ref.dll"] = "libaes_ref.dylib",
-        ["chachapoly_ref.dll"] = "libchachapoly_ref.dylib",
+        ["xchachapoly_v13.dll"] = "libxchachapoly_v13.dylib",
         ["argon2_ref.dll"] = "libargon2_ref.dylib",
         ["argon2.exe"] = "argon2",
     };

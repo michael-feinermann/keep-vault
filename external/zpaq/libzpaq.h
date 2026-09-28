@@ -841,6 +841,14 @@ Use at your own risk.
 #include <string.h>
 #include <algorithm>
 
+// Keep Vault's process-wide allocation gate includes libzpaq's C allocations.
+void* keepvault_budget_malloc(size_t);
+void* keepvault_budget_calloc(size_t, size_t);
+void* keepvault_budget_realloc(void*, size_t);
+void keepvault_budget_free(void*) noexcept;
+bool keepvault_budget_reserve_mapping(size_t);
+void keepvault_budget_release_mapping(size_t);
+
 namespace libzpaq {
 
 // 1, 2, 4, 8 byte unsigned integers
@@ -913,7 +921,7 @@ void Array<T>::resize(size_t sz, int ex) {
   if (n>0) {
     assert(offset>0 && offset<=64);
     assert((char*)data-offset);
-    ::free((char*)data-offset);
+    ::keepvault_budget_free((char*)data-offset);
   }
   n=0;
   offset=0;
@@ -921,7 +929,7 @@ void Array<T>::resize(size_t sz, int ex) {
   n=sz;
   const size_t nb=128+n*sizeof(T);  // test for overflow
   if (nb<=128 || (nb-128)/sizeof(T)!=n) n=0, error("Array too big");
-  data=(T*)::calloc(nb, 1);
+  data=(T*)::keepvault_budget_calloc(nb, 1);
   if (!data) n=0, error("Out of memory");
   offset=64-int(reinterpret_cast<uintptr_t>(data)&uintptr_t(63));
   assert(offset>0 && offset<=64);
@@ -1387,7 +1395,7 @@ class StringBuffer: public libzpaq::Reader, public libzpaq::Writer {
     assert(!al==!p);
     if (a<=al) return;
     unsigned char* q=0;
-    if (a>0) q=(unsigned char*)(p ? realloc(p, a) : malloc(a));
+    if (a>0) q=(unsigned char*)(p ? keepvault_budget_realloc(p, a) : keepvault_budget_malloc(a));
     if (a>0 && !q) error("Out of memory");
     p=q;
     al=a;
@@ -1399,7 +1407,10 @@ class StringBuffer: public libzpaq::Reader, public libzpaq::Writer {
     if (wpos+n>limit || wpos+n<wpos) error("StringBuffer overflow");
     if (wpos+n<=al) return;
     size_t a=al;
-    while (wpos+n>=a) a=a*2+init;
+    while (wpos+n>=a) {
+      if (a>(size_t(-1)-init)/2) { a=wpos+n; break; }
+      a=a*2+init;
+    }
     reserve(a);
   }
 
@@ -1435,7 +1446,7 @@ public:
     if (p) {
       volatile unsigned char* wipe=p;
       for (size_t i=0; i<al; ++i) wipe[i]=0;
-      free(p);
+      keepvault_budget_free(p);
     }
     p=0;
     al=rpos=wpos=0;

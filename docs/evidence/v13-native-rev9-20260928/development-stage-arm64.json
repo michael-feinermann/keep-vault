@@ -1,0 +1,15 @@
+{
+  "status": "DEVELOPMENT_COMPILE_ONLY",
+  "hybrid_sidecars": "require re-signing",
+  "artifacts": {
+    "libaes_ref.dylib": "630f185d248e5f261a7d097209e6c04c9294187f4c7f3a20cc31029aa508ddee",
+    "libargon2_ref.dylib": "a5d20afe53cbbc6504f2b364ed28911d7e2d31a6b9a24ecaf7bdeac2034de039",
+    "libcamellia_v13.dylib": "66a4b025c18dd64f482afa70ebdbec7c8713716571e376d985f64d663b8817b6",
+    "libkalyna_v13.dylib": "4c3f437e7ed86e3b737908dc7d4cb7df6721247165ac08de78248411f5929f19",
+    "libmars_ref.dylib": "5f80996466c2aee0e9fd9f0e20d302e5695dc6c2484a13e37ceef4d5e9a48d11",
+    "libserpent_v13.dylib": "25c91df53957d70c38e9d57765c0f918f56724139c4543e5e03c886e7df34396",
+    "libshacal2_ref.dylib": "492c28c7729e7704df04653e46fa29624dd858f8c64e7fcace56b618908df2d3",
+    "libthreefish_ref.dylib": "0682b00faf64600a359b807343e84338baa2bcbda6663eabcf7c3bd6b56a0d89",
+    "libxchachapoly_v13.dylib": "3d402430b966e3ef89d1196f5957d02d90170be8103615b07bc974b759304c94"
+  }
+}

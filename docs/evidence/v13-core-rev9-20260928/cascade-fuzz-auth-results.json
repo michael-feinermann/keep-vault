@@ -1,0 +1,51 @@
+{
+  "status": "PASS",
+  "scope": "macOS development trust stage; final signed release gates remain separate",
+  "tests": {
+    "v13-cascade-independent-composition": {
+      "cases": 28,
+      "stages": [
+        4,
+        8
+      ],
+      "evidence": "cascade-role-nonce-dev.log"
+    },
+    "v13-par8-rolekeys": {
+      "cipher_roles": 8,
+      "evidence": "cascade-role-nonce-dev.log"
+    },
+    "v13-header-seeded-fuzz": {
+      "unique_frames": 10000,
+      "accepted_frames": 1500,
+      "rejected_frames": 8500,
+      "metadata_consumers": 2,
+      "seed": "4B56563133524539",
+      "evidence": "header-fuzz-final.log"
+    },
+    "v13-nonce-seeded-fuzz": {
+      "positive_cases": 10000,
+      "negative_cases": 10000,
+      "seed": "4B56567F7C1C067C",
+      "evidence": "cascade-role-nonce-dev.log"
+    },
+    "v13-par8-header-auth": {
+      "payload_bytes": 127,
+      "test_memory_kib": 8192,
+      "legacy_mutations": 12,
+      "metadata_consumers": 2,
+      "local_tag_failure_after_both_global_macs": true,
+      "evidence": "par8-header-auth-final.log"
+    }
+  },
+  "notes": [
+    "The earlier combined developer log intentionally preserves one header-generator duplicate failure. The final dedicated header run fixes and supersedes that failure; the duplicate assertion remains mandatory.",
+    "No production KDF or release performance is inferred from the explicit 8192-KiB test-only authentication fixture.",
+    "Frozen reference reads do not regenerate outputs."
+  ],
+  "evidence_sha256": {
+    "cascade-role-nonce-dev.log": "63a7570bf87797fb003276d6457afb481af9f185c6425dba7e52769a3589840b",
+    "header-fuzz-final.log": "c30bc0bff7f1ed86845a678f5ba2f05d144b287ecf26c21e152ba2bfb62ef809",
+    "par8-header-auth-final.log": "3c87e26aff906b4c64ca10f7746435b3ebd3b7cd9f3913bd35dcd27ac7e26bf2",
+    "final-fuzz-auth-build.log": "eff14b5e53be95d5afed361ceefb99e2383a419f63cb354f15cf3afd665ddbbd"
+  }
+}

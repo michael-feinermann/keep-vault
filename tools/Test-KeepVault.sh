@@ -58,7 +58,7 @@ mkdir -m 0700 ${private_root}/home ${private_root}/packages \
 private_artifacts=${private_root}/artifacts
 
 run_dotnet_clean() {
-  /usr/bin/env -i \
+  (cd ${repo_root}/KeepVaultMac && /usr/bin/env -i \
     HOME=${private_root}/home \
     PATH=${PATH} \
     TMPDIR=${private_root}/tmp \
@@ -78,7 +78,7 @@ run_dotnet_clean() {
     KEEPVAULT_TEST_REPOSITORY_ROOT=${repo_root} \
     KEEPVAULT_TEST_RELEASE_ROOT=${test_release_root} \
     KEEPVAULT_PERF_BASELINE=${test_performance_baseline} \
-    ${dotnet_command} "$@"
+    ${dotnet_command} "$@")
 }
 
 for arg in "$@"; do

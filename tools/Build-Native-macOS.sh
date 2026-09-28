@@ -540,6 +540,22 @@ build_architecture() {
     ${link_flags[@]}
 
   ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
+    -install_name @rpath/libcamellia_v13.dylib \
+    -o ${output_dir}/libcamellia_v13.dylib \
+    -I${cryptopp_dir} \
+    ${repo_root}/native/camellia_v13_export.cpp \
+    ${cryptopp_archive} \
+    ${link_flags[@]}
+
+  ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
+    -install_name @rpath/libserpent_v13.dylib \
+    -o ${output_dir}/libserpent_v13.dylib \
+    -I${cryptopp_dir} \
+    ${repo_root}/native/serpent_v13_export.cpp \
+    ${cryptopp_archive} \
+    ${link_flags[@]}
+
+  ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
     -install_name @rpath/libaes_ref.dylib \
     -o ${output_dir}/libaes_ref.dylib \
     -I${cryptopp_dir} \
@@ -548,10 +564,10 @@ build_architecture() {
     ${link_flags[@]}
 
   ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
-    -install_name @rpath/libchachapoly_ref.dylib \
-    -o ${output_dir}/libchachapoly_ref.dylib \
+    -install_name @rpath/libxchachapoly_v13.dylib \
+    -o ${output_dir}/libxchachapoly_v13.dylib \
     -I${cryptopp_dir} \
-    ${repo_root}/native/chachapoly_ref_export.cpp \
+    ${repo_root}/native/xchachapoly_ref_export.cpp \
     ${cryptopp_archive} \
     ${link_flags[@]}
 
@@ -565,15 +581,15 @@ build_architecture() {
 
   # zpaq.cpp prints __DATE__ in its banner, which puts the build day into the
   # executable. That alone makes two builds of one unchanged source differ,
-  # and the root-owned v12 anchor pins ZPAQ by its exact bytes: every build on
+  # and the root-owned v13 anchor pins ZPAQ by its exact bytes: every build on
   # a new day would invalidate the installed anchor and force a reinstall.
   # Fixing the macro keeps the banner honest about the version and keeps the
-  # bytes a function of the source only. The upstream file stays untouched, so
-  # its hash in external/NATIVE_SOURCE_SHA256SUMS still matches.
+  # bytes a function of the reviewed source only. The local ZPAQ changes are
+  # pinned by external/NATIVE_SOURCE_SHA256SUMS.
   ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} -DNOJIT -DBSD -fPIE -pthread \
     -Wno-builtin-macro-redefined '-D__DATE__="from pinned sources"' \
     -o ${output_dir}/zpaq \
-    ${repo_root}/external/zpaq/zpaq.cpp \
+    -std=c++17 ${repo_root}/external/zpaq/zpaq.cpp \
     ${repo_root}/external/zpaq/libzpaq.cpp \
     -framework CoreFoundation \
     -Wl,-pie ${link_flags[@]}
@@ -582,13 +598,15 @@ build_architecture() {
   # unlicensed reference source and its derived table path are intentionally
   # absent from both this build and the repository.
   ${cxx} ${cxx_driver_flags[@]} ${common_flags[@]} ${cryptopp_flags[@]} -dynamiclib -pthread \
-    -install_name @rpath/libkalyna_v12.dylib \
-    -Wl,-exported_symbol,_keepvault_v12_kalyna_512_512_ctr_xcrypt \
-    -Wl,-exported_symbol,_keepvault_v12_kalyna_512_512_ctr_xcrypt_scalar \
-    -Wl,-exported_symbol,_keepvault_v12_kalyna_join_failure_kat \
-    -o ${output_dir}/libkalyna_v12.dylib \
+    -install_name @rpath/libkalyna_v13.dylib \
+    -Wl,-exported_symbol,_keepvault_v13_register_executor \
+    -Wl,-exported_symbol,_keepvault_v13_kalyna_512_512_ctr_xcrypt \
+    -Wl,-exported_symbol,_keepvault_v13_kalyna_512_512_ctr_xcrypt_with_workers \
+    -Wl,-exported_symbol,_keepvault_v13_kalyna_512_512_ctr_xcrypt_scalar \
+    -Wl,-exported_symbol,_keepvault_v13_kalyna_join_failure_kat \
+    -o ${output_dir}/libkalyna_v13.dylib \
     -I${cryptopp_dir} \
-    ${repo_root}/native/kalyna_v12_export.cpp \
+    ${repo_root}/native/kalyna_v13_export.cpp \
     ${cryptopp_archive} \
     ${link_flags[@]}
 
@@ -651,14 +669,23 @@ build_architecture x86_64 osx-x64
 
 universal_dir=${output_root}/osx-universal
 mkdir -p -- ${universal_dir}
-artifacts=(zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_v12.dylib libmars_ref.dylib libmldsa87_ref.dylib libshacal2_ref.dylib libsha3_ref.dylib libthreefish_ref.dylib)
+artifacts=(zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libxchachapoly_v13.dylib libkalyna_v13.dylib libmars_ref.dylib libcamellia_v13.dylib libserpent_v13.dylib libmldsa87_ref.dylib libshacal2_ref.dylib libsha3_ref.dylib libthreefish_ref.dylib)
 for artifact_name in ${artifacts[@]}; do
   xcrun lipo -create \
     ${output_root}/osx-arm64/${artifact_name} \
     ${output_root}/osx-x64/${artifact_name} \
     -output ${universal_dir}/${artifact_name}
   chmod 0755 ${universal_dir}/${artifact_name}
-  xcrun lipo ${universal_dir}/${artifact_name} -verify_arch arm64 x86_64
+  # Some current Apple lipo builds treat a second -verify_arch operand as
+  # another input. Verify each slice independently without relaxing the gate.
+  for expected_architecture in arm64 x86_64; do
+    xcrun lipo ${universal_dir}/${artifact_name} -verify_arch ${expected_architecture}
+  done
+  universal_architectures=(${=:-$(xcrun lipo -archs ${universal_dir}/${artifact_name})})
+  if [[ ${(j: :)${(on)universal_architectures}} != 'arm64 x86_64' ]]; then
+    print -u2 "Unexpected universal slice inventory: ${artifact_name}"
+    exit 1
+  fi
   file -- ${universal_dir}/${artifact_name}
 done
 

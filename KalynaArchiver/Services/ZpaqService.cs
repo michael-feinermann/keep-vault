@@ -34,17 +34,19 @@ public sealed partial class ZpaqService
     private const StringComparison FileSystemPathComparison = StringComparison.OrdinalIgnoreCase;
 #endif
     private readonly string? _configuredPath;
+    private readonly ArchiveOperationPolicy? _operationPolicy;
     private readonly ArchiveIntegrityService _archiveIntegrity = new();
     private static readonly AsyncLocal<int?> WorkerCountOverride = new();
 
-    public ZpaqService(string? configuredPath = null)
+    public ZpaqService(string? configuredPath = null, ArchiveOperationPolicy? operationPolicy = null)
     {
         _configuredPath = configuredPath;
+        _operationPolicy = operationPolicy;
     }
 
     internal static IDisposable UseWorkerCountForTests(int workerCount)
     {
-        if (workerCount is < 1 or > 64)
+        if (workerCount < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(workerCount));
         }
@@ -55,7 +57,7 @@ public sealed partial class ZpaqService
     }
 
     private static string EffectiveWorkerCountArgument =>
-        Math.Clamp(WorkerCountOverride.Value ?? Environment.ProcessorCount, 1, 64)
+        Math.Max(1, WorkerCountOverride.Value ?? ArchiveOperationPolicy.Current.MaxCpuWorkers)
             .ToString(CultureInfo.InvariantCulture);
 
     private static string[] WithNativeExtractionLimits(params string[] arguments) =>
@@ -64,15 +66,15 @@ public sealed partial class ZpaqService
         "-kv-max-total",
         (MaxExtractedBytesOverride > 0
             ? MaxExtractedBytesOverride
-            : DefaultMaxExtractedBytes).ToString(CultureInfo.InvariantCulture),
+            : ArchiveOperationPolicy.Current.MaxExtractedTotalBytes).ToString(CultureInfo.InvariantCulture),
         "-kv-max-file",
         (MaxSingleFileBytesOverride > 0
             ? MaxSingleFileBytesOverride
-            : DefaultMaxSingleFileBytes).ToString(CultureInfo.InvariantCulture),
+            : ArchiveOperationPolicy.Current.MaxSingleFileBytes).ToString(CultureInfo.InvariantCulture),
         "-kv-max-files",
         (MaxExtractedFilesOverride > 0
             ? MaxExtractedFilesOverride
-            : DefaultMaxExtractedFiles).ToString(CultureInfo.InvariantCulture),
+            : checked((int)ArchiveOperationPolicy.Current.MaxEntryCount)).ToString(CultureInfo.InvariantCulture),
     ];
 
 #if KEEPVAULT_MACOS
@@ -149,7 +151,7 @@ public sealed partial class ZpaqService
                 StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                "Keep Vault v12 does not permit a configurable macOS ZPAQ executable. Install the root-owned v12 runtime anchor first.");
+                "Keep Vault v13 does not permit a configurable macOS ZPAQ executable. Install the root-owned v13 runtime anchor first.");
         }
         return File.Exists(MacZpaqRootAnchor.ExecutablePath)
             ? MacZpaqRootAnchor.ExecutablePath
@@ -182,6 +184,11 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(inputPaths);
         if (inputPaths.Count == 0)
         {
@@ -420,6 +427,11 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         using ArchiveIntegrityLease archive = await _archiveIntegrity.AcquireVerifiedAsync(archivePath, cancellationToken).ConfigureAwait(false);
         using TrustedNativeFileLease executable = AcquireExecutable();
 #if KEEPVAULT_MACOS
@@ -430,14 +442,15 @@ public sealed partial class ZpaqService
                 executable.Path,
                 WithNativeExtractionLimits(
                     staging.StagingIdentity,
-                    "--verified-stdin", "extract", "-", "-threads", EffectiveWorkerCountArgument),
+                    "--verified-read-at", "extract", "-", "-threads", EffectiveWorkerCountArgument),
                 staging.StagingPath,
-                archive.CopyToVerifiedStagingAsync,
+                archive.CopyToAsync,
                 progress,
                 cancellationToken,
                 monitorStagingDirectory: staging.StagingPath,
                 macStaging: staging,
-                macTrustedExecutable: executable).ConfigureAwait(false);
+                macTrustedExecutable: executable,
+                macReadAtArchive: archive).ConfigureAwait(false);
             if (result.Succeeded)
             {
                 ValidateExtractedDirectoryLimits(staging.StagingPath, staging);
@@ -513,17 +526,23 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         using ArchiveIntegrityLease archive = await _archiveIntegrity.AcquireVerifiedAsync(archivePath, cancellationToken).ConfigureAwait(false);
         using TrustedNativeFileLease executable = AcquireExecutable();
 #if KEEPVAULT_MACOS
         return await RunStdinPipeAsync(
             executable.Path,
-            new[] { "--verified-stdin", "list", "-", "-threads", EffectiveWorkerCountArgument },
+            new[] { "--verified-read-at", "list", "-", "-threads", EffectiveWorkerCountArgument },
             Environment.CurrentDirectory,
-            archive.CopyToVerifiedStagingAsync,
+            archive.CopyToAsync,
             progress,
             cancellationToken,
-            macTrustedExecutable: executable).ConfigureAwait(false);
+            macTrustedExecutable: executable,
+            macReadAtArchive: archive).ConfigureAwait(false);
 #else
         return await RunTextProcessAsync(
             executable.Path,
@@ -541,6 +560,11 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(inputPaths);
         ArgumentNullException.ThrowIfNull(consumeArchive);
         if (inputPaths.Count == 0)
@@ -588,6 +612,11 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(writeArchive);
         using TrustedNativeFileLease executable = AcquireExecutable();
 #if KEEPVAULT_MACOS
@@ -682,6 +711,11 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(writeArchive);
         using TrustedNativeFileLease executable = AcquireExecutable();
         return await RunStdinPipeAsync(
@@ -715,7 +749,7 @@ public sealed partial class ZpaqService
         string executable = ResolveExecutable()
             ?? throw new FileNotFoundException(
 #if KEEPVAULT_MACOS
-                "Der root-geschützte Keep-Vault-v12-ZPAQ-Anker fehlt. Installiere die App mit dem mitgelieferten macOS-Installer; ein Start aus App-ZIP oder portablem Ordner fällt aus Sicherheitsgründen nicht auf eine beschreibbare ZPAQ-Kopie zurück."
+                "Der root-geschützte Keep-Vault-v13-ZPAQ-Anker fehlt. Installiere die App mit dem mitgelieferten macOS-Installer; ein Start aus App-ZIP oder portablem Ordner fällt aus Sicherheitsgründen nicht auf eine beschreibbare ZPAQ-Kopie zurück."
 #else
                 "Die fest eingebundene ZPAQ-Komponente wurde nicht gefunden."
 #endif
@@ -955,9 +989,9 @@ public sealed partial class ZpaqService
 
     private static void ValidateExtractedTreeMeasurement(DirectoryTreeMeasurement measurement)
     {
-        long maxBytes = MaxExtractedBytesOverride > 0 ? MaxExtractedBytesOverride : DefaultMaxExtractedBytes;
-        long maxSingleBytes = MaxSingleFileBytesOverride > 0 ? MaxSingleFileBytesOverride : DefaultMaxSingleFileBytes;
-        int maxFiles = MaxExtractedFilesOverride > 0 ? MaxExtractedFilesOverride : DefaultMaxExtractedFiles;
+        long maxBytes = MaxExtractedBytesOverride > 0 ? MaxExtractedBytesOverride : ArchiveOperationPolicy.Current.MaxExtractedTotalBytes;
+        long maxSingleBytes = MaxSingleFileBytesOverride > 0 ? MaxSingleFileBytesOverride : ArchiveOperationPolicy.Current.MaxSingleFileBytes;
+        int maxFiles = MaxExtractedFilesOverride > 0 ? MaxExtractedFilesOverride : checked((int)ArchiveOperationPolicy.Current.MaxEntryCount);
 
         if (measurement.MaxFileBytes > maxSingleBytes)
         {
@@ -1054,6 +1088,8 @@ public sealed partial class ZpaqService
 #else
         , WindowsExtractionStaging? windowsStaging = null
 #endif
+        , long? nativeResidentLimit = null
+        , string? archiveOutputPath = null
     )
     {
         long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
@@ -1064,13 +1100,15 @@ public sealed partial class ZpaqService
         TimeSpan maxProgressStall = MaxZpaqProgressStallOverrideForTests is { } configuredStall
             && configuredStall > TimeSpan.Zero
             ? configuredStall
-            : DefaultMaxZpaqProgressStall;
+            : ArchiveOperationPolicy.Current.NoProgressTimeout;
         TimeSpan nextTreeScan = TimeSpan.Zero;
         TimeSpan treeScanInterval = MinimumTreeScanInterval;
         var wallClock = Stopwatch.StartNew();
         long lastActivitySequence = activity.Snapshot;
         TimeSpan lastMeasuredProgress = TimeSpan.Zero;
+        TimeSpan previousChildCpu = TimeSpan.Zero;
         DirectoryProgressMeasurement? lastTreeMeasurement = null;
+        using var archiveOutput = new ArchiveOutputProgress(archiveOutputPath);
 
         while (true)
         {
@@ -1080,14 +1118,19 @@ public sealed partial class ZpaqService
                 return;
             }
 
-            _ = MeasureAndValidateZpaqProcessResources(
+            ProcessResourceMeasurement resources = MeasureAndValidateZpaqProcessResources(
                 process,
-                wallClock.Elapsed);
+                wallClock.Elapsed,
+                nativeResidentLimit);
+            if (resources.CpuTime >= previousChildCpu)
+                OperationMemoryBudget.ReportChildCpu(resources.CpuTime - previousChildCpu);
+            previousChildCpu = resources.CpuTime;
             // CPU consumption alone is not evidence that an adversarial
             // archive is making forward progress. A tight decoder loop must
             // hit the independent progress-stall limit instead of running
             // until the much larger aggregate CPU budget is exhausted.
             bool madeProgress = false;
+            if (archiveOutput.ObserveGrowth()) madeProgress = true;
 
             long currentActivitySequence = activity.Snapshot;
             if (currentActivitySequence != lastActivitySequence)
@@ -1156,6 +1199,7 @@ public sealed partial class ZpaqService
 
             if (madeProgress)
             {
+                OperationMemoryBudget.ReportProgress(1);
                 lastMeasuredProgress = wallClock.Elapsed;
             }
             else if (wallClock.Elapsed - lastMeasuredProgress > maxProgressStall)
@@ -1172,6 +1216,39 @@ public sealed partial class ZpaqService
             // observes a genuinely exited process through HasExited().
             await Task.Delay(monitorInterval, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private sealed class ArchiveOutputProgress(string? path) : IDisposable
+    {
+        private FileStream? _stream;
+        private long _previousLength;
+        internal bool ObserveGrowth()
+        {
+            if (path is null) return false;
+            if (_stream is null)
+            {
+                if (!File.Exists(path)) return false;
+#if KEEPVAULT_MACOS
+                _stream = MacSafeFileSystem.OpenReadNoSymlinks(path, requireSingleLink: true);
+#else
+                _stream = SecureFile.OpenReadNoReparse(path, FileShare.ReadWrite, randomAccess: true);
+#endif
+            }
+#if KEEPVAULT_MACOS
+            MacSafeFileSystem.RequirePathStillNamesHandle(_stream.SafeFileHandle, path);
+            long length = MacSafeFileSystem.GetIdentity(_stream.SafeFileHandle).Size;
+#else
+            long length = _stream.Length;
+#endif
+            if (length < _previousLength)
+                throw new IOException("The native archive output shrank during creation.");
+            if (length > ArchiveOperationPolicy.Current.MaxContainerBytes)
+                throw new IOException("The native archive output exceeded its approved container-size budget.");
+            bool progress = length > _previousLength;
+            _previousLength = length;
+            return progress;
+        }
+        public void Dispose() => _stream?.Dispose();
     }
 
     private static bool HasExited(Process process)
@@ -1193,19 +1270,20 @@ public sealed partial class ZpaqService
 
     private static ProcessResourceMeasurement MeasureAndValidateZpaqProcessResources(
         Process process,
-        TimeSpan wallTime)
+        TimeSpan wallTime,
+        long? nativeResidentLimit = null)
     {
         TimeSpan maxWallTime = MaxZpaqWallTimeOverride is { } configuredWall
             && configuredWall > TimeSpan.Zero
             ? configuredWall
-            : DefaultMaxZpaqWallTime;
+            : ArchiveOperationPolicy.Current.WallTimeBudget;
         TimeSpan maxCpuTime = MaxZpaqCpuTimeOverride is { } configuredCpu
             && configuredCpu > TimeSpan.Zero
             ? configuredCpu
-            : DefaultMaxZpaqCpuTime;
+            : ArchiveOperationPolicy.Current.CpuTimeBudget;
         long maxResidentBytes = MaxZpaqResidentBytesOverride > 0
             ? MaxZpaqResidentBytesOverride
-            : DefaultMaxZpaqResidentBytes;
+            : nativeResidentLimit ?? Math.Min(DefaultMaxZpaqResidentBytes, ArchiveOperationPolicy.Current.HeavyWorkerMemoryBudgetBytes);
         int maxChildProcesses = MaxZpaqChildProcessesOverride >= 0
             ? MaxZpaqChildProcessesOverride
             : DefaultMaxZpaqChildProcesses;
@@ -1319,7 +1397,7 @@ public sealed partial class ZpaqService
 
         return [.. descendants];
 #else
-        // Windows publication is deliberately out of scope for the macOS v12
+        // Windows publication is deliberately out of scope for the macOS v13
         // release. The root process still receives RSS, CPU and wall limits;
         // Windows descendant enumeration must be implemented before that port
         // is released.
@@ -1378,7 +1456,11 @@ public sealed partial class ZpaqService
 
         internal long Snapshot => Interlocked.Read(ref _sequence);
 
-        internal void RecordActivity() => Interlocked.Increment(ref _sequence);
+        internal void RecordActivity()
+        {
+            Interlocked.Increment(ref _sequence);
+            OperationMemoryBudget.ReportProgress(1);
+        }
     }
 
     /// <summary>
@@ -1518,6 +1600,10 @@ public sealed partial class ZpaqService
     )
     {
         string[] stableArguments = arguments.ToArray();
+        using OperationMemoryBudget.HeavyLease? nativeMemory = await ReserveNativeMemoryAsync(
+            stableArguments, reserveKdf: false, cancellationToken).ConfigureAwait(false);
+        stableArguments = WithNativeMemoryBudget(stableArguments, nativeMemory);
+        using CpuWorkBudget.Lease? nativeCpu = await ReserveNativeWorkersAsync(stableArguments, cancellationToken).ConfigureAwait(false);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 #if KEEPVAULT_MACOS
         using MacZpaqSeatbelt sandbox = macTrustedExecutable is null
@@ -1563,9 +1649,11 @@ public sealed partial class ZpaqService
 #else
                     , windowsStaging
 #endif
+                    , nativeResidentLimit: nativeMemory?.Bytes
+                    , archiveOutputPath: nativeMemory is not null && stableArguments[0] == "add" ? stableArguments[1] : null
                   );
             startedTasks.Add(monitorTask);
-            Task waitTask = process.WaitForExitAsync(linkedCts.Token);
+            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, nativeCpu, nativeMemory, linkedCts.Token);
             startedTasks.Add(waitTask);
 
             taskCoordinatorEntered = true;
@@ -1588,6 +1676,53 @@ public sealed partial class ZpaqService
         }
     }
 
+    private static async ValueTask<CpuWorkBudget.Lease?> ReserveNativeWorkersAsync(
+        string[] arguments, CancellationToken token)
+    {
+        int index = Array.IndexOf(arguments, "-threads");
+        if (index < 0) return null; // System-tool fault fixtures do not run ZPAQ worker teams.
+        ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
+        if (policy.MaxCpuWorkers < 2)
+            throw new InvalidOperationException("ZPAQ requires at least two CPU workers in the operation budget: one for the native worker and one for authenticated input processing.");
+        if (index + 1 >= arguments.Length || !int.TryParse(arguments[index + 1], NumberStyles.None,
+            CultureInfo.InvariantCulture, out int requested) || requested < 1)
+            throw new InvalidDataException("Invalid native ZPAQ worker budget.");
+        CpuWorkBudget.Lease lease = await CpuWorkBudget.AcquireAsync(policy.MaxCpuWorkers,
+            Math.Min(requested, policy.MaxCpuWorkers - 1), token, reservedHeadroom: 1).ConfigureAwait(false);
+        arguments[index + 1] = lease.Workers.ToString(CultureInfo.InvariantCulture);
+        return lease;
+    }
+
+    // Both pipe directions can overlap the child with the parent KDF. Reserve
+    // the maximum matrix before starting the child, so waiting for matrix memory
+    // can never deadlock against a compressor blocked on the parent pipe.
+    internal static long NativeResidentBudget(ArchiveOperationPolicy policy, bool reserveKdf)
+    {
+        long matrixHeadroom = reserveKdf ? checked((long)V13MasterKdf.MemoryMaxKiB * 1024) : 0;
+        long bytes = checked(policy.HeavyWorkerMemoryBudgetBytes - matrixHeadroom);
+        if (bytes < (1L << 30))
+            throw new IOException("The approved memory budget leaves less than 1 GiB for ZPAQ alongside the required Argon2 matrix and protected buffers. Increase the memory budget; KDF costs are never reduced.");
+        return bytes;
+    }
+
+    private static async ValueTask<OperationMemoryBudget.HeavyLease?> ReserveNativeMemoryAsync(
+        string[] arguments, bool reserveKdf, CancellationToken token)
+    {
+        if (Array.IndexOf(arguments, "-threads") < 0) return null;
+        return await OperationMemoryBudget.AcquireHeavyAsync(
+            NativeResidentBudget(ArchiveOperationPolicy.Current, reserveKdf), token).ConfigureAwait(false);
+    }
+
+    private static string[] WithNativeMemoryBudget(string[] arguments, OperationMemoryBudget.HeavyLease? memory)
+    {
+        if (memory is null) return arguments;
+        if (Array.IndexOf(arguments, "-kv-memory-budget") >= 0)
+            throw new InvalidDataException("A native memory budget cannot be supplied twice.");
+        int position = Array.IndexOf(arguments, "--");
+        if (position < 0) position = arguments.Length;
+        return [.. arguments[..position], "-kv-memory-budget", memory.Bytes.ToString(CultureInfo.InvariantCulture), .. arguments[position..]];
+    }
+
     private static async Task<ProcessResult> RunStdoutPipeAsync(
         string executable,
         IEnumerable<string> arguments,
@@ -1601,6 +1736,10 @@ public sealed partial class ZpaqService
         )
     {
         string[] stableArguments = arguments.ToArray();
+        using OperationMemoryBudget.HeavyLease? nativeMemory = await ReserveNativeMemoryAsync(
+            stableArguments, reserveKdf: true, cancellationToken).ConfigureAwait(false);
+        stableArguments = WithNativeMemoryBudget(stableArguments, nativeMemory);
+        using CpuWorkBudget.Lease? nativeCpu = await ReserveNativeWorkersAsync(stableArguments, cancellationToken).ConfigureAwait(false);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 #if KEEPVAULT_MACOS
         using MacZpaqSeatbelt sandbox = macTrustedExecutable is null
@@ -1646,9 +1785,10 @@ public sealed partial class ZpaqService
                 string.Empty,
                 process,
                 activity,
-                linkedCts.Token);
+                linkedCts.Token,
+                nativeResidentLimit: nativeMemory?.Bytes);
             startedTasks.Add(monitorTask);
-            Task waitTask = process.WaitForExitAsync(linkedCts.Token);
+            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, nativeCpu, nativeMemory, linkedCts.Token);
             startedTasks.Add(waitTask);
 
             taskCoordinatorEntered = true;
@@ -1674,6 +1814,18 @@ public sealed partial class ZpaqService
         }
     }
 
+    private static async Task WaitForExitAndReleaseResourcesAsync(Process process,
+        CpuWorkBudget.Lease? cpu, OperationMemoryBudget.HeavyLease? memory, CancellationToken token)
+    {
+        await process.WaitForExitAsync(token).ConfigureAwait(false);
+        if (!HasExited(process)) throw new IOException("The native process exit was not confirmed.");
+        // The consumer may still finish its authenticated MAC root after EOF.
+        // Retain the outer operation reservation, but return permits belonging
+        // exclusively to the now-exited child as soon as their lifetime ends.
+        cpu?.Dispose();
+        memory?.Dispose();
+    }
+
     private static async Task ConsumeOutputAsync(
         Func<Stream, CancellationToken, Task> consumeArchive,
         Stream archiveOutput,
@@ -1697,12 +1849,17 @@ public sealed partial class ZpaqService
 #if KEEPVAULT_MACOS
         , MacExtractionStaging? macStaging = null
         , TrustedNativeFileLease? macTrustedExecutable = null
+        , ArchiveIntegrityLease? macReadAtArchive = null
 #else
         , WindowsExtractionStaging? windowsStaging = null
 #endif
     )
     {
         string[] stableArguments = arguments.ToArray();
+        using OperationMemoryBudget.HeavyLease? nativeMemory = await ReserveNativeMemoryAsync(
+            stableArguments, reserveKdf: true, cancellationToken).ConfigureAwait(false);
+        stableArguments = WithNativeMemoryBudget(stableArguments, nativeMemory);
+        using CpuWorkBudget.Lease? nativeCpu = await ReserveNativeWorkersAsync(stableArguments, cancellationToken).ConfigureAwait(false);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 #if KEEPVAULT_MACOS
         using MacZpaqSeatbelt sandbox = macTrustedExecutable is null
@@ -1735,10 +1892,20 @@ public sealed partial class ZpaqService
             sandbox.RequireValidAfterStart("stdin", process.Id);
 #endif
             var activity = new ProcessActivityTracker();
-            Task inputTask = WriteInputAndCloseAsync(process.StandardInput, writeArchive, activity, linkedCts.Token);
-            startedTasks.Add(inputTask);
-            Task outputTask = ReadLinesAsync(process.StandardOutput, output, progress, activity, linkedCts.Token);
-            startedTasks.Add(outputTask);
+#if KEEPVAULT_MACOS
+            if (macReadAtArchive is not null)
+            {
+                startedTasks.Add(ServeVerifiedReadAtAndCloseAsync(macReadAtArchive,
+                    process.StandardOutput.BaseStream, process.StandardInput.BaseStream, activity, linkedCts.Token));
+            }
+            else
+#endif
+            {
+                Task inputTask = WriteInputAndCloseAsync(process.StandardInput, writeArchive, activity, linkedCts.Token);
+                startedTasks.Add(inputTask);
+                Task outputTask = ReadLinesAsync(process.StandardOutput, output, progress, activity, linkedCts.Token);
+                startedTasks.Add(outputTask);
+            }
             Task errorTask = ReadLinesAsync(process.StandardError, errors, progress, activity, linkedCts.Token);
             startedTasks.Add(errorTask);
             Task monitorTask = MonitorProcessAndExtractionLimitsAsync(
@@ -1751,9 +1918,10 @@ public sealed partial class ZpaqService
 #else
                     , windowsStaging
 #endif
+                    , nativeResidentLimit: nativeMemory?.Bytes
                   );
             startedTasks.Add(monitorTask);
-            Task waitTask = process.WaitForExitAsync(linkedCts.Token);
+            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, nativeCpu, nativeMemory, linkedCts.Token);
             startedTasks.Add(waitTask);
 
             taskCoordinatorEntered = true;
@@ -1761,6 +1929,10 @@ public sealed partial class ZpaqService
 #if KEEPVAULT_MACOS
             sandbox.RequireValid();
             sandbox.RequireNoSharedMemoryResidue();
+#endif
+#if KEEPVAULT_MACOS
+            if (macReadAtArchive is not null)
+                return new ProcessResult(process.ExitCode, errors.ToString(), process.ExitCode == 0 ? string.Empty : errors.ToString());
 #endif
             return new ProcessResult(process.ExitCode, output.ToString(), errors.ToString());
         }
@@ -1775,6 +1947,20 @@ public sealed partial class ZpaqService
             throw new UnreachableException();
         }
     }
+
+#if KEEPVAULT_MACOS
+    private static async Task ServeVerifiedReadAtAndCloseAsync(
+        ArchiveIntegrityLease archive, Stream requests, Stream responses,
+        ProcessActivityTracker activity, CancellationToken token)
+    {
+        try
+        {
+            await archive.ServeVerifiedReadAtAsync(new ProcessActivityStream(requests, activity),
+                new ProcessActivityStream(responses, activity), token).ConfigureAwait(false);
+        }
+        finally { await responses.DisposeAsync().ConfigureAwait(false); }
+    }
+#endif
 
 #if !KEEPVAULT_MACOS
     private static Process CreateProcess(string executable, IEnumerable<string> arguments, string workingDirectory)
@@ -1894,7 +2080,7 @@ public sealed partial class ZpaqService
             int read;
             while ((read = await reader.ReadAsync(readBuffer.AsMemory(), cancellationToken).ConfigureAwait(false)) > 0)
             {
-                activity.RecordActivity();
+                // Text/status output is not evidence of processed archive bytes.
                 for (int index = 0; index < read; index++)
                 {
                     char character = readBuffer[index];

@@ -34,7 +34,7 @@ internal static class KeySheetV502Tests
                 {
                     using var document = PdfReader.Open(path, PdfDocumentOpenMode.Import);
                     Require(document.PageCount == 2, "Each factor has exactly one sheet plus public guidance.");
-                    Require(document.Info.Title == $"Keep Vault 5.0.2 {(english ? "Key Sheet" : "Schlüsselzettel")} {factor}",
+                    Require(document.Info.Title == $"Keep Vault 5.0.3 {(english ? "Key Sheet" : "Schlüsselzettel")} {factor}",
                         "Localized document title includes the actual release version.");
                 }
                 byte[] before = SHA256.HashData(File.ReadAllBytes(a));

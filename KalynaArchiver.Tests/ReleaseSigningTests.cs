@@ -87,7 +87,7 @@ internal static class ReleaseSigningTests
                     new FileInfo(Path.Combine(packageRoot, name)).Length,
                     Convert.ToHexString(SHA512.HashData(File.ReadAllBytes(Path.Combine(packageRoot, name)))))).ToArray();
                 string inventoryPath = Path.Combine(packageRoot, VerifiedReleaseInventory.InventoryName);
-                File.WriteAllText(inventoryPath, JsonSerializer.Serialize(new ReleaseInventoryDocument("Keep Vault", "5.0.2", "win-x64", entries)));
+                File.WriteAllText(inventoryPath, JsonSerializer.Serialize(new ReleaseInventoryDocument("Keep Vault", "5.0.3", "win-x64", entries)));
                 ReleaseSigningOperations.SignFile(inventoryPath, loaded, envelopePath, wrappingPath, publicPath,
                     referencePath, false,
                     Convert.ToHexString(rsaPins.Sha256), Convert.ToHexString(rsaPins.Sha3_512), Convert.ToHexString(rsaPins.Skein1024),

@@ -16,7 +16,7 @@ Erzeugt: 2026-08-15T15:46:48Z
   festgelegte Upstream-Quellbaum enthielt keine Lizenzerteilung, daher werden
   weder seine Quellen noch eine daraus abgeleitete Binärdatei gebaut,
   gebündelt oder verteilt.
-- Der v12-Adapter exportiert ausschließlich v12-spezifische Symbole. Ein
+- Der v13-Adapter exportiert v13-spezifische Produktsymbole. Ein
   offizieller Vektor aus DSTU 7624:2014, eine unabhängige Differenzmatrix mit
   Bouncy Castle, die Gleichheit von skalarem und parallelem Pfad sowie
   vollständige Container-KATs sichern die Änderung als Gates ab.
@@ -98,12 +98,26 @@ die nachfolgend aufgeführten Dateien werden tatsächlich gebaut; der Rest wird
 mitgeführt, damit die Ausgabe dem Upstream-Release entspricht und seine
 Prüfsumme aussagekräftig bleibt.
 
-Verwendet für:
+In v13 verwendet für:
 
-- MARS-448 (`mars.cpp`), SHACAL-2-512 (`shacal2.cpp`),
-  ChaCha20-Poly1305 (`chachapoly.cpp`, `chacha.cpp`) und den
-  AES-256-Referenzfallback (`rijndael.cpp`), also Primitive, für die es zuvor
-  keine Referenzimplementierung in diesem Repository gab.
+- Produktives AES-256 (`rijndael.cpp`), MARS-448 (`mars.cpp`),
+  SHACAL-2-512 (`shacal2.cpp`) und Serpent-256 (`serpent.cpp`).
+- Produktives XChaCha20-Poly1305 verbindet den eigenen HChaCha-Adapter mit
+  den ChaCha20-/Poly1305-Primitiven von Crypto++. Die Produkt-ABI akzeptiert
+  genau 24 Noncebytes; das rohe ChaCha-Testorakel mit 12 Noncebytes ist
+  getrennt. Vollständige AEAD-Ergebnisse werden zusätzlich mit libsodium
+  und Go x/crypto verglichen.
+- Produktives Camellia-256 leitet sich von der gemeinfreien Implementierung
+  in `camellia.cpp` ab. Die separate eigene Datei
+  `native/camellia_fixed_access.hpp` ersetzt geheimnisabhängige S-Box-Adressen
+  sowohl im Schlüsselplan als auch in allen 24 Runden durch öffentliche
+  Tabellenloads und Registerauswahl auf ARM64 beziehungsweise einen
+  vollständigen volatile-Tabellenscan auf portablen Zielen. Explizite
+  temporäre Schlüssel-/Zustandswerte werden gelöscht. Der Vendorquelltext
+  bleibt unverändert; dessen ursprüngliche Tabellenimplementierung ist kein
+  Produktfallback. Veröffentlichte Vektoren, unabhängige Block-/manuelle
+  CTR-Vergleiche mit Bouncy Castle 2.6.2, Sanitizer-Prüfungen und die Grenzen
+  des Nachweises stehen in `docs/KEEP_VAULT_5_0_3_CIPHER_REFERENCE_REPORT.md`.
 - SHA-512 (`sha.cpp`) für die zweite Argon2id-Runde, die eine Referenz zum
   Vergleich mit der Plattformimplementierung benötigt; zuvor hatte nur
   SHA3-512 eine solche Referenz.
@@ -138,6 +152,8 @@ Verwendet für:
 - Basis-Commit: `9ab539f644e364f0d92e2918b90ce2534c75653f`
 - Lokale Patches sind nachfolgend beschrieben und durch
   `NATIVE_SOURCE_SHA256SUMS` an die exakten Quelldateien gebunden.
+
+Version 5.0.3 ergänzt den begrenzten verifizierten Read-at-Backend `KV13RA` und das v13-Pipe-Framing. Der Parser erhält geschützte Bereichsantworten, weder einen Archivdeskriptor noch eine vollständige Klartext-Arbeitskopie. Das validierte `-kv-memory-budget` gilt für den nativen Prozess: Modell-/Queue-Zulassung und ein gezählter Allokator begrenzen C++-Objekte, libzpaq-Arrays, StringBuffer-Wachstum und BWT-Arbeitsbereiche vor der Allokation. Realloc zählt beide während der Überlappung lebenden Besitzer; freigegebene Nutzkapazität wird vollständig gelöscht. Überausgerichtete C++-Allokationen verwenden dasselbe Budget. Dynamische Thread- und Extraktionslimits bleiben endlich, geprüft und vom Aufrufer freigegeben, anstelle fester 64-Thread-/500-GiB-Grenzen. ARM64-, x86_64- und ARM64-ASan/UBSan-Prüfungen umfassen Allokationsfehler und echte kleine Plain-/Read-at-/Pipe-Strukturrunden. Sie belegen keine physische TiB-Verarbeitung.
 
 Windows 5.0.2 ergänzt die eigene Extraktionshärtung in
 `native/windows_zpaq_output.hpp` (gepinnt in `native/WINDOWS_SOURCE_SHA256SUMS`):

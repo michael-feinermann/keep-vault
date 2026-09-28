@@ -13,39 +13,36 @@ internal static class PipelineWorkerPolicyTests
 
     public static Task RunPolicyAsync()
     {
+        // Slot counts constrain locked buffers, not native team width. The
+        // shared CpuWorkBudget grants the aggregate CPU permits independently.
         (int CpuCount, int ExpectedSlots)[] cases =
         [
-            (int.MinValue, 1), (-1, 1), (0, 1), (1, 1), (2, 1), (4, 1), (8, 1),
-            (16, 1), (32, 1), (63, 1), (64, 1), (65, 1), (96, 1), (127, 1),
-            (128, 2), (129, 2), (191, 2), (192, 3), (255, 3), (256, 4),
-            (512, 8), (1024, 16), (4095, 63), (4096, 64), (int.MaxValue, 64),
+            (int.MinValue, 1), (-1, 1), (0, 1), (1, 1), (2, 1), (3, 1),
+            (4, 1), (7, 1), (8, 1), (10, 1), (16, 1), (32, 1),
+            (63, 1), (64, 1), (65, 1), (96, 1), (127, 1), (128, 2),
+            (129, 2), (191, 2), (192, 3), (255, 3), (256, 4), (512, 8),
+            (1024, 16), (4095, 63), (4096, 64), (4160, 65), (65536, 1024), (65600, 1025),
+            (int.MaxValue, 33554431),
         ];
-        // Two locked 16 MiB buffers per slot, small metadata allowance, and a 1/16 memory budget.
         const long bytesPerSlotBudget = 16L * (32L * 1024 * 1024 + 512);
         foreach ((int cpus, int expected) in cases)
         {
             int actual = KalynaContainerService.CalculatePipelineWorkerCount(cpus, long.MaxValue);
-            Require(actual == expected, $"Windows CPU policy selected {actual} slots for {cpus} CPUs; expected {expected}.");
-            long effectiveCpus = Math.Max(1, cpus);
-            Require(actual * Math.Min(effectiveCpus, 64) <= effectiveCpus,
-                "The Windows outer pipeline oversubscribed whole native teams.");
-            int nativeTeams = KalynaContainerService.CalculateNativeTransformConcurrency(cpus);
-            Require(nativeTeams is >= 1 and <= 64
-                && nativeTeams * Math.Min(effectiveCpus, 64) <= 2L * effectiveCpus,
-                "The independent global native-team bound overflowed or exceeded its CPU budget.");
-
+            Require(actual == expected, $"The 64:1 staging policy selected {actual} slots for {cpus} CPUs; expected {expected}.");
+            Require(KalynaContainerService.CalculateNativeTransformConcurrency(cpus) == Math.Max(1, cpus),
+                "The native topology bound was capped, overflowed, or conflated with memory slots.");
+            Require(actual >= 1 && actual <= Math.Max(1, cpus),
+                "Staging slots exceeded the independently supplied CPU capacity.");
             foreach (long memory in new[] { long.MinValue, -1L, 0L, 1L, 256L * 1024 * 1024 })
-            {
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, memory) == 1,
-                    "Unknown, invalid or small available memory must conservatively select one slot.");
-            }
-            for (int slots = 1; slots <= 64; slots++)
+                    "Missing or small memory must conservatively select one chunk slot.");
+            foreach (int slots in Enumerable.Range(1, 64).Concat(new[] { 65, 96, 128, 1024, 1025, 4096 }))
             {
-                long boundary = bytesPerSlotBudget * slots;
+                long boundary = checked(bytesPerSlotBudget * slots);
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, boundary) == Math.Min(expected, slots),
-                    "The memory budget did not admit exactly the affordable whole slots.");
+                    "The chunk policy admitted a slot outside its exact locked-memory budget.");
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, boundary - 1) == Math.Min(expected, Math.Max(1, slots - 1)),
-                    "The memory budget rounded up into an unaffordable slot.");
+                    "The chunk policy rounded up past its memory budget.");
             }
         }
         return Task.CompletedTask;
@@ -53,23 +50,28 @@ internal static class PipelineWorkerPolicyTests
 
     public static async Task RunNativeConcurrencyAsync()
     {
-        int limit = KalynaContainerService.CalculateNativeTransformConcurrency(Environment.ProcessorCount);
+        int limit = Math.Min(CpuTopology.AvailableWorkers, ArchiveOperationPolicy.Current.MaxCpuWorkers);
         using var release = new ManualResetEventSlim();
         using var cancellation = new CancellationTokenSource();
         var occupied = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        int active = 0, started = 0, finished = 0, queuedStarted = 0;
+        int active = 0, activePermits = 0, started = 0, finished = 0, queuedStarted = 0;
         Task running = KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(limit, _ =>
         {
             int current = Interlocked.Increment(ref active);
+            int grant = NativeCipherWorkerBudget.Current;
+            int grantedTotal = Interlocked.Add(ref activePermits, grant);
             Interlocked.Increment(ref started);
             try
             {
+                Require(grant >= 1 && grantedTotal <= limit && CpuWorkBudget.IsOwnedByCurrentContext,
+                    "A native callback exceeded the aggregate CPU budget or lost its lease context.");
                 Require(current <= limit, "Active native teams exceeded their global concurrency bound.");
                 if (current == limit) occupied.TrySetResult();
                 Require(release.Wait(TimeSpan.FromSeconds(15)), "Blocked test workers were not released.");
             }
             finally
             {
+                Interlocked.Add(ref activePermits, -grant);
                 Interlocked.Decrement(ref active);
                 Interlocked.Increment(ref finished);
             }
@@ -100,7 +102,7 @@ internal static class PipelineWorkerPolicyTests
             }
         }
         Require(cancellationObserved, "Queued native work did not observe cancellation.");
-        Require(active == 0 && finished == started && started == limit && queuedStarted == 0,
+        Require(active == 0 && activePermits == 0 && finished == started && started == limit && queuedStarted == 0,
             "Cancellation failed to join active work or allowed canceled queued work to execute.");
 
         // Reuse every permit together. A one-at-a-time probe would miss partial permit leaks.
@@ -134,12 +136,21 @@ internal static class PipelineWorkerPolicyTests
         void RequireProduction() => Require(Effective() == KalynaContainerService.ProductionPipelineWorkerCount,
             "A test override escaped its scope into the production policy.");
         RequireProduction();
-        foreach (int invalid in new[] { int.MinValue, -1, 0, 65, int.MaxValue })
+        foreach (int invalid in new[] { int.MinValue, -1, 0 })
         {
             bool rejected = false;
             try { using IDisposable unexpected = KalynaContainerService.UsePipelineWorkerCountForTests(invalid); }
             catch (ArgumentOutOfRangeException) { rejected = true; }
             Require(rejected, $"Invalid worker override {invalid} was accepted.");
+            RequireProduction();
+        }
+
+        // Only inspect scoped values: this does not allocate huge slot arrays
+        // or create a real many-core workload on the developer's host.
+        foreach (int logicalWorkers in new[] { 65, 1025, 4096, int.MaxValue })
+        {
+            using (IDisposable large = KalynaContainerService.UsePipelineWorkerCountForTests(logicalWorkers))
+                Require(Effective() == logicalWorkers, "A scoped test width retained an old fixed worker cap.");
             RequireProduction();
         }
 

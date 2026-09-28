@@ -24,13 +24,15 @@
     <Resource Include="Assets\Fonts\OFL.txt" />
     <None Include="$(KalynaNativeToolDirectory)\zpaq.exe" Link="zpaq.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
     <None Include="$(KalynaNativeToolDirectory)\argon2.exe" Link="argon2.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="$(KalynaNativeToolDirectory)\kalyna_v12.dll" Link="kalyna_v12.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\kalyna_v13.dll" Link="kalyna_v13.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
     <None Include="$(KalynaNativeToolDirectory)\threefish_ref.dll" Link="threefish_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
     <None Include="$(KalynaNativeToolDirectory)\argon2_ref.dll" Link="argon2_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
     <None Include="$(KalynaNativeToolDirectory)\aes_ref.dll" Link="aes_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
     <None Include="$(KalynaNativeToolDirectory)\mars_ref.dll" Link="mars_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\camellia_v13.dll" Link="camellia_v13.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\serpent_v13.dll" Link="serpent_v13.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
     <None Include="$(KalynaNativeToolDirectory)\shacal2_ref.dll" Link="shacal2_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
-    <None Include="$(KalynaNativeToolDirectory)\chachapoly_ref.dll" Link="chachapoly_ref.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
+    <None Include="$(KalynaNativeToolDirectory)\xchachapoly_v13.dll" Link="xchachapoly_v13.dll" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" ExcludeFromSingleFile="true" />
     <None Include="$(KalynaNativeToolDirectory)\*.sha3"
           Exclude="$(KalynaNativeToolDirectory)\mldsa87_ref.dll.sha3"
           Link="%(Filename)%(Extension)"

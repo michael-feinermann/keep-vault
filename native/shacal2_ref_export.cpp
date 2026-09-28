@@ -33,7 +33,19 @@ extern "C" KEEPVAULT_EXPORT int shacal2_512_ctr_xcrypt(
     std::size_t length)
 {
     return keepvault::xcrypt_ctr<CryptoPP::SHACAL2::Encryption>(
-        key, SHACAL2_KEY_BYTES, nonce, input, output, length);
+        key, SHACAL2_KEY_BYTES, nonce, input, output, length, 1);
+}
+
+extern "C" KEEPVAULT_EXPORT int shacal2_512_ctr_xcrypt_v13_with_workers(
+    const std::uint8_t key[SHACAL2_KEY_BYTES],
+    const std::uint8_t nonce[SHACAL2_BLOCK_BYTES],
+    const std::uint8_t* input,
+    std::uint8_t* output,
+    std::size_t length, std::uint32_t worker_budget)
+{
+    if (worker_budget == 0) return 1;
+    return keepvault::xcrypt_ctr<CryptoPP::SHACAL2::Encryption>(
+        key, SHACAL2_KEY_BYTES, nonce, input, output, length, worker_budget);
 }
 
 /*

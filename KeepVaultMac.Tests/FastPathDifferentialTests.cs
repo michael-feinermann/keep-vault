@@ -57,7 +57,7 @@ internal static class FastPathDifferentialTests
             KalynaAgainstReferenceAsync, TestResource.CpuHeavy, "Crypto"),
         new("crypto.chacha20-fast-path-differential", "ChaCha20 worker split against the serial keystream over 256 MiB",
             ChaChaAgainstSerialAsync, TestResource.CpuHeavy, "Crypto"),
-        new("crypto.chacha20-poly1305-rfc8439", "ChaCha20-Poly1305 RFC KAT, worker differential and 256 MiB Poly1305",
+        new("crypto.xchacha20-poly1305-draft03", "XChaCha20-Poly1305 draft KAT, independent Crypto++ and 16 MiB worker differential",
             AeadFramingAsync, TestResource.CpuHeavy, "Crypto")
         {
             Cost = new TestCost(4, 768, false, TestConstraint.None),
@@ -212,6 +212,7 @@ internal static class FastPathDifferentialTests
     /// </summary>
     private static Task AesAgainstIndependentReferenceAsync()
     {
+        using IDisposable workerScope = NativeCipherWorkerBudget.EnterScope(Math.Max(1, Math.Min(Environment.ProcessorCount, 4)));
         MacComprehensiveTests.Require(
             NativeAes.IsAvailable(),
             $"AES reference library unavailable: {NativeAes.LastLoadError}");
@@ -434,6 +435,7 @@ internal static class FastPathDifferentialTests
 
     private static Task KalynaAgainstReferenceAsync()
     {
+        using IDisposable workerScope = NativeCipherWorkerBudget.EnterScope(Math.Max(1, Math.Min(Environment.ProcessorCount, 4)));
         MacComprehensiveTests.Require(
             NativeKalyna.IsAvailable(),
             $"Kalyna v12 library unavailable: {NativeKalyna.LastLoadError}");
@@ -549,8 +551,8 @@ internal static class FastPathDifferentialTests
     private static Task ChaChaAgainstSerialAsync()
     {
         MacComprehensiveTests.Require(
-            NativeChaChaPoly.IsAvailable(),
-            $"ChaCha20-Poly1305 reference library unavailable: {NativeChaChaPoly.LastLoadError}");
+            NativeXChaChaPoly.IsAvailable(),
+            $"ChaCha20-Poly1305 reference library unavailable: {NativeXChaChaPoly.LastLoadError}");
 
         byte[] plaintext = DerivedBytes(LargeBytes + 37, 0x5A5A5A);
         byte[] fromSerial = new byte[plaintext.Length];
@@ -572,10 +574,10 @@ internal static class FastPathDifferentialTests
             byte[] nonce = DerivedBytes(12, nonceSeed);
 
             var stopwatch = Stopwatch.StartNew();
-            int serialResult = NativeChaChaPoly.XCryptSerial(key, nonce, counter, plaintext, fromSerial, length);
+            int serialResult = NativeXChaChaPoly.XCryptSerial(key, nonce, counter, plaintext, fromSerial, length);
             TimeSpan serialElapsed = stopwatch.Elapsed;
             stopwatch.Restart();
-            int parallelResult = NativeChaChaPoly.XCrypt(key, nonce, counter, plaintext, fromParallel, length);
+            int parallelResult = NativeXChaChaPoly.XCrypt(key, nonce, counter, plaintext, fromParallel, length);
             TimeSpan parallelElapsed = stopwatch.Elapsed;
 
             MacComprehensiveTests.Require(
@@ -592,8 +594,8 @@ internal static class FastPathDifferentialTests
         foreach (int length in BoundaryLengths)
         {
             const uint counter = 7;
-            int serialResult = NativeChaChaPoly.XCryptSerial(boundaryKey, boundaryNonce, counter, plaintext, fromSerial, length);
-            int parallelResult = NativeChaChaPoly.XCrypt(boundaryKey, boundaryNonce, counter, plaintext, fromParallel, length);
+            int serialResult = NativeXChaChaPoly.XCryptSerial(boundaryKey, boundaryNonce, counter, plaintext, fromSerial, length);
+            int parallelResult = NativeXChaChaPoly.XCrypt(boundaryKey, boundaryNonce, counter, plaintext, fromParallel, length);
             MacComprehensiveTests.Require(
                 serialResult == 0 && parallelResult == 0,
                 $"ChaCha20 boundary length {length}: serial returned {serialResult}, worker split returned {parallelResult}.");
@@ -602,7 +604,7 @@ internal static class FastPathDifferentialTests
             byte[] inPlace = plaintext.AsSpan(0, length).ToArray();
             try
             {
-                int inPlaceResult = NativeChaChaPoly.XCrypt(
+                int inPlaceResult = NativeXChaChaPoly.XCrypt(
                     boundaryKey, boundaryNonce, counter, inPlace, inPlace, length);
                 MacComprehensiveTests.Require(
                     inPlaceResult == 0,
@@ -626,14 +628,14 @@ internal static class FastPathDifferentialTests
         byte[] finalCounterInput = plaintext.AsSpan(0, ChaChaBlockBytes).ToArray();
         byte[] finalCounterSerial = new byte[ChaChaBlockBytes];
         byte[] finalCounterSplit = new byte[ChaChaBlockBytes];
-        int finalSerialResult = NativeChaChaPoly.XCryptSerial(
+        int finalSerialResult = NativeXChaChaPoly.XCryptSerial(
             exhaustionKey,
             exhaustionNonce,
             uint.MaxValue,
             finalCounterInput,
             finalCounterSerial,
             finalCounterInput.Length);
-        int finalSplitResult = NativeChaChaPoly.XCrypt(
+        int finalSplitResult = NativeXChaChaPoly.XCrypt(
             exhaustionKey,
             exhaustionNonce,
             uint.MaxValue,
@@ -647,7 +649,7 @@ internal static class FastPathDifferentialTests
             "ChaCha20 must permit exactly one final block at counter 2^32-1 and both paths must agree.");
 
         fromParallel.AsSpan(0, 3 * ChaChaBlockBytes).Fill(0xA5);
-        int refused = NativeChaChaPoly.XCrypt(
+        int refused = NativeXChaChaPoly.XCrypt(
             exhaustionKey, exhaustionNonce, uint.MaxValue - 1, plaintext, fromParallel, 3 * ChaChaBlockBytes);
         MacComprehensiveTests.Require(
             refused == 4,
@@ -657,7 +659,7 @@ internal static class FastPathDifferentialTests
             "ChaCha20 split wrote output before refusing counter exhaustion.");
 
         fromSerial.AsSpan(0, 3 * ChaChaBlockBytes).Fill(0x5A);
-        int serialRefused = NativeChaChaPoly.XCryptSerial(
+        int serialRefused = NativeXChaChaPoly.XCryptSerial(
             exhaustionKey, exhaustionNonce, uint.MaxValue - 1, plaintext, fromSerial, 3 * ChaChaBlockBytes);
         MacComprehensiveTests.Require(
             serialRefused == 4
@@ -665,24 +667,6 @@ internal static class FastPathDifferentialTests
             "ChaCha20 serial did not refuse counter exhaustion before writing output.");
         Console.WriteLine("    ChaCha20 permits the final counter and refuses exhaustion before either path writes output");
 
-        // And the split has to reproduce this library's own RFC 8439 AEAD,
-        // whose keystream starts at block 1. That anchors it to the standard
-        // rather than only to the implementation it replaced.
-        const int aeadLength = 16 * 1024 * 1024;
-        byte[] aeadTag = new byte[NativeChaChaPoly.TagBytes];
-        for (int trial = 0; trial < 4; trial++)
-        {
-            byte[] key = DerivedBytes(32, 3000 + (ulong)trial);
-            byte[] nonce = DerivedBytes(12, 4000 + (ulong)trial);
-            NativeChaChaPoly.Encrypt(key, nonce, ReadOnlySpan<byte>.Empty, plaintext, fromSerial, aeadLength, aeadTag);
-            int parallelResult = NativeChaChaPoly.XCrypt(key, nonce, 1, plaintext, fromParallel, aeadLength);
-            MacComprehensiveTests.Require(
-                parallelResult == 0,
-                $"ChaCha20 AEAD cross-check trial {trial}: the worker split returned {parallelResult}.");
-            RequireIdentical(fromSerial, fromParallel, aeadLength, $"ChaCha20 against the AEAD, trial {trial}");
-        }
-
-        Console.WriteLine("    ChaCha20 worker split reproduces the RFC 8439 AEAD keystream");
         return Task.CompletedTask;
     }
 
@@ -690,10 +674,10 @@ internal static class FastPathDifferentialTests
     /// The authenticated pair against the published vector and its own rules.
     /// </summary>
     /// <remarks>
-    /// This suite used to call Crypto++'s ChaCha20Poly1305, and the framing -
+    /// This suite used to call Crypto++'s XChaCha20Poly1305, and the framing -
     /// associated data padded to 16, ciphertext padded to 16, then both lengths
     /// little-endian - came with it. It is assembled here now, so the vector in
-    /// RFC 8439 section 2.8.2 is what holds it: a padding or length-encoding
+    /// draft-irtf-cfrg-xchacha-03 A.3.1 is what holds it: a padding or length-encoding
     /// slip produces a tag that is merely different, and nothing else in the
     /// suite would notice, because both sides of a round trip would be wrong in
     /// the same way.
@@ -705,9 +689,10 @@ internal static class FastPathDifferentialTests
     /// </remarks>
     private static Task AeadFramingAsync()
     {
+        using IDisposable workerScope = NativeCipherWorkerBudget.EnterScope(Math.Max(1, Math.Min(Environment.ProcessorCount, 4)));
         MacComprehensiveTests.Require(
-            NativeChaChaPoly.IsAvailable(),
-            $"ChaCha20-Poly1305 reference library unavailable: {NativeChaChaPoly.LastLoadError}");
+            NativeXChaChaPoly.IsAvailable(),
+            $"XChaCha20-Poly1305 reference library unavailable: {NativeXChaChaPoly.LastLoadError}");
 
         byte[] key = new byte[32];
         for (int i = 0; i < key.Length; i++)
@@ -715,41 +700,41 @@ internal static class FastPathDifferentialTests
             key[i] = (byte)(0x80 + i);
         }
 
-        byte[] nonce = Convert.FromHexString("070000004041424344454647");
+        byte[] nonce = Convert.FromHexString("404142434445464748494a4b4c4d4e4f5051525354555657");
         byte[] associated = Convert.FromHexString("50515253c0c1c2c3c4c5c6c7");
         byte[] plaintext = System.Text.Encoding.ASCII.GetBytes(
             "Ladies and Gentlemen of the class of '99: If I could offer you only "
             + "one tip for the future, sunscreen would be it.");
         byte[] expectedCiphertext = Convert.FromHexString(
-            "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d6"
-            + "3dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b36"
-            + "92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc"
-            + "3ff4def08e4b7a9de576d26586cec64b6116");
+            "bd6d179d3e83d43b9576579493c0e939572a1700252bfaccbed2902c21396cbb"
+            + "731c7f1b0b4aa6440bf3a82f4eda7e39ae64c6708c54c216cb96b72e1213b452"
+            + "2f8c9ba40db5d945b11b69b982c1bb9e3f3fac2bc369488f76b2383565d3fff9"
+            + "21f9664c97637da9768812f615c68b13b52e");
 
-        byte[] expectedTag = Convert.FromHexString("1ae10b594f09e26a7e902ecbd0600691");
+        byte[] expectedTag = Convert.FromHexString("c0875924c1c7987947deafd8780acf49");
 
-        MacComprehensiveTests.Require(plaintext.Length == 114, "The RFC 8439 vector plaintext is 114 bytes.");
+        MacComprehensiveTests.Require(plaintext.Length == 114, "The XChaCha draft vector plaintext is 114 bytes.");
         MacComprehensiveTests.Require(
             expectedCiphertext.Length == plaintext.Length,
-            "The RFC 8439 vector ciphertext is as long as its plaintext.");
+            "The XChaCha draft vector ciphertext is as long as its plaintext.");
 
         byte[] ciphertext = new byte[plaintext.Length];
-        byte[] tag = new byte[NativeChaChaPoly.TagBytes];
-        NativeChaChaPoly.Encrypt(key, nonce, associated, plaintext, ciphertext, plaintext.Length, tag);
+        byte[] tag = new byte[NativeXChaChaPoly.TagBytes];
+        NativeXChaChaPoly.Encrypt(key, nonce, associated, plaintext, ciphertext, plaintext.Length, tag);
 
         MacComprehensiveTests.Require(
             ciphertext.AsSpan().SequenceEqual(expectedCiphertext),
-            "ChaCha20-Poly1305 did not reproduce the RFC 8439 section 2.8.2 ciphertext.");
+            "XChaCha20-Poly1305 did not reproduce the draft-irtf-cfrg-xchacha-03 A.3.1 ciphertext.");
         MacComprehensiveTests.Require(
             tag.AsSpan().SequenceEqual(expectedTag),
-            "ChaCha20-Poly1305 did not reproduce the RFC 8439 section 2.8.2 tag.");
-        Console.WriteLine("    RFC 8439 section 2.8.2 ciphertext and tag reproduced");
+            "XChaCha20-Poly1305 did not reproduce the draft-irtf-cfrg-xchacha-03 A.3.1 tag.");
+        Console.WriteLine("    draft-irtf-cfrg-xchacha-03 A.3.1 ciphertext and tag reproduced");
 
         byte[] recovered = new byte[plaintext.Length];
-        NativeChaChaPoly.Decrypt(key, nonce, associated, ciphertext, recovered, ciphertext.Length, tag);
+        NativeXChaChaPoly.Decrypt(key, nonce, associated, ciphertext, recovered, ciphertext.Length, tag);
         MacComprehensiveTests.Require(
             recovered.AsSpan().SequenceEqual(plaintext),
-            "ChaCha20-Poly1305 did not recover the RFC 8439 vector plaintext.");
+            "XChaCha20-Poly1305 did not recover the XChaCha draft vector plaintext.");
 
         RequireRejected("a flipped tag bit", key, nonce, associated, ciphertext, tag, mutateTag: true);
         RequireRejected("a flipped ciphertext bit", key, nonce, associated, ciphertext, tag, mutateCiphertext: true);
@@ -761,15 +746,15 @@ internal static class FastPathDifferentialTests
         // writing and decryption has to take it before overwriting; getting
         // either backwards works out-of-place and fails only here.
         byte[] scratch = plaintext.ToArray();
-        byte[] inPlaceTag = new byte[NativeChaChaPoly.TagBytes];
-        NativeChaChaPoly.Encrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
+        byte[] inPlaceTag = new byte[NativeXChaChaPoly.TagBytes];
+        NativeXChaChaPoly.Encrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
         MacComprehensiveTests.Require(
             scratch.AsSpan().SequenceEqual(expectedCiphertext) && inPlaceTag.AsSpan().SequenceEqual(expectedTag),
-            "In-place ChaCha20-Poly1305 encryption did not match the out-of-place result.");
-        NativeChaChaPoly.Decrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
+            "In-place XChaCha20-Poly1305 encryption did not match the out-of-place result.");
+        NativeXChaChaPoly.Decrypt(key, nonce, associated, scratch, scratch, scratch.Length, inPlaceTag);
         MacComprehensiveTests.Require(
             scratch.AsSpan().SequenceEqual(plaintext),
-            "In-place ChaCha20-Poly1305 decryption did not recover the plaintext.");
+            "In-place XChaCha20-Poly1305 decryption did not recover the plaintext.");
         Console.WriteLine("    in-place encryption and decryption match the out-of-place result");
 
         RunParallelPoly1305Matrix();
@@ -780,7 +765,7 @@ internal static class FastPathDifferentialTests
 
     /// <summary>
     /// Holds the fixed-limb worker implementation against both Crypto++'s
-    /// scalar Poly1305 and .NET's independent RFC 8439 implementation.
+    /// scalar Poly1305 and Crypto++'s independent full XChaCha20-Poly1305 implementation.
     /// </summary>
     private static void RunParallelPoly1305Matrix()
     {
@@ -815,15 +800,15 @@ internal static class FastPathDifferentialTests
         }
 
         uint parallelWorkers = (uint)Math.Clamp(Environment.ProcessorCount, 2, 8);
-        byte[] key = DerivedBytes(NativeChaChaPoly.KeyBytes, 0x504F4C5931333035UL);
-        using var reference = new ChaCha20Poly1305(key);
+        byte[] key = DerivedBytes(NativeXChaChaPoly.KeyBytes, 0x504F4C5931333035UL);
+        using var reference = new XChaChaReference(key);
         int checkedCases = 0;
         try
         {
             foreach ((int payloadLength, int aadLength) in cases)
             {
                 byte[] nonce = DerivedBytes(
-                    NativeChaChaPoly.NonceBytes,
+                    NativeXChaChaPoly.NonceBytes,
                     0x4E4F4E43454D4154UL ^ ((ulong)(uint)payloadLength << 16) ^ (uint)aadLength);
                 byte[] plaintext = DerivedBytes(
                     payloadLength,
@@ -832,22 +817,22 @@ internal static class FastPathDifferentialTests
                     aadLength,
                     0x414144UL ^ ((ulong)(uint)aadLength << 24) ^ (uint)payloadLength);
                 byte[] expectedCiphertext = new byte[payloadLength];
-                byte[] expectedTag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] expectedTag = new byte[NativeXChaChaPoly.TagBytes];
                 byte[] serialCiphertext = new byte[payloadLength];
-                byte[] serialTag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] serialTag = new byte[NativeXChaChaPoly.TagBytes];
                 byte[] oneWorkerCiphertext = new byte[payloadLength];
-                byte[] oneWorkerTag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] oneWorkerTag = new byte[NativeXChaChaPoly.TagBytes];
                 byte[] manyWorkerCiphertext = new byte[payloadLength];
-                byte[] manyWorkerTag = new byte[NativeChaChaPoly.TagBytes];
-                byte[] authenticatedOnlyTag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] manyWorkerTag = new byte[NativeXChaChaPoly.TagBytes];
+                byte[] authenticatedOnlyTag = new byte[NativeXChaChaPoly.TagBytes];
                 try
                 {
                     reference.Encrypt(nonce, plaintext, expectedCiphertext, expectedTag, associated);
-                    NativeChaChaPoly.EncryptSerial(
+                    NativeXChaChaPoly.EncryptSerial(
                         key, nonce, associated, plaintext, serialCiphertext, payloadLength, serialTag);
-                    NativeChaChaPoly.EncryptWithPoly1305Workers(
+                    NativeXChaChaPoly.EncryptWithPoly1305Workers(
                         key, nonce, associated, plaintext, oneWorkerCiphertext, payloadLength, oneWorkerTag, 1);
-                    NativeChaChaPoly.EncryptWithPoly1305Workers(
+                    NativeXChaChaPoly.EncryptWithPoly1305Workers(
                         key,
                         nonce,
                         associated,
@@ -856,7 +841,7 @@ internal static class FastPathDifferentialTests
                         payloadLength,
                         manyWorkerTag,
                         parallelWorkers);
-                    NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+                    NativeXChaChaPoly.AuthenticateWithPoly1305Workers(
                         key,
                         nonce,
                         associated,
@@ -924,35 +909,25 @@ internal static class FastPathDifferentialTests
 
     private static void RequirePoly1305WorkerPreflight(byte[] key, uint parallelWorkers)
     {
-        byte[] nonce = DerivedBytes(NativeChaChaPoly.NonceBytes, 0x505245464C494748UL);
+        byte[] nonce = DerivedBytes(NativeXChaChaPoly.NonceBytes, 0x505245464C494748UL);
         byte[] associated = DerivedBytes(17, 0x505245414144UL);
         byte[] ciphertext = DerivedBytes(33, 0x50524543495048UL);
-        byte[] tag = Enumerable.Repeat((byte)0xA7, NativeChaChaPoly.TagBytes).ToArray();
-        bool rejected = false;
-        try
-        {
-            NativeChaChaPoly.AuthenticateWithPoly1305Workers(
-                key, nonce, associated, ciphertext, ciphertext.Length, tag, 65);
-        }
-        catch (CryptographicException)
-        {
-            rejected = true;
-        }
+        byte[] tag = Enumerable.Repeat((byte)0xA7, NativeXChaChaPoly.TagBytes).ToArray();
+        NativeXChaChaPoly.AuthenticateWithPoly1305Workers(
+            key, nonce, associated, ciphertext, ciphertext.Length, tag, 4096);
+        bool rejected;
 
-        MacComprehensiveTests.Require(
-            rejected && tag.All(value => value == 0xA7),
-            "Poly1305 accepted more than 64 workers or modified its output before rejecting the argument.");
-
-        byte[] validTag = new byte[NativeChaChaPoly.TagBytes];
-        NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+        byte[] validTag = new byte[NativeXChaChaPoly.TagBytes];
+        NativeXChaChaPoly.AuthenticateWithPoly1305Workers(
             key, nonce, associated, ciphertext, ciphertext.Length, validTag, parallelWorkers);
+        MacComprehensiveTests.Require(validTag.AsSpan().SequenceEqual(tag), "Dynamic Poly1305 grant must preserve the exact tag.");
         byte[] manipulatedTag = validTag.ToArray();
         manipulatedTag[0] ^= 0x80;
         byte[] output = Enumerable.Repeat((byte)0x5C, ciphertext.Length).ToArray();
         rejected = false;
         try
         {
-            NativeChaChaPoly.DecryptWithPoly1305Workers(
+            NativeXChaChaPoly.DecryptWithPoly1305Workers(
                 key,
                 nonce,
                 associated,
@@ -981,15 +956,15 @@ internal static class FastPathDifferentialTests
 
     private static void RequirePoly1305WorkerInPlace(byte[] key, uint parallelWorkers)
     {
-        byte[] nonce = DerivedBytes(NativeChaChaPoly.NonceBytes, 0x494E504C414345UL);
+        byte[] nonce = DerivedBytes(NativeXChaChaPoly.NonceBytes, 0x494E504C414345UL);
         byte[] associated = DerivedBytes(64, 0x494E504C414144UL);
         byte[] plaintext = DerivedBytes(4096, 0x494E504C504159UL);
         byte[] scratch = plaintext.ToArray();
-        byte[] tag = new byte[NativeChaChaPoly.TagBytes];
+        byte[] tag = new byte[NativeXChaChaPoly.TagBytes];
         byte[] serialRecovered = new byte[plaintext.Length];
         try
         {
-            NativeChaChaPoly.EncryptWithPoly1305Workers(
+            NativeXChaChaPoly.EncryptWithPoly1305Workers(
                 key,
                 nonce,
                 associated,
@@ -998,7 +973,7 @@ internal static class FastPathDifferentialTests
                 scratch.Length,
                 tag,
                 parallelWorkers);
-            NativeChaChaPoly.DecryptSerial(
+            NativeXChaChaPoly.DecryptSerial(
                 key,
                 nonce,
                 associated,
@@ -1011,7 +986,7 @@ internal static class FastPathDifferentialTests
                 serialRecovered,
                 plaintext.Length,
                 "scalar Crypto++ decrypt of parallel Poly1305 output");
-            NativeChaChaPoly.DecryptWithPoly1305Workers(
+            NativeXChaChaPoly.DecryptWithPoly1305Workers(
                 key,
                 nonce,
                 associated,
@@ -1036,41 +1011,41 @@ internal static class FastPathDifferentialTests
     private static void RunLargePoly1305Probe()
     {
         uint parallelWorkers = (uint)Math.Clamp(Environment.ProcessorCount, 2, 8);
-        byte[] key = DerivedBytes(NativeChaChaPoly.KeyBytes, 0x4C41524745504F4CUL);
-        byte[] nonce = DerivedBytes(NativeChaChaPoly.NonceBytes, 0x4C415247454E4F4EUL);
+        byte[] key = DerivedBytes(NativeXChaChaPoly.KeyBytes, 0x4C41524745504F4CUL);
+        byte[] nonce = DerivedBytes(NativeXChaChaPoly.NonceBytes, 0x4C415247454E4F4EUL);
         byte[] associated = DerivedBytes(64, 0x4C41524745414144UL);
-        byte[] ciphertext = DerivedBytes(LargeBytes, 0x4C41524745434950UL);
-        byte[] scalarTag = new byte[NativeChaChaPoly.TagBytes];
-        byte[] oneWorkerTag = new byte[NativeChaChaPoly.TagBytes];
-        byte[] manyWorkerTag = new byte[NativeChaChaPoly.TagBytes];
-        byte[] automaticTag = new byte[NativeChaChaPoly.TagBytes];
+        byte[] ciphertext = DerivedBytes(NativeXChaChaPoly.MaximumPayloadBytes, 0x4C41524745434950UL);
+        byte[] scalarTag = new byte[NativeXChaChaPoly.TagBytes];
+        byte[] oneWorkerTag = new byte[NativeXChaChaPoly.TagBytes];
+        byte[] manyWorkerTag = new byte[NativeXChaChaPoly.TagBytes];
+        byte[] automaticTag = new byte[NativeXChaChaPoly.TagBytes];
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            NativeChaChaPoly.AuthenticateSerial(
+            NativeXChaChaPoly.AuthenticateSerial(
                 key, nonce, associated, ciphertext, ciphertext.Length, scalarTag);
             TimeSpan scalarElapsed = stopwatch.Elapsed;
             stopwatch.Restart();
-            NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+            NativeXChaChaPoly.AuthenticateWithPoly1305Workers(
                 key, nonce, associated, ciphertext, ciphertext.Length, oneWorkerTag, 1);
             TimeSpan oneWorkerElapsed = stopwatch.Elapsed;
             stopwatch.Restart();
-            NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+            NativeXChaChaPoly.AuthenticateWithPoly1305Workers(
                 key, nonce, associated, ciphertext, ciphertext.Length, manyWorkerTag, parallelWorkers);
             TimeSpan manyWorkerElapsed = stopwatch.Elapsed;
-            NativeChaChaPoly.AuthenticateWithPoly1305Workers(
+            NativeXChaChaPoly.AuthenticateWithPoly1305Workers(
                 key, nonce, associated, ciphertext, ciphertext.Length, automaticTag, 0);
 
             MacComprehensiveTests.Require(
                 CryptographicOperations.FixedTimeEquals(scalarTag, oneWorkerTag)
                     && CryptographicOperations.FixedTimeEquals(scalarTag, manyWorkerTag)
                     && CryptographicOperations.FixedTimeEquals(scalarTag, automaticTag),
-                "The 256 MiB Poly1305 scalar, fixed-worker and automatic tags differ.");
+                "The 16 MiB Poly1305 scalar, fixed-worker and automatic tags differ.");
             Console.WriteLine(
-                $"    Poly1305 256 MiB tags identical "
-                + $"({Rate(LargeBytes, scalarElapsed)} Crypto++, "
-                + $"{Rate(LargeBytes, oneWorkerElapsed)} fixed-limb 1-worker, "
-                + $"{Rate(LargeBytes, manyWorkerElapsed)} fixed-limb {parallelWorkers}-worker)");
+                $"    Poly1305 16 MiB tags identical "
+                + $"({Rate(NativeXChaChaPoly.MaximumPayloadBytes, scalarElapsed)} Crypto++, "
+                + $"{Rate(NativeXChaChaPoly.MaximumPayloadBytes, oneWorkerElapsed)} fixed-limb 1-worker, "
+                + $"{Rate(NativeXChaChaPoly.MaximumPayloadBytes, manyWorkerElapsed)} fixed-limb {parallelWorkers}-worker)");
         }
         finally
         {
@@ -1086,7 +1061,7 @@ internal static class FastPathDifferentialTests
     }
 
     /// <summary>
-    /// Compares the shipped framing against .NET's independent RFC 8439
+    /// Compares the shipped framing against Crypto++'s independent full XChaCha20-Poly1305
     /// implementation at every pad16 boundary used by the audit contract.
     /// </summary>
     private static void RunAeadReferenceMatrix()
@@ -1106,8 +1081,8 @@ internal static class FastPathDifferentialTests
         for (int trial = 0; trial < 3; trial++)
         {
             byte[] key = DerivedBytes(32, 0x414541444B4559UL + (ulong)trial);
-            byte[] nonce = DerivedBytes(12, 0x414541444E4F4E43UL + (ulong)trial);
-            using var reference = new ChaCha20Poly1305(key);
+            byte[] nonce = DerivedBytes(24, 0x414541444E4F4E43UL + (ulong)trial);
+            using var reference = new XChaChaReference(key);
             try
             {
                 foreach (int payloadLength in payloadLengths)
@@ -1121,13 +1096,13 @@ internal static class FastPathDifferentialTests
                             aadLength,
                             0x414144UL + (ulong)aadLength + ((ulong)trial << 32));
                         byte[] expectedCiphertext = new byte[payloadLength];
-                        byte[] expectedTag = new byte[NativeChaChaPoly.TagBytes];
+                        byte[] expectedTag = new byte[NativeXChaChaPoly.TagBytes];
                         byte[] nativeCiphertext = new byte[payloadLength];
-                        byte[] nativeTag = new byte[NativeChaChaPoly.TagBytes];
+                        byte[] nativeTag = new byte[NativeXChaChaPoly.TagBytes];
                         byte[] recovered = new byte[payloadLength];
                         byte[] independentRecovered = new byte[payloadLength];
                         byte[] inPlace = plaintext.ToArray();
-                        byte[] inPlaceTag = new byte[NativeChaChaPoly.TagBytes];
+                        byte[] inPlaceTag = new byte[NativeXChaChaPoly.TagBytes];
                         try
                         {
                             reference.Encrypt(
@@ -1136,7 +1111,7 @@ internal static class FastPathDifferentialTests
                                 expectedCiphertext,
                                 expectedTag,
                                 associated);
-                            NativeChaChaPoly.Encrypt(
+                            NativeXChaChaPoly.Encrypt(
                                 key,
                                 nonce,
                                 associated,
@@ -1148,13 +1123,13 @@ internal static class FastPathDifferentialTests
                                 expectedCiphertext,
                                 nativeCiphertext,
                                 payloadLength,
-                                $"ChaCha20-Poly1305 payload {payloadLength}, AAD {aadLength}, trial {trial}");
+                                $"XChaCha20-Poly1305 payload {payloadLength}, AAD {aadLength}, trial {trial}");
                             MacComprehensiveTests.Require(
                                 CryptographicOperations.FixedTimeEquals(expectedTag, nativeTag),
-                                $"ChaCha20-Poly1305 tag differs from the independent RFC implementation "
+                                $"XChaCha20-Poly1305 tag differs from the independent Crypto++ XChaCha implementation "
                                 + $"at payload {payloadLength}, AAD {aadLength}, trial {trial}.");
 
-                            NativeChaChaPoly.Decrypt(
+                            NativeXChaChaPoly.Decrypt(
                                 key,
                                 nonce,
                                 associated,
@@ -1179,7 +1154,7 @@ internal static class FastPathDifferentialTests
                                 payloadLength,
                                 $"Independent AEAD decrypt payload {payloadLength}, AAD {aadLength}, trial {trial}");
 
-                            NativeChaChaPoly.Encrypt(
+                            NativeXChaChaPoly.Encrypt(
                                 key,
                                 nonce,
                                 associated,
@@ -1195,7 +1170,7 @@ internal static class FastPathDifferentialTests
                             MacComprehensiveTests.Require(
                                 CryptographicOperations.FixedTimeEquals(expectedTag, inPlaceTag),
                                 $"In-place AEAD tag differs at payload {payloadLength}, AAD {aadLength}, trial {trial}.");
-                            NativeChaChaPoly.Decrypt(
+                            NativeXChaChaPoly.Decrypt(
                                 key,
                                 nonce,
                                 associated,
@@ -1270,7 +1245,7 @@ internal static class FastPathDifferentialTests
             checkedCases == 3 * payloadLengths.Length * aadLengths.Length,
             $"The AEAD padding matrix ran {checkedCases} cases instead of the complete cross product.");
         Console.WriteLine(
-            $"    ChaCha20-Poly1305 independent reference matrix: {checkedCases} payload/AAD/key/nonce cases, "
+            $"    XChaCha20-Poly1305 independent reference matrix: {checkedCases} payload/AAD/key/nonce cases, "
             + "out-of-place, in-place and authentication-before-output");
     }
 
@@ -1298,7 +1273,7 @@ internal static class FastPathDifferentialTests
         bool outputUntouched = false;
         try
         {
-            NativeChaChaPoly.Decrypt(
+            NativeXChaChaPoly.Decrypt(
                 key, nonce, usedAssociated, usedCiphertext, output, usedCiphertext.Length, usedTag);
         }
         catch (CryptographicException)
@@ -1314,10 +1289,10 @@ internal static class FastPathDifferentialTests
             CryptographicOperations.ZeroMemory(output);
         }
 
-        MacComprehensiveTests.Require(rejected, $"ChaCha20-Poly1305 accepted {what}.");
+        MacComprehensiveTests.Require(rejected, $"XChaCha20-Poly1305 accepted {what}.");
         MacComprehensiveTests.Require(
             outputUntouched,
-            $"ChaCha20-Poly1305 wrote into the caller's buffer while refusing {what}.");
+            $"XChaCha20-Poly1305 wrote into the caller's buffer while refusing {what}.");
     }
 
     private static string Rate(int length, TimeSpan elapsed)
@@ -1330,4 +1305,14 @@ internal static class FastPathDifferentialTests
 
         return $"{length / (1024.0 * 1024.0) / seconds:F0} MB/s";
     }
+    private sealed class XChaChaReference(byte[] key) : IDisposable
+    {
+        private readonly byte[] _key = key.ToArray();
+        public void Encrypt(byte[] nonce, byte[] input, byte[] output, byte[] tag, byte[] aad)
+            => NativeXChaChaPoly.EncryptReference(_key, nonce, aad, input, output, input.Length, tag);
+        public void Decrypt(byte[] nonce, byte[] input, byte[] tag, byte[] output, byte[] aad)
+            => NativeXChaChaPoly.DecryptReference(_key, nonce, aad, input, output, input.Length, tag);
+        public void Dispose() => CryptographicOperations.ZeroMemory(_key);
+    }
+
 }

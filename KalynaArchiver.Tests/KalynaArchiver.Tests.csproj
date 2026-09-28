@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="../KeepVaultMac.Tests/Fixtures/V13Reference/pool_shuffle_rev9_public_vectors.json" Link="Fixtures/V13Reference/pool_shuffle_rev9_public_vectors.json" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="..\KeepVaultInstaller\InstallerWindow.cs" Link="InstallerWindow.cs" />
     <ProjectReference Include="..\KalynaArchiver\KalynaArchiver.csproj" />
     <ProjectReference Include="..\KalynaArchiver.Signing\KalynaArchiver.Signing.csproj" />
@@ -21,13 +22,15 @@
   <ItemGroup>
     <None Include="$(KalynaNativeToolDirectory)\zpaq.exe" Link="zpaq.exe" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\argon2.exe" Link="argon2.exe" CopyToOutputDirectory="Always" />
-    <None Include="$(KalynaNativeToolDirectory)\kalyna_v12.dll" Link="kalyna_v12.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\kalyna_v13.dll" Link="kalyna_v13.dll" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\threefish_ref.dll" Link="threefish_ref.dll" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\argon2_ref.dll" Link="argon2_ref.dll" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\aes_ref.dll" Link="aes_ref.dll" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\mars_ref.dll" Link="mars_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\camellia_v13.dll" Link="camellia_v13.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\serpent_v13.dll" Link="serpent_v13.dll" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\shacal2_ref.dll" Link="shacal2_ref.dll" CopyToOutputDirectory="Always" />
-    <None Include="$(KalynaNativeToolDirectory)\chachapoly_ref.dll" Link="chachapoly_ref.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(KalynaNativeToolDirectory)\xchachapoly_v13.dll" Link="xchachapoly_v13.dll" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\*.sha3" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\*.skein" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
     <None Include="$(KalynaNativeToolDirectory)\*.khsig" Link="%(Filename)%(Extension)" CopyToOutputDirectory="Always" />

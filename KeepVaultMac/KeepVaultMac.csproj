@@ -10,7 +10,7 @@
     <RootNamespace>KalynaArchiver</RootNamespace>
     <Product>Keep Vault</Product>
     <AssemblyTitle>Keep Vault</AssemblyTitle>
-    <Version>5.0.2</Version>
+    <Version>5.0.3</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -79,10 +79,16 @@
     <Compile Include="../KalynaArchiver/Services/ArchiveIntegrityService.cs" Link="Services/ArchiveIntegrityService.cs" />
     <Compile Include="../KalynaArchiver/Services/CryptographicEraseService.cs" Link="Services/CryptographicEraseService.cs" />
     <Compile Include="../KalynaArchiver/Services/EntropyMixer.cs" Link="Services/EntropyMixer.cs" />
+    <Compile Include="../KalynaArchiver/Services/SensitiveMouseRecordStore.cs" Link="Services/SensitiveMouseRecordStore.cs" />
+    <Compile Include="../KalynaArchiver/Services/PoolShuffleRandomSource.cs" Link="Services/PoolShuffleRandomSource.cs" />
+    <Compile Include="../KalynaArchiver/Services/ConsumedEntropySnapshot.cs" Link="Services/ConsumedEntropySnapshot.cs" />
+
     <Compile Include="../KalynaArchiver/Services/EncryptionSuite.cs" Link="Services/EncryptionSuite.cs" />
+    <Compile Include="../KalynaArchiver/Services/ChunkNoncePlan.cs" Link="Services/ChunkNoncePlan.cs" />
     <Compile Include="../KalynaArchiver/Services/KalynaContainerService.cs" Link="Services/KalynaContainerService.cs" />
     <Compile Include="../KalynaArchiver/Services/ParallelContainerAuthenticator.cs" Link="Services/ParallelContainerAuthenticator.cs" />
     <Compile Include="../KalynaArchiver/Services/NativeCascadeCiphers.cs" Link="Services/NativeCascadeCiphers.cs" />
+    <Compile Include="../KalynaArchiver/Services/NativeCipherExecutor.cs" Link="Services/NativeCipherExecutor.cs" />
     <Compile Include="../KalynaArchiver/Services/NativeArgon2id.cs" Link="Services/NativeArgon2id.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordKeyService.cs" Link="Services/PasswordKeyService.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordGuessabilityService.cs" Link="Services/PasswordGuessabilityService.cs" />
@@ -95,7 +101,18 @@
     <Compile Include="../KalynaArchiver/Services/KdfPrimitives.cs" Link="Services/KdfPrimitives.cs" />
     <Compile Include="../KalynaArchiver/Services/SuiteKeySchedule.cs" Link="Services/SuiteKeySchedule.cs" />
     <Compile Include="../KalynaArchiver/Services/KdfSalts.cs" Link="Services/KdfSalts.cs" />
-    <Compile Include="../KalynaArchiver/Services/V12MasterKdf.cs" Link="Services/V12MasterKdf.cs" />
+    <Compile Include="../KalynaArchiver/Services/ArchiveOperationPolicy.cs" Link="Services/ArchiveOperationPolicy.cs" />
+    <Compile Include="../KalynaArchiver/Services/OperationMemoryBudget.cs" Link="Services/OperationMemoryBudget.cs" />
+    <Compile Include="../KalynaArchiver/Services/OperationExecutionBudget.cs" Link="Services/OperationExecutionBudget.cs" />
+    <Compile Include="../KalynaArchiver/Services/CryptoUsageBudget.cs" Link="Services/CryptoUsageBudget.cs" />
+    <Compile Include="../KalynaArchiver/Services/CpuWorkBudget.cs" Link="Services/CpuWorkBudget.cs" />
+    <Compile Include="../KalynaArchiver/Services/VerifiedArchiveInput.cs" Link="Services/VerifiedArchiveInput.cs" />
+    <Compile Include="../KalynaArchiver/Services/RecoveryRecordTable.cs" Link="Services/RecoveryRecordTable.cs" />
+    <Compile Include="../KalynaArchiver/Services/RecoveryMetadataBudget.cs" Link="Services/RecoveryMetadataBudget.cs" />
+    <Compile Include="../KalynaArchiver/Services/RecoveryMetadataStream.cs" Link="Services/RecoveryMetadataStream.cs" />
+    <Compile Include="../KalynaArchiver/Services/RecoveryManifestCodec.cs" Link="Services/RecoveryManifestCodec.cs" />
+    <Compile Include="../KalynaArchiver/Services/VerifiedArchiveReadAtServer.cs" Link="Services/VerifiedArchiveReadAtServer.cs" />
+    <Compile Include="../KalynaArchiver/Services/V13MasterKdf.cs" Link="Services/V13MasterKdf.cs" />
     <Compile Include="../KalynaArchiver/Services/ContainerKeyDerivation.cs" Link="Services/ContainerKeyDerivation.cs" />
     <Compile Include="../KalynaArchiver/Services/PinCreationPolicy.cs" Link="Services/PinCreationPolicy.cs" />
     <Compile Include="../KalynaArchiver/Services/ZpaqService.cs" Link="Services/ZpaqService.cs" />
@@ -112,10 +129,12 @@
     <Content Include="Native/osx-arm64/zpaq" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/zpaq" />
     <Content Include="Native/osx-arm64/argon2" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/argon2" />
     <Content Include="Native/osx-arm64/libargon2_ref.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libargon2_ref.dylib" />
-    <Content Include="Native/osx-arm64/libkalyna_v12.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libkalyna_v12.dylib" />
+    <Content Include="Native/osx-arm64/libkalyna_v13.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libkalyna_v13.dylib" />
     <Content Include="Native/osx-arm64/libaes_ref.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libaes_ref.dylib" />
-    <Content Include="Native/osx-arm64/libchachapoly_ref.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libchachapoly_ref.dylib" />
+    <Content Include="Native/osx-arm64/libxchachapoly_v13.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libxchachapoly_v13.dylib" />
     <Content Include="Native/osx-arm64/libmars_ref.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libmars_ref.dylib" />
+    <Content Include="Native/osx-arm64/libcamellia_v13.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libcamellia_v13.dylib" />
+    <Content Include="Native/osx-arm64/libserpent_v13.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libserpent_v13.dylib" />
     <Content Include="Native/osx-arm64/libshacal2_ref.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libshacal2_ref.dylib" />
     <Content Include="Native/osx-arm64/libthreefish_ref.dylib" CopyToOutputDirectory="PreserveNewest" TargetPath="Native/libthreefish_ref.dylib" />
   </ItemGroup>

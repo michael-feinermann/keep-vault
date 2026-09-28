@@ -35,6 +35,27 @@ if errorlevel 1 set "ANALYSIS_FAILED=1"
 cl %ANALYZE% /DNOJIT /EHsc /std:c++17 /Fobuild-analysis\libzpaq.obj /analyze:log build-analysis\libzpaq.xml external\zpaq\libzpaq.cpp
 if errorlevel 1 set "ANALYSIS_FAILED=1"
 
+REM Match all seven Crypto++ adapter translation units from Build-Native.cmd.
+REM Retain its C++17, exception, static CRT and assembly/header configuration;
+REM CRYPTOPP_DISABLE_ASM must stay unset here as in the production build.
+REM /c keeps this analysis separate from the linked production libraries.
+for %%F in (
+  native\aes_ref_export.cpp
+  native\mars_ref_export.cpp
+  native\shacal2_ref_export.cpp
+  native\xchachapoly_ref_export.cpp
+  native\kalyna_v13_export.cpp
+  native\camellia_v13_export.cpp
+  native\serpent_v13_export.cpp
+) do (
+  cl %ANALYZE% /WX /MT /guard:cf /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS ^
+    /Iexternal\cryptopp ^
+    /Fobuild-analysis\cryptopp_%%~nF.obj ^
+    /analyze:log build-analysis\cryptopp_%%~nF.xml ^
+    %%F
+  if errorlevel 1 set "ANALYSIS_FAILED=1"
+)
+
 cl %ANALYZE% /WX /D_CRT_SECURE_NO_WARNINGS ^
   /Iexternal\Skein-reference\NIST\CD\Reference_Implementation ^
   /Fobuild-analysis\threefish_ref_export.obj ^

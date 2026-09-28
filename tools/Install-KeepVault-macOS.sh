@@ -855,14 +855,14 @@ verify_installed_release_identities() {
   if [[ ! ${zpaq_anchor_identity:-} =~ '^[0-9]+:[0-9]+$' \
       || $(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || print invalid) != ${zpaq_anchor_identity} ]] \
       || ! validate_zpaq_anchor_structure ${zpaq_anchor_directory} ${zpaq_uid} ${zpaq_gid}; then
-    print -u2 'The root-owned v12 ZPAQ anchor changed identity or security metadata during installation.'
+    print -u2 'The root-owned v13 ZPAQ anchor changed identity or security metadata during installation.'
     return 1
   fi
   local zpaq_index=1
   local zpaq_leaf=''
   for zpaq_leaf in ${zpaq_anchor_path} ${zpaq_anchor_path}${^zpaq_sidecar_suffixes}; do
     if [[ $(sha256_file ${zpaq_leaf}) != ${zpaq_anchor_expected_sha256[${zpaq_index}]:-missing} ]]; then
-      print -u2 'The root-owned v12 ZPAQ anchor changed bytes during installation.'
+      print -u2 'The root-owned v13 ZPAQ anchor changed bytes during installation.'
       return 1
     fi
     (( zpaq_index++ ))
@@ -914,9 +914,9 @@ else
 fi
 anchor_parent=${anchor_directory:h}
 anchor_path=${anchor_directory}/minimum-version
-zpaq_anchor_directory=${anchor_directory}/v12
+zpaq_anchor_directory=${anchor_directory}/v13
 zpaq_anchor_path=${zpaq_anchor_directory}/zpaq
-zpaq_anchor_backup=${anchor_directory}/.v12.rollback.$$.$RANDOM$RANDOM
+zpaq_anchor_backup=${anchor_directory}/.v13.rollback.$$.$RANDOM$RANDOM
 zpaq_sidecar_suffixes=(.sha3 .skein .khsig .sha3.khsig .skein.khsig)
 
 validate_zpaq_anchor_structure() {
@@ -1032,7 +1032,7 @@ if [[ -e ${zpaq_anchor_directory} || -L ${zpaq_anchor_directory} ]]; then
   if ! validate_zpaq_anchor_structure \
       ${zpaq_anchor_directory} ${zpaq_expected_uid} ${zpaq_expected_gid}; then
     release_lock
-    print -u2 "The existing v12 ZPAQ anchor is unsafe, incomplete, or not root-bound: ${zpaq_anchor_directory}"
+    print -u2 "The existing v13 ZPAQ anchor is unsafe, incomplete, or not root-bound: ${zpaq_anchor_directory}"
     exit 1
   fi
   had_existing_zpaq_anchor=1
@@ -1122,12 +1122,12 @@ execute_rollback() {
       (( has_existing_scanner )) && print -u2 'Previous QR-Scanner app and signatures restore attempted.'
     fi
 
-    # Roll back the root-owned v12 ZPAQ execution anchor before the version
+    # Roll back the root-owned v13 ZPAQ execution anchor before the version
     # anchor. This ordering lets a first-install rollback remove the now-empty
     # Keep Vault state directory without ever following a user-controlled path.
     if (( zpaq_anchor_updated )); then
       if (( test_mode )); then
-        zpaq_failed=${anchor_directory}/.v12.failed.$$.$RANDOM$RANDOM
+        zpaq_failed=${anchor_directory}/.v13.failed.$$.$RANDOM$RANDOM
         if (( had_existing_zpaq_anchor )); then
           if [[ -d ${zpaq_anchor_directory} && ! -L ${zpaq_anchor_directory} \
               && $(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || print invalid) == ${zpaq_anchor_identity} \
@@ -1137,28 +1137,28 @@ execute_rollback() {
               && mv -- ${zpaq_anchor_backup} ${zpaq_anchor_directory}; then
             rm -rf -- ${zpaq_failed}
           else
-            rollback_errors+=("Failed to restore the previous private v12 ZPAQ anchor")
+            rollback_errors+=("Failed to restore the previous private v13 ZPAQ anchor")
           fi
         elif [[ -d ${zpaq_anchor_directory} && ! -L ${zpaq_anchor_directory} \
             && $(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || print invalid) == ${zpaq_anchor_identity} ]]; then
           if ! mv -- ${zpaq_anchor_directory} ${zpaq_failed} || ! rm -rf -- ${zpaq_failed}; then
-            rollback_errors+=("Failed to remove the new private v12 ZPAQ anchor")
+            rollback_errors+=("Failed to remove the new private v13 ZPAQ anchor")
           fi
         elif [[ -e ${zpaq_anchor_directory} || -L ${zpaq_anchor_directory} ]]; then
-          rollback_errors+=("Private v12 ZPAQ anchor identity changed; replacement was preserved")
+          rollback_errors+=("Private v13 ZPAQ anchor identity changed; replacement was preserved")
         fi
       else
         ZPAQ_DIR=${zpaq_anchor_directory} ZPAQ_BACKUP=${zpaq_anchor_backup} \
           ZPAQ_INSTALLED_ID=${zpaq_anchor_identity} ZPAQ_BACKUP_ID=${zpaq_anchor_backup_identity} \
           ZPAQ_HAD_PREVIOUS=${had_existing_zpaq_anchor} osascript <<'APPLESCRIPT' \
-          || rollback_errors+=("Failed to restore the root-owned v12 ZPAQ anchor")
+          || rollback_errors+=("Failed to restore the root-owned v13 ZPAQ anchor")
 set zpaqDir to system attribute "ZPAQ_DIR"
 set zpaqBackup to system attribute "ZPAQ_BACKUP"
 set installedIdentity to system attribute "ZPAQ_INSTALLED_ID"
 set backupIdentity to system attribute "ZPAQ_BACKUP_ID"
 set hadPrevious to system attribute "ZPAQ_HAD_PREVIOUS"
 set commandText to "set -eu; dir=" & quoted form of zpaqDir & "; backup=" & quoted form of zpaqBackup & "; expected=" & quoted form of installedIdentity & "; backup_expected=" & quoted form of backupIdentity & "; had=" & quoted form of hadPrevious & "; " & ¬
-  "base=\"${dir%/*}\"; failed=\"$base/.v12.failed.$$\"; " & ¬
+  "base=\"${dir%/*}\"; failed=\"$base/.v13.failed.$$\"; " & ¬
   "[ ! -e \"$failed\" ] && [ ! -L \"$failed\" ] || exit 1; " & ¬
   "[ -d \"$dir\" ] && [ ! -L \"$dir\" ] && [ \"$(/usr/bin/stat -f %d:%i \"$dir\")\" = \"$expected\" ] || exit 1; " & ¬
   "if [ \"$had\" = 1 ]; then [ -d \"$backup\" ] && [ ! -L \"$backup\" ] && [ \"$(/usr/bin/stat -f %d:%i \"$backup\")\" = \"$backup_expected\" ] || exit 1; /bin/mv \"$dir\" \"$failed\"; if ! /bin/mv \"$backup\" \"$dir\"; then /bin/mv \"$failed\" \"$dir\"; exit 1; fi; /bin/rm -rf \"$failed\"; else /bin/mv \"$dir\" \"$failed\"; /bin/rm -rf \"$failed\"; fi"
@@ -1546,7 +1546,7 @@ fi
 # 5. BEGIN MUTATION TRANSACTION
 transaction_active=1
 
-# Install the only ZPAQ pathname that the v12 application will execute. The
+# Install the only ZPAQ pathname that the v13 application will execute. The
 # directory swap is atomic on the anchor filesystem; the privileged block
 # restores the old directory itself if the second rename fails. The outer
 # transaction retains the previous root directory until the app, signatures,
@@ -1557,7 +1557,7 @@ if (( test_mode )); then
     mkdir -m 0700 -- ${anchor_directory}
   fi
   zpaq_test_gid=$(stat -f '%g' ${anchor_directory})
-  zpaq_stage=$(mktemp -d "${anchor_directory}/.v12.stage.XXXXXXXX")
+  zpaq_stage=$(mktemp -d "${anchor_directory}/.v13.stage.XXXXXXXX")
   chmod 0755 ${zpaq_stage}
   ditto ${zpaq_anchor_sources[1]} ${zpaq_stage}/zpaq
   zpaq_source_index=2
@@ -1619,7 +1619,7 @@ set commandText to "set -eu; umask 077; base=" & quoted form of basePath & "; ta
   "check_parent() { p=\"$1\"; wheel=\"$2\"; [ -d \"$p\" ] && [ ! -L \"$p\" ] || return 1; meta=$(/usr/bin/stat -f %u:%g:%Lp \"$p\"); uid=${meta%%:*}; rest=${meta#*:}; gid=${rest%%:*}; mode=${rest##*:}; [ \"$uid\" = 0 ] || return 1; [ $((0$mode & 022)) -eq 0 ] || return 1; [ \"$wheel\" = 0 ] || [ \"$gid\" = 0 ]; }; " & ¬
   "check_parent / 1; check_parent /Library 1; check_parent '/Library/Application Support' 0; " & ¬
   "if [ -e \"$base\" ] || [ -L \"$base\" ]; then check_parent \"$base\" 1 && [ \"$(/usr/bin/stat -f %Lp \"$base\")\" = 755 ] || exit 1; else /bin/mkdir \"$base\"; /usr/sbin/chown 0:0 \"$base\"; /bin/chmod 0755 \"$base\"; fi; " & ¬
-  "[ ! -e \"$backup\" ] && [ ! -L \"$backup\" ] || exit 1; stage=$(/usr/bin/mktemp -d \"$base/.v12.stage.XXXXXXXX\"); cleanup() { [ -z \"${stage:-}\" ] || /bin/rm -rf \"$stage\"; }; trap cleanup EXIT HUP INT TERM; /usr/sbin/chown 0:0 \"$stage\"; /bin/chmod 0755 \"$stage\"; " & ¬
+  "[ ! -e \"$backup\" ] && [ ! -L \"$backup\" ] || exit 1; stage=$(/usr/bin/mktemp -d \"$base/.v13.stage.XXXXXXXX\"); cleanup() { [ -z \"${stage:-}\" ] || /bin/rm -rf \"$stage\"; }; trap cleanup EXIT HUP INT TERM; /usr/sbin/chown 0:0 \"$stage\"; /bin/chmod 0755 \"$stage\"; " & ¬
   "/usr/bin/ditto \"$src\" \"$stage/zpaq\"; /usr/bin/ditto \"$sha3_src\" \"$stage/zpaq.sha3\"; /usr/bin/ditto \"$skein_src\" \"$stage/zpaq.skein\"; /usr/bin/ditto \"$sig_src\" \"$stage/zpaq.khsig\"; /usr/bin/ditto \"$sha3_sig_src\" \"$stage/zpaq.sha3.khsig\"; /usr/bin/ditto \"$skein_sig_src\" \"$stage/zpaq.skein.khsig\"; /usr/sbin/chown 0:0 \"$stage\"/*; /bin/chmod 0555 \"$stage/zpaq\"; /bin/chmod 0444 \"$stage/zpaq.sha3\" \"$stage/zpaq.skein\" \"$stage/zpaq.khsig\" \"$stage/zpaq.sha3.khsig\" \"$stage/zpaq.skein.khsig\"; " & ¬
   "hash() { /usr/bin/env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin /usr/bin/shasum -a 256 -- \"$1\" | /usr/bin/awk '{print $1}'; }; [ \"$(hash \"$stage/zpaq\")\" = \"$src_sha\" ] && [ \"$(hash \"$stage/zpaq.sha3\")\" = \"$sha3_sha\" ] && [ \"$(hash \"$stage/zpaq.skein\")\" = \"$skein_sha\" ] && [ \"$(hash \"$stage/zpaq.khsig\")\" = \"$sig_sha\" ] && [ \"$(hash \"$stage/zpaq.sha3.khsig\")\" = \"$sha3_sig_sha\" ] && [ \"$(hash \"$stage/zpaq.skein.khsig\")\" = \"$skein_sig_sha\" ] || exit 1; " & ¬
   "/usr/bin/codesign --verify --strict --all-architectures \"$stage/zpaq\"; signature=$(/usr/bin/codesign -dv --verbose=4 \"$stage/zpaq\" 2>&1); case \"$signature\" in *TeamIdentifier=2T6K9PGS55*) ;; *) exit 1;; esac; " & ¬
@@ -1627,7 +1627,7 @@ set commandText to "set -eu; umask 077; base=" & quoted form of basePath & "; ta
   "if [ \"$had\" = 1 ]; then [ -d \"$target\" ] && [ ! -L \"$target\" ] && [ \"$(/usr/bin/stat -f %u:%g:%Lp \"$target\")\" = 0:0:755 ] || exit 1; /bin/mv \"$target\" \"$backup\"; if ! /bin/mv \"$stage\" \"$target\"; then /bin/mv \"$backup\" \"$target\"; exit 1; fi; else [ ! -e \"$target\" ] && [ ! -L \"$target\" ] || exit 1; /bin/mv \"$stage\" \"$target\"; fi; stage=''; trap - EXIT HUP INT TERM"
 do shell script commandText with administrator privileges
 APPLESCRIPT
-    print -u2 'Failed to install the root-owned v12 ZPAQ execution anchor.'
+    print -u2 'Failed to install the root-owned v13 ZPAQ execution anchor.'
     exit 1
   }
   zpaq_anchor_identity=$(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || true)
@@ -1647,20 +1647,20 @@ if [[ ! ${zpaq_anchor_identity} =~ '^[0-9]+:[0-9]+$' \
     || $(stat -f '%d:%i' ${zpaq_anchor_directory} 2>/dev/null || print invalid) != ${zpaq_anchor_identity} ]] \
     || ! validate_zpaq_anchor_structure \
       ${zpaq_anchor_directory} ${zpaq_expected_uid} ${zpaq_expected_gid}; then
-  print -u2 'The installed v12 ZPAQ anchor failed its post-install identity or ownership check.'
+  print -u2 'The installed v13 ZPAQ anchor failed its post-install identity or ownership check.'
   exit 1
 fi
 zpaq_source_index=1
 for zpaq_installed_source in ${zpaq_anchor_path} ${zpaq_anchor_path}${^zpaq_sidecar_suffixes}; do
   if [[ $(sha256_file ${zpaq_installed_source}) != ${zpaq_anchor_expected_sha256[${zpaq_source_index}]} ]]; then
-    print -u2 'The installed v12 ZPAQ anchor failed its SHA-256 pin.'
+    print -u2 'The installed v13 ZPAQ anchor failed its SHA-256 pin.'
     exit 1
   fi
   (( zpaq_source_index++ ))
 done
 if ! codesign --verify --strict --all-architectures ${zpaq_anchor_path} >/dev/null 2>&1 \
     || [[ $(codesign -dv --verbose=4 ${zpaq_anchor_path} 2>&1) != *'TeamIdentifier=2T6K9PGS55'* ]]; then
-  print -u2 'The installed v12 ZPAQ anchor failed its pinned Apple Team signature check.'
+  print -u2 'The installed v13 ZPAQ anchor failed its pinned Apple Team signature check.'
   exit 1
 fi
 inject_failure_now zpaq-anchor-post-check

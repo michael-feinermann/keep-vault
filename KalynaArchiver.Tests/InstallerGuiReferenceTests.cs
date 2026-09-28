@@ -52,7 +52,7 @@ internal static class InstallerGuiReferenceTests
             Layout(surface, window.MinWidth - 16, 300);
             Require(primary.TransformToAncestor(surface).Transform(new Point()).Y + primary.ActualHeight <= 300,
                 "The installer OK button must remain available at minimum width and a small viewport.");
-            window.ShowResult(true, "C:\\Synthetic\\Keep Vault 5.0.2");
+            window.ShowResult(true, "C:\\Synthetic\\Keep Vault 5.0.3");
             Layout(surface, 560, 300);
             Require(details.Visibility == Visibility.Collapsed, "Short installation results must be directly readable.");
             string before = heading.Text;

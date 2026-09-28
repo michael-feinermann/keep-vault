@@ -1,0 +1,177 @@
+// PUBLIC SYNTHETIC TEST DATA ONLY. Standalone generator, never product code.
+// Five block ciphers use BouncyCastle.Cryptography 2.6.2. The test-only scalar
+// MARS transcription follows the public-domain Crypto++ 8.9.0 algorithm;
+// only its fixed S-box constants are loaded, never its native implementation.
+// SHACAL-2 is independently encoded as the SHA-256 round permutation, without feedforward.
+using System.Buffers.Binary;
+using System.Numerics;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Parameters;
+
+internal static class Program
+{
+    private static byte[] Bytes(int n, int mul, int start) => Enumerable.Range(0,n).Select(i => unchecked((byte)(i*mul+start))).ToArray();
+    private static string B64(byte[] b) => Convert.ToBase64String(b);
+    private static uint[] S = [];
+    static void Main(string[] args)
+    {
+        string vendor = args.Single();
+        S = Regex.Matches(File.ReadAllText(Path.Combine(vendor,"marss.cpp")), "0x[0-9a-fA-F]{8}")
+            .Select(m => Convert.ToUInt32(m.Value[2..],16)).ToArray();
+        if(S.Length!=512) throw new Exception("MARS S-box inventory changed.");
+        // Public published block anchors are parsed separately from our scalar
+        // algorithm. Monte-Carlo records have a different iteration contract.
+        var fields = new Dictionary<string,string>(); int marsKats=0;
+        foreach(string line in File.ReadLines(Path.Combine(vendor,"TestVectors/mars.txt")))
+        {
+            int split=line.IndexOf(':'); if(split<0)continue;
+            fields[line[..split]]=line[(split+1)..].Trim();
+            if(!line.StartsWith("Test:"))continue;
+            if(fields["Test"]=="Encrypt")
+            {
+                byte[] actual = MarsBlock(Convert.FromHexString(fields["Key"]),Convert.FromHexString(fields["Plaintext"]));
+                if(!actual.SequenceEqual(Convert.FromHexString(fields["Ciphertext"])))throw new Exception("Scalar MARS KAT mismatch.");
+                marsKats++;
+            }
+        }
+        if(marsKats!=10)throw new Exception("MARS KAT inventory changed.");
+        fields.Clear(); int shacalKats=0;
+        foreach(string line in File.ReadLines(Path.Combine(vendor,"TestVectors/shacal2.txt")))
+        {
+            int split=line.IndexOf(':');if(split<0)continue;
+            fields[line[..split]]=line[(split+1)..].Trim();
+            if(line.StartsWith("Test:") && fields["Test"]=="Encrypt")
+            {
+                if(!ShacalBlock(Convert.FromHexString(fields["Key"]),Convert.FromHexString(fields["Plaintext"])).SequenceEqual(Convert.FromHexString(fields["Ciphertext"])))throw new Exception("SHACAL-2 NESSIE KAT mismatch.");
+                shacalKats++;
+            }
+        }
+        if(shacalKats!=1024)throw new Exception("SHACAL-2 KAT inventory changed.");
+        var cases = new List<object>();
+        foreach(int suite in new[]{2,3})
+        {
+            bool p=suite==3;
+            string[] names=p?["AES-256","MARS-448","Camellia-256","Serpent-256","SHACAL-2-512","Kalyna-512/512","Threefish-1024"]:["AES-256","Kalyna-512/512","Threefish-1024"];
+            int[] kb=p?[32,56,32,32,64,64,128]:[32,64,128];
+            int[] nb=p?[16,16,16,16,32,64,128]:[16,64,128];
+            byte[] key=Bytes(p?440:256,13,17),nonce=Bytes(p?312:232,29,7),tweak=Bytes(16,43,3),aad=Bytes(36,7,19);
+            foreach(int length in new[]{0,1,15,16,17,63,64,65,127,128,129,1025,4097,65537})
+            {
+                byte[] plain=Bytes(length,19,11),input=plain; int ko=0,no=0; var stages=new List<object>();
+                for(int i=0;i<names.Length;i++)
+                {
+                    byte[] k=key[ko..(ko+kb[i])],n=nonce[no..(no+nb[i])];
+                    byte[] output=names[i]=="MARS-448"?Ctr(n,input,b=>MarsBlock(k,b)):names[i]=="SHACAL-2-512"?Ctr(n,input,b=>ShacalBlock(k,b)):BlockCtr(names[i],k,n,tweak,input);
+                    stages.Add(new{cipher=names[i],key=B64(k),nonce=B64(n),output=B64(output)});
+                    input=output; ko+=kb[i];no+=nb[i];
+                }
+                cases.Add(new{suiteId=suite,length,key=B64(key),stageNonce=B64(nonce),tweak=B64(tweak),aad=B64(aad),plaintext=B64(plain),stages});
+            }
+        }
+        Console.WriteLine(JsonSerializer.Serialize(new{schema=1,publicSyntheticOnly=true,marsKats,shacalKats,cases},new JsonSerializerOptions{WriteIndented=true}));
+    }
+
+    private static byte[] BlockCtr(string name,byte[]key,byte[]nonce,byte[]tweak,byte[]input)
+    {
+        IBlockCipher cipher=name switch
+        {
+            "AES-256"=>new AesEngine(),"Camellia-256"=>new CamelliaEngine(),"Serpent-256"=>new SerpentEngine(),
+            "Kalyna-512/512"=>new Dstu7624Engine(512),"Threefish-1024"=>new ThreefishEngine(1024),
+            _=>throw new Exception("Unknown reference cipher.")
+        };
+        cipher.Init(true,name=="Threefish-1024"?new TweakableBlockCipherParameters(new KeyParameter(key),tweak):new KeyParameter(key));
+        return Ctr(nonce,input,block=>{byte[]r=new byte[block.Length];cipher.ProcessBlock(block,0,r,0);return r;});
+    }
+    private static byte[] Ctr(byte[] start,byte[] input,Func<byte[],byte[]> encrypt)
+    {
+        // BigInteger supplies an independent full-width counter encoder.
+        BigInteger initial=new(start,isUnsigned:true,isBigEndian:true),limit=BigInteger.One<<(start.Length*8);
+        byte[] result=new byte[input.Length];
+        for(int offset=0;offset<input.Length;offset+=start.Length)
+        {
+            BigInteger value=initial+offset/start.Length;if(value>=limit)throw new Exception("Counter overflow.");
+            byte[] shortCounter=value.ToByteArray(isUnsigned:true,isBigEndian:true),counter=new byte[start.Length];
+            shortCounter.CopyTo(counter,start.Length-shortCounter.Length);
+            byte[] block=encrypt(counter);
+            for(int j=0;j<Math.Min(block.Length,input.Length-offset);j++)result[offset+j]=(byte)(input[offset+j]^block[j]);
+        }
+        return result;
+    }
+
+    private static byte[] ShacalBlock(byte[] key,byte[] block)
+    {
+        uint[] constants=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+            0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+            0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+            0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+            0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+            0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+            0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+            0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+        unchecked
+        {
+            uint[] w=new uint[64],state=new uint[8];
+            for(int i=0;i<key.Length/4;i++)w[i]=BinaryPrimitives.ReadUInt32BigEndian(key.AsSpan(i*4));
+            for(int i=16;i<64;i++)w[i]=w[i-16]+(Ror(w[i-15],7)^Ror(w[i-15],18)^(w[i-15]>>3))+w[i-7]+(Ror(w[i-2],17)^Ror(w[i-2],19)^(w[i-2]>>10));
+            for(int i=0;i<8;i++)state[i]=BinaryPrimitives.ReadUInt32BigEndian(block.AsSpan(i*4));
+            for(int i=0;i<64;i++)
+            {
+                uint a=state[0],b=state[1],c=state[2],d=state[3],e=state[4],f=state[5],g=state[6],h=state[7];
+                uint t1=h+(Ror(e,6)^Ror(e,11)^Ror(e,25))+((e&f)^(~e&g))+constants[i]+w[i];
+                uint t2=(Ror(a,2)^Ror(a,13)^Ror(a,22))+((a&b)^(a&c)^(b&c));
+                state=[t1+t2,a,b,c,d+t1,e,f,g];
+            }
+            byte[] result=new byte[32];for(int i=0;i<8;i++)BinaryPrimitives.WriteUInt32BigEndian(result.AsSpan(i*4),state[i]);return result;
+        }
+    }
+
+    private static uint Rol(uint x,uint n)=>BitOperations.RotateLeft(x,(int)(n&31));
+    private static uint Ror(uint x,int n)=>BitOperations.RotateRight(x,n);
+    private static uint S0(uint x)=>S[x&255];
+    private static uint S1(uint x)=>S[256+(x&255)];
+    private static byte[] MarsBlock(byte[] key,byte[] block)
+    {
+        unchecked
+        {
+            uint[] t=new uint[15],k=new uint[40];
+            for(int i=0;i<key.Length/4;i++)t[i]=BinaryPrimitives.ReadUInt32LittleEndian(key.AsSpan(i*4));
+            t[key.Length/4]=(uint)(key.Length/4);
+            for(uint pass=0;pass<4;pass++)
+            {
+                for(int i=0;i<15;i++)t[i]^=Rol(t[(i+8)%15]^t[(i+13)%15],3)^(uint)(4*i+pass);
+                for(int stir=0;stir<4;stir++)for(int i=0;i<15;i++)t[i]=Rol(t[i]+S[t[(i+14)%15]&511],9);
+                for(int i=0;i<10;i++)k[10*pass+i]=t[(4*i)%15];
+            }
+            for(int i=5;i<37;i+=2)
+            {
+                uint w=k[i]|3,mask=(~w^(w<<1))&(~w^(w>>1))&0x7ffffffe;
+                mask&=mask>>1;mask&=mask>>2;mask&=mask>>4;
+                mask|=mask<<1;mask|=mask<<2;mask|=mask<<4;mask&=0x7ffffffc;
+                k[i]=w^(Rol(S[265+(k[i]&3)],k[i-1])&mask);
+            }
+            uint a=BinaryPrimitives.ReadUInt32LittleEndian(block)+k[0],b=BinaryPrimitives.ReadUInt32LittleEndian(block.AsSpan(4))+k[1],
+                c=BinaryPrimitives.ReadUInt32LittleEndian(block.AsSpan(8))+k[2],d=BinaryPrimitives.ReadUInt32LittleEndian(block.AsSpan(12))+k[3];
+            for(int i=0;i<8;i++)
+            {
+                b=(b^S0(a))+S1(a>>8);c+=S0(a>>16);a=Ror(a,24);d^=S1(a);
+                if(i%4==0)a+=d;if(i%4==1)a+=b;(a,b,c,d)=(b,c,d,a);
+            }
+            for(int i=0;i<16;i++)
+            {
+                uint next=Rol(a,13),r=Rol(next*k[2*i+5],10),m=a+k[2*i+4],l=Rol(S[m&511]^Ror(r,5)^r,r);
+                c+=Rol(m,Ror(r,5));if(i<8){b+=l;d^=r;}else{d+=l;b^=r;}(a,b,c,d)=(b,c,d,next);
+            }
+            for(int i=0;i<8;i++)
+            {
+                if(i%4==2)a-=d;if(i%4==3)a-=b;b^=S1(a);c-=S0(a>>24);
+                uint next=Rol(a,24);d=(d-S1(a>>16))^S0(next);(a,b,c,d)=(b,c,d,next);
+            }
+            byte[] result=new byte[16];uint[] words=[a-k[36],b-k[37],c-k[38],d-k[39]];
+            for(int i=0;i<4;i++)BinaryPrimitives.WriteUInt32LittleEndian(result.AsSpan(i*4),words[i]);
+            return result;
+        }
+    }
+}

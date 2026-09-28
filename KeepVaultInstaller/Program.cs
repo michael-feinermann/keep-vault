@@ -18,7 +18,7 @@ internal static class Program
             if (args is ["--verify", var source])
             {
                 using VerifiedReleaseInventory inventory = Verify(source);
-                Console.WriteLine("RESULT: TRUSTED - complete Windows 5.0.2 inventory verified.");
+                Console.WriteLine("RESULT: TRUSTED - complete Windows 5.0.3 inventory verified.");
                 return 0;
             }
             if (args is ["--test-copy", var sourceForTest, var destination])
@@ -78,7 +78,7 @@ internal static class Program
                 Directory.CreateDirectory(current);
                 directoryLeases.Items.Add(VerifiedReleaseInventory.HoldDirectory(current));
             }
-            destination = Path.Combine(installParent, "5.0.2-" + package.InventoryDigest[..12] + "-" + Guid.NewGuid().ToString("N")[..8]);
+            destination = Path.Combine(installParent, "5.0.3-" + package.InventoryDigest[..12] + "-" + Guid.NewGuid().ToString("N")[..8]);
         }
         destination = Path.GetFullPath(destination);
         var shortcuts = createShortcuts ? new[]
@@ -115,7 +115,7 @@ internal static class Program
             link.SetPath(target);
             link.SetWorkingDirectory(Path.GetDirectoryName(target)!);
             link.SetIconLocation(target, 0);
-            link.SetDescription("Keep Vault 5.0.2");
+            link.SetDescription("Keep Vault 5.0.3");
             stream = SHCreateMemStream(0, 0) ?? throw new IOException("Cannot serialize the Windows shortcut in memory.");
             ((IPersistStream)shellLink).Save(stream, true);
             stream.Stat(out var info, 1);

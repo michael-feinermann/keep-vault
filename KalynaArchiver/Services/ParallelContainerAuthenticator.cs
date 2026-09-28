@@ -9,7 +9,7 @@ using KalynaArchiver.Signing;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// Computes the two v12 container authentication tags as a bounded parallel
+/// Computes the two v13 container authentication tags as a bounded parallel
 /// tree.  Leaves are independent MACs over fixed-size pieces of the logical
 /// authenticated stream; a very small ordered root transcript binds every
 /// leaf, its position, its exact length and the complete stream length.
@@ -17,7 +17,7 @@ namespace KalynaArchiver.Services;
 /// <remarks>
 /// Standard incremental HMAC-SHA3-512 and Skein-MAC-1024 each have a serial
 /// chaining dependency.  Running only those two chains beside one another
-/// still limits a fast cipher to one core per MAC.  v12 deliberately changes
+/// still limits a fast cipher to one core per MAC.  v13 deliberately changes
 /// the authenticated format instead: independent, domain-separated leaves can
 /// occupy all processors, while the root processes only 204 bytes per MiB of
 /// archive data. There is no compatibility path for an older container
@@ -26,34 +26,71 @@ namespace KalynaArchiver.Services;
 internal static class ParallelContainerAuthenticator
 {
     internal const int LeafBytes = 1024 * 1024;
-    private const int MaxWorkers = 64;
     private const int Sha3Bytes = 64;
     private const int SkeinBytes = 128;
 
     private static readonly byte[] LeafDomain =
-        "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/Leaf"u8.ToArray();
+        "Kalyna-ZPAQ/v13/Parallel-Tree-MAC/Leaf"u8.ToArray();
     private static readonly byte[] RootDomain =
-        "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/Root"u8.ToArray();
+        "Kalyna-ZPAQ/v13/Parallel-Tree-MAC/Root"u8.ToArray();
     private static readonly byte[] Sha3LeafKeyDomain =
-        "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/HMAC-SHA3-512/Leaf-Key"u8.ToArray();
+        "Kalyna-ZPAQ/v13/Parallel-Tree-MAC/HMAC-SHA3-512/Leaf-Key"u8.ToArray();
     private static readonly byte[] Sha3RootKeyDomain =
-        "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/HMAC-SHA3-512/Root-Key"u8.ToArray();
+        "Kalyna-ZPAQ/v13/Parallel-Tree-MAC/HMAC-SHA3-512/Root-Key"u8.ToArray();
     private const string SkeinKeyDomain =
-        "Kalyna-ZPAQ/v12/Parallel-Tree-MAC/Skein-MAC-1024-1024/Key-Derivation";
+        "Kalyna-ZPAQ/v13/Parallel-Tree-MAC/Skein-MAC-1024-1024/Key-Derivation";
     private static readonly byte[] SkeinLeafKeyLabel = "Leaf-Key"u8.ToArray();
     private static readonly byte[] SkeinRootKeyLabel = "Root-Key"u8.ToArray();
 
     private static readonly AsyncLocal<int?> WorkerOverride = new();
+    private static readonly AsyncLocal<PhaseMeasurementsForTests?> PhaseObserver = new();
     internal static Action? BeforeDerivedKeyCleanupForTests { get; set; }
+
+    // Optional timing-only test seam. No keys, tags, data or schedule decisions
+    // enter this observer; disabled operation does not read the clock.
+    internal enum PhaseForTests { KeyPreparation, RootInitialization, InputRead, LeafBatches, OrderedRoot, FinalTags, Cleanup }
+    internal sealed class PhaseMeasurementsForTests
+    {
+        private readonly long[] _ticks = new long[Enum.GetValues<PhaseForTests>().Length];
+        internal void Record(PhaseForTests phase, long ticks) => Interlocked.Add(ref _ticks[(int)phase], ticks);
+        internal Dictionary<string, double> Seconds() => Enum.GetValues<PhaseForTests>()
+            .ToDictionary(phase => phase.ToString(), phase => (double)Volatile.Read(ref _ticks[(int)phase]) / Stopwatch.Frequency);
+    }
+    internal static IDisposable ObservePhasesForTests(PhaseMeasurementsForTests observer)
+    {
+        ArgumentNullException.ThrowIfNull(observer);
+        PhaseMeasurementsForTests? previous = PhaseObserver.Value;
+        PhaseObserver.Value = observer;
+        return new PhaseObserverScope(previous);
+    }
+    private static PhaseTimer Measure(PhaseForTests phase) => new(PhaseObserver.Value, phase);
+    private readonly struct PhaseTimer(PhaseMeasurementsForTests? observer, PhaseForTests phase) : IDisposable
+    {
+        private readonly long _started = observer is null ? 0 : Stopwatch.GetTimestamp();
+        public void Dispose()
+        {
+            if (observer is not null) observer.Record(phase, Stopwatch.GetTimestamp() - _started);
+        }
+    }
+    private sealed class PhaseObserverScope(PhaseMeasurementsForTests? previous) : IDisposable
+    {
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            PhaseObserver.Value = previous;
+            _disposed = true;
+        }
+    }
 
     /// <summary>
     /// Selects the production worker count for the current asynchronous flow.
-    /// It is a test seam, not a user setting: v12 KATs use it to prove that a
+    /// It is a test seam, not a user setting: v13 KATs use it to prove that a
     /// one-worker and an all-core traversal produce identical bytes.
     /// </summary>
     internal static IDisposable UseWorkerCountForTests(int workers)
     {
-        if (workers is < 1 or > MaxWorkers)
+        if (workers < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(workers));
         }
@@ -64,7 +101,7 @@ internal static class ParallelContainerAuthenticator
     }
 
     internal static int ProductionWorkerCount =>
-        Math.Clamp(Environment.ProcessorCount, 1, MaxWorkers);
+        Math.Max(1, Math.Min(Environment.ProcessorCount, ArchiveOperationPolicy.Current.MaxCpuWorkers));
 
     internal static async Task<(byte[] Sha3Tag, byte[] SkeinTag)> ComputeAsync(
         Stream ciphertextStream,
@@ -108,6 +145,7 @@ internal static class ParallelContainerAuthenticator
 
         long ciphertextLength = checked(ciphertextStream.Length - ciphertextOffset);
         long logicalLength = checked(prefixLength + ciphertextLength);
+        CryptoUsageBudget.ValidateAuthenticationLength(logicalLength);
         if (logicalLength <= 0)
         {
             throw new InvalidDataException("A container authentication stream cannot be empty.");
@@ -126,18 +164,22 @@ internal static class ParallelContainerAuthenticator
         Exception? operationFailure = null;
         try
         {
-            sha3LeafKey = LockedSensitiveBuffer.Create(Sha3Bytes);
-            sha3RootKey = LockedSensitiveBuffer.Create(Sha3Bytes);
-            skeinLeafKey = LockedSensitiveBuffer.Create(SkeinBytes);
-            skeinRootKey = LockedSensitiveBuffer.Create(SkeinBytes);
-            DeriveSubkeys(
-                sha3MacKey,
-                skeinMacKey,
-                sha3LeafKey.Bytes,
-                sha3RootKey.Bytes,
-                skeinLeafKey.Bytes,
-                skeinRootKey.Bytes);
+            using (Measure(PhaseForTests.KeyPreparation))
+            {
+                sha3LeafKey = LockedSensitiveBuffer.Create(Sha3Bytes);
+                sha3RootKey = LockedSensitiveBuffer.Create(Sha3Bytes);
+                skeinLeafKey = LockedSensitiveBuffer.Create(SkeinBytes);
+                skeinRootKey = LockedSensitiveBuffer.Create(SkeinBytes);
+                DeriveSubkeys(
+                    sha3MacKey,
+                    skeinMacKey,
+                    sha3LeafKey.Bytes,
+                    sha3RootKey.Bytes,
+                    skeinLeafKey.Bytes,
+                    skeinRootKey.Bytes);
+            }
 
+            PhaseTimer rootInitialization = Measure(PhaseForTests.RootInitialization);
             using var rootSha3 = new HmacSha3_512(sha3RootKey.Bytes);
             using NativeSkein1024Mac rootSkein = NativeThreefish.CreateSkeinMac(skeinRootKey.Bytes);
             byte[] rootHeader = new byte[RootDomain.Length + sizeof(long) + sizeof(long) + sizeof(int)];
@@ -150,6 +192,7 @@ internal static class ParallelContainerAuthenticator
             BinaryPrimitives.WriteInt32BigEndian(rootHeader.AsSpan(rootHeaderOffset), LeafBytes);
             rootSha3.AppendData(rootHeader);
             rootSkein.AppendData(rootHeader);
+            rootInitialization.Dispose();
 
             ciphertextStream.Position = ciphertextOffset;
             var reader = new LogicalStreamReader(authenticatedPrefix, ciphertextStream, ciphertextLength);
@@ -164,32 +207,41 @@ internal static class ParallelContainerAuthenticator
                     int initializedInputs = 0;
                     try
                     {
-                        for (int index = 0; index < batchCount; index++)
+                        using (Measure(PhaseForTests.InputRead))
                         {
-                            int length = checked((int)Math.Min(LeafBytes, logicalLength - reader.BytesRead));
-                            byte[] data = new byte[length];
-                            try
+                            for (int index = 0; index < batchCount; index++)
                             {
-                                await reader.ReadExactlyAsync(data, cancellationToken).ConfigureAwait(false);
-                                inputs[index] = new LeafInput(nextLeaf + index, data);
-                                initializedInputs++;
-                            }
-                            catch
-                            {
-                                CryptographicOperations.ZeroMemory(data);
-                                throw;
+                                int length = checked((int)Math.Min(LeafBytes, logicalLength - reader.BytesRead));
+                                byte[] data = new byte[length];
+                                try
+                                {
+                                    await reader.ReadExactlyAsync(data, cancellationToken).ConfigureAwait(false);
+                                    inputs[index] = new LeafInput(nextLeaf + index, data);
+                                    initializedInputs++;
+                                }
+                                catch
+                                {
+                                    CryptographicOperations.ZeroMemory(data);
+                                    throw;
+                                }
                             }
                         }
 
+                        PhaseTimer leafBatches = Measure(PhaseForTests.LeafBatches);
                         LeafResult[] results = workers == 1
-                            ? ComputeSerialBatch(inputs, sha3LeafKey.Bytes, skeinLeafKey.Bytes)
+                            ? await ComputeSerialBatchAsync(inputs, sha3LeafKey.Bytes, skeinLeafKey.Bytes, cancellationToken).ConfigureAwait(false)
                             : await ComputeParallelBatchAsync(
                                 inputs,
                                 sha3LeafKey.Bytes,
                                 skeinLeafKey.Bytes,
                                 cancellationToken).ConfigureAwait(false);
+                        leafBatches.Dispose();
                         try
                         {
+                            using CpuWorkBudget.Lease rootCpu = await CpuWorkBudget.AcquireAsync(
+                                ArchiveOperationPolicy.Current.MaxCpuWorkers, 1, cancellationToken).ConfigureAwait(false);
+                            using IDisposable rootCpuScope = rootCpu.EnterScope();
+                            using PhaseTimer rootTimer = Measure(PhaseForTests.OrderedRoot);
                             foreach (LeafResult result in results)
                             {
                                 AppendRootLeaf(rootSha3, rootSkein, result);
@@ -197,6 +249,7 @@ internal static class ParallelContainerAuthenticator
                         }
                         finally
                         {
+                            using PhaseTimer resultCleanup = Measure(PhaseForTests.Cleanup);
                             foreach (LeafResult result in results)
                             {
                                 result.Dispose();
@@ -205,6 +258,7 @@ internal static class ParallelContainerAuthenticator
                     }
                     finally
                     {
+                        using PhaseTimer inputCleanup = Measure(PhaseForTests.Cleanup);
                         for (int index = 0; index < initializedInputs; index++)
                         {
                             inputs[index].Dispose();
@@ -220,6 +274,10 @@ internal static class ParallelContainerAuthenticator
                     throw new EndOfStreamException("The container authentication stream changed while it was read.");
                 }
 
+                using CpuWorkBudget.Lease finalCpu = await CpuWorkBudget.AcquireAsync(
+                    ArchiveOperationPolicy.Current.MaxCpuWorkers, 1, cancellationToken).ConfigureAwait(false);
+                using IDisposable finalCpuScope = finalCpu.EnterScope();
+                using PhaseTimer finalTags = Measure(PhaseForTests.FinalTags);
                 completedSha3Tag = rootSha3.GetHashAndReset();
                 completedSkeinTag = rootSkein.GetTag();
                 return (completedSha3Tag, completedSkeinTag);
@@ -250,6 +308,7 @@ internal static class ParallelContainerAuthenticator
         }
         finally
         {
+            using PhaseTimer keyCleanup = Measure(PhaseForTests.Cleanup);
             BeforeDerivedKeyCleanupForTests?.Invoke();
             try
             {
@@ -318,11 +377,13 @@ internal static class ParallelContainerAuthenticator
         KeyedSkein1024.Compute(skeinMacKey, SkeinKeyDomain, SkeinRootKeyLabel, skeinRootKey);
     }
 
-    private static LeafResult[] ComputeSerialBatch(
+    private static async Task<LeafResult[]> ComputeSerialBatchAsync(
         LeafInput[] inputs,
         byte[] sha3LeafKey,
-        byte[] skeinLeafKey)
+        byte[] skeinLeafKey, CancellationToken cancellationToken)
     {
+        using CpuWorkBudget.Lease lease = await CpuWorkBudget.AcquireAsync(ArchiveOperationPolicy.Current.MaxCpuWorkers, 1, cancellationToken).ConfigureAwait(false);
+        using IDisposable cpuScope = lease.EnterScope();
         var results = new LeafResult[inputs.Length];
         int completed = 0;
         try
@@ -360,9 +421,13 @@ internal static class ParallelContainerAuthenticator
             {
                 LeafInput input = inputs[started];
                 tasks[started] = Task.Run(
-                    () => computeOverride is null
-                        ? ComputeLeaf(input, sha3LeafKey, skeinLeafKey)
-                        : computeOverride(input),
+                    async () =>
+                    {
+                        using CpuWorkBudget.Lease lease = await CpuWorkBudget.AcquireAsync(
+                            ArchiveOperationPolicy.Current.MaxCpuWorkers, 1, cancellationToken).ConfigureAwait(false);
+                        using IDisposable cpuScope = lease.EnterScope();
+                        return computeOverride is null ? ComputeLeaf(input, sha3LeafKey, skeinLeafKey) : computeOverride(input);
+                    },
                     cancellationToken);
             }
         }
@@ -437,7 +502,7 @@ internal static class ParallelContainerAuthenticator
         IReadOnlyList<Exception> workerFailures)
     {
         ArgumentNullException.ThrowIfNull(workerFailures);
-        if (workerFailures.Count is < 2 or > MaxWorkers)
+        if (workerFailures.Count < 2)
         {
             throw new ArgumentOutOfRangeException(nameof(workerFailures));
         }
@@ -553,6 +618,7 @@ internal static class ParallelContainerAuthenticator
             skein.AppendData(header);
             skein.AppendData(input.Data);
             byte[] skeinTag = skein.GetTag();
+            OperationMemoryBudget.ReportProgress(input.Data.Length);
             return new LeafResult(input.Index, input.Data.Length, sha3, skeinTag);
         }
         catch

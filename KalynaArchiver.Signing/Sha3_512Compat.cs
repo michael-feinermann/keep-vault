@@ -1,7 +1,5 @@
 using System.Security.Cryptography;
 using Org.BouncyCastle.Crypto.Digests;
-using Org.BouncyCastle.Crypto.Macs;
-using Org.BouncyCastle.Crypto.Parameters;
 
 namespace KalynaArchiver.Signing;
 
@@ -24,14 +22,20 @@ public static class Sha3_512Compat
         }
 
         var digest = new Sha3Digest(512);
-        digest.BlockUpdate(source);
-        int written = digest.DoFinal(destination);
-        if (written != HashSizeInBytes)
+        try
         {
-            throw new CryptographicException("The SHA3-512 provider returned an invalid digest length.");
+            digest.BlockUpdate(source);
+            int written = digest.DoFinal(destination);
+            if (written != HashSizeInBytes)
+                throw new CryptographicException("The SHA3-512 provider returned an invalid digest length.");
+            return written;
         }
-
-        return written;
+        catch
+        {
+            CryptographicOperations.ZeroMemory(destination[..HashSizeInBytes]);
+            throw;
+        }
+        finally { digest.Reset(); }
     }
 }
 
@@ -46,82 +50,91 @@ public sealed class Sha3_512Incremental : IDisposable
 
     public byte[] GetHashAndReset()
     {
-        Sha3Digest digest = _digest ?? throw new ObjectDisposedException(nameof(Sha3_512Incremental));
         byte[] result = new byte[Sha3_512Compat.HashSizeInBytes];
-        int written = digest.DoFinal(result);
-        if (written != result.Length)
-        {
-            CryptographicOperations.ZeroMemory(result);
-            throw new CryptographicException("The SHA3-512 provider returned an invalid digest length.");
-        }
-
-        digest.Reset();
+        GetHashAndReset(result);
         return result;
     }
 
     public int GetHashAndReset(Span<byte> destination)
     {
         if (destination.Length < Sha3_512Compat.HashSizeInBytes)
-        {
             throw new ArgumentException("SHA3-512 destination is too short.", nameof(destination));
-        }
-
         Sha3Digest digest = _digest ?? throw new ObjectDisposedException(nameof(Sha3_512Incremental));
-        int written = digest.DoFinal(destination);
-        digest.Reset();
-        return written;
+        try
+        {
+            int written = digest.DoFinal(destination);
+            if (written != Sha3_512Compat.HashSizeInBytes)
+                throw new CryptographicException("The SHA3-512 provider returned an invalid digest length.");
+            return written;
+        }
+        catch { CryptographicOperations.ZeroMemory(destination[..Sha3_512Compat.HashSizeInBytes]); throw; }
+        finally { digest.Reset(); }
     }
 
     public void Dispose()
     {
-        _digest?.Reset();
-        _digest = null;
+        try { _digest?.Reset(); }
+        finally { _digest = null; }
     }
 }
 
+/// <summary>
+/// RFC 2104 HMAC over SHA3-512's 72-byte rate. Own the two pads explicitly so
+/// disposal clears them; a provider HMac.Reset intentionally retains its key.
+/// Provider digest arrays are reset, but this is not a claim about registers,
+/// runtime copies, or universal erasure of the managed heap.
+/// </summary>
 public sealed class HmacSha3_512 : IDisposable
 {
-    private HMac? _mac;
+    private const int BlockBytes = 72;
+    private Sha3Digest? _digest;
+    private readonly byte[] _innerPad = new byte[BlockBytes];
+    private readonly byte[] _outerPad = new byte[BlockBytes];
 
     public HmacSha3_512(ReadOnlySpan<byte> key)
     {
-        byte[] tempKey = key.ToArray();
         try
         {
-            _mac = new HMac(new Sha3Digest(512));
-            _mac.Init(new KeyParameter(tempKey));
-            if (_mac.GetMacSize() != Sha3_512Compat.HashSizeInBytes)
+            if (key.Length > BlockBytes) Sha3_512Compat.HashData(key, _innerPad);
+            else key.CopyTo(_innerPad);
+            for (int i = 0; i < BlockBytes; ++i)
             {
-                throw new CryptographicException("The HMAC-SHA3-512 provider returned an invalid tag length.");
+                _outerPad[i] = (byte)(_innerPad[i] ^ 0x5c);
+                _innerPad[i] ^= 0x36;
             }
+            _digest = new Sha3Digest(512);
+            _digest.BlockUpdate(_innerPad);
         }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(tempKey);
-        }
+        catch { Dispose(); throw; }
     }
 
-    public void AppendData(ReadOnlySpan<byte> data)
-    {
-        (_mac ?? throw new ObjectDisposedException(nameof(HmacSha3_512))).BlockUpdate(data);
-    }
+    public void AppendData(ReadOnlySpan<byte> data) =>
+        (_digest ?? throw new ObjectDisposedException(nameof(HmacSha3_512))).BlockUpdate(data);
 
     public int GetHashAndReset(Span<byte> destination)
     {
         if (destination.Length < Sha3_512Compat.HashSizeInBytes)
-        {
             throw new ArgumentException("Destination span is too short for HMAC-SHA3-512 tag.", nameof(destination));
-        }
-
-        HMac mac = _mac ?? throw new ObjectDisposedException(nameof(HmacSha3_512));
-        int written = mac.DoFinal(destination);
-        if (written != Sha3_512Compat.HashSizeInBytes)
+        Sha3Digest digest = _digest ?? throw new ObjectDisposedException(nameof(HmacSha3_512));
+        Span<byte> innerTag = stackalloc byte[Sha3_512Compat.HashSizeInBytes];
+        try
         {
-            throw new CryptographicException("The HMAC-SHA3-512 provider returned an invalid tag length.");
+            if (digest.DoFinal(innerTag) != innerTag.Length)
+                throw new CryptographicException("The HMAC inner digest has an invalid length.");
+            digest.BlockUpdate(_outerPad);
+            digest.BlockUpdate(innerTag);
+            int written = digest.DoFinal(destination);
+            if (written != Sha3_512Compat.HashSizeInBytes)
+                throw new CryptographicException("The HMAC-SHA3-512 provider returned an invalid tag length.");
+            return written;
         }
-
-        mac.Reset();
-        return written;
+        catch { CryptographicOperations.ZeroMemory(destination[..Sha3_512Compat.HashSizeInBytes]); throw; }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(innerTag);
+            digest.Reset();
+            digest.BlockUpdate(_innerPad);
+        }
     }
 
     public byte[] GetHashAndReset()
@@ -133,7 +146,12 @@ public sealed class HmacSha3_512 : IDisposable
 
     public void Dispose()
     {
-        _mac?.Reset();
-        _mac = null;
+        try { _digest?.Reset(); }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(_innerPad);
+            CryptographicOperations.ZeroMemory(_outerPad);
+            _digest = null;
+        }
     }
 }

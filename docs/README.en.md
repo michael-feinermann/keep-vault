@@ -2,9 +2,34 @@
 
 [Deutsch](README.md) · [English](README.en.md) · [Main guide](../README.md)
 
-All first-party project guides, specifications, audit reports and release notes are available in complete German and English editions. Each language edition links to its counterpart. Commands, hashes, test data and original log quotations are preserved as technical evidence.
+The paired guides and historical reports below have complete German and English editions. New 5.0.3/v13 implementation and review reports are currently available in German and are marked accordingly; no complete English translation is claimed for them. Commands, hashes, test data and original log quotations are preserved as technical evidence.
 
-Current published release: [Keep Vault 5.0.2 for macOS](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2), build 13, container v12 and KPAR2 v4. The Windows port is verified and released separately. Historical reports below record their respective dated state, including failures and open steps at that time; translation does not turn them into current release approval.
+Published reference pending completion of the new release: [Keep Vault 5.0.2 for macOS](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2), build 13, container v12 and KPAR2 v4. The working source targets 5.0.3, build 14 and container v13 under REV9. Its [release report](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) records the actual validation, installation and publication status. This run covers macOS only; Windows requires separate evidence. Historical reports retain their dated results and do not approve 5.0.3.
+
+## 5.0.3 / v13 / REV9: current source and evidence
+
+All documents in this table are currently in German. A link is a document index, not a PASS claim; the report itself distinguishes completed checks, pending gates and limits. Real test data is limited by the user to 256 MiB, with an explicit 512 MiB Paranoia structural exception. No physical multi-TiB run is implied.
+
+| Document | Available edition |
+|---|---|
+| Implementation, baseline and toolchain | [German](KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md) |
+| Container format v13 | [German](KEEP_VAULT_V13_FORMAT.md) |
+| Cryptographic primitive usage | [German](KEEP_VAULT_V13_CRYPTO_USAGE.md) |
+| REV9 core review | [German](KEEP_VAULT_5_0_3_CORE_REV9_REVIEW.md) |
+| Nonce and pool review | [German](KEEP_VAULT_5_0_3_NONCE_POOLS_REVIEW.md) |
+| REV6 nonce derivation, retained in REV9 | [German](KEEP_VAULT_5_0_3_NONCE_REV6_REVIEW.md) |
+| REV7 pool routing, retained in REV9 | [German](KEEP_VAULT_5_0_3_POOL_ROUTING_REV7_REVIEW.md) |
+| REV9 pool shuffle and lifetime | [German](KEEP_VAULT_5_0_3_POOL_SHUFFLE_REV9_REVIEW.md) |
+| REV9 entropy measurements | [German](KEEP_VAULT_5_0_3_ENTROPY_REV9_PERFORMANCE.md) |
+| Cipher references and oracles | [German](KEEP_VAULT_5_0_3_CIPHER_REFERENCE_REPORT.md) |
+| Optimization review | [German](KEEP_VAULT_5_0_3_OPTIMIZATION_REPORT.md) |
+| Parallelism and scaling boundaries | [German](KEEP_VAULT_5_0_3_SCALABILITY_REPORT.md) |
+| Bounded input, KPAR2 and resources | [German](KEEP_VAULT_5_0_3_MULTITB_DESIGN.md) |
+| IO and resource tests | [German](KEEP_VAULT_5_0_3_MULTITB_TEST_REPORT.md) |
+| Security review | [German](KEEP_VAULT_5_0_3_SECURITY_REVIEW.md) |
+| Overall test status | [German](KEEP_VAULT_5_0_3_TEST_REPORT.md) |
+| GUI test status | [German](KEEP_VAULT_5_0_3_GUI_REPORT.md) |
+| Release and installation status | [German](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) |
 
 ## Guides and specifications
 
@@ -15,9 +40,9 @@ Current published release: [Keep Vault 5.0.2 for macOS](https://github.com/micha
 | QR scanner for macOS | [Deutsch](../QrCodeScanner/README.md) | [English](../QrCodeScanner/README.en.md) |
 | QR scanner for Windows | [Deutsch](../QrCodeScannerWindows/README.de.md) | [English](../QrCodeScannerWindows/README.md) |
 | Synthetic credential compatibility fixtures | [Deutsch](../KeepVaultMac.Tests/Fixtures/CredentialCompatibility/README.de.md) | [English](../KeepVaultMac.Tests/Fixtures/CredentialCompatibility/README.md) |
-| v12 credential policy and Windows contract | [Deutsch](KEEP_VAULT_V12_CREDENTIAL_POLICY.md) | [English](KEEP_VAULT_V12_CREDENTIAL_POLICY.en.md) |
-| v12 macOS release specification | [Deutsch](KEEP_VAULT_V12_MACOS_RELEASE.md) | [English](KEEP_VAULT_V12_MACOS_RELEASE.en.md) |
-| v12 Windows port requirements | [Deutsch](KEEP_VAULT_V12_WINDOWS_UPDATE.md) | [English](KEEP_VAULT_V12_WINDOWS_UPDATE.en.md) |
+| v12 credential policy and Windows contract (historical) | [Deutsch](KEEP_VAULT_V12_CREDENTIAL_POLICY.md) | [English](KEEP_VAULT_V12_CREDENTIAL_POLICY.en.md) |
+| v12 macOS release specification (historical) | [Deutsch](KEEP_VAULT_V12_MACOS_RELEASE.md) | [English](KEEP_VAULT_V12_MACOS_RELEASE.en.md) |
+| v12 Windows port requirements (historical) | [Deutsch](KEEP_VAULT_V12_WINDOWS_UPDATE.md) | [English](KEEP_VAULT_V12_WINDOWS_UPDATE.en.md) |
 | Additional local password model | [Deutsch](password-model/README.de.md) | [English](password-model/README.en.md) |
 
 ## Audit reports and historical evidence
@@ -43,8 +68,9 @@ The [bundled installation file](../KeepVaultMac/Packaging/INSTALLATION.txt) alre
 
 ## Release notes
 
-Each file below contains the complete German and English text. The same editions appear in the GitHub release descriptions. Historical drafts remain drafts.
+Each file below contains the complete German and English text. Published versions have corresponding GitHub release descriptions. The 5.0.3 draft has not been published; historical drafts remain drafts.
 
+- [v5.0.3: unpublished draft, Deutsch · English](releases/v5.0.3.md)
 - [v5.0.2: Deutsch · English](releases/v5.0.2.md)
 - [v5.0.1: Deutsch · English](releases/v5.0.1.md)
 - [v5.0.0: Deutsch · English](releases/v5.0.0.md)
@@ -56,6 +82,6 @@ Each file below contains the complete German and English text. The same editions
 
 ## Maintaining language editions
 
-Substantive changes are made to both language editions together. New first-party documents receive both editions and an entry in this index. Translations are checked against the source for sections, tables, numbers, formulas, commands, hashes and evidence limits; a summary does not replace a complete edition. Links lead to the chosen language wherever available. Historical source paths in logs remain as evidence.
+Substantive changes to paired guides are made to both language editions together. New first-party documents receive an entry in this index identifying the editions actually available. The new 5.0.3 review reports may remain German-only; a future translation must be complete before it is marked as an English edition. Translations are checked against the source for sections, tables, numbers, formulas, commands, hashes and evidence limits; a summary does not replace a complete edition. Links lead to the chosen language wherever available. Historical source paths in logs remain as evidence.
 
 The documentation change of 9 September 2026 changes neither the published `v5.0.2` tag nor its notarized executables. The release tag is authoritative for their source version; the default branch contains language editions added afterwards.

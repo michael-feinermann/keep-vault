@@ -5,7 +5,7 @@ namespace KalynaArchiver.Services;
 
 /// <summary>
 /// What a single key role is for. Part of the canonical role context, so two
-/// roles can never derive the same bytes.
+/// roles have distinct transcripts; accidental output equality remains probabilistic.
 /// </summary>
 internal enum KeyRolePurpose
 {
@@ -17,13 +17,13 @@ internal enum KeyRolePurpose
 }
 
 /// <summary>
-/// Turns the 1024-bit v12 master into the individual cipher, MAC and recovery
+/// Turns the 1024-bit v13 master into the individual cipher, MAC and recovery
 /// keys.
 /// </summary>
 /// <remarks>
 /// An earlier design sliced one flat Argon2id output into cipher and MAC keys, so the same
 /// cipher in two positions could end up sharing structure and every role's key
-/// was a function of where it happened to sit in that buffer. v12 derives each
+/// was a function of where it happened to sit in that buffer. v13 derives each
 /// role separately from a canonical, domain-separated context instead.
 ///
 /// Each role runs through two independent PRF families and the results are
@@ -50,7 +50,7 @@ internal static class SuiteKeySchedule
 
     /// <summary>
     /// The role schedule belongs to the container generation it serves, so
-    /// every domain string and the context's own version field say v12.
+    /// every domain string and the context's own version field say v13.
     /// </summary>
     /// <remarks>
     /// There is one generation and no second set of domains to select between.
@@ -58,11 +58,11 @@ internal static class SuiteKeySchedule
     /// domains is a second derivation to attack and a second thing to get
     /// wrong, and nothing in this build can read an older container anyway.
     /// </remarks>
-    public const int ContextVersion = 12;
+    public const int ContextVersion = 13;
 
-    private const string RoleDomain = "Kalyna-ZPAQ/v12/RoleKey";
-    private const string Sha3RoleDomain = "Kalyna-ZPAQ/v12/RoleKey/HKDF-HMAC-SHA3-512";
-    private const string SkeinRoleDomain = "Kalyna-ZPAQ/v12/RoleKey/Skein-MAC-1024-1024";
+    private const string RoleDomain = "Kalyna-ZPAQ/v13/RoleKey";
+    private const string Sha3RoleDomain = "Kalyna-ZPAQ/v13/RoleKey/HKDF-HMAC-SHA3-512";
+    private const string SkeinRoleDomain = "Kalyna-ZPAQ/v13/RoleKey/Skein-MAC-1024-1024";
 
     /// <summary>
     /// The stage index reserved for keys that belong to the container as a
@@ -87,7 +87,9 @@ internal static class SuiteKeySchedule
         CascadeCipher.Aes256 => "AES-256",
         CascadeCipher.Mars448 => "MARS-448",
         CascadeCipher.Shacal2_512 => "SHACAL-2-512",
-        CascadeCipher.ChaCha20Poly1305 => "ChaCha20-Poly1305",
+        CascadeCipher.XChaCha20Poly1305 => "XChaCha20-Poly1305",
+        CascadeCipher.Camellia256 => "Camellia-256",
+        CascadeCipher.Serpent256 => "Serpent-256",
         _ => throw new ArgumentOutOfRangeException(nameof(cipher), cipher, null)
     };
 
@@ -428,7 +430,7 @@ internal static class SuiteKeySchedule
     /// The synthetic stage's cipher label comes from the suite itself, so no two
     /// suites can produce the same role context.
     /// </remarks>
-    private static IReadOnlyList<CascadeStage> StagesOf(EncryptionSuiteParameters parameters)
+    internal static IReadOnlyList<CascadeStage> StagesOf(EncryptionSuiteParameters parameters)
     {
         if (parameters.Cascade is { Stages.Count: > 0 } layout)
         {
@@ -442,7 +444,7 @@ internal static class SuiteKeySchedule
             EncryptionSuite.Aes256 => CascadeCipher.Aes256,
             EncryptionSuite.Mars448 => CascadeCipher.Mars448,
             EncryptionSuite.Shacal2_512 => CascadeCipher.Shacal2_512,
-            EncryptionSuite.ChaCha20Poly1305 => CascadeCipher.ChaCha20Poly1305,
+            EncryptionSuite.XChaCha20Poly1305 => CascadeCipher.XChaCha20Poly1305,
             _ => throw new CryptographicException(
                 $"{parameters.Suite} has neither a cascade layout nor a known single cipher."),
         };
@@ -450,7 +452,7 @@ internal static class SuiteKeySchedule
         return [new CascadeStage(
             cipher,
             parameters.EncryptionKeyBytes,
-            parameters.NonceBytes,
+            parameters.StageNonceBytes,
             parameters.BlockBytes)];
     }
 

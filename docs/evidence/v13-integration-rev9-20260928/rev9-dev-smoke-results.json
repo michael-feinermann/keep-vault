@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 3,
+  "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+  "testInventoryHash": "a02b4b830330371f7667928a0f2ecc3a0b04c0afa9f22852e31f95bfe36c4d6f",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 2,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "smoke.sha3-512-fips",
+      "name": "SHA3-512 FIPS vector",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 57,
+      "seed": "0x232AAB17",
+      "failure": null
+    },
+    {
+      "id": "smoke.hmac-sha3-512",
+      "name": "HMAC-SHA3-512 vector",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 56,
+      "seed": "0x2031437E",
+      "failure": null
+    },
+    {
+      "id": "smoke.descriptor-identity",
+      "name": "descriptor identity",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 52,
+      "seed": "0x6D9BA07F",
+      "failure": null
+    },
+    {
+      "id": "smoke.symlink-rejection",
+      "name": "symlink rejection",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 52,
+      "seed": "0x56A8ADC5",
+      "failure": null
+    },
+    {
+      "id": "smoke.archive-input-symlink",
+      "name": "archive-input symlink rejection",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 52,
+      "seed": "0x359380D3",
+      "failure": null
+    },
+    {
+      "id": "smoke.archive-input-snapshot-location",
+      "name": "container-private archive-input snapshot",
+      "status": "PASS",
+      "seconds": 0.012,
+      "peakRssMiB": 56,
+      "seed": "0x6AF4D3C4",
+      "failure": null
+    },
+    {
+      "id": "smoke.archive-input-snapshot-races",
+      "name": "archive-input snapshot root and entry substitution rejection",
+      "status": "PASS",
+      "seconds": 0.016,
+      "peakRssMiB": 57,
+      "seed": "0x497D97D8",
+      "failure": null
+    },
+    {
+      "id": "infra.runner-invariants",
+      "name": "test runner reservation, inventory, peak-RSS and result-schema invariants",
+      "status": "PASS",
+      "seconds": 0.472,
+      "peakRssMiB": 73,
+      "seed": "0x2C63878D",
+      "failure": null
+    },
+    {
+      "id": "smoke.archive-input-hardlink",
+      "name": "archive-input hard-link alias rejection",
+      "status": "PASS",
+      "seconds": 0.032,
+      "peakRssMiB": 61,
+      "seed": "0x12643298",
+      "failure": null
+    },
+    {
+      "id": "smoke.overlapping-input-normalization",
+      "name": "overlapping archive-input normalization",
+      "status": "PASS",
+      "seconds": 0.014,
+      "peakRssMiB": 56,
+      "seed": "0x0CAE76D0",
+      "failure": null
+    },
+    {
+      "id": "smoke.trailing-separator-folder",
+      "name": "folder input with a trailing separator",
+      "status": "FAIL",
+      "seconds": 0.026,
+      "peakRssMiB": 61,
+      "seed": "0x7935FF9E",
+      "failure": "FileNotFoundException: Der root-gesch\u00FCtzte Keep-Vault-v13-ZPAQ-Anker fehlt. Installiere die App mit dem mitgelieferten macOS-Installer; ein Start aus App-ZIP oder portablem Ordner f\u00E4llt aus Sicherheitsgr\u00FCnden nicht auf eine beschreibbare ZPAQ-Kopie zur\u00FCck.\n   at KalynaArchiver.Services.ZpaqService.AcquireExecutable()\n   at KalynaArchiver.Services.ZpaqService.AddStreamingAsync(IReadOnlyList\u00601 inputPaths, Int32 compressionLevel, Func\u00603 consumeArchive, IProgress\u00601 progress, CancellationToken cancellationToken)\n   at Program.\u003C\u003CMain\u003E$\u003Eg__TestTrailingSeparatorFolderInputAsync|0_18() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/Program.cs:line 829\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList\u00601 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403"
+    },
+    {
+      "id": "smoke.descriptor-bound-snapshot",
+      "name": "descriptor-bound private snapshot",
+      "status": "PASS",
+      "seconds": 0.361,
+      "peakRssMiB": 67,
+      "seed": "0x472384FE",
+      "failure": null
+    },
+    {
+      "id": "smoke.private-snapshot-cleanup-identity",
+      "name": "private snapshot is anonymous and read-only",
+      "status": "PASS",
+      "seconds": 0.402,
+      "peakRssMiB": 67,
+      "seed": "0x28161B4F",
+      "failure": null
+    },
+    {
+      "id": "smoke.private-snapshot-race-failclosed",
+      "name": "private snapshot rejects source mutation during copy",
+      "status": "PASS",
+      "seconds": 0.174,
+      "peakRssMiB": 70,
+      "seed": "0x1CBB0583",
+      "failure": null
+    },
+    {
+      "id": "smoke.private-snapshot-resource-failures",
+      "name": "private snapshot serial/parallel equivalence, size and ENOSPC failures",
+      "status": "PASS",
+      "seconds": 0.165,
+      "peakRssMiB": 68,
+      "seed": "0x68CDEBA0",
+      "failure": null
+    },
+    {
+      "id": "smoke.apple-signature-binding",
+      "name": "Apple signature framework binding",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 53,
+      "seed": "0x26223A61",
+      "failure": null
+    },
+    {
+      "id": "smoke.locked-secret-lifecycle",
+      "name": "locked secret buffer lifecycle",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 56,
+      "seed": "0x2CA879BC",
+      "failure": null
+    },
+    {
+      "id": "smoke.private-authenticated-snapshot",
+      "name": "private authenticated-input snapshot",
+      "status": "PASS",
+      "seconds": 0.148,
+      "peakRssMiB": 68,
+      "seed": "0x6E31C038",
+      "failure": null
+    },
+    {
+      "id": "smoke.password-policy",
+      "name": "password policy",
+      "status": "PASS",
+      "seconds": 0.188,
+      "peakRssMiB": 145,
+      "seed": "0x3588333A",
+      "failure": null
+    },
+    {
+      "id": "smoke.native-atomic-publish",
+      "name": "native build atomic publish and hard-link isolation",
+      "status": "PASS",
+      "seconds": 0.497,
+      "peakRssMiB": 60,
+      "seed": "0x09E1494F",
+      "failure": null
+    },
+    {
+      "id": "smoke.release-companion-version",
+      "name": "release companion version plumbing",
+      "status": "PASS",
+      "seconds": 0.769,
+      "peakRssMiB": 77,
+      "seed": "0x0849D403",
+      "failure": null
+    },
+    {
+      "id": "smoke.qr-atomic-publish",
+      "name": "QR distribution atomic publish and hard-link isolation",
+      "status": "PASS",
+      "seconds": 0.742,
+      "peakRssMiB": 60,
+      "seed": "0x6127C8A6",
+      "failure": null
+    },
+    {
+      "id": "smoke.release-atomic-publish",
+      "name": "release publish atomic exchange, exclusive create and identity binding",
+      "status": "PASS",
+      "seconds": 0.857,
+      "peakRssMiB": 60,
+      "seed": "0x4A0CE981",
+      "failure": null
+    },
+    {
+      "id": "smoke.native-snapshot-cleanup-identity",
+      "name": "native snapshot cleanup preserves a replacement directory",
+      "status": "PASS",
+      "seconds": 0.061,
+      "peakRssMiB": 67,
+      "seed": "0x6D5CAB99",
+      "failure": null
+    },
+    {
+      "id": "smoke.portable-rollback-binding",
+      "name": "portable publish rollback preserves substituted and linked objects",
+      "status": "PASS",
+      "seconds": 0.349,
+      "peakRssMiB": 60,
+      "seed": "0x3546ACF0",
+      "failure": null
+    }
+  ]
+}

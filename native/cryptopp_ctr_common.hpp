@@ -1,10 +1,9 @@
 /*
  * Shared CTR driver for the Crypto++-backed block ciphers.
  *
- * The Kalyna and Threefish adapters each carry their own copy of this logic in
- * C, with a #ifdef ladder for Windows and pthreads. These two are C++ because
- * Crypto++ is, so they can use the standard library's threads instead and share
- * one implementation. The behaviour is deliberately identical to the C
+ * The Kalyna and Threefish adapters have dedicated drivers. Crypto++-backed
+ * AES, MARS, SHACAL-2, Camellia and Serpent share this implementation and the
+ * registered, synchronously borrowed executor. Its behaviour matches the
  * adapters: same counter arithmetic, same claimed-chunk work queue, same
  * ciphertext regardless of how many threads run.
  */
@@ -12,6 +11,8 @@
 #define KEEPVAULT_CRYPTOPP_CTR_COMMON_HPP
 
 #include "modes.h"
+#include "borrowed_executor_v13.h"
+#include "adaptive_work_v13.h"
 
 #include <atomic>
 #include <cstddef>
@@ -32,21 +33,9 @@ namespace keepvault {
 /* Below this the thread hand-off costs more than it saves. */
 constexpr std::size_t kParallelThresholdBytes = 1024u * 1024u;
 
-/* 256 KiB of work per claim for a 64-byte block: one atomic claim disappears
-   into the work it buys, and the tail stays short. Expressed in blocks so the
-   claim is the same size in bytes whatever the cipher's block width is. */
+/* Preferred claim size, reduced by the adaptive helper when the permitted
+   worker count needs more independently executable block-aligned ranges. */
 constexpr std::size_t kChunkBytes = 256u * 1024u;
-
-/*
- * Only a sanity bound on the worker table, not a target.
- *
- * Large enough for current high-core-count hosts while still preventing a bad
- * platform report from creating an unbounded number of threads. The previous
- * value was exactly the size of one Windows processor group, which is the
- * number a machine gets stuck at for an entirely different reason; see
- * bind_worker_to_processor_group below.
- */
-constexpr std::size_t kMaxThreads = 1024;
 
 /*
  * Every logical processor on the machine, hyperthreads included.
@@ -69,43 +58,11 @@ inline std::size_t logical_processor_count() noexcept
 }
 
 #if defined(_WIN32)
-/*
- * Puts this worker on one processor group.
- *
- * Windows divides a machine with more than 64 logical processors into groups of
- * at most 64, and a thread inherits its creator's single group. A process that
- * ignores this therefore runs on 64 processors no matter how many the machine
- * has: on a dual-socket 128-thread server exactly half the hardware sits idle
- * while the other half does all the work.
- *
- * Each worker claims a group by its own index, so the workers spread evenly
- * across the groups and the scheduler stays free to move each one among the
- * processors inside its group. The thread does this to itself rather than
- * being placed by whoever created it, which keeps this independent of how the
- * standard library implements std::thread.
- *
- * On a single-group machine there is nothing to do and nothing is called.
- */
-inline void bind_worker_to_processor_group(std::size_t worker_index) noexcept
-{
-    const WORD group_count = GetActiveProcessorGroupCount();
-    if (group_count <= 1) {
-        return;
-    }
-
-    const WORD group = static_cast<WORD>(worker_index % static_cast<std::size_t>(group_count));
-    const DWORD processors = GetActiveProcessorCount(group);
-    if (processors == 0 || processors > 64) {
-        return;
-    }
-
-    GROUP_AFFINITY affinity{};
-    affinity.Group = group;
-    affinity.Mask = processors == 64
-        ? ~static_cast<KAFFINITY>(0)
-        : static_cast<KAFFINITY>((static_cast<KAFFINITY>(1) << processors) - 1);
-    (void)SetThreadGroupAffinity(GetCurrentThread(), &affinity, nullptr);
-}
+// Windows 11 / Server 2022 schedule across processor groups by default.
+// Explicit pinning would narrow that affinity and ignore job restrictions.
+// Keep the call site inert unless an older supported host is separately
+// measured and an affinity-respecting compatibility strategy is justified.
+inline void bind_worker_to_processor_group(std::size_t) noexcept {}
 #endif
 
 inline void secure_zero(void* pointer, std::size_t length) noexcept
@@ -115,6 +72,15 @@ inline void secure_zero(void* pointer, std::size_t length) noexcept
         *target++ = 0;
     }
 }
+
+struct ScopedWipe final {
+    void* pointer;
+    std::size_t length;
+    ScopedWipe(void* target, std::size_t bytes) noexcept : pointer(target), length(bytes) {}
+    ~ScopedWipe() noexcept { secure_zero(pointer, length); }
+    ScopedWipe(const ScopedWipe&) = delete;
+    ScopedWipe& operator=(const ScopedWipe&) = delete;
+};
 
 /*
  * Adds a block count to a big-endian counter that spans the whole nonce.
@@ -141,16 +107,16 @@ inline bool add_counter_blocks(
 }
 
 /*
- * Encrypts or decrypts one range of blocks under a freshly keyed cipher.
+ * Encrypts or decrypts one range under an exclusively owned keyed cipher.
  *
  * CTR is its own inverse, so this one path serves both directions. Each worker
- * keys its own cipher instance: Crypto++ block ciphers hold an expanded key
- * schedule and are not safe to share across threads.
+ * keys its own cipher instance once: Crypto++ block ciphers hold an expanded
+ * schedule. Only the separately constructed CTR state changes between claims;
+ * no instance is shared concurrently with another worker.
  */
 template <typename Encryption>
-inline int xcrypt_ctr_range(
-    const std::uint8_t* key,
-    std::size_t key_length,
+inline int xcrypt_ctr_keyed_range(
+    Encryption& cipher,
     const std::uint8_t* nonce,
     const std::uint8_t* input,
     std::uint8_t* output,
@@ -159,13 +125,10 @@ inline int xcrypt_ctr_range(
 {
     constexpr std::size_t block_bytes = Encryption::BLOCKSIZE;
 
-    Encryption cipher;
-    cipher.SetKey(key, key_length);
-
     std::uint8_t counter[block_bytes];
+    const ScopedWipe wipe_counter(counter, sizeof(counter));
     std::memcpy(counter, nonce, block_bytes);
     if (add_counter_blocks(counter, block_bytes, static_cast<std::uint64_t>(first_block))) {
-        secure_zero(counter, sizeof(counter));
         return 4;
     }
 
@@ -184,8 +147,22 @@ inline int xcrypt_ctr_range(
     CryptoPP::CTR_Mode_ExternalCipher::Encryption ctr(cipher, counter);
     ctr.ProcessData(output, input, length);
 
-    secure_zero(counter, sizeof(counter));
     return 0;
+}
+
+template <typename Encryption>
+inline int xcrypt_ctr_range(
+    const std::uint8_t* key,
+    std::size_t key_length,
+    const std::uint8_t* nonce,
+    const std::uint8_t* input,
+    std::uint8_t* output,
+    std::size_t length,
+    std::size_t first_block)
+{
+    Encryption cipher;
+    cipher.SetKey(key, key_length);
+    return xcrypt_ctr_keyed_range(cipher, nonce, input, output, length, first_block);
 }
 
 /*
@@ -205,7 +182,8 @@ inline int xcrypt_ctr(
     const std::uint8_t* nonce,
     const std::uint8_t* input,
     std::uint8_t* output,
-    std::size_t length)
+    std::size_t length,
+    std::uint32_t worker_budget = 0)
 {
     constexpr std::size_t block_bytes = Encryption::BLOCKSIZE;
 
@@ -216,13 +194,19 @@ inline int xcrypt_ctr(
     if (length == 0) {
         return 0;
     }
+    const auto input_address = reinterpret_cast<std::uintptr_t>(input);
+    const auto output_address = reinterpret_cast<std::uintptr_t>(output);
+    if (input_address > UINTPTR_MAX - length || output_address > UINTPTR_MAX - length
+        || (input != output && input_address < output_address + length
+            && output_address < input_address + length)) {
+        return 1;
+    }
 
     if (length > SIZE_MAX - (block_bytes - 1)) {
         return 4;
     }
 
     const std::size_t total_blocks = (length + block_bytes - 1) / block_bytes;
-    const std::size_t chunk_blocks = kChunkBytes / block_bytes;
 
     // Refuse the whole request before writing a byte if its final block would
     // carry out of the block-wide big-endian counter. The old driver discarded
@@ -241,18 +225,14 @@ inline int xcrypt_ctr(
 
     std::size_t thread_count = 1;
     if (length >= kParallelThresholdBytes) {
-        thread_count = logical_processor_count();
-        const std::size_t chunks = (total_blocks + chunk_blocks - 1) / chunk_blocks;
-        if (thread_count > chunks) {
-            thread_count = chunks;
-        }
-        if (thread_count > kMaxThreads) {
-            thread_count = kMaxThreads;
-        }
+        thread_count = worker_budget == 0 ? logical_processor_count() : worker_budget;
+        if (thread_count > total_blocks) thread_count = total_blocks;
         if (thread_count == 0) {
             thread_count = 1;
         }
     }
+
+    const std::size_t chunk_blocks = keepvault_v13_claim_blocks(total_blocks, kChunkBytes / block_bytes, thread_count);
 
     if (thread_count <= 1) {
         // The parallel path below catches inside its workers, so without this
@@ -282,7 +262,14 @@ inline int xcrypt_ctr(
         (void)worker_index;
 #endif
         try {
+            // Exclusive operation-local schedule, wiped by the cipher's
+            // SecBlock destructor on normal return and exception unwind.
+            // CTR state is constructed anew with an absolute counter per
+            // claim and is never retained by the persistent executor.
+            Encryption cipher;
+            cipher.SetKey(key, key_length);
             for (;;) {
+                if (failure.load(std::memory_order_relaxed) != 0) return;
                 const std::size_t chunk = next_chunk.fetch_add(1, std::memory_order_relaxed);
                 const std::size_t first_block = chunk * chunk_blocks;
                 if (first_block >= total_blocks) {
@@ -294,8 +281,8 @@ inline int xcrypt_ctr(
                 const std::size_t remaining = length - offset;
                 const std::size_t count = remaining < span ? remaining : span;
 
-                const int result = xcrypt_ctr_range<Encryption>(
-                    key, key_length, nonce, input + offset, output + offset, count, first_block);
+                const int result = xcrypt_ctr_keyed_range(
+                    cipher, nonce, input + offset, output + offset, count, first_block);
                 if (result != 0) {
                     failure.store(result, std::memory_order_relaxed);
                     return;
@@ -307,6 +294,9 @@ inline int xcrypt_ctr(
             failure.store(3, std::memory_order_relaxed);
         }
     };
+
+    const int borrowed = execute_borrowed(thread_count, worker);
+    if (borrowed != -1) return borrowed == 0 ? failure.load(std::memory_order_relaxed) : 3;
 
     std::vector<std::thread> threads;
     try {

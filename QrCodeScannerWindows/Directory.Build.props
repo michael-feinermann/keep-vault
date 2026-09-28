@@ -13,10 +13,10 @@
     other's assets file.
   -->
   <PropertyGroup>
-    <Version>5.0.2</Version>
+    <Version>5.0.3</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-    <AssemblyVersion>5.0.2.0</AssemblyVersion>
-    <FileVersion>5.0.2.0</FileVersion>
+    <AssemblyVersion>5.0.3.0</AssemblyVersion>
+    <FileVersion>5.0.3.0</FileVersion>
     <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)\build-obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <BaseOutputPath>$(MSBuildProjectDirectory)\bin\$(MSBuildProjectName)\</BaseOutputPath>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)\build-obj\**;$(MSBuildProjectDirectory)\bin\**</DefaultItemExcludes>

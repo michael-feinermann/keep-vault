@@ -13,45 +13,25 @@ namespace KalynaArchiver.Services;
 public static partial class EntropyMixer
 {
     private const int BcryptUseSystemPreferredRng = 0x00000002;
-    // Nine pools: one per 512-bit factor half, one per salt branch, and three
-    // nonce parts. Each factor half draws from its own pool so that the v12
-    // split - A1+B1 into one SHA3 half, A2+B2 into the other - is backed by
-    // separately collected material rather than by one pool cut in two. The
-    // third nonce pool exists for the cascade, whose two layers each need their
-    // own nonce - 64 bytes for Kalyna and 128 for Threefish. Deriving the
-    // second nonce from the first would make one layer's keystream a function
-    // of the other's, and the whole point of the cascade is that the two are
-    // independent.
-    private const int PurposeCount = 9;
-    /// <summary>
-    /// Mouse samples each pool needs before factors can be generated.
-    /// </summary>
-    /// <remarks>
-    /// Raised from 512 to 1024. The pools are the only entropy the app gathers
-    /// that an attacker cannot model, and doubling the requirement costs the
-    /// user seconds of pointer movement once per archive.
-    /// </remarks>
+    internal const int PurposeCount = 11;
     public const long RequiredMouseSamplesPerPurpose = 1024;
     private static readonly object Gate = new();
-    private static readonly EntropyPurpose[] SamplePurposes =
-    [
-        EntropyPurpose.FactorA1,
-        EntropyPurpose.FactorA2,
-        EntropyPurpose.FactorB1,
-        EntropyPurpose.FactorB2,
-        EntropyPurpose.SaltSha3,
-        EntropyPurpose.SaltSkein,
-        EntropyPurpose.NonceFirst,
-        EntropyPurpose.NonceSecond,
-        EntropyPurpose.NonceThird,
-    ];
-    private static readonly LockedSensitiveBuffer[] MousePools = CreateMousePools();
+    private static readonly object ResetGate = new();
+    private static readonly HashSet<PreparationLease> ActivePreparations = [];
+    private static long _collectionStartSequence;
+    private static ulong _resetVersion;
+    private static readonly EntropyPurpose[] SamplePurposes = Enum.GetValues<EntropyPurpose>();
+    private static SensitiveMouseRecordStore[] MousePools = CreateMousePools();
     private static readonly long[] PurposeSampleCounts = new long[PurposeCount];
     private static readonly ulong[] DerivationCounters = new ulong[PurposeCount];
+    private static readonly HashSet<ConsumedEntropySnapshot> ActiveSnapshots = [];
+    private static readonly HashSet<IDisposable> PendingCleanup = [];
     private static long _systemRandomCallCount;
     private static long _sampleSequence;
     private static int _lastSystemRandomRequestBytes;
-    private static int _nextPurposeIndex;
+    private static bool _healthy = true;
+    internal static Action<byte[], EntropyRandomRole>? RandomFillForTests;
+    internal static Action<string>? PreparationPhaseForTests;
 
     public static long SampleCount => GetPoolStatus().Total;
     public static long FirstGeneratedPasswordSampleCount => Math.Min(
@@ -63,7 +43,10 @@ public static partial class EntropyMixer
     public static long NonceFirstSampleCount => GetSampleCount(EntropyPurpose.NonceFirst);
     public static long NonceSecondSampleCount => GetSampleCount(EntropyPurpose.NonceSecond);
     public static long NonceThirdSampleCount => GetSampleCount(EntropyPurpose.NonceThird);
+    public static long NonceFourthSampleCount => GetSampleCount(EntropyPurpose.NonceFourth);
+    public static long NonceFifthSampleCount => GetSampleCount(EntropyPurpose.NonceFifth);
     internal static long SystemRandomCallCountForTests => Interlocked.Read(ref _systemRandomCallCount);
+    internal static int PendingCleanupCountForTests { get { lock (Gate) return PendingCleanup.Count; } }
     internal static int LastSystemRandomRequestBytesForTests => Volatile.Read(ref _lastSystemRandomRequestBytes);
     public static bool HasRequiredSamples(EntropyPurpose purpose) => GetSampleCount(purpose) >= RequiredMouseSamplesPerPurpose;
     public static long MissingSamples(EntropyPurpose purpose) => Math.Max(0, RequiredMouseSamplesPerPurpose - GetSampleCount(purpose));
@@ -88,7 +71,9 @@ public static partial class EntropyMixer
                 PurposeSampleCounts[(int)EntropyPurpose.SaltSkein],
                 PurposeSampleCounts[(int)EntropyPurpose.NonceFirst],
                 PurposeSampleCounts[(int)EntropyPurpose.NonceSecond],
-                PurposeSampleCounts[(int)EntropyPurpose.NonceThird]);
+                PurposeSampleCounts[(int)EntropyPurpose.NonceThird],
+                PurposeSampleCounts[(int)EntropyPurpose.NonceFourth],
+                PurposeSampleCounts[(int)EntropyPurpose.NonceFifth], _healthy);
         }
     }
 
@@ -134,139 +119,228 @@ public static partial class EntropyMixer
             middlePressed ? 1 : 0);
     }
 
-    private static void AddMouseSampleCore(
-        double x,
-        double y,
-        int timestamp,
-        int left,
-        int right,
-        int middle)
+    private static void AddMouseSampleCore(double x, double y, int timestamp, int left, int right, int middle)
     {
-        LockedSensitiveBuffer? sample = null;
-        LockedSensitiveBuffer? sampleCountBytes = null;
-        LockedSensitiveBuffer? purposeBytes = null;
-        LockedSensitiveBuffer? combined = null;
-        LockedSensitiveBuffer? nextPool = null;
-        LockedSensitiveBuffer? oldPool = null;
-        Exception? operationFailure = null;
+        if (!double.IsFinite(x) || !double.IsFinite(y)) return;
+        LockedSensitiveBuffer sample = LockedSensitiveBuffer.Create(80);
+        Exception? transientFailure = null;
         try
         {
-            sample = LockedSensitiveBuffer.Create(80);
-            BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(0, 8), BitConverter.DoubleToInt64Bits(x));
-            BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(8, 8), BitConverter.DoubleToInt64Bits(y));
-            BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(16, 4), timestamp);
-            BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(20, 8), Environment.TickCount64);
-            BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(28, 8), DateTime.UtcNow.Ticks);
-            BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(36, 4), (int)left);
-            BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(40, 4), (int)right);
-            BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(44, 4), (int)middle);
-            BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(48, 4), Environment.CurrentManagedThreadId);
-            BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(52, 4), Environment.ProcessId);
-            BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(56, 8), Stopwatch.GetTimestamp());
-            BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(64, 8), GC.GetTotalMemory(forceFullCollection: false));
+        BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(0, 8), BitConverter.DoubleToInt64Bits(x));
+        BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(8, 8), BitConverter.DoubleToInt64Bits(y));
+        BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(16, 4), timestamp);
+        BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(20, 8), Environment.TickCount64);
+        BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(28, 8), DateTime.UtcNow.Ticks);
+        BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(36, 4), left);
+        BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(40, 4), right);
+        BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(44, 4), middle);
+        BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(48, 4), Environment.CurrentManagedThreadId);
+        BinaryPrimitives.WriteInt32LittleEndian(sample.Bytes.AsSpan(52, 4), Environment.ProcessId);
+        BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(56, 8), Stopwatch.GetTimestamp());
+        BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(64, 8), GC.GetTotalMemory(forceFullCollection: false));
+        AddCanonicalRecord(sample.Bytes);
 
+        }
+        catch (Exception error) { transientFailure = error; throw; }
+        finally { DisposeEntropyOwners(transientFailure, "Entropy event temporary cleanup failed.", sample); }
+    }
+
+    internal static void AddCanonicalRecord(ReadOnlySpan<byte> original)
+    {
+        if (original.Length != 80) throw new ArgumentException("A mouse record is exactly 80 bytes.");
+        LockedSensitiveBuffer sample = LockedSensitiveBuffer.Create(80);
+        Exception? transientFailure = null;
+        try
+        {
+        original.CopyTo(sample.Bytes);
+        lock (Gate)
+        {
+            if (!_healthy) throw new InvalidOperationException("The mouse collection failed. Reset it before collecting again.");
+            SensitiveMouseRecordStore.Segment? spare = null;
+            Exception? failure = null;
+            try
+            {
+                long nextSequence = checked(_sampleSequence + 1);
+                foreach (SensitiveMouseRecordStore pool in MousePools)
+                    if (pool.NeedsSegment) pool.ReserveSegmentMetadata();
+                if (MousePools.Any(pool => pool.NeedsSegment))
+                    spare = new SensitiveMouseRecordStore.Segment(ArchiveOperationPolicy.Current.EntropyCaptureBudgetBytes);
+                int purpose = (int)SelectUniformPurpose(SamplePurposes, CancellationToken.None);
+                long nextCount = checked(PurposeSampleCounts[purpose] + 1);
+                BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(72), _sampleSequence);
+                MousePools[purpose].Append(sample.Bytes, ref spare);
+                PurposeSampleCounts[purpose] = nextCount;
+                _sampleSequence = nextSequence;
+            }
+            catch (Exception error) { _healthy = false; failure = error; throw; }
+            finally
+            {
+                try { DisposeEntropyOwners(null, "Unused entropy segment cleanup failed.", spare); }
+                catch (Exception cleanup)
+                {
+                    _healthy = false;
+                    if (failure is not null) throw new AggregateException(failure, cleanup);
+                    throw;
+                }
+            }
+        }
+
+        }
+        catch (Exception error) { transientFailure = error; throw; }
+        finally { DisposeEntropyOwners(transientFailure, "Entropy event temporary cleanup failed.", sample); }
+    }
+
+    internal static EntropyPurpose SelectUniformPurpose(ReadOnlySpan<EntropyPurpose> catalog, CancellationToken token)
+    {
+        int slot = SelectUniformPurposeSlot(catalog.Length, token);
+        return catalog[slot];
+    }
+
+    internal static int SelectUniformPurposeSlot(int count, CancellationToken token)
+    {
+        if (count <= 0) throw new ArgumentOutOfRangeException(nameof(count));
+        ulong space = 1UL << 32;
+        ulong limit = space - space % (uint)count;
+        LockedSensitiveBuffer candidate = LockedSensitiveBuffer.Create(4);
+        Exception? transientFailure = null;
+        try
+        {
+        for (int attempt = 0; attempt < 128; ++attempt)
+        {
+            token.ThrowIfCancellationRequested();
+            FillRandom(candidate.Bytes, EntropyRandomRole.PoolRouting);
+            uint value = BinaryPrimitives.ReadUInt32LittleEndian(candidate.Bytes);
+            CryptographicOperations.ZeroMemory(candidate.Bytes);
+            if ((ulong)value < limit) return checked((int)((ulong)value % (uint)count));
+        }
+        throw new CryptographicException("The mouse routing random source exceeded its rejection budget.");
+
+        }
+        catch (Exception error) { transientFailure = error; throw; }
+        finally { DisposeEntropyOwners(transientFailure, "Entropy event temporary cleanup failed.", candidate); }
+    }
+
+    // Reset joins the complete operation, including output XOR and publication,
+    // rather than only its record readers. It never waits while holding Gate.
+    public static void Reset()
+    {
+        lock (ResetGate)
+        {
+            PreparationLease[] active;
             lock (Gate)
             {
-                int selectedPurposeIndex = SelectNextPurposeIndex();
-                EntropyPurpose purpose = SamplePurposes[selectedPurposeIndex];
-                int purposeIndex = (int)purpose;
-                long sampleSequence = _sampleSequence;
-                long nextSampleSequence = checked(sampleSequence + 1);
-                BinaryPrimitives.WriteInt64LittleEndian(sample.Bytes.AsSpan(72, 8), sampleSequence);
-                sampleCountBytes = LockedSensitiveBuffer.Create(sizeof(long));
-                purposeBytes = LockedSensitiveBuffer.Create(sizeof(int));
-                BinaryPrimitives.WriteInt64LittleEndian(sampleCountBytes.Bytes, sampleSequence);
-                BinaryPrimitives.WriteInt32LittleEndian(purposeBytes.Bytes, purposeIndex);
-                combined = LockedSensitiveBuffer.Create(
-                    MousePools[purposeIndex].Bytes.Length
-                    + sample.Bytes.Length
-                    + sampleCountBytes.Bytes.Length
-                    + purposeBytes.Bytes.Length);
-                WriteCombined(
-                    combined.Bytes,
-                    MousePools[purposeIndex].Bytes,
-                    sample.Bytes,
-                    sampleCountBytes.Bytes,
-                    purposeBytes.Bytes);
-
-                nextPool = LockedSensitiveBuffer.Create(Sha3_512Compat.HashSizeInBytes);
-                int written = Sha3_512Compat.HashData(combined.Bytes, nextPool.Bytes);
-                if (written != Sha3_512Compat.HashSizeInBytes)
-                {
-                    throw new CryptographicException("SHA3-512 returned an invalid entropy-pool digest length.");
-                }
-
-                oldPool = MousePools[purposeIndex];
-                MousePools[purposeIndex] = nextPool;
-                nextPool = null;
-                PurposeSampleCounts[purposeIndex]++;
-                _sampleSequence = nextSampleSequence;
+                ulong nextVersion = checked(_resetVersion + 1);
+                ulong[] nextEpochs = DerivationCounters.Select(epoch => checked(epoch + 1)).ToArray();
+                SensitiveMouseRecordStore[] replacement = CreateMousePools();
+                PendingCleanup.EnsureCapacity(checked(PendingCleanup.Count + MousePools.Length));
+                // Register every old owner before detaching it. A failed unlock
+                // must remain reachable for the next explicit cleanup attempt.
+                foreach (SensitiveMouseRecordStore pool in MousePools) PendingCleanup.Add(pool);
+                MousePools = replacement;
+                Array.Clear(PurposeSampleCounts);
+                nextEpochs.CopyTo(DerivationCounters, 0);
+                _collectionStartSequence = _sampleSequence;
+                _resetVersion = nextVersion;
+                active = [.. ActivePreparations];
+                _healthy = false;
             }
-        }
-        catch (Exception failure)
-        {
-            operationFailure = failure;
-            throw;
-        }
-        finally
-        {
-            SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                operationFailure,
-                "Mouse-entropy pool update failed and one or more sensitive buffers could not be released.",
-                oldPool,
-                nextPool,
-                combined,
-                purposeBytes,
-                sampleCountBytes,
-                sample);
+            List<Exception> errors = [];
+            foreach (PreparationLease operation in active)
+                try { operation.Cancel(); } catch (Exception error) { errors.Add(error); }
+            foreach (PreparationLease operation in active)
+                try { operation.Completion.GetAwaiter().GetResult(); } catch (Exception error) { errors.Add(error); }
+            IDisposable[] pending;
+            lock (Gate) pending = [.. PendingCleanup, .. ActiveSnapshots];
+            foreach (IDisposable owner in pending.Distinct())
+                try { DisposeEntropyOwners(null, "Entropy reset cleanup failed.", owner); }
+                catch (Exception error) { errors.Add(error); }
+            lock (Gate) _healthy = errors.Count == 0 && PendingCleanup.Count == 0 && ActiveSnapshots.Count == 0;
+            if (errors.Count != 0) throw new AggregateException("Entropy reset cleanup failed.", errors);
         }
     }
 
-    private static int SelectNextPurposeIndex()
+    // Cleanup attempts every owner and retains failed objects, not just their
+    // underlying memory locks, so accounting and cancellation sources can retry.
+    internal static void DisposeEntropyOwners(Exception? original, string message, params IDisposable?[] owners)
     {
-        long minimumCount = PurposeSampleCounts.Min();
-        for (int offset = 0; offset < SamplePurposes.Length; offset++)
+        foreach (IDisposable? owner in owners)
+            if (owner is LockedSensitiveBuffer buffer) buffer.ZeroForDisposal();
+        List<Exception> errors = [];
+        foreach (IDisposable? owner in owners)
         {
-            int index = (_nextPurposeIndex + offset) % SamplePurposes.Length;
-            if (PurposeSampleCounts[index] != minimumCount)
+            if (owner is null) continue;
+            try
             {
-                continue;
+                owner.Dispose();
+                lock (Gate)
+                {
+                    PendingCleanup.Remove(owner);
+                    if (owner is ConsumedEntropySnapshot snapshot) ActiveSnapshots.Remove(snapshot);
+                }
             }
-
-            _nextPurposeIndex = (index + 1) % SamplePurposes.Length;
-            return index;
+            catch (Exception cleanup)
+            {
+                lock (Gate) { PendingCleanup.Add(owner); _healthy = false; }
+                errors.Add(cleanup);
+            }
         }
-
-        throw new InvalidOperationException("No mouse-entropy pool could be selected.");
+        if (errors.Count != 0)
+            throw new AggregateException(message, original is null ? errors : [original, .. errors]);
     }
 
-    /// <summary>
-    /// Bytes drawn from each pool.
-    /// </summary>
-    /// <remarks>
-    /// One digest per pool was enough while every suite's nonce fitted in three
-    /// of them. The six-layer cascade needs a wider one, so the draw is sized
-    /// from the catalogue: three pools have to cover the widest nonce any suite
-    /// asks for. Every pool is expanded by the same amount because the
-    /// expansion takes one size for all of them, and the extra bytes in the
-    /// password and salt pools are simply not used.
-    /// </remarks>
-    /// <summary>
-    /// One salt pair: the SHA3 branch's 512-bit salt followed by the Skein
-    /// branch's.
-    /// </summary>
-    internal const int SaltPairBytes = 2 * 64;
-
-    private static readonly int PoolDrawBytes = Math.Max(
-        Sha3_512Compat.HashSizeInBytes,
-        (EncryptionSuiteCatalog.MaxNonceBytes + 2) / 3);
-
-    internal static GeneratedArchiveEntropy CreateArchiveEntropy()
+    private sealed class PreparationLease : IDisposable
     {
-        // One consumption of the pools yields both Argon2id rounds: the first
-        // expansion uses SHA3-512, the second SHA-512 over the same snapshot.
-        // That gives the paranoia suite a computationally domain-diverse
-        // second round without asking the user for another 512 samples per pool.
+        private readonly CancellationTokenSource _cancel;
+        private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly ulong _version;
+        private bool _disposed;
+        private bool _committed;
+        internal CancellationToken Token => _cancel.Token;
+        internal Task Completion => _completion.Task;
+        internal PreparationLease(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            _cancel = CancellationTokenSource.CreateLinkedTokenSource(token);
+            lock (Gate)
+            {
+                if (!_healthy) { _cancel.Dispose(); throw new InvalidOperationException("Reset the failed mouse collection before generation."); }
+                _version = _resetVersion;
+                ActivePreparations.Add(this);
+            }
+        }
+        internal void Cancel() { lock (Gate) { if (!_disposed && !_committed) _cancel.Cancel(); } }
+        internal void CommitPublication()
+        {
+            lock (Gate)
+            {
+                Token.ThrowIfCancellationRequested();
+                if (!_healthy || _version != _resetVersion) throw new OperationCanceledException("Entropy preparation was reset.");
+                _committed = true;
+            }
+        }
+        public void Dispose()
+        {
+            lock (Gate)
+            {
+                if (_disposed) return;
+                _disposed = true;
+                ActivePreparations.Remove(this);
+                _cancel.Dispose();
+                _completion.TrySetResult();
+            }
+        }
+    }
+
+    internal const int SaltPairBytes = 128;
+    private const int PoolDrawBytes = 64;
+
+    internal static GeneratedArchiveEntropy CreateArchiveEntropy(EntropyPreparationKind kind = EntropyPreparationKind.DualRound, CancellationToken cancellationToken = default, IProgress<string>? progress = null)
+    {
+        if (kind is not (EntropyPreparationKind.SingleRound or EntropyPreparationKind.DualRound)) throw new ArgumentOutOfRangeException(nameof(kind));
+        using var operation = new PreparationLease(cancellationToken);
+        // A fixed preparation plan consumes all eleven record pools once.
+        // DualRound performs fresh shuffles and independent replay accumulators
+        // over that same immutable record snapshot before clearing it.
         LockedSensitiveBuffer? firstMouse = null;
         LockedSensitiveBuffer? secondMouse = null;
         LockedSensitiveBuffer? passwordBytes = null;
@@ -278,7 +352,7 @@ public static partial class EntropyMixer
         Exception? operationFailure = null;
         try
         {
-            (firstMouse, secondMouse) = ExpandAndConsumeMousePoolsDual(PoolDrawBytes, SamplePurposes);
+            (firstMouse, secondMouse) = ExpandAndConsumeMousePoolsCore(PoolDrawBytes, SamplePurposes, kind == EntropyPreparationKind.DualRound, operation.Token, progress);
             passwordBytes = LockedSensitiveBuffer.Create(4 * Sha3_512Compat.HashSizeInBytes);
             FillSystemRandom(passwordBytes.Bytes);
             // A factor is 1024 bits and comes from two pools laid end to
@@ -299,7 +373,7 @@ public static partial class EntropyMixer
             }
 
             (salt, fullNonce) = SplitPreparedSaltAndNonce(firstMouse);
-            (secondSalt, secondFullNonce) = SplitPreparedSaltAndNonce(secondMouse);
+            if (secondMouse is not null) (secondSalt, secondFullNonce) = SplitPreparedSaltAndNonce(secondMouse);
 
             string firstPassword = Convert.ToHexString(passwordBytes.Bytes.AsSpan(0, 128));
             string secondPassword = Convert.ToHexString(passwordBytes.Bytes.AsSpan(128, 128));
@@ -319,6 +393,10 @@ public static partial class EntropyMixer
             fullNonce = null;
             secondSalt = null;
             secondFullNonce = null;
+            DisposeEntropyOwners(null, "Archive entropy temporaries could not be released.", passwordBytes, secondMouse, firstMouse);
+            passwordBytes = null; secondMouse = null; firstMouse = null;
+            PreparationPhaseForTests?.Invoke("before-publication");
+            operation.CommitPublication();
             return completed;
         }
         catch (Exception failure)
@@ -328,40 +406,9 @@ public static partial class EntropyMixer
         }
         finally
         {
-            try
-            {
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                    operationFailure,
-                    "Archive-entropy creation failed and one or more sensitive buffers could not be released.",
-                    secondFullNonce,
-                    secondSalt,
-                    fullNonce,
-                    salt,
-                    passwordBytes,
-                    secondMouse,
-                    firstMouse);
-            }
-            catch (Exception cleanupFailure)
-            {
-                if (completed is null)
-                {
-                    throw;
-                }
-
-                try
-                {
-                    completed.Dispose();
-                }
-                catch (Exception resultCleanupFailure)
-                {
-                    throw new AggregateException(
-                        "Archive-entropy temporaries and the completed entropy object could not be released.",
-                        cleanupFailure,
-                        resultCleanupFailure);
-                }
-
-                throw;
-            }
+            DisposeEntropyOwners(operationFailure, "Entropy preparation cleanup failed.",
+                secondFullNonce, secondSalt, fullNonce, salt, passwordBytes, secondMouse, firstMouse,
+                operationFailure is null ? null : completed);
         }
     }
 
@@ -401,11 +448,11 @@ public static partial class EntropyMixer
                 salt.Bytes.AsSpan(Sha3_512Compat.HashSizeInBytes, Sha3_512Compat.HashSizeInBytes),
                 mouseBytes.Bytes.AsSpan(5 * PoolDrawBytes, Sha3_512Compat.HashSizeInBytes));
 
-            nonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+            nonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.ArchiveNonceBytes);
             FillSystemRandom(nonce.Bytes);
             XorInPlace(
                 nonce.Bytes,
-                mouseBytes.Bytes.AsSpan(6 * PoolDrawBytes, EncryptionSuiteCatalog.MaxNonceBytes));
+                mouseBytes.Bytes.AsSpan(6 * PoolDrawBytes, EncryptionSuiteCatalog.ArchiveNonceBytes));
 
             completedSalt = salt;
             completedNonce = nonce;
@@ -422,7 +469,7 @@ public static partial class EntropyMixer
         {
             try
             {
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                DisposeEntropyOwners(
                     operationFailure,
                     "Prepared salt/nonce derivation failed and one or more sensitive buffers could not be released.",
                     nonce,
@@ -437,7 +484,7 @@ public static partial class EntropyMixer
                     throw;
                 }
 
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                DisposeEntropyOwners(
                     cleanupFailure,
                     "Prepared salt/nonce cleanup failed and the completed result could not be released.",
                     completedNonce,
@@ -456,8 +503,8 @@ public static partial class EntropyMixer
     ///
     /// Both rounds are drawn from a single pool consumption, because consuming
     /// the pools twice would mean asking the user to collect the whole mouse
-    /// entropy a second time. The two rounds differ by the hash that expands
-    /// the shared snapshot — SHA3-512 for the first, SHA-512 for the second —
+    /// entropy a second time. Each pool is shuffled independently in each
+    /// round, then replayed from zero with SHA3-512 or SHA-512 respectively,
     /// and each is XORed with its own independent draw from the system
     /// generator, so neither salt nor either nonce set can be derived from the
     /// other.
@@ -466,12 +513,15 @@ public static partial class EntropyMixer
     /// archive whose header carries only the first round cannot be decrypted by
     /// anyone, including the machine that wrote it.
     /// </remarks>
-    internal static TwoRoundEncryptionParameters CreateTwoRoundEncryptionParameters(EncryptionSuite suite)
+    internal static TwoRoundEncryptionParameters CreateTwoRoundEncryptionParameters(EncryptionSuite suite, CancellationToken cancellationToken = default)
     {
+        using var operation = new PreparationLease(cancellationToken);
         if (!EncryptionSuiteCatalog.IsKnown(suite))
         {
             throw new ArgumentOutOfRangeException(nameof(suite), suite, "Unbekanntes Verschluesselungsverfahren.");
         }
+        if (!EncryptionSuiteCatalog.Get(suite).UsesTwoKdfRounds)
+            throw new ArgumentException("This suite requires single-round preparation.", nameof(suite));
 
         LockedSensitiveBuffer? firstMouse = null;
         LockedSensitiveBuffer? secondMouse = null;
@@ -491,7 +541,9 @@ public static partial class EntropyMixer
                     EntropyPurpose.NonceFirst,
                     EntropyPurpose.NonceSecond,
                     EntropyPurpose.NonceThird,
-                ]);
+                    EntropyPurpose.NonceFourth,
+                    EntropyPurpose.NonceFifth,
+                ], operation.Token);
             (firstSalt, firstNonce) = SplitSaltAndNonce(firstMouse, suite);
             (secondSalt, secondNonce) = SplitSaltAndNonce(secondMouse, suite);
 
@@ -509,6 +561,10 @@ public static partial class EntropyMixer
             firstNonce = null;
             secondSalt = null;
             secondNonce = null;
+            DisposeEntropyOwners(null, "Two-round entropy temporaries could not be released.", secondMouse, firstMouse);
+            secondMouse = null; firstMouse = null;
+            PreparationPhaseForTests?.Invoke("before-publication");
+            operation.CommitPublication();
             return completed;
         }
         catch (Exception failure)
@@ -518,39 +574,9 @@ public static partial class EntropyMixer
         }
         finally
         {
-            try
-            {
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                    operationFailure,
-                    "Two-round entropy derivation failed and one or more sensitive buffers could not be released.",
-                    secondNonce,
-                    secondSalt,
-                    firstNonce,
-                    firstSalt,
-                    secondMouse,
-                    firstMouse);
-            }
-            catch (Exception cleanupFailure)
-            {
-                if (completed is null)
-                {
-                    throw;
-                }
-
-                try
-                {
-                    completed.Dispose();
-                }
-                catch (Exception resultCleanupFailure)
-                {
-                    throw new AggregateException(
-                        "Two-round entropy temporaries and the completed result could not be released.",
-                        cleanupFailure,
-                        resultCleanupFailure);
-                }
-
-                throw;
-            }
+            DisposeEntropyOwners(operationFailure, "Entropy preparation cleanup failed.",
+                secondNonce, secondSalt, firstNonce, firstSalt, secondMouse, firstMouse,
+                operationFailure is null ? null : completed);
         }
     }
 
@@ -588,26 +614,17 @@ public static partial class EntropyMixer
                 salt.Bytes.AsSpan(Sha3_512Compat.HashSizeInBytes, Sha3_512Compat.HashSizeInBytes),
                 mouseBytes.Bytes.AsSpan(PoolDrawBytes, Sha3_512Compat.HashSizeInBytes));
 
-            // Sized from the catalogue, not from three digests: the six-layer
-            // cascade needs 268 nonce bytes and the old fixed 192 would have
-            // silently starved it.
-            fullNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+            // All suites keep all five 64-byte pool digests in the header basis.
+            fullNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.ArchiveNonceBytes);
             FillSystemRandom(fullNonce.Bytes);
             XorInPlace(
                 fullNonce.Bytes,
-                mouseBytes.Bytes.AsSpan(2 * PoolDrawBytes, EncryptionSuiteCatalog.MaxNonceBytes));
+                mouseBytes.Bytes.AsSpan(2 * PoolDrawBytes, EncryptionSuiteCatalog.ArchiveNonceBytes));
 
-            int nonceBytes = EncryptionSuiteCatalog.Get(suite).NonceBytes;
-            if (nonceBytes == fullNonce.Bytes.Length)
-            {
-                selectedNonce = fullNonce;
-                fullNonce = null;
-            }
-            else
-            {
-                selectedNonce = LockedSensitiveBuffer.Create(nonceBytes);
-                fullNonce.Bytes.AsSpan(0, nonceBytes).CopyTo(selectedNonce.Bytes);
-            }
+            if (EncryptionSuiteCatalog.Get(suite).ArchiveNonceBytes != fullNonce.Bytes.Length)
+                throw new CryptographicException("Archive nonce width differs from the fixed v13 basis.");
+            selectedNonce = fullNonce;
+            fullNonce = null;
 
             completedSalt = salt;
             completedNonce = selectedNonce;
@@ -624,7 +641,7 @@ public static partial class EntropyMixer
         {
             try
             {
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                DisposeEntropyOwners(
                     operationFailure,
                     "Salt/nonce derivation failed and one or more sensitive buffers could not be released.",
                     selectedNonce,
@@ -640,7 +657,7 @@ public static partial class EntropyMixer
                     throw;
                 }
 
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
+                DisposeEntropyOwners(
                     cleanupFailure,
                     "Salt/nonce cleanup failed and the completed result could not be released.",
                     completedNonce,
@@ -650,12 +667,15 @@ public static partial class EntropyMixer
         }
     }
 
-    internal static (LockedSensitiveBuffer Salt, LockedSensitiveBuffer Nonce) CreateEncryptionParameters(EncryptionSuite suite)
+    internal static (LockedSensitiveBuffer Salt, LockedSensitiveBuffer Nonce) CreateEncryptionParameters(EncryptionSuite suite, CancellationToken cancellationToken = default)
     {
+        using var operation = new PreparationLease(cancellationToken);
         if (!EncryptionSuiteCatalog.IsKnown(suite))
         {
             throw new ArgumentOutOfRangeException(nameof(suite), suite, "Unbekanntes Verschluesselungsverfahren.");
         }
+        if (EncryptionSuiteCatalog.Get(suite).UsesTwoKdfRounds)
+            throw new ArgumentException("This suite requires dual-round preparation.", nameof(suite));
 
         LockedSensitiveBuffer? mouseBytes = null;
         LockedSensitiveBuffer? salt = null;
@@ -673,12 +693,18 @@ public static partial class EntropyMixer
                     EntropyPurpose.NonceFirst,
                     EntropyPurpose.NonceSecond,
                     EntropyPurpose.NonceThird,
-                ]);
+                    EntropyPurpose.NonceFourth,
+                    EntropyPurpose.NonceFifth,
+                ], operation.Token);
             (salt, nonce) = SplitSaltAndNonce(mouseBytes, suite);
             completedSalt = salt;
             completedNonce = nonce;
             salt = null;
             nonce = null;
+            DisposeEntropyOwners(null, "Direct entropy temporaries could not be released.", mouseBytes);
+            mouseBytes = null;
+            PreparationPhaseForTests?.Invoke("before-publication");
+            operation.CommitPublication();
             return (completedSalt, completedNonce);
         }
         catch (Exception failure)
@@ -688,29 +714,9 @@ public static partial class EntropyMixer
         }
         finally
         {
-            try
-            {
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                    operationFailure,
-                    "Encryption-parameter creation failed and one or more sensitive buffers could not be released.",
-                    nonce,
-                    salt,
-                    mouseBytes);
-            }
-            catch (Exception cleanupFailure)
-            {
-                if (completedSalt is null && completedNonce is null)
-                {
-                    throw;
-                }
-
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                    cleanupFailure,
-                    "Encryption-parameter cleanup failed and the completed result could not be released.",
-                    completedNonce,
-                    completedSalt);
-                throw;
-            }
+            DisposeEntropyOwners(operationFailure, "Entropy preparation cleanup failed.",
+                nonce, salt, mouseBytes,
+                operationFailure is null ? null : completedSalt, operationFailure is null ? null : completedNonce);
         }
     }
 
@@ -729,8 +735,8 @@ public static partial class EntropyMixer
 
     private static LockedSensitiveBuffer ExpandAndConsumeMousePools(
         int byteCountPerPool,
-        EntropyPurpose[] purposes)
-        => ExpandAndConsumeMousePoolsCore(byteCountPerPool, purposes, secondRound: false).First;
+        EntropyPurpose[] purposes, CancellationToken token)
+        => ExpandAndConsumeMousePoolsCore(byteCountPerPool, purposes, secondRound: false, token).First;
 
     /// <summary>
     /// Expands the pools twice in one pass: once through SHA3-512 and once
@@ -751,234 +757,92 @@ public static partial class EntropyMixer
     /// </remarks>
     private static (LockedSensitiveBuffer First, LockedSensitiveBuffer Second) ExpandAndConsumeMousePoolsDual(
         int byteCountPerPool,
-        EntropyPurpose[] purposes)
+        EntropyPurpose[] purposes, CancellationToken token)
     {
         (LockedSensitiveBuffer first, LockedSensitiveBuffer? second) =
-            ExpandAndConsumeMousePoolsCore(byteCountPerPool, purposes, secondRound: true);
+            ExpandAndConsumeMousePoolsCore(byteCountPerPool, purposes, secondRound: true, token);
         return (first, second!);
     }
 
-    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "The returned outputs transfer ownership to the caller; all failure paths dispose them, replacement-pool transfer is guarded, and loop buffers use compiler-generated finally blocks.")]
     private static (LockedSensitiveBuffer First, LockedSensitiveBuffer? Second) ExpandAndConsumeMousePoolsCore(
-        int byteCountPerPool,
-        EntropyPurpose[] purposes,
-        bool secondRound)
+        int byteCountPerPool, EntropyPurpose[] purposes, bool secondRound, CancellationToken token, IProgress<string>? progress = null)
     {
-        if (byteCountPerPool <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(byteCountPerPool), "Die Byteanzahl muss positiv sein.");
-        }
-
+        if (byteCountPerPool != 64) throw new ArgumentOutOfRangeException(nameof(byteCountPerPool));
         ArgumentNullException.ThrowIfNull(purposes);
-        if (purposes.Length == 0)
+        if (purposes.Length == 0 || purposes.Distinct().Count() != purposes.Length
+            || purposes.Any(purpose => !SamplePurposes.Contains(purpose)))
+            throw new ArgumentException("Invalid entropy purpose selection.", nameof(purposes));
+        ConsumedEntropySnapshot snapshot;
+        lock (Gate)
         {
-            throw new ArgumentException("Mindestens ein Entropiepool ist erforderlich.", nameof(purposes));
-        }
-
-        var uniquePurposes = new HashSet<EntropyPurpose>();
-        foreach (EntropyPurpose purpose in purposes)
-        {
-            int purposeIndex = (int)purpose;
-            if (purposeIndex < 0 || purposeIndex >= PurposeCount)
+            token.ThrowIfCancellationRequested();
+            if (!_healthy || PurposeSampleCounts.Any(count => count < RequiredMouseSamplesPerPurpose))
+                throw new InvalidOperationException("All eleven mouse pools need at least 1024 stored records before generation.");
+            long total = 0;
+            for (int i = 0; i < PurposeCount; ++i)
             {
-                throw new ArgumentOutOfRangeException(nameof(purposes), purpose, "Unbekannter Entropiezweck.");
+                if (MousePools[i].Count != PurposeSampleCounts[i])
+                    throw new InvalidOperationException("Mouse-record count does not match the committed snapshot.");
+                total = checked(total + PurposeSampleCounts[i]);
             }
-
-            if (!uniquePurposes.Add(purpose))
-            {
-                throw new ArgumentException("Jeder Entropiepool darf pro Ableitung nur einmal verwendet werden.", nameof(purposes));
-            }
+            if (total <= 0 || total != checked(_sampleSequence - _collectionStartSequence)) throw new InvalidOperationException("Mouse snapshot sequence does not match committed counts.");
+            ulong[] epochs = (ulong[])DerivationCounters.Clone();
+            ulong[] next = epochs.Select(epoch => checked(epoch + 1)).ToArray();
+            SensitiveMouseRecordStore[] replacement = CreateMousePools();
+            ActiveSnapshots.EnsureCapacity(checked(ActiveSnapshots.Count + 1));
+            snapshot = new ConsumedEntropySnapshot(MousePools, epochs,
+                secondRound ? EntropyPreparationKind.DualRound : EntropyPreparationKind.SingleRound, token);
+            ActiveSnapshots.Add(snapshot);
+            foreach (SensitiveMouseRecordStore pool in MousePools) pool.Seal();
+            MousePools = replacement;
+            _collectionStartSequence = _sampleSequence;
+            next.CopyTo(DerivationCounters, 0);
+            Array.Clear(PurposeSampleCounts);
         }
-
-        int totalByteCount = checked(byteCountPerPool * purposes.Length);
-        LockedSensitiveBuffer? output = null;
-        LockedSensitiveBuffer? secondOutput = null;
-        LockedSensitiveBuffer? completedFirst = null;
-        LockedSensitiveBuffer? completedSecond = null;
-        var snapshots = new LockedSensitiveBuffer?[purposes.Length];
-        var replacements = new LockedSensitiveBuffer?[PurposeCount];
-        var oldPools = new LockedSensitiveBuffer?[PurposeCount];
-        var baseCounters = new ulong[purposes.Length];
-        var nextCounters = new ulong[PurposeCount];
-        Exception? operationFailure = null;
+        LockedSensitiveBuffer? allFirst = null;
+        LockedSensitiveBuffer? allSecond = null;
+        LockedSensitiveBuffer? selectedFirst = null;
+        LockedSensitiveBuffer? selectedSecond = null;
+        Exception? failure = null;
         try
         {
-            output = LockedSensitiveBuffer.Create(totalByteCount);
-            secondOutput = secondRound ? LockedSensitiveBuffer.Create(totalByteCount) : null;
-
-            for (int index = 0; index < purposes.Length; index++)
+            (allFirst, allSecond) = snapshot.Generate(FillRandom, phase => { PreparationPhaseForTests?.Invoke(phase); progress?.Report(phase); });
+            selectedFirst = LockedSensitiveBuffer.Create(checked(purposes.Length * 64));
+            selectedSecond = secondRound ? LockedSensitiveBuffer.Create(checked(purposes.Length * 64)) : null;
+            for (int i = 0; i < purposes.Length; ++i)
             {
-                snapshots[index] = LockedSensitiveBuffer.Create(Sha3_512Compat.HashSizeInBytes);
+                allFirst.Bytes.AsSpan((int)purposes[i] * 64, 64).CopyTo(selectedFirst.Bytes.AsSpan(i * 64, 64));
+                if (selectedSecond is not null) allSecond!.Bytes.AsSpan((int)purposes[i] * 64, 64).CopyTo(selectedSecond.Bytes.AsSpan(i * 64, 64));
             }
-
-            for (int index = 0; index < PurposeCount; index++)
-            {
-                replacements[index] = LockedSensitiveBuffer.Create(Sha3_512Compat.HashSizeInBytes);
-            }
-
-            lock (Gate)
-            {
-                foreach (EntropyPurpose purpose in purposes)
-                {
-                    long current = PurposeSampleCounts[(int)purpose];
-                    if (current < RequiredMouseSamplesPerPurpose)
-                    {
-                        throw new InvalidOperationException($"Nicht genug Maus-Entropie-Samples fuer {purpose}: {current}/{RequiredMouseSamplesPerPurpose}.");
-                    }
-                }
-
-                for (int index = 0; index < purposes.Length; index++)
-                {
-                    int purposeIndex = (int)purposes[index];
-                    MousePools[purposeIndex].Bytes.CopyTo(snapshots[index]!.Bytes, 0);
-                    baseCounters[index] = DerivationCounters[purposeIndex];
-                }
-
-                for (int purposeIndex = 0; purposeIndex < PurposeCount; purposeIndex++)
-                {
-                    nextCounters[purposeIndex] = checked(DerivationCounters[purposeIndex] + 1);
-                }
-
-                for (int purposeIndex = 0; purposeIndex < PurposeCount; purposeIndex++)
-                {
-                    oldPools[purposeIndex] = MousePools[purposeIndex];
-                    MousePools[purposeIndex] = replacements[purposeIndex]!;
-                    replacements[purposeIndex] = null;
-                    DerivationCounters[purposeIndex] = nextCounters[purposeIndex];
-                    PurposeSampleCounts[purposeIndex] = 0;
-                }
-            }
-
-            SecureMemory.ZeroAndDisposeAll(oldPools);
-            Array.Clear(oldPools);
-
-            for (int poolIndex = 0; poolIndex < purposes.Length; poolIndex++)
-            {
-                int poolOffset = checked(poolIndex * byteCountPerPool);
-                int localOffset = 0;
-                int purposeIndex = (int)purposes[poolIndex];
-                for (uint blockIndex = 0; localOffset < byteCountPerPool; blockIndex++)
-                {
-                    LockedSensitiveBuffer? baseCounterBytes = null;
-                    LockedSensitiveBuffer? blockIndexBytes = null;
-                    LockedSensitiveBuffer? purposeBytes = null;
-                    LockedSensitiveBuffer? combined = null;
-                    LockedSensitiveBuffer? block = null;
-                    LockedSensitiveBuffer? secondBlock = null;
-                    Exception? blockFailure = null;
-                    try
-                    {
-                        baseCounterBytes = LockedSensitiveBuffer.Create(sizeof(ulong));
-                        blockIndexBytes = LockedSensitiveBuffer.Create(sizeof(uint));
-                        purposeBytes = LockedSensitiveBuffer.Create(sizeof(int));
-                        BinaryPrimitives.WriteUInt64LittleEndian(baseCounterBytes.Bytes, baseCounters[poolIndex]);
-                        BinaryPrimitives.WriteUInt32LittleEndian(blockIndexBytes.Bytes, blockIndex);
-                        BinaryPrimitives.WriteInt32LittleEndian(purposeBytes.Bytes, purposeIndex);
-                        combined = LockedSensitiveBuffer.Create(
-                            snapshots[poolIndex]!.Bytes.Length
-                            + baseCounterBytes.Bytes.Length
-                            + blockIndexBytes.Bytes.Length
-                            + purposeBytes.Bytes.Length);
-                        WriteCombined(
-                            combined.Bytes,
-                            snapshots[poolIndex]!.Bytes,
-                            baseCounterBytes.Bytes,
-                            blockIndexBytes.Bytes,
-                            purposeBytes.Bytes);
-                        block = LockedSensitiveBuffer.Create(Sha3_512Compat.HashSizeInBytes);
-                        int written = Sha3_512Compat.HashData(combined.Bytes, block.Bytes);
-                        if (written != Sha3_512Compat.HashSizeInBytes)
-                        {
-                            throw new CryptographicException("SHA3-512 returned an invalid mouse-entropy expansion length.");
-                        }
-
-                        int count = Math.Min(block.Bytes.Length, byteCountPerPool - localOffset);
-                        Buffer.BlockCopy(block.Bytes, 0, output.Bytes, poolOffset + localOffset, count);
-                        localOffset += count;
-
-                        if (secondOutput is null)
-                        {
-                            continue;
-                        }
-
-                        // The same block input, expanded through a computationally domain-diverse hash.
-                        // SHA3-512 is a sponge and SHA-512 is Merkle-Damgard; both are
-                        // domain-diverse expansions of the same pool snapshot (with genuine
-                        // entropy ensured by distinct OS CSPRNG draws for each round's salt).
-                        secondBlock = LockedSensitiveBuffer.Create(Sha512Compat.HashSizeInBytes);
-                        int secondWritten = Sha512Compat.HashData(combined.Bytes, secondBlock.Bytes);
-                        if (secondWritten != Sha512Compat.HashSizeInBytes)
-                        {
-                            throw new CryptographicException("SHA-512 returned an invalid mouse-entropy expansion length.");
-                        }
-
-                        Buffer.BlockCopy(
-                            secondBlock.Bytes,
-                            0,
-                            secondOutput.Bytes,
-                            poolOffset + localOffset - count,
-                            count);
-                    }
-                    catch (Exception failure)
-                    {
-                        blockFailure = failure;
-                        throw;
-                    }
-                    finally
-                    {
-                        SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                            blockFailure,
-                            "Mouse-entropy expansion failed and one or more per-block secrets could not be released.",
-                            secondBlock,
-                            block,
-                            combined,
-                            purposeBytes,
-                            blockIndexBytes,
-                            baseCounterBytes);
-                    }
-                }
-            }
-
-            completedFirst = output;
-            completedSecond = secondOutput;
-            output = null;
-            secondOutput = null;
-            return (completedFirst, completedSecond);
+            DisposeEntropyOwners(null, "Entropy digest cleanup failed.", allFirst, allSecond);
+            allFirst = null; allSecond = null;
+            DisposeEntropyOwners(null, "Entropy snapshot cleanup failed.", snapshot);
+            var result = (selectedFirst, selectedSecond);
+            selectedFirst = null; selectedSecond = null;
+            return result;
         }
-        catch (Exception failure)
-        {
-            operationFailure = failure;
-            throw;
-        }
+        catch (Exception error) { failure = error; throw; }
         finally
         {
-            CryptographicOperations.ZeroMemory(MemoryMarshal.AsBytes(baseCounters.AsSpan()));
-            CryptographicOperations.ZeroMemory(MemoryMarshal.AsBytes(nextCounters.AsSpan()));
-            try
-            {
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                    operationFailure,
-                    "Mouse-entropy expansion failed and one or more composite secrets could not be released.",
-                    [output, secondOutput, .. snapshots, .. replacements, .. oldPools]);
-            }
-            catch (Exception cleanupFailure)
-            {
-                if (completedFirst is null && completedSecond is null)
-                {
-                    throw;
-                }
-
-                SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                    cleanupFailure,
-                    "Mouse-entropy temporary cleanup failed and the completed expansion could not be released.",
-                    completedSecond,
-                    completedFirst);
-                throw;
-            }
+            DisposeEntropyOwners(failure, "Entropy snapshot/result cleanup failed.",
+                snapshot, allFirst, allSecond, selectedFirst, selectedSecond);
         }
     }
 
-    private static void FillSystemRandom(byte[] buffer)
+    private static void FillRandom(byte[] buffer, EntropyRandomRole role)
+    {
+        if (RandomFillForTests is { } testFill) { testFill(buffer, role); return; }
+        FillSystemRandomCore(buffer);
+        if (role == EntropyRandomRole.OutputXor)
+        {
+            Volatile.Write(ref _lastSystemRandomRequestBytes, buffer.Length);
+            Interlocked.Increment(ref _systemRandomCallCount);
+        }
+    }
+
+    private static void FillSystemRandom(byte[] buffer) => FillRandom(buffer, EntropyRandomRole.OutputXor);
+
+    private static void FillSystemRandomCore(byte[] buffer)
     {
         int status = OperatingSystem.IsWindows()
             ? BCryptGenRandom(0, buffer, buffer.Length, BcryptUseSystemPreferredRng)
@@ -990,44 +854,10 @@ public static partial class EntropyMixer
             throw new CryptographicException($"The operating-system CSPRNG failed: 0x{status:X8}");
         }
 
-        Volatile.Write(ref _lastSystemRandomRequestBytes, buffer.Length);
-        Interlocked.Increment(ref _systemRandomCallCount);
     }
 
-    private static void WriteCombined(byte[] destination, params byte[][] arrays)
-    {
-        int expectedLength = arrays.Sum(array => array.Length);
-        if (destination.Length != expectedLength)
-        {
-            throw new ArgumentException("Combined entropy buffer has an invalid length.", nameof(destination));
-        }
-
-        int offset = 0;
-        foreach (byte[] array in arrays)
-        {
-            Buffer.BlockCopy(array, 0, destination, offset, array.Length);
-            offset += array.Length;
-        }
-    }
-
-    private static LockedSensitiveBuffer[] CreateMousePools()
-    {
-        var pools = new List<LockedSensitiveBuffer>(PurposeCount);
-        try
-        {
-            for (int index = 0; index < PurposeCount; index++)
-            {
-                pools.Add(LockedSensitiveBuffer.Create(Sha3_512Compat.HashSizeInBytes));
-            }
-
-            return [.. pools];
-        }
-        catch
-        {
-            SecureMemory.ZeroAndDisposeAll([.. pools]);
-            throw;
-        }
-    }
+    private static SensitiveMouseRecordStore[] CreateMousePools() =>
+        Enumerable.Range(0, PurposeCount).Select(_ => new SensitiveMouseRecordStore()).ToArray();
 
     [LibraryImport("bcrypt.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
@@ -1038,7 +868,7 @@ public static partial class EntropyMixer
 }
 
 /// <summary>
-/// How full each of the nine pools is.
+/// Committed counts of the eleven independently routed pools.
 /// </summary>
 /// <remarks>
 /// A1/A2 and B1/B2 are reported separately because they are separate pools, but
@@ -1055,16 +885,19 @@ public readonly record struct EntropyPoolStatus(
     long SaltSkein,
     long NonceFirst,
     long NonceSecond,
-    long NonceThird)
+    long NonceThird,
+    long NonceFourth,
+    long NonceFifth,
+    bool Healthy = true)
 {
     private long[] All =>
-        [FactorA1, FactorA2, FactorB1, FactorB2, SaltSha3, SaltSkein, NonceFirst, NonceSecond, NonceThird];
+        [FactorA1, FactorA2, FactorB1, FactorB2, SaltSha3, SaltSkein, NonceFirst, NonceSecond, NonceThird, NonceFourth, NonceFifth];
 
     public long Minimum => All.Min();
 
     public long Maximum => All.Max();
 
-    public bool IsBalanced => Maximum - Minimum <= 1;
+    public bool IsReady => Healthy && Minimum >= EntropyMixer.RequiredMouseSamplesPerPurpose;
 
     /// <summary>The lower of the two halves that make up factor A.</summary>
     public long FactorA => Math.Min(FactorA1, FactorA2);
@@ -1116,7 +949,7 @@ internal sealed class TwoRoundEncryptionParameters : IDisposable
 }
 
 /// <summary>
-/// The nine independent mouse-entropy pools an archive draws on.
+/// The eleven independent mouse-entropy pools an archive draws on.
 /// </summary>
 /// <remarks>
 /// A1/A2 and B1/B2 are internal sources, not four user-facing factors: each
@@ -1138,6 +971,8 @@ public enum EntropyPurpose
     NonceFirst = 6,
     NonceSecond = 7,
     NonceThird = 8,
+    NonceFourth = 9,
+    NonceFifth = 10,
 }
 
 internal sealed class GeneratedArchiveEntropy : IDisposable
@@ -1161,24 +996,25 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
         string secondPassword,
         LockedSensitiveBuffer salt,
         LockedSensitiveBuffer fullNonce,
-        LockedSensitiveBuffer secondSalt,
-        LockedSensitiveBuffer secondFullNonce)
+        LockedSensitiveBuffer? secondSalt,
+        LockedSensitiveBuffer? secondFullNonce)
     {
         ArgumentNullException.ThrowIfNull(firstPassword);
         ArgumentNullException.ThrowIfNull(secondPassword);
         _salt = salt ?? throw new ArgumentNullException(nameof(salt));
         _fullNonce = fullNonce ?? throw new ArgumentNullException(nameof(fullNonce));
-        _secondSalt = secondSalt ?? throw new ArgumentNullException(nameof(secondSalt));
-        _secondFullNonce = secondFullNonce ?? throw new ArgumentNullException(nameof(secondFullNonce));
+        _secondSalt = secondSalt;
+        _secondFullNonce = secondFullNonce;
         if (_salt.Bytes.Length != EntropyMixer.SaltPairBytes
-            || _secondSalt.Bytes.Length != EntropyMixer.SaltPairBytes
-            || _fullNonce.Bytes.Length != EncryptionSuiteCatalog.MaxNonceBytes
-            || _secondFullNonce.Bytes.Length != EncryptionSuiteCatalog.MaxNonceBytes)
+            || (_secondSalt is null) != (_secondFullNonce is null)
+            || (_secondSalt is not null && _secondSalt.Bytes.Length != EntropyMixer.SaltPairBytes)
+            || _fullNonce.Bytes.Length != EncryptionSuiteCatalog.ArchiveNonceBytes
+            || (_secondFullNonce is not null && _secondFullNonce.Bytes.Length != EncryptionSuiteCatalog.ArchiveNonceBytes))
         {
             throw new ArgumentException("Prepared archive entropy has an invalid length.");
         }
 
-        if (CryptographicOperations.FixedTimeEquals(_salt.Bytes, _secondSalt.Bytes))
+        if (_secondSalt is not null && CryptographicOperations.FixedTimeEquals(_salt.Bytes, _secondSalt.Bytes))
         {
             throw new CryptographicException("Both prepared Argon2id rounds carry the same salt.");
         }
@@ -1256,9 +1092,9 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
         Exception? operationFailure = null;
         try
         {
-            firstNonce = TakeNonce(fullNonce, parameters.NonceBytes);
+            firstNonce = TakeNonce(fullNonce, parameters.ArchiveNonceBytes);
             fullNonce = null;
-            secondNonce = TakeNonce(secondFullNonce, parameters.NonceBytes);
+            secondNonce = TakeNonce(secondFullNonce, parameters.ArchiveNonceBytes);
             secondFullNonce = null;
             var result = new TwoRoundEncryptionParameters(salt, firstNonce, secondSalt, secondNonce);
             salt = null;
@@ -1292,35 +1128,9 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
     /// </summary>
     private static LockedSensitiveBuffer TakeNonce(LockedSensitiveBuffer fullNonce, int nonceBytes)
     {
-        if (nonceBytes == fullNonce.Bytes.Length)
-        {
-            return fullNonce;
-        }
-
-        LockedSensitiveBuffer? selected = null;
-        Exception? operationFailure = null;
-        try
-        {
-            selected = LockedSensitiveBuffer.Create(nonceBytes);
-            fullNonce.Bytes.AsSpan(0, nonceBytes).CopyTo(selected.Bytes);
-            SecureMemory.ZeroAndDisposeAll(fullNonce);
-            LockedSensitiveBuffer completed = selected;
-            selected = null;
-            return completed;
-        }
-        catch (Exception failure)
-        {
-            operationFailure = failure;
-            throw;
-        }
-        finally
-        {
-            SecureMemory.ZeroAndDisposeAllPreservingFailure(
-                operationFailure,
-                "Prepared nonce selection failed and its buffers could not be completely released.",
-                selected,
-                operationFailure is null ? null : fullNonce);
-        }
+        if (nonceBytes != EncryptionSuiteCatalog.ArchiveNonceBytes || fullNonce.Bytes.Length != nonceBytes)
+            throw new InvalidDataException("Prepared archive bases must contain exactly 320 bytes.");
+        return fullNonce;
     }
 
     public string FirstPassword
@@ -1404,7 +1214,7 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
             _fullNonce = null;
         }
 
-        int nonceBytes = EncryptionSuiteCatalog.Get(suite).NonceBytes;
+        int nonceBytes = EncryptionSuiteCatalog.Get(suite).ArchiveNonceBytes;
         if (nonceBytes == fullNonce.Bytes.Length)
         {
             return (salt, fullNonce);

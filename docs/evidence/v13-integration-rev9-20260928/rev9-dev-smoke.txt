@@ -1,0 +1,45 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 2 worker(s)
+FULL PASS SHA3-512 FIPS vector (0,0s)
+FULL PASS HMAC-SHA3-512 vector (0,0s)
+FULL PASS descriptor identity (0,0s)
+FULL PASS symlink rejection (0,0s)
+FULL PASS archive-input symlink rejection (0,0s)
+FULL PASS container-private archive-input snapshot (0,0s)
+FULL PASS archive-input snapshot root and entry substitution rejection (0,0s)
+FULL PASS test runner reservation, inventory, peak-RSS and result-schema invariants (0,5s)
+FULL PASS archive-input hard-link alias rejection (0,0s)
+FULL PASS overlapping archive-input normalization (0,0s)
+
+FAIL folder input with a trailing separator
+  seed=0x7935FF9E
+  FileNotFoundException: Der root-geschützte Keep-Vault-v13-ZPAQ-Anker fehlt. Installiere die App mit dem mitgelieferten macOS-Installer; ein Start aus App-ZIP oder portablem Ordner fällt aus Sicherheitsgründen nicht auf eine beschreibbare ZPAQ-Kopie zurück.
+   at KalynaArchiver.Services.ZpaqService.AcquireExecutable()
+   at KalynaArchiver.Services.ZpaqService.AddStreamingAsync(IReadOnlyList`1 inputPaths, Int32 compressionLevel, Func`3 consumeArchive, IProgress`1 progress, CancellationToken cancellationToken)
+   at Program.<<Main>$>g__TestTrailingSeparatorFolderInputAsync|0_18() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/Program.cs:line 829
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --smoke-only "smoke.trailing-separator-folder" --seed 0x7935FF9E
+
+FULL PASS descriptor-bound private snapshot (0,4s)
+FULL PASS private snapshot is anonymous and read-only (0,4s)
+FULL PASS private snapshot rejects source mutation during copy (0,2s)
+FULL PASS private snapshot serial/parallel equivalence, size and ENOSPC failures (0,2s)
+FULL PASS Apple signature framework binding (0,0s)
+FULL PASS locked secret buffer lifecycle (0,0s)
+FULL PASS private authenticated-input snapshot (0,1s)
+FULL PASS password policy (0,2s)
+FULL PASS native build atomic publish and hard-link isolation (0,5s)
+FULL PASS release companion version plumbing (0,8s)
+FULL PASS QR distribution atomic publish and hard-link isolation (0,7s)
+FULL PASS release publish atomic exchange, exclusive create and identity binding (0,9s)
+FULL PASS native snapshot cleanup preserves a replacement directory (0,1s)
+FULL PASS portable publish rollback preserves substituted and linked objects (0,3s)
+25 macOS smoke tests: 24 passed, 1 failed, 0 blocked.
+
+25 macOS groups: 24 passed, 1 failed, 0 blocked.
+wall clock 3,5s; sum of test times 5,3s; parallel speedup 1,51x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL smoke.trailing-separator-folder — folder input with a trailing separator

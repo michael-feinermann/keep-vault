@@ -26,6 +26,10 @@ public sealed class ArchiveIntegrityService
 
     public async Task CreateAsync(string archivePath, CancellationToken cancellationToken)
     {
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         string fullPath = Path.GetFullPath(archivePath);
         byte[] sha3;
         byte[] skein;
@@ -58,6 +62,10 @@ public sealed class ArchiveIntegrityService
 
     public async Task VerifyAsync(string archivePath, CancellationToken cancellationToken)
     {
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         using ArchiveIntegrityLease lease = await AcquireVerifiedAsync(archivePath, cancellationToken).ConfigureAwait(false);
     }
 
@@ -146,10 +154,10 @@ public sealed class ArchiveIntegrityService
         byte[] actualSha3 = [];
         byte[] actualSkein = [];
 #if KEEPVAULT_MACOS
-        MacPrivateFileSnapshot? snapshot = await MacPrivateFileSnapshot
-            .CaptureAsync(fullPath, cancellationToken)
+        VerifiedArchiveInput? snapshot = await VerifiedArchiveInput
+            .CaptureOriginalAsync(fullPath, ArchiveOperationPolicy.Current, cancellationToken)
             .ConfigureAwait(false);
-        FileStream? stream = snapshot.Stream;
+        Stream? stream = snapshot;
 #else
         FileStream? stream = SecureFile.OpenReadNoReparse(
             fullPath,
@@ -160,20 +168,20 @@ public sealed class ArchiveIntegrityService
         try
         {
 #if KEEPVAULT_MACOS
-            // The macOS snapshot is unlinked before it is authenticated. It
-            // can therefore be consumed only through its retained descriptor;
-            // the native archiver receives those exact bytes over stdin.
             const string resolvedPath = "-";
+            await snapshot.VerifyGloballyAsync(async (view, token) =>
+            {
+                (actualSha3, actualSkein) = await IntegrityService.HashStreamAsync(view, token).ConfigureAwait(false);
+                return new VerifiedArchiveAuthentication(expectedSha3, actualSha3, expectedSkein, actualSkein);
+            }, cancellationToken).ConfigureAwait(false);
 #else
             string resolvedPath = ResolveCanonicalArchivePath(stream, fullPath);
-#endif
             (actualSha3, actualSkein) = await IntegrityService.HashStreamAsync(stream, cancellationToken).ConfigureAwait(false);
             bool sha3Matches = CryptographicOperations.FixedTimeEquals(expectedSha3, actualSha3);
             bool skeinMatches = CryptographicOperations.FixedTimeEquals(expectedSkein, actualSkein);
             if (!(sha3Matches & skeinMatches))
-            {
                 throw new InvalidDataException("Plain ZPAQ archive failed its SHA3-512/Skein-1024 dual-integrity check.");
-            }
+#endif
 
             var lease = new ArchiveIntegrityLease(
                 resolvedPath,
@@ -434,10 +442,10 @@ public sealed class ArchiveIntegrityService
 
 internal sealed class ArchiveIntegrityLease : IDisposable
 {
-    private FileStream? _stream;
+    private Stream? _stream;
     private IDisposable? _owner;
 
-    internal ArchiveIntegrityLease(string path, FileStream stream, IDisposable? owner = null)
+    internal ArchiveIntegrityLease(string path, Stream stream, IDisposable? owner = null)
     {
         Path = path;
         _stream = stream;
@@ -445,31 +453,20 @@ internal sealed class ArchiveIntegrityLease : IDisposable
     }
 
     public string Path { get; }
+    internal Stream Stream => _stream ?? throw new ObjectDisposedException(nameof(ArchiveIntegrityLease));
+    internal long Length => Stream.Length;
 
     internal async Task CopyToAsync(Stream destination, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(destination);
-        FileStream stream = _stream ?? throw new ObjectDisposedException(nameof(ArchiveIntegrityLease));
+        Stream stream = _stream ?? throw new ObjectDisposedException(nameof(ArchiveIntegrityLease));
         stream.Position = 0;
         await stream.CopyToAsync(destination, 1024 * 1024, cancellationToken).ConfigureAwait(false);
     }
 
 #if KEEPVAULT_MACOS
-    internal async Task CopyToVerifiedStagingAsync(Stream destination, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(destination);
-        FileStream stream = _stream ?? throw new ObjectDisposedException(nameof(ArchiveIntegrityLease));
-        long length = stream.Length;
-        if (length is <= 0 or > 512L * 1024 * 1024 * 1024)
-            throw new InvalidDataException("The verified ZPAQ staging length exceeds the v12 bound.");
-        byte[] header = new byte[16];
-        "KV12VM\0\0"u8.CopyTo(header);
-        System.Buffers.Binary.BinaryPrimitives.WriteInt64BigEndian(header.AsSpan(8), length);
-        await destination.WriteAsync(header, cancellationToken).ConfigureAwait(false);
-        await CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
-        if (stream.Length != length || stream.Position != length)
-            throw new IOException("The verified ZPAQ stream changed length during staging.");
-    }
+    internal Task ServeVerifiedReadAtAsync(Stream requestSource, Stream responseDestination, CancellationToken cancellationToken) =>
+        VerifiedArchiveReadAtServer.ServeAsync(Stream, requestSource, responseDestination, cancellationToken);
 #endif
 
     public void Dispose()

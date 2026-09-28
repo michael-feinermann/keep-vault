@@ -11,7 +11,7 @@ namespace KalynaArchiver.Services;
 /// <summary>Additional requirements for distributable Windows release executables.</summary>
 public static class ReleaseExecutablePolicy
 {
-    public const string RequiredVersion = "5.0.2.0";
+    public const string RequiredVersion = "5.0.3.0";
     private static readonly string[] Products =
         ["Keep Vault.exe", "Keep Vault Release Verifier.exe", "Keep Vault Setup.exe", "QR-Scanner/QR-Scanner.exe"];
 
@@ -19,7 +19,7 @@ public static class ReleaseExecutablePolicy
     {
         foreach (string product in Products)
             if (FileVersionInfo.GetVersionInfo(Path.Combine(directory, product)).FileVersion != RequiredVersion)
-                throw new InvalidDataException("Executable version does not match Windows 5.0.2: " + product);
+                throw new InvalidDataException("Executable version does not match Windows 5.0.3: " + product);
     }
 
     public static void RequireTimestampedPe(string path)

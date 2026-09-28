@@ -123,7 +123,7 @@ public sealed class SourceSnapshotLease : IDisposable
         // Only the named native outputs may differ from HEAD. An arbitrary
         // executable or similarly named source file is never a dirty override.
         return System.Text.RegularExpressions.Regex.IsMatch(path[6..],
-            @"^(?:zpaq\.exe|argon2\.exe|(?:kalyna_v12|threefish_ref|mars_ref|shacal2_ref|aes_ref|chachapoly_ref|argon2_ref|mldsa87_ref)\.dll)(?:\.(?:sha3|skein))?(?:\.khsig)?$",
+            @"^(?:zpaq\.exe|argon2\.exe|(?:kalyna_v13|threefish_ref|mars_ref|camellia_v13|serpent_v13|shacal2_ref|aes_ref|xchachapoly_v13|argon2_ref|mldsa87_ref)\.dll)(?:\.(?:sha3|skein))?(?:\.khsig)?$",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
     }
 

@@ -1061,7 +1061,7 @@ internal static class TestRunner
         foreach (string file in normalizedFiles)
         {
             bool matched = false;
-            if (file.Contains("V12MasterKdf") || file.Contains("KdfPrimitives") || file.Contains("KdfSalts") || file.Contains("SuiteKeySchedule") || file.Contains("PasswordKeyService") || file.Contains("ContainerKeyDerivation") || file.Contains("SecureMemory"))
+            if (file.Contains("V13MasterKdf") || file.Contains("KdfPrimitives") || file.Contains("KdfSalts") || file.Contains("SuiteKeySchedule") || file.Contains("PasswordKeyService") || file.Contains("ContainerKeyDerivation") || file.Contains("SecureMemory"))
             {
                 matched = true;
                 if (file.Contains("SecureMemory", StringComparison.Ordinal))
@@ -1076,16 +1076,16 @@ internal static class TestRunner
                 affected.Add("policy.password");
                 affected.Add("policy.pin-creation");
                 affected.Add("ALL_CONTAINER_SUITES");
-                affected.Add("containers.v12-kpar2-roundtrip");
-                affected.Add("containers.v12-production-worker-equivalence");
+                affected.Add("containers.v13-kpar2-roundtrip");
+                affected.Add("containers.v13-production-worker-equivalence");
             }
             if (file.Contains("KalynaContainerService") || file.Contains("ParallelContainerAuthenticator"))
             {
                 matched = true;
-                affected.Add("crypto.v12-parallel-mac-kat");
+                affected.Add("crypto.v13-parallel-mac-kat");
                 affected.Add("ALL_CONTAINER_SUITES");
-                affected.Add("containers.v12-kpar2-roundtrip");
-                affected.Add("containers.v12-production-worker-equivalence");
+                affected.Add("containers.v13-kpar2-roundtrip");
+                affected.Add("containers.v13-production-worker-equivalence");
                 affected.Add("performance.cipher-suites");
             }
             if (file.Contains("ZpaqService") || file.Contains("BoundFileTransaction") || file.Contains("MacPlatformSecurity") || file.Contains("MacSecureFile") || file.Contains("MacOriginalDeletionService"))
@@ -1095,7 +1095,7 @@ internal static class TestRunner
                 affected.Add("zpaq.process-resource-limits");
                 affected.Add("zpaq.fail-fast-error-preservation");
                 affected.Add("zpaq.three-file-commit-binding");
-                affected.Add("containers.v12-kpar2-roundtrip");
+                affected.Add("containers.v13-kpar2-roundtrip");
                 affected.Add("deletion.original-verification");
                 affected.Add("deletion.cryptographic-erase");
                 affected.Add("smoke.descriptor-identity");
@@ -1182,10 +1182,10 @@ internal static class TestRunner
                 affected.Add("crypto.reference-differential");
                 affected.Add("crypto.kalyna-fast-path-differential");
                 affected.Add("crypto.chacha20-fast-path-differential");
-                affected.Add("crypto.chacha20-poly1305-rfc8439");
+                affected.Add("crypto.xchacha20-poly1305-draft03");
                 affected.Add("crypto.aes-ctr-differential");
-                affected.Add("crypto.v12-parallel-mac-kat");
-                affected.Add("containers.v12-production-worker-equivalence");
+                affected.Add("crypto.v13-parallel-mac-kat");
+                affected.Add("containers.v13-production-worker-equivalence");
             }
 
             foreach (string impactedTest in GetPerformanceSensitiveImpact(file))
@@ -1280,9 +1280,9 @@ internal static class TestRunner
 
         string[] sensitiveNames =
         [
-            "kalyna_v12_export.cpp",
+            "kalyna_v13_export.cpp",
             "threefish_ref_export.c",
-            "chachapoly_ref_export.cpp",
+            "xchachapoly_ref_export.cpp",
             "aes_ref_export.cpp",
             "mars_ref_export.cpp",
             "shacal2_ref_export.cpp",
@@ -1313,10 +1313,10 @@ internal static class TestRunner
             "crypto.reference-differential",
             "crypto.kalyna-fast-path-differential",
             "crypto.chacha20-fast-path-differential",
-            "crypto.chacha20-poly1305-rfc8439",
+            "crypto.xchacha20-poly1305-draft03",
             "crypto.aes-ctr-differential",
-            "crypto.v12-parallel-mac-kat",
-            "containers.v12-production-worker-equivalence",
+            "crypto.v13-parallel-mac-kat",
+            "containers.v13-production-worker-equivalence",
         };
     }
 

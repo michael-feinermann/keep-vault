@@ -1,9 +1,9 @@
 /*
  * Native adapter for AES-256 in CTR mode.
  *
- * This adapter is the v12 production path used directly by
- * NativeAes.XCryptCtr256: by itself for the AES suite and as the innermost
- * stage of the paranoia, ChaCha-over-AES and mixed cascades. It is not a slow
+ * This adapter is the v13 production path used directly by
+ * NativeAes.XCrypt: by itself for the AES suite and as the innermost
+ * stage of the standard, paranoia, XChaCha-over-AES and mixed cascades. It is not a slow
  * fallback behind a separate platform implementation.
  *
  * Crypto++ runtime dispatch selects AES-NI/SIMD on Windows x64 and the ARM AES
@@ -81,7 +81,19 @@ extern "C" KEEPVAULT_EXPORT int aes_256_ctr_xcrypt(
     std::size_t length)
 {
     return keepvault::xcrypt_ctr<CryptoPP::Rijndael::Encryption>(
-        key, AES_KEY_BYTES, nonce, input, output, length);
+        key, AES_KEY_BYTES, nonce, input, output, length, 1);
+}
+
+extern "C" KEEPVAULT_EXPORT int aes_256_ctr_xcrypt_v13_with_workers(
+    const std::uint8_t key[AES_KEY_BYTES],
+    const std::uint8_t nonce[AES_BLOCK_BYTES],
+    const std::uint8_t* input,
+    std::uint8_t* output,
+    std::size_t length, std::uint32_t worker_budget)
+{
+    if (worker_budget == 0) return 1;
+    return keepvault::xcrypt_ctr<CryptoPP::Rijndael::Encryption>(
+        key, AES_KEY_BYTES, nonce, input, output, length, worker_budget);
 }
 
 /*

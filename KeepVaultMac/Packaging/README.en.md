@@ -42,7 +42,9 @@ There are no exceptions for network, camera, microphone, USB, Bluetooth,
 Apple Events, debugging, JIT, unsigned memory or library validation. ZPAQ and
 the Argon2 command-line tool receive no additional sandbox or inherit entitlements.
 ZPAQ is additionally subject to restrictive operation-specific Seatbelt profiles
-and the root-owned v12 execution anchor.
+and the root-owned v13 execution anchor.
+
+The source targets Keep Vault 5.0.3, build 14, container v13. The installed ZPAQ anchor is `/Library/Application Support/Keep Vault/v13`. The separate release-key envelope format and its `.v12.enc` filenames remain unchanged; they are not container-format identifiers. Actual release approval is recorded in the [5.0.3 release report](../../docs/KEEP_VAULT_5_0_3_RELEASE_REPORT.md).
 
 ## Private release keys
 

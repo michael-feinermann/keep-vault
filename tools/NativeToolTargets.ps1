@@ -6,7 +6,7 @@
 # three grew:
 #
 #   - Sign-Binaries and Generate-ReleaseManifests left aes_ref.dll,
-#     mars_ref.dll, shacal2_ref.dll and chachapoly_ref.dll unsigned and without
+#     mars_ref.dll, shacal2_ref.dll and xchachapoly_v13.dll unsigned and without
 #     manifests, which the integrity gate reads as four missing tools - the same
 #     symptom as never having built them.
 #   - Sign-ManagedOutput skipped them in its generation-sync loop, and then,
@@ -22,12 +22,14 @@
 function Get-NativeToolNames {
     return @(
         "zpaq.exe",
-        "kalyna_v12.dll",
+        "kalyna_v13.dll",
         "threefish_ref.dll",
         "mars_ref.dll",
+        "camellia_v13.dll",
+        "serpent_v13.dll",
         "shacal2_ref.dll",
         "aes_ref.dll",
-        "chachapoly_ref.dll",
+        "xchachapoly_v13.dll",
         "argon2_ref.dll",
         "argon2.exe"
     )

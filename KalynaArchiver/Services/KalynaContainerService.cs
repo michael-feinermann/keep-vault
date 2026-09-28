@@ -22,12 +22,12 @@ public sealed partial class KalynaContainerService
     /// generation; a second one would only exist to serve archives this build
     /// refuses to open.
     /// </remarks>
-    internal static readonly byte[] ThreefishTweakDomain = "Kalyna-ZPAQ/v12/Threefish-1024/CTR-Tweak"u8.ToArray();
-    // Version 12 is the only container generation this build reads or writes.
+    internal static readonly byte[] ThreefishTweakDomain = "Kalyna-ZPAQ/v13/Threefish-1024/CTR-Tweak"u8.ToArray();
+    // Version 13 is the only container generation this build reads or writes.
     // There is deliberately no reader for anything older: a format this app
     // writes once and reads years later is safer with one shape than with a
     // compatibility path that is exercised rarely and audited less.
-    private const int CurrentVersion = 12;
+    private const int CurrentVersion = 13;
 
     /// <summary>
     /// The width of the master key. Every role key is cut from a value of
@@ -53,27 +53,23 @@ public sealed partial class KalynaContainerService
 
     // Each slot owns two locked 16 MiB buffers, plus small nonce/tag storage.
     // Also bound the aggregate buffers by 1/16 of reported available memory.
-    private const int MaxPipelineWorkers = 64;
     private const int Sha3TagSize = 64;
     private const int SkeinTagSize = 128;
     private const int MaxHeaderSize = 16 * 1024;
     private readonly PasswordKeyService _passwords = new();
-    private static readonly AsyncLocal<int?> PipelineWorkerOverride = new();
-    private static readonly SemaphoreSlim NativePipelineConcurrency = new(
-        CalculateNativeTransformConcurrency(Environment.ProcessorCount));
+    private readonly ArchiveOperationPolicy? _operationPolicy;
 
-    // A 16 MiB native call uses at most 64 workers (256 KiB per work claim).
-    // Bound simultaneous native teams across container operations to roughly
-    // two workers per logical CPU, rather than multiplying both parallel axes.
-    internal static int CalculateNativeTransformConcurrency(int logicalProcessors)
+    public KalynaContainerService(ArchiveOperationPolicy? operationPolicy = null)
     {
-        long processors = Math.Max(1, logicalProcessors);
-        return (int)Math.Clamp(2L * processors / Math.Min(processors, 64), 1, 64);
+        _operationPolicy = operationPolicy;
     }
+    private static readonly AsyncLocal<int?> PipelineWorkerOverride = new();
+    // A compatibility test hook for the natural topology bound, not a fixed CPU cap.
+    internal static int CalculateNativeTransformConcurrency(int logicalProcessors) => Math.Max(1, logicalProcessors);
 
     internal static IDisposable UsePipelineWorkerCountForTests(int workers)
     {
-        if (workers is < 1 or > MaxPipelineWorkers)
+        if (workers < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(workers));
         }
@@ -83,15 +79,22 @@ public sealed partial class KalynaContainerService
         return new PipelineWorkerOverrideScope(previous);
     }
 
-    internal static int ProductionPipelineWorkerCount => CalculatePipelineWorkerCount(
-        Environment.ProcessorCount, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
+    internal static int ProductionPipelineWorkerCount
+    {
+        get
+        {
+            ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
+            return Math.Min(Math.Min(policy.MaxCpuWorkers, policy.MaxQueuedChunks), CalculatePipelineWorkerCount(
+                Environment.ProcessorCount, Math.Min(policy.MemoryBudgetBytes, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes)));
+        }
+    }
 
     internal static int CalculatePipelineWorkerCount(int logicalProcessors, long availableMemoryBytes)
     {
-        int cpuSlots = Math.Clamp(logicalProcessors / LogicalProcessorsPerPipelineWorker, 1, MaxPipelineWorkers);
+        int cpuSlots = Math.Max(1, logicalProcessors / LogicalProcessorsPerPipelineWorker);
         long memorySlots = availableMemoryBytes <= 0
             ? 1
-            : Math.Clamp(availableMemoryBytes / (16L * (2L * BufferSize + 512)), 1, MaxPipelineWorkers);
+            : Math.Clamp(availableMemoryBytes / (16L * (2L * BufferSize + 512)), 1, int.MaxValue);
         return Math.Min(cpuSlots, (int)memorySlots);
     }
 
@@ -123,7 +126,7 @@ public sealed partial class KalynaContainerService
             pin,
             firstGeneratedPassword,
             secondGeneratedPassword,
-            EncryptionSuite.Kalyna512_512,
+            EncryptionSuiteCatalog.Default,
             hint,
             progress,
             cancellationToken);
@@ -203,7 +206,7 @@ public sealed partial class KalynaContainerService
             pin,
             firstGeneratedPassword,
             secondGeneratedPassword,
-            EncryptionSuite.Kalyna512_512,
+            EncryptionSuiteCatalog.Default,
             argon2Profile,
             hint,
             progress,
@@ -224,7 +227,13 @@ public sealed partial class KalynaContainerService
         CancellationToken cancellationToken,
         GeneratedArchiveEntropy? preparedEntropy = null)
     {
+        using IDisposable? policyScope = _operationPolicy?.EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(plainZpaqStream);
+        if (plainZpaqStream.CanSeek)
+            CryptoUsageBudget.ValidatePayloadLength(checked(plainZpaqStream.Length - plainZpaqStream.Position));
         EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.Get(suite);
         EnsureNativeAvailable(suite);
         PasswordKeyService.ValidateUserPasswordForCreation(userPassword, firstGeneratedPassword, secondGeneratedPassword);
@@ -321,8 +330,8 @@ public sealed partial class KalynaContainerService
             // block ends and leave the still-populated buffers unpinned until
             // the finally ran, which is the one ordering the locking exists to
             // prevent.
-            nonceLock = SecureMemory.TryLock(nonce);
-            tweakLock = SecureMemory.TryLock(tweak);
+            nonceLock = SecureMemory.TryLock(nonce!);
+            tweakLock = SecureMemory.TryLock(tweak!);
 
             var header = new ContainerHeader(
                 CurrentVersion,
@@ -338,13 +347,14 @@ public sealed partial class KalynaContainerService
                 Convert.ToBase64String(salt[64..128]),
                 secondSalt.Length == 0 ? null : Convert.ToBase64String(secondSalt[..64]),
                 secondSalt.Length == 0 ? null : Convert.ToBase64String(secondSalt[64..128]),
-                parameters.NonceBytes * 8,
+                parameters.ArchiveNonceBytes * 8,
                 Convert.ToBase64String(nonce),
+                EncryptionSuiteCatalog.NonceDerivationMode,
                 parameters.TweakBytes * 8,
                 parameters.TweakBytes > 0 ? EncryptionSuiteCatalog.ThreefishTweakMode : "None",
                 tweak.Length == 0 ? null : Convert.ToBase64String(tweak),
                 hint,
-                // Zero on purpose. v12 derives the Argon2id memory cost from
+                // Zero on purpose. v13 derives the Argon2id memory cost from
                 // the credentials, so writing it here would publish the one
                 // parameter the derivation keeps secret. Iterations and
                 // parallelism are fixed constants and reveal nothing.
@@ -355,12 +365,12 @@ public sealed partial class KalynaContainerService
                 MasterKeyBits,
                 "Sequential",
                 "PMI16",
-                V12MasterKdf.PasswordMode,
-                V12MasterKdf.KdfInputMode,
+                V13MasterKdf.PasswordMode,
+                V13MasterKdf.KdfInputMode,
                 1024,
                 2,
-                V12MasterKdf.KdfMode,
-                secondNonce.Length == 0 ? 0 : parameters.NonceBytes * 8,
+                V13MasterKdf.KdfMode,
+                secondNonce.Length == 0 ? 0 : parameters.ArchiveNonceBytes * 8,
                 secondNonce.Length == 0 ? null : Convert.ToBase64String(secondNonce));
             byte[] headerBytes = JsonSerializer.SerializeToUtf8Bytes(header, ContainerJsonContext.Default.ContainerHeader);
             if (headerBytes.Length > MaxHeaderSize)
@@ -525,19 +535,14 @@ public sealed partial class KalynaContainerService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using IDisposable? policyScope = _operationPolicy?.EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(plainZpaqDestination);
-#if KEEPVAULT_MACOS
-        using MacPrivateFileSnapshot inputSnapshot = await MacPrivateFileSnapshot
-            .CaptureAsync(encryptedPath, cancellationToken)
+        await using VerifiedArchiveInput input = await VerifiedArchiveInput
+            .CaptureAsync(encryptedPath, _operationPolicy, cancellationToken)
             .ConfigureAwait(false);
-        FileStream input = inputSnapshot.Stream;
-#else
-        // Windows has no unlinked private snapshot, but the open itself must
-        // match the macOS one: no reparse point is followed, the object is
-        // proven to be a regular file, and no other writer is admitted for as
-        // long as the container is being authenticated and decrypted.
-        await using var input = SecureFile.OpenReadNoReparse(encryptedPath, FileShare.Read);
-#endif
         byte[] magic = new byte[Magic.Length];
         byte[] headerLengthBytes = new byte[sizeof(int)];
         byte[]? headerBytes = null;
@@ -558,13 +563,18 @@ public sealed partial class KalynaContainerService
 
         try
         {
-            await input.ReadExactlyAsync(magic, cancellationToken).ConfigureAwait(false);
+            ContainerHeader? header = null;
+            EncryptionSuiteParameters? parameters = null;
+            long cipherStart = 0;
+            await input.VerifyGloballyAsync(async (verificationInput, verificationToken) =>
+            {
+            await verificationInput.ReadExactlyAsync(magic, verificationToken).ConfigureAwait(false);
             if (!CryptographicOperations.FixedTimeEquals(magic, Magic))
             {
                 throw new InvalidDataException("The file is not an encrypted ZPAQ container.");
             }
 
-            await input.ReadExactlyAsync(headerLengthBytes, cancellationToken).ConfigureAwait(false);
+            await verificationInput.ReadExactlyAsync(headerLengthBytes, verificationToken).ConfigureAwait(false);
             int headerLength = BinaryPrimitives.ReadInt32LittleEndian(headerLengthBytes);
             if (headerLength is <= 0 or > MaxHeaderSize)
             {
@@ -572,17 +582,18 @@ public sealed partial class KalynaContainerService
             }
 
             headerBytes = new byte[headerLength];
-            await input.ReadExactlyAsync(headerBytes, cancellationToken).ConfigureAwait(false);
-            ContainerHeader header = DeserializeAndValidateHeader(headerBytes);
-            EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.FromAlgorithm(header.Algorithm);
-            EnsureNativeAvailable(parameters.Suite);
+            await verificationInput.ReadExactlyAsync(headerBytes, verificationToken).ConfigureAwait(false);
+            header = DeserializeAndValidateHeader(headerBytes);
+            parameters = EncryptionSuiteCatalog.FromAlgorithm(header.Algorithm);
 
             expectedSha3Tag = new byte[Sha3TagSize];
             expectedSkeinTag = new byte[SkeinTagSize];
-            await input.ReadExactlyAsync(expectedSha3Tag, cancellationToken).ConfigureAwait(false);
-            await input.ReadExactlyAsync(expectedSkeinTag, cancellationToken).ConfigureAwait(false);
-            long cipherStart = input.Position;
-            if (input.Length <= cipherStart)
+            await verificationInput.ReadExactlyAsync(expectedSha3Tag, verificationToken).ConfigureAwait(false);
+            await verificationInput.ReadExactlyAsync(expectedSkeinTag, verificationToken).ConfigureAwait(false);
+            cipherStart = verificationInput.Position;
+            CryptoUsageBudget.ValidateCiphertextLength(parameters, checked(verificationInput.Length - cipherStart));
+            EnsureNativeAvailable(parameters.Suite);
+            if (verificationInput.Length <= cipherStart)
             {
                 throw new InvalidDataException("Encrypted container has no ciphertext payload.");
             }
@@ -623,23 +634,20 @@ public sealed partial class KalynaContainerService
                 salt,
                 secondSalt,
                 progress,
-                cancellationToken).ConfigureAwait(false);
+                verificationToken).ConfigureAwait(false);
 
             (actualSha3Tag, actualSkeinTag) = await ComputeCiphertextAuthenticationAsync(
-                input,
+                verificationInput,
                 cipherStart,
                 keyMaterial.Sha3MacKey,
                 keyMaterial.SkeinMacKey,
                 headerLengthBytes,
                 headerBytes,
-                cancellationToken).ConfigureAwait(false);
+                verificationToken).ConfigureAwait(false);
 
-            bool sha3Matches = CryptographicOperations.FixedTimeEquals(expectedSha3Tag, actualSha3Tag);
-            bool skeinMatches = CryptographicOperations.FixedTimeEquals(expectedSkeinTag, actualSkeinTag);
-            if (!(sha3Matches & skeinMatches))
-            {
-                throw new CryptographicException("Wrong password or manipulated container.");
-            }
+            return new VerifiedArchiveAuthentication(
+                expectedSha3Tag, actualSha3Tag, expectedSkeinTag, actualSkeinTag);
+            }, cancellationToken).ConfigureAwait(false);
 
             // Locked until the outer finally has zeroed them; a `using`
             // declaration would unlock the pages while they still hold their
@@ -650,14 +658,14 @@ public sealed partial class KalynaContainerService
             await DecryptPayloadParallelAsync(
                 input,
                 plainZpaqDestination,
-                parameters,
-                header.Version,
-                keyMaterial.EncryptionKey,
-                tweak,
-                chunkNonceBase,
+                parameters!,
+                header!.Version,
+                keyMaterial!.EncryptionKey,
+                tweak!,
+                chunkNonceBase!,
                 cancellationToken).ConfigureAwait(false);
 
-            progress?.Report($"{parameters.DisplayName} container decrypted.");
+            progress?.Report($"{parameters!.DisplayName} container decrypted.");
         }
         catch (Exception failure)
         {
@@ -721,6 +729,26 @@ public sealed partial class KalynaContainerService
         string secondGeneratedPassword,
         CancellationToken cancellationToken)
     {
+        VerifiedArchiveAuthentication result = await VerifyAuthenticationResultAsync(input, userPassword, pin,
+            firstGeneratedPassword, secondGeneratedPassword, cancellationToken).ConfigureAwait(false);
+        CryptographicOperations.ZeroMemory(result.ExpectedSha3);
+        CryptographicOperations.ZeroMemory(result.ActualSha3);
+        CryptographicOperations.ZeroMemory(result.ExpectedSkein);
+        CryptographicOperations.ZeroMemory(result.ActualSkein);
+    }
+
+    internal async Task<VerifiedArchiveAuthentication> VerifyAuthenticationResultAsync(
+        Stream input,
+        string userPassword,
+        string pin,
+        string firstGeneratedPassword,
+        string secondGeneratedPassword,
+        CancellationToken cancellationToken)
+    {
+        using IDisposable? policyScope = _operationPolicy?.EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(input);
         if (!input.CanRead || !input.CanSeek)
         {
@@ -757,13 +785,14 @@ public sealed partial class KalynaContainerService
             await input.ReadExactlyAsync(headerBytes, cancellationToken).ConfigureAwait(false);
             ContainerHeader header = DeserializeAndValidateHeader(headerBytes);
             EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.FromAlgorithm(header.Algorithm);
-            EnsureNativeAvailable(parameters.Suite);
 
             expectedSha3Tag = new byte[Sha3TagSize];
             expectedSkeinTag = new byte[SkeinTagSize];
             await input.ReadExactlyAsync(expectedSha3Tag, cancellationToken).ConfigureAwait(false);
             await input.ReadExactlyAsync(expectedSkeinTag, cancellationToken).ConfigureAwait(false);
             long cipherStart = input.Position;
+            CryptoUsageBudget.ValidateCiphertextLength(parameters, checked(input.Length - cipherStart));
+            EnsureNativeAvailable(parameters.Suite);
             if (input.Length <= cipherStart)
             {
                 throw new InvalidDataException("Encrypted container has no ciphertext payload.");
@@ -820,6 +849,9 @@ public sealed partial class KalynaContainerService
             {
                 throw new CryptographicException("Wrong password or manipulated container.");
             }
+            return new VerifiedArchiveAuthentication(
+                (byte[])expectedSha3Tag.Clone(), (byte[])actualSha3Tag.Clone(),
+                (byte[])expectedSkeinTag.Clone(), (byte[])actualSkeinTag.Clone());
         }
         catch (Exception failure)
         {
@@ -1089,7 +1121,12 @@ public sealed partial class KalynaContainerService
         byte[] chunkNonceBase,
         CancellationToken cancellationToken)
     {
+        ChunkNoncePlan noncePlan = ChunkNoncePlan.Create(parameters);
+        byte[] associatedTemplate = CreateChunkAssociatedDataTemplate(parameters, chunkNonceBase, CurrentVersion);
         int workerCount = PipelineWorkerCount;
+        long prefixBytes = ciphertext.CanSeek ? ciphertext.Position : 0;
+        long maximumContainerBytes = ArchiveOperationPolicy.Current.MaxContainerBytes;
+        int tagBytes = parameters.Cascade is { OutermostIsAead: true } ? NativeXChaChaPoly.TagBytes : 0;
         var slots = new ContainerChunkSlot[workerCount];
         Exception? operationFailure = null;
         try
@@ -1103,16 +1140,21 @@ public sealed partial class KalynaContainerService
                 for (; active < slots.Length; active++)
                 {
                     ContainerChunkSlot slot = slots[active] ??= new ContainerChunkSlot(
-                        BufferSize, BufferSize, parameters.NonceBytes);
+                        BufferSize, BufferSize, parameters.StageNonceBytes);
                     int read = await ReadChunkAsync(plaintext, slot.Input, cancellationToken).ConfigureAwait(false);
                     if (read == 0)
                     {
                         break;
                     }
 
+                    CryptoUsageBudget.ValidateChunk(chunkIndex, read);
                     slot.Prepare(chunkIndex, read);
                     total = checked(total + read);
                     chunkIndex = checked(chunkIndex + 1);
+                    if (checked(prefixBytes + total + checked(chunkIndex * tagBytes)) > maximumContainerBytes)
+                    {
+                        throw new IOException("The encrypted container exceeds the approved operation size budget.");
+                    }
                     if (read < BufferSize)
                     {
                         active++;
@@ -1132,7 +1174,7 @@ public sealed partial class KalynaContainerService
                         parameters,
                         encryptionKey,
                         tweak,
-                        chunkNonceBase),
+                        chunkNonceBase, noncePlan, associatedTemplate),
                     cancellationToken,
                     limitNativeConcurrency: true).ConfigureAwait(false);
 
@@ -1197,9 +1239,10 @@ public sealed partial class KalynaContainerService
         EncryptionSuiteParameters parameters,
         byte[] encryptionKey,
         byte[] tweak,
-        byte[] chunkNonceBase)
+        byte[] chunkNonceBase, ChunkNoncePlan noncePlan, byte[] associatedTemplate)
     {
-        DeriveChunkNonce(chunkNonceBase, slot.Index, slot.Counter);
+        CryptoUsageBudget.ValidateChunk(slot.Index, slot.PayloadLength);
+        noncePlan.DeriveStageNonce(chunkNonceBase, slot.Index, slot.Counter);
         XCrypt(
             parameters,
             encryptionKey,
@@ -1211,20 +1254,16 @@ public sealed partial class KalynaContainerService
 
         if (parameters.Cascade is not { OutermostIsAead: true } aeadLayout)
         {
+            OperationMemoryBudget.ReportProgress(slot.PayloadLength);
             return;
         }
 
         (byte[] aeadKey, byte[] aeadNonce) =
             SplitAeadMaterial(aeadLayout, encryptionKey, slot.Counter);
-        byte[] associated = BuildChunkAssociatedData(
-            parameters,
-            chunkNonceBase,
-            slot.Index,
-            slot.PayloadLength,
-            CurrentVersion);
+        byte[] associated = BuildChunkAssociatedDataFromTemplate(associatedTemplate, slot.Index, slot.PayloadLength);
         try
         {
-            NativeChaChaPoly.Encrypt(
+            NativeXChaChaPoly.Encrypt(
                 aeadKey,
                 aeadNonce,
                 associated,
@@ -1233,6 +1272,7 @@ public sealed partial class KalynaContainerService
                 slot.PayloadLength,
                 slot.Tag);
             slot.HasTag = true;
+            OperationMemoryBudget.ReportProgress(slot.PayloadLength);
         }
         finally
         {
@@ -1253,8 +1293,10 @@ public sealed partial class KalynaContainerService
         CancellationToken cancellationToken)
     {
         int tagBytes = parameters.Cascade is { OutermostIsAead: true }
-            ? NativeChaChaPoly.TagBytes
+            ? NativeXChaChaPoly.TagBytes
             : 0;
+        ChunkNoncePlan noncePlan = ChunkNoncePlan.Create(parameters);
+        byte[] associatedTemplate = CreateChunkAssociatedDataTemplate(parameters, chunkNonceBase, version);
         int workerCount = PipelineWorkerCount;
         var slots = new ContainerChunkSlot[workerCount];
         Exception? operationFailure = null;
@@ -1268,7 +1310,7 @@ public sealed partial class KalynaContainerService
                 for (; active < slots.Length; active++)
                 {
                     ContainerChunkSlot slot = slots[active] ??= new ContainerChunkSlot(
-                        BufferSize + tagBytes, BufferSize, parameters.NonceBytes);
+                        BufferSize + tagBytes, BufferSize, parameters.StageNonceBytes);
                     int read = await ReadChunkAsync(ciphertext, slot.Input, cancellationToken).ConfigureAwait(false);
                     if (read == 0)
                     {
@@ -1284,6 +1326,7 @@ public sealed partial class KalynaContainerService
                                 : "The container ends inside an authentication tag.");
                     }
 
+                    CryptoUsageBudget.ValidateChunk(chunkIndex, payloadLength);
                     slot.Prepare(chunkIndex, payloadLength, read);
                     chunkIndex = checked(chunkIndex + 1);
                     if (read < BufferSize + tagBytes)
@@ -1306,7 +1349,7 @@ public sealed partial class KalynaContainerService
                         version,
                         encryptionKey,
                         tweak,
-                        chunkNonceBase),
+                        chunkNonceBase, noncePlan, associatedTemplate),
                     cancellationToken,
                     limitNativeConcurrency: true).ConfigureAwait(false);
 
@@ -1376,7 +1419,7 @@ public sealed partial class KalynaContainerService
             {
                 int workerIndex = started;
                 tasks[started] = limitNativeConcurrency
-                    ? RunNativeChunkWorkerAsync(worker, workerIndex, cancellationToken)
+                    ? RunNativeChunkWorkerAsync(worker, workerIndex, workerCount, cancellationToken)
                     : Task.Run(() => worker(workerIndex), cancellationToken);
             }
         }
@@ -1434,17 +1477,18 @@ public sealed partial class KalynaContainerService
         RunChunkWorkersAsync(workerCount, worker, CancellationToken.None);
 
     private static async Task RunNativeChunkWorkerAsync(
-        Action<int> worker, int index, CancellationToken cancellationToken)
+        Action<int> worker, int index, int readyChunks, CancellationToken cancellationToken)
     {
-        await NativePipelineConcurrency.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
+        int preferredWorkers = 1 + (policy.MaxCpuWorkers - 1) / readyChunks;
+        using CpuWorkBudget.Lease lease = await CpuWorkBudget.AcquireAsync(policy.MaxCpuWorkers,
+            preferredWorkers, cancellationToken).ConfigureAwait(false);
+        await Task.Run(() =>
         {
-            await Task.Run(() => worker(index), cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            NativePipelineConcurrency.Release();
-        }
+            using IDisposable cpuScope = lease.EnterScope();
+            using IDisposable nativeBudget = NativeCipherWorkerBudget.EnterScope(lease.Workers);
+            worker(index);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     internal static Task RunBoundedChunkWorkersForTestsAsync(
@@ -1504,26 +1548,22 @@ public sealed partial class KalynaContainerService
         int version,
         byte[] encryptionKey,
         byte[] tweak,
-        byte[] chunkNonceBase)
+        byte[] chunkNonceBase, ChunkNoncePlan noncePlan, byte[] associatedTemplate)
     {
-        DeriveChunkNonce(chunkNonceBase, slot.Index, slot.Counter);
+        CryptoUsageBudget.ValidateChunk(slot.Index, slot.PayloadLength);
+        noncePlan.DeriveStageNonce(chunkNonceBase, slot.Index, slot.Counter);
         if (parameters.Cascade is { OutermostIsAead: true } aeadLayout)
         {
-            slot.Input.AsSpan(slot.PayloadLength, NativeChaChaPoly.TagBytes).CopyTo(slot.Tag);
+            slot.Input.AsSpan(slot.PayloadLength, NativeXChaChaPoly.TagBytes).CopyTo(slot.Tag);
             (byte[] aeadKey, byte[] aeadNonce) =
                 SplitAeadMaterial(aeadLayout, encryptionKey, slot.Counter);
-            byte[] associated = BuildChunkAssociatedData(
-                parameters,
-                chunkNonceBase,
-                slot.Index,
-                slot.PayloadLength,
-                version);
+            byte[] associated = BuildChunkAssociatedDataFromTemplate(associatedTemplate, slot.Index, slot.PayloadLength);
             try
             {
-                // NativeChaChaPoly performs the constant-time tag check before
+                // NativeXChaChaPoly performs the constant-time tag check before
                 // writing any plaintext. On failure this slot is discarded and
                 // the ordered writer is never entered.
-                NativeChaChaPoly.Decrypt(
+                NativeXChaChaPoly.Decrypt(
                     aeadKey,
                     aeadNonce,
                     associated,
@@ -1549,6 +1589,7 @@ public sealed partial class KalynaContainerService
             slot.Input,
             slot.Output,
             slot.PayloadLength);
+        OperationMemoryBudget.ReportProgress(slot.PayloadLength);
     }
 
     private static long BlocksForLength(int length, int blockBytes)
@@ -1582,57 +1623,16 @@ public sealed partial class KalynaContainerService
         }
     }
 
-    /// <summary>
-    /// Applies the suite's keystream to <paramref name="length"/> bytes.
-    /// </summary>
-    /// <remarks>
-    /// Every suite here is a counter-mode keystream, so this one routine both
-    /// encrypts and decrypts. The cascade runs the inner layer into the output
-    /// buffer and then the outer layer over that buffer in place; the reference
-    /// cores read each byte before writing the same index and never declare
-    /// their buffers restricted, so the aliasing is defined.
-    /// </remarks>
-    private static readonly byte[] ChunkNonceDomain = "Kalyna-ZPAQ/v12/chunk-nonce"u8.ToArray();
-
-    /// <summary>
-    /// Gives every chunk its own nonce instead of running one counter across
-    /// the whole archive.
-    /// </summary>
-    /// <remarks>
-    /// A single CTR stream over an archive of unbounded size is the case where
-    /// counter blocks eventually repeat, and a repeated counter block under the
-    /// same key hands an observer the XOR of two plaintexts. Re-deriving the
-    /// nonce for every chunk keeps each chunk's counter space to one chunk, so
-    /// archive size stops being what decides whether that is reachable.
-    ///
-    /// The per-chunk value is derived, not drawn. Fresh randomness per chunk
-    /// could not be reproduced when reading unless it were stored per chunk,
-    /// which is exactly the overhead an arbitrarily large archive cannot carry.
-    /// The chunk index is bound into the hash, so the nonces are independent of
-    /// each other while both sides compute the same sequence.
-    ///
-    /// SHA3-512 does this for every suite, including the two-round paranoia
-    /// cascade. The two hashes separate the *key derivation* rounds, where two
-    /// independent expansions of one entropy snapshot are the whole point;
-    /// chunk nonces need no such separation, because the base nonce they hang
-    /// off is already per-archive and per-suite. Using one hash here keeps the
-    /// sequence identical for every suite and removes a branch that could put
-    /// a reader and a writer on different derivations.
-    /// </remarks>
-    /// <summary>
-    /// The material every chunk nonce hangs off.
-    /// </summary>
-    /// <remarks>
-    /// One-round suites use their single nonce. A two-round suite uses both,
-    /// laid end to end, so each chunk nonce depends on the entropy of both
-    /// rounds and neither of the two stored nonces is dead weight in the header.
-    /// </remarks>
+    // The stored basis contains all five blocks of B1 and, for Paranoia, all
+    // five blocks of B2. ActivePrefix-v3 rotates only the first ceil(W/64)
+    // blocks required by the stage layout. AAD binds the entire stored basis,
+    // including reserve blocks; those blocks are never extra cipher nonces.
     private static byte[] BuildChunkNonceBase(byte[] nonce, byte[] secondNonce)
     {
-        if (secondNonce.Length == 0)
-        {
-            return (byte[])nonce.Clone();
-        }
+        if (nonce.Length != EncryptionSuiteCatalog.ArchiveNonceBytes
+            || (secondNonce.Length != 0 && secondNonce.Length != EncryptionSuiteCatalog.ArchiveNonceBytes))
+            throw new ArgumentException("The archive nonce basis must contain one or two complete 320-byte values.");
+        if (secondNonce.Length == 0) return (byte[])nonce.Clone();
 
         byte[] combined = new byte[checked(nonce.Length + secondNonce.Length)];
         nonce.CopyTo(combined, 0);
@@ -1640,42 +1640,9 @@ public sealed partial class KalynaContainerService
         return combined;
     }
 
-    private static void DeriveChunkNonce(
-        byte[] baseNonce,
-        long chunkIndex,
-        byte[] destination)
-    {
-        Span<byte> indexBytes = stackalloc byte[sizeof(long)];
-        BinaryPrimitives.WriteInt64BigEndian(indexBytes, chunkIndex);
-        Span<byte> blockBytes = stackalloc byte[sizeof(uint)];
-        Span<byte> digest = stackalloc byte[Sha3_512Compat.HashSizeInBytes];
-
-        int messageLength = ChunkNonceDomain.Length + baseNonce.Length + indexBytes.Length + blockBytes.Length;
-        byte[] message = new byte[messageLength];
-        try
-        {
-            ChunkNonceDomain.CopyTo(message, 0);
-            baseNonce.CopyTo(message, ChunkNonceDomain.Length);
-            indexBytes.CopyTo(message.AsSpan(ChunkNonceDomain.Length + baseNonce.Length));
-            int blockOffset = ChunkNonceDomain.Length + baseNonce.Length + indexBytes.Length;
-
-            int written = 0;
-            for (uint block = 0; written < destination.Length; block++)
-            {
-                BinaryPrimitives.WriteUInt32BigEndian(message.AsSpan(blockOffset, sizeof(uint)), block);
-                _ = Sha3_512Compat.HashData(message, digest);
-
-                int count = Math.Min(digest.Length, destination.Length - written);
-                digest[..count].CopyTo(destination.AsSpan(written));
-                written += count;
-            }
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(message);
-            CryptographicOperations.ZeroMemory(digest);
-        }
-    }
+    internal static void DeriveChunkNonce(EncryptionSuiteParameters parameters,
+        byte[] baseNonce, long chunkIndex, byte[] destination) =>
+        ChunkNoncePlan.Create(parameters).DeriveStageNonce(baseNonce, chunkIndex, destination);
 
     private static void XCrypt(
         EncryptionSuiteParameters parameters,
@@ -1738,10 +1705,10 @@ public sealed partial class KalynaContainerService
             return;
         }
 
-        if (tag.Length != NativeChaChaPoly.TagBytes)
+        if (tag.Length != NativeXChaChaPoly.TagBytes)
         {
             throw new ArgumentException(
-                $"The performance transform requires a {NativeChaChaPoly.TagBytes}-byte AEAD tag.",
+                $"The performance transform requires a {NativeXChaChaPoly.TagBytes}-byte AEAD tag.",
                 nameof(tag));
         }
 
@@ -1749,7 +1716,7 @@ public sealed partial class KalynaContainerService
             SplitAeadMaterial(aeadLayout, encryptionKey, counter);
         try
         {
-            NativeChaChaPoly.Encrypt(
+            NativeXChaChaPoly.Encrypt(
                 aeadKey,
                 aeadNonce,
                 associatedData,
@@ -1880,27 +1847,36 @@ public sealed partial class KalynaContainerService
     /// The archive identity is the header nonce, which is unique per archive
     /// and already authenticated by the container's own MACs.
     /// </remarks>
-    private static byte[] BuildChunkAssociatedData(
-        EncryptionSuiteParameters parameters,
-        ReadOnlySpan<byte> archiveNonce,
-        long chunkIndex,
-        int length,
-        int version = CurrentVersion)
-    {
-        // The archive identity is a digest of the whole base nonce, not its
-        // first bytes: nonces range from 12 bytes for ChaCha20-Poly1305 alone to
-        // 536 for the two-round paranoia cascade, and slicing a fixed prefix
-        // both overruns the short ones and ignores most of the long ones.
-        const int identityBytes = 16;
-        Span<byte> identityDigest = stackalloc byte[Sha3_512Compat.HashSizeInBytes];
-        _ = Sha3_512Compat.HashData(archiveNonce, identityDigest);
+    internal static byte[] BuildChunkAssociatedData(
+        EncryptionSuiteParameters parameters, ReadOnlySpan<byte> archiveNonce,
+        long chunkIndex, int length, int version = CurrentVersion) =>
+        BuildChunkAssociatedDataFromTemplate(CreateChunkAssociatedDataTemplate(parameters, archiveNonce, version), chunkIndex, length);
 
-        byte[] associated = new byte[4 + 4 + identityBytes + sizeof(long) + sizeof(int)];
-        BinaryPrimitives.WriteInt32BigEndian(associated.AsSpan(0), version);
-        BinaryPrimitives.WriteInt32BigEndian(associated.AsSpan(4), (int)parameters.Suite);
-        identityDigest[..identityBytes].CopyTo(associated.AsSpan(8));
-        BinaryPrimitives.WriteInt64BigEndian(associated.AsSpan(8 + identityBytes), chunkIndex);
-        BinaryPrimitives.WriteInt32BigEndian(associated.AsSpan(8 + identityBytes + sizeof(long)), length);
+    private static byte[] CreateChunkAssociatedDataTemplate(
+        EncryptionSuiteParameters parameters, ReadOnlySpan<byte> archiveNonce, int version)
+    {
+        if (version != CurrentVersion || archiveNonce.Length != parameters.ChunkNonceBaseBytes)
+            throw new ArgumentException("AAD requires v13 and the complete 320/640-byte archive basis.");
+        Span<byte> identityDigest = stackalloc byte[64];
+        try
+        {
+            _ = Sha3_512Compat.HashData(archiveNonce, identityDigest);
+            byte[] associated = new byte[36];
+            BinaryPrimitives.WriteInt32BigEndian(associated.AsSpan(0, 4), version);
+            BinaryPrimitives.WriteInt32BigEndian(associated.AsSpan(4, 4), (int)parameters.Suite);
+            identityDigest[..16].CopyTo(associated.AsSpan(8, 16));
+            return associated;
+        }
+        finally { CryptographicOperations.ZeroMemory(identityDigest); }
+    }
+
+    private static byte[] BuildChunkAssociatedDataFromTemplate(byte[] template, long chunkIndex, int length)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(chunkIndex);
+        if (template.Length != 36 || length is < 0 or > BufferSize) throw new ArgumentOutOfRangeException(nameof(length));
+        byte[] associated = (byte[])template.Clone();
+        BinaryPrimitives.WriteInt64BigEndian(associated.AsSpan(24, 8), chunkIndex);
+        BinaryPrimitives.WriteInt32BigEndian(associated.AsSpan(32, 4), length);
         return associated;
     }
 
@@ -1913,7 +1889,16 @@ public sealed partial class KalynaContainerService
         byte[] encryptionKey,
         byte[] counter)
     {
+        if (!layout.OutermostIsAead || encryptionKey.Length != layout.TotalKeyBytes
+            || counter.Length != layout.TotalNonceBytes)
+        {
+            throw new CryptographicException("AEAD material must contain the complete declared suite key and nonce.");
+        }
         CascadeStage stage = layout.Stages[^1];
+        if (stage.KeyBytes != NativeXChaChaPoly.KeyBytes || stage.NonceBytes != NativeXChaChaPoly.NonceBytes)
+        {
+            throw new CryptographicException("The outer v13 AEAD requires a 32-byte key and 24-byte nonce.");
+        }
         int keyOffset = layout.TotalKeyBytes - stage.KeyBytes;
         int nonceOffset = layout.TotalNonceBytes - stage.NonceBytes;
         return (
@@ -1933,6 +1918,12 @@ public sealed partial class KalynaContainerService
         {
             case CascadeCipher.Aes256:
                 NativeAes.XCryptCtr256(key, counter, buffer, buffer, length);
+                break;
+            case CascadeCipher.Camellia256:
+                NativeCamellia.XCrypt(key, counter, buffer, buffer, length);
+                break;
+            case CascadeCipher.Serpent256:
+                NativeSerpent.XCrypt(key, counter, buffer, buffer, length);
                 break;
             case CascadeCipher.Mars448:
                 NativeMars.XCryptCtr448(key, counter, buffer, buffer, length);
@@ -1982,6 +1973,7 @@ public sealed partial class KalynaContainerService
 
     internal static byte[] CreateSuiteTweak(EncryptionSuiteParameters parameters, byte[] nonce)
     {
+        if (nonce.Length != parameters.ArchiveNonceBytes) throw new ArgumentException("Threefish tweak requires the complete first320-byte archive basis.", nameof(nonce));
         byte[] threefishTweakDomain = ThreefishTweakDomain;
         if (parameters.TweakBytes == 0)
         {
@@ -2083,10 +2075,12 @@ public sealed partial class KalynaContainerService
             {
                 CascadeCipher.Aes256 => (NativeAes.IsAvailable(), "aes_ref.dll"),
                 CascadeCipher.Mars448 => (NativeMars.IsAvailable(), "mars_ref.dll"),
+                CascadeCipher.Camellia256 => (NativeCamellia.IsAvailable(), "camellia_v13.dll"),
+                CascadeCipher.Serpent256 => (NativeSerpent.IsAvailable(), "serpent_v13.dll"),
                 CascadeCipher.Shacal2_512 => (NativeShacal2.IsAvailable(), "shacal2_ref.dll"),
-                CascadeCipher.Kalyna512_512 => (NativeKalyna.IsAvailable(), "kalyna_v12.dll"),
+                CascadeCipher.Kalyna512_512 => (NativeKalyna.IsAvailable(), "kalyna_v13.dll"),
                 CascadeCipher.Threefish1024 => (NativeThreefish.IsAvailable(), "threefish_ref.dll"),
-                CascadeCipher.ChaCha20Poly1305 => (NativeChaChaPoly.IsAvailable(), "chachapoly_ref.dll"),
+                CascadeCipher.XChaCha20Poly1305 => (NativeXChaChaPoly.IsAvailable(), "xchachapoly_v13.dll"),
                 _ => (false, "an unknown cipher"),
             };
             if (!available && !missing.Contains(library))
@@ -2112,6 +2106,17 @@ public sealed partial class KalynaContainerService
             + " is unavailable.");
     }
 
+    private static byte[] DecodeCanonicalHeaderBase64(string encoded)
+    {
+        byte[] decoded = Convert.FromBase64String(encoded);
+        if (!string.Equals(encoded, Convert.ToBase64String(decoded), StringComparison.Ordinal))
+        {
+            CryptographicOperations.ZeroMemory(decoded);
+            throw new InvalidDataException("Container header contains non-canonical Base64 parameters.");
+        }
+        return decoded;
+    }
+
     private static void ValidateHeader(ContainerHeader header)
     {
         EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.FromAlgorithm(header.Algorithm);
@@ -2123,8 +2128,10 @@ public sealed partial class KalynaContainerService
             || header.Sha3TagBits != Sha3TagSize * 8
             || header.SkeinMacKeyBits != parameters.SkeinMacKeyBytes * 8
             || header.SkeinTagBits != SkeinTagSize * 8
-            || header.NonceBits != parameters.NonceBytes * 8
+            || !string.Equals(header.NonceDerivationMode, EncryptionSuiteCatalog.NonceDerivationMode, StringComparison.Ordinal)
+            || header.NonceBits != parameters.ArchiveNonceBytes * 8
             || header.TweakBits != parameters.TweakBytes * 8
+            || (parameters.TweakBytes == 0 && header.Tweak is not null)
             || !string.Equals(
                 header.TweakMode,
                 parameters.TweakBytes > 0 ? EncryptionSuiteCatalog.ThreefishTweakMode : "None",
@@ -2139,10 +2146,10 @@ public sealed partial class KalynaContainerService
 
         ValidatePasswordMode(header);
         if (header.Argon2MemoryKiB != 0
-            || header.Argon2Iterations != (int)V12MasterKdf.Iterations
-            || header.Argon2Parallelism != (int)V12MasterKdf.Parallelism)
+            || header.Argon2Iterations != (int)V13MasterKdf.Iterations
+            || header.Argon2Parallelism != (int)V13MasterKdf.Parallelism)
         {
-            throw new InvalidDataException("Container header does not use the fixed v12 Argon2id profile.");
+            throw new InvalidDataException("Container header does not use the fixed v13 Argon2id profile.");
         }
 
         if (header.Hint is { Length: > 180 } || header.Hint?.Any(char.IsControl) == true)
@@ -2166,14 +2173,14 @@ public sealed partial class KalynaContainerService
         byte[]? expectedTweak = null;
         try
         {
-            sha3Salt1 = Convert.FromBase64String(header.SaltSha3Round1);
-            skeinSalt1 = Convert.FromBase64String(header.SaltSkeinRound1);
-            nonce = Convert.FromBase64String(header.Nonce);
-            tweak = string.IsNullOrEmpty(header.Tweak) ? [] : Convert.FromBase64String(header.Tweak);
+            sha3Salt1 = DecodeCanonicalHeaderBase64(header.SaltSha3Round1);
+            skeinSalt1 = DecodeCanonicalHeaderBase64(header.SaltSkeinRound1);
+            nonce = DecodeCanonicalHeaderBase64(header.Nonce);
+            tweak = string.IsNullOrEmpty(header.Tweak) ? [] : DecodeCanonicalHeaderBase64(header.Tweak);
             if (sha3Salt1.Length != 64
                 || skeinSalt1.Length != 64
                 || CryptographicOperations.FixedTimeEquals(sha3Salt1, skeinSalt1)
-                || nonce.Length != parameters.NonceBytes
+                || nonce.Length != parameters.ArchiveNonceBytes
                 || tweak.Length != parameters.TweakBytes)
             {
                 throw new InvalidDataException("Container header contains invalid salt, nonce, or tweak lengths.");
@@ -2241,7 +2248,7 @@ public sealed partial class KalynaContainerService
                 "Container header is missing the second Argon2id round's salt or nonce.");
         }
 
-        if (header.SecondNonceBits != parameters.NonceBytes * 8)
+        if (header.SecondNonceBits != parameters.ArchiveNonceBytes * 8)
         {
             throw new InvalidDataException("Container header contains invalid second-round parameter lengths.");
         }
@@ -2253,15 +2260,15 @@ public sealed partial class KalynaContainerService
         byte[]? secondNonce = null;
         try
         {
-            sha3Salt1 = Convert.FromBase64String(header.SaltSha3Round1);
-            skeinSalt1 = Convert.FromBase64String(header.SaltSkeinRound1);
-            sha3Salt2 = Convert.FromBase64String(header.SaltSha3Round2);
-            skeinSalt2 = Convert.FromBase64String(header.SaltSkeinRound2);
-            secondNonce = Convert.FromBase64String(header.SecondNonce);
+            sha3Salt1 = DecodeCanonicalHeaderBase64(header.SaltSha3Round1);
+            skeinSalt1 = DecodeCanonicalHeaderBase64(header.SaltSkeinRound1);
+            sha3Salt2 = DecodeCanonicalHeaderBase64(header.SaltSha3Round2);
+            skeinSalt2 = DecodeCanonicalHeaderBase64(header.SaltSkeinRound2);
+            secondNonce = DecodeCanonicalHeaderBase64(header.SecondNonce);
 
             if (sha3Salt2.Length != 64
                 || skeinSalt2.Length != 64
-                || secondNonce.Length != parameters.NonceBytes)
+                || secondNonce.Length != parameters.ArchiveNonceBytes)
             {
                 throw new InvalidDataException("Container header contains invalid second-round lengths.");
             }
@@ -2306,11 +2313,11 @@ public sealed partial class KalynaContainerService
             throw new InvalidDataException($"Unsupported container version: {header.Version}");
         }
 
-        if (!string.Equals(header.PasswordMode, V12MasterKdf.PasswordMode, StringComparison.Ordinal)
-            || !string.Equals(header.KdfInputMode, V12MasterKdf.KdfInputMode, StringComparison.Ordinal)
-            || !string.Equals(header.KdfMode, V12MasterKdf.KdfMode, StringComparison.Ordinal))
+        if (!string.Equals(header.PasswordMode, V13MasterKdf.PasswordMode, StringComparison.Ordinal)
+            || !string.Equals(header.KdfInputMode, V13MasterKdf.KdfInputMode, StringComparison.Ordinal)
+            || !string.Equals(header.KdfMode, V13MasterKdf.KdfMode, StringComparison.Ordinal))
         {
-            throw new InvalidDataException("Container header contains no valid v12 four-credential KDF model.");
+            throw new InvalidDataException("Container header contains no valid v13 four-credential KDF model.");
         }
     }
 
@@ -2492,7 +2499,7 @@ public sealed partial class KalynaContainerService
             Input = new byte[inputBytes];
             Output = new byte[outputBytes];
             Counter = new byte[counterBytes];
-            Tag = new byte[NativeChaChaPoly.TagBytes];
+            Tag = new byte[NativeXChaChaPoly.TagBytes];
             try
             {
                 _inputLock = SecureMemory.TryLock(Input);
@@ -2633,7 +2640,7 @@ public sealed partial class KalynaContainerService
         /// Takes over the keys the role schedule derived.
         /// </summary>
         /// <remarks>
-        /// v12 derives each role from its own domain-separated context rather
+        /// v13 derives each role from its own domain-separated context rather
         /// than slicing one flat Argon2id output, so there is nothing to slice
         /// here — only three finished keys to copy into locked storage.
         /// </remarks>
@@ -2779,6 +2786,7 @@ public sealed partial class KalynaContainerService
         string? SaltSkeinRound2,
         int NonceBits,
         string Nonce,
+        string NonceDerivationMode,
         int TweakBits,
         string TweakMode,
         string? Tweak,
@@ -2876,10 +2884,10 @@ internal sealed class ContainerRecoveryKdfInfo : IDisposable
 
 internal static unsafe class NativeKalyna
 {
-    private const string DllName = "kalyna_v12.dll";
+    private const string DllName = "kalyna_v13.dll";
     private static readonly object LoadGate = new();
     private static nint _libraryHandle;
-    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int> _xcryptCtr;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, uint, int> _xcryptCtr;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int> _xcryptCtrScalar;
 
     /// <summary>
@@ -2916,7 +2924,7 @@ internal static unsafe class NativeKalyna
     }
 
     /// <summary>
-    /// Runs the same licensed v12 primitive with exactly one CTR worker.
+    /// Runs the same licensed v13 primitive with exactly one CTR worker.
     /// </summary>
     /// <remarks>
     /// Test and performance invariant only. Independent algorithm agreement is
@@ -2935,6 +2943,9 @@ internal static unsafe class NativeKalyna
         }
 
         EnsureLoaded();
+        // Preserve validation and native trust even for an empty no-op. A
+        // pinned empty managed array is NULL under the legacy primitive ABI.
+        if (length == 0) return;
 
         int result;
         fixed (byte* keyPointer = key)
@@ -2944,19 +2955,19 @@ internal static unsafe class NativeKalyna
         {
             result = forceScalar
                 ? _xcryptCtrScalar(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length)
-                : _xcryptCtr(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length);
+                : _xcryptCtr(keyPointer, noncePointer, inputPointer, outputPointer, (nuint)length, (uint)NativeCipherWorkerBudget.Current);
         }
 
         if (result != 0)
         {
             throw new CryptographicException(result switch
             {
-                1 => "Kalyna v12 library received invalid or overlapping buffers.",
-                2 => "Kalyna v12 library could not initialize a cipher context.",
-                3 => "Kalyna v12 library could not start or join CTR worker threads.",
+                1 => "Kalyna v13 library received invalid or overlapping buffers.",
+                2 => "Kalyna v13 library could not initialize a cipher context.",
+                3 => "Kalyna v13 library could not start or join CTR worker threads.",
                 4 => "Kalyna CTR counter is exhausted or overflowed.",
-                5 => "Kalyna v12 library failed its official DSTU 7624:2014 start-up vector.",
-                _ => $"Kalyna v12 library returned error {result}.",
+                5 => "Kalyna v13 library failed its official DSTU 7624:2014 start-up vector.",
+                _ => $"Kalyna v13 library returned error {result}.",
             });
         }
     }
@@ -2970,10 +2981,11 @@ internal static unsafe class NativeKalyna
                 nint handle = NativeToolIntegrity.LoadTrustedLibrary(DllName);
                 try
                 {
-                    _xcryptCtr = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
-                        NativeLibrary.GetExport(handle, "keepvault_v12_kalyna_512_512_ctr_xcrypt");
+                    NativeCipherExecutor.Install(handle);
+                    _xcryptCtr = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, uint, int>)
+                        NativeLibrary.GetExport(handle, "keepvault_v13_kalyna_512_512_ctr_xcrypt_with_workers");
                     _xcryptCtrScalar = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, nuint, int>)
-                        NativeLibrary.GetExport(handle, "keepvault_v12_kalyna_512_512_ctr_xcrypt_scalar");
+                        NativeLibrary.GetExport(handle, "keepvault_v13_kalyna_512_512_ctr_xcrypt_scalar");
                     _libraryHandle = handle;
                 }
                 catch
@@ -2994,7 +3006,7 @@ internal static unsafe class NativeThreefish
     private static readonly object LoadGate = new();
     private static nint _libraryHandle;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, int> _encryptBlock;
-    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, byte*, nuint, int> _xcryptCtr;
+    private static delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, byte*, nuint, uint, int> _xcryptCtr;
     private static delegate* unmanaged[Cdecl]<byte*, nuint, nint> _skeinMacCreate;
     private static delegate* unmanaged[Cdecl]<nint, byte*, nuint, int> _skeinUpdate;
     private static delegate* unmanaged[Cdecl]<nint, byte*, nuint, int> _skeinFinal;
@@ -3067,6 +3079,7 @@ internal static unsafe class NativeThreefish
         }
 
         EnsureLoaded();
+        if (length == 0) return;
         int result;
         fixed (byte* keyPointer = key)
         fixed (byte* tweakPointer = tweak)
@@ -3074,7 +3087,7 @@ internal static unsafe class NativeThreefish
         fixed (byte* inputPointer = input)
         fixed (byte* outputPointer = output)
         {
-            result = _xcryptCtr(keyPointer, tweakPointer, noncePointer, inputPointer, outputPointer, (nuint)length);
+            result = _xcryptCtr(keyPointer, tweakPointer, noncePointer, inputPointer, outputPointer, (nuint)length, (uint)NativeCipherWorkerBudget.Current);
         }
 
         if (result != 0)
@@ -3280,10 +3293,11 @@ internal static unsafe class NativeThreefish
                 nint handle = NativeToolIntegrity.LoadTrustedLibrary(DllName);
                 try
                 {
+                    NativeCipherExecutor.Install(handle);
                     _encryptBlock = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, int>)
                         NativeLibrary.GetExport(handle, "threefish_1024_encrypt_block");
-                    _xcryptCtr = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, byte*, nuint, int>)
-                        NativeLibrary.GetExport(handle, "threefish_1024_ctr_xcrypt");
+                    _xcryptCtr = (delegate* unmanaged[Cdecl]<byte*, byte*, byte*, byte*, byte*, nuint, uint, int>)
+                        NativeLibrary.GetExport(handle, "threefish_1024_ctr_xcrypt_v13_with_workers");
                     _skeinMacCreate = (delegate* unmanaged[Cdecl]<byte*, nuint, nint>)
                         NativeLibrary.GetExport(handle, "skein_1024_mac_create");
                     _skeinUpdate = (delegate* unmanaged[Cdecl]<nint, byte*, nuint, int>)

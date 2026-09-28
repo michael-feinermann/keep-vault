@@ -72,6 +72,8 @@ Possible options:
 #include <atomic>
 #include <cerrno>
 #include <chrono>
+#include <cstddef>
+#include <new>
 #include <condition_variable>
 #include <deque>
 #include <exception>
@@ -101,16 +103,140 @@ Possible options:
 #include <assert.h>
 
 static bool g_pipe_archive=false;          // --pipe: archive "-" is stdin/stdout
-static bool g_verified_archive_stdin=false; // --verified-stdin: authenticated regular archive on stdin
+static bool g_verified_archive_stdin=false; // --verified-read-at: authenticated regular archive on stdin
+// Every C++ heap allocation and every libzpaq model/StringBuffer allocation
+// is admitted before malloc, including vector capacity and temporary realloc
+// copies. This is independent of the scheduler's logical work reservations.
+// Runtime images, allocator internals and bounded thread stacks have a separate
+// conservative reserve; the parent also measures the real process tree RSS.
+namespace {
+struct alignas(std::max_align_t) KeepVaultAllocation {
+  size_t bytes;
+  size_t charged;
+};
+std::atomic<uint64_t> keepvault_heap_used(0);
+std::atomic<uint64_t> keepvault_heap_limit((6ull<<30)-(128ull<<20));
+static bool keepvault_charge_heap(uint64_t amount) {
+  uint64_t old=keepvault_heap_used.load(std::memory_order_relaxed);
+  for (;;) {
+    const uint64_t limit=keepvault_heap_limit.load(std::memory_order_relaxed);
+    if (old>limit || amount>limit-old) return false;
+    if (keepvault_heap_used.compare_exchange_weak(old, old+amount,
+        std::memory_order_acq_rel, std::memory_order_relaxed)) return true;
+  }
+}
+}
+void* keepvault_budget_malloc(size_t bytes) {
+  if (!bytes) bytes=1;
+  const size_t extra=sizeof(KeepVaultAllocation)+64;
+  if (bytes>SIZE_MAX-extra) return 0;
+  const size_t charged=bytes+extra;
+  if (!keepvault_charge_heap(charged)) return 0;
+  KeepVaultAllocation* header=static_cast<KeepVaultAllocation*>(
+      std::malloc(sizeof(KeepVaultAllocation)+bytes));
+  if (!header) {
+    keepvault_heap_used.fetch_sub(charged, std::memory_order_acq_rel);
+    return 0;
+  }
+  header->bytes=bytes;
+  header->charged=charged;
+  return header+1;
+}
+void keepvault_budget_free(void* pointer) noexcept {
+  if (!pointer) return;
+  KeepVaultAllocation* header=static_cast<KeepVaultAllocation*>(pointer)-1;
+  const size_t charged=header->charged;
+  // Includes discarded realloc capacity. Plaintext must not survive release.
+  volatile unsigned char* wipe=static_cast<unsigned char*>(pointer);
+  for (size_t i=0; i<header->bytes; ++i) wipe[i]=0;
+  std::free(header);
+  keepvault_heap_used.fetch_sub(charged, std::memory_order_acq_rel);
+}
+void* keepvault_budget_calloc(size_t count, size_t bytes) {
+  if (count && bytes>SIZE_MAX/count) return 0;
+  const size_t total=count*bytes;
+  void* result=keepvault_budget_malloc(total);
+  if (result) std::memset(result, 0, total);
+  return result;
+}
+void* keepvault_budget_realloc(void* previous, size_t bytes) {
+  if (!previous) return keepvault_budget_malloc(bytes);
+  if (!bytes) { keepvault_budget_free(previous); return 0; }
+  const KeepVaultAllocation* header=static_cast<const KeepVaultAllocation*>(previous)-1;
+  void* result=keepvault_budget_malloc(bytes);
+  if (!result) return 0;
+  std::memcpy(result, previous, std::min(bytes, header->bytes));
+  keepvault_budget_free(previous);
+  return result;
+}
+bool keepvault_budget_reserve_mapping(size_t bytes) { return keepvault_charge_heap(bytes); }
+void keepvault_budget_release_mapping(size_t bytes) {
+  keepvault_heap_used.fetch_sub(bytes, std::memory_order_acq_rel);
+}
+void* operator new(size_t bytes) {
+  void* result=keepvault_budget_malloc(bytes);
+  if (!result) throw std::bad_alloc();
+  return result;
+}
+void* operator new[](size_t bytes) { return ::operator new(bytes); }
+void operator delete(void* pointer) noexcept { keepvault_budget_free(pointer); }
+void operator delete[](void* pointer) noexcept { keepvault_budget_free(pointer); }
+void operator delete(void* pointer, size_t) noexcept { keepvault_budget_free(pointer); }
+void operator delete[](void* pointer, size_t) noexcept { keepvault_budget_free(pointer); }
+static void* keepvault_budget_aligned_malloc(size_t bytes, size_t alignment) {
+  if (!alignment || (alignment&(alignment-1))) return 0;
+  if (alignment<alignof(void*)) alignment=alignof(void*);
+  if ((alignment&(alignment-1)) || alignment>SIZE_MAX-sizeof(void*)
+      || bytes>SIZE_MAX-alignment-sizeof(void*)) return 0;
+  void* raw=keepvault_budget_malloc(bytes+alignment+sizeof(void*));
+  if (!raw) return 0;
+  const uintptr_t start=reinterpret_cast<uintptr_t>(raw)+sizeof(void*);
+  void* aligned=reinterpret_cast<void*>((start+alignment-1)&~uintptr_t(alignment-1));
+  std::memcpy(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(aligned)-sizeof(raw)), &raw, sizeof(raw));
+  return aligned;
+}
+static void keepvault_budget_aligned_free(void* pointer) noexcept {
+  if (!pointer) return;
+  void* raw=0;
+  std::memcpy(&raw, reinterpret_cast<const void*>(reinterpret_cast<uintptr_t>(pointer)-sizeof(raw)), sizeof(raw));
+  keepvault_budget_free(raw);
+}
+void* operator new(size_t bytes, std::align_val_t alignment) {
+  void* result=keepvault_budget_aligned_malloc(bytes, size_t(alignment));
+  if (!result) throw std::bad_alloc();
+  return result;
+}
+void* operator new[](size_t bytes, std::align_val_t alignment) { return ::operator new(bytes, alignment); }
+void* operator new(size_t bytes, std::align_val_t alignment, const std::nothrow_t&) noexcept {
+  return keepvault_budget_aligned_malloc(bytes, size_t(alignment));
+}
+void* operator new[](size_t bytes, std::align_val_t alignment, const std::nothrow_t&) noexcept {
+  return keepvault_budget_aligned_malloc(bytes, size_t(alignment));
+}
+void operator delete(void* pointer, std::align_val_t) noexcept { keepvault_budget_aligned_free(pointer); }
+void operator delete[](void* pointer, std::align_val_t) noexcept { keepvault_budget_aligned_free(pointer); }
+void operator delete(void* pointer, size_t, std::align_val_t) noexcept { keepvault_budget_aligned_free(pointer); }
+void operator delete[](void* pointer, size_t, std::align_val_t) noexcept { keepvault_budget_aligned_free(pointer); }
+void operator delete(void* pointer, std::align_val_t, const std::nothrow_t&) noexcept { keepvault_budget_aligned_free(pointer); }
+void operator delete[](void* pointer, std::align_val_t, const std::nothrow_t&) noexcept { keepvault_budget_aligned_free(pointer); }
+void* operator new(size_t bytes, const std::nothrow_t&) noexcept {
+  return keepvault_budget_malloc(bytes);
+}
+void* operator new[](size_t bytes, const std::nothrow_t&) noexcept {
+  return keepvault_budget_malloc(bytes);
+}
+void operator delete(void* pointer, const std::nothrow_t&) noexcept { keepvault_budget_free(pointer); }
+void operator delete[](void* pointer, const std::nothrow_t&) noexcept { keepvault_budget_free(pointer); }
+
 static std::atomic<int> g_keepvault_test_creation_read_error(0);
 static std::atomic<int> g_keepvault_test_close_error(0);
 static std::atomic<int> g_keepvault_test_output_open_error(0);
-// Keep Vault v12 wraps every independently compressed streaming block in a
+// Keep Vault v13 wraps every independently compressed streaming block in a
 // bounded frame. The frame boundary is what lets extraction verify and
 // decompress different blocks in parallel without buffering the whole archive
 // or guessing where a compressed block ends. Older unframed pipe streams are
-// deliberately not accepted by the v12 application.
-static const char KEEPVAULT_PIPE_MAGIC[8]={'K','V','P','1','2','Z','P','1'};
+// deliberately not accepted by the v13 application.
+static const char KEEPVAULT_PIPE_MAGIC[8]={'K','V','P','1','3','Z','P','1'};
 static const unsigned char KEEPVAULT_ZPAQ_BLOCK_MAGIC[16]={
   0x37,0x6b,0x53,0x74,0xa0,0x31,0x83,0xd3,
   0x8c,0xb2,0x28,0xb0,0xd3,0x7a,0x50,0x51};
@@ -120,28 +246,28 @@ static const double KEEPVAULT_PIPE_MAX_MODEL_MEMORY=128.0*1024.0*1024.0;
 static const uint64_t KEEPVAULT_MAX_EXTRACTED_BYTES=500ull<<30;
 static const uint64_t KEEPVAULT_MAX_SINGLE_FILE_BYTES=500ull<<30;
 static const uint64_t KEEPVAULT_MAX_EXTRACTED_FILES=500000ull;
-// The v12 scheduler admits reservations against a logical 6 GiB shared
-// processing budget. It never allocates this amount as one object.
-static const uint64_t KEEPVAULT_NATIVE_PROCESSING_BUDGET=6ull<<30;
-// A regular v12 archive may be as large as 512 GiB. Verified stdin is staged
-// into one unlinked, descriptor-bound POSIX-SHM object and read with pread(2),
-// so this limit never implies a same-sized address-space mapping or allocation.
-static const uint64_t KEEPVAULT_MAX_VERIFIED_ARCHIVE_BYTES=512ull<<30;
-static const size_t KEEPVAULT_VERIFIED_STAGING_WINDOW=size_t(32)<<20;
+// The parent supplies a total process budget. Heap allocations are admitted
+// before allocation; model scheduling uses only the separately remaining share.
+static uint64_t keepvault_total_memory_budget=6ull<<30;
+static uint64_t keepvault_processing_memory_budget=4ull<<30;
+static uint64_t keepvault_pending_compressed_budget=512ull<<20;
+static const uint64_t KEEPVAULT_PROCESS_BASE_RESERVE=128ull<<20;
+static const uint64_t KEEPVAULT_THREAD_STACK_RESERVE=8ull<<20;
+// Regular archives use bounded authenticated parent reads, never whole-archive VM.
 static const uint64_t KEEPVAULT_COMPRESSION_JOB_RESERVATION=384ull<<20;
 static const uint64_t KEEPVAULT_REGULAR_JOB_RESERVATION=592ull<<20;
-static const uint64_t KEEPVAULT_PIPE_PENDING_COMPRESSED_BUDGET=512ull<<20;
+
 static const uint64_t KEEPVAULT_REGULAR_MAX_UNCOMPRESSED=64ull<<20;
 static const double KEEPVAULT_REGULAR_MAX_MODEL_MEMORY=512.0*1024.0*1024.0;
 static const size_t KEEPVAULT_MAX_ARCHIVE_MEMBER_NAME_BYTES=32767;
 static const size_t KEEPVAULT_MAX_ARCHIVE_COMMENT_BYTES=1024;
-static const uint64_t MAX_ARCHIVE_FRAGMENTS=uint64_t(1)<<26;
-static const uint64_t MAX_INDEX_BLOCK_BYTES=uint64_t(512)<<20;
+static const uint64_t MAX_ARCHIVE_FRAGMENTS=uint64_t(UINT32_MAX)-1;
+static uint64_t keepvault_max_index_block_bytes=uint64_t(512)<<20;
 
 static int zpaq_printf(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  const int result=vfprintf(g_pipe_archive ? stderr : stdout, fmt, args);
+  const int result=vfprintf((g_pipe_archive || g_verified_archive_stdin) ? stderr : stdout, fmt, args);
   va_end(args);
   return result;
 }
@@ -164,8 +290,8 @@ static int zpaq_printf(const char* fmt, ...) {
 #include <dirent.h>
 #include <utime.h>
 #include <errno.h>
-#include "../../native/verified_archive_staging.hpp"
-static std::unique_ptr<keepvault::VerifiedArchiveStaging> g_verified_archive;
+#include "../../native/verified_archive_reader.hpp"
+static std::unique_ptr<keepvault::VerifiedArchiveReader> g_verified_archive;
 static int64_t g_verified_archive_size=0;
 static int g_keepvault_output_root_fd=-1;
 static uint64_t g_keepvault_expected_root_device=0;
@@ -488,7 +614,7 @@ std::wstring utow(const char* ss, char slash='\\') {
 void printUTF8(const char* s, FILE* f=stdout) {
   assert(f);
   assert(s);
-  if (g_pipe_archive && f==stdout) f=stderr;
+  if ((g_pipe_archive || g_verified_archive_stdin) && f==stdout) f=stderr;
 #ifdef unix
   fprintf(f, "%s", s);
 #else
@@ -972,7 +1098,7 @@ public:
         error("verified archive staging identity is invalid");
       const size_t count=size_t(min<int64_t>(int64_t(len),
           g_verified_archive_size-off));
-      memcpy(obuf, g_verified_archive->data()+size_t(off), count);
+      g_verified_archive->read_at(uint64_t(off), obuf, count);
       off+=int64_t(count);
       return int(count);
     }
@@ -1313,7 +1439,7 @@ int numberOfProcessors() {
 
 ////////////////////////////// misc ///////////////////////////////////
 
-// Bounded libzpaq metadata writer. The target v12 reader supplies the
+// Bounded libzpaq metadata writer. The target v13 reader supplies the
 // schema-specific filename/comment limits before either string is materialized.
 struct StringWriter: public libzpaq::Writer {
   string s;
@@ -1322,7 +1448,7 @@ struct StringWriter: public libzpaq::Writer {
     if (maximum<1 || maximum>65535) error("invalid metadata string limit");
   }
   void put(int c) {
-    if (s.size()>=limit) error("archive metadata string exceeds its v12 limit");
+    if (s.size()>=limit) error("archive metadata string exceeds its v13 limit");
     s+=char(c);
   }
 };
@@ -1341,7 +1467,7 @@ inline int tolowerW(int c) {
 // are deliberately forbidden: a compromised parser must not be able to create
 // durable shared-memory objects or exhaust the namespace.
 static bool keepvault_valid_verified_shm_name(const char* name) {
-  if (!name || strlen(name)!=30 || memcmp(name, "/kv12-", 6)!=0) return false;
+  if (!name || strlen(name)!=30 || memcmp(name, "/kv13-", 6)!=0) return false;
   for (size_t i=6; i<30; ++i) {
     const unsigned char c=static_cast<unsigned char>(name[i]);
     if (!((c>='0' && c<='9') || (c>='a' && c<='f'))) return false;
@@ -1351,18 +1477,18 @@ static bool keepvault_valid_verified_shm_name(const char* name) {
 
 static void stage_verified_archive_stdin() {
   if (g_verified_archive) error("verified archive staging is already installed");
-  g_verified_archive=keepvault::VerifiedArchiveStaging::Read(
-      stdin, KEEPVAULT_MAX_VERIFIED_ARCHIVE_BYTES);
+  g_verified_archive.reset(new keepvault::VerifiedArchiveReader(stdin, stdout));
   g_verified_archive_size=int64_t(g_verified_archive->size());
 }
 #endif
 
 static int parse_keepvault_thread_count(const char* text) {
+  if (!text || text[0]<'0' || text[0]>'9') error("invalid thread count");
   errno=0;
   char* end=0;
   const long value=strtol(text, &end, 10);
-  if (errno || !end || end==text || *end || value<1 || value>64)
-    error("thread count must be an integer from 1 through 64");
+  if (!text || text[0]<'0' || text[0]>'9' || errno || !end || end==text || *end || value<1 || value>INT_MAX)
+    error("thread count must be a positive representable integer");
   return int(value);
 }
 
@@ -1525,7 +1651,7 @@ private:
   // Commands
   int add();                // add, return 1 if error else 0
   int extract();            // extract, return 1 if error else 0
-  int extract_pipe_streaming(bool list_only=false); // bounded parallel v12 pipe extraction/list
+  int extract_pipe_streaming(bool list_only=false); // bounded parallel v13 pipe extraction/list
   int list();               // list, return 0
   void usage();             // help
 
@@ -1714,9 +1840,9 @@ static void keepvault_require_root_identity_locked() {
 static void keepvault_initialize_output_root() {
   if (!g_keepvault_has_expected_root_device
       || !g_keepvault_has_expected_root_inode)
-    error("v12 extraction requires the expected output-root device and inode");
+    error("v13 extraction requires the expected output-root device and inode");
   if (g_keepvault_output_root_fd>=0)
-    error("v12 extraction root was initialized more than once");
+    error("v13 extraction root was initialized more than once");
   const int fd=open(".", O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
   if (fd<0) error("cannot open descriptor-bound extraction root");
   g_keepvault_output_root_fd=fd;
@@ -2256,6 +2382,7 @@ int Jidac::doCommand(int argc, const char** argv) {
   keepvault_max_extracted_files=KEEPVAULT_MAX_EXTRACTED_FILES;
   version=DEFAULT_VERSION;
   date=0;
+  bool memory_budget_given=false;
 
   for (int i=1; i<argc; ++i) {
     if (!strcmp(argv[i], "--pipe")) {
@@ -2267,12 +2394,12 @@ int Jidac::doCommand(int argc, const char** argv) {
 #endif
       continue;
     }
-    if (!strcmp(argv[i], "--verified-stdin"))
+    if (!strcmp(argv[i], "--verified-read-at"))
       g_verified_archive_stdin=true;
   }
 
   if (g_pipe_archive && g_verified_archive_stdin)
-    error("--pipe and --verified-stdin are mutually exclusive");
+    error("--pipe and --verified-read-at are mutually exclusive");
 
   printf("zpaq v" ZPAQ_VERSION " journaling archiver, compiled "
          __DATE__ "\n");
@@ -2310,10 +2437,10 @@ int Jidac::doCommand(int argc, const char** argv) {
         files.push_back(argv[i]);
       --i;
     }
-    else if (opt=="--pipe" || opt=="--verified-stdin") {}
+    else if (opt=="--pipe" || opt=="--verified-read-at") {}
     else if (opt=="--") {
       if (command!='a' || files.size())
-        error("invalid explicit v12 archive file list");
+        error("invalid explicit v13 archive file list");
       while (++i<argc) files.push_back(argv[i]);
       break;
     }
@@ -2367,47 +2494,64 @@ int Jidac::doCommand(int argc, const char** argv) {
     else if (opt=="-threads" && i<argc-1)
       threads=parse_keepvault_thread_count(argv[++i]);
     else if (opt[1]=='t') threads=parse_keepvault_thread_count(argv[i]+2);
+    else if (opt=="-kv-memory-budget" && i<argc-1) {
+      if (memory_budget_given) error("duplicate native memory budget");
+      const char* text=argv[++i];
+      errno=0;
+      char* end=0;
+      const unsigned long long value=strtoull(text, &end, 10);
+      if (!text[0] || text[0]<'0' || text[0]>'9' || errno || !end
+          || end==text || *end || value<(1ull<<30) || value>uint64_t(INT64_MAX))
+        error("invalid native total memory budget");
+      keepvault_total_memory_budget=uint64_t(value);
+      memory_budget_given=true;
+    }
     else if (opt=="-kv-max-total" && i<argc-1) {
       errno=0;
       char* end=0;
-      const unsigned long long value=strtoull(argv[++i], &end, 10);
-      if (errno || !end || *end || value<1 || value>KEEPVAULT_MAX_EXTRACTED_BYTES)
-        error("invalid v12 total extraction limit");
+      const char* limit_text=argv[++i];
+      const unsigned long long value=strtoull(limit_text, &end, 10);
+      if (limit_text[0]<'0' || limit_text[0]>'9' || errno || !end || end==limit_text || *end || value<1 || value>uint64_t(INT64_MAX))
+        error("invalid v13 total extraction limit");
       keepvault_max_extracted_bytes=uint64_t(value);
     }
     else if (opt=="-kv-max-file" && i<argc-1) {
       errno=0;
       char* end=0;
-      const unsigned long long value=strtoull(argv[++i], &end, 10);
-      if (errno || !end || *end || value<1 || value>KEEPVAULT_MAX_SINGLE_FILE_BYTES)
-        error("invalid v12 single-file extraction limit");
+      const char* limit_text=argv[++i];
+      const unsigned long long value=strtoull(limit_text, &end, 10);
+      if (limit_text[0]<'0' || limit_text[0]>'9' || errno || !end || end==limit_text || *end || value<1 || value>uint64_t(INT64_MAX))
+        error("invalid v13 single-file extraction limit");
       keepvault_max_single_file_bytes=uint64_t(value);
     }
     else if (opt=="-kv-max-files" && i<argc-1) {
       errno=0;
       char* end=0;
-      const unsigned long long value=strtoull(argv[++i], &end, 10);
-      if (errno || !end || *end || value<1 || value>KEEPVAULT_MAX_EXTRACTED_FILES)
-        error("invalid v12 extracted-file limit");
+      const char* limit_text=argv[++i];
+      const unsigned long long value=strtoull(limit_text, &end, 10);
+      if (limit_text[0]<'0' || limit_text[0]>'9' || errno || !end || end==limit_text || *end || value<1 || value>uint64_t(INT_MAX))
+        error("invalid v13 extracted-file limit");
       keepvault_max_extracted_files=uint64_t(value);
     }
     else if (opt=="-kv-root-dev" && i<argc-1) {
       errno=0;
       char* end=0;
-      const unsigned long long value=strtoull(argv[++i], &end, 10);
+      const char* limit_text=argv[++i];
+      const unsigned long long value=strtoull(limit_text, &end, 10);
       if (errno || !end || end==argv[i] || *end
           || g_keepvault_has_expected_root_device)
-        error("invalid v12 output-root device identity");
+        error("invalid v13 output-root device identity");
       g_keepvault_expected_root_device=uint64_t(value);
       g_keepvault_has_expected_root_device=true;
     }
     else if (opt=="-kv-root-ino" && i<argc-1) {
       errno=0;
       char* end=0;
-      const unsigned long long value=strtoull(argv[++i], &end, 10);
+      const char* limit_text=argv[++i];
+      const unsigned long long value=strtoull(limit_text, &end, 10);
       if (errno || !end || end==argv[i] || *end
           || g_keepvault_has_expected_root_inode)
-        error("invalid v12 output-root inode identity");
+        error("invalid v13 output-root inode identity");
       g_keepvault_expected_root_inode=uint64_t(value);
       g_keepvault_has_expected_root_inode=true;
     }
@@ -2464,7 +2608,29 @@ int Jidac::doCommand(int argc, const char** argv) {
 
   // Set threads
   if (threads<1) threads=numberOfProcessors();
-  if (threads>64) threads=64;
+  threads=min(threads, numberOfProcessors());
+  const uint64_t maximum_stack_workers=(keepvault_total_memory_budget/8)
+      /KEEPVAULT_THREAD_STACK_RESERVE;
+  if (maximum_stack_workers<1) error("native memory budget permits no thread stacks");
+  threads=int(min(uint64_t(threads), maximum_stack_workers));
+  const uint64_t runtime_reserve=KEEPVAULT_PROCESS_BASE_RESERVE
+      +(uint64_t(threads)+3)*KEEPVAULT_THREAD_STACK_RESERVE;
+  if (runtime_reserve>=keepvault_total_memory_budget)
+    error("native memory budget does not fit runtime and thread reserves");
+  const uint64_t heap_budget=keepvault_total_memory_budget-runtime_reserve;
+  // Metadata and queued compressed input do not borrow the decoder/model share.
+  // The independent allocator ceiling also counts actual metadata growth before
+  // each allocation, so an archive cannot expand these estimates into extra RAM.
+  const uint64_t metadata_reserve=heap_budget/4;
+  keepvault_pending_compressed_budget=min(512ull<<20, heap_budget/8);
+  if (keepvault_pending_compressed_budget<KEEPVAULT_PIPE_MAX_COMPRESSED)
+    error("native memory budget does not fit one compressed frame");
+  keepvault_processing_memory_budget=heap_budget-metadata_reserve
+      -keepvault_pending_compressed_budget;
+  if (keepvault_heap_used.load()>heap_budget)
+    error("native startup metadata exceeds the approved memory budget");
+  keepvault_heap_limit.store(heap_budget);
+  keepvault_max_index_block_bytes=min(uint64_t(UINT32_MAX), metadata_reserve);
 
   // Test date
   if (now==-1 || date<19000000000000LL || date>30000000000000LL)
@@ -2476,14 +2642,14 @@ int Jidac::doCommand(int argc, const char** argv) {
   }
   else if (g_keepvault_has_expected_root_device
       || g_keepvault_has_expected_root_inode) {
-    error("v12 output-root identity is accepted only for extraction");
+    error("v13 output-root identity is accepted only for extraction");
   }
 #else
   if (command=='x' && !dotest) {
     keepvault_windows_initialize_output_root();
   }
   else if (g_keepvault_has_expected_root_device || g_keepvault_has_expected_root_inode) {
-    error("v12 output-root identity is accepted only for extraction");
+    error("v13 output-root identity is accepted only for extraction");
   }
 #endif
 
@@ -2492,10 +2658,10 @@ int Jidac::doCommand(int argc, const char** argv) {
     if ((command!='x' && command!='l') || archive!="-" || password || repack
         || index || files.size() || tofiles.size() || onlyfiles.size()
         || notfiles.size() || all || force || dotest || method!="")
-      error("--verified-stdin accepts only an unfiltered extract or list of archive -");
+      error("--verified-read-at accepts only an unfiltered extract or list of archive -");
     stage_verified_archive_stdin();
 #else
-    error("--verified-stdin is available only in the macOS v12 native build");
+    error("--verified-read-at is available only in the macOS v13 native build");
 #endif
   }
 
@@ -2620,7 +2786,7 @@ int64_t Jidac::read_archive(const char* arc, int *errors) {
               if (usize>0xffffffff) error("journaling block too big");
             }
             if (strchr("chi", filename.s[17])
-                && uint64_t(usize)>MAX_INDEX_BLOCK_BYTES)
+                && uint64_t(usize)>keepvault_max_index_block_bytes)
               error("journaling index block exceeds safety limit");
 
             // Read the date and number in the filename
@@ -2827,7 +2993,7 @@ int64_t Jidac::read_archive(const char* arc, int *errors) {
       done=true;
     }  // end try
     catch (std::exception&) {
-      // Keep Vault v12 never salvages around a malformed block. KPAR2 is the
+      // Keep Vault v13 never salvages around a malformed block. KPAR2 is the
       // only recovery layer; parser resynchronization could otherwise turn a
       // truncated or injected prefix into a seemingly successful listing.
       throw;
@@ -3038,7 +3204,7 @@ public:
   }
   void acquire(uint64_t amount) {
     if (amount<1 || amount>limit)
-      error("native job exceeds the v12 processing-memory budget");
+      error("native job exceeds the v13 processing-memory budget");
     std::unique_lock<std::mutex> lock(mutex);
     changed.wait(lock, [this, amount]() {
       return stopped || used<=limit-amount;
@@ -3136,7 +3302,7 @@ public:
   friend ThreadReturn writeThread(void* arg);
   CompressJob(int threads, int buffers, libzpaq::Writer* f):
       job(0), q(0), qsize(buffers), front(0), out(f),
-      processing_memory(KEEPVAULT_NATIVE_PROCESSING_BUDGET) {
+      processing_memory(keepvault_processing_memory_budget) {
     q=new CJ[buffers];
     if (!q) throw std::bad_alloc();
     init_mutex(mutex);
@@ -3288,7 +3454,7 @@ ThreadReturn writeThread(void* arg) {
         int64_t n=cj.out.size();
         if (g_pipe_archive) {
           if (uint64_t(n)>KEEPVAULT_PIPE_MAX_COMPRESSED)
-            error("v12 pipe frame exceeds compressed-size limit");
+            error("v13 pipe frame exceeds compressed-size limit");
           if (!pipe_header_written) {
             job.out->write(KEEPVAULT_PIPE_MAGIC, sizeof(KEEPVAULT_PIPE_MAGIC));
             pipe_header_written=true;
@@ -3562,7 +3728,7 @@ int Jidac::add() {
   // Start compress and write jobs
   const int compression_workers=int(min(
       uint64_t(threads),
-      KEEPVAULT_NATIVE_PROCESSING_BUDGET/KEEPVAULT_COMPRESSION_JOB_RESERVATION));
+      keepvault_processing_memory_budget/KEEPVAULT_COMPRESSION_JOB_RESERVATION));
   if (compression_workers<1) error("native compression memory budget permits no workers");
 
   // One queued block beyond the active compressors is sufficient to keep the
@@ -4166,7 +4332,7 @@ struct ExtractJob {         // list of jobs
   KeepVaultMemoryBudget processing_memory;
   ExtractJob(Jidac& j): job(0), jd(j), outf(FPNULL), lastdt(j.dt.end()),
       maxMemory(0), total_size(0), total_done(0), io_errors(0),
-      processing_memory(KEEPVAULT_NATIVE_PROCESSING_BUDGET) {
+      processing_memory(keepvault_processing_memory_budget) {
     init_mutex(mutex);
     init_mutex(write_mutex);
   }
@@ -4598,12 +4764,12 @@ struct KeepVaultBoundedWriter: public libzpaq::Writer {
   ~KeepVaultBoundedWriter() {keepvault_wipe_vector(data);}
   void put(int c) {
     if (data.size()>=limit)
-      throw std::runtime_error("v12 pipe block exceeds uncompressed-size limit");
+      throw std::runtime_error("v13 pipe block exceeds uncompressed-size limit");
     data.push_back(char(c));
   }
   void write(const char* source, int count) {
     if (count<0 || data.size()>limit || size_t(count)>limit-data.size())
-      throw std::runtime_error("v12 pipe block exceeds uncompressed-size limit");
+      throw std::runtime_error("v13 pipe block exceeds uncompressed-size limit");
     data.insert(data.end(), source, source+count);
   }
 };
@@ -4643,7 +4809,7 @@ struct KeepVaultPipeState {
   std::atomic<bool> failed;
   string failure;
   KeepVaultPipeState(size_t limit):
-      processing_memory(KEEPVAULT_NATIVE_PROCESSING_BUDGET),
+      processing_memory(keepvault_processing_memory_budget),
       inflight(0), capacity(limit),
       compressed_bytes(0), frame_count(0), input_done(false), failed(false),
       failure() {}
@@ -4682,7 +4848,7 @@ static void keepvault_decompress_frame(
   if (frame.compressed.size()<sizeof(KEEPVAULT_ZPAQ_BLOCK_MAGIC)
       || memcmp(&frame.compressed[0], KEEPVAULT_ZPAQ_BLOCK_MAGIC,
           sizeof(KEEPVAULT_ZPAQ_BLOCK_MAGIC))!=0)
-    throw std::runtime_error("v12 pipe frame does not start at a ZPAQ block boundary");
+    throw std::runtime_error("v13 pipe frame does not start at a ZPAQ block boundary");
   KeepVaultFrameReader input(frame.compressed);
   std::unique_ptr<libzpaq::Decompresser> d(new libzpaq::Decompresser());
   d->setInput(&input);
@@ -4690,9 +4856,9 @@ static void keepvault_decompress_frame(
   unsigned segments=0;
   size_t total_uncompressed=0;
   if (!d->findBlock(&memory))
-    throw std::runtime_error("v12 pipe frame contains no ZPAQ block");
+    throw std::runtime_error("v13 pipe frame contains no ZPAQ block");
   if (!(memory>=0 && memory<=KEEPVAULT_PIPE_MAX_MODEL_MEMORY))
-    throw std::runtime_error("v12 pipe block requires too much model memory");
+    throw std::runtime_error("v13 pipe block requires too much model memory");
   const uint64_t model_bytes=uint64_t(memory)+uint64_t(memory!=uint64_t(memory));
   // Admit reservations in writer order. Otherwise later completed frames can
   // hold the whole budget while the missing front frame waits for memory that
@@ -4706,7 +4872,7 @@ static void keepvault_decompress_frame(
   StringWriter comment(KEEPVAULT_MAX_ARCHIVE_COMMENT_BYTES);
   while (d->findFilename(&filename)) {
     if (++segments!=1)
-      throw std::runtime_error("v12 pipe frame contains more than one segment");
+      throw std::runtime_error("v13 pipe frame contains more than one segment");
     comment.s="";
     d->readComment(&comment);
     if (comment.s.size()>=4
@@ -4714,7 +4880,7 @@ static void keepvault_decompress_frame(
       throw std::runtime_error("journaling archive is not supported on an input pipe");
     const size_t metadata_bytes=filename.s.size()+comment.s.size();
     if (metadata_bytes>size_t(KEEPVAULT_PIPE_MAX_UNCOMPRESSED)-total_uncompressed)
-      throw std::runtime_error("v12 pipe frame exceeds its metadata budget");
+      throw std::runtime_error("v13 pipe frame exceeds its metadata budget");
     total_uncompressed+=metadata_bytes;
 
     std::shared_ptr<KeepVaultPipeSegment> segment(new KeepVaultPipeSegment());
@@ -4729,7 +4895,7 @@ static void keepvault_decompress_frame(
     char sha1result[21];
     d->readSegmentEnd(sha1result);
     if (sha1result[0]!=1)
-      throw std::runtime_error("v12 pipe segment has no SHA1 checksum");
+      throw std::runtime_error("v13 pipe segment has no SHA1 checksum");
     if (memcmp(sha1result+1, sha1.result(), 20)!=0)
       throw std::runtime_error("checksum failed");
     total_uncompressed+=output.data.size();
@@ -4739,14 +4905,56 @@ static void keepvault_decompress_frame(
 
   const int buffered=d->buffered();
   if (buffered<0 || size_t(buffered)>input.position)
-    throw std::runtime_error("v12 pipe decoder reported an invalid input boundary");
+    throw std::runtime_error("v13 pipe decoder reported an invalid input boundary");
   const size_t exact_consumed=input.position-size_t(buffered);
   if (segments!=1 || exact_consumed!=frame.compressed.size())
-    throw std::runtime_error("v12 pipe frame is truncated or has trailing bytes");
+    throw std::runtime_error("v13 pipe frame is truncated or has trailing bytes");
 }
 
 // This test uses the production frame decoder and a budget that admits one
 // frame. An observed wait makes the reversed arrival order deterministic.
+static int keepvault_total_memory_self_test() {
+  const uint64_t initial=keepvault_heap_used.load();
+  const uint64_t prior_limit=keepvault_heap_limit.load();
+  keepvault_heap_limit.store(initial+65536);
+  const size_t extra=sizeof(KeepVaultAllocation)+64;
+  void* first=keepvault_budget_malloc(65536-extra);
+  if (!first || keepvault_budget_malloc(1)
+      || keepvault_budget_calloc(SIZE_MAX, 2))
+    error("native total-memory boundary failed");
+  static_cast<unsigned char*>(first)[0]=0xA7;
+  if (keepvault_budget_realloc(first, 65536)!=0
+      || static_cast<unsigned char*>(first)[0]!=0xA7)
+    error("native realloc failure changed the retained owner");
+  keepvault_budget_free(first);
+  void* source=keepvault_budget_calloc(128, 1);
+  if (!source) error("native calloc self-test allocation failed");
+  for (size_t i=0; i<128; ++i)
+    if (static_cast<unsigned char*>(source)[i]) error("native calloc was not zero");
+  static_cast<unsigned char*>(source)[127]=0x5A;
+  void* grown=keepvault_budget_realloc(source, 1024);
+  if (!grown || static_cast<unsigned char*>(grown)[127]!=0x5A)
+    error("native realloc did not preserve data");
+  keepvault_budget_free(grown);
+  void* aligned=::operator new(8192, std::align_val_t(4096));
+  if ((reinterpret_cast<uintptr_t>(aligned)&4095)!=0)
+    error("overaligned allocation lost its alignment");
+  if (::operator new(65536, std::align_val_t(4096), std::nothrow)!=0)
+    error("overaligned allocation bypassed the budget");
+  ::operator delete(aligned, std::align_val_t(4096));
+  { vector<char> allocation(4096); }
+  { libzpaq::Array<unsigned> model(1024); }
+  { libzpaq::StringBuffer buffer; buffer.write("fixture", 7); }
+  if (keepvault_heap_used.load()!=initial)
+    error("native total-memory owners did not release their charges");
+  keepvault_heap_limit.store(prior_limit);
+  if (parse_keepvault_thread_count("65")!=65
+      || parse_keepvault_thread_count("2147483647")!=INT_MAX)
+    error("native thread parsing still contains a fixed core limit");
+  fprintf(stderr, "native_total_memory=pass checks=12 max_fixture=65536\n");
+  return 0;
+}
+
 static int keepvault_pipe_memory_order_self_test() {
   StringBuffer plain;
   StringBuffer encoded;
@@ -4832,7 +5040,7 @@ static int keepvault_pipe_memory_order_self_test() {
   return 0;
 }
 
-// Extract or list a Keep Vault v12 streaming archive from stdin. Compression
+// Extract or list a Keep Vault v13 streaming archive from stdin. Compression
 // writes one complete ZPAQ block per length-delimited frame. Workers can thus
 // decompress and verify frames independently; one ordered writer is the only
 // code allowed to create or append output files. Memory is bounded by twice the
@@ -4845,9 +5053,9 @@ int Jidac::extract_pipe_streaming(bool list_only) {
   char magic[sizeof(KEEPVAULT_PIPE_MAGIC)];
   if (!keepvault_pipe_read_exact(in, magic, sizeof(magic))
       || memcmp(magic, KEEPVAULT_PIPE_MAGIC, sizeof(magic))!=0)
-    error("input is not a Keep Vault v12 framed pipe archive");
+    error("input is not a Keep Vault v13 framed pipe archive");
 
-  const int worker_count=threads<1 ? 1 : (threads>64 ? 64 : threads);
+  const int worker_count=threads<1 ? 1 : threads;
   KeepVaultPipeState state(size_t(worker_count)*2u);
   unsigned segments=0;
   unsigned files_extracted=0;
@@ -4876,7 +5084,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
           keepvault_wipe_vector(frame->compressed);
           std::lock_guard<std::mutex> guard(state.mutex);
           if (frame->compressed_accounted>state.compressed_bytes)
-            throw std::runtime_error("v12 pipe compressed-memory accounting underflow");
+            throw std::runtime_error("v13 pipe compressed-memory accounting underflow");
           state.compressed_bytes-=frame->compressed_accounted;
           frame->compressed_accounted=0;
           state.ready[frame->sequence]=frame;
@@ -4887,7 +5095,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
           return;
         }
         catch (...) {
-          keepvault_pipe_fail(state, "unknown v12 pipe worker failure");
+          keepvault_pipe_fail(state, "unknown v13 pipe worker failure");
           return;
         }
       }
@@ -4898,7 +5106,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
     keepvault_pipe_fail(state, e.what());
   }
   catch (...) {
-    keepvault_pipe_fail(state, "unable to start v12 pipe workers");
+    keepvault_pipe_fail(state, "unable to start v13 pipe workers");
   }
   if (state.failed) {
     for (size_t i=0; i<workers.size(); ++i) workers[i].join();
@@ -5044,9 +5252,9 @@ int Jidac::extract_pipe_streaming(bool list_only) {
             throw std::runtime_error("directory streaming member contains file data");
 	          const uint64_t segment_bytes=uint64_t(segment.data.size());
 	          if (segment_bytes>keepvault_max_single_file_bytes-current_file_bytes)
-	            throw std::runtime_error("v12 pipe archive exceeds the single-file extraction limit");
+	            throw std::runtime_error("v13 pipe archive exceeds the single-file extraction limit");
 	          if (segment_bytes>keepvault_max_extracted_bytes-archive_total_bytes)
-	            throw std::runtime_error("v12 pipe archive exceeds the total extraction limit");
+	            throw std::runtime_error("v13 pipe archive exceeds the total extraction limit");
 	          if (selected && !list_only && !dotest && outf!=FPNULL
 	              && !segment.data.empty()
 	              && fwrite(&segment.data[0], 1, segment.data.size(), outf)!=segment.data.size())
@@ -5089,7 +5297,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
     }
     catch (...) {
       if (outf!=FPNULL) fclose(outf);
-      keepvault_pipe_fail(state, "unknown v12 pipe writer failure");
+      keepvault_pipe_fail(state, "unknown v13 pipe writer failure");
     }
     });
   }
@@ -5097,7 +5305,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
     keepvault_pipe_fail(state, e.what());
   }
   catch (...) {
-    keepvault_pipe_fail(state, "unable to start v12 pipe writer");
+    keepvault_pipe_fail(state, "unable to start v13 pipe writer");
   }
   if (state.failed) {
     for (size_t i=0; i<workers.size(); ++i) workers[i].join();
@@ -5109,13 +5317,13 @@ int Jidac::extract_pipe_streaming(bool list_only) {
     for (;;) {
       char encoded_length[8];
       if (!keepvault_pipe_read_exact(in, encoded_length, sizeof(encoded_length)))
-        throw std::runtime_error("v12 pipe archive is truncated before a frame length");
+        throw std::runtime_error("v13 pipe archive is truncated before a frame length");
       const uint64_t length=keepvault_pipe_read_u64(encoded_length);
       if (length==0) break;
       if (length>KEEPVAULT_PIPE_MAX_COMPRESSED)
-        throw std::runtime_error("v12 pipe frame exceeds compressed-size limit");
-      if (sequence>=MAX_ARCHIVE_FRAGMENTS)
-        throw std::runtime_error("v12 pipe archive has too many frames");
+        throw std::runtime_error("v13 pipe frame exceeds compressed-size limit");
+      if (sequence>=uint64_t(INT64_MAX))
+        throw std::runtime_error("v13 pipe archive has too many frames");
 
       std::shared_ptr<KeepVaultPipeFrame> frame(new KeepVaultPipeFrame(sequence));
       bool accounted=false;
@@ -5126,7 +5334,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
             return state.failed
                 || (state.inflight<state.capacity
                     && state.compressed_bytes
-                        <=KEEPVAULT_PIPE_PENDING_COMPRESSED_BUDGET-length);
+                        <=keepvault_pending_compressed_budget-length);
           });
           if (state.failed) throw std::runtime_error(state.failure);
           ++state.inflight;
@@ -5137,7 +5345,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
 
         frame->compressed.resize(size_t(length));
         if (!keepvault_pipe_read_exact(in, &frame->compressed[0], size_t(length)))
-          throw std::runtime_error("v12 pipe archive is truncated inside a frame");
+          throw std::runtime_error("v13 pipe archive is truncated inside a frame");
         {
           std::lock_guard<std::mutex> guard(state.mutex);
           if (state.failed) throw std::runtime_error(state.failure);
@@ -5151,7 +5359,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
           std::lock_guard<std::mutex> guard(state.mutex);
           if (frame->compressed_accounted>state.compressed_bytes
               || state.inflight<1)
-            throw std::runtime_error("v12 pipe reader-memory accounting underflow");
+            throw std::runtime_error("v13 pipe reader-memory accounting underflow");
           state.compressed_bytes-=frame->compressed_accounted;
           frame->compressed_accounted=0;
           --state.inflight;
@@ -5163,13 +5371,13 @@ int Jidac::extract_pipe_streaming(bool list_only) {
     }
     char trailing;
     if (in.read(&trailing, 1)!=0)
-      throw std::runtime_error("v12 pipe archive has data after its terminator");
+      throw std::runtime_error("v13 pipe archive has data after its terminator");
   }
   catch (const std::exception& e) {
     keepvault_pipe_fail(state, e.what());
   }
   catch (...) {
-    keepvault_pipe_fail(state, "unknown v12 pipe reader failure");
+    keepvault_pipe_fail(state, "unknown v13 pipe reader failure");
   }
 
   {
@@ -5183,7 +5391,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
 
   if (state.failed) error(state.failure.c_str());
   if (segments==0) error("archive contains no data");
-  printf("%u v12 parallel streaming segments in %u files %s\n",
+  printf("%u v13 parallel streaming segments in %u files %s\n",
       segments, files_extracted, list_only ? "listed" : "extracted");
   return 0;
 }
@@ -5523,7 +5731,7 @@ int Jidac::extract() {
   // Decompress archive in parallel
   const int regular_workers=int(min(
       uint64_t(threads),
-      KEEPVAULT_NATIVE_PROCESSING_BUDGET/KEEPVAULT_REGULAR_JOB_RESERVATION));
+      keepvault_processing_memory_budget/KEEPVAULT_REGULAR_JOB_RESERVATION));
   if (regular_workers<1) error("native regular-extraction memory budget permits no workers");
   printf("Extracting %1.6f MB in %d files -threads %d\n",
       job.total_size/1000000.0, total_files, regular_workers);
@@ -6250,6 +6458,8 @@ int main(int argc, const char** argv) {
     return 126;
   }
 #endif
+  if (argc==2 && !strcmp(argv[1], "--keepvault-total-memory-self-test"))
+    return keepvault_total_memory_self_test();
   if (argc==2 && !strcmp(argv[1], "--kv-self-test-pipe-memory-order"))
     return keepvault_pipe_memory_order_self_test();
   if (argc==2 && !strcmp(argv[1], "--kv-self-test-root-identity-mismatch"))

@@ -1,0 +1,46 @@
+{
+  "pynacl_version": "1.6.2",
+  "sdist_url": "https://files.pythonhosted.org/packages/d9/9a/4019b524b03a13438637b11538c82781a5eda427394380381af8f04f467a/pynacl-1.6.2.tar.gz",
+  "sdist_sha256": "018494d6d696ae03c7e656e5e74cdfd8ea1326962cc401bcf018f1ed8436811c",
+  "reference_files": [
+    {
+      "path": "pynacl-1.6.2/src/libsodium/LICENSE",
+      "sha256": "508a76d186356c0dd807a670ef510964f8724557024796a2c426c6c0e19ab683"
+    },
+    {
+      "path": "pynacl-1.6.2/src/libsodium/src/libsodium/crypto_aead/xchacha20poly1305/aead_xchacha20poly1305.c",
+      "sha256": "26b35c0c0d49676817b3935cadc30e9f9e2c814f16916ea177767e78e5b1ea0d"
+    },
+    {
+      "path": "pynacl-1.6.2/src/libsodium/src/libsodium/crypto_core/hchacha20/core_hchacha20.c",
+      "sha256": "9c891c646f9e6ec20d0597464d5d987512697a3d5b00051ad9ed67501ebdecc9"
+    },
+    {
+      "path": "pynacl-1.6.2/src/libsodium/test/default/aead_xchacha20poly1305.c",
+      "sha256": "e6c8bd9b6f598e9b3fa0878348720744c65bc6b56bcb4a02e8cf01fd7af254d7"
+    }
+  ],
+  "go_version": "go1.25.1",
+  "go_archive_sha256": "68deebb214f39d542e518ebb0598a406ab1b5a22bba8ec9ade9f55fb4dd94a6c",
+  "go_crypto_version": "v0.43.0",
+  "licenses": {
+    "PyNaCl": "Apache-2.0",
+    "libsodium": "ISC",
+    "golang.org/x/crypto": "BSD-3-Clause",
+    "Crypto++": "Boost Software License 1.0"
+  },
+  "go_sources": [
+    {
+      "path": "chacha20poly1305/xchacha20poly1305.go",
+      "sha256": "775b938979b730d18270041df6280791f10f63cf6c2ed487bbb5aeadee8cc170"
+    },
+    {
+      "path": "chacha20/chacha_generic.go",
+      "sha256": "34403e82b1387b4402b00ce30c1364508c333f4bdbe671321690c6ebaa8d3180"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+    }
+  ]
+}

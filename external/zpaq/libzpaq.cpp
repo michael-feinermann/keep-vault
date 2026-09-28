@@ -80,28 +80,44 @@ void allocx(U8* &p, int &n, int newsize) {
   n=0;
 #else
   if (p || n) {
-    if (p)
+    if (!p || n<=0) error("inconsistent executable memory owner");
 #ifdef unix
-      munmap(p, n);
-#else // Windows
-      VirtualFree(p, 0, MEM_RELEASE);
+    if (munmap(p, n)!=0) error("executable memory unmap failed");
+#else
+    if (!VirtualFree(p, 0, MEM_RELEASE)) error("executable memory release failed");
 #endif
+    keepvault_budget_release_mapping(n);
     p=0;
     n=0;
   }
   if (newsize>0) {
 #ifdef unix
-    p=(U8*)mmap(0, newsize, PROT_READ|PROT_WRITE|PROT_EXEC,
+    const long page_value=sysconf(_SC_PAGESIZE);
+    if (page_value<=0) error("executable memory page size is unavailable");
+    const size_t page=size_t(page_value);
+#else
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    const size_t page=size_t(info.dwPageSize);
+    if (!page) error("executable memory page size is unavailable");
+#endif
+    if (size_t(newsize)>size_t(INT_MAX)-(page-1))
+      error("executable memory size overflows");
+    const size_t mapped=(size_t(newsize)+page-1)/page*page;
+    if (!keepvault_budget_reserve_mapping(mapped))
+      error("executable memory exceeds the process budget");
+#ifdef unix
+    p=(U8*)mmap(0, mapped, PROT_READ|PROT_WRITE|PROT_EXEC,
                 MAP_PRIVATE|MAP_ANON, -1, 0);
     if ((void*)p==MAP_FAILED) p=0;
 #else
-    p=(U8*)VirtualAlloc(0, newsize, MEM_RESERVE|MEM_COMMIT,
+    p=(U8*)VirtualAlloc(0, mapped, MEM_RESERVE|MEM_COMMIT,
                         PAGE_EXECUTE_READWRITE);
 #endif
-    if (p)
-      n=newsize;
+    if (p) n=int(mapped);
     else {
       n=0;
+      keepvault_budget_release_mapping(mapped);
       error("allocx failed");
     }
   }
@@ -6421,8 +6437,8 @@ divsufsort(const unsigned char *T, int *SA, int n) {
   else if(n == 1) { SA[0] = 0; return 0; }
   else if(n == 2) { m = (T[0] < T[1]); SA[m ^ 1] = 0, SA[m] = 1; return 0; }
 
-  bucket_A = (int *)malloc(BUCKET_A_SIZE * sizeof(int));
-  bucket_B = (int *)malloc(BUCKET_B_SIZE * sizeof(int));
+  bucket_A = (int *)keepvault_budget_malloc(BUCKET_A_SIZE * sizeof(int));
+  bucket_B = (int *)keepvault_budget_malloc(BUCKET_B_SIZE * sizeof(int));
 
   /* Suffixsort. */
   if((bucket_A != NULL) && (bucket_B != NULL)) {
@@ -6432,8 +6448,8 @@ divsufsort(const unsigned char *T, int *SA, int n) {
     err = -2;
   }
 
-  free(bucket_B);
-  free(bucket_A);
+  keepvault_budget_free(bucket_B);
+  keepvault_budget_free(bucket_A);
 
   return err;
 }
@@ -6448,9 +6464,12 @@ divbwt(const unsigned char *T, unsigned char *U, int *A, int n) {
   if((T == NULL) || (U == NULL) || (n < 0)) { return -1; }
   else if(n <= 1) { if(n == 1) { U[0] = T[0]; } return n; }
 
-  if((B = A) == NULL) { B = (int *)malloc((size_t)(n + 1) * sizeof(int)); }
-  bucket_A = (int *)malloc(BUCKET_A_SIZE * sizeof(int));
-  bucket_B = (int *)malloc(BUCKET_B_SIZE * sizeof(int));
+  if((B = A) == NULL) {
+    if (n<0 || size_t(n)>SIZE_MAX/sizeof(int)-1) return -2;
+    B = (int *)keepvault_budget_malloc((size_t(n) + 1) * sizeof(int));
+  }
+  bucket_A = (int *)keepvault_budget_malloc(BUCKET_A_SIZE * sizeof(int));
+  bucket_B = (int *)keepvault_budget_malloc(BUCKET_B_SIZE * sizeof(int));
 
   /* Burrows-Wheeler Transform. */
   if((B != NULL) && (bucket_A != NULL) && (bucket_B != NULL)) {
@@ -6466,9 +6485,9 @@ divbwt(const unsigned char *T, unsigned char *U, int *A, int n) {
     pidx = -2;
   }
 
-  free(bucket_B);
-  free(bucket_A);
-  if(A == NULL) { free(B); }
+  keepvault_budget_free(bucket_B);
+  keepvault_budget_free(bucket_A);
+  if(A == NULL) { keepvault_budget_free(B); }
 
   return pidx;
 }

@@ -8,7 +8,7 @@
     <AssemblyName>Keep Vault Release Verifier</AssemblyName>
     <RootNamespace>KalynaArchiver.ReleaseVerifier</RootNamespace>
     <Product>Keep Vault</Product>
-    <Version>5.0.2</Version>
+    <Version>5.0.3</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <AssemblyTitle>Keep Vault Release Verifier</AssemblyTitle>
     <Nullable>enable</Nullable>

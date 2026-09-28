@@ -7,8 +7,8 @@ using KalynaArchiver.Services;
 
 /// <summary>
 /// Frozen synthetic v12 files produced by the pre-policy 5.0.1 source snapshot.
-/// The private producer bypassed selection rules only; these readers use the
-/// unmodified production KDF, authentication, ZPAQ and dual KPAR2 services.
+/// The original bytes remain untouched. v13 production readers must reject
+/// these older archives before any plaintext or repair result is released.
 /// </summary>
 internal static class CredentialCompatibilityTests
 {
@@ -24,9 +24,8 @@ internal static class CredentialCompatibilityTests
         new("credentials.creation-still-rejects", "all frozen policy-incompatible credentials remain rejected for new archives",
             VerifyCreationRejectionAsync, TestResource.Light, "Credentials"),
         .. FixtureIds.Select(id => new TestCase("credentials.read-" + id,
-            "production v12 list, decrypt, extract and authenticated KPAR2 repair without model evaluation: " + id,
-            () => VerifyReadAndRepairAsync(id), TestResource.ArgonHeavy, "Credentials")
-        { Cost = new TestCost(4, 2560, true, TestConstraint.ZpaqProcess) }),
+            "V13-STD-NOLEGACY: genuine frozen v12 is refused by read and recovery: " + id,
+            () => VerifyReadAndRepairAsync(id), TestResource.Light, "Credentials")),
     ];
 
     private static Task VerifyProvenanceAsync()
@@ -66,8 +65,8 @@ internal static class CredentialCompatibilityTests
             Assert(raw.Password.Length > 256 && raw.Pin.Length > 16, "Oversized fixture lost its original selection-policy violations.");
             string normalized = raw.Password.Trim().Normalize(NormalizationForm.FormC);
             Assert(normalized != raw.Password && raw.Pin[0] == '0', "Raw-byte sentinel does not exercise whitespace, normalization and leading zero.");
-            byte[] normalizedHash = V12MasterKdf.DeriveSha3CredentialHash(raw.Algorithm, normalized, raw.Pin, a, b);
-            byte[] shortenedPinHash = V12MasterKdf.DeriveSkeinCredentialHash(raw.Algorithm, raw.Password, raw.Pin.TrimStart('0'), a, b);
+            byte[] normalizedHash = ReferenceOldSha3(raw.Algorithm, normalized, raw.Pin, a, b);
+            byte[] shortenedPinHash = ReferenceOldSkein(raw.Algorithm, raw.Password, raw.Pin.TrimStart('0'), a, b);
             try
             {
                 Assert(!normalizedHash.SequenceEqual(Convert.FromHexString(raw.Sha3CredentialHex)), "Password normalization did not change the KDF input.");
@@ -107,7 +106,7 @@ internal static class CredentialCompatibilityTests
                 {
                     await new KalynaContainerService().EncryptZpaqStreamAsync(source, rejectedOutput,
                         fixture.Password, fixture.Pin, manifest.FactorAHex, manifest.FactorBHex,
-                        Enum.Parse<EncryptionSuite>(fixture.Suite), null, null, CancellationToken.None).ConfigureAwait(false);
+                        EncryptionSuiteCatalog.Default, null, null, CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (ArgumentException) { rejected = true; }
                 Assert(rejected && !File.Exists(rejectedOutput), "New archive creation did not reject the frozen incompatible pair before publishing output.");
@@ -121,82 +120,39 @@ internal static class CredentialCompatibilityTests
         Manifest manifest = LoadManifest();
         Fixture fixture = manifest.Fixtures.Single(f => f.Id == id);
         VerifyFiles(fixture);
-        string temp = Directory.CreateTempSubdirectory("keep-vault-credential-read-").FullName;
+        string original = ArchivePath(fixture);
+        var container = new KalynaContainerService();
         int modelCalls = 0;
-        try
+        using IDisposable noModel = PasswordGuessabilityService.ForbidEvaluationForTesting(() => modelCalls++);
+        await RejectedAsync(() => container.ReadContainerInfoAsync(original, CancellationToken.None));
+        using (var source = File.OpenRead(original))
         {
-            using IDisposable noModel = PasswordGuessabilityService.ForbidEvaluationForTesting(() => Interlocked.Increment(ref modelCalls));
-            var container = new KalynaContainerService();
-            var zpaq = new ZpaqService();
-            var recovery = new RecoveryService();
-            string original = ArchivePath(fixture);
-            Task WriteArchive(Stream destination, CancellationToken ct) => container.DecryptToStreamAsync(
-                original, fixture.Password, fixture.Pin, manifest.FactorAHex, manifest.FactorBHex, destination, null, ct);
-            using (var decrypted = new MemoryStream())
-            {
-                await WriteArchive(decrypted, CancellationToken.None).ConfigureAwait(false);
-                Assert(Convert.ToHexString(SHA256.HashData(decrypted.ToArray())) == manifest.PackedPayloadSha256, "Decrypted frozen ZPAQ bytes differ.");
-            }
-            ProcessResult listing = await zpaq.ListStreamingAsync(WriteArchive, null, CancellationToken.None).ConfigureAwait(false);
-            // The v12 pipe reserves stdout for archive bytes. Both native
-            // diagnostic printf and UTF-8 member names are sent to stderr.
-            Assert(listing.Succeeded, "Frozen archive listing failed: " + SafeProcessDiagnostic(listing, fixture, manifest));
-            Assert(listing.StandardError.Split('\n').Any(line =>
-                    string.Equals(line.TrimEnd('\r'), "> " + manifest.PlainFileName, StringComparison.Ordinal))
-                && listing.StandardError.Contains("streaming segments in 1 files listed", StringComparison.Ordinal),
-                "Frozen incompatible archive did not list its exact canary in the native pipe diagnostics: "
-                    + SafeProcessDiagnostic(listing, fixture, manifest));
-            string extracted = Path.Combine(temp, "extracted");
-            ProcessResult extraction = await zpaq.ExtractStreamingAsync(WriteArchive, extracted, null, CancellationToken.None).ConfigureAwait(false);
-            Assert(extraction.Succeeded && File.ReadAllBytes(Path.Combine(extracted, manifest.PlainFileName)).SequenceEqual(Convert.FromHexString(manifest.PlainUtf8Hex)), "Frozen incompatible archive did not extract its exact canary.");
-            Assert(await recovery.TryReadProtectionModeAsync(original, CancellationToken.None).ConfigureAwait(false) == RecoveryProtectionMode.DualAuthenticatedEncrypted, "Frozen sidecar lost dual authentication mode.");
-            RecoveryRepairResult healthy = await recovery.VerifyAndRepairAuthenticatedAsync(original,
-                fixture.Password, fixture.Pin, manifest.FactorAHex, manifest.FactorBHex, null, CancellationToken.None).ConfigureAwait(false);
-            Assert(healthy.RecoveryAvailable && healthy.ArchiveHealthy && healthy.Authenticated && !healthy.Repaired, "Frozen healthy KPAR2 did not authenticate.");
-
-            string damaged = Path.Combine(temp, Path.GetFileName(original));
-            File.Copy(original, damaged);
-            File.Copy(original + ".kpar2", damaged + ".kpar2");
-            using (var file = new FileStream(damaged, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-            {
-                file.Position = file.Length - 1;
-                int previous = file.ReadByte(); file.Position--; file.WriteByte((byte)(previous ^ 0x80));
-            }
-            string damagedHash = HashFile(damaged);
-            using (var rejectedPlaintext = new MemoryStream())
-            {
-                bool rejected = false;
-                try { await container.DecryptToStreamAsync(damaged, fixture.Password, fixture.Pin, manifest.FactorAHex, manifest.FactorBHex, rejectedPlaintext, null, CancellationToken.None).ConfigureAwait(false); }
-                catch (CryptographicException) { rejected = true; }
-                Assert(rejected && rejectedPlaintext.Length == 0, "Damaged authenticated container leaked plaintext or was accepted.");
-            }
-            if (id == "short")
-            {
-                bool rejected = false;
-                try { _ = await recovery.VerifyAndRepairAuthenticatedAsync(damaged, fixture.Password + "wrong", fixture.Pin, manifest.FactorAHex, manifest.FactorBHex, null, CancellationToken.None).ConfigureAwait(false); }
-                catch (CryptographicException) { rejected = true; }
-                Assert(rejected && HashFile(damaged) == damagedHash, "KPAR2 accepted wrong raw credentials or mutated its source.");
-            }
-            RecoveryRepairResult repair = await recovery.VerifyAndRepairAuthenticatedAsync(damaged,
-                fixture.Password, fixture.Pin, manifest.FactorAHex, manifest.FactorBHex, null, CancellationToken.None).ConfigureAwait(false);
-            Assert(repair.Repaired && repair.Authenticated && repair.OutputPath is not null &&
-                HashFile(repair.OutputPath) == fixture.ArchiveSha256 && HashFile(damaged) == damagedHash,
-                "KPAR2 did not independently reconstruct the exact frozen archive without changing its damaged source.");
-            using (var repairedPlaintext = new MemoryStream())
-            {
-                await container.DecryptToStreamAsync(repair.OutputPath!, fixture.Password, fixture.Pin, manifest.FactorAHex, manifest.FactorBHex, repairedPlaintext, null, CancellationToken.None).ConfigureAwait(false);
-                Assert(Convert.ToHexString(SHA256.HashData(repairedPlaintext.ToArray())) == manifest.PackedPayloadSha256, "Repaired archive did not retain exact original KDF/decryption behavior.");
-            }
-            Assert(modelCalls == 0, "List, decrypt, extract or KPAR2 invoked the password model.");
-            VerifyFiles(fixture);
+            await RejectedAsync(() => container.ReadRecoveryKdfInfoAsync(source, CancellationToken.None));
+            source.Position = 0;
+            await RejectedAsync(() => container.VerifyAuthenticationAsync(source, fixture.Password, fixture.Pin,
+                manifest.FactorAHex, manifest.FactorBHex, CancellationToken.None));
         }
-        finally { Directory.Delete(temp, true); }
+        using var plaintext = new MemoryStream();
+        await RejectedAsync(() => container.DecryptToStreamAsync(original, fixture.Password, fixture.Pin,
+            manifest.FactorAHex, manifest.FactorBHex, plaintext, null, CancellationToken.None));
+        Assert(plaintext.Length == 0, "A v12 fixture released plaintext.");
+        await RejectedAsync(() => new RecoveryService().VerifyAndRepairAuthenticatedAsync(original,
+            fixture.Password, fixture.Pin, manifest.FactorAHex, manifest.FactorBHex, null, CancellationToken.None));
+        Assert(modelCalls == 0, "Format rejection must not evaluate credential selection policy.");
+        VerifyFiles(fixture);
+    }
+
+    private static async Task RejectedAsync(Func<Task> operation)
+    {
+        try { await operation().ConfigureAwait(false); }
+        catch (InvalidDataException) { return; }
+        throw new InvalidOperationException("A production v13 reader accepted an original v12 fixture.");
     }
 
     private static void AssertCredentialHashes(Fixture fixture, byte[] a, byte[] b)
     {
-        byte[] qs = V12MasterKdf.DeriveSha3CredentialHash(fixture.Algorithm, fixture.Password, fixture.Pin, a, b);
-        byte[] qk = V12MasterKdf.DeriveSkeinCredentialHash(fixture.Algorithm, fixture.Password, fixture.Pin, a, b);
+        byte[] qs = ReferenceOldSha3(fixture.Algorithm, fixture.Password, fixture.Pin, a, b);
+        byte[] qk = ReferenceOldSkein(fixture.Algorithm, fixture.Password, fixture.Pin, a, b);
         try
         {
             Assert(Convert.ToHexString(qs) == fixture.Sha3CredentialHex, "v12 SHA3 raw credential KAT changed.");
@@ -204,21 +160,32 @@ internal static class CredentialCompatibilityTests
         }
         finally { CryptographicOperations.ZeroMemory(qs); CryptographicOperations.ZeroMemory(qk); }
     }
-    private static string SafeProcessDiagnostic(ProcessResult result, Fixture fixture, Manifest manifest)
+    // Test-only historical encoding oracle. It performs no Argon2, parsing or
+    // decryption and cannot be called by the production application.
+    private static byte[] OldLp(params byte[][] fields)
     {
-        string[] credentials = [fixture.Password, fixture.Pin, manifest.FactorAHex, manifest.FactorBHex,
-            fixture.PasswordUtf8Hex, fixture.PinAsciiHex, fixture.Sha3CredentialHex, fixture.SkeinCredentialHex];
-        string Redact(string text)
+        using var output = new MemoryStream(); using var writer = new BinaryWriter(output);
+        foreach (byte[] field in fields) { writer.Write(field.Length); writer.Write(field); }
+        return output.ToArray();
+    }
+    private static byte[] ReferenceOldSha3(string algorithm, string password, string pin, byte[] a, byte[] b)
+    {
+        var result = new byte[128];
+        for (int half = 0; half < 2; half++)
         {
-            // Redact before truncation, so the boundary cannot retain a prefix
-            // of a complete secret. Longest first also protects short PIN cases.
-            foreach (string credential in credentials.Where(value => value.Length != 0)
-                .Distinct(StringComparer.OrdinalIgnoreCase).OrderByDescending(value => value.Length))
-                text = text.Replace(credential, "[redacted]", StringComparison.OrdinalIgnoreCase);
-            text = text.Replace("\r", "\\r", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal);
-            return text.Length <= 2048 ? text : text[..2048] + "[truncated]";
+            byte[] input = OldLp(Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v12/{algorithm}/SHA3-512/User+PIN+Factors-A{half + 1}+B{half + 1}"),
+                Encoding.UTF8.GetBytes(password), Encoding.ASCII.GetBytes(pin), a.AsSpan(half * 64, 64).ToArray(), b.AsSpan(half * 64, 64).ToArray());
+            var digest = new Org.BouncyCastle.Crypto.Digests.Sha3Digest(512); digest.BlockUpdate(input); digest.DoFinal(result, half * 64);
         }
-        return $"exit={result.ExitCode}; stdout={Redact(result.StandardOutput)}; stderr={Redact(result.StandardError)}";
+        return result;
+    }
+    private static byte[] ReferenceOldSkein(string algorithm, string password, string pin, byte[] a, byte[] b)
+    {
+        var mac = new Org.BouncyCastle.Crypto.Macs.SkeinMac(1024, 1024);
+        mac.Init(new Org.BouncyCastle.Crypto.Parameters.SkeinParameters.Builder().SetKey([.. a, .. b])
+            .SetPersonalisation(Encoding.UTF8.GetBytes($"Kalyna-ZPAQ/v12/{algorithm}/Skein-MAC-1024-1024/User+PIN/Factors-A+B-Key")).Build());
+        mac.BlockUpdate(OldLp(Encoding.UTF8.GetBytes(password), Encoding.ASCII.GetBytes(pin)));
+        byte[] output = new byte[128]; mac.DoFinal(output); return output;
     }
     private static string FixtureDirectory => Path.Combine(RepositoryLayout.FindRepositoryRoot(), "KeepVaultMac.Tests", "Fixtures", "CredentialCompatibility");
     private static string ArchivePath(Fixture fixture) => Path.Combine(FixtureDirectory, fixture.Id + ".kzpaq");

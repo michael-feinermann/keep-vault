@@ -105,8 +105,8 @@ function Assert-ScanCompleted {
 
 function Get-NativeOutputInventory {
     param([Parameter(Mandatory)][string] $Directory)
-    $expected = @('aes_ref.dll', 'argon2.exe', 'argon2_ref.dll', 'chachapoly_ref.dll',
-        'kalyna_v12.dll', 'mars_ref.dll', 'mldsa87_ref.dll', 'shacal2_ref.dll',
+    $expected = @('aes_ref.dll', 'argon2.exe', 'argon2_ref.dll', 'xchachapoly_v13.dll',
+        'kalyna_v13.dll', 'mars_ref.dll', 'camellia_v13.dll', 'serpent_v13.dll', 'mldsa87_ref.dll', 'shacal2_ref.dll',
         'threefish_ref.dll', 'zpaq.exe')
     $files = @(Get-ChildItem -LiteralPath $Directory -File -Force |
         Where-Object { $_.Extension -in @('.exe', '.dll') } | Sort-Object Name)

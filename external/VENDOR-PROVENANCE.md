@@ -14,7 +14,7 @@ Generated: 2026-08-15T15:46:48Z
   derived table adapter were removed before v12: the pinned upstream tree did
   not contain a licence grant, so neither its source nor a derived binary is
   built, bundled or distributed.
-- The v12 adapter exports v12-specific symbols only. An official
+- The v13 adapter exports v13-specific product symbols. An official
   DSTU 7624:2014 vector, an independent Bouncy Castle differential matrix,
   scalar-versus-parallel equivalence and full container KATs gate the change.
 
@@ -86,11 +86,22 @@ compile and would have to be maintained by hand at every update. Only the files
 listed below are actually built; the rest is carried so the release is the
 upstream release and its checksum still means something.
 
-Used for:
-- **MARS-448** (`mars.cpp`), **SHACAL-2-512** (`shacal2.cpp`),
-  **ChaCha20-Poly1305** (`chachapoly.cpp`, `chacha.cpp`) and the
-  **AES-256 reference fallback** (`rijndael.cpp`) — primitives with no
-  reference implementation in this repository before.
+Used for in v13:
+- Production AES-256 (`rijndael.cpp`), MARS-448 (`mars.cpp`),
+  SHACAL-2-512 (`shacal2.cpp`) and Serpent-256 (`serpent.cpp`).
+- Production XChaCha20-Poly1305 uses the first-party HChaCha adapter and
+  Crypto++ ChaCha20/Poly1305 primitives. The product ABI accepts exactly
+  24 nonce bytes; the retained raw 12-byte ChaCha test oracle is separate.
+  Full AEAD results are also checked against libsodium and Go x/crypto.
+- Production Camellia-256 derives from the public-domain implementation in
+  `camellia.cpp`. The separate first-party `native/camellia_fixed_access.hpp`
+  replaces secret-addressed S-box accesses in both key setup and all 24 rounds
+  with public table loads and register selection on ARM64, or a full-table
+  volatile scan on portable targets. Explicit key/state temporaries are wiped.
+  The vendored source itself is unchanged; its original table implementation
+  is not a production fallback. Published vectors, independent Bouncy Castle
+  2.6.2 block/manual-CTR results, sanitizer checks and the scope limitations are
+  documented in `docs/KEEP_VAULT_5_0_3_CIPHER_REFERENCE_REPORT.md`.
 - **SHA-512** (`sha.cpp`) for the second Argon2id round, which needs a
   reference to check the platform implementation against; only SHA3-512 had one.
 - The **production implementation** of Kalyna-512/512 (`kalyna.cpp`) and an
@@ -118,6 +129,8 @@ Used for:
 - Upstream: https://github.com/zpaq/zpaq
 - Base commit: `9ab539f644e364f0d92e2918b90ce2534c75653f`
 - Local patches are described below and bound by `NATIVE_SOURCE_SHA256SUMS`.
+
+Version 5.0.3 adds the bounded `KV13RA` verified read-at backend and v13 pipe framing. The parser receives protected range responses, never an archive descriptor or a complete plaintext staging copy. A validated `-kv-memory-budget` covers the native process: model/queue admission and a charged allocator bound C++ objects, libzpaq arrays, StringBuffer growth and BWT workspaces before allocation. Reallocation charges both owners while they coexist; all released usable capacity is wiped. Overaligned C++ allocations use the same quota. Dynamic thread and extraction limits remain finite, checked and caller-authorized instead of fixed 64-thread/500-GiB ceilings. ARM64, x86_64 and ARM64 ASan/UBSan checks include allocator failures and real bounded plain/read-at/pipe structural roundtrips. These are small-data tests, not physical TiB evidence.
 
 Windows 5.0.2 adds first-party extraction hardening in
 `native/windows_zpaq_output.hpp` (pinned in `native/WINDOWS_SOURCE_SHA256SUMS`):

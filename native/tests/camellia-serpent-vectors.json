@@ -1,0 +1,95 @@
+{
+  "sources": {
+    "Camellia": {
+      "url": "https://github.com/bcgit/bc-csharp/blob/release-2.6.2/crypto/test/src/crypto/test/CamelliaTest.cs",
+      "sha256": "023aa41109ccb0b2cfd73398cc359ed99e6086db83859d5b0f14a2c6709d138c",
+      "git_blob": "c2b3846dd53c2b74096454efadd0a20ae5b09dda"
+    },
+    "Serpent": {
+      "url": "https://github.com/bcgit/bc-csharp/blob/release-2.6.2/crypto/test/src/crypto/test/SerpentTest.cs",
+      "sha256": "4c05db9fa3a5f112755bf72fd4a70ebc17dc8b88e487d7b0673f671c272aaf77",
+      "git_blob": "a766757f7b03597c8334b7f254511e22ade64092"
+    }
+  },
+  "camellia": [
+    {
+      "key": "0123456789abcdeffedcba987654321000112233445566778899aabbccddeeff",
+      "input": "0123456789abcdeffedcba9876543210",
+      "output": "9acc237dff16d76c20ef7c919e3a7509",
+      "iterations": 1,
+      "source": "Bouncy Castle release-2.6.2 CamelliaTest 6 RFC3713 AppendixA"
+    },
+    {
+      "key": "4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a",
+      "input": "057764fe3a500edbd988c5c3b56cba9a",
+      "output": "4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a",
+      "iterations": 1,
+      "source": "Bouncy Castle release-2.6.2 CamelliaTest 7"
+    },
+    {
+      "key": "0303030303030303030303030303030303030303030303030303030303030303",
+      "input": "7968b08aba92193f2295121ef8d75c8a",
+      "output": "03030303030303030303030303030303",
+      "iterations": 1,
+      "source": "Bouncy Castle release-2.6.2 CamelliaTest 8"
+    }
+  ],
+  "serpent": [
+    {
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "input": "00000000000000000000000000000001",
+      "output": "ad86de83231c3203a86ae33b721eaa9f",
+      "iterations": 1,
+      "source": "Bouncy Castle release-2.6.2 SerpentTest 4"
+    },
+    {
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "input": "3da46ffa6f4d6f30cd258333e5a61369",
+      "output": "00112233445566778899aabbccddeeff",
+      "iterations": 1,
+      "source": "Bouncy Castle release-2.6.2 SerpentTest 5"
+    },
+    {
+      "key": "2bd6459f82c5b300952c49104881ff482bd6459f82c5b300952c49104881ff48",
+      "input": "677c8dfaa08071743fd2b415d1b28af2",
+      "output": "ea024714ad5c4d84ea024714ad5c4d84",
+      "iterations": 1,
+      "source": "Bouncy Castle release-2.6.2 SerpentTest 6"
+    },
+    {
+      "key": "0004000000000000000000000000000000000000000000000000000000000000",
+      "input": "00000000000000000000000000000000",
+      "output": "e7b681e8871fd05feae5fb64da891ea2",
+      "iterations": 100,
+      "source": "Bouncy Castle release-2.6.2 SerpentTest 21"
+    },
+    {
+      "key": "0000000020000000000000000000000000000000000000000000000000000000",
+      "input": "00000000000000000000000000000000",
+      "output": "c5545d516eec73bfa3622a8194f95620",
+      "iterations": 100,
+      "source": "Bouncy Castle release-2.6.2 SerpentTest 22"
+    },
+    {
+      "key": "0000000000000000000000000000000000000000000000000000000002000000",
+      "input": "00000000000000000000000000000000",
+      "output": "11ff5c9be006f82c98bd4fac1a19920e",
+      "iterations": 100,
+      "source": "Bouncy Castle release-2.6.2 SerpentTest 23"
+    },
+    {
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "input": "00000000000000000000000000010000",
+      "output": "47ca1ca404b6481cad4c21c8a0415a0e",
+      "iterations": 100,
+      "source": "Bouncy Castle release-2.6.2 SerpentTest 24"
+    },
+    {
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "input": "00000000000000008000000000000000",
+      "output": "a0a2d5b07e27d539ca5bee9de1eab3e6",
+      "iterations": 100,
+      "source": "Bouncy Castle release-2.6.2 SerpentTest 25"
+    }
+  ]
+}

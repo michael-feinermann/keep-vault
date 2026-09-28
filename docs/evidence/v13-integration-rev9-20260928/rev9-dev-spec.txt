@@ -1,0 +1,37 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 2 worker(s)
+FULL PASS documentation matches the normative v13 specification (0,0s)
+FULL PASS no legacy constructions in production source (0,2s)
+
+FAIL lock files match the platform their project builds on
+  seed=0x62A8415D
+  InvalidOperationException: Lock files do not match their build platform:
+  Lock graph has unchecked lock file(s): KeepVaultInstaller/packages.lock.json, native/tests/camellia_serpent_reference/packages.lock.json, native/tests/claim_grain/packages.lock.json, native/tests/managed_executor/packages.lock.json, native/tests/native_benchmark/packages.lock.json.
+  Lock graph has unchecked project(s): KeepVaultInstaller/KeepVaultInstaller.csproj, native/tests/camellia_serpent_reference/CipherReference.csproj, native/tests/claim_grain/ClaimGrain.csproj, native/tests/managed_executor/ManagedExecutor.csproj, native/tests/native_benchmark/NativeBenchmark.csproj.
+  KalynaArchiver/packages.lock.json is missing target(s): net9.0-windows7.0, net9.0-windows7.0/win-x64.
+  KalynaArchiver/packages.lock.json carries foreign target(s): net10.0-windows7.0, net10.0-windows7.0/win-x64.
+  KalynaArchiver.Tests/packages.lock.json is missing target(s): net9.0-windows7.0, net9.0-windows7.0/win-x64.
+  KalynaArchiver.Tests/packages.lock.json carries foreign target(s): net10.0-windows7.0, net10.0-windows7.0/win-x64.
+  KalynaArchiver.Signing/packages.lock.json is missing target(s): net9.0-windows7.0, net9.0-windows7.0/win-x64.
+  KalynaArchiver.Signing/packages.lock.json carries foreign target(s): net10.0-windows7.0, net10.0-windows7.0/win-x64.
+  KalynaReleaseVerifier/packages.lock.json is missing target(s): net9.0-windows7.0, net9.0-windows7.0/win-x64.
+  KalynaReleaseVerifier/packages.lock.json carries foreign target(s): net10.0-windows7.0, net10.0-windows7.0/win-x64.
+  KalynaSigningTool/packages.lock.json is missing target(s): net9.0-windows7.0, net9.0-windows7.0/win-x64.
+  KalynaSigningTool/packages.lock.json carries foreign target(s): net10.0-windows7.0, net10.0-windows7.0/win-x64.
+  QrCodeScannerWindows/packages.lock.json is missing target(s): net9.0-windows10.0.19041, net9.0-windows10.0.19041/win-x64.
+  QrCodeScannerWindows/packages.lock.json carries foreign target(s): net10.0-windows10.0.19041, net10.0-windows10.0.19041/win-x64.
+  QrCodeScannerWindows/packages.tests.lock.json is missing target(s): net9.0-windows10.0.19041, net9.0-windows10.0.19041/win-x64.
+  QrCodeScannerWindows/packages.tests.lock.json carries foreign target(s): net10.0-windows10.0.19041, net10.0-windows10.0.19041/win-x64.
+   at SpecLintTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/SpecLintTests.cs:line 620
+   at SpecLintTests.LockFileRuntimesAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/SpecLintTests.cs:line 296
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "spec.lockfile-runtimes" --seed 0x62A8415D
+
+
+3 macOS groups: 2 passed, 1 failed, 0 blocked.
+wall clock 0,7s; sum of test times 0,7s; parallel speedup 0,95x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL spec.lockfile-runtimes — lock files match the platform their project builds on

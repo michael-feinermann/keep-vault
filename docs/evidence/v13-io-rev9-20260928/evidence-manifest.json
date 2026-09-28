@@ -1,0 +1,187 @@
+{
+  "captured_utc": "2026-09-28T14:38:55.974944+00:00",
+  "scope": "Development integration evidence; not final package, installation, publication or external audit. 19 targeted groups and 3 fuzz groups passed before the later buffered descriptor concurrency fix. The new descriptor regression and original multi-chunk crypto test both passed after the fix with separately recorded exact development binary hashes.",
+  "managed_fuzz_runs": [
+    {
+      "id": "fuzz.verified-input-10000",
+      "cases": 10000,
+      "status": "PASS",
+      "seconds": 112.1322306,
+      "scheduler_seed": "0x5EED0313",
+      "scheduler_seed_source": "explicit --seed in root execution commands, confirmed by root on 2026-09-28",
+      "effective_seed": "0x08A44C00",
+      "seed_derivation": "scheduler_seed XOR 0x56494F13",
+      "log": "dev-fuzz.verified-input-10000.log",
+      "tested_managed_assembly_sha256": null,
+      "binary_attribution_limitation": "Intermediate managed assembly hashes were not captured for these runs. The older dev-trust manifest is historical and is not assigned to these later fuzz runs."
+    },
+    {
+      "id": "fuzz.recovery-streaming-10000",
+      "cases": 10000,
+      "status": "PASS",
+      "seconds": 6.4047563,
+      "scheduler_seed": "0x5EED0313",
+      "scheduler_seed_source": "explicit --seed in root execution commands, confirmed by root on 2026-09-28",
+      "effective_seed": "0x15BD4227",
+      "seed_derivation": "scheduler_seed XOR 0x4B504134",
+      "log": "dev-fuzz.recovery-streaming-10000.log",
+      "tested_managed_assembly_sha256": null,
+      "binary_attribution_limitation": "Intermediate managed assembly hashes were not captured for these runs. The older dev-trust manifest is historical and is not assigned to these later fuzz runs."
+    },
+    {
+      "id": "fuzz.verified-read-at-server-10000",
+      "cases": 10000,
+      "status": "PASS",
+      "seconds": 1.6496645,
+      "scheduler_seed": "0x5EED0313",
+      "scheduler_seed_source": "explicit --seed in root execution commands, confirmed by root on 2026-09-28",
+      "effective_seed": "0x0CAC3220",
+      "seed_derivation": "scheduler_seed XOR 0x52413133",
+      "log": "dev-final-fuzz.verified-read-at-server-10000.log",
+      "tested_managed_assembly_sha256": null,
+      "binary_attribution_limitation": "Intermediate managed assembly hashes were not captured for these runs. The older dev-trust manifest is historical and is not assigned to these later fuzz runs."
+    }
+  ],
+  "native_fuzz_report": "native-report.json",
+  "variation_claim": "10000 seeded varied cases per target; no assertion that all truncated framing byte strings are pairwise unique.",
+  "pending_regressions": [],
+  "files_sha256": {
+    "dev-crypto-before-descriptor-fix.log": "0851abb13440d4707d8ef583f339a5a128a0eecbdbf3dfc6f3a4bd6aa05e9151",
+    "dev-final-fuzz.verified-read-at-server-10000.json": "bfcf4fd8caf65ea0e6d5655c64107d998a68be50479af819f9e2f4553b3c420c",
+    "dev-final-fuzz.verified-read-at-server-10000.log": "09cc72cdd0e2af52db41d96863b042993d07796448f3949d05b2b67546525eae",
+    "dev-fuzz.recovery-streaming-10000.json": "e62a4b343ecaab6a32aa38b98e013e1aae531bfa8ff1737b007847e3f2707a20",
+    "dev-fuzz.recovery-streaming-10000.log": "a6d384e46a11ee63bc4d0a1c947b9c93b03dfec53da229e9dbc965daa54d9821",
+    "dev-fuzz.verified-input-10000.json": "c5e68a99e18ba8264a0fb095898f49a18f63b14b91012126963de4f9e33bd111",
+    "dev-fuzz.verified-input-10000.log": "2230a69b1c6cb826d4d65d468f43091172aa17eab6b1cf90ac3de1366b879a7a",
+    "dev-io.verified-input-cleanup-retry.json": "ff45f5aefc1f18656b50dcfbf016d83efae0934cb5e3c445d28d56279aa15128",
+    "dev-io.verified-input-cleanup-retry.log": "fa3e51b1ab93ce8a735ab0c19ca94af67efc8467834eb45d2f904094fea01384",
+    "dev-io.verified-input-domain-kats.json": "0b337e19b98a6bec1cc3d936aab5982b28fdf050d6de056597b91a49e6942034",
+    "dev-io.verified-input-domain-kats.log": "e10f3541563941d2c014616a7519e2a947af486ff53a0765805c2ae81ef2793d",
+    "dev-io.verified-input-parallel-lifetime.json": "7f266f7327fc2c90c13136921f65768265507638e629b8c5aca096a9a34e3275",
+    "dev-io.verified-input-parallel-lifetime.log": "8647d91b7e8698ccc6cc5709ff83be5916b7fda435ea62b7a038fc04c6b99cb6",
+    "dev-io.verified-input-policy.json": "11b010befe88978a857959ea28a130cda5c53b327e4251855dbecf6d521fd5da",
+    "dev-io.verified-input-policy.log": "1b253b507c6b1f154bba779306d0e7f3675c8383c38d5a7075f9adc0583339ea",
+    "dev-io.verified-input-private-copy.json": "6574b465b62ce9401673da6a794446ce466bf39201a4dd74cdc03009704b4bd3",
+    "dev-io.verified-input-private-copy.log": "3d49e06f63e5e918b6fef9ecb6635a307f3568f029e99554e90ccdcbfd472743",
+    "dev-io.verified-input-ranges.json": "f1e6e2c64cd3e1738edc97cb75c133ba7a93beb31b62dc6dbeb717711fbc8e9b",
+    "dev-io.verified-input-ranges.log": "92761bdb8fd1c79a9fdced74ad2486ecf79f3a5442697b93aac2999d4c3ee8b6",
+    "dev-io.verified-input-state.json": "8caa49a8cb23283134004517c8026ffed9e61e83dd2db028ae10258fccad7ff5",
+    "dev-io.verified-input-state.log": "d0c615e44240606680cccbc3eab0e6eaacdf685a1398742f6ed270b1cc417a80",
+    "dev-io.verified-input-tamper.json": "ab13e47f6815646f4800a8576d0262b13309a6afc00baa933b095cde2ba60be8",
+    "dev-io.verified-input-tamper.log": "9c0f962ce009f3890ccf084c4043a53ae469bb79c425e2cf8551d47233fc6adf",
+    "dev-io.verified-original.json": "be71357d663ae2100b003a03193a9503d3e683d4c10bd4f3b8c16768bef2087d",
+    "dev-io.verified-original.log": "0a23626f456112ff96051315d48ee5988f77f63a5cdffb98ebc4e943ea20dc15",
+    "dev-recovery.record-table-budget.json": "69ba123dfefe34b1445522d40d223ad0bcfc9c2c7ad8845f7d83fd3c71b58481",
+    "dev-recovery.record-table-budget.log": "e391977ba42ca26d194979bdb02335552916d1d6b15162fa6adb5472d5f89bf1",
+    "dev-recovery.record-table-cleanup.json": "6896acabed59dd4a0d96af5400733697e429e7639118d69d37b12e240226c73d",
+    "dev-recovery.record-table-cleanup.log": "abbda99ac66b59a371ebcddad4646003d69ff99c0ff9eac1917f91555d144559",
+    "dev-recovery.record-table-layout-rerun.json": "e4df49ee6ecd5af6cc31660cb605e6ef9da226fd119cc421136471ae5db0a61c",
+    "dev-recovery.record-table-layout-rerun.log": "5994d709d4c3bcf1350f64d93d968e408355897c377cd3cf7e40f4243cef1ca1",
+    "dev-recovery.record-table-layout.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "dev-recovery.record-table-layout.log": "69cc64e93e5b3223cbc402e76ce9b59cb8848f4bb4d0ca1b2ab197af070abd3e",
+    "dev-recovery.record-table-tamper-rerun.json": "9501f938693a13a57c77415dfcbbb0036705449756fd2be973a16f9114dbbca2",
+    "dev-recovery.record-table-tamper-rerun.log": "8474b8a47bd4a42a11497003df63d3f4a9b8a7207b4e3ebc30cf5895ecc502f7",
+    "dev-recovery.record-table-tamper.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "dev-recovery.record-table-tamper.log": "17e986562011929a57b5633e9c1da6013efaf929ecc5a309753ca8abf5ebb104",
+    "dev-recovery.streaming-metadata-canonical.json": "a17f0061d213fe8e8a8e8737ecf581dab938325ce45c62863fad2f9421bdb059",
+    "dev-recovery.streaming-metadata-canonical.log": "6d778d13b4adf50afcf711cbc3288656eba162a40bea09ff971d28e24cfa7b3d",
+    "dev-recovery.streaming-metadata-large-logical.json": "8457fbdf8b0fdad5eebfece209e87677c098bd572937ec8e9440eb8f18a1b13f",
+    "dev-recovery.streaming-metadata-large-logical.log": "ff771f248f43fc34b385c7026c60b325045745c63845027d507cbdf48911e5a8",
+    "dev-recovery.streaming-metadata-negative.json": "19f0707b215f9115a0a63fd0e93c01944c32d9b4c352e0fb9ce3c3daea1b4e04",
+    "dev-recovery.streaming-metadata-negative.log": "e63416e02d60fcb20b03982c2724f364c004ad16547931e5a573ffb0b92f7b02",
+    "dev-resources.cpu-worker-budget.json": "abffbec6dc15de7614b03789821261b51cc68ac346ee15fa164e9765a0ded8a9",
+    "dev-resources.cpu-worker-budget.log": "9f2120ed3ca59a9f5852021d3fd1b887fad4da8a6869a9d599035852a10a2b71",
+    "dev-resources.shared-memory-budget.json": "e42bbee69afc1aade9ebcc41f42de5fe5464811321c95e753ff95fb15dc9fc42",
+    "dev-resources.shared-memory-budget.log": "bc4468150db4552471ef8901d963a54c54b204ded58c7e3bd80520c16588bc03",
+    "dev-resources.shared-runtime-budget.json": "3b245b5b811357b9033389e3d06d0483bd3f4403796278df5cc6c0756b84a40c",
+    "dev-resources.shared-runtime-budget.log": "e33cf89208c4c714b413aec3cd88d181f77d66c004bb9298eb16ce38761b17bd",
+    "integration-rerun-crypto.per-chunk-nonces.log": "8dcf519912307bb0952608fb35a9c636395ba3a0b1f53846e78a53a325963c7f",
+    "integration-rerun-io.verified-input-descriptor-capture.log": "cbe881071b6cfcc1b5502bce8d228a07ff690fc86e226b48c1f0420124cb1869",
+    "io-required-test-ids.json": "8740f3e7d357ab4e20c6f757076570b3144bcd6daf5859ea38243dac9540f1d3",
+    "native-arm64-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "native-arm64.log": "54c2d44508d1afc11ae2c4588f4f136a4a8f5a2ac7ccf54b5515b910a617080b",
+    "native-asan-ubsan-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "native-asan-ubsan.log": "54c2d44508d1afc11ae2c4588f4f136a4a8f5a2ac7ccf54b5515b910a617080b",
+    "native-report.json": "015acade0cba42581932561b0d1330e6c0395586c586603a107ee6d22a562e62",
+    "native-x86_64-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "native-x86_64.log": "54c2d44508d1afc11ae2c4588f4f136a4a8f5a2ac7ccf54b5515b910a617080b",
+    "read-at-fuzz-native.log": "b9b969707b553b9c5056758edb43a63dd0da315b9f632d3bbdb3d50ac3d87198",
+    "rev9-dev-integration-rerun-binaries.json": "cc514db3856f68344c833614c065373b0529d96cc08b8e5c97231e35808c3f0f",
+    "rev9-dev-integration-reruns.json": "2ee3ea780bdf307e0d54ce94e7ab538442a29b94ac178863cbc395ef00eae937",
+    "rev9-dev-io-fuzz-results.json": "c512181bd3d619dd7e32919b8b413260d8efdb376a8250d37f439c8667096db6",
+    "rev9-dev-trust-binary-manifest.json": "f5c61835ecfba186c9974fb7cd687ee3171b03fed16a1fb20f80f6e4129d3f71",
+    "rev9-final-fuzz-auth-build.log": "eff14b5e53be95d5afed361ceefb99e2383a419f63cb354f15cf3afd665ddbbd",
+    "zpaq-memory-results.json": "3c9a5f5f9f4367b0f306b9df53afbe3e1d59a713b7232403605251dab6a5ee0e"
+  },
+  "post_descriptor_fix_runs": [
+    {
+      "id": "io.verified-input-descriptor-capture",
+      "exit": 0,
+      "log": "work/v13-evidence/integration-rerun-io.verified-input-descriptor-capture.log",
+      "results": {
+        "schemaVersion": 3,
+        "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+        "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-descriptor-capture",
+            "name": "parallel multi-range captures retain descriptor ownership without buffered cursor races",
+            "status": "PASS",
+            "seconds": 3.162,
+            "peakRssMiB": 146,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "crypto.per-chunk-nonces",
+      "exit": 0,
+      "log": "work/v13-evidence/integration-rerun-crypto.per-chunk-nonces.log",
+      "results": {
+        "schemaVersion": 3,
+        "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+        "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "crypto.per-chunk-nonces",
+            "name": "per-chunk nonces across a multi-chunk archive",
+            "status": "PASS",
+            "seconds": 51.609,
+            "peakRssMiB": 2403,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    }
+  ],
+  "post_descriptor_fix_binary_manifest": "rev9-dev-integration-rerun-binaries.json",
+  "post_descriptor_fix_managed_sha256": {
+    "Keep Vault.dll": "05c6410762c802bb346c2494ce7fab2d4559af4d51aefff14a0a5bc3a2b5641e",
+    "KeepVaultMac.Tests.dll": "210500f09030cd33d3bc5aeacff32ad2f75961a22ce4af8e89a29fe3fac4c0ce"
+  }
+}

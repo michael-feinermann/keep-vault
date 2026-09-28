@@ -41,6 +41,9 @@ public sealed partial class MainWindow : Window, IDisposable
     private readonly MacKeySheetService _keySheets = new();
     private readonly IAppSettingsStore _settingsStore;
     private readonly CancellationTokenSource _lifetime = new();
+    private readonly CancellationToken _lifetimeToken;
+    private CancellationTokenSource? _operationCancellation;
+    private CancellationToken OperationToken => _operationCancellation?.Token ?? _lifetimeToken;
 
     private GeneratedArchiveEntropy? _generatedEntropy;
     private string? _keySheetFingerprint;
@@ -51,6 +54,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private IBrush _integrityBrush = Brush.Parse("#F2BD55");
     private bool _componentsReady;
     private bool _generatedPairReady;
+    private bool _entropyCaptureFaulted;
     private bool _extractHintLoaded;
     private bool _extractHintUnavailable;
     private bool _integrityTrusted;
@@ -68,6 +72,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     internal MainWindow(IAppSettingsStore settingsStore)
     {
+        _lifetimeToken = _lifetime.Token;
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
         InitializeComponent();
         LoadLogo();
@@ -81,6 +86,8 @@ public sealed partial class MainWindow : Window, IDisposable
         PopulateSuites();
         SelectSuite(LoadSuite());
         CompressionBox.SelectedIndex = LoadCompression();
+        WorkingDirectoryBox.Text = _resourcePolicy.WorkingDirectory;
+        ResourceWorkersBox.Text = _resourcePolicy.MaxCpuWorkers.ToString(CultureInfo.InvariantCulture);
         EncryptBox.PropertyChanged += EncryptBox_PropertyChanged;
         _componentsReady = true;
 
@@ -116,6 +123,7 @@ public sealed partial class MainWindow : Window, IDisposable
         CaptureText.Text = T("captureUnavailable");
         Log(T("captureBoundaryLog"));
         await CheckIntegrityAsync();
+        if (_disposed) return;
         Log($"ZPAQ: {_zpaq.ResolveExecutable() ?? T("notFound")}");
         if (_integrityTrusted)
         {
@@ -206,6 +214,7 @@ public sealed partial class MainWindow : Window, IDisposable
         _disposed = true;
         Interlocked.Increment(ref _hintLoadVersion);
         _lifetime.Cancel();
+        EntropyMixer.Reset();
         ClearCreateSecrets();
         ClearExtractSecrets();
         HintBox.Text = string.Empty;
@@ -229,8 +238,9 @@ public sealed partial class MainWindow : Window, IDisposable
         OperationStatusText.Text = T("integrityChecking");
         try
         {
-            IntegrityStatus app = await _integrity.CheckSelfAsync(_lifetime.Token);
-            IReadOnlyList<ToolIntegrityStatus> tools = await _integrity.CheckNativeToolsAsync(_lifetime.Token);
+            IntegrityStatus app = await _integrity.CheckSelfAsync(_lifetimeToken);
+            IReadOnlyList<ToolIntegrityStatus> tools = await _integrity.CheckNativeToolsAsync(_lifetimeToken);
+            _lifetimeToken.ThrowIfCancellationRequested();
             foreach (ToolIntegrityStatus component in app.Components)
             {
                 Log($"App-Komponente {Path.GetFileName(component.FilePath)}: dual-hash={component.HashMatches}; hybrid={component.HybridSignatureMatches}; Apple={component.SignatureState}");
@@ -252,7 +262,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 Log(T("integrityBlockedLog"));
             }
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested)
         {
             return;
         }
@@ -266,9 +276,12 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            ApplyIntegrityStatus();
-            UpdateProtectedOperationControls();
-            OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
+            if (!_disposed)
+            {
+                ApplyIntegrityStatus();
+                UpdateProtectedOperationControls();
+                OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
+            }
         }
     }
 
@@ -281,20 +294,21 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private void Window_PointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_disposed || Volatile.Read(ref _operationActive) != 0)
+        if (_disposed || Volatile.Read(ref _operationActive) != 0 || _entropyCaptureFaulted
+            || !EntropyMixer.GetPoolStatus().Healthy) return;
+        try
         {
-            return;
+            using IDisposable capturePolicy = _resourcePolicy.EnterScope();
+            var point = e.GetCurrentPoint(this);
+            EntropyMixer.AddMouseSample(point.Position.X, point.Position.Y, unchecked((int)e.Timestamp),
+                point.Properties.IsLeftButtonPressed, point.Properties.IsRightButtonPressed, point.Properties.IsMiddleButtonPressed);
         }
-
-        var point = e.GetCurrentPoint(this);
-        EntropyMixer.AddMouseSample(
-            point.Position.X,
-            point.Position.Y,
-            unchecked((int)e.Timestamp),
-            point.Properties.IsLeftButtonPressed,
-            point.Properties.IsRightButtonPressed,
-            point.Properties.IsMiddleButtonPressed);
-        UpdateEntropyStatus(force: false);
+        catch (Exception exception)
+        {
+            _entropyCaptureFaulted = true;
+            Log(exception.ToString());
+        }
+        UpdateEntropyStatus(force: _entropyCaptureFaulted);
     }
 
     private async void AddFiles_Click(object? sender, RoutedEventArgs e)
@@ -515,6 +529,7 @@ public sealed partial class MainWindow : Window, IDisposable
         GeneratedArchiveEntropy? prepared = null;
         try
         {
+            using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("create");
             string[] inputs = InputList.Items.OfType<string>().ToArray();
             if (inputs.Length == 0)
@@ -578,11 +593,11 @@ public sealed partial class MainWindow : Window, IDisposable
                     createdArchive = archivePath;
                 }
 
-                result = await _zpaq.AddStreamingAsync(inputs, compression, ConsumeAsync, Progress(), _lifetime.Token);
+                result = await _zpaq.AddStreamingAsync(inputs, compression, ConsumeAsync, Progress(), OperationToken);
             }
             else
             {
-                result = await _zpaq.AddAsync(archivePath, inputs, compression, Progress(), _lifetime.Token);
+                result = await _zpaq.AddAsync(archivePath, inputs, compression, Progress(), OperationToken);
                 if (result.Succeeded)
                 {
                     createdArchive = archivePath;
@@ -611,11 +626,11 @@ public sealed partial class MainWindow : Window, IDisposable
                     GeneratedPasswordFirstBox.Text ?? string.Empty,
                     GeneratedPasswordSecondBox.Text ?? string.Empty,
                     Progress(),
-                    _lifetime.Token);
+                    OperationToken);
             }
             else
             {
-                await _recovery.CreateAsync(archivePath, Progress(), _lifetime.Token);
+                await _recovery.CreateAsync(archivePath, Progress(), OperationToken);
             }
 
             // Deleting the originals is gated on proving the archive reproduces
@@ -634,7 +649,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ? T("archiveCreatedOriginalsDeleted")
                 : T("archiveCreated"));
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (OperationToken.IsCancellationRequested)
         {
         }
         catch (Exception exception)
@@ -677,6 +692,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("extract");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
             string output = OutputFolderBox.Text?.Trim() ?? string.Empty;
@@ -710,7 +726,7 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             archive = await PrepareArchiveForUseAsync(archive);
-            bool encrypted = await _containers.LooksEncryptedAsync(archive, _lifetime.Token);
+            bool encrypted = await _containers.LooksEncryptedAsync(archive, OperationToken);
             ProcessResult result;
             if (encrypted)
             {
@@ -727,12 +743,12 @@ public sealed partial class MainWindow : Window, IDisposable
                         CaptureDecryptionProducer(effectivePath, creationCredentials: false),
                         output,
                         Progress(),
-                        _lifetime.Token));
+                        OperationToken));
             }
             else
             {
                 Log(T("extracting"));
-                result = await _zpaq.ExtractAsync(archive, output, Progress(), _lifetime.Token);
+                result = await _zpaq.ExtractAsync(archive, output, Progress(), OperationToken);
             }
 
             if (!result.Succeeded)
@@ -768,6 +784,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("list");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
             if (archive.Length == 0)
@@ -788,7 +805,7 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             archive = await PrepareArchiveForUseAsync(archive);
-            bool encrypted = await _containers.LooksEncryptedAsync(archive, _lifetime.Token);
+            bool encrypted = await _containers.LooksEncryptedAsync(archive, OperationToken);
             ProcessResult result;
             if (encrypted)
             {
@@ -802,11 +819,11 @@ public sealed partial class MainWindow : Window, IDisposable
                     effectivePath => _zpaq.ListStreamingAsync(
                         CaptureDecryptionProducer(effectivePath, creationCredentials: false),
                         Progress(),
-                        _lifetime.Token));
+                        OperationToken));
             }
             else
             {
-                result = await _zpaq.ListAsync(archive, Progress(), _lifetime.Token);
+                result = await _zpaq.ListAsync(archive, Progress(), OperationToken);
             }
 
             Log(result.StandardOutput);
@@ -843,6 +860,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("recovery");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
             if (archive.Length == 0)
@@ -862,7 +880,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            RecoveryProtectionMode? mode = await _recovery.TryReadProtectionModeAsync(archive, _lifetime.Token);
+            RecoveryProtectionMode? mode = await _recovery.TryReadProtectionModeAsync(archive, OperationToken);
             if (mode is null)
             {
                 await WarnAsync(T("emergencyRecoveryMissing"));
@@ -888,11 +906,11 @@ public sealed partial class MainWindow : Window, IDisposable
                     ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
                     ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
                     Progress(),
-                    _lifetime.Token);
+                    OperationToken);
             }
             else
             {
-                result = await _recovery.RecoverToNewFileAsync(archive, Progress(), _lifetime.Token);
+                result = await _recovery.RecoverToNewFileAsync(archive, Progress(), OperationToken);
             }
 
             string effective = result.OutputPath ?? archive;
@@ -914,37 +932,52 @@ public sealed partial class MainWindow : Window, IDisposable
         }
     }
 
-    internal void GeneratePassword_Click(object? sender, RoutedEventArgs e)
+    internal async void GeneratePassword_Click(object? sender, RoutedEventArgs e)
     {
-        if (Volatile.Read(ref _operationActive) != 0)
-        {
-            return;
-        }
+        await GenerateArchiveEntropyAsync();
+    }
 
+    internal async Task GenerateArchiveEntropyAsync()
+    {
+        if (!TryBeginProtectedOperation()) return;
+        GeneratedArchiveEntropy? next = null;
         try
         {
+            using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
             EncryptBox.IsChecked = true;
-            foreach (EntropyPurpose purpose in Enum.GetValues<EntropyPurpose>())
+            foreach (EntropyPurpose purpose in Enum.GetValues<EntropyPurpose>()) EnsureEntropyReady(purpose);
+            EntropyPreparationKind kind = SelectedEncryptionSuite == EncryptionSuite.ParanoiaCascade
+                ? EntropyPreparationKind.DualRound : EntropyPreparationKind.SingleRound;
+            CancellationToken token = OperationToken;
+            var progress = new Progress<string>(phase =>
             {
-                EnsureEntropyReady(purpose);
-            }
-
-            GeneratedArchiveEntropy next = EntropyMixer.CreateArchiveEntropy();
+                if (!_disposed && Volatile.Read(ref _operationActive) != 0 && OperationToken == token)
+                    OperationStatusText.Text = T("entropyPhase." + phase);
+            });
+            next = await Task.Run(() => EntropyMixer.CreateArchiveEntropy(kind, token, progress), token);
+            token.ThrowIfCancellationRequested();
+            if (_disposed) return;
             GeneratedArchiveEntropy? previous = _generatedEntropy;
+            previous?.Dispose();
             _generatedEntropy = next;
             _generatedPairReady = true;
             GeneratedPasswordFirstBox.Text = next.FirstPassword;
             GeneratedPasswordSecondBox.Text = next.SecondPassword;
-            previous?.Dispose();
+            next = null;
             ResetKeySheetStatus();
             UpdateEntropyStatus(force: true);
             UpdatePasswordPolicyStatus();
             Log(T("generatedPasswordLog"));
         }
+        catch (OperationCanceledException) { if (!_disposed) Log(T("cancelled")); }
         catch (Exception exception)
         {
-            Log(exception.ToString());
-            _ = ErrorAsync(exception.Message);
+            if (!_disposed) { Log(exception.ToString()); await ErrorAsync(exception.Message); }
+        }
+        finally
+        {
+            try { next?.Dispose(); }
+            finally { EndProtectedOperation(); }
         }
     }
 
@@ -1028,7 +1061,7 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             MacKeySheetData data = BuildKeySheetData();
-            IReadOnlyList<string> printers = await _keySheets.GetPhysicalPrintersAsync(_lifetime.Token);
+            IReadOnlyList<string> printers = await _keySheets.GetPhysicalPrintersAsync(OperationToken);
             if (printers.Count == 0)
             {
                 throw new InvalidOperationException(T("noPhysicalPrinter"));
@@ -1047,7 +1080,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            await _keySheets.PrintAsync(data, selected, _lifetime.Token);
+            await _keySheets.PrintAsync(data, selected, OperationToken);
             MarkKeySheetHandled(data);
             Log(string.Format(CultureInfo.CurrentCulture, T("keySheetPrintedLog"), selected));
         }
@@ -1058,7 +1091,18 @@ public sealed partial class MainWindow : Window, IDisposable
         }
     }
 
-    private void ClearCreateSecrets_Click(object? sender, RoutedEventArgs e) => ClearCreateSecrets();
+    private async void ClearCreateSecrets_Click(object? sender, RoutedEventArgs e)
+    {
+        if (Volatile.Read(ref _operationActive) != 0) return;
+        try
+        {
+            EntropyMixer.Reset();
+            _entropyCaptureFaulted = false;
+            ClearCreateSecrets();
+            UpdateEntropyStatus(force: true);
+        }
+        catch (Exception exception) { Log(exception.ToString()); await ErrorAsync(exception.Message); }
+    }
 
     private void ClearExtractSecrets_Click(object? sender, RoutedEventArgs e) => ClearExtractSecrets();
 
@@ -1104,7 +1148,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
             ProcessResult extraction = encrypted
                 ? await ExtractEncryptedForVerificationAsync(archivePath, verifyRoot)
-                : await _zpaq.ExtractAsync(archivePath, verifyRoot, Progress(), _lifetime.Token);
+                : await _zpaq.ExtractAsync(archivePath, verifyRoot, Progress(), OperationToken);
             if (!extraction.Succeeded)
             {
                 Log(extraction.StandardError);
@@ -1117,7 +1161,7 @@ public sealed partial class MainWindow : Window, IDisposable
                     inputs,
                     verifyRoot,
                     Progress(),
-                    _lifetime.Token);
+                    OperationToken);
             if (!verification.Verified || verification.Originals is null)
             {
                 Log($"{T("verifyMismatch")} — {verification.Failure}");
@@ -1198,7 +1242,7 @@ public sealed partial class MainWindow : Window, IDisposable
             CaptureDecryptionProducer(archivePath, creationCredentials: true),
             outputRoot,
             Progress(),
-            _lifetime.Token);
+            OperationToken);
     }
 
     // ZPAQ invokes its producer/consumer on worker threads. Capture every GUI
@@ -1301,6 +1345,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
             string path = ErasePathBox.Text?.Trim() ?? string.Empty;
             if (path.Length == 0)
             {
@@ -1326,7 +1371,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, _lifetime.Token);
+            CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, OperationToken);
             SetEraseAnalysis(analysis);
             if (!analysis.IsEncryptedContainer)
             {
@@ -1339,7 +1384,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            CryptoEraseResult result = await _erase.EraseEncryptedContainerAsync(path, Progress(), _lifetime.Token);
+            CryptoEraseResult result = await _erase.EraseEncryptedContainerAsync(path, Progress(), OperationToken);
             ErasePathBox.Text = string.Empty;
             EraseConfirmBox.IsChecked = false;
             SetEraseStatus("eraseCompleted");
@@ -1380,7 +1425,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, _lifetime.Token);
+            CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, OperationToken);
             SetEraseAnalysis(analysis);
             Log(analysis.Message);
             Log(analysis.HardwareNotice);
@@ -1524,19 +1569,17 @@ public sealed partial class MainWindow : Window, IDisposable
 
         // 1024 samples per pool is the minimum that unlocks generation, not a
         // ceiling: collection continues for as long as the pointer moves, and
-        // the reported counts must keep rising so that the extra entropy stays
-        // visible. Throttle on the true pool minimum, never on the value
-        // clamped for the progress bar — clamping the throttle input froze the
-        // whole display at 1024.
+        // every accepted record remains visible. Throttle on total changes,
+        // since independent routing need not advance the minimum pool.
         long poolMinimum = status.Minimum;
-        if (!force && poolMinimum == _lastEntropyUiMinimum)
+        if (!force && status.Total == _lastEntropyUiMinimum)
         {
             return;
         }
 
-        _lastEntropyUiMinimum = poolMinimum;
+        _lastEntropyUiMinimum = status.Total;
         EntropyProgress.Value = Math.Min(poolMinimum, EntropyMixer.RequiredMouseSamplesPerPurpose);
-        bool ready = poolMinimum >= EntropyMixer.RequiredMouseSamplesPerPurpose;
+        bool ready = status.IsReady && !_entropyCaptureFaulted;
         GeneratePasswordButton.IsEnabled = ready && Volatile.Read(ref _operationActive) == 0;
         GeneratePasswordButton.Content = T(_generatedPairReady ? "regeneratePassword" : "generatePassword");
         string key = !_generatedPairReady
@@ -1544,7 +1587,7 @@ public sealed partial class MainWindow : Window, IDisposable
             : _generatedEntropy is { HasPendingEncryptionParameters: true }
                 ? "entropyPrepared"
                 : "entropyRetry";
-        EntropyStatusText.Text = string.Format(
+        EntropyStatusText.Text = (_entropyCaptureFaulted || !status.Healthy ? T("entropyCollectionFailed") + " " : string.Empty) + string.Format(
             CultureInfo.CurrentCulture,
             T(key),
             status.Total,
@@ -1557,6 +1600,8 @@ public sealed partial class MainWindow : Window, IDisposable
             status.NonceFirst,
             status.NonceSecond,
             status.NonceThird,
+            status.NonceFourth,
+            status.NonceFifth,
             EntropyMixer.RequiredMouseSamplesPerPurpose);
         EntropyStatusText.Foreground = Brush.Parse(key == "entropyPrepared" ? "#7EE2B8" : key == "entropyRetry" ? "#F2BD55" : "#5DE4EC");
     }
@@ -1739,12 +1784,12 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async Task<string> PrepareArchiveForUseAsync(string archive)
     {
-        if (await _containers.LooksEncryptedAsync(archive, _lifetime.Token))
+        if (await _containers.LooksEncryptedAsync(archive, OperationToken))
         {
             return archive;
         }
 
-        RecoveryProtectionMode? mode = await _recovery.TryReadProtectionModeAsync(archive, _lifetime.Token);
+        RecoveryProtectionMode? mode = await _recovery.TryReadProtectionModeAsync(archive, OperationToken);
         if (mode is null)
         {
             if (HasEncryptedArchiveExtension(archive))
@@ -1766,11 +1811,11 @@ public sealed partial class MainWindow : Window, IDisposable
                 ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
                 ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
                 Progress(),
-                _lifetime.Token);
+                OperationToken);
         }
         else
         {
-            repair = await _recovery.VerifyAndRepairAsync(archive, Progress(), _lifetime.Token);
+            repair = await _recovery.VerifyAndRepairAsync(archive, Progress(), OperationToken);
         }
 
         string effective = repair.OutputPath ?? archive;
@@ -1787,7 +1832,7 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         try
         {
-            return (await _containers.ReadContainerInfoAsync(archive, _lifetime.Token), archive);
+            return (await _containers.ReadContainerInfoAsync(archive, OperationToken), archive);
         }
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException)
         {
@@ -1799,7 +1844,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
                 ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
                 Progress(),
-                _lifetime.Token);
+                OperationToken);
             if (!repair.Repaired)
             {
                 throw;
@@ -1807,7 +1852,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
             string effective = repair.OutputPath ?? archive;
             Log(string.Format(CultureInfo.CurrentCulture, T("recoveryNewFile"), effective));
-            return (await _containers.ReadContainerInfoAsync(effective, _lifetime.Token), effective);
+            return (await _containers.ReadContainerInfoAsync(effective, OperationToken), effective);
         }
     }
 
@@ -1828,7 +1873,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
                 ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
                 Progress(),
-                _lifetime.Token);
+                OperationToken);
             if (!repair.Repaired)
             {
                 throw;
@@ -1903,7 +1948,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ?? throw new UnauthorizedAccessException(T("sandboxLeaseFailed"));
             if (debounce)
             {
-                await Task.Delay(150, _lifetime.Token);
+                await Task.Delay(150, _lifetimeToken);
             }
 
             if (version != Volatile.Read(ref _hintLoadVersion))
@@ -1911,12 +1956,12 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            if (await _containers.LooksEncryptedAsync(path, _lifetime.Token))
+            if (await _containers.LooksEncryptedAsync(path, _lifetimeToken))
             {
-                hint = (await _containers.ReadContainerInfoAsync(path, _lifetime.Token)).Hint;
+                hint = (await _containers.ReadContainerInfoAsync(path, _lifetimeToken)).Hint;
             }
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested)
         {
             return;
         }
@@ -2016,13 +2061,26 @@ public sealed partial class MainWindow : Window, IDisposable
             return false;
         }
 
+        try { _operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token); }
+        catch { Interlocked.Exchange(ref _operationActive, 0); throw; }
         OperationStatusText.Text = T("working");
         UpdateProtectedOperationControls();
         return true;
     }
 
+    private void CancelOperation_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_operationCancellation is not { } cancellation) return;
+        CancelOperationButton.IsEnabled = false;
+        OperationStatusText.Text = T("cancelling");
+        cancellation.Cancel();
+    }
+
     private void EndProtectedOperation()
     {
+        CancellationTokenSource? completed = _operationCancellation;
+        _operationCancellation = null;
+        completed?.Dispose();
         Interlocked.Exchange(ref _operationActive, 0);
         if (_disposed)
         {
@@ -2044,9 +2102,12 @@ public sealed partial class MainWindow : Window, IDisposable
 
         bool busy = Volatile.Read(ref _operationActive) != 0;
         bool interactive = !_disposed && !busy;
+        CancelOperationButton.IsEnabled = !_disposed && busy && _operationCancellation is { IsCancellationRequested: false };
         CreatePanel.IsEnabled = interactive;
         ExtractPanel.IsEnabled = interactive;
         ErasePanel.IsEnabled = interactive;
+        ResourcesPanel.IsEnabled = interactive;
+        GeneratePasswordButton.IsEnabled = interactive && !_entropyCaptureFaulted && EntropyMixer.GetPoolStatus().IsReady;
         bool protectedEnabled = interactive && _integrityTrusted;
         CreateArchiveButton.IsEnabled = protectedEnabled;
         ExtractArchiveButton.IsEnabled = protectedEnabled;

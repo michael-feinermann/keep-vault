@@ -33,6 +33,9 @@ internal static class SpecLintTests
     /// </summary>
     private static readonly ForbiddenPattern[] ForbiddenInProductionSource =
     [
+        new(@"Kalyna-ZPAQ/v12/", "a v12 container domain"),
+        new(@"\bV12MasterKdf\b|\bNativeChaChaPoly\b|EncryptionSuite\.ThreefishOverKalyna\b", "a removed v12 API"),
+        new(@"KVP12ZP1|KV12VM", "a removed v12 transport"),
         new(@"Kalyna-ZPAQ/v10/", "a v10 cryptographic domain"),
         new(@"Kalyna-ZPAQ/v9/", "a v9 cryptographic domain"),
         new(@"Kalyna-ZPAQ/KPAR2/v3/", "a KPAR2 v3 domain"),
@@ -140,8 +143,8 @@ internal static class SpecLintTests
         // The role context has to serialize the current schedule version. The
         // byte-exact KAT proves the value; this proves nobody reintroduced a
         // second, older constant to choose from.
-        Require(SuiteKeySchedule.ContextVersion == 12, "The role-key schedule context version is not 12.");
-        Require(ContainerKeyDerivation.ContainerVersion == 12, "The container key derivation is not pinned to v12.");
+        Require(SuiteKeySchedule.ContextVersion == 13, "The role-key schedule context version is not 13.");
+        Require(ContainerKeyDerivation.ContainerVersion == 13, "The container key derivation is not pinned to v13.");
         return Task.CompletedTask;
     }
 
@@ -170,17 +173,24 @@ internal static class SpecLintTests
         // graph inputs for the two AOT deliverables.
         LockFileExpectation[] projects =
         [
-            new("KalynaArchiver", "KalynaArchiver.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
-            new("KalynaArchiver.Tests", "KalynaArchiver.Tests.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
-            new("KalynaArchiver.Signing", "KalynaArchiver.Signing.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
-            new("KalynaReleaseVerifier", "KalynaReleaseVerifier.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
-            new("KalynaSigningTool", "KalynaSigningTool.csproj", "net9.0-windows7.0", ["win-x64"], null, "9.0.19"),
+            new("KalynaArchiver", "KalynaArchiver.csproj", "net10.0-windows7.0", ["win-x64"], null, "10.0.12"),
+            new("KalynaArchiver.Tests", "KalynaArchiver.Tests.csproj", "net10.0-windows7.0", ["win-x64"], null, "10.0.12"),
+            new("KalynaArchiver.Signing", "KalynaArchiver.Signing.csproj", "net10.0-windows7.0", ["win-x64"], null, "10.0.12"),
+            new("KalynaReleaseVerifier", "KalynaReleaseVerifier.csproj", "net10.0-windows7.0", ["win-x64"], null, "10.0.12"),
+            new("KalynaSigningTool", "KalynaSigningTool.csproj", "net10.0-windows7.0", ["win-x64"], null, "10.0.12"),
+            new("KeepVaultInstaller", "KeepVaultInstaller.csproj", "net10.0-windows7.0", ["win-x64"], null, "10.0.12"),
             new("KeepVaultMac", "KeepVaultMac.csproj", "net10.0", ["osx-arm64", "osx-x64"], NativeAotPackVersion, NativeAotPackVersion),
             new("KeepVaultMac.Tests", "KeepVaultMac.Tests.csproj", "net10.0", ["osx-arm64"], null, null),
             new("KeepVaultMac.ReleaseVerifier", "KeepVaultMac.ReleaseVerifier.csproj", "net10.0", ["osx-arm64", "osx-x64"], NativeAotPackVersion, NativeAotPackVersion),
             new("KeepVaultMac/Packaging/HybridSigner", "KeepVaultMac.HybridSigner.csproj", "net10.0", ["osx-arm64"], null, null),
-            new("QrCodeScannerWindows", "QrScanner.csproj", "net9.0-windows10.0.19041", ["win-x64"], null, "9.0.19"),
-            new("QrCodeScannerWindows", "QrScanner.Tests.csproj", "net9.0-windows10.0.19041", ["win-x64"], null, null, "packages.tests.lock.json"),
+            new("QrCodeScannerWindows", "QrScanner.csproj", "net10.0-windows10.0.19041", ["win-x64"], null, "10.0.12"),
+            new("QrCodeScannerWindows", "QrScanner.Tests.csproj", "net10.0-windows10.0.19041", ["win-x64"], null, null, "packages.tests.lock.json"),
+            // Test-only harnesses retain the inherited Windows RID plus the
+            // explicit macOS reference-run RID. Neither is a shipping graph.
+            new("native/tests/camellia_serpent_reference", "CipherReference.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
+            new("native/tests/claim_grain", "ClaimGrain.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
+            new("native/tests/managed_executor", "ManagedExecutor.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
+            new("native/tests/native_benchmark", "NativeBenchmark.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
         ];
 
         var violations = new List<string>();
@@ -196,7 +206,7 @@ internal static class SpecLintTests
                 // not projects used by any production project graph.
                 .Where(relative => !relative.StartsWith("build/", StringComparison.Ordinal))
                 .Where(relative => !relative.Split('/').Any(segment =>
-                    segment is ".git" or ".claude" or "bin" or "obj" or "obj_alt" or "build-obj")),
+                    segment is ".git" or ".claude" or "work" or "bin" or "obj" or "obj_alt" or "build-obj")),
         ];
         string[] uncheckedLocks =
         [
@@ -217,7 +227,7 @@ internal static class SpecLintTests
                 .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
                 .Where(relative => !relative.StartsWith("build/", StringComparison.Ordinal))
                 .Where(relative => !relative.Split('/').Any(segment =>
-                    segment is ".git" or ".claude" or "bin" or "obj" or "obj_alt" or "build-obj"))
+                    segment is ".git" or ".claude" or "work" or "bin" or "obj" or "obj_alt" or "build-obj"))
                 .Where(path => !expectedProjectFiles.Contains(path))
                 .Order(StringComparer.Ordinal),
         ];
@@ -272,12 +282,13 @@ internal static class SpecLintTests
             {
                 using JsonDocument document = JsonDocument.Parse(RepositoryLayout.ReadText(path));
                 JsonElement sdk = document.RootElement.GetProperty("sdk");
-                if (sdk.GetProperty("version").GetString() != "10.0.400"
+                string expectedSdk = relativePath == "global.json" ? "10.0.401" : "10.0.400";
+                if (sdk.GetProperty("version").GetString() != expectedSdk
                     || sdk.GetProperty("rollForward").GetString() != expectedRollForward
                     || sdk.GetProperty("allowPrerelease").ValueKind != JsonValueKind.False)
                 {
                     violations.Add(
-                        $"{relativePath} must preserve .NET SDK 10.0.400 with "
+                        $"{relativePath} must preserve .NET SDK {expectedSdk} with "
                         + $"{expectedRollForward} and no prereleases.");
                 }
             }
@@ -514,11 +525,11 @@ internal static class SpecLintTests
             }
         }
 
-        RequireInReadme(V12MasterKdf.KdfMode, "KDF mode");
-        RequireInReadme(V12MasterKdf.KdfInputMode, "KDF input mode");
-        RequireInReadme(V12MasterKdf.PasswordMode, "password mode");
+        RequireInReadme(V13MasterKdf.KdfMode, "KDF mode");
+        RequireInReadme(V13MasterKdf.KdfInputMode, "KDF input mode");
+        RequireInReadme(V13MasterKdf.PasswordMode, "password mode");
 
-        // The v12 factor split, stated the way the specification states it.
+        // The v13 factor split, stated the way the specification states it.
         RequireInReadme("A1 = A[0..64)", "factor A split");
         RequireInReadme("A2 = A[64..128)", "factor A split");
         RequireInReadme("B1 = B[0..64)", "factor B split");
@@ -531,8 +542,8 @@ internal static class SpecLintTests
         RequireInReadme("1,048,576 to 2,097,136 KiB", "PMI-derived memory range");
         RequireInReadme("`t=4`, `p=4`", "Argon2id cost parameters");
         RequireInReadme("PIN of 6 to 16 digits", "PIN length policy");
-        RequireInReadme("container format **v12**", "container version");
-        RequireInReadme("Magic `KZPAQ2\\0`", "v12 container magic");
+        RequireInReadme("container format v13", "container version");
+        RequireInReadme("Magic `KZPAQ2\\0`", "v13 container magic");
 
         string mainWindowSource = RepositoryLayout.ReadText(Path.Combine(root, "KeepVaultMac", "MainWindow.axaml.cs"));
         string programSource = RepositoryLayout.ReadText(Path.Combine(root, "KeepVaultMac", "Program.cs"));
@@ -553,7 +564,7 @@ internal static class SpecLintTests
         // forbidden legacy strings as search needles and negative examples; it
         // is deliberately not a product claim.
         const string AuditFileName = "KEEP_VAULT_V11_MACOS_CODEX_AUDIT.md";
-        const string ReleaseFileName = "KEEP_VAULT_V12_MACOS_RELEASE.md";
+        const string ReleaseFileName = "KEEP_VAULT_V13_FORMAT.md";
         string docsDirectory = Path.Combine(root, "docs");
         string[] referenceDocuments =
         [
@@ -563,12 +574,27 @@ internal static class SpecLintTests
         Require(referenceDocuments.Length == 1, "The historical Codex audit reference is missing or ambiguous.");
         Require(
             File.Exists(Path.Combine(docsDirectory, ReleaseFileName)),
-            "The normative v12 macOS release contract is missing.");
+            "The v13 implementation contract is missing.");
+        string format = RepositoryLayout.ReadText(Path.Combine(docsDirectory, ReleaseFileName));
+        foreach (string identifier in new[] { "Version=13", EncryptionSuiteCatalog.StandardAlgorithm,
+            V13MasterKdf.KdfMode, V13MasterKdf.KdfInputMode, V13MasterKdf.PasswordMode,
+            "ArchiveNonceBytes=320", "DerivedKeyBytes=448", "KV13RA", "KVP13ZP1" })
+            Require(format.Contains(identifier, StringComparison.Ordinal), $"The normative v13 document omits {identifier}.");
+        foreach (EncryptionSuite suite in EncryptionSuiteCatalog.DisplayOrder)
+        {
+            EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.Get(suite);
+            string rowStart = $"| {(int)suite} / `{suite}` |";
+            string row = format.Split('\n').SingleOrDefault(line => line.StartsWith(rowStart, StringComparison.Ordinal))
+                ?? throw new InvalidOperationException($"The normative v13 table omits {suite}.");
+            Require(row.Contains($"| {parameters.EncryptionKeyBytes} | {parameters.StageNonceBytes} |", StringComparison.Ordinal),
+                $"The normative v13 table has stale widths for {suite}.");
+        }
         string[] docs =
         [
             Path.Combine(root, "README.md"),
-            .. Directory.EnumerateFiles(docsDirectory, "*.md")
-                .Where(path => !string.Equals(Path.GetFileName(path), AuditFileName, StringComparison.OrdinalIgnoreCase)),
+            Path.Combine(root, "README.de.md"),
+            Path.Combine(docsDirectory, ReleaseFileName),
+            .. Directory.EnumerateFiles(docsDirectory, "KEEP_VAULT_5_0_3*.md"),
         ];
         (string Pattern, string Why)[] forbidden =
         [

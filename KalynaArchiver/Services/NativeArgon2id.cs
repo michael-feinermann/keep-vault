@@ -12,9 +12,9 @@ internal static unsafe partial class NativeArgon2id
     private static nint _libraryHandle;
     private static delegate* unmanaged[Cdecl]<uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, int> _hashRaw;
     private static delegate* unmanaged[Cdecl]<
-        uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, int> _hashRawV12;
+        uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, uint, int> _hashRawV13;
     private static delegate* unmanaged[Cdecl]<
-        uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, int> _hashRawV12Kat;
+        uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, uint, int> _hashRawV13Kat;
     private static delegate* unmanaged[Cdecl]<int, nint> _errorMessage;
     private static delegate* unmanaged[Cdecl]<uint> _lastMemoryLockError;
 
@@ -107,7 +107,7 @@ internal static unsafe partial class NativeArgon2id
     }
 
     /// <summary>
-    /// One v12 Argon2id branch, with Argon2's optional secret and
+    /// One v13 Argon2id branch, with Argon2's optional secret and
     /// associated-data inputs.
     /// </summary>
     /// <remarks>
@@ -131,15 +131,17 @@ internal static unsafe partial class NativeArgon2id
         byte[]? secret,
         byte[] associatedData,
         byte[] output,
-        bool useKatProfile = false)
+        bool useKatProfile = false,
+        uint workerBudget = 1)
     {
+        ArgumentOutOfRangeException.ThrowIfZero(workerBudget);
         ArgumentNullException.ThrowIfNull(password);
         ArgumentNullException.ThrowIfNull(salt);
         ArgumentNullException.ThrowIfNull(associatedData);
         ArgumentNullException.ThrowIfNull(output);
         if (associatedData.Length == 0)
         {
-            throw new ArgumentException("A v12 Argon2id branch requires associated data.", nameof(associatedData));
+            throw new ArgumentException("A v13 Argon2id branch requires associated data.", nameof(associatedData));
         }
 
         EnsureLoaded();
@@ -154,8 +156,8 @@ internal static unsafe partial class NativeArgon2id
         fixed (byte* outputPtr = output)
         {
             delegate* unmanaged[Cdecl]<
-                uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, int> hashRaw =
-                useKatProfile ? _hashRawV12Kat : _hashRawV12;
+                uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, uint, int> hashRaw =
+                useKatProfile ? _hashRawV13Kat : _hashRawV13;
             int result = hashRaw(
                 iterations,
                 memoryKiB,
@@ -169,13 +171,14 @@ internal static unsafe partial class NativeArgon2id
                 associatedDataPtr,
                 checked((uint)associatedData.Length),
                 outputPtr,
-                checked((uint)output.Length));
+                checked((uint)output.Length),
+                workerBudget);
 
             if (result != 0)
             {
                 string lockFailure = DescribeMemoryLockFailure();
                 throw new CryptographicException(
-                    $"Argon2id v12 returned {result}: {GetErrorMessage(result)}.{lockFailure}");
+                    $"Argon2id v13 returned {result}: {GetErrorMessage(result)}.{lockFailure}");
             }
         }
     }
@@ -200,12 +203,12 @@ internal static unsafe partial class NativeArgon2id
             {
                 _hashRaw = (delegate* unmanaged[Cdecl]<uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, int>)
                     NativeLibrary.GetExport(handle, "phc_argon2id_hash_raw");
-                _hashRawV12 = (delegate* unmanaged[Cdecl]<
-                    uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, int>)
-                    NativeLibrary.GetExport(handle, "keepvault_argon2id_v12");
-                _hashRawV12Kat = (delegate* unmanaged[Cdecl]<
-                    uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, int>)
-                    NativeLibrary.GetExport(handle, "keepvault_argon2id_v12_kat");
+                _hashRawV13 = (delegate* unmanaged[Cdecl]<
+                    uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, uint, int>)
+                    NativeLibrary.GetExport(handle, "keepvault_argon2id_v13_with_budget");
+                _hashRawV13Kat = (delegate* unmanaged[Cdecl]<
+                    uint, uint, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, byte*, uint, uint, int>)
+                    NativeLibrary.GetExport(handle, "keepvault_argon2id_v13_kat_with_budget");
                 _errorMessage = (delegate* unmanaged[Cdecl]<int, nint>)
                     NativeLibrary.GetExport(handle, "phc_argon2_error_message");
                 _lastMemoryLockError = (delegate* unmanaged[Cdecl]<uint>)
@@ -216,8 +219,8 @@ internal static unsafe partial class NativeArgon2id
             {
                 NativeLibrary.Free(handle);
                 _hashRaw = null;
-                _hashRawV12 = null;
-                _hashRawV12Kat = null;
+                _hashRawV13 = null;
+                _hashRawV13Kat = null;
                 _errorMessage = null;
                 _lastMemoryLockError = null;
                 throw;

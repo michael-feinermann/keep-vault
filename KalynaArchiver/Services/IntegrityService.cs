@@ -121,12 +121,14 @@ public sealed class IntegrityService : IDisposable
     public static readonly IReadOnlyList<string> RequiredNativeTools =
     [
         "zpaq.exe",
-        "kalyna_v12.dll",
+        "kalyna_v13.dll",
         "threefish_ref.dll",
         "mars_ref.dll",
+        "camellia_v13.dll",
+        "serpent_v13.dll",
         "shacal2_ref.dll",
         "aes_ref.dll",
-        "chachapoly_ref.dll",
+        "xchachapoly_v13.dll",
         "argon2_ref.dll",
         "argon2.exe",
     ];
@@ -522,10 +524,10 @@ public sealed class IntegrityService : IDisposable
             while ((read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
             {
                 int count = read;
-                await Task.WhenAll(
-                    Task.Run(() => sha3.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
-                    Task.Run(() => skein.AppendData(buffer.AsSpan(0, count)), CancellationToken.None))
-                    .ConfigureAwait(false);
+                await CpuWorkBudget.RunIndependentAsync(cancellationToken,
+                    () => sha3.AppendData(buffer.AsSpan(0, count)),
+                    () => skein.AppendData(buffer.AsSpan(0, count))).ConfigureAwait(false);
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             sha3Result = sha3.GetHashAndReset();
@@ -559,9 +561,10 @@ public sealed class IntegrityService : IDisposable
             while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
             {
                 int count = read;
-                Parallel.Invoke(
+                CpuWorkBudget.RunIndependentAsync(CancellationToken.None,
                     () => sha3.AppendData(buffer.AsSpan(0, count)),
-                    () => skein.AppendData(buffer.AsSpan(0, count)));
+                    () => skein.AppendData(buffer.AsSpan(0, count))).GetAwaiter().GetResult();
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             sha3Result = sha3.GetHashAndReset();
@@ -602,11 +605,11 @@ public sealed class IntegrityService : IDisposable
             {
                 length = checked(length + read);
                 int count = read;
-                await Task.WhenAll(
-                    Task.Run(() => sha3.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
-                    Task.Run(() => sha512.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
-                    Task.Run(() => skein.AppendData(buffer.AsSpan(0, count)), CancellationToken.None))
-                    .ConfigureAwait(false);
+                await CpuWorkBudget.RunIndependentAsync(cancellationToken,
+                    () => sha3.AppendData(buffer.AsSpan(0, count)),
+                    () => sha512.AppendData(buffer.AsSpan(0, count)),
+                    () => skein.AppendData(buffer.AsSpan(0, count))).ConfigureAwait(false);
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             sha3Result = sha3.GetHashAndReset();
@@ -644,10 +647,11 @@ public sealed class IntegrityService : IDisposable
             {
                 length = checked(length + read);
                 int count = read;
-                Parallel.Invoke(
+                CpuWorkBudget.RunIndependentAsync(CancellationToken.None,
                     () => sha3.AppendData(buffer.AsSpan(0, count)),
                     () => sha512.AppendData(buffer.AsSpan(0, count)),
-                    () => skein.AppendData(buffer.AsSpan(0, count)));
+                    () => skein.AppendData(buffer.AsSpan(0, count))).GetAwaiter().GetResult();
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             sha3Result = sha3.GetHashAndReset();

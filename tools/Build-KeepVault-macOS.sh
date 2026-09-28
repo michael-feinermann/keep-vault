@@ -459,8 +459,8 @@ bundle_identifier='de.michael-feinermann.keep-vault'
 core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
-marketing_version='5.0.2'
-build_version='13'
+marketing_version='5.0.3'
+build_version='14'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
@@ -487,7 +487,7 @@ pfx_wrapping_key_file=${KEEPVAULT_PFX_WRAPPING_KEY_FILE:-}
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${packaging_dir}/Keys/mldsa87-public.key}
 dotnet_command=''
 expected_main_lock_sha256='B111FBCD11FBF46DF0E61164109CBD8BFB2C22B80EC79E4B4D1EA0ED7FE07DE7'
-expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF39407EB6BA5EB'
+expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
 expected_tests_lock_sha256='EE7FEDF92179705DE025536CDCF1CB6B5991AA69D457B26103B3E420B9957A24'
 
 usage() {
@@ -789,7 +789,7 @@ if [[ ! -x ${dotnet_command} || -L ${dotnet_command} ]]; then
   print -u2 "The explicitly selected official .NET SDK host is unavailable or a symbolic link: ${dotnet_command}"
   exit 1
 fi
-selected_sdk=$(cd ${repo_root} && run_dotnet_clean --version)
+selected_sdk=$(cd ${mac_project} && run_dotnet_clean --version)
 if [[ ${selected_sdk} != '10.0.400' ]]; then
   print -u2 'Keep Vault release builds require the reviewed official .NET SDK 10.0.400.'
   exit 1
@@ -997,9 +997,9 @@ fi
   run_dotnet_clean restore Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj --artifacts-path ${private_signer_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
 )
 (
-  cd ${repo_root}
-  run_dotnet_clean restore KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path ${private_tests_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
-  run_dotnet_clean restore KeepVaultMac.ReleaseVerifier/KeepVaultMac.ReleaseVerifier.csproj --artifacts-path ${private_verifier_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
+  cd ${mac_project}
+  run_dotnet_clean restore ${repo_root}/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path ${private_tests_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
+  run_dotnet_clean restore ${repo_root}/KeepVaultMac.ReleaseVerifier/KeepVaultMac.ReleaseVerifier.csproj --artifacts-path ${private_verifier_artifacts} --locked-mode --force -p:RestoreForceEvaluate=false --no-http-cache --disable-build-servers --nologo
 )
 verify_reviewed_locks
 
@@ -1149,7 +1149,8 @@ if [[ ${architecture} == universal ]]; then
       fi
       xcrun lipo -create ${arm_slice} ${x64_slice} -output ${merged_file}
       chmod $(stat -f %Lp ${arm_file}) ${merged_file}
-      xcrun lipo ${merged_file} -verify_arch arm64 x86_64
+      xcrun lipo ${merged_file} -verify_arch arm64
+      xcrun lipo ${merged_file} -verify_arch x86_64
       rm -- ${arm_slice} ${x64_slice}
     elif ! cmp -s ${arm_file} ${x64_file}; then
       print -u2 "Non-Mach-O publish outputs differ between architectures: ${relative}"
@@ -1207,7 +1208,7 @@ if [[ -d ${native_dir} && ${native_dir} == ${build_root}/* ]]; then
 fi
 mkdir -p ${native_dir}
 native_source=${repo_root}/KeepVaultMac/Native/$([[ ${architecture} == universal ]] && print osx-universal || print osx-arm64)
-for native_name in zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_v12.dylib libmars_ref.dylib libshacal2_ref.dylib libthreefish_ref.dylib; do
+for native_name in zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libxchachapoly_v13.dylib libkalyna_v13.dylib libmars_ref.dylib libcamellia_v13.dylib libserpent_v13.dylib libshacal2_ref.dylib libthreefish_ref.dylib; do
   ditto ${native_source}/${native_name} ${native_dir}/${native_name}
 done
 
@@ -1232,8 +1233,8 @@ ditto ${merged_publish} ${macos_dir}
 # covered by Apple's CodeResources seal and Keep Vault's detached manifests.
 third_party_header=${packaging_dir}/ThirdPartyNoticesHeader.txt
 third_party_notices=${resources_dir}/THIRD-PARTY-NOTICES.txt
-expected_third_party_header_sha256='908f80164af2529cc884b1712649f306ca4653c18ea79b910e7835df368ce4ae'
-expected_third_party_notices_sha256='bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159'
+expected_third_party_header_sha256='3d3f4fc0956a0b72726044f2e708da2724be356597b5d32d14ce444ef7a92379'
+expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
 create_bound_notice_output ${third_party_notices}
 copy_pinned_notice_source 'reviewed third-party-notice header' \
   ${third_party_header} ${expected_third_party_header_sha256} 0
@@ -1288,7 +1289,7 @@ model_notice_root=${repo_root}/KalynaArchiver/Resources/PasswordModel
 model_notices=${resources_dir}/PASSWORD-MODEL-NOTICES.txt
 create_bound_notice_output ${model_notices}
 copy_pinned_notice_source 'password model attribution header' \
-  ${packaging_dir}/PasswordModelNoticesHeader.txt ae08b5e2c47647263b7af645eb99aeb3761b8d010853a8b6bc12d1c091e2afaa 0
+  ${packaging_dir}/PasswordModelNoticesHeader.txt 752bfefef41cc9cbacbffdfcb9421da1b1aba3e5d7076d7f39f6947343f6e471 0
 append_pinned_notice 'Password model manifest' \
   ${model_notice_root}/manifest.json 2f6ec374c19496eb548e4270a972bde0bc3146748d20c72781c0a34c03a8f0e4
 append_pinned_notice 'LICENSE-CC-BY-4.0.txt' \
@@ -1312,7 +1313,7 @@ append_pinned_notice 'NOTICE-OPUS-de.md' \
 append_pinned_notice 'NOTICE-OPUS-en.md' \
   ${model_notice_root}/NOTICE-OPUS-en.md 7e0d37cbb4ce3541cc4447ab3fa1c836cf87729572490f421bc0599885b311f0
 finalize_bound_notice_output \
-  ${model_notices} 1000 200000 fcc48f7f9d123570230f6e0fdb45a9e172c9addea17a619081392a3d8ec57ea2
+  ${model_notices} 1000 200000 47e917a325d5bc39bf669f53c727752070b383a41fb50e6bdf037826891f6871
 print "password_model_notices_sha256=${third_party_notice_sha256}"
 
 sed \
@@ -1464,7 +1465,8 @@ done
 supervisor_path=${macos_dir}/Keep\ Vault\ Supervisor
 if [[ ${architecture} == universal ]]; then
   xcrun lipo -create ${supervisor_thin[@]} -output ${supervisor_path}
-  xcrun lipo ${supervisor_path} -verify_arch arm64 x86_64
+  xcrun lipo ${supervisor_path} -verify_arch arm64
+  xcrun lipo ${supervisor_path} -verify_arch x86_64
 else
   ditto ${supervisor_thin[1]} ${supervisor_path}
 fi
@@ -1548,7 +1550,8 @@ done
 launcher_path=${macos_dir}/Keep\ Vault\ Launcher
 if [[ ${architecture} == universal ]]; then
   xcrun lipo -create ${launcher_thin[@]} -output ${launcher_path}
-  xcrun lipo ${launcher_path} -verify_arch arm64 x86_64
+  xcrun lipo ${launcher_path} -verify_arch arm64
+  xcrun lipo ${launcher_path} -verify_arch x86_64
 else
   ditto ${launcher_thin[1]} ${launcher_path}
 fi
@@ -2015,8 +2018,8 @@ fi
 
 print 'RELEASE GATE: building the test project before staging any signed test-native bytes...'
 (
-  cd ${repo_root}
-  run_dotnet_clean build KeepVaultMac.Tests/KeepVaultMac.Tests.csproj \
+  cd ${mac_project}
+  run_dotnet_clean build ${repo_root}/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj \
     -c Release \
     --no-restore \
     --no-incremental \
@@ -2033,10 +2036,42 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
   --destination ${private_tests_artifacts}/bin/KeepVaultMac.Tests/release_osx-arm64/Native \
   --identity ${identity}
 (
-  cd ${repo_root}
+  cd ${mac_project}
   test_sheet_dir=$(mktemp -d "${build_root}/test-sheets.XXXXXX")
   trap 'rm -rf -- "${test_sheet_dir}"' EXIT INT TERM
-  test_project=KeepVaultMac.Tests/KeepVaultMac.Tests.csproj
+  test_project=${repo_root}/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj
+  # Keep every completed phase outside the disposable SDK tree. Later phases
+  # overwrite the runner's default JSON, including after a failed earlier run.
+  test_evidence_dir=$(mktemp -d "${private_temp_parent}/keep-vault-release-evidence.XXXXXXXX")
+  chmod 0700 ${test_evidence_dir}
+  test_evidence_identity=$(stat -f '%d:%i' ${test_evidence_dir})
+  print "release_test_evidence=${test_evidence_dir}"
+  test_phase=0
+  run_release_tests() {
+    local test_exit=0
+    local result_root=${private_tests_artifacts}/bin/KeepVaultMac.Tests/release_osx-arm64
+    local artifact
+    (( ++test_phase ))
+    require_private_nuget_cache_identity || return 2
+    rm -f -- ${result_root}/.test-results.json ${result_root}/.test-timings.json
+    run_dotnet_clean "$@" || test_exit=$?
+    require_private_directory_identity ${test_evidence_dir} ${test_evidence_identity} || return 2
+    for artifact in .test-results.json .test-timings.json; do
+      if [[ -f ${result_root}/${artifact} && ! -L ${result_root}/${artifact} ]]; then
+        cp -n ${result_root}/${artifact} ${test_evidence_dir}/phase-${test_phase}${artifact} || return 2
+      fi
+    done
+    if (( test_exit == 0 )) && [[ ! -f ${test_evidence_dir}/phase-${test_phase}.test-results.json ]]; then
+      print -u2 'RELEASE GATE: a successful test phase produced no result JSON.'
+      test_exit=2
+    fi
+    print -r -- "${test_phase} exit=${test_exit} ${(q)@}" >> ${test_evidence_dir}/phases.txt
+    return ${test_exit}
+  }
+  shasum -a 256 \
+    ${private_tests_artifacts}/bin/KeepVaultMac.Tests/release_osx-arm64/*.dll \
+    ${private_tests_artifacts}/bin/KeepVaultMac.Tests/release_osx-arm64/Native/* \
+    > ${test_evidence_dir}/test-input-sha256.txt
   test_inventory=$(run_dotnet_clean run \
     --project ${test_project} \
     --artifacts-path ${private_tests_artifacts} \
@@ -2067,19 +2102,48 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     credentials.read-model-and-old-pattern
     gui.credential-policy-boundary
     gui.erase-completion-status
-    crypto.v12-parallel-mac-kat
-    crypto.chacha20-poly1305-rfc8439
-    containers.v12-production-worker-equivalence
-    containers.v12-kpar2-roundtrip
+    crypto.v13-parallel-mac-kat
+    crypto.xchacha20-poly1305-draft03
+    containers.v13-production-worker-equivalence
+    containers.v13-kpar2-roundtrip
     recovery.parallel-worker-equivalence
     recovery.physical-eio-repair
     packaging.keychain-secret-not-in-argv
     packaging.hybrid-key-separation
     zpaq.full-matrix
+    zpaq.verified-read-at
+    entropy.rev9-routing
+    entropy.rev9-golden
+    entropy.rev9-finalization-golden
+    entropy.rev9-cache-equivalence
+    crypto.hash-cleanup-regression
+    v13-header-canonical-fields
+    v13-cascade-independent-composition
+    v13-par8-rolekeys
+    v13-par8-header-auth
+    v13-header-seeded-fuzz
+    v13-nonce-seeded-fuzz
+    fuzz.verified-input-10000
+    fuzz.recovery-streaming-10000
+    fuzz.verified-read-at-server-10000
+    resources.cpu-worker-budget
+    entropy.rev9-shuffle
+    entropy.rev9-dual-composition
+    entropy.rev9-suite-plans
+    entropy.rev9-output
+    entropy.rev9-faults
+    entropy.rev9-lifecycle
+    gui.entropy-rev9-phases-cancel
+    gui.operation-cancel-lifetime
+    containers.suite.camellia256
+    containers.suite.serpent256
+    release.v13-paranoia-structure512
     zpaq.process-resource-limits
     zpaq.fail-fast-error-preservation
     zpaq.sync-consumer-fail-fast
     performance.cipher-suites
+    performance.entropy-rev9-phases
+    performance.mac-root-phases
     performance.paranoia-256mib-e2e
     performance.paranoia-complex-tree-e2e
     containers.suite.kalyna512-512
@@ -2092,10 +2156,51 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     containers.suite.shacal2-512
     containers.suite.chacha20-poly1305
     containers.suite.mixed-cascade
+    v13-std-catalog
+    v13-std-layout
+    v13-std-rolekeys
+    v13-std-tweak
+    v13-std-nonces-aad
+    v13-std-composition
+    v13-std-default-api
+    v13-std-header
+    v13-std-framing
+    v13-std-nolegacy
+    v13-std-tamper
+    v13-nonce-vectors
+    v13-nonce-plan
+    v13-nonce-isolation
+    v13-nonce-capacity
+    v13-nonce-faults
+    crypto.v13-camellia-reference
+    crypto.v13-serpent-reference
+    v13-usage-boundaries
+    v13-usage-writer-guard
+    v13-usage-reader-guard
+    v13-usage-model
+    io.verified-input-domain-kats
+    io.verified-input-descriptor-capture
+    io.verified-input-state
+    io.verified-input-ranges
+    io.verified-input-tamper
+    io.verified-input-private-copy
+    io.verified-original
+    io.verified-input-policy
+    io.verified-input-parallel-lifetime
+    io.verified-input-cleanup-retry
+    recovery.streaming-metadata-canonical
+    recovery.streaming-metadata-negative
+    recovery.streaming-metadata-large-logical
+    resources.shared-memory-budget
+    resources.shared-runtime-budget
+    recovery.record-table-layout
+    recovery.record-table-tamper
+    recovery.record-table-cleanup
+    recovery.record-table-budget
   )
   for required_test_id in ${required_test_ids[@]}; do
     if ! print -r -- ${test_inventory} | grep -Fq -- ${required_test_id}; then
-      print -u2 "RELEASE GATE: required v12 test is absent: ${required_test_id}"
+      print -u2 "RELEASE GATE: required v13 test is absent: ${required_test_id}"
       exit 2
     fi
   done
@@ -2107,11 +2212,11 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
   fi
   parallel_test_workers=$(( logical_processors > 8 ? 8 : logical_processors ))
 
-  # The suite exercises the real ZPAQ path, and v12 executes ZPAQ only from the
+  # The suite exercises the real ZPAQ path, and v13 executes ZPAQ only from the
   # root-owned anchor the installer provisions. A second build cannot recreate
   # the first build's CMS signing time. Explicit installation must therefore
   # install this exact candidate and resume these tests without rebuilding it.
-  zpaq_anchor_executable='/Library/Application Support/Keep Vault/v12/zpaq'
+  zpaq_anchor_executable='/Library/Application Support/Keep Vault/v13/zpaq'
   staged_zpaq=${private_tests_artifacts}/bin/KeepVaultMac.Tests/release_osx-arm64/Native/zpaq
   if [[ ! -f ${staged_zpaq} || -L ${staged_zpaq} ]]; then
     print -u2 'RELEASE GATE: the staged test ZPAQ is missing; staging did not complete.'
@@ -2156,7 +2261,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
   if [[ ! -f ${zpaq_anchor_executable} || -L ${zpaq_anchor_executable} ]] \
       || ! cmp -s -- ${zpaq_anchor_executable} ${staged_zpaq}; then
     publish_for_anchor_install \
-      'the root-owned v12 ZPAQ anchor is absent or differs from this signed candidate.'
+      'the root-owned v13 ZPAQ anchor is absent or differs from this signed candidate.'
   fi
   if [[ ! -f ${zpaq_anchor_executable} || -L ${zpaq_anchor_executable} ]] \
       || ! cmp -s -- ${zpaq_anchor_executable} ${staged_zpaq}; then
@@ -2167,7 +2272,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
 
   print "RELEASE GATE: running the complete suite with ${parallel_test_workers} test workers..."
   KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-    run_dotnet_clean run \
+    run_release_tests run \
       --project ${test_project} \
       --artifacts-path ${private_tests_artifacts} \
       -c Release \
@@ -2182,7 +2287,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
   if (( release_mode )); then
     print 'RELEASE GATE: explicitly running the production worker-1-vs-N container KAT...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \
@@ -2192,12 +2297,12 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         -- \
         --full \
         --no-smoke \
-        --only containers.v12-production-worker-equivalence \
+        --only containers.v13-production-worker-equivalence \
         --parallel 1
 
-    print 'RELEASE GATE: explicitly running the independently pinned v12 parallel-MAC KAT...'
+    print 'RELEASE GATE: explicitly running the independently pinned v13 parallel-MAC KAT...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \
@@ -2207,12 +2312,12 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         -- \
         --full \
         --no-smoke \
-        --only crypto.v12-parallel-mac-kat \
+        --only crypto.v13-parallel-mac-kat \
         --parallel 1
 
-    print 'RELEASE GATE: explicitly running the integrated v12 container, ZPAQ and KPAR2 end-to-end gates...'
+    print 'RELEASE GATE: explicitly running the integrated v13 container, ZPAQ and KPAR2 end-to-end gates...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \
@@ -2222,10 +2327,10 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         -- \
         --full \
         --no-smoke \
-        --only containers.v12-kpar2-roundtrip \
+        --only containers.v13-kpar2-roundtrip \
         --parallel 1
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \
@@ -2238,7 +2343,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         --only recovery.parallel-worker-equivalence \
         --parallel 1
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \
@@ -2251,7 +2356,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         --only recovery.physical-eio-repair \
         --parallel 1
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \
@@ -2270,10 +2375,10 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
       exit 2
     fi
     performance_baseline=${performance_baseline:A}
-    print 'RELEASE GATE: running the ten-suite manual performance matrix on one test worker...'
+    print 'RELEASE GATE: running the twelve-suite manual performance matrix on one test worker...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
       KEEPVAULT_PERF_BASELINE=${performance_baseline} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \
@@ -2285,9 +2390,37 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         --only performance.cipher-suites \
         --parallel 1
 
+    print 'RELEASE GATE: measuring the REV9 entropy phases on one test worker...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_release_tests run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --performance \
+        --only performance.entropy-rev9-phases \
+        --parallel 1
+
+    print 'RELEASE GATE: measuring actual dual-MAC leaf and ordered root phases...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_release_tests run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --performance \
+        --only performance.mac-root-phases \
+        --parallel 1
+
     print 'RELEASE GATE: running the 256-MiB Paranoia production-KDF end-to-end gate...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \
@@ -2303,7 +2436,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     # notarized bundle, ZIP and hybrid manifests already have their final bytes.
     print 'RELEASE GATE: running the final complex-tree Paranoia end-to-end gate...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
-      run_dotnet_clean run \
+      run_release_tests run \
         --project ${test_project} \
         --artifacts-path ${private_tests_artifacts} \
         -c Release \

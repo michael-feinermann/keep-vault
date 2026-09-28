@@ -411,7 +411,7 @@ foreach ($target in $portableBinaries) {
 
 $readmePath = Join-Path $publishDir "PORTABLE_README.txt"
 @"
-Keep Vault Portable 5.0.2
+Keep Vault Portable 5.0.3
 =========================
 
 Start:
@@ -439,28 +439,35 @@ The release signing keys remain external to this package. The verifier checks th
 compiled public-key pins even when Windows does not trust the certificate chain. No new
 Windows root certificate is installed by this portable package.
 
-Encrypted containers use format v12 only and offer ten production suites: four cascades
-and six individual ciphers. Every suite requires a passphrase, a PIN, and two independent
+Encrypted containers use format v13 only and offer twelve production suites: four cascades
+and eight individual ciphers, including Camellia-256 and Serpent-256. Five suites end in
+XChaCha20-Poly1305. Every suite requires a passphrase, a PIN, and two independent
 generated 1024-bit hexadecimal factors. Creating a new archive requires a 24-256 character
 passphrase and a 6-16 digit PIN. Extraction passes the entered credentials unchanged to
-the v12 derivation and does not reapply the creation policy, so existing v12 archives
+the v13 derivation and does not reapply the creation policy, so valid v13 archives
 created under an earlier credential policy remain readable. No older container format
 is accepted. Key sheets A and B are printed as two separate jobs, each containing its
 factor page and a public installation-guidance page. Store factors A and B separately.
 
-One atomic generation consumes nine evenly filled mouse pools with at least 1024 samples
-each: A1, A2, B1, B2, the SHA3 salt, the Skein salt, and three nonce parts. The visible
-counters restart at zero after that epoch is consumed. Every output also includes the
-operating-system CSPRNG. The matching salt and nonce remain available exactly once in
-locked RAM and stay bound to the displayed factors A and B.
+Each accepted mouse event is assigned uniformly at random to exactly one of eleven pools:
+A1, A2, B1, B2, the SHA3 salt, the Skein salt, and five nonce parts. Pool counts do not
+influence this selection. Generation is available only when every pool has at least 1024
+events; collecting 11264 events in total alone is not sufficient. Additional events remain
+accepted until atomic consumption, including for pools already above 1024. The consumed
+records are shuffled and hashed per pool with SHA3-512; dual-round preparation uses a new
+shuffle and a fresh SHA-512 accumulator for the second round. All consumed pool resources
+must be cleared successfully before generated material is released. New live counters
+restart at zero independently. Every output also includes the operating-system CSPRNG.
+The matching salt and nonce remain available exactly once in locked RAM and stay bound
+to the displayed factors A and B.
 
-The v12 KDF length-prefixes and domain-separates the passphrase, PIN and both factors in
+The v13 KDF length-prefixes and domain-separates the passphrase, PIN and both factors in
 independent SHA3 and Skein branches. PMI16 is derived from the credentials and selects an
 Argon2id memory cost from 1 GiB to just under 2 GiB with t=4 and p=4; it is not stored in
 the header. The Paranoia cascade performs the complete second KDF round.
 
 Every 16 MiB container chunk derives its own nonce from the base nonce and chunk index.
-CTR and ChaCha20 counter exhaustion is rejected before any output mutation.
+CTR and XChaCha20-Poly1305 counter exhaustion is rejected before any output mutation.
 
 Physical printing creates no PDF file in this app. Windows print spoolers and drivers are
 outside the app's storage control and can use their own temporary storage.
@@ -473,10 +480,10 @@ NTFS alternate data streams are intentionally omitted during archive creation an
 during extraction. OneDrive/cloud versions, backups, shadow copies and print spooling can
 retain data outside this app's control.
 
-Cryptographic erase only applies to encrypted v12 ZPAQ containers. True SSD hardware secure
+Cryptographic erase only applies to encrypted v13 ZPAQ containers. True SSD hardware secure
 erase is a whole-drive firmware/vendor operation, not a reliable per-file app operation.
 
-KPAR2 v4 with ContainerVersion 12 is this app's custom RS(20,3) recovery format, not
+KPAR2 v4 with ContainerVersion 13 is this app's custom RS(20,3) recovery format, not
 standard PAR2. At 1 TB, 15 percent
 recovery redundancy requires about 150 GiB of additional storage and several full I/O passes.
 Encrypted archives always use dual-authenticated KPAR2 metadata (HMAC-SHA3-512 and keyed
@@ -534,7 +541,7 @@ if (-not $SkipSigning) {
             }
         })
     $inventoryPath = Join-Path $publishDir 'RELEASE-INVENTORY.json'
-    [ordered]@{Product='Keep Vault';Version='5.0.2';Runtime='win-x64';Files=$inventoryFiles} |
+    [ordered]@{Product='Keep Vault';Version='5.0.3';Runtime='win-x64';Files=$inventoryFiles} |
         ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $inventoryPath -Encoding utf8NoBOM
     $inventorySigning = @{
         Path = @($inventoryPath)

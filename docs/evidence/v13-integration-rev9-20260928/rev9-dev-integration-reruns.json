@@ -1,0 +1,258 @@
+[
+  {
+    "id": "io.verified-input-descriptor-capture",
+    "exit": 0,
+    "log": "work/v13-evidence/integration-rerun-io.verified-input-descriptor-capture.log",
+    "results": {
+      "schemaVersion": 3,
+      "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+      "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+      "platform": "macos",
+      "osArchitecture": "arm64",
+      "processArchitecture": "arm64",
+      "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+      "budget": {
+        "maxWorkers": 1,
+        "cpuTokens": 9,
+        "memoryMiB": 9011,
+        "argonSlots": 2,
+        "zpaqSlots": 1
+      },
+      "tests": [
+        {
+          "id": "io.verified-input-descriptor-capture",
+          "name": "parallel multi-range captures retain descriptor ownership without buffered cursor races",
+          "status": "PASS",
+          "seconds": 3.162,
+          "peakRssMiB": 146,
+          "seed": "0x5EED0313",
+          "failure": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "crypto.per-chunk-nonces",
+    "exit": 0,
+    "log": "work/v13-evidence/integration-rerun-crypto.per-chunk-nonces.log",
+    "results": {
+      "schemaVersion": 3,
+      "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+      "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+      "platform": "macos",
+      "osArchitecture": "arm64",
+      "processArchitecture": "arm64",
+      "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+      "budget": {
+        "maxWorkers": 1,
+        "cpuTokens": 9,
+        "memoryMiB": 9011,
+        "argonSlots": 2,
+        "zpaqSlots": 1
+      },
+      "tests": [
+        {
+          "id": "crypto.per-chunk-nonces",
+          "name": "per-chunk nonces across a multi-chunk archive",
+          "status": "PASS",
+          "seconds": 51.609,
+          "peakRssMiB": 2403,
+          "seed": "0x5EED0313",
+          "failure": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "crypto.two-round-derivation",
+    "exit": 0,
+    "log": "work/v13-evidence/integration-rerun-crypto.two-round-derivation.log",
+    "results": {
+      "schemaVersion": 3,
+      "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+      "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+      "platform": "macos",
+      "osArchitecture": "arm64",
+      "processArchitecture": "arm64",
+      "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+      "budget": {
+        "maxWorkers": 1,
+        "cpuTokens": 9,
+        "memoryMiB": 9011,
+        "argonSlots": 2,
+        "zpaqSlots": 1
+      },
+      "tests": [
+        {
+          "id": "crypto.two-round-derivation",
+          "name": "two-round key derivation from one pool consumption",
+          "status": "PASS",
+          "seconds": 0.135,
+          "peakRssMiB": 68,
+          "seed": "0x5EED0313",
+          "failure": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "security.pipeline-worker-policy",
+    "exit": 0,
+    "log": "work/v13-evidence/integration-rerun-security.pipeline-worker-policy.log",
+    "results": {
+      "schemaVersion": 3,
+      "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+      "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+      "platform": "macos",
+      "osArchitecture": "arm64",
+      "processArchitecture": "arm64",
+      "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+      "budget": {
+        "maxWorkers": 1,
+        "cpuTokens": 9,
+        "memoryMiB": 9011,
+        "argonSlots": 2,
+        "zpaqSlots": 1
+      },
+      "tests": [
+        {
+          "id": "security.pipeline-worker-policy",
+          "name": "v13 staging slots and aggregate native permits obey independent CPU and memory bounds",
+          "status": "PASS",
+          "seconds": 0.001,
+          "peakRssMiB": 52,
+          "seed": "0x5EED0313",
+          "failure": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "security.pipeline-native-concurrency",
+    "exit": 0,
+    "log": "work/v13-evidence/integration-rerun-security.pipeline-native-concurrency.log",
+    "results": {
+      "schemaVersion": 3,
+      "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+      "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+      "platform": "macos",
+      "osArchitecture": "arm64",
+      "processArchitecture": "arm64",
+      "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+      "budget": {
+        "maxWorkers": 1,
+        "cpuTokens": 9,
+        "memoryMiB": 9011,
+        "argonSlots": 2,
+        "zpaqSlots": 1
+      },
+      "tests": [
+        {
+          "id": "security.pipeline-native-concurrency",
+          "name": "bounded native teams join on cancellation and release every concurrency permit",
+          "status": "PASS",
+          "seconds": 0.007,
+          "peakRssMiB": 54,
+          "seed": "0x5EED0313",
+          "failure": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "security.credential-encoding-only",
+    "exit": 0,
+    "log": "work/v13-evidence/integration-rerun-security.credential-encoding-only.log",
+    "results": {
+      "schemaVersion": 3,
+      "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+      "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+      "platform": "macos",
+      "osArchitecture": "arm64",
+      "processArchitecture": "arm64",
+      "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+      "budget": {
+        "maxWorkers": 1,
+        "cpuTokens": 9,
+        "memoryMiB": 9011,
+        "argonSlots": 2,
+        "zpaqSlots": 1
+      },
+      "tests": [
+        {
+          "id": "security.credential-encoding-only",
+          "name": "technical credential limits preserve raw input encoding under independent v13 domains",
+          "status": "PASS",
+          "seconds": 0.008,
+          "peakRssMiB": 65,
+          "seed": "0x5EED0313",
+          "failure": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "spec.lockfile-runtimes",
+    "exit": 0,
+    "log": "work/v13-evidence/integration-rerun-spec.lockfile-runtimes.log",
+    "results": {
+      "schemaVersion": 3,
+      "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+      "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+      "platform": "macos",
+      "osArchitecture": "arm64",
+      "processArchitecture": "arm64",
+      "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+      "budget": {
+        "maxWorkers": 1,
+        "cpuTokens": 9,
+        "memoryMiB": 9011,
+        "argonSlots": 2,
+        "zpaqSlots": 1
+      },
+      "tests": [
+        {
+          "id": "spec.lockfile-runtimes",
+          "name": "lock files match the platform their project builds on",
+          "status": "PASS",
+          "seconds": 0.304,
+          "peakRssMiB": 60,
+          "seed": "0x5EED0313",
+          "failure": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "trust.native-tools",
+    "exit": 0,
+    "log": "work/v13-evidence/integration-rerun-trust.native-tools.log",
+    "results": {
+      "schemaVersion": 3,
+      "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+      "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+      "platform": "macos",
+      "osArchitecture": "arm64",
+      "processArchitecture": "arm64",
+      "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+      "budget": {
+        "maxWorkers": 1,
+        "cpuTokens": 9,
+        "memoryMiB": 9011,
+        "argonSlots": 2,
+        "zpaqSlots": 1
+      },
+      "tests": [
+        {
+          "id": "trust.native-tools",
+          "name": "signed native trust and tamper rejection",
+          "status": "PASS",
+          "seconds": 0.378,
+          "peakRssMiB": 73,
+          "seed": "0x5EED0313",
+          "failure": null
+        }
+      ]
+    }
+  }
+]

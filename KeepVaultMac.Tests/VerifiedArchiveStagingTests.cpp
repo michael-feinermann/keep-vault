@@ -11,7 +11,7 @@ static_assert(MNT_IGNORE_OWNERSHIP == 0x00200000, "Darwin ownership flag");
 
 static std::vector<unsigned char> envelope(std::size_t payload) {
     std::vector<unsigned char> bytes(16 + payload);
-    const unsigned char magic[8] = {0x4b,0x56,0x31,0x32,0x56,0x4d,0,0};
+    const unsigned char magic[8] = {0x4b,0x56,0x31,0x33,0x56,0x4d,0,0};
     std::memcpy(bytes.data(), magic, 8);
     std::uint64_t size = payload;
     for (int i = 15; i >= 8; --i) { bytes[i] = static_cast<unsigned char>(size); size >>= 8; }
@@ -57,6 +57,7 @@ int main() {
     require(envelope(4097), 4096, false);
     auto invalid = envelope(16);
     invalid[0] ^= 1; require(invalid, 4096, false);
+    invalid = envelope(16); invalid[3] = 0x32; require(invalid, 4096, false);
     invalid = envelope(16); invalid.resize(15); require(invalid, 4096, false);
     invalid = envelope(16); invalid.pop_back(); require(invalid, 4096, false);
     invalid = envelope(16); invalid.push_back(0); require(invalid, 4096, false);

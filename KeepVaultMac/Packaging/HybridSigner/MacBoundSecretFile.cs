@@ -22,6 +22,7 @@ internal sealed class MacBoundSecretFile : IDisposable
     private const ushort RegularFile = 0x8000;
     private const ushort Directory = 0x4000;
 
+    private readonly PrivateDirectoryLease? _directoryLease;
     private readonly string _canonicalParent;
     private readonly string _finalName;
     private readonly SafeFileHandle _parentHandle;
@@ -45,8 +46,10 @@ internal sealed class MacBoundSecretFile : IDisposable
         FileStream stream,
         FileIdentity parentIdentity,
         FileIdentity createdIdentity,
-        string temporaryName)
+        string temporaryName,
+        PrivateDirectoryLease? directoryLease)
     {
+        _directoryLease = directoryLease;
         _canonicalParent = canonicalParent;
         _finalName = finalName;
         _parentHandle = parentHandle;
@@ -57,6 +60,65 @@ internal sealed class MacBoundSecretFile : IDisposable
     }
 
     internal FileStream Stream => _stream;
+
+    internal static void ValidatePrivateDirectory(string directory)
+    {
+        using var lease = BindPrivateDirectory(directory);
+        lease.Validate();
+    }
+
+    internal static PrivateDirectoryLease BindPrivateDirectory(string directory)
+        => new(directory);
+
+    // A provisioning operation retains this descriptor through generation,
+    // every publication and the final proof. A pathname precheck alone cannot
+    // bind several independently created files to one protected directory.
+    internal sealed class PrivateDirectoryLease : IDisposable
+    {
+        private readonly SafeFileHandle _handle;
+        private readonly FileIdentity _identity;
+        internal string Path { get; }
+
+        internal PrivateDirectoryLease(string directory)
+        {
+            if (!OperatingSystem.IsMacOS()) throw new PlatformNotSupportedException();
+            Path = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(directory));
+            if (!string.Equals(Path, ResolveExistingPath(Path), StringComparison.Ordinal))
+                throw new IOException("The key directory must not contain symbolic links.");
+            int fd = Open(Path, OpenReadOnly | OpenDirectory | OpenCloseOnExec | OpenNoFollowAny);
+            if (fd < 0) throw NativeIOException("The private key directory cannot be opened.");
+            _handle = new SafeFileHandle((nint)fd, ownsHandle: true);
+            try
+            {
+                _identity = GetIdentity(_handle);
+                Validate();
+            }
+            catch { _handle.Dispose(); throw; }
+        }
+
+        internal void Validate()
+        {
+            ObjectDisposedException.ThrowIf(_handle.IsClosed, this);
+            RequireOwnershipEnforced(_handle);
+            RequireNoExtendedAcl(_handle);
+            FileIdentity held = GetIdentity(_handle);
+            FileIdentity named = GetPathIdentity(Path);
+            if (!_identity.SameObject(held) || !_identity.SameObject(named)
+                || (held.Mode & FileTypeMask) != Directory || (held.Mode & 0x01FF) != 0x01C0
+                || held.Uid != GetEffectiveUserId() || held.Mode != named.Mode || held.Uid != named.Uid)
+                throw new IOException("The private mode-0700 key directory changed its object, owner or permissions.");
+        }
+
+        internal void RequireSameDirectory(SafeFileHandle handle, string path)
+        {
+            Validate();
+            if (!string.Equals(path, Path, StringComparison.Ordinal)
+                || !_identity.SameObject(GetIdentity(handle)))
+                throw new IOException("A keyset write was redirected outside its bound directory.");
+        }
+
+        public void Dispose() => _handle.Dispose();
+    }
 
     // Invoked only by adversarial tests after the pathname and descriptor have
     // first been proven to identify the same private file. Production leaves
@@ -101,6 +163,7 @@ internal sealed class MacBoundSecretFile : IDisposable
         try
         {
             RequireOwnershipEnforced(handle);
+            RequireNoExtendedAcl(handle);
             FileIdentity before = RequirePrivateReadIdentity(GetIdentity(handle), description);
             FileIdentity pathBefore = GetPathIdentity(fullPath);
             if (!before.SameReadSnapshot(pathBefore))
@@ -135,6 +198,7 @@ internal sealed class MacBoundSecretFile : IDisposable
                 description);
             FileIdentity pathAfter = GetPathIdentity(fullPath);
             RequireOwnershipEnforced(stream.SafeFileHandle);
+            RequireNoExtendedAcl(stream.SafeFileHandle);
             if (!before.SameReadSnapshot(after)
                 || !after.SameReadSnapshot(pathAfter))
             {
@@ -155,13 +219,14 @@ internal sealed class MacBoundSecretFile : IDisposable
             [stream, handle]);
     }
 
-    internal static MacBoundSecretFile Create(string destinationPath)
+    internal static MacBoundSecretFile Create(string destinationPath, PrivateDirectoryLease? directoryLease = null)
     {
         if (!OperatingSystem.IsMacOS())
         {
             throw new PlatformNotSupportedException("Bound secret-file creation requires macOS.");
         }
 
+        directoryLease?.Validate();
         string fullPath = Path.GetFullPath(destinationPath);
         string requestedParent = Path.GetDirectoryName(fullPath)
             ?? throw new IOException("The secret-file destination has no parent directory.");
@@ -187,6 +252,9 @@ internal sealed class MacBoundSecretFile : IDisposable
                 throw NativeIOException("The canonical secret-file parent could not be opened without symlinks.");
             }
             parentHandle = new SafeFileHandle((nint)parentDescriptor, ownsHandle: true);
+            directoryLease?.RequireSameDirectory(parentHandle, canonicalParent);
+            RequireOwnershipEnforced(parentHandle);
+            RequireNoExtendedAcl(parentHandle);
             FileIdentity parentIdentity = GetIdentity(parentHandle);
             if ((parentIdentity.Mode & FileTypeMask) != Directory
                 || !parentIdentity.SameObject(GetPathIdentity(canonicalParent)))
@@ -244,6 +312,8 @@ internal sealed class MacBoundSecretFile : IDisposable
             {
                 throw NativeIOException("The secret staging descriptor could not be fixed at mode 0600.");
             }
+            RequireOwnershipEnforced(createdHandle);
+            RequireNoExtendedAcl(createdHandle);
             FileIdentity createdIdentity = RequirePrivateSingleLink(GetIdentity(createdHandle));
             FileIdentity temporaryIdentity = GetIdentityAt(parentHandle, temporaryName);
             if (!createdIdentity.SameObject(temporaryIdentity)
@@ -255,7 +325,9 @@ internal sealed class MacBoundSecretFile : IDisposable
             stream = new FileStream(
                 createdHandle,
                 FileAccess.ReadWrite,
-                bufferSize: 4096,
+                // Wrapping-key provisioning writes sensitive bytes directly
+                // from a locked buffer. Do not retain a second buffered copy.
+                bufferSize: 1,
                 isAsync: false);
             createdHandle = null;
             var result = new MacBoundSecretFile(
@@ -265,7 +337,8 @@ internal sealed class MacBoundSecretFile : IDisposable
                 stream,
                 parentIdentity,
                 createdIdentity,
-                temporaryName);
+                temporaryName,
+                directoryLease);
             parentHandle = null;
             stream = null;
             return result;
@@ -310,6 +383,8 @@ internal sealed class MacBoundSecretFile : IDisposable
 
         TestHookBeforeRename?.Invoke(_canonicalParent, _currentName);
         RequireParentStillBound();
+        RequireOwnershipEnforced(_stream.SafeFileHandle);
+        RequireNoExtendedAcl(_stream.SafeFileHandle);
         FileIdentity handleIdentity = RequirePrivateSingleLink(GetIdentity(_stream.SafeFileHandle));
         FileIdentity temporaryIdentity = GetIdentityAt(_parentHandle, _currentName);
         if (!handleIdentity.SameObject(temporaryIdentity)
@@ -325,6 +400,8 @@ internal sealed class MacBoundSecretFile : IDisposable
         // This post-check is mandatory: success is reported only if the final
         // namespace entry still names the exact descriptor that was validated.
         RequireParentStillBound();
+        RequireOwnershipEnforced(_stream.SafeFileHandle);
+        RequireNoExtendedAcl(_stream.SafeFileHandle);
         FileIdentity installedHandle = RequirePrivateSingleLink(GetIdentity(_stream.SafeFileHandle));
         FileIdentity installedEntry = GetIdentityAt(_parentHandle, _finalName);
         if (!installedHandle.SameObject(installedEntry)
@@ -379,6 +456,9 @@ internal sealed class MacBoundSecretFile : IDisposable
 
     private void RequireParentStillBound()
     {
+        _directoryLease?.RequireSameDirectory(_parentHandle, _canonicalParent);
+        RequireOwnershipEnforced(_parentHandle);
+        RequireNoExtendedAcl(_parentHandle);
         FileIdentity descriptorIdentity = GetIdentity(_parentHandle);
         FileIdentity pathIdentity = GetPathIdentity(_canonicalParent);
         if (!_parentIdentity.SameObject(descriptorIdentity)
@@ -393,7 +473,8 @@ internal sealed class MacBoundSecretFile : IDisposable
     {
         if ((identity.Mode & FileTypeMask) != RegularFile
             || (identity.Mode & 0x01FF) != OwnerReadWrite
-            || identity.LinkCount != 1)
+            || identity.LinkCount != 1
+            || identity.Uid != GetEffectiveUserId())
         {
             throw new IOException("The secret staging descriptor is not a single-link mode-0600 regular file.");
         }
@@ -421,6 +502,29 @@ internal sealed class MacBoundSecretFile : IDisposable
         const uint ignoreOwnership = 0x00200000;
         if ((flags & local) == 0 || (flags & ignoreOwnership) != 0)
             throw new IOException("Signing secrets require a local volume with ownership enforcement enabled.");
+    }
+
+    private static void RequireNoExtendedAcl(SafeFileHandle handle)
+    {
+        // Darwin ACL_TYPE_EXTENDED from the current SDK. Reject any attached
+        // ACL rather than treating mode 0600/0700 as proof of exclusivity.
+        bool added = false;
+        try
+        {
+            handle.DangerousAddRef(ref added);
+            nint acl = AclGetFdNp(checked((int)handle.DangerousGetHandle()), 0x100);
+            if (acl != 0)
+            {
+                _ = AclFree(acl);
+                throw new IOException("Signing secrets and their private directory must have no extended ACL.");
+            }
+            int error = Marshal.GetLastPInvokeError();
+            // Darwin returns ENOENT for an absent ACL; ENOATTR is also an
+            // explicit absence result. All unsupported/permission errors fail.
+            if (error is not (2 or 93))
+                throw new IOException("The private signing object's ACL could not be inspected.", new Win32Exception(error));
+        }
+        finally { if (added) handle.DangerousRelease(); }
     }
 
     private static void RequireOwnershipEnforced(SafeFileHandle handle)
@@ -658,6 +762,12 @@ internal sealed class MacBoundSecretFile : IDisposable
             && ChangeNanoseconds == other.ChangeNanoseconds
             && Generation == other.Generation;
     }
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "acl_get_fd_np", SetLastError = true)]
+    private static extern nint AclGetFdNp(int descriptor, int type);
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "acl_free", SetLastError = true)]
+    private static extern int AclFree(nint acl);
 
     [DllImport("libSystem.B.dylib", EntryPoint = "open", SetLastError = true)]
     private static extern int Open(string path, int flags);

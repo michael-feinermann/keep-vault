@@ -11,6 +11,21 @@ function Require-Rejection {
     Write-Host "PASS reject: $Name"
 }
 
+foreach ($name in @('kalyna_v13', 'xchachapoly_v13', 'camellia_v13', 'serpent_v13')) {
+    foreach ($suffix in @('', '.sha3', '.skein', '.khsig', '.sha3.khsig', '.skein.khsig')) {
+        if (-not [KeepVaultBuild.SourceSnapshotLease]::IsOutput("tools/$name.dll$suffix")) {
+            throw "A current v13 native output was classified as source: $name.dll$suffix"
+        }
+    }
+}
+foreach ($path in @('tools/kalyna_v12.dll', 'tools/chachapoly_ref.dll.sha3.khsig',
+                    'tools/camellia_v13.dll.cs', 'tools/nested/serpent_v13.dll')) {
+    if ([KeepVaultBuild.SourceSnapshotLease]::IsOutput($path)) {
+        throw "A historical native artifact or unreviewed path became a dirty-tree exemption: $path"
+    }
+}
+Write-Host 'PASS current v13 native-output inventory and historical/ambiguous-path rejection'
+
 Assert-LocalReleaseWorkspace 'C:\Dev\Kalyna'
 Require-Rejection { Assert-LocalReleaseWorkspace 'C:\Users\Synthetic\OneDrive\Kalyna' } 'personal OneDrive workspace'
 Require-Rejection { Assert-LocalReleaseWorkspace 'C:\Users\Synthetic\OneDrive - University\Kalyna' } 'organization OneDrive workspace'

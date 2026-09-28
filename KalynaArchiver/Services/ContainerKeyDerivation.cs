@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// The whole v12 key derivation, from the four things the user holds to the
+/// The whole v13 key derivation, from the four things the user holds to the
 /// keys one suite needs.
 /// </summary>
 /// <remarks>
@@ -26,7 +26,7 @@ internal static partial class ContainerKeyDerivation
     /// <summary>
     /// The one container generation this build derives keys for.
     /// </summary>
-    public const int ContainerVersion = 12;
+    public const int ContainerVersion = 13;
 
     public const int MinPinLength = 6;
     public const int MaxPinSyntaxLength = 16;
@@ -395,6 +395,10 @@ internal static partial class ContainerKeyDerivation
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using OperationMemoryBudget.Lease memory = OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).AsTask().GetAwaiter().GetResult();
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(salts);
         ValidatePasswordEncoding(userPassword);
@@ -420,24 +424,24 @@ internal static partial class ContainerKeyDerivation
             }
 
             string algorithm = parameters.Algorithm;
-            sha3Credential = LockedSensitiveBuffer.Create(V12MasterKdf.CredentialHashBytes);
-            skeinCredential = LockedSensitiveBuffer.Create(V12MasterKdf.CredentialHashBytes);
+            sha3Credential = LockedSensitiveBuffer.Create(V13MasterKdf.CredentialHashBytes);
+            skeinCredential = LockedSensitiveBuffer.Create(V13MasterKdf.CredentialHashBytes);
 
-            V12MasterKdf.DeriveSha3CredentialHash(
+            V13MasterKdf.DeriveSha3CredentialHash(
                 algorithm, userPassword, pin, factorA.Bytes, factorB.Bytes, sha3Credential.Bytes);
-            V12MasterKdf.DeriveSkeinCredentialHash(
+            V13MasterKdf.DeriveSkeinCredentialHash(
                 algorithm, userPassword, pin, factorA.Bytes, factorB.Bytes, skeinCredential.Bytes);
 
             cancellationToken.ThrowIfCancellationRequested();
-            (_, uint memory1) = V12MasterKdf.DerivePmi(
+            (_, uint memory1) = V13MasterKdf.DerivePmi(
                 algorithm, 1, sha3Credential.Bytes, skeinCredential.Bytes,
                 ReadOnlySpan<byte>.Empty, salts.Sha3Round1, salts.SkeinRound1);
             progress?.Report(paranoia ? "Key derivation, round 1 of 2" : "Key derivation");
 
-            round1Master = LockedSensitiveBuffer.Create(V12MasterKdf.MasterBytes);
-            V12MasterKdf.DeriveRoundMaster(
+            round1Master = LockedSensitiveBuffer.Create(V13MasterKdf.MasterBytes);
+            V13MasterKdf.DeriveRoundMaster(
                 algorithm, 1, sha3Credential.Bytes, skeinCredential.Bytes,
-                salts.Sha3Round1, salts.SkeinRound1, ReadOnlySpan<byte>.Empty, memory1, round1Master.Bytes);
+                salts.Sha3Round1, salts.SkeinRound1, ReadOnlySpan<byte>.Empty, memory1, round1Master.Bytes, cancellationToken);
 
             if (!paranoia)
             {
@@ -447,17 +451,17 @@ internal static partial class ContainerKeyDerivation
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            (_, uint memory2) = V12MasterKdf.DerivePmi(
+            (_, uint memory2) = V13MasterKdf.DerivePmi(
                 algorithm, 2, sha3Credential.Bytes, skeinCredential.Bytes,
                 round1Master.Bytes, salts.Sha3Round2!, salts.SkeinRound2!);
             progress?.Report("Key derivation, round 2 of 2");
             // The first master is the Argon2id secret here, not the password:
             // it makes round two unreachable without round one, and it keeps
             // the credentials themselves in the same position in both rounds.
-            round2Master = LockedSensitiveBuffer.Create(V12MasterKdf.MasterBytes);
-            V12MasterKdf.DeriveRoundMaster(
+            round2Master = LockedSensitiveBuffer.Create(V13MasterKdf.MasterBytes);
+            V13MasterKdf.DeriveRoundMaster(
                 algorithm, 2, sha3Credential.Bytes, skeinCredential.Bytes,
-                salts.Sha3Round2!, salts.SkeinRound2!, round1Master.Bytes, memory2, round2Master.Bytes);
+                salts.Sha3Round2!, salts.SkeinRound2!, round1Master.Bytes, memory2, round2Master.Bytes, cancellationToken);
             completed = new MasterResult(round2Master, memory1, memory2);
             round2Master = null; // ownership transferred to result
             return completed;

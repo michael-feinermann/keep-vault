@@ -1,0 +1,266 @@
+{
+  "scope": "28 native-independent correctness groups plus isolated component performance; not release acceptance",
+  "results": [
+    {
+      "schemaVersion": 1,
+      "id": "v13-header-canonical-fields",
+      "status": "PASS",
+      "seconds": 0.0311414,
+      "peakRssMiB": 63,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "crypto.hash-cleanup-regression",
+      "status": "PASS",
+      "seconds": 0.5399402,
+      "peakRssMiB": 60,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-finalization-golden",
+      "status": "PASS",
+      "seconds": 0.011476,
+      "peakRssMiB": 58,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-cache-equivalence",
+      "status": "PASS",
+      "seconds": 0.6681771,
+      "peakRssMiB": 73,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-golden",
+      "status": "PASS",
+      "seconds": 0.2331149,
+      "peakRssMiB": 73,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-routing",
+      "status": "PASS",
+      "seconds": 0.0322944,
+      "peakRssMiB": 67,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-shuffle",
+      "status": "PASS",
+      "seconds": 0.2038425,
+      "peakRssMiB": 70,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-dual-composition",
+      "status": "PASS",
+      "seconds": 0.0500342,
+      "peakRssMiB": 66,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-suite-plans",
+      "status": "PASS",
+      "seconds": 0.8455297,
+      "peakRssMiB": 77,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-output",
+      "status": "PASS",
+      "seconds": 0.3194542,
+      "peakRssMiB": 71,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-faults",
+      "status": "PASS",
+      "seconds": 0.100416,
+      "peakRssMiB": 68,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "entropy.rev9-lifecycle",
+      "status": "PASS",
+      "seconds": 0.8428271,
+      "peakRssMiB": 73,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "resources.cpu-worker-budget",
+      "status": "PASS",
+      "seconds": 0.0075092,
+      "peakRssMiB": 53,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-nonce-vectors",
+      "status": "PASS",
+      "seconds": 0.0102476,
+      "peakRssMiB": 58,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-nonce-plan",
+      "status": "PASS",
+      "seconds": 0.0023205,
+      "peakRssMiB": 52,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-nonce-isolation",
+      "status": "PASS",
+      "seconds": 0.1596289,
+      "peakRssMiB": 64,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-nonce-capacity",
+      "status": "PASS",
+      "seconds": 0.012465,
+      "peakRssMiB": 57,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-nonce-faults",
+      "status": "PASS",
+      "seconds": 0.0101367,
+      "peakRssMiB": 58,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-usage-boundaries",
+      "status": "PASS",
+      "seconds": 0.0018468,
+      "peakRssMiB": 52,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-usage-model",
+      "status": "PASS",
+      "seconds": 0.0017992,
+      "peakRssMiB": 53,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-usage-writer-guard",
+      "status": "PASS",
+      "seconds": 0.0061745,
+      "peakRssMiB": 56,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-usage-reader-guard",
+      "status": "PASS",
+      "seconds": 0.0234497,
+      "peakRssMiB": 59,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-std-catalog",
+      "status": "PASS",
+      "seconds": 0.0026559,
+      "peakRssMiB": 52,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-std-layout",
+      "status": "PASS",
+      "seconds": 0.0010823,
+      "peakRssMiB": 52,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-std-tweak",
+      "status": "PASS",
+      "seconds": 0.0047619,
+      "peakRssMiB": 57,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "v13-std-nonces-aad",
+      "status": "PASS",
+      "seconds": 0.0112707,
+      "peakRssMiB": 57,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "spec.no-legacy-source",
+      "status": "PASS",
+      "seconds": 0.1845997,
+      "peakRssMiB": 68,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "spec.normative-v13-docs",
+      "status": "PASS",
+      "seconds": 0.0104765,
+      "peakRssMiB": 56,
+      "seed": 1,
+      "failure": null
+    },
+    {
+      "schemaVersion": 1,
+      "id": "performance.entropy-rev9-phases",
+      "status": "PASS",
+      "seconds": 13.0035002,
+      "peakRssMiB": 289,
+      "seed": 1,
+      "failure": null
+    }
+  ]
+}

@@ -7,7 +7,7 @@ using System.Text.Json;
 using KalynaArchiver.Services;
 
 /// <summary>
-/// Manual, full-cost release measurements requested for v12. These are kept
+/// Manual, full-cost release measurements requested for v13. These are kept
 /// outside the automatic suite because every invocation performs the real
 /// Paranoia Argon2id profile and processes hundreds of MiB at ZPAQ level 5.
 /// </summary>
@@ -19,7 +19,7 @@ internal static class ReleaseEndToEndPerformanceTests
     private const string UserPassword = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
     private const string UserPin = "428317";
     private static readonly byte[] TextPattern = Encoding.UTF8.GetBytes(
-        "Keep Vault v12 Parallelisierung: Kompression, Verschluesselung, "
+        "Keep Vault v13 Parallelisierung: Kompression, Verschluesselung, "
         + "Authentifizierung und Fehlerkorrektur. Grüße aus Dortmund.\n");
 
     internal static Task RunExact256MiBAsync() =>
@@ -33,6 +33,34 @@ internal static class ReleaseEndToEndPerformanceTests
             "paranoia-complex-tree-level5-repair",
             CreateComplexTreeFixtureAsync,
             damageAndRepair: true);
+
+    internal static Task RunV13ParanoiaStructure512Async() =>
+        RunWorkflowAsync(
+            "v13-paranoia-structure512-production-kdf",
+            CreateV13Structure512Async,
+            damageAndRepair: true);
+
+    private static async Task CreateV13Structure512Async(string root)
+    {
+        await CreateComplexTreeFixtureAsync(root).ConfigureAwait(false);
+        for (int index = 0; index < 128; ++index)
+        {
+            await WritePatternFileAsync(Path.Combine(root, "viele kleine Dateien", $"Gruppe {index % 8:00}", $"Datei {index:000}.bin"),
+                index * 31L, DataPattern.PseudoRandom, (ulong)index + 991).ConfigureAwait(false);
+        }
+        Directory.CreateDirectory(Path.Combine(root, "vollständig leer"));
+        Directory.CreateDirectory(Path.Combine(root, "Unicode", "空のフォルダー", "🙂"));
+        await WritePatternFileAsync(Path.Combine(root, ".versteckt-null"), 0, DataPattern.Zero, 1).ConfigureAwait(false);
+        TreeManifest manifest = await BuildManifestAsync(root).ConfigureAwait(false);
+        long remaining = checked(ExactBenchmarkBytes - manifest.TotalBytes);
+        Require(remaining > 0, "The v13 structure fixture exceeded its 256 MiB source budget.");
+        await WritePatternFileAsync(Path.Combine(root, "Rest bis exakt 256 MiB zufällig.bin"), remaining,
+            DataPattern.PseudoRandom, 0x5631335354525543).ConfigureAwait(false);
+        // Explicit user exception: the complete 256 MiB tree plus one additional
+        // individually 256 MiB file. All other release fixtures keep the old cap.
+        await WritePatternFileAsync(Path.Combine(root, "Zusätzliche Einzeldatei exakt 256 MiB.bin"),
+            ExactBenchmarkBytes, DataPattern.PseudoRandom, 0x5631334249474649).ConfigureAwait(false);
+    }
 
     private static async Task RunWorkflowAsync(
         string label,
@@ -63,7 +91,15 @@ internal static class ReleaseEndToEndPerformanceTests
             await createFixture(sourceRoot).ConfigureAwait(false);
             TreeManifest expected = await BuildManifestAsync(sourceRoot).ConfigureAwait(false);
             setupTimer.Stop();
-            Require(expected.TotalBytes > 0, "The release E2E fixture contains no payload bytes.");
+            bool isExtendedStructure = label.StartsWith("v13-paranoia-structure512", StringComparison.Ordinal);
+            long approvedBudget = isExtendedStructure ? checked(2 * ExactBenchmarkBytes) : ExactBenchmarkBytes;
+            Require(expected.TotalBytes > 0 && expected.TotalBytes <= approvedBudget,
+                "The release E2E fixture exceeded its explicitly approved source budget.");
+            if (isExtendedStructure)
+            {
+                Require(expected.TotalBytes == 2 * ExactBenchmarkBytes && expected.Files.Count >= 147
+                    && expected.Directories.Count >= 24, "The v13 structural fixture lost its exact size or topology diversity.");
+            }
             if (!damageAndRepair)
             {
                 Require(
@@ -94,7 +130,7 @@ internal static class ReleaseEndToEndPerformanceTests
                         factorB,
                         EncryptionSuite.ParanoiaCascade,
                         entropy,
-                        "v12 release E2E",
+                        "v13 release E2E",
                         null,
                         cancellationToken),
                 null,
@@ -246,8 +282,8 @@ internal static class ReleaseEndToEndPerformanceTests
                 LogicalProcessors: Environment.ProcessorCount,
                 CompressionLevel: CompressionLevel,
                 Suite: EncryptionSuite.ParanoiaCascade.ToString(),
-                Argon2Iterations: V12MasterKdf.Iterations,
-                Argon2Parallelism: V12MasterKdf.Parallelism,
+                Argon2Iterations: V13MasterKdf.Iterations,
+                Argon2Parallelism: V13MasterKdf.Parallelism,
                 InputFiles: expected.Files.Count,
                 InputDirectories: expected.Directories.Count,
                 InputBytes: expected.TotalBytes,

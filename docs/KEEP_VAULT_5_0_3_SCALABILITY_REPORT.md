@@ -1,0 +1,49 @@
+# Keep Vault 5.0.3: Skalierbarkeit und Nachweisgrenzen nach REV9
+
+Stand: 28. September 2026, macOS, vor abschließendem Quellfreeze und Releaseprüfung. Reale gewöhnliche Datenläufe sind auf Benutzerwunsch auf 256 MiB begrenzt. Die ausdrücklich genehmigte Ausnahme ist ein Paranoia-Strukturbaum mit 256 MiB plus zusätzlicher 256-MiB-Einzeldatei. Numerische TiB-Grenztests sind keine realen TiB-Läufe. Windows ist nicht Teil dieses Releaseauftrags.
+
+## Gemeinsame Ressourcenentscheidung
+
+`ArchiveOperationPolicy` friert vor Beginn getrennte Byte-, Datei-, Arbeits-/Ausgabevolume-, RAM-, CPU-, I/O-, Queue- und Zeitbudgets ein. Fremde Header erhöhen diese Werte nicht. Die macOS-GUI kann größere endliche Budgets und ein geeignetes Arbeitsvolume auswählen; die konservativen Defaults sind keine Formatgrenzen.
+
+`CpuWorkBudget` vergibt prozessweit Permits und berücksichtigt aktive niedrigere Policygrenzen. Neue Leases und wartende Wiederaufnahmen lesen die aktuelle macOS-Anzahl aktivierter logischer CPUs, begrenzt durch die .NET-Prozesskapazität. Bereits laufende Claims bleiben bis zum Join gültig. Staging-Slots und native Blockworker sind getrennt; es gibt keine feste produktweite 64-/1024-Kernobergrenze.
+
+Verwaltete Leases markieren einen Async-Kontext, den lokale Read-at-MACs und verschachtelte Hashfamilien wiederverwenden. Native ZPAQ-Kinder halten eine ausdrückliche Teilreservation ohne Parent-Kontext. Bei gleichzeitigem Childbetrieb bleibt mindestens ein Parent-Permit für den Daten-/RPC-Pfad frei. Der gemeinsame native Cipher-Executor leiht die bereits gewährten Teams, fordert keine weiteren Permits an und joint alle gestarteten Leser vor Rückgabe.
+
+`OperationMemoryBudget` reserviert Arbeit pro Rootoperation global und verwendet den Kontext bei verschachtelten Aufrufen erneut. Lebende/detachte Entropiesegmente zählen zusätzlich global. Additive Heavy-Leases begrenzen KDF-Matrizen und native Kinder gemeinsam; eine Pipeoperation hält Raum für die maximale produktive KDF-Matrix frei. Argon2-t=4, p=4-Lanes, PMI-Speicherformel und sequenzielle Runden bleiben erhalten. Der laufende Prozessmonitor unterscheidet Wandzeit, addierte Parent-/Child-CPU und echten Bytefortschritt. Eine Statusmeldung verlängert keine Stillstandsfrist.
+
+## Bulkpfade und verbleibende Abhängigkeiten
+
+| Pfad | Umgesetzte Parallelität / begrenzter Speicher | Unvermeidbare oder derzeit erhaltene Reihenfolge |
+|---|---|---|
+| Entropie | Unabhängige Pooljobs, segmentierte gesperrte Records, exklusiver wiederverwendeter Index | Aufnahme/Detach atomar; FY-Swaps und Replaykette je Pool sequenziell; R1 vor R2 |
+| Rollen / Nonces | Getrennte Cipherrollen; aktive Blockhashes im Chunkworker | Kryptographische Transcripts und KDF-Abhängigkeiten unverändert; keine Reservejobs |
+| CTR / XChaCha | Viele Chunks und disjunkte native Blockclaims; adaptive bevorzugte 256-KiB-Claims; exklusiver Schedule je Worker | Stufenreihenfolge pro Datenbereich; HChaCha vor Chunknutzung |
+| Poly1305 | Geordnete Kombination unabhängiger Feldsegmente unter geliehenem Budget | Exakter Transcript, einmalige s-Addition, Tagentscheidung vor Decryptausgabe |
+| Container-MACs | Begrenzte Batches unabhängiger 1-MiB-Blätter | Linearer geordneter Root bleibt seriell; keine Kombination fertiger HMAC-Tags |
+| Capture / Consume | Exklusive 1-MiB-Prüfpuffer und begrenzte parallele Read-at-Slots | Vollständige globale Verifikation vor allgemeiner Consumerfreigabe |
+| Reguläres ZPAQ | Gebundenes Original plus authentifizierter Diskindex und kontrolliertes Read-at-RPC | Parser-/Modellabhängigkeiten bleiben; keine vollständige Klartext-Spoolkopie |
+| Verschlüsseltes ZPAQ | Begrenzte geordnete Frames/Pipes und reservierte Childworker | Keine Veröffentlichung vor MAC-/AEAD-/Parser-/Stagingabschluss |
+| Recovery | Begrenzte Stripe-/Shardworker und lokale Prüfpuffer | RS(20,3), Locator-/Manifestordnung, Kandidatenverifikation und finaler Commit |
+| KPAR2-Metadaten | Private authentifizierte Disk-Recordtabellen, 8-KiB-Streaming-JSON-Fenster, gemeinsame Metadatenquote | Kanonische v4-Serialisierung und exakte Zertifizierung bleiben unverändert |
+
+Der Eingabeindex benötigt 204 Byte je physischem MiB auf dem Datenträger. Daher ergeben exakt 1 TiB physische Eingabe rechnerisch 204 MiB und 4 TiB 816 MiB Index. Das ist kein RAMverbrauchsnachweis. Daten, Index, Parität, Reparaturkandidat und Extraktionsstaging benötigen gleichzeitig ausreichend bewilligten Platz. Private Ciphertextspools enthalten keinen entschlüsselten Archivstrom; reguläre Klartexteingaben werden über das gebundene Original geprüft.
+
+## Tatsächlich vorhandene Gates
+
+| Bereich | Belegter Umfang | Einschränkung |
+|---|---|---|
+| CPU-Permits | Aktive Policygrenzen, Headroom, Cancel, Async-Kontext, verschachtelte Hashteams, Fehlerjoin und Topologieänderung; [aktuelles CPU-Gate](evidence/v13-core-rev9-20260928/cpu-context-gate.log) | Synthetische Kapazitäten prüfen Arithmetik und Ownership, keine reale NUMA-/4096-CPU-Leistung |
+| Keine feste Kernzahlgrenze | Native 16-MiB-Aufrufe aller acht Cipher mit logischen Grants bis 4096, Bytegleichheit und angeforderte Teamgröße | Derselbe M5 mit zehn CPUs führt diese Jobs aus; keine 4096 gleichzeitigen Hardwarekerne |
+| RAM / Laufzeit | Gemeinsame Memory-/Heavy-Leases, konkurrierende Vorgänge, Entropie, Konstruktionsfehler und deterministische Deadlineuhren bestanden | Eigene Ressourcengates; keine vollständige IO-/Recovery-RSS-/Swap-Kurve |
+| Native ZPAQ-Ressourcen | Heap-/Alignment-/Quoten-/Overflowtests sowie reale Plain-/Read-at-/Pipe-Bäume mit 2.097.197 Bytes auf ARM64, x64/Rosetta und ARM64 ASan/UBSan | Kleine tatsächliche Bäume mit leeren Verzeichnissen; keine TiB-Daten |
+| Entropiephasen | 1024/4096/16384/65536 Records je Pool und ungleiche Größen, reale OS-RNG, Cleanup, Cachevergleich | Sequenzielle Komponentenmessung; separate [Messbedingungen und Speichergrößen](KEEP_VAULT_5_0_3_ENTROPY_REV9_PERFORMANCE.md) |
+| Cipher-Skalierung | Grants 1/2/5/10, Warmup und fünf Läufe bis 256 MiB, Claimgrößenvergleich und exakte Ausgabeprüfung | Zwischenstände sind über Binaryhashes getrennt; finale Produkt-/Containerbenchmarkgates separat |
+| MAC-Root | Tatsächlicher produktiver Tree-Pfad über 64 MiB + 59 Byte, 65 Blätter, je ein Warmup und fünf Läufe bei 1/10 Workern | Rootzeit separat beobachtet; Nicht-Leaf-Wandzeit ist kein allgemeiner serieller CPU-Anteil |
+| ISA | ARM-AES/NEON tatsächlich ausgeführt; x64-Baseline unter Rosetta geprüft | Physisches Intel-AES-NI/AVX2 und reale Many-Core-/NUMA-Hosts nicht ausgeführt |
+
+Der [native Referenzbericht](KEEP_VAULT_5_0_3_CIPHER_REFERENCE_REPORT.md) und [Optimierungsbericht](KEEP_VAULT_5_0_3_OPTIMIZATION_REPORT.md) nennen Orakel, Compiler, Quell-/Binaryhashes, Sanitizerumfang und alle Rohdateien. Die gezielten IO-/Recovery-Entwicklungsnachweise und drei 10.000-Fall-Gruppen sind im [IO-Evidenzmanifest](evidence/v13-io-rev9-20260928/evidence-manifest.json) mit ihren Versionsgrenzen gesichert. Eine später gefundene Race-Bedingung am gepufferten FileStream-Handle führte zur einmaligen Descriptorbindung; deren neue Mehrbereichsregression und der echte Mehrchunk-Noncepfad bestanden im [gesonderten Wiederholungslauf](evidence/v13-core-rev9-20260928/integration-reruns-all.json). Das ist kein pauschaler Nachweis aller früheren Gruppen gegen jede spätere Assembly. Die endgültigen Releasegates bleiben im [Mehr-TB-Testbericht](KEEP_VAULT_5_0_3_MULTITB_TEST_REPORT.md) getrennt. Eine frühere geschlossene Trust-Ablehnung zählt ausdrücklich nicht als bestandener IO-Test.
+
+Die gesonderte [MAC-Phasenmessung](evidence/v13-native-rev9-20260928/mac-root-phases.json) ist bestanden: Gesamtmediane 223,892/53,120 ms bei 1/10 Workern; Root einschließlich Initialisierung/Finalisierung 0,0651/0,0576 ms, entsprechend 0,0292/0,1062 Prozent der Wandzeit. Die Nicht-Leaf-Wandzeit beträgt 5,715/5,512 ms und umfasst Lesen, Kopien, Cleanup und Permitwartezeit. Sie ist kein universeller serieller CPU-Anteil. Der Runner meldete 460 MiB Peak-RSS; das ist keine isolierte IO-/Recovery-Speicherbilanz. IO-/Recovery-Gesamt-RSS, Swapänderungen und vollständige finale GUI-/Installationsläufe sind eigenständige noch zuzuordnende Artefaktgates. Die aktuelle CPUquelle beschreibt die aktivierte macOS-Prozesskapazität, keine ausgelesene Affinitätsmaske, NUMA-Verteilung oder garantierte dedizierte CPU-Zeit. Eine spätere große Hardwarekonfiguration benötigt eigene reale Nachweise.
+
+Der Entwurf arbeitet innerhalb geprüfter 64-Bit-Arithmetik, öffentlicher Formatgrenzen, des [kryptographischen Nutzungsbudgets](KEEP_VAULT_V13_CRYPTO_USAGE.md) und der bewilligten Ressourcen. Daraus folgt keine Zusage unbegrenzter Größe, linearer Beschleunigung oder vollständiger CPU-Auslastung in abhängigen, kleinen oder I/O-begrenzten Phasen. Es gibt in diesem Auftrag keinen tatsächlich ausgeführten 1-/4-TiB-Lauf.

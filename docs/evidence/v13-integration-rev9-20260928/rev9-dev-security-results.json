@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 3,
+  "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+  "testInventoryHash": "a02b4b830330371f7667928a0f2ecc3a0b04c0afa9f22852e31f95bfe36c4d6f",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 2,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "fuzz.verified-read-at-server-10000",
+      "name": "10000 seeded bounded read-at request frames with guarded response oracles",
+      "status": "PASS",
+      "seconds": 1.669,
+      "peakRssMiB": 69,
+      "seed": "0x13C64DA4",
+      "failure": null
+    },
+    {
+      "id": "fuzz.recovery-streaming-10000",
+      "name": "10000 seeded canonical/hostile KPAR4 metadata streams with fragmented reads",
+      "status": "PASS",
+      "seconds": 49.839,
+      "peakRssMiB": 87,
+      "seed": "0x2B1352FA",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-domain-kats",
+      "name": "fixed local HMAC/Skein domain vectors from independent oracles",
+      "status": "PASS",
+      "seconds": 0.286,
+      "peakRssMiB": 67,
+      "seed": "0x6D7369AD",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-state",
+      "name": "disk input requires both global tags and revokes verifier view",
+      "status": "PASS",
+      "seconds": 0.822,
+      "peakRssMiB": 85,
+      "seed": "0x3BB06F12",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-ranges",
+      "name": "unaligned authenticated ranges and exact disk record framing",
+      "status": "PASS",
+      "seconds": 0.513,
+      "peakRssMiB": 78,
+      "seed": "0x13F7585A",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-tamper",
+      "name": "spool, index, truncation, extension and cross-operation replay rejection",
+      "status": "PASS",
+      "seconds": 1.129,
+      "peakRssMiB": 81,
+      "seed": "0x77A22030",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-private-copy",
+      "name": "verified private bytes survive later spool mutation; reread fails",
+      "status": "PASS",
+      "seconds": 0.445,
+      "peakRssMiB": 78,
+      "seed": "0x327245E8",
+      "failure": null
+    },
+    {
+      "id": "io.verified-original",
+      "name": "plain original index avoids plaintext copy and rejects later source mutation",
+      "status": "PASS",
+      "seconds": 0.441,
+      "peakRssMiB": 78,
+      "seed": "0x10EF355D",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-policy",
+      "name": "64-bit policy arithmetic, capacity and cancellation",
+      "status": "PASS",
+      "seconds": 0.019,
+      "peakRssMiB": 60,
+      "seed": "0x0CB7B497",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-parallel-lifetime",
+      "name": "independent sealed range readers join before key and full-buffer cleanup",
+      "status": "PASS",
+      "seconds": 0.442,
+      "peakRssMiB": 78,
+      "seed": "0x76D7E8DA",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-cleanup-retry",
+      "name": "failed capture retains closed owners and retries cleanup before another capture",
+      "status": "PASS",
+      "seconds": 0.241,
+      "peakRssMiB": 78,
+      "seed": "0x60D42B0A",
+      "failure": null
+    },
+    {
+      "id": "recovery.streaming-metadata-canonical",
+      "name": "bounded KPAR4 canonical streaming preserves exact wire bytes",
+      "status": "PASS",
+      "seconds": 0.219,
+      "peakRssMiB": 68,
+      "seed": "0x2E08B72B",
+      "failure": null
+    },
+    {
+      "id": "recovery.streaming-metadata-negative",
+      "name": "streaming metadata rejects duplicate, oversized, truncated and noncanonical JSON",
+      "status": "PASS",
+      "seconds": 0.227,
+      "peakRssMiB": 68,
+      "seed": "0x2E4F09A0",
+      "failure": null
+    },
+    {
+      "id": "recovery.streaming-metadata-large-logical",
+      "name": "64-bit logical archive geometry with bounded disk-backed digest tables",
+      "status": "PASS",
+      "seconds": 1.31,
+      "peakRssMiB": 77,
+      "seed": "0x651EFC14",
+      "failure": null
+    },
+    {
+      "id": "recovery.record-table-layout",
+      "name": "bounded record codecs and independent HMAC/Skein authentication",
+      "status": "PASS",
+      "seconds": 0.225,
+      "peakRssMiB": 67,
+      "seed": "0x22BB28A1",
+      "failure": null
+    },
+    {
+      "id": "recovery.record-table-tamper",
+      "name": "dual tags, payload, replay, position, lengths and terminal failure",
+      "status": "PASS",
+      "seconds": 0.222,
+      "peakRssMiB": 67,
+      "seed": "0x06EA5775",
+      "failure": null
+    },
+    {
+      "id": "recovery.record-table-cleanup",
+      "name": "retryable all-member zeroing and cleanup after unlock failure",
+      "status": "PASS",
+      "seconds": 0.194,
+      "peakRssMiB": 67,
+      "seed": "0x15427FA3",
+      "failure": null
+    },
+    {
+      "id": "recovery.record-table-budget",
+      "name": "shared metadata budget, nested scopes and release after disposal",
+      "status": "PASS",
+      "seconds": 0.185,
+      "peakRssMiB": 67,
+      "seed": "0x4E0DF7FD",
+      "failure": null
+    },
+    {
+      "id": "resources.cpu-worker-budget",
+      "name": "aggregate CPU reservations, cancellation and policy ceilings",
+      "status": "PASS",
+      "seconds": 0.009,
+      "peakRssMiB": 54,
+      "seed": "0x3342F2F9",
+      "failure": null
+    },
+    {
+      "id": "security.process-hardening",
+      "name": "macOS process hardening",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 53,
+      "seed": "0x281E998E",
+      "failure": null
+    },
+    {
+      "id": "security.skein-workspace-wipe",
+      "name": "optimized Skein workspace wiping clears complete arrays and preserves adjacent guards on both macOS slices",
+      "status": "PASS",
+      "seconds": 1.045,
+      "peakRssMiB": 61,
+      "seed": "0x47986A8A",
+      "failure": null
+    },
+    {
+      "id": "security.pipeline-worker-policy",
+      "name": "v12 chunk worker policy scales across CPU and memory boundaries without overflow",
+      "status": "FAIL",
+      "seconds": 0.007,
+      "peakRssMiB": 56,
+      "seed": "0x2CC00A74",
+      "failure": "InvalidOperationException: Nested native teams exceed their CPU-derived concurrency bound.\n   at SecurityHardeningTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/SecurityHardeningTests.cs:line 1417\n   at SecurityHardeningTests.TestPipelineWorkerPolicyAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/SecurityHardeningTests.cs:line 110\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403"
+    },
+    {
+      "id": "security.pipeline-native-concurrency",
+      "name": "bounded native teams join on cancellation and release every concurrency permit",
+      "status": "PASS",
+      "seconds": 0.007,
+      "peakRssMiB": 54,
+      "seed": "0x75EBCC61",
+      "failure": null
+    },
+    {
+      "id": "security.secure-memory-unlock-accounting",
+      "name": "mlock rollback and failed munlock preserve exact secure-memory accounting",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 56,
+      "seed": "0x3574ECBE",
+      "failure": null
+    },
+    {
+      "id": "security.composite-secret-cleanup",
+      "name": "composite secret owners erase all bytes, aggregate failures and retain failed locks for retry",
+      "status": "PASS",
+      "seconds": 0.006,
+      "peakRssMiB": 56,
+      "seed": "0x185A6722",
+      "failure": null
+    },
+    {
+      "id": "security.production-secret-cleanup-faults",
+      "name": "early, middle and last unlock failures in v12 KDF and authenticator cleanup",
+      "status": "PASS",
+      "seconds": 0.212,
+      "peakRssMiB": 74,
+      "seed": "0x241C993F",
+      "failure": null
+    },
+    {
+      "id": "security.container-worker-multifailure",
+      "name": "parallel container workers preserve every failure in deterministic worker order",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 53,
+      "seed": "0x26146B39",
+      "failure": null
+    },
+    {
+      "id": "security.authenticator-worker-multifailure",
+      "name": "parallel authenticator workers preserve every failure in deterministic leaf order",
+      "status": "PASS",
+      "seconds": 0.01,
+      "peakRssMiB": 56,
+      "seed": "0x51343BAF",
+      "failure": null
+    },
+    {
+      "id": "security.extraction-parent-no-side-effects",
+      "name": "rejected extraction parents create no directory through missing or symlinked ancestors",
+      "status": "PASS",
+      "seconds": 0.005,
+      "peakRssMiB": 52,
+      "seed": "0x1E1BF818",
+      "failure": null
+    },
+    {
+      "id": "security.pin-password-pair",
+      "name": "literal complete PIN/password pairing and pending validation",
+      "status": "PASS",
+      "seconds": 0.015,
+      "peakRssMiB": 56,
+      "seed": "0x5FC38B27",
+      "failure": null
+    },
+    {
+      "id": "security.pin-local-dates",
+      "name": "local final dates, exact formats, leap years and versioned date bounds",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 53,
+      "seed": "0x537FF48E",
+      "failure": null
+    },
+    {
+      "id": "security.pin-pattern-monotonicity",
+      "name": "additional complete PIN patterns retain every sampled historical rejection",
+      "status": "PASS",
+      "seconds": 0.072,
+      "peakRssMiB": 63,
+      "seed": "0x0FDB4F63",
+      "failure": null
+    },
+    {
+      "id": "security.credential-encoding-only",
+      "name": "technical credential limits preserve historical v12 byte encodings",
+      "status": "FAIL",
+      "seconds": 0.014,
+      "peakRssMiB": 69,
+      "seed": "0x194F7636",
+      "failure": "InvalidOperationException: Technical-validation split changed v12 credential input bytes.\n   at PinCreationPolicyTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/PinCreationPolicyTests.cs:line 210\n   at PinCreationPolicyTests.TestEncodingAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/PinCreationPolicyTests.cs:line 189\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403"
+    },
+    {
+      "id": "security.password-model-data",
+      "name": "offline model integrity, completeness and fail-closed resources",
+      "status": "PASS",
+      "seconds": 0.283,
+      "peakRssMiB": 216,
+      "seed": "0x47B54608",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-phrases",
+      "name": "complete phrase, case, Unicode, morphology and unknown-rest models",
+      "status": "PASS",
+      "seconds": 0.501,
+      "peakRssMiB": 234,
+      "seed": "0x44145F35",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-bip39",
+      "name": "independent BIP39 checksums and exact word-list search spaces",
+      "status": "PASS",
+      "seconds": 1.26,
+      "peakRssMiB": 244,
+      "seed": "0x061BF292",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-boundaries",
+      "name": "old password rejections and monotone 128-bit model boundaries",
+      "status": "PASS",
+      "seconds": 0.799,
+      "peakRssMiB": 161,
+      "seed": "0x22C02D06",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-isolation",
+      "name": "async isolation and creation-only model access",
+      "status": "PASS",
+      "seconds": 0.181,
+      "peakRssMiB": 147,
+      "seed": "0x246DAC0B",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-bounded",
+      "name": "bounded evaluation at the 256-code-unit limit",
+      "status": "PASS",
+      "seconds": 0.787,
+      "peakRssMiB": 161,
+      "seed": "0x206A956D",
+      "failure": null
+    },
+    {
+      "id": "fuzz.verified-input-10000",
+      "name": "10000 seeded sealed-spool states, mutations and guarded range oracles",
+      "status": "PASS",
+      "seconds": 113.907,
+      "peakRssMiB": 99,
+      "seed": "0x0510F817",
+      "failure": null
+    }
+  ]
+}

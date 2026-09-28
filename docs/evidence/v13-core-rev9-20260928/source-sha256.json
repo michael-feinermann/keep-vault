@@ -1,0 +1,9 @@
+{
+  "KalynaArchiver.Tests/EntropyRev9PerformanceTests.cs": "58ad971bf57bbef6cb5daf74cd887a10e16dc38c94d3e56f0761f56347a33735",
+  "KalynaArchiver.Tests/HashCleanupRegressionTests.cs": "57bca1a58ad961bf19270182f297aad03bbb06483b13a09d6da4c90aa70f4496",
+  "KalynaArchiver.Tests/V13StandardTests.cs": "af3da1538415ed5ecc4a21dd9de805f82a512d17a521f563c64fd7606687b45f",
+  "KalynaArchiver/Services/ConsumedEntropySnapshot.cs": "d3919f171e99fa32447e23eed2ee7c5a78ddc0ade9b315edfd056c851b8c1fd1",
+  "KalynaArchiver.Signing/Sha3_512Compat.cs": "d3149fe88028185dfac184abe086219a1caa81d2fe52f0133fbdf89301acd084",
+  "KalynaArchiver.Signing/Sha512Compat.cs": "161fe9bf82116012665dff22f4a07c7bb984a6c1e60cdaf89887c325dd997919",
+  "KeepVaultMac.Tests/Fixtures/V13Reference/pool_finalization_rev9_vectors.json": "87156ec384cc129f233e93bb07bc23c9ff5c0f61aba1f0e2f70852eb491fabbd"
+}

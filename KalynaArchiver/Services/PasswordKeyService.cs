@@ -22,9 +22,6 @@ public sealed class PasswordKeyService
     public const int SaltSize = 64;
     public const int Argon2PasswordInputSize = 128;
     public const int KalynaDerivedKeySize = 256;
-    public const int ThreefishDerivedKeySize = 320;
-    public const int CascadeDerivedKeySize = 384;
-    public const int KeySize = KalynaDerivedKeySize;
 
     private const double EntropySafetyFactor = 0.70;
 
@@ -523,9 +520,9 @@ public sealed class PasswordPolicyException : ArgumentException
 /// The Argon2id cost parameters this build fixes at compile time.
 /// </summary>
 /// <remarks>
-/// Memory is deliberately not part of this record. v12 derives the memory cost
+/// Memory is deliberately not part of this record. v13 derives the memory cost
 /// from the credentials themselves - <c>m = 1 GiB + 16 KiB * PMI16</c>, see
-/// <see cref="V12MasterKdf.DerivePmi"/> - so there is no single productive
+/// <see cref="V13MasterKdf.DerivePmi"/> - so there is no single productive
 /// memory value to state here. A record that carried a "fixed 1 GiB" alongside
 /// the real iteration and parallelism counts would read like the whole profile
 /// and would be exactly the wrong thing for later code to reuse.
@@ -547,7 +544,7 @@ public sealed record Argon2ExecutionProfile(int Iterations, int Parallelism)
 /// native adapter against an independent Argon2id implementation.
 /// </summary>
 /// <remarks>
-/// This is a test reference point, not the v12 production profile: production
+/// This is a test reference point, not the v13 production profile: production
 /// memory comes from PMI16 and is never this exact value except by chance.
 /// </remarks>
 public static class Argon2ReferenceProfile

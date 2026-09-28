@@ -34,7 +34,7 @@ internal sealed class InstallerWindow : Window
     internal InstallerWindow(Func<string, string> installPackage)
     {
         _installPackage = installPackage;
-        Title = "Keep Vault 5.0.2 · Setup";
+        Title = "Keep Vault 5.0.3 · Setup";
         Width = 560; Height = 340; MinWidth = 540; MinHeight = 160;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         FontFamily = SystemFonts.MessageFontFamily; FontSize = 13;
@@ -110,7 +110,7 @@ internal sealed class InstallerWindow : Window
             Phase.Installing => _german ? "Paket prüfen und installieren …" : "Verifying and installing package …",
             Phase.Succeeded => _german ? "Installation abgeschlossen" : "Installation completed",
             Phase.Failed => _german ? "Installation angehalten" : "Installation stopped",
-            _ => "Keep Vault 5.0.2",
+            _ => "Keep Vault 5.0.3",
         };
         _description.Text = confirmation
             ? (_german ? "Installiert Keep Vault und den separaten QR-Scanner für Ihr Benutzerkonto. Das vollständige signierte Paket wird vor und nach dem Kopieren geprüft. Vorhandene Installationen bleiben unverändert."

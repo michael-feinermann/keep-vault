@@ -1,0 +1,32 @@
+using System.Buffers.Binary;
+using System.Text;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Macs;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Generators;
+class Program {
+static byte[] B(int n,int m,int s)=>Enumerable.Range(0,n).Select(i=>unchecked((byte)(i*m+s))).ToArray();
+static byte[] U(string s)=>Encoding.UTF8.GetBytes(s);
+static byte[] LP(params byte[][] parts){using var m=new MemoryStream();using var w=new BinaryWriter(m);foreach(var p in parts){w.Write(p.Length);w.Write(p);}return m.ToArray();}
+static byte[] Sha(byte[] x){var h=new Sha3Digest(512);h.BlockUpdate(x);var o=new byte[64];h.DoFinal(o);return o;}
+static byte[] Hmac(byte[] k,byte[] x){var h=new HMac(new Sha3Digest(512));h.Init(new KeyParameter(k));h.BlockUpdate(x);var o=new byte[64];h.DoFinal(o);return o;}
+static byte[] Skein(byte[] k,string d,byte[] x){var h=new SkeinMac(1024,1024);h.Init(new SkeinParameters.Builder().SetKey(k).SetPersonalisation(U(d)).Build());h.BlockUpdate(x);var o=new byte[128];h.DoFinal(o);return o;}
+static void Emit(string name,byte[] x)=>Console.WriteLine(name+"="+Convert.ToHexString(x));
+static byte[] Context(string algorithm,int stage,string cipher,string purpose,int bits){using var o=new MemoryStream();using var w=new BinaryWriter(o);w.Write(LP(U("Kalyna-ZPAQ/v13/RoleKey")));w.Write(13);w.Write(LP(U(algorithm)));w.Write(stage);w.Write(LP(U(cipher),U(purpose)));w.Write(bits);return o.ToArray();}
+static byte[] Role(byte[] master,byte[] ctx){byte[] v=Skein(master,"Kalyna-ZPAQ/v13/RoleKey/Skein-MAC-1024-1024",ctx);for(int h=0;h<2;h++){var u=Hmac(master[(h*64)..(h*64+64)],[..LP(U("Kalyna-ZPAQ/v13/RoleKey/HKDF-HMAC-SHA3-512"),ctx,U("Half-"+h)),1]);for(int j=0;j<64;j++)v[h*64+j]^=u[j];}return v;}
+static byte[] Argon(byte[] password,byte[] salt,byte[] secret,byte[] ad,int mem){var b=new Argon2Parameters.Builder(Argon2Parameters.Argon2id).WithVersion(Argon2Parameters.Version13).WithIterations(4).WithParallelism(4).WithMemoryAsKB(mem).WithSalt(salt).WithAdditional(ad);if(secret.Length>0)b.WithSecret(secret);var g=new Argon2BytesGenerator();g.Init(b.Build());var o=new byte[64];g.GenerateBytes(password,o);return o;}
+static byte[] RawSkein(byte[] k,byte[] x){var h=new SkeinMac(1024,1024);h.Init(new KeyParameter(k));h.BlockUpdate(x);var o=new byte[128];h.DoFinal(o);return o;}
+static (byte[],byte[]) Tree(byte[][] prefixes,byte[] ciphertext,byte[] shaKey,byte[] skKey){
+byte[] logical=[..prefixes.SelectMany(x=>x),..ciphertext];string dom="Kalyna-ZPAQ/v13/Parallel-Tree-MAC/";
+var sl=Hmac(shaKey,U(dom+"HMAC-SHA3-512/Leaf-Key"));var sr=Hmac(shaKey,U(dom+"HMAC-SHA3-512/Root-Key"));var kl=Skein(skKey,dom+"Skein-MAC-1024-1024/Key-Derivation",U("Leaf-Key"));var kr=Skein(skKey,dom+"Skein-MAC-1024-1024/Key-Derivation",U("Root-Key"));
+using var stream=new MemoryStream();stream.Write(U(dom+"Root"));var header=new byte[20];long leaves=(logical.LongLength+1048575)/1048576;BinaryPrimitives.WriteInt64BigEndian(header,logical.LongLength);BinaryPrimitives.WriteInt64BigEndian(header.AsSpan(8),leaves);BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(16),1048576);stream.Write(header);
+for(long i=0;i<leaves;i++){int offset=checked((int)(i*1048576)),count=Math.Min(1048576,logical.Length-offset);var h=new byte[12];BinaryPrimitives.WriteInt64BigEndian(h,i);BinaryPrimitives.WriteInt32BigEndian(h.AsSpan(8),count);byte[] msg=[..U(dom+"Leaf"),..h,..logical.AsSpan(offset,count)];stream.Write(h);stream.Write(Hmac(sl,msg));stream.Write(RawSkein(kl,msg));}var transcript=stream.ToArray();return(Hmac(sr,transcript),RawSkein(kr,transcript));}
+static void Main(string[] args){
+var mac=Tree([U("KZPAQ2-v13-prefix"),B(193,17,0x31)],B((2<<20)+333,101,0x57),B(64,13,0x83),B(128,29,0xA9));Emit("macSha3",mac.Item1);Emit("macSkein",mac.Item2);if(args.Length>0)return;
+Emit("roleContext",Context("Kalyna-512",0,"Kalyna-512/512","Encryption",512));var ctx=Context("ParanoiaCascade",-1,"Skein-MAC-1024-1024","SkeinMac",1024);Emit("skeinContext",ctx);Emit("roleValue",Role(B(128,7,13),ctx));
+var dom=LP(U("Kalyna-ZPAQ/v13/Threefish-1024/CTR-Tweak"),U("Threefish-1024-CTR+HMAC-SHA3-512+Skein-MAC-1024"));Emit("tweak",Sha([..dom,0,0,0,0,..LP(B(320,1,1))])[..16]);
+string a="Kalyna-512/Threefish-1024/v13",p="N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce",pin="428317";var fa=B(128,7,3);var fb=B(128,13,11);var qs=new List<byte>();for(int h=0;h<2;h++)qs.AddRange(Sha(LP(U($"Kalyna-ZPAQ/v13/{a}/SHA3-512/User+PIN+Factors-A{h+1}+B{h+1}"),U(p),U(pin),fa[(h*64)..(h*64+64)],fb[(h*64)..(h*64+64)])));
+var q=qs.ToArray();var sk=Skein([..fa,..fb],$"Kalyna-ZPAQ/v13/{a}/Skein-MAC-1024-1024/User+PIN/Factors-A+B-Key",LP(U(p),U(pin)));Emit("qs1",q[..64]);Emit("qs2",q[64..]);Emit("qk",sk);
+byte[] previous=[];for(int round=1;round<=2;round++){var ss=round==1?B(64,17,5):B(64,29,31);var ks=round==1?B(64,19,23):B(64,37,41);var pieces=new List<byte[]>{U($"Kalyna-ZPAQ/v13/{a}/SHA3-512/PMI/Round-{round}"),q,sk};if(previous.Length>0)pieces.Add(previous);pieces.Add(ss);pieces.Add(ks);int pmi=BinaryPrimitives.ReadUInt16BigEndian(Sha(LP(pieces.ToArray())));int mem=1048576+16*pmi;Console.WriteLine($"pmi{round}={pmi}\nmem{round}={mem}");Console.Out.Flush();var left=Argon(q,ss,previous,U($"Kalyna-ZPAQ/v13/{a}/Argon2id/SHA3-Branch/Round-{round}"),mem);GC.Collect();var right=Argon(sk,ks,previous,U($"Kalyna-ZPAQ/v13/{a}/Argon2id/Skein-Branch/Round-{round}"),mem);var master=new byte[128];for(int i=0;i<64;i++){master[2*i]=left[i];master[2*i+1]=right[i];}previous=master;Emit("master"+round,master);Console.Out.Flush();GC.Collect();}
+}
+}

@@ -34,7 +34,19 @@ extern "C" KEEPVAULT_EXPORT int mars_448_ctr_xcrypt(
     std::size_t length)
 {
     return keepvault::xcrypt_ctr<CryptoPP::MARS::Encryption>(
-        key, MARS_KEY_BYTES, nonce, input, output, length);
+        key, MARS_KEY_BYTES, nonce, input, output, length, 1);
+}
+
+extern "C" KEEPVAULT_EXPORT int mars_448_ctr_xcrypt_v13_with_workers(
+    const std::uint8_t key[MARS_KEY_BYTES],
+    const std::uint8_t nonce[MARS_BLOCK_BYTES],
+    const std::uint8_t* input,
+    std::uint8_t* output,
+    std::size_t length, std::uint32_t worker_budget)
+{
+    if (worker_budget == 0) return 1;
+    return keepvault::xcrypt_ctr<CryptoPP::MARS::Encryption>(
+        key, MARS_KEY_BYTES, nonce, input, output, length, worker_budget);
 }
 
 /*

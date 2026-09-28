@@ -2,9 +2,34 @@
 
 [Deutsch](README.md) · [English](README.en.md) · [Hauptanleitung](../README.de.md)
 
-Alle eigenen Projektanleitungen, Spezifikationen, Prüfberichte und Release-Texte sind vollständig auf Deutsch und Englisch verfügbar. Jede Sprachfassung verlinkt ihr Gegenstück. Befehle, Hashes, Testdaten und originale Protokollzitate bleiben als technische Belege erhalten.
+Die unten paarweise verlinkten Anleitungen und historischen Berichte liegen vollständig auf Deutsch und Englisch vor. Neue Umsetzungs- und Prüfberichte zu 5.0.3/v13 sind derzeit auf Deutsch verfügbar und entsprechend gekennzeichnet; für sie wird keine vollständige englische Übersetzung behauptet. Befehle, Hashes, Testdaten und originale Protokollzitate bleiben als technische Belege erhalten.
 
-Aktuell veröffentlicht: [Keep Vault 5.0.2 für macOS](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2), Build 13, Container v12 und KPAR2 v4. Die Windows-Portierung wird gesondert geprüft und freigegeben. Die nachfolgenden historischen Berichte dokumentieren den jeweils datierten Stand einschließlich damaliger Fehler und offener Schritte; eine Übersetzung wandelt diese nicht in aktuelle Freigaben um.
+Veröffentlichte Referenz bis zum Abschluss des neuen Releases: [Keep Vault 5.0.2 für macOS](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2), Build 13, Container v12 und KPAR2 v4. Der Arbeitsstand zielt auf 5.0.3, Build 14 und Container v13 gemäß REV9. Der [Releasebericht](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) hält den tatsächlichen Prüf-, Installations- und Veröffentlichungsstatus fest. Dieser Durchgang betrifft ausschließlich macOS; Windows benötigt eigene Nachweise. Historische Berichte behalten ihren datierten Befund und geben 5.0.3 nicht frei.
+
+## 5.0.3 / v13 / REV9: aktueller Quell- und Prüfstand
+
+Alle Dokumente in dieser Tabelle liegen derzeit auf Deutsch vor. Ein Link ist ein Verzeichniseintrag, keine PASS-Aussage; der jeweilige Bericht trennt bestandene Prüfungen, offene Gates und Nachweisgrenzen. Reale Testdaten sind auf Benutzerwunsch auf 256 MiB begrenzt, mit einer ausdrücklichen 512-MiB-Ausnahme für die Paranoia-Strukturrunde. Daraus folgt kein physischer Mehr-TiB-Lauf.
+
+| Dokument | Verfügbare Fassung |
+|---|---|
+| Umsetzung, Ausgangsstand und Toolchain | [Deutsch](KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md) |
+| Containerformat v13 | [Deutsch](KEEP_VAULT_V13_FORMAT.md) |
+| Verwendung der kryptografischen Primitive | [Deutsch](KEEP_VAULT_V13_CRYPTO_USAGE.md) |
+| REV9-Kernprüfung | [Deutsch](KEEP_VAULT_5_0_3_CORE_REV9_REVIEW.md) |
+| Nonce- und Poolprüfung | [Deutsch](KEEP_VAULT_5_0_3_NONCE_POOLS_REVIEW.md) |
+| REV6-Nonceableitung, in REV9 beibehalten | [Deutsch](KEEP_VAULT_5_0_3_NONCE_REV6_REVIEW.md) |
+| REV7-Poolrouting, in REV9 beibehalten | [Deutsch](KEEP_VAULT_5_0_3_POOL_ROUTING_REV7_REVIEW.md) |
+| REV9-Poolshuffle und Lebensdauer | [Deutsch](KEEP_VAULT_5_0_3_POOL_SHUFFLE_REV9_REVIEW.md) |
+| REV9-Entropiemessungen | [Deutsch](KEEP_VAULT_5_0_3_ENTROPY_REV9_PERFORMANCE.md) |
+| Cipherreferenzen und Orakel | [Deutsch](KEEP_VAULT_5_0_3_CIPHER_REFERENCE_REPORT.md) |
+| Optimierungsprüfung | [Deutsch](KEEP_VAULT_5_0_3_OPTIMIZATION_REPORT.md) |
+| Parallelität und Skalierungsgrenzen | [Deutsch](KEEP_VAULT_5_0_3_SCALABILITY_REPORT.md) |
+| Begrenzter Input, KPAR2 und Ressourcen | [Deutsch](KEEP_VAULT_5_0_3_MULTITB_DESIGN.md) |
+| IO- und Ressourcenprüfungen | [Deutsch](KEEP_VAULT_5_0_3_MULTITB_TEST_REPORT.md) |
+| Sicherheitsprüfung | [Deutsch](KEEP_VAULT_5_0_3_SECURITY_REVIEW.md) |
+| Gesamtprüfstand | [Deutsch](KEEP_VAULT_5_0_3_TEST_REPORT.md) |
+| GUI-Prüfstand | [Deutsch](KEEP_VAULT_5_0_3_GUI_REPORT.md) |
+| Release- und Installationsstatus | [Deutsch](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) |
 
 ## Anleitungen und Spezifikationen
 
@@ -15,9 +40,9 @@ Aktuell veröffentlicht: [Keep Vault 5.0.2 für macOS](https://github.com/michae
 | QR-Scanner für macOS | [Deutsch](../QrCodeScanner/README.md) | [English](../QrCodeScanner/README.en.md) |
 | QR-Scanner für Windows | [Deutsch](../QrCodeScannerWindows/README.de.md) | [English](../QrCodeScannerWindows/README.md) |
 | Synthetische Zugangsdaten-Kompatibilitätstests | [Deutsch](../KeepVaultMac.Tests/Fixtures/CredentialCompatibility/README.de.md) | [English](../KeepVaultMac.Tests/Fixtures/CredentialCompatibility/README.md) |
-| v12-Zugangsdatenregeln und Windows-Vertrag | [Deutsch](KEEP_VAULT_V12_CREDENTIAL_POLICY.md) | [English](KEEP_VAULT_V12_CREDENTIAL_POLICY.en.md) |
-| v12-macOS-Release-Spezifikation | [Deutsch](KEEP_VAULT_V12_MACOS_RELEASE.md) | [English](KEEP_VAULT_V12_MACOS_RELEASE.en.md) |
-| v12-Windows-Portierungsauftrag | [Deutsch](KEEP_VAULT_V12_WINDOWS_UPDATE.md) | [English](KEEP_VAULT_V12_WINDOWS_UPDATE.en.md) |
+| v12-Zugangsdatenregeln und Windows-Vertrag (historisch) | [Deutsch](KEEP_VAULT_V12_CREDENTIAL_POLICY.md) | [English](KEEP_VAULT_V12_CREDENTIAL_POLICY.en.md) |
+| v12-macOS-Release-Spezifikation (historisch) | [Deutsch](KEEP_VAULT_V12_MACOS_RELEASE.md) | [English](KEEP_VAULT_V12_MACOS_RELEASE.en.md) |
+| v12-Windows-Portierungsauftrag (historisch) | [Deutsch](KEEP_VAULT_V12_WINDOWS_UPDATE.md) | [English](KEEP_VAULT_V12_WINDOWS_UPDATE.en.md) |
 | Zusätzliches lokales Passwortmodell | [Deutsch](password-model/README.de.md) | [English](password-model/README.en.md) |
 
 ## Prüfberichte und historische Nachweise
@@ -43,8 +68,9 @@ Die [mitgelieferte Installationsdatei](../KeepVaultMac/Packaging/INSTALLATION.tx
 
 ## Release-Texte
 
-Jede der folgenden Dateien enthält den vollständigen deutschen und englischen Text. Dieselben Fassungen stehen in den GitHub-Release-Beschreibungen. Historische Entwürfe bleiben Entwürfe.
+Jede der folgenden Dateien enthält den vollständigen deutschen und englischen Text. Veröffentlichte Fassungen besitzen entsprechende GitHub-Release-Beschreibungen. Der 5.0.3-Entwurf ist noch nicht veröffentlicht; historische Entwürfe bleiben Entwürfe.
 
+- [v5.0.3: unveröffentlichter Entwurf, Deutsch · English](releases/v5.0.3.md)
 - [v5.0.2: Deutsch · English](releases/v5.0.2.md)
 - [v5.0.1: Deutsch · English](releases/v5.0.1.md)
 - [v5.0.0: Deutsch · English](releases/v5.0.0.md)
@@ -56,6 +82,6 @@ Jede der folgenden Dateien enthält den vollständigen deutschen und englischen 
 
 ## Pflege der Sprachfassungen
 
-Inhaltliche Änderungen werden in beiden Sprachfassungen gemeinsam vorgenommen. Neue eigene Dokumente erhalten beide Sprachfassungen und einen Eintrag in diesem Verzeichnis. Bei Übersetzungen werden Abschnitte, Tabellen, Zahlen, Formeln, Befehle, Hashes und Nachweisgrenzen mit der Quelle abgeglichen; eine Zusammenfassung ersetzt keine vollständige Fassung. Verweise führen soweit vorhanden zur gewählten Sprache. Historische Quellenpfade in Protokollen bleiben als Belege erhalten.
+Inhaltliche Änderungen an paarweise gepflegten Anleitungen werden in beiden Sprachfassungen gemeinsam vorgenommen. Neue eigene Dokumente erhalten einen Eintrag mit den tatsächlich verfügbaren Sprachfassungen. Die neuen 5.0.3-Prüfberichte dürfen zunächst nur auf Deutsch vorliegen; eine spätere Übersetzung muss vollständig sein, bevor sie als englische Fassung ausgewiesen wird. Bei Übersetzungen werden Abschnitte, Tabellen, Zahlen, Formeln, Befehle, Hashes und Nachweisgrenzen mit der Quelle abgeglichen; eine Zusammenfassung ersetzt keine vollständige Fassung. Verweise führen soweit vorhanden zur gewählten Sprache. Historische Quellenpfade in Protokollen bleiben als Belege erhalten.
 
 Die Dokumentationsänderung vom 9. September 2026 verändert weder den veröffentlichten Tag `v5.0.2` noch dessen notarisierte Programmdateien. Für den Quellstand dieser Programme ist der Release-Tag maßgeblich; der Standardbranch enthält die anschließend ergänzten Sprachfassungen.

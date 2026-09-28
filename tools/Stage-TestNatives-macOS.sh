@@ -143,7 +143,7 @@ if [[ ! -d ${source_app} || -L ${source_app} ]]; then
 fi
 source_natives=${source_app}/Contents/MacOS/Native
 signature_root=${source_app}/Contents/Resources/HybridSignatures/Native
-components=(zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libchachapoly_ref.dylib libkalyna_v12.dylib libmars_ref.dylib libshacal2_ref.dylib libthreefish_ref.dylib)
+components=(zpaq argon2 libaes_ref.dylib libargon2_ref.dylib libxchachapoly_v13.dylib libkalyna_v13.dylib libmars_ref.dylib libcamellia_v13.dylib libserpent_v13.dylib libshacal2_ref.dylib libthreefish_ref.dylib)
 helpers=(zpaq argon2)
 
 app_team=$(codesign -dv --verbose=4 ${source_app} 2>&1 \

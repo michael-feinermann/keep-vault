@@ -171,10 +171,10 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
         _forbiddenHomeWritePath = Path.Combine(_profileRootPath, ForbiddenHomeName, ForbiddenWriteName);
         _forbiddenTmpWritePath = Path.Combine(_profileRootPath, ForbiddenTmpName, ForbiddenWriteName);
         _unixSocketPath = Path.Combine(_profileRootPath, UnixSocketName);
-        _allowedShmName = "/kv12-" + RandomHex(12);
+        _allowedShmName = "/kv13-" + RandomHex(12);
         do
         {
-            _deniedShmName = "/kv12-" + RandomHex(12);
+            _deniedShmName = "/kv13-" + RandomHex(12);
         }
         while (string.Equals(_deniedShmName, _allowedShmName, StringComparison.Ordinal));
 
@@ -731,7 +731,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
                 _ => throw new InvalidOperationException("Unsupported sandboxed ZPAQ pipe operation."),
             };
         }
-        if (arguments.Count >= 3 && string.Equals(arguments[0], "--verified-stdin", StringComparison.Ordinal))
+        if (arguments.Count >= 3 && string.Equals(arguments[0], "--verified-read-at", StringComparison.Ordinal))
         {
             return arguments[1] switch
             {
@@ -1040,7 +1040,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
 
     private static bool IsVerifiedSharedMemoryName(string name) =>
         name.Length == 30
-        && name.StartsWith("/kv12-", StringComparison.Ordinal)
+        && name.StartsWith("/kv13-", StringComparison.Ordinal)
         && name.AsSpan(6).IndexOfAnyExcept("0123456789abcdef") < 0;
 
     private void ThrowIfDisposed()

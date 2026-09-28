@@ -21,7 +21,67 @@ internal static class HybridKeyProtectionTests
             TestHybridKeySeparationAsync,
             TestResource.ProcessGlobal,
             "Packaging"),
+        new("packaging.private-directory-lease", "private directory lease rejects ACLs and replacement",
+            TestPrivateDirectoryLeaseAsync, TestResource.ProcessGlobal, "Packaging"),
     ];
+
+    private static Task TestPrivateDirectoryLeaseAsync()
+    {
+        string parent = MacSafeFileSystem.ResolveExistingRealPath(Directory.CreateTempSubdirectory("keep-vault-keydir-lease-").FullName);
+        string root = Path.Combine(parent, "keys");
+        string moved = Path.Combine(parent, "moved");
+        Directory.CreateDirectory(root);
+        SetPrivate(root);
+        try
+        {
+            using var lease = MacBoundSecretFile.BindPrivateDirectory(root);
+            lease.Validate();
+            string target = Path.Combine(root, "synthetic-public-test-data");
+            using (var file = MacBoundSecretFile.Create(target, lease))
+            {
+                file.Stream.Write(new byte[] { 1, 2, 3, 4 });
+                file.Stream.Flush(flushToDisk: true);
+                file.Publish();
+            }
+            using (var read = MacBoundSecretFile.ReadPrivateBytes(target, 4, 4, "synthetic fixture"))
+                Require(read.Bytes.AsSpan().SequenceEqual(new byte[] { 1, 2, 3, 4 }), "Bound directory altered synthetic bytes.");
+            Chmod("+a", "everyone allow read", target);
+            RequireThrows<IOException>(() => { using var ignored = MacBoundSecretFile.ReadPrivateBytes(target, 4, 4, "ACL fixture"); },
+                "A mode-0600 file with an extended read ACL was accepted.");
+            Chmod("-N", target);
+            Chmod("+a", "everyone allow read,search", root);
+            RequireThrows<IOException>(() => lease.Validate(), "A mode-0700 directory with an extended ACL was accepted.");
+            RequireThrows<IOException>(() => { using var ignored = MacBoundSecretFile.BindPrivateDirectory(root); }, "Provisioning accepted a directory ACL.");
+            Chmod("-N", root);
+            lease.Validate();
+            File.SetUnixFileMode(root, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead);
+            RequireThrows<IOException>(() => lease.Validate(), "A directory permission change was ignored.");
+            SetPrivate(root);
+            Directory.Move(root, moved);
+            Directory.CreateDirectory(root);
+            SetPrivate(root);
+            RequireThrows<IOException>(() => lease.Validate(), "A replaced physical directory retained the keyset lease.");
+            string redirected = Path.Combine(root, "must-not-be-created");
+            RequireThrows<IOException>(() => { using var ignored = MacBoundSecretFile.Create(redirected, lease); }, "A secret write escaped to a replacement directory.");
+            Require(!File.Exists(redirected), "Rejected keyset write created a replacement-directory object.");
+            Directory.Delete(root);
+            Directory.Move(moved, root);
+            lease.Validate();
+        }
+        finally { Directory.Delete(parent, recursive: true); }
+        return Task.CompletedTask;
+
+        static void SetPrivate(string path) => File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        static void Chmod(params string[] arguments)
+        {
+            var info = new ProcessStartInfo("/bin/chmod") { UseShellExecute = false, RedirectStandardError = true };
+            foreach (string argument in arguments) info.ArgumentList.Add(argument);
+            using var process = Process.Start(info) ?? throw new IOException("Could not start ACL fixture setup.");
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            Require(process.ExitCode == 0, "ACL fixture setup failed: " + error);
+        }
+    }
 
     private static Task TestUsbWrappingKeysAsync()
     {
@@ -501,8 +561,8 @@ internal static class HybridKeyProtectionTests
                     && protectionScript.Contains("hybrid_protection_tool_paths=verified", StringComparison.Ordinal),
                 "The provisioning script no longer enforces distinct services and accounts.");
             Require(
-                keepVaultBuildScript.Contains("build_version='13'", StringComparison.Ordinal)
-                    && keepVaultBuildScript.Contains("marketing_version='5.0.2'", StringComparison.Ordinal)
+                keepVaultBuildScript.Contains("build_version='14'", StringComparison.Ordinal)
+                    && keepVaultBuildScript.Contains("marketing_version='5.0.3'", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("require_root_system_tool", StringComparison.Ordinal)
                     && HasIsolatedDotnetBuildPath(keepVaultBuildScript)
                     && keepVaultBuildScript.Contains("sysopen -r -o nofollow", StringComparison.Ordinal)
@@ -513,9 +573,9 @@ internal static class HybridKeyProtectionTests
                     && keepVaultBuildScript.Contains("notice_self_test_inplace_aba", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("output_mutation_status", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains(
-                        "bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159",
+                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
                         StringComparison.Ordinal),
-                "The macOS v12 release default or fixed system-tool gate regressed.");
+                "The macOS v13 release default or fixed system-tool gate regressed.");
             foreach (string lockedBuildScript in new[] { keepVaultBuildScript, portableBuildScript,
                 RepositoryLayout.ReadText(Path.Combine(root, "tools", "Test-KeepVault.sh")) })
             {
@@ -549,7 +609,7 @@ internal static class HybridKeyProtectionTests
                     && portableBuildScript.Contains("${portable_dir}/THIRD-PARTY-NOTICES.txt", StringComparison.Ordinal)
                     && portableBuildScript.Contains("zstat -f ${descriptor}", StringComparison.Ordinal)
                     && portableBuildScript.Contains(
-                        "bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159",
+                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
                         StringComparison.Ordinal),
                 "The portable release build no longer uses a fresh verified SDK and private package cache.");
             Require(
@@ -624,7 +684,7 @@ internal static class HybridKeyProtectionTests
                     && keepVaultVerifierScript.Contains("sysopen -r -o nofollow", StringComparison.Ordinal)
                     && keepVaultVerifierScript.Contains("bound_verifier_notice_identity", StringComparison.Ordinal)
                     && keepVaultVerifierScript.Contains(
-                        "bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159",
+                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
                         StringComparison.Ordinal)
                     && !keepVaultVerifierScript.Contains("${dotnet_command} restore", StringComparison.Ordinal)
                     && !keepVaultVerifierScript.Contains("${dotnet_command} build", StringComparison.Ordinal),
@@ -666,7 +726,7 @@ internal static class HybridKeyProtectionTests
                     && releaseVerifierSource.Contains("THIRD-PARTY-NOTICES.txt", StringComparison.Ordinal)
                     && releaseVerifierSource.Contains("portable root notice", StringComparison.Ordinal)
                     && releaseVerifierSource.Contains(
-                        "BD4BD21C7FFA79D36A4F20ABB6B7AF3116FC005D3971CA0BE09B49E083D6F159",
+                        "1A02EAD03198231BB35F2AA7576B9BE2EA79E153FDF22AB6E85B90FF8B710C3E",
                         StringComparison.Ordinal),
                 "The standalone release verifier lost its bound app/portable notice pin.");
             Require(

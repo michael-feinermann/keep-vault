@@ -10,9 +10,20 @@
     <DefineConstants>$(DefineConstants);KEEPVAULT_MACOS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="Fixtures/V13Reference/pool_shuffle_rev9_public_vectors.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="MarsKnownAnswers.txt" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="ZpaqInheritedFdHarness.c" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../KeepVaultMac/KeepVaultMac.csproj" />
+    <Compile Include="../KalynaArchiver.Tests/HashCleanupRegressionTests.cs" Link="HashCleanupRegressionTests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/V13StandardTests.cs" Link="V13StandardTests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/V13ParanoiaCompositionTests.cs" Link="V13ParanoiaCompositionTests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/V13HeaderNonceFuzzTests.cs" Link="V13HeaderNonceFuzzTests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/V13NewCipherTests.cs" Link="V13NewCipherTests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/CryptoUsageBudgetTests.cs" Link="CryptoUsageBudgetTests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/V13NonceTests.cs" Link="V13NonceTests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/EntropyRev9PerformanceTests.cs" Link="EntropyRev9PerformanceTests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/EntropyRev9Tests.cs" Link="EntropyRev9Tests.cs" />
+    <Compile Include="../KalynaArchiver.Tests/EntropyRev9GoldenTests.cs" Link="EntropyRev9GoldenTests.cs" />
     <Compile Include="../KalynaArchiver.Tests/CipherSuitePerformanceTests.cs" Link="CipherSuitePerformanceTests.cs" />
     <Compile Include="../KalynaArchiver.Signing/Mldsa87Reference.cs" Link="Signing/Mldsa87Reference.cs" />
     <Compile Include="../KeepVaultMac/Packaging/HybridSigner/HybridKeyEnvelope.cs" Link="Packaging/HybridKeyEnvelope.cs" />

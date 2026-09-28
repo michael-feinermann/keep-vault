@@ -1,0 +1,2 @@
+RELEASE GATE: a successful test phase produced no result JSON.
+PASS: successful and failed phase retained; missing result fails closed and never reuses preceding JSON.

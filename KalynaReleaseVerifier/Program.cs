@@ -47,7 +47,7 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
     // than listed again. Listed again, it went stale: this array named five
     // libraries while the application refused to start without nine, so a
     // portable release built without aes_ref.dll, mars_ref.dll,
-    // shacal2_ref.dll or chachapoly_ref.dll passed verification and then
+    // shacal2_ref.dll or xchachapoly_v13.dll passed verification and then
     // refused to open an archive on the machine it was verified for.
     string[] requiredTopLevelArtifacts =
     [

@@ -43,7 +43,7 @@ if not exist "%NATIVEOBJ%" mkdir "%NATIVEOBJ%"
 set "HARDEN_COMPILE=/O2 /MT /GS /sdl /guard:cf /Fo%NATIVEOBJ%\"
 set "HARDEN_LINK=/link /guard:cf /CETCOMPAT"
 
-cl %HARDEN_COMPILE% /DNOJIT /EHsc /Fe"%NATIVEOUTPUT%\zpaq.exe" external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
+cl %HARDEN_COMPILE% /std:c++17 /DNOJIT /EHsc /Fe"%NATIVEOUTPUT%\zpaq.exe" external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
 cl %HARDEN_COMPILE% /LD /D_CRT_SECURE_NO_WARNINGS ^
@@ -177,7 +177,7 @@ popd
 lib /nologo /OUT:"%CPPOBJ%\cryptopp.lib" @"%CPPOBJ%\cryptopp-objects.rsp"
 if errorlevel 1 exit /b 1
 
-for %%A in (aes mars shacal2 chachapoly) do (
+for %%A in (aes mars shacal2) do (
   cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
     /I"%CRYPTOPP%" ^
     /Fo"%CPPOBJ%\adapters\\" ^
@@ -188,14 +188,34 @@ for %%A in (aes mars shacal2 chachapoly) do (
   if errorlevel 1 exit /b 1
 )
 
+for %%A in (camellia serpent) do (
+  cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
+    /I"%CRYPTOPP%" ^
+    /Fo"%CPPOBJ%\adapters\\" ^
+    /Fe"%NATIVEOUTPUT%\%%A_v13.dll" ^
+    native\%%A_v13_export.cpp ^
+    "%CPPOBJ%\cryptopp.lib" ^
+    %HARDEN_LINK%
+  if errorlevel 1 exit /b 1
+)
+
 cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
   /I"%CRYPTOPP%" ^
   /Fo"%CPPOBJ%\adapters\\" ^
-  /Fe"%NATIVEOUTPUT%\kalyna_v12.dll" ^
-  native\kalyna_v12_export.cpp ^
+  /Fe"%NATIVEOUTPUT%\xchachapoly_v13.dll" ^
+  native\xchachapoly_ref_export.cpp ^
   "%CPPOBJ%\cryptopp.lib" ^
   %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
-echo Keep Vault v12 Windows native toolset built.
+cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
+  /I"%CRYPTOPP%" ^
+  /Fo"%CPPOBJ%\adapters\\" ^
+  /Fe"%NATIVEOUTPUT%\kalyna_v13.dll" ^
+  native\kalyna_v13_export.cpp ^
+  "%CPPOBJ%\cryptopp.lib" ^
+  %HARDEN_LINK%
+if errorlevel 1 exit /b 1
+
+echo Keep Vault v13 Windows native toolset built.
 exit /b 0

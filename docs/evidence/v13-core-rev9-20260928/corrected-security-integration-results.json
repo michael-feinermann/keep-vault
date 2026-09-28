@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "scope": "Four corrected macOS development integration regression groups, not final package or Windows execution evidence.",
+  "source_head": "305da05a123779a7c00dede97337c6c5773a4c30",
+  "working_tree": "uncommitted REV9 implementation; source_head alone does not identify tested source",
+  "platform": "macOS 26.6.2 arm64",
+  "host": "10 logical CPUs, 16 GiB",
+  "binary_manifest": "integration-rerun-binaries.json",
+  "tests": [
+    {
+      "id": "crypto.two-round-derivation",
+      "status": "PASS",
+      "seed": "0x5EED0313",
+      "seconds": 0.135,
+      "peak_rss_mib": 68,
+      "log": "integration-rerun-crypto.two-round-derivation.log",
+      "test_inventory_hash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874"
+    },
+    {
+      "id": "security.pipeline-worker-policy",
+      "status": "PASS",
+      "seed": "0x5EED0313",
+      "seconds": 0.001,
+      "peak_rss_mib": 52,
+      "log": "integration-rerun-security.pipeline-worker-policy.log",
+      "test_inventory_hash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874"
+    },
+    {
+      "id": "security.pipeline-native-concurrency",
+      "status": "PASS",
+      "seed": "0x5EED0313",
+      "seconds": 0.007,
+      "peak_rss_mib": 54,
+      "log": "integration-rerun-security.pipeline-native-concurrency.log",
+      "test_inventory_hash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874"
+    },
+    {
+      "id": "security.credential-encoding-only",
+      "status": "PASS",
+      "seed": "0x5EED0313",
+      "seconds": 0.008,
+      "peak_rss_mib": 65,
+      "log": "integration-rerun-security.credential-encoding-only.log",
+      "test_inventory_hash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874"
+    }
+  ],
+  "evidence_sha256": {
+    "integration-reruns-all.json": "2ee3ea780bdf307e0d54ce94e7ab538442a29b94ac178863cbc395ef00eae937",
+    "integration-rerun-binaries.json": "cc514db3856f68344c833614c065373b0529d96cc08b8e5c97231e35808c3f0f",
+    "integration-rerun-crypto.two-round-derivation.log": "987157103a5c3f95e2726508304974b0fa88670342ce43be73f012a16a0e897a",
+    "integration-rerun-security.pipeline-worker-policy.log": "988afb3925df64d98d418856f95b60c32f8ea1b16c4e89301f1e811333391094",
+    "integration-rerun-security.pipeline-native-concurrency.log": "012593876848f7aaf33fc278ca575ec4c153482ec51769ad65d935bb89510082",
+    "integration-rerun-security.credential-encoding-only.log": "06ca0ab3a6984b4e3b4039a9a926095542b4e8454616d9c98743ed8ca38e4927"
+  }
+}

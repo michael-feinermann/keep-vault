@@ -6,6 +6,8 @@
  * cipher without changing the reference rounds, rotations, or key schedule.
  */
 #include <stdint.h>
+#include "borrowed_executor_v13.h"
+#include "adaptive_work_v13.h"
 #include <stdlib.h>
 #include <string.h>
 #if defined(_WIN32)
@@ -31,7 +33,6 @@
    identical no matter how many workers process it. The cap is large enough for
    current high-core-count hosts while still bounding the job tables if a bad
    platform report is returned. */
-#define THREEFISH_MAX_THREADS 1024
 #define THREEFISH_PARALLEL_THRESHOLD_BYTES (1024 * 1024)
 
 /* Work is handed out in chunks rather than split once up front. Apple silicon
@@ -43,7 +44,6 @@
 
    The chunk is 256 KiB: large enough that one atomic claim is lost in the
    noise of the work it buys, small enough that the tail is short. */
-#define THREEFISH_MIN_BYTES_PER_THREAD (256 * 1024)
 #define THREEFISH_CHUNK_BLOCKS (2048u)
 
 #if defined(_WIN32)
@@ -531,26 +531,11 @@ typedef struct threefish_ctr_job {
  * On a single-group machine - every laptop and desktop, and most servers -
  * there is nothing to do and nothing is called.
  */
+/* Modern Windows schedules across eligible processor groups. The parent
+   applies the validated global CPU grant; do not override OS/job affinity. */
 static void bind_worker_to_processor_group(size_t worker_index)
 {
-    WORD group_count = GetActiveProcessorGroupCount();
-    if (group_count <= 1) {
-        return;
-    }
-
-    WORD group = (WORD)(worker_index % (size_t)group_count);
-    DWORD processors = GetActiveProcessorCount(group);
-    if (processors == 0 || processors > 64) {
-        return;
-    }
-
-    GROUP_AFFINITY affinity;
-    memset(&affinity, 0, sizeof(affinity));
-    affinity.Group = group;
-    affinity.Mask = processors == 64
-        ? ~(KAFFINITY)0
-        : (KAFFINITY)(((KAFFINITY)1 << processors) - 1);
-    (void)SetThreadGroupAffinity(GetCurrentThread(), &affinity, NULL);
+    (void)worker_index;
 }
 #endif
 
@@ -600,15 +585,19 @@ static void* threefish_ctr_worker(void* parameter)
 #endif
 }
 
+static void threefish_borrowed_worker(void* context, size_t index)
+{
+    threefish_ctr_job* jobs = (threefish_ctr_job*)context;
+    (void)threefish_ctr_worker(&jobs[index]);
+}
+
 static size_t configured_thread_limit(void)
 {
     const char* configured = getenv("THREEFISH_CTR_THREADS");
     if (configured != NULL && configured[0] != '\0') {
         long parsed = strtol(configured, NULL, 10);
         if (parsed > 0) {
-            return parsed > THREEFISH_MAX_THREADS
-                ? THREEFISH_MAX_THREADS
-                : (size_t)parsed;
+            return (size_t)parsed;
         }
     }
 
@@ -621,31 +610,19 @@ static size_t configured_thread_limit(void)
         processors = 1;
     }
 
-    return processors > THREEFISH_MAX_THREADS
-        ? THREEFISH_MAX_THREADS
-        : (size_t)processors;
+    return (size_t)processors;
 }
 
-static size_t choose_thread_count(size_t length, size_t total_blocks)
+static size_t choose_thread_count(size_t length, size_t total_blocks, uint32_t worker_budget)
 {
     if (length < THREEFISH_PARALLEL_THRESHOLD_BYTES || total_blocks < 2) {
         return 1;
     }
 
-    size_t threads = configured_thread_limit();
+    size_t threads = worker_budget == 0 ? configured_thread_limit()
+        : (keepvault_get_executor() != NULL ? worker_budget : (worker_budget > 1 ? worker_budget - 1 : 1));
     if (threads < 1) {
         threads = 1;
-    }
-
-    /* Keep every worker on a substantial contiguous range so that a wide
-       machine does not spend more on thread setup and cache traffic than the
-       split saves. */
-    size_t useful_threads = length / THREEFISH_MIN_BYTES_PER_THREAD;
-    if (useful_threads < 1) {
-        useful_threads = 1;
-    }
-    if (threads > useful_threads) {
-        threads = useful_threads;
     }
 
     if (threads > total_blocks) {
@@ -677,7 +654,8 @@ static int threefish_1024_ctr_xcrypt_internal(
     uint8_t* output,
     size_t length,
     int force_join_failure,
-    int force_create_failure)
+    int force_create_failure,
+    uint32_t worker_budget)
 {
     if (key == NULL || tweak == NULL || nonce == NULL
         || (length != 0 && (input == NULL || output == NULL))) {
@@ -699,7 +677,7 @@ static int threefish_1024_ctr_xcrypt_internal(
 
     size_t thread_count = (force_join_failure || force_create_failure)
         ? (total_blocks < 2 ? 1 : 2)
-        : choose_thread_count(length, total_blocks);
+        : choose_thread_count(length, total_blocks, worker_budget);
     if (thread_count > 1) {
 #if defined(_WIN32)
         HANDLE* handles = (HANDLE*)calloc(thread_count, sizeof(HANDLE));
@@ -729,9 +707,24 @@ static int threefish_1024_ctr_xcrypt_internal(
         shared.output = output;
         shared.length = length;
         shared.total_blocks = total_blocks;
-        shared.chunk_blocks = THREEFISH_CHUNK_BLOCKS;
+        shared.chunk_blocks = keepvault_v13_claim_blocks(total_blocks, THREEFISH_CHUNK_BLOCKS, thread_count);
         shared.next_chunk = 0;
         shared.finished = 0;
+
+        if (!force_join_failure && !force_create_failure && keepvault_get_executor() != NULL) {
+            for (size_t index = 0; index < thread_count; ++index) {
+                jobs[index].shared = &shared; jobs[index].worker_index = index;
+            }
+            int result = keepvault_get_executor()(thread_count, threefish_borrowed_worker, jobs);
+            for (size_t index = 0; index < thread_count; ++index)
+                if (jobs[index].result != 0 && result == 0) result = jobs[index].result;
+            secure_zero(jobs, thread_count * sizeof(*jobs));
+            free(jobs); free(handles);
+#if !defined(_WIN32)
+            free(started);
+#endif
+            return result == 0 ? 0 : 3;
+        }
 
         size_t created = 0;
         for (size_t index = 0; index < thread_count; ++index) {
@@ -830,7 +823,29 @@ THREEFISH_EXPORT int threefish_1024_ctr_xcrypt(
         output,
         length,
         0,
-        0);
+        0,
+        1);
+}
+
+THREEFISH_EXPORT int threefish_1024_ctr_xcrypt_v13_with_workers(
+    const uint8_t key[THREEFISH_BLOCK_BYTES],
+    const uint8_t tweak[THREEFISH_TWEAK_BYTES],
+    const uint8_t nonce[THREEFISH_BLOCK_BYTES],
+    const uint8_t* input,
+    uint8_t* output,
+    size_t length, uint32_t worker_budget)
+{
+    if (worker_budget == 0) return 1;
+    return threefish_1024_ctr_xcrypt_internal(
+        key,
+        tweak,
+        nonce,
+        input,
+        output,
+        length,
+        0,
+        0,
+        worker_budget);
 }
 
 THREEFISH_EXPORT int keepvault_v12_threefish_join_failure_kat(void)
@@ -881,6 +896,7 @@ THREEFISH_EXPORT int keepvault_v12_threefish_join_failure_kat(void)
             actual,
             kat_length,
             1,
+            0,
             0) != 3) {
         goto cleanup;
     }
@@ -893,7 +909,8 @@ THREEFISH_EXPORT int keepvault_v12_threefish_join_failure_kat(void)
             actual,
             kat_length,
             0,
-            1) != 3) {
+            1,
+            0) != 3) {
         goto cleanup;
     }
     result = memcmp(expected, actual, kat_length) == 0 ? 0 : 2;

@@ -15,7 +15,7 @@
 namespace keepvault {
 
 // Private in-process staging of an integrity-checked regular ZPAQ stream.
-// This is an internal v12 pipe envelope, not an on-disk container format.
+// This is an internal v13 pipe envelope, not an on-disk container format.
 // No named IPC object, pathname reopening, or device/inode claim is involved.
 class VerifiedArchiveStaging final {
 public:
@@ -23,16 +23,16 @@ public:
         FILE* input, std::uint64_t maximum_bytes)
     {
         std::array<unsigned char, 16> header{};
-        static constexpr unsigned char magic[8] = {'K','V','1','2','V','M',0,0};
+        static constexpr unsigned char magic[8] = {'K','V','1','3','V','M',0,0};
         if (input == nullptr || std::fread(header.data(), 1, header.size(), input) != header.size()
             || std::memcmp(header.data(), magic, sizeof(magic)) != 0)
-            throw std::runtime_error("invalid v12 verified-staging envelope");
+            throw std::runtime_error("invalid v13 verified-staging envelope");
         std::uint64_t length = 0;
         for (std::size_t i = 8; i < header.size(); ++i)
             length = (length << 8) | header[i];
         if (length == 0 || length > maximum_bytes
             || length > std::numeric_limits<std::size_t>::max())
-            throw std::runtime_error("v12 verified-staging length exceeds its bound");
+            throw std::runtime_error("v13 verified-staging length exceeds its bound");
 
         auto result = std::unique_ptr<VerifiedArchiveStaging>(
             new VerifiedArchiveStaging(static_cast<std::size_t>(length)));
@@ -44,17 +44,17 @@ public:
                 result->bytes_ + result->written_, 1, count, input);
             result->written_ += read;
             if (read != count)
-                throw std::runtime_error("truncated v12 verified-staging payload");
+                throw std::runtime_error("truncated v13 verified-staging payload");
         }
         if (std::fgetc(input) != EOF || std::ferror(input))
-            throw std::runtime_error("trailing or unreadable v12 verified-staging payload");
+            throw std::runtime_error("trailing or unreadable v13 verified-staging payload");
 
         // Reduce maximum protection as well as current protection. The parser
         // must not be able to regain write access through mprotect afterwards.
         if (mach_vm_protect(mach_task_self(),
                 reinterpret_cast<mach_vm_address_t>(result->bytes_),
                 result->size_, TRUE, VM_PROT_READ) != KERN_SUCCESS)
-            throw std::runtime_error("cannot seal v12 verified-staging memory");
+            throw std::runtime_error("cannot seal v13 verified-staging memory");
         result->sealed_ = true;
         return result;
     }
@@ -80,7 +80,7 @@ private:
         void* memory = mmap(nullptr, size, PROT_READ | PROT_WRITE,
             MAP_PRIVATE | MAP_ANON, -1, 0);
         if (memory == MAP_FAILED)
-            throw std::runtime_error("cannot allocate bounded v12 verified-staging memory");
+            throw std::runtime_error("cannot allocate bounded v13 verified-staging memory");
         bytes_ = static_cast<unsigned char*>(memory);
     }
     unsigned char* bytes_ = nullptr;
