@@ -54,4 +54,3 @@ internal static unsafe class NativeCipherExecutor
         return status;
     }
 }
-
