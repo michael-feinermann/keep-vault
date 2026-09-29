@@ -1,0 +1,120 @@
+[
+  {
+    "id": "packaging.usb-wrapping-key-input",
+    "exit_code": 0,
+    "wall_seconds": 0.29207396507263184,
+    "command": [
+      "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet",
+      "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-packaging-tests-20260929-x5yfhol6/KeepVaultMac.Tests.dll",
+      "--full",
+      "--no-smoke",
+      "--only",
+      "packaging.usb-wrapping-key-input",
+      "--parallel",
+      "1"
+    ],
+    "log": "work/v13-evidence/pre-release-packaging-20260929/packaging.usb-wrapping-key-input.log",
+    "log_sha256": "C0B55530EB4AD8B5480A8184F0D4FB8BD18F823BC76785EEE40095D058BF56E0",
+    "results": "work/v13-evidence/pre-release-packaging-20260929/packaging.usb-wrapping-key-input.json",
+    "results_sha256": "32A78680C7D6F81A0EBC3966D2E00F32EF6241059EFA6A763EB05882C396D577"
+  },
+  {
+    "id": "packaging.private-directory-lease",
+    "exit_code": 0,
+    "wall_seconds": 0.2865309715270996,
+    "command": [
+      "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet",
+      "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-packaging-tests-20260929-x5yfhol6/KeepVaultMac.Tests.dll",
+      "--full",
+      "--no-smoke",
+      "--only",
+      "packaging.private-directory-lease",
+      "--parallel",
+      "1"
+    ],
+    "log": "work/v13-evidence/pre-release-packaging-20260929/packaging.private-directory-lease.log",
+    "log_sha256": "C300960F9D8831CFBA3271DCE1F8DA521F54CED9C45ABCD9E695780C301C72BB",
+    "results": "work/v13-evidence/pre-release-packaging-20260929/packaging.private-directory-lease.json",
+    "results_sha256": "645C787B1678CAC5957A4B4E6B68B597DFD45C72447A97323BA316F24EE9B6BF"
+  },
+  {
+    "id": "packaging.keychain-secret-not-in-argv",
+    "exit_code": 0,
+    "wall_seconds": 0.1985020637512207,
+    "command": [
+      "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet",
+      "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-packaging-tests-20260929-x5yfhol6/KeepVaultMac.Tests.dll",
+      "--full",
+      "--no-smoke",
+      "--only",
+      "packaging.keychain-secret-not-in-argv",
+      "--parallel",
+      "1"
+    ],
+    "log": "work/v13-evidence/pre-release-packaging-20260929/packaging.keychain-secret-not-in-argv.log",
+    "log_sha256": "7716CC3FAA820E0BF77F14F39797E75A6AE2C4D1ACD636ED304B0C36552D6727",
+    "results": "work/v13-evidence/pre-release-packaging-20260929/packaging.keychain-secret-not-in-argv.json",
+    "results_sha256": "52480AEE29A9CDAB4A0DE197B3FF2205F788258FA356189B1065D7097156DBD1"
+  },
+  {
+    "id": "packaging.installer-lock-cleanup",
+    "exit_code": 0,
+    "wall_seconds": 0.6876442432403564,
+    "command": [
+      "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet",
+      "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-packaging-tests-20260929-x5yfhol6/KeepVaultMac.Tests.dll",
+      "--full",
+      "--no-smoke",
+      "--only",
+      "packaging.installer-lock-cleanup",
+      "--parallel",
+      "1"
+    ],
+    "log": "work/v13-evidence/pre-release-packaging-20260929/packaging.installer-lock-cleanup.log",
+    "log_sha256": "2AECDFD2E406B0673BD43C4CDADEB79638A4DA79E00296891B456DAA1E1D53A1",
+    "results": "work/v13-evidence/pre-release-packaging-20260929/packaging.installer-lock-cleanup.json",
+    "results_sha256": "66464C9352AC09CB1C9ABDA915DCB2E87428FD7F4697B85ACE72A45C35D915F4"
+  },
+  {
+    "id": "packaging.hybrid-key-separation",
+    "exit_code": 1,
+    "wall_seconds": 42.3116340637207,
+    "command": [
+      "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet",
+      "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-packaging-tests-20260929-x5yfhol6/KeepVaultMac.Tests.dll",
+      "--full",
+      "--no-smoke",
+      "--only",
+      "packaging.hybrid-key-separation",
+      "--parallel",
+      "1"
+    ],
+    "log": "work/v13-evidence/pre-release-packaging-20260929/packaging.hybrid-key-separation.log",
+    "log_sha256": "04B3BD363420C80235C920DFF104D69F7AA7C50B5E78201943BA81FB941176E1",
+    "results": "work/v13-evidence/pre-release-packaging-20260929/packaging.hybrid-key-separation.json",
+    "results_sha256": "4A8EFC9560B8269B40B2842267D1DF5698D141855B76CF391D0C7219B698FC92"
+  },
+  {
+    "id": "packaging.hybrid-key-separation",
+    "attempt": "macOS-project-cwd",
+    "exit_code": 0,
+    "wall_seconds": 96.0636568069458,
+    "command": [
+      "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet",
+      "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-packaging-tests-20260929-x5yfhol6/KeepVaultMac.Tests.dll",
+      "--full",
+      "--no-smoke",
+      "--only",
+      "packaging.hybrid-key-separation",
+      "--parallel",
+      "1",
+      "--seed",
+      "0x5EFB840F"
+    ],
+    "cwd": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac",
+    "log": "work/v13-evidence/pre-release-packaging-20260929/packaging.hybrid-key-separation.rerun-mac-cwd.log",
+    "log_sha256": "91805E737B385CDB1D5EBE9562B187F0EA3800B2C38CEE67F84C072D877DABD5",
+    "results": "work/v13-evidence/pre-release-packaging-20260929/packaging.hybrid-key-separation.rerun-mac-cwd.json",
+    "results_sha256": "AC2EE8AC6B85C88DA4DE090D44019A8FB823C65D8DA6D2B50C3590625AAEB7EC"
+  }
+]

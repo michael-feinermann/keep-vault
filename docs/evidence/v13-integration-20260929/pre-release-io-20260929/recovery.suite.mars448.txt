@@ -1,0 +1,6 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+FULL PASS KPAR2 v4 authenticates and rejects wrong credentials: Mars448 (14,3s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 14,4s; sum of test times 14,3s; parallel speedup 0,99x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json

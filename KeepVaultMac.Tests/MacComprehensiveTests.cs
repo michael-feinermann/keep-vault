@@ -2380,13 +2380,15 @@ internal static partial class MacComprehensiveTests
     private static async Task TestHeaderPublishesNoDerivedCostAsync()
     {
         string root = CreateTempRoot("keep-vault-v13-header-");
+        byte[]? payload = null;
+        byte[]? headerBytes = null;
         try
         {
             AddMouseSamplesUntilReady();
-            using GeneratedArchiveEntropy entropy = EntropyMixer.CreateArchiveEntropy();
+            using GeneratedArchiveEntropy entropy = EntropyMixer.CreateArchiveEntropy(EntropyPreparationKind.DualRound);
             var containers = new KalynaContainerService();
             string path = Path.Combine(root, "header.kzpaq");
-            byte[] payload = RandomNumberGenerator.GetBytes(4096);
+            payload = RandomNumberGenerator.GetBytes(4096);
             await using (var source = new MemoryStream(payload, writable: false))
             {
                 await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
@@ -2403,7 +2405,7 @@ internal static partial class MacComprehensiveTests
                     CancellationToken.None).ConfigureAwait(false);
             }
 
-            byte[] headerBytes = ReadHeaderBytes(path);
+            headerBytes = ReadHeaderBytes(path);
             using JsonDocument document = JsonDocument.Parse(headerBytes);
             JsonElement header = document.RootElement;
 
@@ -2414,7 +2416,7 @@ internal static partial class MacComprehensiveTests
                 "Version", "Algorithm", "BlockBits", "CounterEndian", "EncryptionKeyBits",
                 "Sha3MacKeyBits", "Sha3TagBits", "SkeinMacKeyBits", "SkeinTagBits",
                 "SaltSha3Round1", "SaltSkeinRound1", "SaltSha3Round2", "SaltSkeinRound2",
-                "NonceBits", "Nonce", "TweakBits", "TweakMode", "Tweak",
+                "NonceBits", "Nonce", "NonceDerivationMode", "TweakBits", "TweakMode", "Tweak",
                 "Hint", "Argon2MemoryKiB", "Argon2Iterations", "Argon2Parallelism",
                 "KdfBranchOutputBits", "MasterKeyBits", "KdfExecutionMode", "KdfMemoryMode",
                 "PasswordMode", "KdfInputMode", "GeneratedPasswordBits",
@@ -2423,12 +2425,69 @@ internal static partial class MacComprehensiveTests
             ];
             string[] actual = [.. header.EnumerateObject().Select(property => property.Name)];
             Require(
-                actual.Length == expected.Length && !actual.Except(expected, StringComparer.Ordinal).Any(),
-                $"The v13 header field set changed: {string.Join(", ", actual.Except(expected, StringComparer.Ordinal))}");
+                actual.SequenceEqual(expected, StringComparer.Ordinal),
+                "The canonical v13 header field inventory or order changed.");
 
             Require(
                 header.GetProperty("Argon2MemoryKiB").GetInt32() == 0,
                 "The header published the Argon2id memory cost.");
+
+            // Pin every public numeric/string contract, not just the absence
+            // of an extra field. This also catches a private cost smuggled into
+            // an existing field, a scaled cost, or a numeric string. Never log
+            // an unexpected value: a failed regression could itself be a leak.
+            (string Field, long Value)[] publicNumbers =
+            [
+                ("Version", 13), ("BlockBits", 1024), ("EncryptionKeyBits", 3520),
+                ("Sha3MacKeyBits", 512), ("Sha3TagBits", 512),
+                ("SkeinMacKeyBits", 1024), ("SkeinTagBits", 1024),
+                ("NonceBits", 2560), ("SecondNonceBits", 2560), ("TweakBits", 128),
+                ("Argon2MemoryKiB", 0), ("Argon2Iterations", 4), ("Argon2Parallelism", 4),
+                ("KdfBranchOutputBits", 512), ("MasterKeyBits", 1024),
+                ("GeneratedPasswordBits", 1024), ("GeneratedPasswordFactorCount", 2),
+            ];
+            foreach ((string field, long value) in publicNumbers)
+            {
+                JsonElement actualValue = header.GetProperty(field);
+                Require(actualValue.ValueKind == JsonValueKind.Number
+                    && actualValue.TryGetInt64(out long number) && number == value,
+                    $"Header field {field} differs from its fixed public REV9 value.");
+            }
+            (string Field, string Value)[] publicStrings =
+            [
+                ("Algorithm", "XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024"),
+                ("CounterEndian", "BigEndian"),
+                ("NonceDerivationMode", "Seed320-Blockwise64-SHA3-512-ActivePrefix-v3"),
+                ("TweakMode", "SHA3-512(LP(Domain)||LP(Algorithm)||LE32(StageIndex)||LP(Nonce))[0..15]"),
+                ("KdfExecutionMode", "Sequential"), ("KdfMemoryMode", "PMI16"),
+                ("PasswordMode", "UserPassword24to256+PIN6to16+GeneratedHex1024x2"),
+                ("KdfInputMode", "DualBranch-v13: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024"),
+                ("KdfMode", "DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024"),
+            ];
+            foreach ((string field, string value) in publicStrings)
+                Require(header.GetProperty(field).ValueKind == JsonValueKind.String
+                    && string.Equals(header.GetProperty(field).GetString(), value, StringComparison.Ordinal),
+                    $"Header field {field} differs from its fixed public REV9 identifier.");
+            Require(header.GetProperty("Hint").ValueKind == JsonValueKind.Null,
+                "A writer-generated value leaked into the absent user hint.");
+            foreach ((string field, int bytes) in new[]
+            {
+                ("SaltSha3Round1", 64), ("SaltSkeinRound1", 64),
+                ("SaltSha3Round2", 64), ("SaltSkeinRound2", 64),
+                ("Nonce", 320), ("SecondNonce", 320), ("Tweak", 16),
+            })
+            {
+                string encoded = header.GetProperty(field).GetString()
+                    ?? throw new InvalidOperationException($"Paranoia header omits {field}.");
+                byte[] decoded = Convert.FromBase64String(encoded);
+                try
+                {
+                    Require(decoded.Length == bytes
+                        && string.Equals(Convert.ToBase64String(decoded), encoded, StringComparison.Ordinal),
+                        $"Header field {field} has an invalid public width or Base64 representation.");
+                }
+                finally { CryptographicOperations.ZeroMemory(decoded); }
+            }
 
             // No integer field anywhere in the header may fall inside the range
             // the derived cost lives in. That catches a cost written under some
@@ -2441,14 +2500,15 @@ internal static partial class MacComprehensiveTests
                     && value <= V13MasterKdf.MemoryMaxKiB)
                 {
                     throw new InvalidOperationException(
-                        $"Header field {property.Name} holds {value}, inside the derived Argon2id memory range.");
+                        $"Header field {property.Name} contains a value in the private Argon2id memory range.");
                 }
             }
 
-            Zero(payload, headerBytes);
         }
         finally
         {
+            if (payload is not null) CryptographicOperations.ZeroMemory(payload);
+            if (headerBytes is not null) CryptographicOperations.ZeroMemory(headerBytes);
             Directory.Delete(root, recursive: true);
         }
     }
@@ -2602,10 +2662,10 @@ internal static partial class MacComprehensiveTests
         // v13 is a clean break. A container claiming any other version must be
         // refused outright rather than read on a compatibility path, and the
         // refusal must not depend on the MACs noticing the edit afterwards.
-        foreach (int rejected in new[] { 8, 9, 10, 11 })
+        foreach (int rejected in new[] { 8, 9, 10, 11, 12 })
         {
             string downgraded = CopyContainer(path, root, $"{suite}-version-{rejected}.kzpaq");
-            ReplaceHeaderToken(downgraded, "\"Version\":12", $"\"Version\":{rejected}");
+            ReplaceHeaderToken(downgraded, "\"Version\":13", $"\"Version\":{rejected}");
             await RequireThrowsAsync<InvalidDataException>(
                 () => containers.ReadContainerInfoAsync(downgraded, CancellationToken.None),
                 $"{suite} accepted a container claiming version {rejected}.").ConfigureAwait(false);
@@ -2947,7 +3007,7 @@ internal static partial class MacComprehensiveTests
             int locatorFormatVersion = BinaryPrimitives.ReadInt32LittleEndian(sidecarHeader.AsSpan(8));
             Require(locatorFormatVersion == 4, $"KPAR2 format version mismatch: expected 4, got {locatorFormatVersion}");
             int locatorContainerVersion = BinaryPrimitives.ReadInt32LittleEndian(sidecarHeader.AsSpan(72));
-            Require(locatorContainerVersion == 13, $"KPAR2 container version mismatch: expected 12, got {locatorContainerVersion}");
+            Require(locatorContainerVersion == 13, $"KPAR2 container version mismatch: expected 13, got {locatorContainerVersion}");
 
             // Targeted ContainerVersion tamper.
             //
@@ -2981,7 +3041,7 @@ internal static partial class MacComprehensiveTests
             // still authenticate. Without this the rejections below could just
             // as well mean the rewrite itself produced an invalid locator.
             byte[] rewrittenUnchanged = await File.ReadAllBytesAsync(authenticatedSidecar).ConfigureAwait(false);
-            RewriteLocatorContainerVersion(rewrittenUnchanged, 12);
+            RewriteLocatorContainerVersion(rewrittenUnchanged, 13);
             await File.WriteAllBytesAsync(tamperedRecoveryPath, rewrittenUnchanged).ConfigureAwait(false);
             RecoveryRepairResult rewrittenRepair = await recovery.VerifyAndRepairAuthenticatedAsync(
                 tamperedContainer, UserPassword, UserPin, factorA, factorB, null, CancellationToken.None).ConfigureAwait(false);
@@ -2991,15 +3051,18 @@ internal static partial class MacComprehensiveTests
 
             // Only the version differs from the control, and it is refused.
             byte[] sidecarAllBytes = await File.ReadAllBytesAsync(authenticatedSidecar).ConfigureAwait(false);
-            RewriteLocatorContainerVersion(sidecarAllBytes, 10);
-            await File.WriteAllBytesAsync(tamperedRecoveryPath, sidecarAllBytes).ConfigureAwait(false);
-            Require(
-                BinaryPrimitives.ReadInt32LittleEndian(sidecarAllBytes.AsSpan(72)) == 10
-                && BinaryPrimitives.ReadInt32LittleEndian(sidecarAllBytes.AsSpan(8)) == 4,
-                "The tampered locator does not carry KPAR2 v4 with container version 10.");
-            await RequireThrowsAsync<InvalidDataException>(
-                () => recovery.VerifyAndRepairAuthenticatedAsync(tamperedContainer, UserPassword, UserPin, factorA, factorB, null, CancellationToken.None),
-                "KPAR2 accepted a container version this build does not support.").ConfigureAwait(false);
+            foreach (int rejectedVersion in new[] { 10, 12 })
+            {
+                RewriteLocatorContainerVersion(sidecarAllBytes, rejectedVersion);
+                await File.WriteAllBytesAsync(tamperedRecoveryPath, sidecarAllBytes).ConfigureAwait(false);
+                Require(
+                    BinaryPrimitives.ReadInt32LittleEndian(sidecarAllBytes.AsSpan(72)) == rejectedVersion
+                    && BinaryPrimitives.ReadInt32LittleEndian(sidecarAllBytes.AsSpan(8)) == 4,
+                    $"The tampered locator does not carry KPAR2 v4 with container version {rejectedVersion}.");
+                await RequireThrowsAsync<InvalidDataException>(
+                    () => recovery.VerifyAndRepairAuthenticatedAsync(tamperedContainer, UserPassword, UserPin, factorA, factorB, null, CancellationToken.None),
+                    $"KPAR2 accepted unsupported container version {rejectedVersion}.").ConfigureAwait(false);
+            }
 
             // The inverse: a locator that claims a KPAR2 format version this
             // build never wrote must not find a second, weaker reader.

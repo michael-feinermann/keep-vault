@@ -1,0 +1,26 @@
+{
+  "recorded_utc": "2026-09-29T07:18:22.906384+00:00",
+  "scope": "Read-only source audit of RecoveryService descriptor/cursor call chains, plus authorized test-fixture corrections. No product change or new build in this pass.",
+  "recovery_source_sha256": "94fc4ac1673aeb71e0e398d4765dfc94189beace83daf8c7b10989da6005eda4",
+  "buffered_descriptor_audit": [
+    "FileRecoveryRandomAccessSource is constructed over a freshly opened archive stream. Production reads go through RandomAccess from the first read; magic/hash wrappers read its RecoveryRandomAccessStream, not the underlying buffered FileStream.",
+    "ReadRecoveryPackageAsync reads sidecar locators and encoded metadata using TryReadAtAsync/ReadAtOffsetAsync/RandomAccess. The sequential parser reads concern RecoveryMetadataStream envelope/payload, not the recovery FileStream.",
+    "Generated-sidecar writes are FlushAsync/Flush(true)-completed before commit verification. Locator/metadata verification begins with awaited serial RandomAccess reads before later parallel parity reads.",
+    "The separate candidate is copied with RandomAccess, flushed, and then repaired by parallel RandomAccess reads/writes. The later full hash and magic probe occur after all repair workers join.",
+    "The repeated SafeFileHandle getter remains a future maintenance concern if buffered reads are added, but no present production call chain retaining a nonempty FileStream read buffer into parallel getter access was identified. No speculative product edit was made."
+  ],
+  "observed_failure": {
+    "id": "recovery.kpar2-v4-adversarial",
+    "seed": "0x5EED0313",
+    "classification": "stale positive test control",
+    "cause": "RewriteLocatorContainerVersion(rewrittenUnchanged, 12) expected authentication success although v13-only production correctly rejects it.",
+    "fix": "Positive control exactly13; preserve negative10 and add negative12; locator self-hash rewriting and all refusal assertions remain."
+  },
+  "related_source_fix": {
+    "method": "TestContainerSuiteAsync",
+    "cause": "Downgrade replacement searched Version12 although current writer emits13.",
+    "fix": "Search Version13, require unique replacement token, reject8/9/10/11/12.",
+    "run_status": "Not executed in this stage because it first requires the absent root-owned ZPAQ anchor."
+  },
+  "test_fix_build_status": "Source corrected; existing development binaries unchanged. Root will perform build and focused rerun after this serial batch."
+}

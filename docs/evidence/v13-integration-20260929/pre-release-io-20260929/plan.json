@@ -1,0 +1,32 @@
+{
+  "ids": [
+    "deletion.quarantine-symlink",
+    "deletion.secure-file-object-binding",
+    "deletion.original-verification",
+    "recovery.key-derivation-failure-cleanup",
+    "recovery.parallel-copy-fail-fast",
+    "recovery.parallel-copy-concurrency",
+    "recovery.parallel-copy-scheduling-failure",
+    "recovery.parallel-worker-equivalence",
+    "recovery.physical-eio-repair",
+    "recovery.sidecar-transaction",
+    "recovery.kpar2-v4-adversarial",
+    "deletion.cryptographic-erase",
+    "containers.v13-production-worker-equivalence",
+    "recovery.suite.threefish-over-kalyna",
+    "recovery.suite.paranoia-cascade",
+    "recovery.suite.mixed-cascade",
+    "recovery.suite.chacha-over-aes",
+    "recovery.suite.kalyna512-512",
+    "recovery.suite.threefish1024",
+    "recovery.suite.aes256",
+    "recovery.suite.mars448",
+    "recovery.suite.shacal2-512",
+    "recovery.suite.chacha20-poly1305",
+    "recovery.suite.camellia256",
+    "recovery.suite.serpent256"
+  ],
+  "excluded": "containers.suite.* and containers.v13-kpar2-roundtrip require absent root-owned v13 ZPAQ anchor. Existing green small IO/metadata groups not repeated.",
+  "source_limit_bytes": 268435456,
+  "seed": "0x5EED0313"
+}

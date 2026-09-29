@@ -1,0 +1,35 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+
+FAIL RSA and ML-DSA use independent Keychain identities, ACLs and v12 envelopes
+  seed=0x5EFB840F
+  InvalidOperationException: Release-tool path self-test failed: swift-driver version: 1.168.6 swift-driver version: 1.168.6 The command could not be loaded, possibly because:
+  * You intended to execute a .NET application:
+      The application '--version' does not exist or is not a managed .dll or .exe.
+  * You intended to execute a .NET SDK command:
+      A compatible .NET SDK was not found.
+
+Requested SDK version: 10.0.401
+global.json file: /Users/michael/Developer/GPT-Codex/Kalyna/global.json
+
+Installed SDKs:
+
+Install the [10.0.401] .NET SDK or update [/Users/michael/Developer/GPT-Codex/Kalyna/global.json] to match an installed SDK.
+
+Learn about SDK resolution:
+https://aka.ms/dotnet/sdk-not-found
+   at HybridKeyProtectionTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 1174
+   at HybridKeyProtectionTests.RequireScriptSelfTestAsync(String script, String argument, String expectedOutput, String shadowPath, String shadowMarker) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 991
+   at HybridKeyProtectionTests.RequireFixedToolSelfTestAsync(String script, String expectedOutput, String shadowPath, String shadowMarker) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 905
+   at HybridKeyProtectionTests.TestHybridKeySeparationAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 803
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "packaging.hybrid-key-separation" --seed 0x5EFB840F
+
+
+1 macOS groups: 0 passed, 1 failed, 0 blocked.
+wall clock 42,2s; sum of test times 42,1s; parallel speedup 1,00x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-packaging-tests-20260929-x5yfhol6/.test-results.json
+
+Failing tests:
+  FAIL packaging.hybrid-key-separation — RSA and ML-DSA use independent Keychain identities, ACLs and v12 envelopes

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "837e36cf1da2c6940c616348edaed4b03ff05bec",
+  "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "packaging.private-directory-lease",
+      "name": "private directory lease rejects ACLs and replacement",
+      "status": "PASS",
+      "seconds": 0.096,
+      "peakRssMiB": 63,
+      "seed": "0x223821B0",
+      "failure": null
+    }
+  ]
+}

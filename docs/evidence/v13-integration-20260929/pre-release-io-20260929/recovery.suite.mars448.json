@@ -1,0 +1,44 @@
+{
+  "command": [
+    "/opt/homebrew/bin/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "recovery.suite.mars448",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x5EED0313"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 14.516406791983172,
+  "result": {
+    "schemaVersion": 3,
+    "head": "837e36cf1da2c6940c616348edaed4b03ff05bec",
+    "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+    "platform": "macos",
+    "osArchitecture": "arm64",
+    "processArchitecture": "arm64",
+    "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+    "budget": {
+      "maxWorkers": 1,
+      "cpuTokens": 9,
+      "memoryMiB": 9011,
+      "argonSlots": 2,
+      "zpaqSlots": 1
+    },
+    "tests": [
+      {
+        "id": "recovery.suite.mars448",
+        "name": "KPAR2 v4 authenticates and rejects wrong credentials: Mars448",
+        "status": "PASS",
+        "seconds": 14.289,
+        "peakRssMiB": 1862,
+        "seed": "0x5EED0313",
+        "failure": null
+      }
+    ]
+  },
+  "log_sha256": "183d9a7898f3066f1aee00bb039b2f92184caa8500fc7a626b34c46a54d7d5b5"
+}

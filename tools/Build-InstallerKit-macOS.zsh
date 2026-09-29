@@ -73,7 +73,7 @@ build_installer_kit() {
   chmod 0755 ${installer_macos}/Keep\ Vault\ Release\ Verifier ${installer_macos}/Keep\ Vault\ Installer ${installer_macos}/InstallerBoundDelete
   sign_macho ${installer_macos}/Keep\ Vault\ Release\ Verifier ${bundle_identifier}.releaseverifier
   sign_macho ${installer_macos}/InstallerBoundDelete ${bundle_identifier}.installer.bounddelete
-  local native suffix
+  local native suffix required_architecture
   for native in ${installer_macos}/Keep\ Vault\ Release\ Verifier ${installer_macos}/InstallerBoundDelete; do
     sign_installation_artifact ${native} InstallerNativePins
     for suffix in .sha3 .skein .khsig .sha3.khsig .skein.khsig; do
@@ -84,7 +84,9 @@ build_installer_kit() {
     ${timestamp_arguments[@]} --identifier ${bundle_identifier}.installer ${installer_app}
   codesign --verify --strict --deep ${installer_app}
   for native in ${installer_macos}/*; do
-    xcrun lipo ${native} -verify_arch ${launcher_architectures[@]}
+    for required_architecture in ${launcher_architectures[@]}; do
+      xcrun lipo ${native} -verify_arch ${required_architecture}
+    done
   done
   ditto ${packaging_dir}/INSTALLATION.txt ${dist_stage}/INSTALLATION.txt
 }
