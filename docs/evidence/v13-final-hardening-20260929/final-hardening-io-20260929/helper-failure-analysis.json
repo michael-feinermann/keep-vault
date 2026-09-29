@@ -1,0 +1,21 @@
+{
+  "utc": "2026-09-29T07:55:45.649046+00:00",
+  "status": "17 groups passed; four failures occurred in the test attacker before their security assertions could execute. Helper corrected; rebuilding and four fresh reruns pending.",
+  "affected_ids": [
+    "io.verified-input-read-only-seal",
+    "io.verified-input-tamper",
+    "io.verified-input-private-copy",
+    "fuzz.verified-input-10000"
+  ],
+  "finding": "Darwin ARM64 variadic fcntl requires its optional argument on the variadic stack. The fixed three-argument P/Invoke cannot implement F_DUPFD_CLOEXEC correctly. Independent ctypes calls distinguish fixed-three return FD4 from correct variadic return FD300 when the requested minimum is300.",
+  "test_fix": "Use fixed-ABI dup then MacSafeFileSystem.SetCloseOnExec(handle,true), independently check F_GETFD, and retain all original attack assertions. Product O_RDONLY binding is unchanged.",
+  "sources": [
+    "https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/sys/filio.h"
+  ],
+  "files_sha256": {
+    "summary.json": "fe65a8e8e972e58f47065f4a92ff679d0c87704b4d6513f287290da877d3fa0f",
+    "fcntl-abi-probe.py": "69b20606368860937a296652d347fc169b9eba77204cdf71fe544e0ed7760576",
+    "fcntl-abi-probe.json": "d2a861eef1205c58e5019a27a2bf95ddc6edcc81ac59fd70d9ba527662a319f2"
+  }
+}

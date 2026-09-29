@@ -427,7 +427,7 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
-        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
+        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).ForExtraction(outputFolder).EnterScope();
         using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
             ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
         using IDisposable memoryScope = memory.EnterScope();
@@ -438,6 +438,7 @@ public sealed partial class ZpaqService
         using var staging = new MacExtractionStaging(outputFolder);
         try
         {
+            ArchiveOperationPolicy.Current.RequireBoundExtractionVolume(staging.GetOperationVolume());
             ProcessResult result = await RunStdinPipeAsync(
                 executable.Path,
                 WithNativeExtractionLimits(
@@ -612,7 +613,7 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
-        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
+        using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).ForExtraction(outputFolder).EnterScope();
         using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
             ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
         using IDisposable memoryScope = memory.EnterScope();
@@ -623,6 +624,7 @@ public sealed partial class ZpaqService
         using var staging = new MacExtractionStaging(outputFolder);
         try
         {
+            ArchiveOperationPolicy.Current.RequireBoundExtractionVolume(staging.GetOperationVolume());
             ProcessResult result = await RunStdinPipeAsync(
                 executable.Path,
                 WithNativeExtractionLimits(
@@ -1165,6 +1167,8 @@ public sealed partial class ZpaqService
                     var treeScan = Stopwatch.StartNew();
 #if KEEPVAULT_MACOS
                     DirectoryTreeMeasurement measurement = macStaging.MeasureTree(allowWriters: true);
+                    ArchiveOperationPolicy.Current.RequireRemainingExtractionCapacity(
+                        macStaging.GetFreeDiskSpaceBytes(), measurement.TotalBytes);
 #else
                     DirectoryTreeMeasurement measurement = windowsStaging?.MeasureTree(allowWriters: true)
                         ?? WindowsExtractionStaging.MeasureTreeNoFollow(stagingDirectory, allowWriters: true);

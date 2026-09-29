@@ -1,0 +1,48 @@
+{
+  "results": [
+    {
+      "id": "resources.cpu-worker-budget",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.016
+    },
+    {
+      "id": "spec.lockfile-runtimes",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.352
+    },
+    {
+      "id": "crypto.v13-parallel-mac-kat",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.467
+    },
+    {
+      "id": "crypto.per-chunk-nonces",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 67.072
+    },
+    {
+      "id": "entropy.rev9-golden",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.283
+    },
+    {
+      "id": "entropy.rev9-lifecycle",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 1.039
+    },
+    {
+      "id": "gui.entropy-rev9-phases-cancel",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 9.486
+    }
+  ],
+  "binary_files_unchanged": true,
+  "finished_utc": "2026-09-29T08:04:56.873733+00:00"
+}

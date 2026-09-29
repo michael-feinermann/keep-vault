@@ -1,0 +1,19 @@
+{
+  "architecture": "arm64",
+  "F_DUPFD_CLOEXEC": 67,
+  "results": [
+    {
+      "signature": "incorrect-fixed-three",
+      "requested_minimum_fd": 300,
+      "result_fd": 4,
+      "errno": 0
+    },
+    {
+      "signature": "correct-variadic-two",
+      "requested_minimum_fd": 300,
+      "result_fd": 300,
+      "errno": 0
+    }
+  ],
+  "reference": "https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms"
+}

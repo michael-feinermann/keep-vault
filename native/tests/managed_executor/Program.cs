@@ -21,6 +21,7 @@ internal static unsafe class Program
 
     private static int Main(string[] args)
     {
+        if (args is ["--qos-only"]) { QosChecks.Run(); return 0; }
         if (args.Length != 1) throw new ArgumentException("Native directory required.");
         string root = Path.GetFullPath(args[0]);
         nint x = NativeLibrary.Load(Path.Combine(root, "libxchachapoly_v13.dylib"));

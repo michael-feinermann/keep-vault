@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using KalynaArchiver.Services;
 using KalynaArchiver.Signing;
@@ -7,6 +8,7 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Parameters;
+using Microsoft.Win32.SafeHandles;
 
 internal static class VerifiedArchiveInputTests
 {
@@ -16,6 +18,7 @@ internal static class VerifiedArchiveInputTests
         new("io.verified-input-state", "disk input requires both global tags and revokes verifier view", StateAsync, TestResource.Light, "Security"),
         new("io.verified-input-ranges", "unaligned authenticated ranges and exact disk record framing", RangesAsync, TestResource.Light, "Security"),
         new("io.verified-input-descriptor-capture", "parallel multi-range captures retain descriptor ownership without buffered cursor races", DescriptorCaptureAsync, TestResource.ProcessGlobal, "Security"),
+        new("io.verified-input-read-only-seal", "kernel read-only handles replace capture writers and reject substitution before unlink", ReadOnlySealAsync, TestResource.ProcessGlobal, "Security"),
         new("io.verified-input-tamper", "spool, index, truncation, extension and cross-operation replay rejection", TamperAsync, TestResource.Light, "Security"),
         new("io.verified-input-private-copy", "verified private bytes survive later spool mutation; reread fails", PrivateCopyAsync, TestResource.Light, "Security"),
         new("io.verified-original", "plain original index avoids plaintext copy and rejects later source mutation", OriginalAsync, TestResource.Light, "Security"),
@@ -23,6 +26,126 @@ internal static class VerifiedArchiveInputTests
         new("io.verified-input-parallel-lifetime", "independent sealed range readers join before key and full-buffer cleanup", ParallelLifetimeAsync, TestResource.ProcessGlobal, "Security"),
         new("io.verified-input-cleanup-retry", "failed capture retains closed owners and retries cleanup before another capture", CleanupRetryAsync, TestResource.ProcessGlobal, "Security"),
     ];
+
+    private static async Task ReadOnlySealAsync()
+    {
+        using var fixture = new Fixture();
+        using (var attacker = await VerifiedArchiveInputAttack.CaptureAsync(fixture.Source, fixture.Policy, default))
+        {
+            Require(attacker.OriginalSpoolWriter.IsClosed && attacker.OriginalIndexWriter.IsClosed,
+                "Capture retained an original writable descriptor after sealing.");
+            RequireKernelReadOnly(Storage(attacker.Input, "_spool"));
+            RequireKernelReadOnly(Storage(attacker.Input, "_index"));
+            Require(!attacker.Spool.SafeFileHandle.IsClosed && !attacker.Index.SafeFileHandle.IsClosed,
+                "The adversarial pre-existing writers were accidentally closed by the product.");
+            await attacker.Input.VerifyGloballyAsync(fixture.VerifyAsync, default);
+            byte[] actual = new byte[fixture.Bytes.Length];
+            await attacker.Input.ReadExactlyAsync(actual);
+            Require(actual.AsSpan().SequenceEqual(fixture.Bytes), "Sealing changed the captured bytes.");
+            CryptographicOperations.ZeroMemory(actual);
+            Flip(attacker.Spool, 0);
+            attacker.Input.Position = 0;
+            await ExpectAsync<CryptographicException>(() => attacker.Input.ReadExactlyAsync(actual).AsTask());
+            Require(actual.AsSpan().IndexOfAnyExcept((byte)0) < 0,
+                "A pre-existing writer bypassed the post-seal authenticated read or its complete-slice wipe.");
+        }
+
+        SafeFileHandle? originalIndexWriter = null;
+        Action<VerifiedArchiveInput>? previous = VerifiedArchiveInput.BeforeSealForTests;
+        try
+        {
+            VerifiedArchiveInput.BeforeSealForTests = input => originalIndexWriter = Storage(input, "_index").SafeFileHandle;
+            using VerifiedArchiveInput original = await VerifiedArchiveInput.CaptureOriginalAsync(fixture.Source, fixture.Policy, default);
+            Require(originalIndexWriter is { IsClosed: true }, "Original-mode capture retained its index writer.");
+            RequireKernelReadOnly(Storage(original, "_index"));
+            RequireKernelReadOnly((FileStream)typeof(VerifiedArchiveInput).GetField("_original", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(original)!);
+            await original.VerifyGloballyAsync(fixture.VerifyAsync, default);
+        }
+        finally { VerifiedArchiveInput.BeforeSealForTests = previous; }
+        Require(Directory.GetFiles(fixture.Root).Length == 1, "Captured working objects retained public names.");
+
+        // Fail between complete capture and handle sealing. Both the writer
+        // and the separately owned reader must close; no capability may escape.
+        var handles = new List<SafeFileHandle>();
+        int owners = VerifiedArchiveInput.RetainedOwnersForTests;
+        VerifiedArchiveInput? failedInput = null;
+        try
+        {
+            VerifiedArchiveInput.BeforeSealForTests = input =>
+            {
+                failedInput = input;
+                foreach (string field in new[] { "_spool", "_index" })
+                {
+                    var storage = (BoundFileTransaction)typeof(VerifiedArchiveInput).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(input)!;
+                    handles.Add(storage.Stream.SafeFileHandle);
+                    handles.Add(((FileStream)typeof(BoundFileTransaction).GetField("_preparedReadOnly", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(storage)!).SafeFileHandle);
+                }
+                throw new IOException("injected before-seal failure");
+            };
+            await ExpectAsync<IOException>(async () => { using var unexpected = await fixture.CaptureAsync(); });
+        }
+        finally { VerifiedArchiveInput.BeforeSealForTests = previous; }
+        Require(handles.Count == 4 && handles.All(handle => handle.IsClosed)
+            && failedInput?.State == VerifiedArchiveInputState.Disposed
+            && VerifiedArchiveInput.RetainedOwnersForTests == owners,
+            "A failed seal retained a writer, reader or protected capture owner.");
+
+        // The only pathname reopen is before unlink and must resolve to the
+        // exact exclusively created object, without following a substituted link.
+        foreach (bool symlink in new[] { false, true })
+        {
+            string path = Path.Combine(fixture.Root, symlink ? "link-race" : "object-race");
+            string displaced = path + ".original";
+            string foreign = path + ".foreign";
+            byte[] sentinel = [0x42, 0x13, 0xA7, 0x5E];
+            File.WriteAllBytes(foreign, sentinel);
+            using BoundFileTransaction bound = BoundFileTransaction.CreateNew(path, 1, FileOptions.RandomAccess);
+            bound.Stream.Write(sentinel);
+            bound.Stream.Flush(true);
+            Action<string>? priorOpen = BoundFileTransaction.BeforeReadOnlyOpenForTests;
+            try
+            {
+                BoundFileTransaction.BeforeReadOnlyOpenForTests = openedPath =>
+                {
+                    Require(openedPath == path, "Identity-race fixture targeted an unrelated path.");
+                    File.Move(path, displaced);
+                    if (symlink) File.CreateSymbolicLink(path, foreign);
+                    else File.WriteAllBytes(path, sentinel);
+                };
+                Expect<IOException>(bound.PrepareReadOnly);
+                Expect<InvalidOperationException>(bound.SealReadOnly);
+                Expect<IOException>(bound.DeleteBound);
+            }
+            finally { BoundFileTransaction.BeforeReadOnlyOpenForTests = priorOpen; }
+            Require(File.ReadAllBytes(foreign).AsSpan().SequenceEqual(sentinel)
+                && File.ReadAllBytes(path).AsSpan().SequenceEqual(sentinel)
+                && File.ReadAllBytes(displaced).AsSpan().SequenceEqual(sentinel),
+                "Failed read-only binding modified a foreign or displaced object.");
+        }
+    }
+
+    private static void RequireKernelReadOnly(FileStream stream)
+    {
+        SafeFileHandle handle = stream.SafeFileHandle;
+        long length = RandomAccess.GetLength(handle);
+        int flags = DescriptorFlags(handle, 3); // macOS F_GETFL, no third argument
+        Require(!stream.CanWrite && flags >= 0 && (flags & 3) == 0, "A sealed descriptor still has kernel write authority.");
+        int descriptorFlags = DescriptorFlags(handle, 1); // F_GETFD
+        Require(descriptorFlags >= 0 && (descriptorFlags & 1) != 0, "A sealed descriptor can leak across exec.");
+        // Calling libc, instead of FileStream, proves the underlying FD itself
+        // rejects writes; a read-only managed wrapper over O_RDWR cannot pass.
+        Require(DescriptorWrite(handle, [0x7B], 1, 0) == -1 && Marshal.GetLastPInvokeError() == 9,
+            "The sealed FD allowed pwrite or failed for a reason other than EBADF.");
+        Require(DescriptorTruncate(handle, 0) == -1, "The sealed FD allowed ftruncate.");
+        Require(RandomAccess.GetLength(handle) == length, "A denied descriptor mutation changed the length.");
+    }
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "fcntl", SetLastError = true)]
+    private static extern int DescriptorFlags(SafeFileHandle handle, int command);
+    [DllImport("libSystem.B.dylib", EntryPoint = "pwrite", SetLastError = true)]
+    private static extern nint DescriptorWrite(SafeFileHandle handle, byte[] bytes, nuint count, long offset);
+    [DllImport("libSystem.B.dylib", EntryPoint = "ftruncate", SetLastError = true)]
+    private static extern int DescriptorTruncate(SafeFileHandle handle, long length);
 
     private static async Task DescriptorCaptureAsync()
     {
@@ -225,10 +348,11 @@ internal static class VerifiedArchiveInputTests
         using var fixture = new Fixture();
         foreach (string mutation in new[] { "spool", "hmac", "skein", "index", "length", "truncate-spool", "append-spool", "truncate-index", "append-index", "replay" })
         {
-            using VerifiedArchiveInput input = await fixture.CaptureAsync();
+            using VerifiedArchiveInputAttack attacker = await VerifiedArchiveInputAttack.CaptureAsync(fixture.Source, fixture.Policy, default);
+            VerifiedArchiveInput input = attacker.Input;
             await input.VerifyGloballyAsync(fixture.VerifyAsync, default);
-            FileStream spool = Storage(input, "_spool");
-            FileStream index = Storage(input, "_index");
+            FileStream spool = attacker.Spool;
+            FileStream index = attacker.Index;
             switch (mutation)
             {
                 case "spool": Flip(spool, 10); break;
@@ -260,11 +384,12 @@ internal static class VerifiedArchiveInputTests
     private static async Task PrivateCopyAsync()
     {
         using var fixture = new Fixture();
-        using VerifiedArchiveInput input = await fixture.CaptureAsync();
+        using VerifiedArchiveInputAttack attacker = await VerifiedArchiveInputAttack.CaptureAsync(fixture.Source, fixture.Policy, default);
+        VerifiedArchiveInput input = attacker.Input;
         await input.VerifyGloballyAsync(fixture.VerifyAsync, default);
         byte[] output = new byte[113];
         await input.ReadAtAsync(output, 0, default);
-        Flip(Storage(input, "_spool"), 0);
+        Flip(attacker.Spool, 0);
         Require(output.AsSpan().SequenceEqual(fixture.Bytes.AsSpan(0, output.Length)), "A caller's authenticated buffer aliases the mutable spool.");
         await ExpectAsync<CryptographicException>(async () => { await input.ReadAtAsync(new byte[113], 0, default); });
     }

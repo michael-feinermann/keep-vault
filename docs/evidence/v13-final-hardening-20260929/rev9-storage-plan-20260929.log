@@ -1,0 +1,20 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+
+FAIL combined per-volume space budgets and descriptor-bound filesystem approval
+  seed=0x5EED0313
+  IOException: The working directory's iCloud status could not be verified.
+   at KalynaArchiver.Services.MacOperationVolume.RequireNotUbiquitous(String path)
+   at KalynaArchiver.Services.MacOperationVolume.Inspect(String directory, Boolean workingDirectory)
+   at OperationStoragePolicyTests.RunAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/OperationStoragePolicyTests.cs:line 37
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "resources.operation-storage-plan" --seed 0x5EED0313
+
+
+1 macOS groups: 0 passed, 1 failed, 0 blocked.
+wall clock 0,1s; sum of test times 0,0s; parallel speedup 0,12x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL resources.operation-storage-plan — combined per-volume space budgets and descriptor-bound filesystem approval

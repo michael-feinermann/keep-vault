@@ -1,0 +1,29 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+
+FAIL kernel read-only handles replace capture writers and reject substitution before unlink
+  seed=0x5EED0313
+  IOException: Cannot retain the attacker's pre-sealing descriptor.
+   at VerifiedArchiveInputAttack.DuplicateWriter(SafeFileHandle source) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedArchiveInputAttack.cs:line 47
+   at VerifiedArchiveInputAttack.<>c__DisplayClass20_0.<CaptureAsync>b__0(VerifiedArchiveInput input) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedArchiveInputAttack.cs:line 25
+   at KalynaArchiver.Services.VerifiedArchiveInput.Capture(String path, ArchiveOperationPolicy policy, Boolean copyCiphertext, CancellationToken token)
+   at KalynaArchiver.Services.VerifiedArchiveInput.<>c__DisplayClass43_0.<CaptureAsync>b__0()
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at VerifiedArchiveInputAttack.CaptureAsync(String path, ArchiveOperationPolicy policy, CancellationToken token) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedArchiveInputAttack.cs:line 30
+   at VerifiedArchiveInputTests.ReadOnlySealAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedArchiveInputTests.cs:line 33
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "io.verified-input-read-only-seal" --seed 0x5EED0313
+
+
+1 macOS groups: 0 passed, 1 failed, 0 blocked.
+wall clock 0,3s; sum of test times 0,2s; parallel speedup 0,65x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL io.verified-input-read-only-seal — kernel read-only handles replace capture writers and reject substitution before unlink

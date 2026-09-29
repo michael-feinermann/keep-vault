@@ -188,6 +188,7 @@ public sealed partial class RecoveryService
         using IDisposable cpuScope = lease.EnterScope();
         Parallel.For(start, end, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = lease.Workers }, index =>
         {
+            using var qos = MacCpuWorkerQos.EnterSynchronousScope();
             bool previous = InsideRecoveryWorker.Value;
             InsideRecoveryWorker.Value = true;
             try { action(index); }
@@ -421,6 +422,9 @@ public sealed partial class RecoveryService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        string fullArchivePath = Path.GetFullPath(archivePath);
+        using IDisposable recoveryPolicy = ArchiveOperationPolicy.Current.ForRecovery(
+            Path.GetDirectoryName(GetRecoveryPath(fullArchivePath)) ?? Environment.CurrentDirectory).EnterScope();
         using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
             ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
         using IDisposable memoryScope = memory.EnterScope();
@@ -429,7 +433,6 @@ public sealed partial class RecoveryService
         using var ioScope = new RecoveryIoScope();
         if (ArchiveOperationPolicy.Current.MaxRecoveryBytes < PrefixLocatorBytes + SuffixLocatorBytes)
             throw new IOException("The approved recovery budget is too small for KPAR2 locator framing.");
-        string fullArchivePath = Path.GetFullPath(archivePath);
         string recoveryPath = GetRecoveryPath(fullArchivePath);
         string recoveryDirectory = Path.GetDirectoryName(recoveryPath) ?? Environment.CurrentDirectory;
         string temporaryPath = Path.Combine(
@@ -522,6 +525,7 @@ public sealed partial class RecoveryService
                     progress))
                 {
                     FileStream recovery = sidecarTransaction.Stream;
+                    ArchiveOperationPolicy.Current.RequireBoundOutputFileVolume(recovery.SafeFileHandle, estimatedSidecarBytes);
                     await WriteZeroBytesAsync(recovery, PrefixLocatorBytes, cancellationToken).ConfigureAwait(false);
 
                     if (headerLength > 0)
@@ -1038,13 +1042,15 @@ public sealed partial class RecoveryService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        string fullArchivePath = Path.GetFullPath(archivePath);
+        using IDisposable recoveryPolicy = ArchiveOperationPolicy.Current.ForRecovery(
+            Path.GetDirectoryName(fullArchivePath) ?? Environment.CurrentDirectory).EnterScope();
         using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
             ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
         using IDisposable memoryScope = memory.EnterScope();
         cancellationToken = memory.Token;
         using IDisposable metadataBudget = RecoveryMetadataBudget.Begin(ArchiveOperationPolicy.Current.MaxMetadataBytes);
         using var ioScope = new RecoveryIoScope();
-        string fullArchivePath = Path.GetFullPath(archivePath);
         if (expectedMode == RecoveryProtectionMode.ErrorCorrectionOnly
             && string.Equals(
                 Path.GetExtension(fullArchivePath),
@@ -1196,6 +1202,7 @@ public sealed partial class RecoveryService
                 FileOptions.RandomAccess | FileOptions.WriteThrough);
             candidateCreatedByThisOperation = true;
             FileStream candidate = candidateObject.Stream;
+            ArchiveOperationPolicy.Current.RequireBoundOutputFileVolume(candidate.SafeFileHandle, package.Manifest.ArchiveLength);
             {
                 int unreadableBlocks = await CopyArchiveForRecoveryAsync(
                     archiveSource,

@@ -42,8 +42,6 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
     private const string UnixSocketName = "canary.sock";
     private const string CanaryMarker = "keepvault_sandbox_canary=verified";
     private const int FGetFd = 1;
-    private const int FSetFd = 2;
-    private const int FdCloseOnExec = 1;
     private const int ErrNoEntry = 2;
     private const ushort OwnerDirectoryMode = 0x01C0; // 0700
     private const ushort OwnerFileMode = 0x0180;      // 0600
@@ -371,10 +369,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
             UnixSocketName);
 
         int inheritedDescriptor = GetDescriptor(_inheritedDescriptor!.SafeFileHandle);
-        if (Fcntl(inheritedDescriptor, FSetFd, 0) != 0)
-        {
-            throw new Win32Exception(Marshal.GetLastPInvokeError(), "Could not make the ZPAQ canary descriptor inheritable.");
-        }
+        MacSafeFileSystem.SetCloseOnExec(_inheritedDescriptor!.SafeFileHandle, enabled: false);
 
         var canaryArguments = new[]
         {
@@ -421,10 +416,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
             var cleanupFailures = new List<Exception>();
             try
             {
-                if (Fcntl(inheritedDescriptor, FSetFd, FdCloseOnExec) != 0)
-                {
-                    throw new Win32Exception(Marshal.GetLastPInvokeError(), "Could not restore close-on-exec for the ZPAQ canary descriptor.");
-                }
+                MacSafeFileSystem.SetCloseOnExec(_inheritedDescriptor!.SafeFileHandle, enabled: true);
             }
             catch (Exception exception)
             {
@@ -1189,9 +1181,6 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
 
     [LibraryImport("libSystem.B.dylib", EntryPoint = "geteuid")]
     private static partial uint GetEuid();
-
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "fcntl", SetLastError = true)]
-    private static partial int Fcntl(int descriptor, int command, int argument);
 
     [LibraryImport("libSystem.B.dylib", EntryPoint = "shm_open", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
     private static partial int ShmOpen(string name, int flags, int mode);

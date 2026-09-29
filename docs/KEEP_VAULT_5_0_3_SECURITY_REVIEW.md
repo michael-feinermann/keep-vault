@@ -1,6 +1,6 @@
 # Keep Vault 5.0.3: Sicherheitsreview
 
-Stand: 28.09.2026, Umsetzung und laufende Prüfung auf macOS. Kein externer Audit, keine Zusicherung der Lückenfreiheit.
+Stand: 29.09.2026, Umsetzung und laufende Prüfung auf macOS. Kein externer Audit, keine Zusicherung der Lückenfreiheit.
 
 ## Geprüfte Änderungen
 
@@ -28,6 +28,8 @@ Im Review wurden konkrete Fehler korrigiert: nichtkanonische Base64-Header, unvo
 
 Der sichere Eingabepfad verwendet eigene geprüfte Bereichspuffer und einen versiegelten Index auf dem Datenträger. Parallele Leser werden vor Schlüssellöschung und Freigabe der vollständigen Pufferkapazität beendet. Fehlgeschlagene Bereinigung behält den Besitzer und verhindert eine neue Aufnahme bis zum erfolgreichen Wiederholungsversuch. Die 19 gezielten Eingabe-/Metadaten-/Ressourcengruppen sind mit einzeln signierten Entwicklungs-Natives bestanden; zwei zuvor fehlerhafte Reflection-Testhelper wurden korrigiert und erfolgreich wiederholt. Das ersetzt den abschließenden Lauf mit den exakten Paketbytes nicht.
 
+Der Abschlussreview am 29.09.2026 fand einen weiteren konkreten REV9-Abweichungspunkt: Die eigenen Schreibhandles von Spool und Index blieben nach Capture offen. Der Quellstand bindet jetzt auf macOS vor dem frühen Unlink eigenständige `O_RDONLY`-Handles an dieselben exklusiv erstellten Objekte. Nach Workerjoin, Durability-Flush und Längenprüfung werden die eigenen Schreibhandles geschlossen; für die Leser folgt keine erneute Namensauflösung. Die neue Regression prüft tatsächliche Kernelrechte und weiterhin mögliche Angriffe über fremde Schreibhandles. Ein nur lesbarer Streamwrapper genügt der Prüfung nicht. Der gemeinsame neue Build und die Laufnachweise dieses Übergangs sind noch ausstehend; ältere PASS-Läufe werden ihm nicht zugerechnet.
+
 Zusätzlich bestanden je 10.000 reproduzierbare variierte Fälle für geschützte Eingabespeicher, Streaming-Recoverymetadaten und den verwalteten Read-at-Server. Der native Read-at-Reader bestand je 10.000 Fälle auf ARM64, x64/Rosetta und ARM64 mit ASan/UBSan. Feste Orakel, Canaries und gezielte Negativfälle bleiben neben diesen Läufen erhalten. Die Seed-, Größen- und Evidenzgrenzen stehen im [IO-Bericht](KEEP_VAULT_5_0_3_MULTITB_TEST_REPORT.md).
 
 Der spätere Mehrchunk-Kryptotest fand außerdem einen Capturefehler mit `Invalid argument`. Beim Quellreview zeigte sich, dass die parallelen Worker denselben `FileStream.SafeFileHandle`-Getter nach einer gepufferten Magic-Lesung verwendeten. Der Getter verändert über Flush/Seek den gemeinsamen Lesecursor und konnte dadurch parallel mehrfach zurücksetzen. Der Eingabepfad bindet jetzt die Handleobjekte einmal vor Beginn; auch Magic, Länge und EOF verwenden ausschließlich positionsgebundene Operationen. Quellenidentität, lokale Doppel-MACs und globale Freigabe werden weiterhin geprüft. Die neue Regression verarbeitet dreimal 32 MiB + 37 Byte mit vollständigem Bytevergleich und besteht nach dem neuen Build in 3,162 Sekunden. Auch der ursprüngliche Mehrchunktest über alle zwölf Suites besteht nun in 51,609 Sekunden. Beide Läufe verwenden Seed `0x5EED0313`; die tatsächlichen DLL-/Nativehashes und getrennten früheren Fehlerprotokolle sind im [IO-Nachweis](evidence/v13-io-rev9-20260928/evidence-manifest.json) erhalten. Die älteren 19+3 PASS-Gruppen werden nicht rückwirkend dieser späteren Änderung zugeordnet.
@@ -35,6 +37,8 @@ Der spätere Mehrchunk-Kryptotest fand außerdem einen Capturefehler mit `Invali
 Die REV9-Entropiekette hat neue unabhängig erzeugte öffentliche Referenzwerte. Historische Shufflewerte existierten vor 5.0.3 nicht. Beide Fisher-Yates-Durchläufe, SHA3-/SHA512-Replay, Finalisierung, OS-XOR-Rollen und Löschbarrieren werden getrennt geprüft. Details stehen im [Shufflebericht](KEEP_VAULT_5_0_3_POOL_SHUFFLE_REV9_REVIEW.md).
 
 Der aktuelle Installationsprüfer wurde zusätzlich von der bisherigen Buildnummer 13 auf die neue Buildnummer 14 korrigiert. Der Schutz gegen alte oder gemischte Paketsätze bleibt dabei strikt; Versionsnummer und Containerformat sind getrennte Werte.
+
+Der zusätzliche Altpfadreview fand eine Darwin-ARM64-ABI-Abweichung im bisherigen `F_SETFD`-Aufruf. Descriptorvererbung wird nun mit den argumentlosen SDK-ioctl-Kommandos gesetzt und unabhängig über `F_GETFD` geprüft. Die freien Bytes stammen aus dem gehaltenen Descriptor und dem 64-Bit-`fstatfs`-Layout; das bisherige 32-Bit-`statvfs`-Feld entfällt. Vor ersten Recovery-Ausgabewrites werden auch die tatsächlich geöffneten Sidecar- und Reparaturhandles gegen die freigegebene Volumeidentität, Dateisystemflags und den kombinierten Platzbedarf geprüft. Die Pfadvorprüfung allein reicht dafür nicht.
 
 ## Grenzen
 

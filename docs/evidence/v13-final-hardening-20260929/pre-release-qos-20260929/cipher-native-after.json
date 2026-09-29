@@ -1,0 +1,11 @@
+{
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libaes_ref.dylib": "F0DAD7807456AE59D5CC0B471933081A5AAA992C459F784B40858BFF3D5DE34F",
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libargon2_ref.dylib": "A5D20AFE53CBBC6504F2B364ED28911D7E2D31A6B9A24ECAF7BDEAC2034DE039",
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libcamellia_v13.dylib": "2406EF353A627CBF3F1EF030D93EBE3AB11287E8CDF79B01F527B8AF26EBEF0E",
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libkalyna_v13.dylib": "1D0C22112C2D4A94E7C3792999D2E5A9E78E6A2D03A92DDDDE2337D8D015BF92",
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libmars_ref.dylib": "FFB679B0D6AFF77AF0EA40D069A6704CEB14446CF86E0F9ABF55308C11608E71",
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libserpent_v13.dylib": "2AE8C5FCF8893D32B06B19087A80633ECEB067DA061BB30BDA09509F8DA1C751",
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libshacal2_ref.dylib": "9930E72E935B2D7EDCB3E5DE3D1CA5663B7CC2233FC7073A25CA9377163C5113",
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libthreefish_ref.dylib": "7899D0334C23D9F78423F19713C9BBE8DD6875255191711CE18E648C65CD87A6",
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64/libxchachapoly_v13.dylib": "7CE5062DE2AADB34A66CE5FB6D7418765817576B5F5B6ED44A934D03808A099A"
+}

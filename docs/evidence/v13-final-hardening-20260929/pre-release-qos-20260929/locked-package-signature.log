@@ -1,0 +1,7 @@
+
+"Microsoft.NET.ILLink.Tasks.10.0.11" wird überprüft.
+Inhaltshash: B7ClIZRv1IyPQV3XQO8UbGg9iGm1hggC/WR7kXV8dRu3KAfphANlMoYqZRciLiDpPmwUZac7orR9EKOMvVCYgg==
+
+error: NU3004: Das Paket ist nicht signiert.
+
+Fehler beim Überprüfen der Paketsignatur.

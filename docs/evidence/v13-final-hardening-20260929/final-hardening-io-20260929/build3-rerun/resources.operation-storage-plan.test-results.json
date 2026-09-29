@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "3dde04c28751feda28a12b6c7e78be139747c4c1",
+  "testInventoryHash": "dc0ed328f3efea24176e864c501324940f21b74d7185a2803a857b75b931b215",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "resources.operation-storage-plan",
+      "name": "combined per-volume space budgets and descriptor-bound filesystem approval",
+      "status": "PASS",
+      "seconds": 0.013,
+      "peakRssMiB": 62,
+      "seed": "0x5EED0313",
+      "failure": null
+    }
+  ]
+}

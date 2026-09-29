@@ -69,7 +69,7 @@ internal static class CpuWorkBudget
         ArgumentNullException.ThrowIfNull(actions);
         if (IsOwnedByCurrentContext)
         {
-            foreach (Action action in actions) { token.ThrowIfCancellationRequested(); action(); }
+            foreach (Action action in actions) { token.ThrowIfCancellationRequested(); RunSynchronousWorker(action); }
             return;
         }
         int maximum = ArchiveOperationPolicy.Current.MaxCpuWorkers;
@@ -85,7 +85,7 @@ internal static class CpuWorkBudget
                 {
                     using Lease cpu = await AcquireAsync(maximum, 1, token).ConfigureAwait(false);
                     using IDisposable scope = cpu.EnterScope();
-                    token.ThrowIfCancellationRequested(); action();
+                    token.ThrowIfCancellationRequested(); RunSynchronousWorker(action);
                 }, token);
             }
         }
@@ -98,6 +98,12 @@ internal static class CpuWorkBudget
             catch (Exception error) { failure ??= error; }
         }
         if (failure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+    }
+
+    private static void RunSynchronousWorker(Action action)
+    {
+        using var qos = MacCpuWorkerQos.EnterSynchronousScope();
+        action();
     }
 
     // Pure arithmetic seam permits >1024-worker validation without creating
@@ -155,7 +161,32 @@ internal static class CpuWorkBudget
     }
 }
 
-/// <summary>Runtime process ceiling plus fresh macOS enabled-core availability.</summary>
+/// <summary>
+/// A point-in-time OS observation, not an affinity map or a promise of dedicated
+/// CPUs. Performance-level indexes are OS ranks (zero is highest), not invented
+/// P/E, processor-group or NUMA identities. Missing fields remain unknown.
+/// </summary>
+internal sealed record CpuTopologySnapshot(
+    int ProcessLimit,
+    int AvailableWorkers,
+    int? EnabledLogicalProcessors,
+    int? EnabledPhysicalProcessors,
+    bool ChangedDuringRead,
+    IReadOnlyList<CpuPerformanceLevel> PerformanceLevels)
+{
+    internal bool? HasSimultaneousMultithreading =>
+        !ChangedDuringRead && EnabledLogicalProcessors is int logical && EnabledPhysicalProcessors is int physical
+            ? logical > physical : null;
+}
+
+internal sealed record CpuPerformanceLevel(int Rank, int? EnabledLogicalProcessors, int? EnabledPhysicalProcessors)
+{
+    internal bool? HasSimultaneousMultithreading =>
+        EnabledLogicalProcessors is int logical && EnabledPhysicalProcessors is int physical && physical > 0
+            ? logical > physical : null;
+}
+
+/// <summary>Fresh documented macOS counts, constrained by the runtime process ceiling.</summary>
 internal static class CpuTopology
 {
     // No product configuration exposes this synthetic topology seam.
@@ -166,16 +197,74 @@ internal static class CpuTopology
         {
             Func<int>? synthetic = Volatile.Read(ref AvailabilityForTests);
             if (synthetic is not null) return Math.Max(1, synthetic());
-            int processLimit = Math.Max(1, Environment.ProcessorCount);
-            if (!OperatingSystem.IsMacOS()) return processLimit;
-            // hw.logicalcpu is Apple's enabled logical-core count, also exposed
-            // as hw.activecpu. It does not describe a thread's affinity hint or
-            // promise dedicated CPU time. Keep the runtime process ceiling.
-            nuint bytes = sizeof(int);
-            int status = sysctlbyname("hw.logicalcpu", out int enabled, ref bytes, IntPtr.Zero, 0);
-            return status == 0 && bytes == sizeof(int) && enabled > 0
-                ? Math.Min(processLimit, enabled) : processLimit;
+            return Capture().AvailableWorkers;
         }
+    }
+
+    internal static CpuTopologySnapshot Capture()
+    {
+        int processLimit = Math.Max(1, Environment.ProcessorCount);
+        return OperatingSystem.IsMacOS()
+            ? ReadMacSnapshot(processLimit, ReadInt32)
+            : new CpuTopologySnapshot(processLimit, processLimit, null, null, false, Array.Empty<CpuPerformanceLevel>());
+    }
+
+    // Pure source seam: tests exercise the exact production interpretation of
+    // missing, changing, malformed, homogeneous and heterogeneous OS counts.
+    internal static CpuTopologySnapshot ReadMacSnapshot(int processLimit, Func<string, int?> read)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(processLimit, 1);
+        ArgumentNullException.ThrowIfNull(read);
+        int? logical = Positive(read("hw.logicalcpu"));
+        int? physical = Positive(read("hw.physicalcpu"));
+        int? maximumLogical = Positive(read("hw.logicalcpu_max"));
+        int? levelCount = Positive(read("hw.nperflevels"));
+        CpuPerformanceLevel[] levels = [];
+        // A core type requires at least one possible core. This bound follows
+        // OS-reported hardware size, not a fixed 64/1024-worker array limit.
+        int possibleCores = maximumLogical ?? logical ?? processLimit;
+        if (levelCount is int count && count <= possibleCores && count <= Array.MaxLength)
+        {
+            levels = new CpuPerformanceLevel[count];
+            for (int index = 0; index < count; ++index)
+            {
+                string prefix = "hw.perflevel" + index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                int? levelLogical = Nonnegative(read(prefix + ".logicalcpu"));
+                int? levelPhysical = Nonnegative(read(prefix + ".physicalcpu"));
+                if (levelLogical > possibleCores) levelLogical = null;
+                if (levelPhysical > possibleCores || levelPhysical > levelLogical
+                    || (levelPhysical == 0 && levelLogical > 0)) levelPhysical = null;
+                levels[index] = new CpuPerformanceLevel(index, levelLogical, levelPhysical);
+            }
+        }
+        int? finalLogical = Positive(read("hw.logicalcpu"));
+        int? finalPhysical = Positive(read("hw.physicalcpu"));
+        bool changed = logical != finalLogical || physical != finalPhysical;
+        // sysctl reads are not an atomic topology transaction. If the host
+        // changes mid-read, grant only the smaller observed logical capacity
+        // and withhold derived SMT/performance-level metadata until next read.
+        int? conservativeLogical = logical is int first && finalLogical is int last
+            ? Math.Min(first, last) : logical ?? finalLogical;
+        if (changed)
+        {
+            physical = null;
+            levels = [];
+        }
+        else if (physical > conservativeLogical)
+            physical = null;
+        return new CpuTopologySnapshot(processLimit,
+            Math.Min(processLimit, conservativeLogical ?? processLimit), conservativeLogical, physical, changed,
+            Array.AsReadOnly(levels));
+    }
+
+    private static int? Positive(int? value) => value > 0 ? value : null;
+    private static int? Nonnegative(int? value) => value >= 0 ? value : null;
+
+    private static int? ReadInt32(string name)
+    {
+        nuint bytes = sizeof(int);
+        int status = sysctlbyname(name, out int value, ref bytes, IntPtr.Zero, 0);
+        return status == 0 && bytes == sizeof(int) ? value : null;
     }
 
     [DllImport("/usr/lib/libSystem.B.dylib", CallingConvention = CallingConvention.Cdecl)]

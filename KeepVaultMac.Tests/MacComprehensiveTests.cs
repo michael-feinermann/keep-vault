@@ -280,7 +280,7 @@ internal static partial class MacComprehensiveTests
                 descriptorQueryObserved = true;
                 Require(
                     observed.SameObject(expectedIdentity),
-                    "fstatvfs ran against a descriptor other than the held extraction staging directory.");
+                    "fstatfs ran against a descriptor other than the held extraction staging directory.");
             };
             MacExtractionStaging.TestHookBeforeFreeSpaceQuery = () =>
             {
@@ -292,7 +292,7 @@ internal static partial class MacComprehensiveTests
             RequireThrows<IOException>(
                 () => activeStaging.GetFreeDiskSpaceBytes(),
                 "The free-space gate accepted a replacement staging pathname after its descriptor query.");
-            Require(descriptorQueryObserved, "The free-space gate did not execute fstatvfs on the held descriptor.");
+            Require(descriptorQueryObserved, "The free-space gate did not execute fstatfs on the held descriptor.");
             string canary = Path.Combine(activeStaging.StagingPath, "foreign-canary");
             Require(
                 File.Exists(canary) && File.ReadAllText(canary) == "must survive",
@@ -719,24 +719,7 @@ internal static partial class MacComprehensiveTests
         return candidates.FirstOrDefault(Directory.Exists);
     }
 
-    private static string RepositoryRoot()
-    {
-        string[] bases = [AppContext.BaseDirectory, Environment.CurrentDirectory];
-        foreach (string baseDir in bases)
-        {
-            for (string? directory = baseDir;
-                directory is not null;
-                directory = Path.GetDirectoryName(directory))
-            {
-                if (Directory.Exists(Path.Combine(directory, ".git")))
-                {
-                    return directory;
-                }
-            }
-        }
-
-        return AppContext.BaseDirectory;
-    }
+    private static string RepositoryRoot() => RepositoryLayout.FindRepositoryRoot();
 
     private static bool IsMachO(string path)
     {

@@ -1,0 +1,42 @@
+{
+  "results": [
+    {
+      "id": "io.verified-input-read-only-seal",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.99
+    },
+    {
+      "id": "io.verified-input-tamper",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.981
+    },
+    {
+      "id": "io.verified-input-private-copy",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.451
+    },
+    {
+      "id": "fuzz.verified-input-10000",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 103.683
+    },
+    {
+      "id": "resources.operation-storage-plan",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.013
+    },
+    {
+      "id": "zpaq.free-space-descriptor",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.005
+    }
+  ],
+  "binary_files_unchanged": true,
+  "finished_utc": "2026-09-29T08:02:40.396855+00:00"
+}

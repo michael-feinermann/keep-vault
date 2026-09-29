@@ -37,7 +37,14 @@ var smokeTests = new List<TestCase>
     new("smoke.native-snapshot-cleanup-identity", "native snapshot cleanup preserves a replacement directory", TestNativeSnapshotCleanupIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
 };
 
-return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests.Concat(EntropyRev9Tests.All).Concat(MacPhasePerformanceTests.All).ToArray()).ConfigureAwait(false);
+// This requested macOS campaign processes at most 256 MiB per ordinary test,
+// plus the explicit 512-MiB Paranoia tree. A 1-GiB public extraction allowance
+// bounds both cases; production defaults and all KDF costs remain unchanged.
+using IDisposable testStoragePolicy = new ArchiveOperationPolicy(
+    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KeepVault", "Work"),
+    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    maxExtractedTotalBytes: 1L << 30, maxSingleFileBytes: 1L << 30).EnterScope();
+return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests.Concat(EntropyRev9Tests.All).Concat(MacPhasePerformanceTests.All).Concat(OperationStoragePolicyTests.Tests).ToArray()).ConfigureAwait(false);
 
 static Task TestSha3Async()
 {

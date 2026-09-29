@@ -1,0 +1,2 @@
+Unhandled exception. System.Exception: set test class
+   at Program.Main() in /Users/michael/Developer/GPT-Codex/Kalyna/native/tests/managed_qos/Program.cs:line 102

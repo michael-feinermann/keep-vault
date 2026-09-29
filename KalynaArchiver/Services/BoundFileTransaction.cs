@@ -1,4 +1,6 @@
 using System.IO;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Runtime.ExceptionServices;
 using Microsoft.Win32.SafeHandles;
 
@@ -14,8 +16,58 @@ internal sealed class BoundFileTransaction : IDisposable
     private readonly string _parentPath;
     private readonly WindowsFileIdentity _identity;
     private FileStream? _stream;
+    private FileStream? _preparedReadOnly;
     private string _currentPath;
     private bool _deleted;
+
+    internal void PrepareReadOnly()
+    {
+        if (_deleted || _preparedReadOnly is not null || !Stream.CanWrite)
+            throw new InvalidOperationException("Read-only preparation requires a named writable transaction.");
+        // Unlike Unix dup, Windows DuplicateHandle can reduce the kernel access
+        // mask. Do not use DUPLICATE_SAME_ACCESS, which would retain write access.
+        nint process = new(-1); // GetCurrentProcess pseudo handle.
+        if (!DuplicateHandle(process, Stream.SafeFileHandle, process, out SafeFileHandle readerHandle,
+            0x80000000, false, 0)) // GENERIC_READ only; no WRITE/DELETE rights.
+        {
+            int error = Marshal.GetLastPInvokeError();
+            readerHandle?.Dispose();
+            throw new IOException("The working file could not acquire a reduced-access read-only handle.", new Win32Exception(error));
+        }
+        FileStream? reader = null;
+        try
+        {
+            if (WindowsSafeFileSystem.GetIdentity(readerHandle) != _identity)
+                throw new IOException("The read-only handle identifies a different working file.");
+            reader = new FileStream(readerHandle, FileAccess.Read, 1, isAsync: Stream.IsAsync);
+            _preparedReadOnly = reader;
+        }
+        catch (Exception failure)
+        {
+            try { if (reader is not null) reader.Dispose(); else readerHandle.Dispose(); }
+            catch (Exception cleanupFailure)
+            {
+                throw new AggregateException("Read-only binding failed and its reader could not be closed.", failure, cleanupFailure);
+            }
+            throw;
+        }
+    }
+
+    internal void SealReadOnly()
+    {
+        FileStream reader = _preparedReadOnly
+            ?? throw new InvalidOperationException("No bound read-only handle was prepared.");
+        Stream.Dispose();
+        _stream = reader;
+        _preparedReadOnly = null;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DuplicateHandle(nint sourceProcess, SafeFileHandle source,
+        nint targetProcess, out SafeFileHandle target, uint desiredAccess,
+        [MarshalAs(UnmanagedType.Bool)] bool inheritHandle, uint options);
 
     private BoundFileTransaction(
         string path,
@@ -248,7 +300,8 @@ internal sealed class BoundFileTransaction : IDisposable
 
     public void Dispose()
     {
-        try { Interlocked.Exchange(ref _stream, null)?.Dispose(); }
-        finally { _parentHandle.Dispose(); }
+        SecureMemory.DisposeAll(_stream, _preparedReadOnly, _parentHandle);
+        _stream = null;
+        _preparedReadOnly = null;
     }
 }

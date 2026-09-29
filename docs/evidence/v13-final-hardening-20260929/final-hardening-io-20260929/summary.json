@@ -1,0 +1,132 @@
+{
+  "results": [
+    {
+      "id": "io.verified-input-domain-kats",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.4
+    },
+    {
+      "id": "io.verified-input-state",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.721
+    },
+    {
+      "id": "io.verified-input-ranges",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.519
+    },
+    {
+      "id": "io.verified-input-descriptor-capture",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 3.316
+    },
+    {
+      "id": "io.verified-input-read-only-seal",
+      "exit_code": 1,
+      "status": "FAIL",
+      "seconds": 0.22
+    },
+    {
+      "id": "io.verified-input-tamper",
+      "exit_code": 1,
+      "status": "FAIL",
+      "seconds": 0.261
+    },
+    {
+      "id": "io.verified-input-private-copy",
+      "exit_code": 1,
+      "status": "FAIL",
+      "seconds": 0.238
+    },
+    {
+      "id": "io.verified-original",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.418
+    },
+    {
+      "id": "io.verified-input-policy",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.021
+    },
+    {
+      "id": "io.verified-input-parallel-lifetime",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.416
+    },
+    {
+      "id": "io.verified-input-cleanup-retry",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.302
+    },
+    {
+      "id": "fuzz.verified-input-10000",
+      "exit_code": 1,
+      "status": "FAIL",
+      "seconds": 0.311
+    },
+    {
+      "id": "fuzz.recovery-streaming-10000",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 7.937
+    },
+    {
+      "id": "fuzz.verified-read-at-server-10000",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 1.686
+    },
+    {
+      "id": "recovery.kpar2-v4-adversarial",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 19.576
+    },
+    {
+      "id": "recovery.record-table-layout",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.237
+    },
+    {
+      "id": "recovery.record-table-tamper",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.258
+    },
+    {
+      "id": "recovery.record-table-budget",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.291
+    },
+    {
+      "id": "recovery.record-table-cleanup",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.288
+    },
+    {
+      "id": "recovery.streaming-metadata-canonical",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.221
+    },
+    {
+      "id": "containers.v13-production-worker-equivalence",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 18.458
+    }
+  ],
+  "binary_files_unchanged": true,
+  "finished_utc": "2026-09-29T07:53:08.942504+00:00"
+}

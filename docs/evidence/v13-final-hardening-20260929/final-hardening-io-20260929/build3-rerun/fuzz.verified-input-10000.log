@@ -1,0 +1,6 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+FULL PASS 10000 seeded sealed-spool states, mutations and guarded range oracles (103,7s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 103,8s; sum of test times 103,7s; parallel speedup 1,00x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json

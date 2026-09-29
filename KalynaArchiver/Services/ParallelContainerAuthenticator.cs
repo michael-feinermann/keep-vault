@@ -390,7 +390,7 @@ internal static class ParallelContainerAuthenticator
         {
             for (; completed < inputs.Length; completed++)
             {
-                results[completed] = ComputeLeaf(inputs[completed], sha3LeafKey, skeinLeafKey);
+                results[completed] = ComputeLeafWithQos(inputs[completed], sha3LeafKey, skeinLeafKey);
             }
 
             return results;
@@ -426,7 +426,7 @@ internal static class ParallelContainerAuthenticator
                         using CpuWorkBudget.Lease lease = await CpuWorkBudget.AcquireAsync(
                             ArchiveOperationPolicy.Current.MaxCpuWorkers, 1, cancellationToken).ConfigureAwait(false);
                         using IDisposable cpuScope = lease.EnterScope();
-                        return computeOverride is null ? ComputeLeaf(input, sha3LeafKey, skeinLeafKey) : computeOverride(input);
+                        return ComputeLeafWithQos(input, sha3LeafKey, skeinLeafKey, computeOverride);
                     },
                     cancellationToken);
             }
@@ -590,6 +590,27 @@ internal static class ParallelContainerAuthenticator
         }
 
         return combined.ToArray();
+    }
+
+    private static LeafResult ComputeLeafWithQos(
+        LeafInput input,
+        byte[] sha3LeafKey,
+        byte[] skeinLeafKey,
+        Func<LeafInput, LeafResult>? computeOverride = null)
+    {
+        LeafResult? result = null;
+        try
+        {
+            using (MacCpuWorkerQos.EnterSynchronousScope())
+                result = computeOverride is null ? ComputeLeaf(input, sha3LeafKey, skeinLeafKey) : computeOverride(input);
+            // Transfer tag ownership only after restoring the worker policy.
+            return result;
+        }
+        catch
+        {
+            result?.Dispose();
+            throw;
+        }
     }
 
     private static LeafResult ComputeLeaf(

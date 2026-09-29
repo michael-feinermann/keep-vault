@@ -43,6 +43,7 @@ internal sealed class ConsumedEntropySnapshot(
             {
                 using CpuWorkBudget.Lease cpu = CpuWorkBudget.AcquireAsync(policy.MaxCpuWorkers, 1, _cancel.Token).AsTask().GetAwaiter().GetResult();
                 using IDisposable cpuScope = cpu.EnterScope();
+                using var qos = MacCpuWorkerQos.EnterSynchronousScope();
                 Exception? poolFailure = null;
                 try
                 {

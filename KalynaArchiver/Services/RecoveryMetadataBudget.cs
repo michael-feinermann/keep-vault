@@ -27,6 +27,7 @@ internal sealed class RecoveryMetadataBudget
 
     internal static RecoveryMetadataBudget Capture(long maximum) => Ambient.Value ?? new(maximum);
     internal long ReservedBytes { get { lock (_gate) return _reserved; } }
+    internal static long CurrentReservedBytes => Ambient.Value?.ReservedBytes ?? 0;
 
     internal void Reserve(long bytes)
     {

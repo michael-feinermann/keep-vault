@@ -2,6 +2,8 @@
 
 Stand: 28.09.2026, Revision 9, macOS. Reale Tests sind auf ausdrücklichen Benutzerwunsch auf höchstens 256 MiB begrenzt. Eine zusätzliche Paranoia-Strukturrunde mit 512 MiB ist erlaubt: 256 MiB variierte Dateien/Verzeichnisse und eine einzelne 256-MiB-Datei. Dieser Bericht enthält keinen praktischen TiB-Durchsatznachweis.
 
+Ergänzung vom 29.09.2026: Der Quellstand schließt nach Capture nun die eigenen Schreibhandles und übernimmt zuvor identitätsgebundene echte Lesehandles. Die neue Gruppe `io.verified-input-read-only-seal` prüft Kernelrechte, geschlossene ursprüngliche Schreibhandles, weiter offene fremde Schreibhandles mit anschließender Manipulationsablehnung, Originalmodus, Objekt-/Symlinktausch vor dem Lese-Open und vollständiges Handle-/Besitzercleanup bei einem Fehler vor dem Übergang. Die bestehenden Tamper-, Private-Copy- und 10.000 Spoolfälle verwenden dafür eigene vor dem Übergang duplizierte Angreifer-Schreibhandles; ihre Ablehnungsassertions bleiben erhalten. Der gemeinsame neue Build und diese Wiederholungen sind noch ausstehend. Die folgenden älteren PASS-Nachweise gelten für die jeweils dokumentierten Binärstände.
+
 ## Ausgeführte Prüfungen
 
 | Prüfung | Umfang | Ergebnis |

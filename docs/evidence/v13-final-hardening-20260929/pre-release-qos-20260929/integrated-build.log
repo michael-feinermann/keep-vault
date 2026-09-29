@@ -1,0 +1,13 @@
+  Wiederherzustellende Projekte werden ermittelt...
+/Users/michael/Developer/GPT-Codex/Kalyna/native/tests/managed_executor/ManagedExecutor.csproj : error NU1403: Fehler bei der Hashüberprüfung des Paketinhalts für "Microsoft.NET.ILLink.Tasks.10.0.11". Das Paket unterscheidet sich von der letzten Wiederherstellung.
+/Users/michael/Developer/GPT-Codex/Kalyna/native/tests/managed_executor/ManagedExecutor.csproj : error NU1403: 
+  Fehler beim Wiederherstellen von "/Users/michael/Developer/GPT-Codex/Kalyna/native/tests/managed_executor/ManagedExecutor.csproj" (in 98 ms.).
+
+Fehler beim Buildvorgang.
+
+/Users/michael/Developer/GPT-Codex/Kalyna/native/tests/managed_executor/ManagedExecutor.csproj : error NU1403: Fehler bei der Hashüberprüfung des Paketinhalts für "Microsoft.NET.ILLink.Tasks.10.0.11". Das Paket unterscheidet sich von der letzten Wiederherstellung.
+/Users/michael/Developer/GPT-Codex/Kalyna/native/tests/managed_executor/ManagedExecutor.csproj : error NU1403: 
+    0 Warnung(en)
+    1 Fehler
+
+Verstrichene Zeit 00:00:00.44

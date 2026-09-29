@@ -38,7 +38,8 @@ internal static class VerifiedIoFuzzTests
             try
             {
                 File.WriteAllBytes(scope.Source, source);
-                using VerifiedArchiveInput input = await VerifiedArchiveInput.CaptureAsync(scope.Source, scope.Policy, default);
+                using VerifiedArchiveInputAttack attacker = await VerifiedArchiveInputAttack.CaptureAsync(scope.Source, scope.Policy, default);
+                VerifiedArchiveInput input = attacker.Input;
                 if (mode is 10 or 11)
                 {
                     await RejectAsync<CryptographicException>(() => input.VerifyGloballyAsync(async (stream, token) =>
@@ -55,7 +56,7 @@ internal static class VerifiedIoFuzzTests
                 else
                 {
                     await input.VerifyGloballyAsync((stream, token) => GlobalOracleAsync(source, stream, token), default);
-                    FileStream spool = Storage(input, "_spool"), records = Storage(input, "_index");
+                    FileStream spool = attacker.Spool, records = attacker.Index;
                     if (mode <= 2)
                     {
                         int actual = await input.ReadAtAsync(guarded.AsMemory(32, count), start, default);

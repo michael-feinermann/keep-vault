@@ -89,6 +89,7 @@
     <Compile Include="../KalynaArchiver/Services/ParallelContainerAuthenticator.cs" Link="Services/ParallelContainerAuthenticator.cs" />
     <Compile Include="../KalynaArchiver/Services/NativeCascadeCiphers.cs" Link="Services/NativeCascadeCiphers.cs" />
     <Compile Include="../KalynaArchiver/Services/NativeCipherExecutor.cs" Link="Services/NativeCipherExecutor.cs" />
+    <Compile Include="../KalynaArchiver/Services/MacCpuWorkerQos.cs" Link="Services/MacCpuWorkerQos.cs" />
     <Compile Include="../KalynaArchiver/Services/NativeArgon2id.cs" Link="Services/NativeArgon2id.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordKeyService.cs" Link="Services/PasswordKeyService.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordGuessabilityService.cs" Link="Services/PasswordGuessabilityService.cs" />

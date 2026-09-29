@@ -4,6 +4,7 @@ internal static class CpuWorkBudgetTests
 {
     internal static async Task RunAsync()
     {
+        TestTopologySnapshots();
         Require(CpuTopology.AvailableWorkers >= 1 && CpuTopology.AvailableWorkers <= Environment.ProcessorCount,
             "Live CPU topology exceeds the runtime process ceiling.");
         foreach (int available in new[] { 1, 3, 64, 65, 1024, 1025, 4096, int.MaxValue })
@@ -134,6 +135,90 @@ internal static class CpuWorkBudgetTests
         }
         finally { CpuTopology.AvailabilityForTests = null; }
         Require(CpuWorkBudget.ActiveWorkersForTests == 0, "Topology changes leaked permits.");
+    }
+
+    private static void TestTopologySnapshots()
+    {
+        var values = new Dictionary<string, int>
+        {
+            ["hw.logicalcpu"] = 12, ["hw.physicalcpu"] = 8, ["hw.logicalcpu_max"] = 16,
+            ["hw.nperflevels"] = 2,
+            ["hw.perflevel0.logicalcpu"] = 8, ["hw.perflevel0.physicalcpu"] = 4,
+            ["hw.perflevel1.logicalcpu"] = 4, ["hw.perflevel1.physicalcpu"] = 4,
+        };
+        int? Read(string name) => values.TryGetValue(name, out int value) ? value : null;
+        CpuTopologySnapshot topology = CpuTopology.ReadMacSnapshot(10, Read);
+        Require(topology.ProcessLimit == 10 && topology.AvailableWorkers == 10
+            && topology.EnabledLogicalProcessors == 12 && topology.EnabledPhysicalProcessors == 8
+            && topology.HasSimultaneousMultithreading == true && !topology.ChangedDuringRead,
+            "Topological hardware counts were confused with the process worker ceiling.");
+        Require(topology.PerformanceLevels.Count == 2
+            && topology.PerformanceLevels[0] == new CpuPerformanceLevel(0, 8, 4)
+            && topology.PerformanceLevels[1] == new CpuPerformanceLevel(1, 4, 4)
+            && topology.PerformanceLevels[0].HasSimultaneousMultithreading == true
+            && topology.PerformanceLevels[1].HasSimultaneousMultithreading == false,
+            "OS performance ranks or their independent SMT descriptions changed.");
+        Require(topology.PerformanceLevels is not CpuPerformanceLevel[], "Topology exposed its mutable level array.");
+
+        values["hw.logicalcpu"] = 5;
+        values["hw.physicalcpu"] = 5;
+        values["hw.perflevel0.logicalcpu"] = 1;
+        values["hw.perflevel0.physicalcpu"] = 1;
+        CpuTopologySnapshot smaller = CpuTopology.ReadMacSnapshot(10, Read);
+        Require(smaller.AvailableWorkers == 5 && smaller.HasSimultaneousMultithreading == false
+            && topology.AvailableWorkers == 10 && topology.PerformanceLevels[0].EnabledLogicalProcessors == 8,
+            "A fresh topology query was cached or mutated an earlier immutable snapshot.");
+        CpuTopologySnapshot unknown = CpuTopology.ReadMacSnapshot(7, _ => null);
+        Require(unknown.AvailableWorkers == 7 && unknown.EnabledLogicalProcessors is null
+            && unknown.EnabledPhysicalProcessors is null && unknown.HasSimultaneousMultithreading is null
+            && unknown.PerformanceLevels.Count == 0,
+            "Unsupported sysctl values fabricated physical cores, SMT or performance classes.");
+        CpuTopologySnapshot malformed = CpuTopology.ReadMacSnapshot(7, name => name switch
+        {
+            "hw.logicalcpu" => 4, "hw.physicalcpu" => 9, "hw.logicalcpu_max" => -1,
+            "hw.nperflevels" => int.MaxValue, _ => 0,
+        });
+        Require(malformed.AvailableWorkers == 4 && malformed.EnabledPhysicalProcessors is null
+            && malformed.HasSimultaneousMultithreading is null && malformed.PerformanceLevels.Count == 0,
+            "Malformed optional topology fields authorized workers or an unbounded level allocation.");
+        CpuTopologySnapshot partial = CpuTopology.ReadMacSnapshot(20, name => name switch
+        {
+            "hw.logicalcpu" => 8, "hw.physicalcpu" => 8, "hw.logicalcpu_max" => 8,
+            "hw.nperflevels" => 3,
+            "hw.perflevel0.logicalcpu" => 4, "hw.perflevel0.physicalcpu" => 4,
+            "hw.perflevel1.logicalcpu" => 4, "hw.perflevel1.physicalcpu" => null,
+            "hw.perflevel2.logicalcpu" => 0, "hw.perflevel2.physicalcpu" => 0, _ => null,
+        });
+        Require(partial.AvailableWorkers == 8 && partial.PerformanceLevels.Count == 3
+            && partial.PerformanceLevels[1].HasSimultaneousMultithreading is null
+            && partial.PerformanceLevels[2].EnabledLogicalProcessors == 0
+            && partial.PerformanceLevels[2].HasSimultaneousMultithreading is null,
+            "An absent field or disabled performance class was silently invented or discarded.");
+        int logicalReads = 0;
+        CpuTopologySnapshot changed = CpuTopology.ReadMacSnapshot(16, name => name switch
+        {
+            "hw.logicalcpu" => ++logicalReads == 1 ? 12 : 6,
+            "hw.physicalcpu" => 6, "hw.logicalcpu_max" => 12, "hw.nperflevels" => 1,
+            "hw.perflevel0.logicalcpu" => 12, "hw.perflevel0.physicalcpu" => 6, _ => null,
+        });
+        Require(changed.ChangedDuringRead && changed.AvailableWorkers == 6
+            && changed.HasSimultaneousMultithreading is null && changed.PerformanceLevels.Count == 0,
+            "A non-atomic topology change granted stale capacity or asserted incoherent SMT metadata.");
+        foreach (int cores in new[] { 65, 1025, 4096, int.MaxValue })
+        {
+            CpuTopologySnapshot large = CpuTopology.ReadMacSnapshot(cores,
+                name => name is "hw.logicalcpu" or "hw.physicalcpu" ? cores : null);
+            Require(large.AvailableWorkers == cores && large.HasSimultaneousMultithreading == false,
+                "Topology interpretation inserted a fixed core limit.");
+        }
+        CpuTopologySnapshot live = CpuTopology.Capture();
+        Require(live.AvailableWorkers >= 1 && live.AvailableWorkers <= Environment.ProcessorCount,
+            "Live topology escaped the process ceiling.");
+        foreach (CpuPerformanceLevel level in live.PerformanceLevels)
+            Require(level.Rank >= 0 && level.Rank < live.PerformanceLevels.Count
+                && (level.EnabledPhysicalProcessors is null || level.EnabledLogicalProcessors is null
+                    || level.EnabledPhysicalProcessors <= level.EnabledLogicalProcessors),
+                "Live optional topology metadata is internally invalid.");
     }
 
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }

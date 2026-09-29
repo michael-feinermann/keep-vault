@@ -43,6 +43,9 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
     private readonly CancellationTokenSource _closing = new();
     internal Action<long>? RangeVerifiedForTests;
     internal static Action? CaptureReadyForTests;
+    private static readonly AsyncLocal<Action<VerifiedArchiveInput>?> BeforeSealHook = new();
+    internal static Action<VerifiedArchiveInput>? BeforeSealForTests
+    { get => BeforeSealHook.Value; set => BeforeSealHook.Value = value; }
     private BoundFileTransaction? _spool;
     private BoundFileTransaction? _index;
     private RecoveryMetadataBudget? _metadataBudget;
@@ -172,6 +175,9 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
             long nextRange = -1;
             Parallel.For(0, workers, new ParallelOptions { MaxDegreeOfParallelism = workers, CancellationToken = token }, worker =>
             {
+#if KEEPVAULT_MACOS
+                using var qos = MacCpuWorkerQos.EnterSynchronousScope();
+#endif
                 Span<byte> record = stackalloc byte[RecordBytes];
                 LockedSensitiveBuffer buffer = input._buffers[worker]!;
                 for (;;)
@@ -209,6 +215,14 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
             input._spool?.Stream.Flush(flushToDisk: true);
             input._index.Stream.Flush(flushToDisk: true);
             input.ValidateLengths();
+            BeforeSealForTests?.Invoke(input);
+            // The independent kernel read-only handles were identity-bound
+            // before early unlink. No namespace lookup occurs after capture.
+            input._spool?.SealReadOnly();
+            input._index.SealReadOnly();
+            input._dataHandle = input._spool?.Stream.SafeFileHandle ?? sourceHandle;
+            input._indexHandle = input._index.Stream.SafeFileHandle;
+            input.ValidateLengths();
             foreach (LockedSensitiveBuffer? buffer in input._buffers) CryptographicOperations.ZeroMemory(buffer!.Bytes);
             input._state = VerifiedArchiveInputState.CapturedUnverified;
             retainedOriginal = !copyCiphertext;
@@ -234,12 +248,22 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
             Path.Combine(directory, $".keep-vault-{purpose}.{Guid.NewGuid():N}"), 1, FileOptions.RandomAccess);
         try
         {
+            file.PrepareReadOnly();
             // unlink on macOS; object-bound delete-on-close on Windows. This is
             // cleanup, not the security proof: existing writers are covered by MACs.
             file.DeleteBound();
             return file;
         }
-        catch { file.Dispose(); throw; }
+        catch (Exception failure)
+        {
+            var failures = new List<Exception> { failure };
+            try { file.DeleteBound(); }
+            catch (Exception cleanupFailure) { failures.Add(cleanupFailure); }
+            try { file.Dispose(); }
+            catch (Exception cleanupFailure) { failures.Add(cleanupFailure); }
+            if (failures.Count == 1) throw;
+            throw new AggregateException("Private working-file binding or its bound cleanup failed.", failures);
+        }
     }
 
     internal async Task VerifyGloballyAsync(

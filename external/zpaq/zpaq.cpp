@@ -274,6 +274,8 @@ static int zpaq_printf(const char* fmt, ...) {
 
 #define printf zpaq_printf
 
+#include "../../native/mac_bulk_qos.hpp"
+
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #ifndef unix
 #define unix 1
@@ -3354,6 +3356,7 @@ void CompressJob::write(StringBuffer& s, const char* fn, string method,
 
 // Compress data in the background, one per buffer
 ThreadReturn compressThread(void* arg) {
+  keepvault_mac_bulk_qos_scope qos;
   CompressJob& job=*(CompressJob*)arg;
   int jobNumber=0;
   try {
@@ -3416,6 +3419,7 @@ static void write_keepvault_pipe_u64(libzpaq::Writer* out, uint64_t value) {
 
 // Write compressed data to the archive in the background
 ThreadReturn writeThread(void* arg) {
+  keepvault_mac_bulk_qos_scope qos;
   CompressJob& job=*(CompressJob*)arg;
   try {
 
@@ -4344,6 +4348,7 @@ struct ExtractJob {         // list of jobs
 
 // Decompress blocks in a job until none are READY
 ThreadReturn decompressThread(void* arg) {
+  keepvault_mac_bulk_qos_scope qos;
   ExtractJob& job=*(ExtractJob*)arg;
   int jobNumber=0;
 
@@ -5064,6 +5069,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
   try {
     for (int worker=0; worker<worker_count; ++worker) {
       workers.push_back(std::thread([&state]() {
+      keepvault_mac_bulk_qos_scope qos;
       for (;;) {
         std::shared_ptr<KeepVaultPipeFrame> frame;
         {
@@ -5116,6 +5122,7 @@ int Jidac::extract_pipe_streaming(bool list_only) {
   std::thread writer;
   try {
     writer=std::thread([this, &state, &segments, &files_extracted, list_only]() {
+      keepvault_mac_bulk_qos_scope qos;
 	    FP outf=FPNULL;
 	    string output_name;
 	    std::set<string> published_names;

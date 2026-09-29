@@ -27,13 +27,10 @@
 #include <sched.h>
 #include <unistd.h>
 #endif
-#if defined(__APPLE__)
-#include <pthread/qos.h>
-#endif
-
 #include "kalyna.h"
 #include "borrowed_executor_v13.h"
 #include "adaptive_work_v13.h"
+#include "mac_bulk_qos.hpp"
 
 #if defined(_WIN32)
 #define KEEPVAULT_EXPORT __declspec(dllexport)
@@ -300,9 +297,7 @@ void worker_entry_core(worker_job& job) noexcept
 {
     shared_state& shared = *job.shared;
     worker_completion completion(shared);
-#if defined(__APPLE__)
-    if (keepvault_get_executor() == nullptr) (void)pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);
-#endif
+    keepvault_mac_bulk_qos_scope qos(keepvault_get_executor() == nullptr);
 
     bool announced_ready = false;
     try {

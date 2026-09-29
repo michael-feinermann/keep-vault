@@ -1,0 +1,14 @@
+{
+  "ids": [
+    "io.verified-input-read-only-seal",
+    "io.verified-input-tamper",
+    "io.verified-input-private-copy",
+    "fuzz.verified-input-10000",
+    "resources.operation-storage-plan",
+    "zpaq.free-space-descriptor"
+  ],
+  "group_count": 6,
+  "seed": "0x5EED0313",
+  "cwd": "KeepVaultMac",
+  "real_source_limit_bytes": 268435456
+}

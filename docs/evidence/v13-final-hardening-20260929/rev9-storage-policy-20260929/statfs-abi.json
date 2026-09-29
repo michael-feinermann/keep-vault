@@ -1,0 +1,27 @@
+{
+  "arm64": {
+    "output": "size=2168 flagsOffset=64 formatOffset=72 availableOffset=24 type=apfs flags=76583040 blocksize=4096 available=134616272",
+    "binarySha256": "08d2729ff0afde8f78a687b0410f7379312650509a8f83a1026588e8780bcab8",
+    "symbols": [
+      "___stack_chk_fail",
+      "___stack_chk_guard",
+      "_close",
+      "_fstatfs",
+      "_open",
+      "_printf"
+    ]
+  },
+  "x64": {
+    "output": "size=2168 flagsOffset=64 formatOffset=72 availableOffset=24 type=apfs flags=76583040 blocksize=4096 available=134616260",
+    "binarySha256": "cb68d9648bcacfb3dd8d7e9ea214bd8be6633a8f8108db842994761f4eaeb7d5",
+    "symbols": [
+      "___stack_chk_fail",
+      "___stack_chk_guard",
+      "_close",
+      "_fstatfs$INODE64",
+      "_open",
+      "_printf"
+    ]
+  },
+  "sourceSha256": "681c8ca4d953521bed23f942f2b9ed62dfd9919c19f933343c987760525861e5"
+}

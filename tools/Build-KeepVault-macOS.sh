@@ -2127,6 +2127,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     fuzz.recovery-streaming-10000
     fuzz.verified-read-at-server-10000
     resources.cpu-worker-budget
+    resources.operation-storage-plan
     entropy.rev9-shuffle
     entropy.rev9-dual-composition
     entropy.rev9-suite-plans
@@ -2180,6 +2181,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     v13-usage-model
     io.verified-input-domain-kats
     io.verified-input-descriptor-capture
+    io.verified-input-read-only-seal
     io.verified-input-state
     io.verified-input-ranges
     io.verified-input-tamper
