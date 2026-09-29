@@ -1070,7 +1070,7 @@ internal static class TestRunner
                 }
                 affected.Add("crypto.kdf-primitives");
                 affected.Add("kdf.properties");
-                affected.Add("kdf.v12-master-factor-split");
+                affected.Add("kdf.v13-master-factor-split");
                 affected.Add("kdf.argon2-equivalence");
                 affected.Add("kdf.peak-memory-and-header");
                 affected.Add("policy.password");
@@ -1145,7 +1145,7 @@ internal static class TestRunner
             if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
             {
                 matched = true;
-                affected.Add("spec.normative-v12-docs");
+                affected.Add("spec.normative-v13-docs");
                 affected.Add("spec.no-legacy-source");
             }
             if (file.Contains("QrCodeScanner") || file.Contains("QR-Scanner") || file.Contains("Verify-QR-Scanner"))
@@ -1196,7 +1196,7 @@ internal static class TestRunner
             if (IsSourceOrBuildFile(file))
             {
                 affected.Add("spec.no-legacy-source");
-                affected.Add("spec.normative-v12-docs");
+                affected.Add("spec.normative-v13-docs");
             }
 
             if (!matched && !IsBenignFile(file))

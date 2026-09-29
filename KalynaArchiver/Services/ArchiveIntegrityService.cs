@@ -172,6 +172,13 @@ public sealed class ArchiveIntegrityService
             await snapshot.VerifyGloballyAsync(async (view, token) =>
             {
                 (actualSha3, actualSkein) = await IntegrityService.HashStreamAsync(view, token).ConfigureAwait(false);
+                // Preserve the plain-archive error contract before the shared
+                // encrypted-container gate can classify a digest mismatch as
+                // a credential failure. The gate still owns state publication.
+                bool sha3Matches = CryptographicOperations.FixedTimeEquals(expectedSha3, actualSha3);
+                bool skeinMatches = CryptographicOperations.FixedTimeEquals(expectedSkein, actualSkein);
+                if (!(sha3Matches & skeinMatches))
+                    throw new InvalidDataException("Plain ZPAQ archive failed its SHA3-512/Skein-1024 dual-integrity check.");
                 return new VerifiedArchiveAuthentication(expectedSha3, actualSha3, expectedSkein, actualSkein);
             }, cancellationToken).ConfigureAwait(false);
 #else

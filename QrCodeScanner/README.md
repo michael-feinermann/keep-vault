@@ -18,7 +18,7 @@ gesperrt wiederhergestellten Keep-Vault-Signer auf Basis des gepinnten .NET-SDKs
 
 ```bash
 ./QrCodeScanner/tools/Build-QrScanner-macOS.sh \
-  --version 5.0.0 --build-number 12
+  --version 5.0.3 --build-number 14
 ```
 
 Das Skript baut universell (arm64 + x86_64), fuehrt die Tests aus, erzeugt das
@@ -81,10 +81,11 @@ xcrun swiftc -parse-as-library -O \
 /tmp/scan-file ~/Downloads/mein-schluesselzettel.pdf
 ```
 
-Auf den beiden Beispielzetteln: beide Codes gefunden, ein einziger
-unterschiedlicher Inhalt, uebernommen als „durch 2 Codes bestaetigt“. Wird der
-linke Code im Bild zerstoert, findet die App nur noch einen und bestaetigt
-intern denselben 128-stelligen Faktor. Das Werkzeug gibt niemals Nutzinhalt,
+Die vier aktuellen öffentlichen v13-Testzettel (Faktor A/B, Deutsch/Englisch)
+liefern jeweils zwei Codes mit identischem Inhalt. Wird der linke Code im Bild
+unlesbar gemacht, findet der Decoder nur noch einen und bestätigt nach acht
+Lesungen denselben 256-stelligen Faktor. Das ist ein PDF-/Bildnachweis, kein
+physischer Kamera- oder Drucktest. Das Werkzeug gibt niemals Nutzinhalt,
 Teilstrings oder daraus abgeleitete reversible Kennwerte aus, sondern nur
 Laengen, Positionen, Anzahlen und Entscheidungsmetadaten.
 

@@ -2187,6 +2187,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     io.verified-input-tamper
     io.verified-input-private-copy
     io.verified-original
+    io.plain-manifest-rejection
     io.verified-input-policy
     io.verified-input-parallel-lifetime
     io.verified-input-cleanup-retry

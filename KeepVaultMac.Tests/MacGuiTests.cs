@@ -234,11 +234,9 @@ internal static class MacGuiTests
         MacComprehensiveTests.Require(
             !string.Equals(status.Text ?? string.Empty, textAtThreshold, StringComparison.Ordinal),
             "The entropy status line froze at the minimum instead of reporting the additional samples.");
-        // The readout is refreshed when the pool minimum moves, which happens
-        // once per full round across the pools rather than on every sample. It
-        // may therefore trail the running total by up to one round; what it must
-        // not do is stop catching up. Sampling until it agrees checks exactly
-        // that, without assuming a particular number of pools.
+        // The readout follows total accepted samples: independent routing can
+        // leave the minimum unchanged while another pool grows. Check that the
+        // displayed total catches up without assuming balanced pool counts.
         long reportedTotal = 0;
         for (int round = 0; round < 16; round++)
         {
@@ -720,6 +718,8 @@ internal static class MacGuiTests
     {
         Control<TextBox>(window, "WorkingDirectoryBox").Text = Path.GetFullPath(Path.GetTempPath());
         Control<TextBox>(window, "ResourceBudgetBox").Text = "4096";
+        // The total and single-file limits are independent GUI choices.
+        Control<TextBox>(window, "ResourceSingleFileBox").Text = "4096";
         Control<TextBox>(window, "ResourceHoursBox").Text = "24";
         Control<TextBox>(window, "ResourceWorkersBox").Text = "2";
         FieldInfo field = typeof(MainWindow).GetField("_resourcePolicy", BindingFlags.Instance | BindingFlags.NonPublic)

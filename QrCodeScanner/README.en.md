@@ -18,7 +18,7 @@ restored in locked mode using the pinned .NET SDK.
 
 ```bash
 ./QrCodeScanner/tools/Build-QrScanner-macOS.sh \
-  --version 5.0.0 --build-number 12
+  --version 5.0.3 --build-number 14
 ```
 
 The script builds universally (arm64 + x86_64), runs the tests, generates the
@@ -79,9 +79,10 @@ xcrun swiftc -parse-as-library -O \
 /tmp/scan-file ~/Downloads/mein-schluesselzettel.pdf
 ```
 
-On the two example sheets: both codes found, a single distinct payload,
-accepted as “confirmed by 2 codes”. If the left code in the image is destroyed,
-the app finds only one and internally confirms the same 128-character factor.
+The four current public v13 test sheets (factor A/B, German/English) each
+yield two matching codes. If the left code is obscured in the image, the decoder
+finds one remaining code and confirms the same 256-character factor after eight
+reads. This is a PDF/image check, not a physical camera or paper test.
 The tool never outputs payload content, substrings, or reversible values
 derived from it, only lengths, positions, counts, and decision metadata.
 

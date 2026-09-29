@@ -22,6 +22,7 @@ internal static class VerifiedArchiveInputTests
         new("io.verified-input-tamper", "spool, index, truncation, extension and cross-operation replay rejection", TamperAsync, TestResource.Light, "Security"),
         new("io.verified-input-private-copy", "verified private bytes survive later spool mutation; reread fails", PrivateCopyAsync, TestResource.Light, "Security"),
         new("io.verified-original", "plain original index avoids plaintext copy and rejects later source mutation", OriginalAsync, TestResource.Light, "Security"),
+        new("io.plain-manifest-rejection", "plain archive rejects either digest or changed bytes before lease and extraction publication", PlainManifestContractAsync, TestResource.ProcessGlobal, "Security"),
         new("io.verified-input-policy", "64-bit policy arithmetic, capacity and cancellation", PolicyAsync, TestResource.Light, "Security"),
         new("io.verified-input-parallel-lifetime", "independent sealed range readers join before key and full-buffer cleanup", ParallelLifetimeAsync, TestResource.ProcessGlobal, "Security"),
         new("io.verified-input-cleanup-retry", "failed capture retains closed owners and retries cleanup before another capture", CleanupRetryAsync, TestResource.ProcessGlobal, "Security"),
@@ -430,6 +431,102 @@ internal static class VerifiedArchiveInputTests
         input.Position = 0;
         await ExpectAsync<CryptographicException>(() => input.ReadExactlyAsync(bytes).AsTask());
         Require(bytes.AsSpan().IndexOfAnyExcept((byte)0) < 0, "Failed read did not clear the caller buffer.");
+    }
+
+    private static async Task PlainManifestContractAsync()
+    {
+        string root = MacSafeFileSystem.ResolveExistingRealPath(
+            Directory.CreateTempSubdirectory("keep-vault-plain-manifest-").FullName);
+        File.SetUnixFileMode(root, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        string source = Path.Combine(root, "plain.zpaq");
+        byte[] original = Enumerable.Range(0, 4097).Select(index => (byte)(index * 31)).ToArray();
+        var policy = new ArchiveOperationPolicy(root, root,
+            maxContainerBytes: 16L << 20, maxExtractedTotalBytes: 16L << 20,
+            maxSingleFileBytes: 16L << 20, maxMetadataBytes: 16L << 20);
+        using IDisposable policyScope = policy.EnterScope();
+        var integrity = new ArchiveIntegrityService();
+        var captures = new List<VerifiedArchiveInput>();
+        Action<VerifiedArchiveInput>? previous = VerifiedArchiveInput.BeforeSealForTests;
+        int ownersBefore = VerifiedArchiveInput.RetainedOwnersForTests;
+        try
+        {
+            File.WriteAllBytes(source, original);
+            await integrity.CreateAsync(source, default);
+            string sha3Path = ArchiveIntegrityService.GetSha3ManifestPath(source);
+            string skeinPath = ArchiveIntegrityService.GetSkeinManifestPath(source);
+            string validSha3 = File.ReadAllText(sha3Path);
+            string validSkein = File.ReadAllText(skeinPath);
+            await integrity.VerifyAsync(source, default);
+            using (ArchiveIntegrityLease valid = await integrity.AcquireVerifiedAsync(source, default))
+            {
+                byte[] actual = new byte[original.Length];
+                try
+                {
+                    await valid.Stream.ReadExactlyAsync(actual);
+                    Require(actual.AsSpan().SequenceEqual(original), "A valid plain manifest changed the released bytes.");
+                }
+                finally { CryptographicOperations.ZeroMemory(actual); }
+            }
+
+            VerifiedArchiveInput.BeforeSealForTests = captures.Add;
+            foreach (string mutation in new[] { "sha3", "skein", "archive" })
+            {
+                File.WriteAllBytes(source, original);
+                File.WriteAllText(sha3Path, validSha3);
+                File.WriteAllText(skeinPath, validSkein);
+                if (mutation == "archive")
+                {
+                    using var writer = new FileStream(source, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                    Flip(writer, original.Length - 1);
+                }
+                else
+                {
+                    string path = mutation == "sha3" ? sha3Path : skeinPath;
+                    string valid = mutation == "sha3" ? validSha3 : validSkein;
+                    File.WriteAllText(path, (valid[0] == '0' ? "1" : "0") + valid[1..]);
+                }
+
+                await RequirePlainRejectionAsync(() => integrity.VerifyAsync(source, default));
+                bool publishedLease = false;
+                await RequirePlainRejectionAsync(async () =>
+                {
+                    using ArchiveIntegrityLease lease = await integrity.AcquireVerifiedAsync(source, default);
+                    publishedLease = true;
+                });
+                Require(!publishedLease, "A damaged plain archive published a readable integrity lease.");
+
+                string output = Path.Combine(root, mutation + "-output");
+                // This forbidden executable path is a tripwire: reaching native
+                // resolution fails with a different exception before any process
+                // can start. No installed anchor is needed for this rejection.
+                var zpaq = new ZpaqService(Path.Combine(root, "must-not-be-resolved"), policy);
+                await RequirePlainRejectionAsync(() => zpaq.ExtractAsync(source, output, null, default));
+                Require(!Directory.Exists(output) && !File.Exists(output),
+                    "A rejected plain archive created an extraction destination.");
+                Require(captures.All(capture => capture.State == VerifiedArchiveInputState.Disposed)
+                    && VerifiedArchiveInput.RetainedOwnersForTests == ownersBefore,
+                    "Plain manifest rejection retained a capture or readable source owner.");
+            }
+            Require(captures.Count == 9, "A plain manifest rejection bypassed its captured verification path.");
+        }
+        finally
+        {
+            VerifiedArchiveInput.BeforeSealForTests = previous;
+            CryptographicOperations.ZeroMemory(original);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static async Task RequirePlainRejectionAsync(Func<Task> action)
+    {
+        try { await action(); }
+        catch (InvalidDataException error)
+        {
+            Require(error.Message == "Plain ZPAQ archive failed its SHA3-512/Skein-1024 dual-integrity check.",
+                "Plain archive rejection reported an unrelated validation or password failure.");
+            return;
+        }
+        throw new Exception("A corrupted plain archive passed dual-manifest verification.");
     }
 
     private static FileStream Storage(VerifiedArchiveInput input, string name) =>
