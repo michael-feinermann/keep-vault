@@ -53,7 +53,7 @@ Die [Integrationsbelege](evidence/v13-integration-rev9-20260928/manifest.json) e
 
 ## Releasegrenze
 
-Das macOS-Release-Preflight bestand mit der vorgesehenen Apple-Identität, unveränderten gepinnten Paket-Lockhashes und den geschützten externen Schlüsseldaten. Das Notarisierungsprofil `Keep Vault v13` wurde erfolgreich gelesen. Das bestätigt Voraussetzungen, nicht eine bereits erfolgte Notarisierung des neuen Pakets.
+Das macOS-Release-Preflight bestand mit der vorgesehenen Apple-Identität, unveränderten gepinnten Paket-Lockhashes und den geschützten externen Schlüsseldaten. Das Notarisierungsprofil `Keep Vault v13` war beim früheren Preflight lesbar. Bei der Wiederaufnahme am 29.09. war es nicht verfügbar; der automatische Lauf endete vor der Einreichung bei Apple. Auf ausdrücklichen Benutzerwunsch wird jetzt ein Kandidat für die spätere manuelle Apple-Notarisierung vorbereitet. Die Apple-Signieridentität bleibt im Apple-Schlüsselbund, RSA-/ML-DSA- und Wrapping-Schlüssel verbleiben im VeraCrypt-Speicher. Frühere Preflight-Ergebnisse sind kein Nachweis einer bereits erfolgten Notarisierung des neuen Pakets.
 
 Der vollständige Testlauf gegen die endgültig signierten Dateien, die produktiven Archiv-/KPAR2-Läufe, finale Installation, reale GUI, Paketverifikation und Veröffentlichungsabgleich werden im [Releasebericht](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) mit ihren tatsächlichen Ergebnissen ergänzt. Ein Zwischenstand oder eine einzelne bestandene Gruppe ist keine Freigabe.
 

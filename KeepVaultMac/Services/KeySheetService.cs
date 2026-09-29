@@ -906,14 +906,14 @@ public sealed class KeySheetService
         DrawSteps(graphics, normalFont, margin, bodyWidth, ref y, en
             ? [
                 "1. Download the Windows release from the page above.",
-                "2. Unblock the ZIP file in its properties, then extract it.",
-                "3. Run Install-KeepVaultShortcuts.ps1 in PowerShell, or start KalynaArchiver.exe directly.",
+                "2. Extract the complete ZIP into a new folder.",
+                "3. Run Keep Vault Setup.exe to verify and install the package. No .NET SDK is required.",
                 "4. The installer verifies the dual signature before it creates any shortcut.",
             ]
             : [
                 "1. Windows-Release von der oben genannten Seite herunterladen.",
-                "2. Die ZIP-Datei in den Eigenschaften zulassen, danach entpacken.",
-                "3. Install-KeepVaultShortcuts.ps1 in PowerShell ausführen oder KalynaArchiver.exe direkt starten.",
+                "2. Die vollständige ZIP-Datei in einen neuen Ordner entpacken.",
+                "3. Keep Vault Setup.exe prüft und installiert das Paket. Ein .NET SDK ist nicht erforderlich.",
                 "4. Der Installer prüft die duale Signatur, bevor er eine Verknüpfung anlegt.",
             ]);
         y += 16;
