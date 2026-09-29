@@ -3,6 +3,9 @@ set -euo pipefail
 umask 077
 PATH='/usr/bin:/bin:/usr/sbin:/sbin'
 export PATH
+# zsh globs determine static-archive member order, which affects linked bytes.
+# Keep that order identical under Finder/Terminal and localized release launchers.
+export LC_ALL=C
 unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
   RUBYOPT RUBYLIB NODE_OPTIONS OPENSSL_CONF OPENSSL_MODULES SSL_CERT_FILE \
   SSL_CERT_DIR CURL_HOME XDG_CONFIG_HOME

@@ -848,6 +848,29 @@ internal static class TestCoordinator
                 && forwardedPerformanceOutput.Contains("PERF_RESULT_JSON={\"schemaVersion\":2}", StringComparison.Ordinal)
                 && !forwardedPerformanceOutput.Contains(WorkerResultMarker, StringComparison.Ordinal),
             "The coordinator discarded performance medians/JSON or exposed its private worker envelope.");
+        const string publicEndToEndResult = "    E2E_RESULT_JSON={\"SchemaVersion\":1,\"Label\":\"v13-paranoia-structure512-production-kdf\",\"InputBytes\":536870912}";
+        string mixedReleaseOutput = "private-unrelated-stdout\n"
+            + publicEndToEndResult + "\r\n"
+            + "private-prefix E2E_RESULT_JSON={\"unrelated\":true}\n"
+            + WorkerResultMarker + "{\"schemaVersion\":1,\"status\":\"PASS\"}\n";
+        const string privateStandardError = "private-unrelated-stderr";
+        TestCase structureRelease = light with { Id = "release.v13-paranoia-structure512" };
+        (string releaseOutput, string releaseError) = SelectWorkerDiagnostics(
+            structureRelease, mixedReleaseOutput, privateStandardError);
+        Require(releaseOutput == publicEndToEndResult && releaseError.Length == 0,
+            "The structure release gate lost its public E2E JSON or exposed unrelated/private worker diagnostics.");
+        foreach (TestCase otherTest in new[] { light, structureRelease with { Id = structureRelease.Id + "-other" } })
+        {
+            (string otherOutput, string otherError) = SelectWorkerDiagnostics(
+                otherTest, mixedReleaseOutput, privateStandardError);
+            Require(otherOutput.Length == 0 && otherError.Length == 0,
+                "The E2E diagnostic exception exposed output from an unrelated non-performance test.");
+        }
+        (string selectedPerformanceOutput, string selectedPerformanceError) = SelectWorkerDiagnostics(
+            performance, mixedReleaseOutput, privateStandardError);
+        Require(selectedPerformanceOutput == ExtractWorkerDiagnostics(mixedReleaseOutput)
+            && selectedPerformanceError == privateStandardError,
+            "The public E2E exception changed the existing performance-diagnostic contract.");
         IReadOnlySet<string> nativeBuildImpact =
             TestRunner.GetPerformanceSensitiveImpact("tools/Build-Native-macOS.sh");
         Require(
@@ -1300,12 +1323,7 @@ internal static class TestCoordinator
 
     private static void ReportWorkerDiagnostics(TestCase test, string standardOutput, string standardError)
     {
-        if (!test.IsPerformance)
-        {
-            return;
-        }
-
-        string diagnostics = ExtractWorkerDiagnostics(standardOutput);
+        (string diagnostics, string errors) = SelectWorkerDiagnostics(test, standardOutput, standardError);
         lock (ConsoleLock)
         {
             if (!string.IsNullOrWhiteSpace(diagnostics))
@@ -1313,11 +1331,30 @@ internal static class TestCoordinator
                 Console.WriteLine(diagnostics);
             }
 
-            if (!string.IsNullOrWhiteSpace(standardError))
+            if (!string.IsNullOrWhiteSpace(errors))
             {
-                Console.Error.WriteLine(standardError.TrimEnd());
+                Console.Error.WriteLine(errors.TrimEnd());
             }
         }
+    }
+
+    private static (string Output, string Error) SelectWorkerDiagnostics(
+        TestCase test, string standardOutput, string standardError)
+    {
+        if (test.IsPerformance)
+            return (ExtractWorkerDiagnostics(standardOutput), standardError);
+
+        if (!string.Equals(test.Id, "release.v13-paranoia-structure512", StringComparison.Ordinal))
+            return (string.Empty, string.Empty);
+
+        // This automatic gate emits the public EndToEndResult record: fixture
+        // sizes/counts, fixed crypto profile, host information and phase times.
+        // Forward only its explicit JSON line, never other stdout or stderr.
+        string result = string.Join(Environment.NewLine, standardOutput
+            .Split('\n')
+            .Select(line => line.TrimEnd('\r'))
+            .Where(line => line.TrimStart().StartsWith("E2E_RESULT_JSON=", StringComparison.Ordinal)));
+        return (result, string.Empty);
     }
 
     internal static string ExtractWorkerDiagnostics(string standardOutput) => string.Join(
