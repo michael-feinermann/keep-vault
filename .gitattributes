@@ -20,3 +20,6 @@ external/phc-winner-argon2/src/run.c -text whitespace=blank-at-eol,blank-at-eof,
 # This Windows-only pin expects CRLF; retain LF Git blobs and deterministic checkout bytes.
 native/threefish_ref_export.c text eol=crlf whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 native/argon2_thread_lifecycle_test.c -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Preserve raw, hash-bound tool evidence, including the tools' trailing spaces.
+docs/evidence/v13-final-hardening-20260929/pre-release-bounddelete-20260929/test.log -text -whitespace
+docs/evidence/v13-final-hardening-20260929/pre-release-qos-20260929/integrated-build.log -text -whitespace
