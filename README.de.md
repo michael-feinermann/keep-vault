@@ -551,7 +551,7 @@ und Drucker können außerhalb der App eigene temporäre Daten erzeugen.
 
 ## Streaming und Parallelität
 
-Verschlüsselte v13-Container verwenden vor der Entschlüsselung einen privaten Ciphertext-Spool mit lokalem Doppel-MAC-Index. Jeder vollständige 1-MiB-Abschnitt wird beim Lesen erneut in einem privaten Puffer geprüft. Normale Konsumenten erhalten erst nach beiden globalen Container-MACs Zugriff. Die vertrauenswürdige Ressourcenpolicy begrenzt Größen, Speicher, CPU-Arbeiter und Queue; Archivdaten können diese Werte nicht erhöhen. Reguläre `.zpaq`-Eingaben binden die Originaldatei und speichern nur einen lokalen Authentifizierungsindex. Die reguläre 256-MiB-Testgrenze und die ausdrücklich erweiterte Paranoia-Strukturprüfung mit 512 MiB belegen keine realen Mehr-TB-Läufe.
+REV11 öffnet und bindet die verschlüsselte v13-Originaldatei einmal. Der erste Nutzdatenpass erstellt einen lokalen Doppel-MAC-Index und berechnet beide globalen Authentifikatoren aus denselben Puffern. Eine zusätzliche vollständige Ciphertextkopie entfällt. Der gemeinsame Indexcache wächst nach tatsächlichem Bedarf bis 16 MiB; nur darüber hinaus erforderliche authentifizierte Metadaten werden ausgelagert. Jeder vollständige 1-MiB-Abschnitt wird beim Lesen erneut in einem privaten Puffer geprüft. Normale Konsumenten erhalten erst nach beiden globalen Container-MACs Zugriff. Die vertrauenswürdige Ressourcenpolicy begrenzt Größen, Speicher, CPU-Arbeiter und Queue; Archivdaten können diese Werte nicht erhöhen. Reguläre `.zpaq`-Eingaben binden die Originaldatei und speichern nur einen lokalen Authentifizierungsindex. Die reguläre 256-MiB-Testgrenze und die ausdrücklich erweiterte Paranoia-Strukturprüfung mit 512 MiB belegen keine realen Mehr-TB-Läufe.
 
 ZPAQ liegt unter `external/zpaq`, die lizenzierte v13-Kalyna-Implementierung in
 Crypto++ 8.9.0 unter `external/cryptopp` und der offizielle Skein-1.3-/Threefish-Code
@@ -584,10 +584,12 @@ Indexreihenfolge erzeugt und verarbeitet; begrenzte Arbeitsgruppen komprimieren
 oder dekomprimieren unabhängige Blöcke parallel. Ein Rahmen ist auf 24 MiB
 komprimierte Daten, 32 MiB unkomprimierte Daten und ein 128-MiB-Modell begrenzt.
 Höchstens 512 MiB komprimierte Pipe-Daten dürfen auf geordnete Verarbeitung warten.
-Reguläre Archive verwenden pro Auftrag eine Ausgabegrenze von 64 MiB und ein
-Modelllimit von 512 MiB. Ein gemeinsames Verarbeitungsbudget von 6 GiB lässt nur so
-viele Kompressionsaufträge zu je 384 MiB oder reguläre Aufträge zu je 592 MiB zu,
-wie hineinpassen; zusätzlich gilt das gemeinsame CPU-Budget des Auftrags.
+Reguläre Archive behalten begrenzte Ausgabe- und Modellgrößen für den Parser.
+REV11 lässt tatsächliche Puffer und Modellallokationen anhand einer gemeinsamen
+Speicherrechnung zu, einschließlich aktueller OS-Auslastung und geschützter
+Entropierecords. Eine feste Reservierung von 6 GiB entfällt. Numerische Maxima
+erlauben Arbeit; sie reservieren weder diesen RAM noch entsprechenden
+Datenträgerplatz. Zusätzlich gilt das gemeinsame CPU-Budget des Auftrags.
 Abgeschnittene, vertauschte, nicht kanonische oder prüfsummenfehlerhafte Rahmen
 werden abgelehnt, ohne hinter der Beschädigung erneut zu synchronisieren.
 
@@ -595,7 +597,11 @@ Reguläres `.zpaq` wird über das begrenzte Duplexprotokoll `KV13RA` entpackt un
 
 Dieser Pfad erzeugt weder eine Klartextkopie des Archivs noch eine Vollarchiv-SHM-/VM-Allokation. Die globalen `.sha3`- und `.skein`-Dateien bleiben ungeschlüsselte Korruptionsprüfungen. Wer Quelle und beide Prüfsummen ersetzen kann, kann ihren Inhalt austauschen. Der flüchtige lokale MAC-Index bindet die einmal geprüften Bytes während des laufenden Auftrags. Die Ressourcenpolicy begrenzt weiterhin Parsermodelle, Index, Ausgabe und Einträge.
 
-Native ZPAQ-Gruppen, Cipher-Gruppen, MAC-Blattarbeiter und Argon2-Ausführungsthreads teilen CPU-Reservierungen. Ein ZPAQ-Prozess reserviert höchstens das genehmigte Budget abzüglich eines Arbeiters. Damit bleibt auch bei mehreren wartenden Kindprozessen ein Platz für Streaming und Authentifizierung im Elternprozess frei. Streamingaufträge benötigen deshalb mindestens zwei Workerplätze. Die vier kryptographischen Argon2-Lanes bleiben auch bei weniger gewährten Ausführungsthreads unverändert.
+Native ZPAQ-Gruppen, Cipher-Gruppen, MAC-Blattarbeiter und Argon2-Ausführungsthreads teilen CPU-Permits. Native REV11-Worker geben ihre Rechenfreigabe vor blockierenden Pipe-, I/O- und Steuerkanal-Wartezeiten frei und erwerben sie zum Rechnen erneut. Eine manuelle CPU-Obergrenze von eins wird unterstützt. Die vier kryptographischen Argon2-Lanes bleiben auch bei weniger gewährten Ausführungsthreads unverändert.
+
+Die Ressourcenseite startet mit Automatisch. Optionale manuelle Obergrenzen bleiben von den aktuell ermittelten Werten getrennt. Kleine Aufträge beginnen mit einem Speicherplatz; größere bereitstehende Arbeit kann nach Prüfung weitere erhalten. Für unbekannte Extraktionsmengen gilt zunächst eine sichtbare Freigabe von 256 MiB, die unter Ressourcen ausdrücklich angepasst werden kann. Sie reserviert keinen Datenträgerplatz. Argon2id benötigt auch bei winzigen Archiven weiterhin vorübergehend 1 GiB bis knapp 2 GiB zuzüglich Betriebsbedarf.
+
+Archivierung, Extraktion und Reparatur haben keine anwendungsseitige Wandzeit-, CPU-Zeit- oder Stillstandsfrist. Manueller Abbruch, echte Fehler und begrenzte Abbrucheskalation bleiben erhalten. Der Fortschritt zeigt erledigte Phaseneinheiten und verstrichene Zeit. Eine Phasenrestzeit erscheint erst nach ausreichenden frischen Messungen; unbekannte Gesamtarbeit bleibt unbekannt. Siehe [REV11-Fortschrittsprüfung](docs/KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md).
 
 Die Containerschicht verarbeitet begrenzte Gruppen aus 16-MiB-Blöcken. Speicherplätze sind von CPU-Workern getrennt: Ein Slot besitzt zwei gesperrte 16-MiB-Puffer sowie kleine Zähler-/Nonce-/Tag-Puffer. Selbst ein einzelner Chunk kann mehrere genehmigte Cipher-Worker nutzen. Das gemeinsame Budget reserviert jedes Team einschließlich seines Aufrufers; native Cipher verwenden geliehene Arbeit über den gemeinsamen Executor. Es gibt keine feste Gesamtgrenze von 64 oder 1024 CPUs. Die tatsächliche Prozess-CPU-Verfügbarkeit und RAM-/Queue-Budgets bleiben Grenzen. Ausgaben bleiben geordnet; vor Freigabe werden aktive Arbeiten beendet und alle temporären Geheimnisse gelöscht. Fehler veröffentlichen keinen Teilcontainer. Numerische Viele-Kern-Tests belegen keine Messung einer solchen Maschine.
 

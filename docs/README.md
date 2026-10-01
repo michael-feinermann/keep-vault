@@ -2,16 +2,21 @@
 
 [Deutsch](README.md) · [English](README.en.md) · [Hauptanleitung](../README.de.md)
 
-Die unten paarweise verlinkten Anleitungen und historischen Berichte liegen vollständig auf Deutsch und Englisch vor. Neue Umsetzungs- und Prüfberichte zu 5.0.3/v13 sind derzeit auf Deutsch verfügbar und entsprechend gekennzeichnet; für sie wird keine vollständige englische Übersetzung behauptet. Befehle, Hashes, Testdaten und originale Protokollzitate bleiben als technische Belege erhalten.
+Die unten paarweise verlinkten Anleitungen und historischen Berichte liegen vollständig auf Deutsch und Englisch vor. Neue Umsetzungs- und Prüfberichte zu 5.0.3/v13 nennen ihre verfügbare Sprache im Verzeichnis; für sie wird keine vollständige zweisprachige Übersetzung behauptet. Befehle, Hashes, Testdaten und originale Protokollzitate bleiben als technische Belege erhalten.
 
-Veröffentlichte Referenz bis zum Abschluss des neuen Releases: [Keep Vault 5.0.2 für macOS](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2), Build 13, Container v12 und KPAR2 v4. Der Arbeitsstand zielt auf 5.0.3, Build 14 und Container v13 gemäß REV9. Der [Releasebericht](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) hält den tatsächlichen Prüf-, Installations- und Veröffentlichungsstatus fest. Dieser Durchgang betrifft ausschließlich macOS; Windows benötigt eigene Nachweise. Historische Berichte behalten ihren datierten Befund und geben 5.0.3 nicht frei.
+Veröffentlichte Referenz bis zum Abschluss des neuen Releases: [Keep Vault 5.0.2 für macOS](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2), Build 13, Container v12 und KPAR2 v4. Der Arbeitsstand zielt auf 5.0.3 und Container v13 gemäß REV11. Der [Releasebericht](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) hält den tatsächlichen Prüf-, Installations- und Veröffentlichungsstatus fest. Dieser Durchgang betrifft ausschließlich macOS; Windows benötigt eigene Nachweise. Historische Berichte behalten ihren datierten Befund und geben 5.0.3 nicht frei.
 
-## 5.0.3 / v13 / REV9: aktueller Quell- und Prüfstand
+## 5.0.3 / v13 / REV11: aktueller Quell- und Prüfstand
 
-Alle Dokumente in dieser Tabelle liegen derzeit auf Deutsch vor. Ein Link ist ein Verzeichniseintrag, keine PASS-Aussage; der jeweilige Bericht trennt bestandene Prüfungen, offene Gates und Nachweisgrenzen. Reale Testdaten sind auf Benutzerwunsch auf 256 MiB begrenzt, mit einer ausdrücklichen 512-MiB-Ausnahme für die Paranoia-Strukturrunde. Daraus folgt kein physischer Mehr-TiB-Lauf.
+Die jeweilige Dokumentsprache ist ausdrücklich angegeben. Ein Link ist ein Verzeichniseintrag, keine PASS-Aussage; der jeweilige Bericht trennt bestandene Prüfungen, offene Gates und Nachweisgrenzen. Reale Testdaten sind auf Benutzerwunsch auf 256 MiB begrenzt, mit einer ausdrücklichen 512-MiB-Ausnahme für die Paranoia-Strukturrunde. Daraus folgt kein physischer Mehr-TiB-Lauf.
 
 | Dokument | Verfügbare Fassung |
 |---|---|
+| Automatische Ressourcen nach REV11 | [English](KEEP_VAULT_5_0_3_AUTO_RESOURCES_REV10_REVIEW.md) |
+| Originaleingaben und Recovery nach REV11 | [Deutsch](KEEP_VAULT_5_0_3_ORIGINAL_INPUT_REVIEW.md) |
+| Nativer ZPAQ-Kontrollkanal und Lebensdauer nach REV11 | [Deutsch](KEEP_VAULT_5_0_3_ZPAQ_REV11_REVIEW.md) |
+| Fortschritt und entfallene Laufzeitgrenzen nach REV11 | [English](KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md) |
+| Schreibgeschützte Golden-Prüfung | [English](KEEP_VAULT_5_0_3_GOLDEN_VERIFIER_REVIEW.md) |
 | Umsetzung, Ausgangsstand und Toolchain | [Deutsch](KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md) |
 | Containerformat v13 | [Deutsch](KEEP_VAULT_V13_FORMAT.md) |
 | Verwendung der kryptografischen Primitive | [Deutsch](KEEP_VAULT_V13_CRYPTO_USAGE.md) |

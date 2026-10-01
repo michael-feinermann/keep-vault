@@ -1,6 +1,14 @@
 # Keep Vault 5.0.3: Skalierbarkeit und Nachweisgrenzen nach REV9
 
-Stand: 28. September 2026, macOS, vor abschließendem Quellfreeze und Releaseprüfung. Reale gewöhnliche Datenläufe sind auf Benutzerwunsch auf 256 MiB begrenzt. Die ausdrücklich genehmigte Ausnahme ist ein Paranoia-Strukturbaum mit 256 MiB plus zusätzlicher 256-MiB-Einzeldatei. Numerische TiB-Grenztests sind keine realen TiB-Läufe. Windows ist nicht Teil dieses Releaseauftrags.
+## Aktueller REV11-Stand, 1. Oktober 2026
+
+REV11 beseitigt pauschale Höchstreservierungen. Die gemeinsame Policy löst Auto je Phase auf, native Rechenfreigaben werden an blockierenden Wartegrenzen zurückgegeben, und normale Eingaben benötigen keine zusätzliche vollständige Payloadkopie. Die finalen Integrations- und Leistungsergebnisse dieses neuen Standes sind noch offen; historische REV9-Werte unten sind kein REV11-Benchmark.
+
+Siehe [Auto-Ressourcen](KEEP_VAULT_5_0_3_AUTO_RESOURCES_REV10_REVIEW.md), [Fortschritt und Zeitverhalten](KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md) und [Golden-Verifier](KEEP_VAULT_5_0_3_GOLDEN_VERIFIER_REVIEW.md).
+
+## Historische REV9-Dokumentation
+
+Stand: 29. September 2026, macOS. Der Quellstand ist bei `536d7c2afc47a27397f5a611b7ca4a0127067c82` eingefroren; der neue vollständige Produkt- und Performanceablauf ist RUNNING/PENDING. Reale gewöhnliche Datenläufe sind auf Benutzerwunsch auf 256 MiB begrenzt. Die ausdrücklich genehmigte Ausnahme ist ein Paranoia-Strukturbaum mit 256 MiB plus zusätzlicher 256-MiB-Einzeldatei. Numerische TiB-Grenztests sind keine realen TiB-Läufe. Windows ist nicht Teil dieses Releaseauftrags.
 
 ## Gemeinsame Ressourcenentscheidung
 
@@ -53,3 +61,9 @@ Der [native Referenzbericht](KEEP_VAULT_5_0_3_CIPHER_REFERENCE_REPORT.md) und [O
 Die gesonderte [MAC-Phasenmessung](evidence/v13-native-rev9-20260928/mac-root-phases.json) ist bestanden: Gesamtmediane 223,892/53,120 ms bei 1/10 Workern; Root einschließlich Initialisierung/Finalisierung 0,0651/0,0576 ms, entsprechend 0,0292/0,1062 Prozent der Wandzeit. Die Nicht-Leaf-Wandzeit beträgt 5,715/5,512 ms und umfasst Lesen, Kopien, Cleanup und Permitwartezeit. Sie ist kein universeller serieller CPU-Anteil. Der Runner meldete 460 MiB Peak-RSS; das ist keine isolierte IO-/Recovery-Speicherbilanz. IO-/Recovery-Gesamt-RSS, Swapänderungen und vollständige finale GUI-/Installationsläufe sind eigenständige noch zuzuordnende Artefaktgates. Die aktuelle CPUquelle beschreibt die aktivierte macOS-Systemtopologie mit separatem Prozesslimit, keine ausgelesene Affinitätsmaske, NUMA-Verteilung oder garantierte dedizierte CPU-Zeit. Eine spätere große Hardwarekonfiguration benötigt eigene reale Nachweise.
 
 Der Entwurf arbeitet innerhalb geprüfter 64-Bit-Arithmetik, öffentlicher Formatgrenzen, des [kryptographischen Nutzungsbudgets](KEEP_VAULT_V13_CRYPTO_USAGE.md) und der bewilligten Ressourcen. Daraus folgt keine Zusage unbegrenzter Größe, linearer Beschleunigung oder vollständiger CPU-Auslastung in abhängigen, kleinen oder I/O-begrenzten Phasen. Es gibt in diesem Auftrag keinen tatsächlich ausgeführten 1-/4-TiB-Lauf.
+
+## Zuordnung zum neuen Freeze
+
+Die oben genannten Entwicklungs- und Komponentenmessungen behalten ihre historischen Binärbezüge. Der später installierte Kandidat `253b5fa` bestand 225/227 Gruppen einschließlich des 512-MiB-Struktur-/Reparaturtests; zwei andere Fehler verhinderten die Freigabe. Sieben gezielte Korrekturgruppen bestanden danach mit unveränderten installierten Natives und korrigiertem verwaltetem Arbeitsbaum. Originalresultate und Korrekturen sind getrennt unter `work/v13-evidence/final-run-253b5fa-20260929/` und `work/v13-evidence/postfix-check-20260929/` erhalten. Beim historischen Strukturtest wurden die E2E-Phasenzeiten und exakten Strukturzahlen nicht weitergereicht; sie werden nicht nachträglich aus dem Quelltext als Messwerte behauptet.
+
+Für den neuen Freeze `536d7c2` bestätigt der lesende Vorher-/Nachherabgleich sämtliche 1.931 erfassten versionierten Dateien und 39 Native-Dateien. Beide vom tatsächlichen Releasebuilder ausgeführten Slice-KATs bestanden, zuerst ARM64 und dann x86_64 unter Rosetta; `work/v13-evidence/native-freeze-536d7c2-20260929/kat-association.json` bindet Log, Quellen und Eingaben. Das liefert weder physische Intel-/Many-Core-Ergebnisse noch neue Durchsatzwerte. Der noch laufende Gesamt- und Performanceablauf muss seine eigenen vollständigen Ergebnisse liefern. Reale finale GUI, isolierte IO-/Recovery-RSS-/Swapmessungen und Veröffentlichungsabgleich werden dadurch nicht vorweggenommen; siehe [aktueller Teststand](KEEP_VAULT_5_0_3_TEST_REPORT.md#eingefrorener-kandidat-536d7c2).

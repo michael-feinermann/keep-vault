@@ -1,5 +1,17 @@
 # Keep Vault 5.0.3: Sicherheitsreview
 
+## REV11-Nachtrag, 1. Oktober 2026
+
+Die aktuelle Umsetzung entfernt pauschale Speicher-/Datenträgerreservierungen und Operationszeitfristen. Speicherzulassung, Parsergrenzen, Abbruch, KDF, MACs, AEAD, Integrität und Bereinigung bleiben voneinander unabhängige Kontrollen. Der normale Leser bindet die Originaldatei; sein erster Datenpass berechnet beide globalen MACs und die lokalen Bereichsbelege aus denselben Puffern. RAM-Index und notwendige Metadatenauslagerung ersetzen den verpflichtenden Vollspool.
+
+Der erneute Quellabgleich gegen `536d7c2` bestätigt unveränderte Cipher-/Nonce-/Header-Kernmethoden und unveränderte KDF-Parameter. Die tatsächlichen zwölf Suiteausgaben sind bei deaktiviertem Fortschritt, häufigem Polling und defekter Testuhr bytegleich. Ein separater GUI-Fehlertest bestätigt, dass Ausnahmen der Anzeige und ihres eigenen Cleanups die Operations-/CTS-Bereinigung nicht verhindern. Dies sind Entwicklungsbelege, noch keine neue Releasefreigabe.
+
+Beim Abgleich des bisherigen Original-Löschpfads wurde zusätzlich eine verspätete Identitätsbindung festgestellt: bytegleiche ausgetauschte Originale konnten erst nach Archivierung als Vergleichsbestand übernommen werden. Der neue Erstellungs-Snapshot wird deshalb vor der Archivierung gebunden und bis zur Löschentscheidung erhalten. Alle fünf Löschgruppen im aktuellen Entwicklungsharness bestehen, einschließlich Datei-/Ordneraustausch, fehlender leerer Ordner, ungültiger Creation-Capability, Quarantäne und Abbruch. Die Quelleninventur läuft außerhalb des UI-Threads. Rohbelege: `work/v13-evidence/rev11-resources/deletion-all.log` und die unmittelbar gesicherten Ergebnisdateien. Der abschließende Paket-Gesamtlauf bleibt getrennt.
+
+Die vorhandenen externen RSA-/ML-DSA-Schlüssel werden weiterverwendet. Das Apple-Zertifikat bleibt im Schlüsselbund. Der vollständige neue Paketsatz benötigt eigene Signatur-, Notarisierungs-, Installations- und Funktionstests.
+
+## Historischer REV9-Review
+
 Stand: 29.09.2026, Umsetzung und laufende Prüfung auf macOS. Kein externer Audit, keine Zusicherung der Lückenfreiheit.
 
 ## Geprüfte Änderungen

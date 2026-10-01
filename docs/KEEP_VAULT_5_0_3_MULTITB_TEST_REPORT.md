@@ -1,8 +1,16 @@
 # Keep Vault 5.0.3: Prüfstand Eingabe und Ressourcen
 
-Stand: 28.09.2026, Revision 9, macOS. Reale Tests sind auf ausdrücklichen Benutzerwunsch auf höchstens 256 MiB begrenzt. Eine zusätzliche Paranoia-Strukturrunde mit 512 MiB ist erlaubt: 256 MiB variierte Dateien/Verzeichnisse und eine einzelne 256-MiB-Datei. Dieser Bericht enthält keinen praktischen TiB-Durchsatznachweis.
+## Aktueller REV11-Stand, 1. Oktober 2026
 
-Ergänzung vom 29.09.2026: Der Quellstand schließt nach Capture nun die eigenen Schreibhandles und übernimmt zuvor identitätsgebundene echte Lesehandles. Die neue Gruppe `io.verified-input-read-only-seal` prüft Kernelrechte, geschlossene ursprüngliche Schreibhandles, weiter offene fremde Schreibhandles mit anschließender Manipulationsablehnung, Originalmodus, Objekt-/Symlinktausch vor dem Lese-Open und vollständiges Handle-/Besitzercleanup bei einem Fehler vor dem Übergang. Die bestehenden Tamper-, Private-Copy- und 10.000 Spoolfälle verwenden dafür eigene vor dem Übergang duplizierte Angreifer-Schreibhandles; ihre Ablehnungsassertions bleiben erhalten. Der gemeinsame neue Build und diese Wiederholungen sind noch ausstehend. Die folgenden älteren PASS-Nachweise gelten für die jeweils dokumentierten Binärstände.
+Für REV11 werden dynamische Speicher-/Datenträgerzulassung, RAM-Index, gebundener Originalreader und getrennte Reparaturfähigkeit neu geprüft. Kein alter Deadline- oder Spool-Test gilt unverändert als neuer Architekturbeleg. Neue technische Einzelheiten stehen in den verlinkten Ressourcen- und Originalreader-Berichten. Windows sowie reale TiB-Läufe bleiben gemäß direkter Benutzeranweisung außerhalb dieses Durchgangs.
+
+Siehe [Auto-Ressourcen](KEEP_VAULT_5_0_3_AUTO_RESOURCES_REV10_REVIEW.md), [Fortschritt und Zeitverhalten](KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md) und [Golden-Verifier](KEEP_VAULT_5_0_3_GOLDEN_VERIFIER_REVIEW.md).
+
+## Historische REV9-Dokumentation
+
+Stand: 29.09.2026, Revision 9, macOS. Der neue Gesamt- und Performanceablauf aus Freeze `536d7c2` ist RUNNING/PENDING; die folgenden älteren Nachweise behalten ihre eigene Quell- und Binärzuordnung. Reale Tests sind auf ausdrücklichen Benutzerwunsch auf höchstens 256 MiB begrenzt. Eine zusätzliche Paranoia-Strukturrunde mit 512 MiB ist erlaubt: 256 MiB variierte Dateien/Verzeichnisse und eine einzelne 256-MiB-Datei. Dieser Bericht enthält keinen praktischen TiB-Durchsatznachweis.
+
+Ergänzung vom 29.09.2026: Der Quellstand schließt nach Capture nun die eigenen Schreibhandles und übernimmt zuvor identitätsgebundene echte Lesehandles. Die neue Gruppe `io.verified-input-read-only-seal` prüft Kernelrechte, geschlossene ursprüngliche Schreibhandles, weiter offene fremde Schreibhandles mit anschließender Manipulationsablehnung, Originalmodus, Objekt-/Symlinktausch vor dem Lese-Open und vollständiges Handle-/Besitzercleanup bei einem Fehler vor dem Übergang. Die bestehenden Tamper-, Private-Copy- und 10.000 Spoolfälle verwenden dafür eigene vor dem Übergang duplizierte Angreifer-Schreibhandles; ihre Ablehnungsassertions bleiben erhalten. Der ergänzte Build und die gezielten Wiederholungen bestanden inzwischen, ebenso die betreffenden IO-Gruppen im späteren Gesamtlauf des installierten Kandidaten `253b5fa`. Dessen Gesamtstatus blieb wegen zweier anderer Fehler 225/227. Die weitere neue Kandidatenprüfung aus `536d7c2` ist davon getrennt und noch nicht abgeschlossen; siehe den Nachtrag unten.
 
 ## Ausgeführte Prüfungen
 
@@ -73,7 +81,7 @@ Je Ziel variieren Fallfamilie, öffentliche Quellbytes, Längen, Offsets, Fragme
 
 Alle drei verwalteten Aufrufe verwendeten explizit den Schedulerseed `0x5EED0313`. Die Zielseeds sind nach den im Harness festgelegten XOR-Konstanten `0x08A44C00` für die Spoolfälle, `0x15BD4227` für den Streamingcodec und `0x0CAC3220` für den Server. Reproduktion mit dem gebauten macOS-Teststand: `--full --no-smoke --only <Gruppen-ID> --seed 0x5EED0313`. Der Scheduler hält erfolgreiche Nicht-Performance-Workerdiagnostik zurück; die äußeren Logs belegen deshalb PASS und Dauer, nicht zusätzliche von dort aus nicht sichtbare Byte- oder RSS-Zähler.
 
-Dauerhafte Kopien der 19 gezielten Gruppen, der drei Fuzzgruppen, der früheren beiden Testhelperfehler und der nativen Ergebnisse liegen unter [evidence/v13-io-rev9-20260928](evidence/v13-io-rev9-20260928/evidence-manifest.json). Dieses Manifest enthält SHA-256 der abgelegten Evidenzdateien und die Seedzuordnung. Die Zwischenstände der verwalteten Fuzzassemblies wurden nicht separat gehasht. Das ältere `rev9-dev-trust-binary-manifest.json` wird deshalb ausdrücklich nicht nachträglich diesen späteren Läufen zugeordnet. Der finale Release wiederholt die erforderlichen Gruppen mit aufgezeichneten Releasebytes.
+Dauerhafte Kopien der 19 gezielten Gruppen, der drei Fuzzgruppen, der früheren beiden Testhelperfehler und der nativen Ergebnisse liegen unter [evidence/v13-io-rev9-20260928](evidence/v13-io-rev9-20260928/evidence-manifest.json). Dieses Manifest enthält SHA-256 der abgelegten Evidenzdateien und die Seedzuordnung. Die Zwischenstände der verwalteten Fuzzassemblies wurden nicht separat gehasht. Das ältere `rev9-dev-trust-binary-manifest.json` wird deshalb ausdrücklich nicht nachträglich diesen späteren Läufen zugeordnet. Die späteren Kandidatenläufe verwenden ihre jeweils eigens aufgezeichneten Releasebytes.
 
 ## Zusätzlicher Befund beim Mehrchunk-Kryptotest
 
@@ -90,7 +98,15 @@ Die neue Gruppe `io.verified-input-descriptor-capture` prüft dreimal 32 MiB + 3
 
 Der Kryptotest prüft zwei gleiche 16-MiB-Klartextchunks je Suite, unterschiedliche Ciphertextbereiche und anschließend die vollständige Entschlüsselung aller zwölf Suites. Die Peakwerte stammen aus dem jeweiligen Testworker und sind keine isolierte Bilanz der Spoolkomponente. Rohlogs, vollständige Ergebnisobjekte und die vor diesen Wiederholungen erfassten DLL-/Nativehashes liegen ebenfalls im [IO-Evidenzmanifest](evidence/v13-io-rev9-20260928/evidence-manifest.json). Der Produktassemblyhash ist `05c6410762c802bb346c2494ce7fab2d4559af4d51aefff14a0a5bc3a2b5641e`, der Testassemblyhash `210500f09030cd33d3bc5aeacff32ad2f75961a22ce4af8e89a29fe3fac4c0ce`. Diese Zuordnung gilt für die hier genannten Wiederholungen, nicht rückwirkend für die früheren Fuzzstände.
 
-Der Entwicklungsnachweis umfasst damit 20 gezielte IO-/Metadaten-/Ressourcengruppen plus drei Fuzzgruppen, ausgeführt auf den jeweils ausgewiesenen Ständen, sowie den erfolgreich wiederholten Mehrchunk-Kryptotest. Der frühere Fehler bleibt im Evidenzverzeichnis erhalten. Die abschließende Freigabe prüft erneut die exakten Releasebytes.
+Der damalige Entwicklungsnachweis umfasst damit 20 gezielte IO-/Metadaten-/Ressourcengruppen plus drei Fuzzgruppen, ausgeführt auf den jeweils ausgewiesenen Ständen, sowie den erfolgreich wiederholten Mehrchunk-Kryptotest. Der frühere Fehler bleibt im Evidenzverzeichnis erhalten. Diese Zahlen werden nicht nachträglich um spätere Kandidatengruppen erhöht.
+
+## Kandidaten und Korrekturen vom 29.09.2026
+
+Die ergänzten Build-/Descriptor-/Ressourcenprüfungen sind im [Nachweis der Abschlusshärtung](evidence/v13-final-hardening-20260929/manifest.json) gesichert. Der vollständige installierte Kandidat `253b5fa33f0d93cf87525b6e70ad9d4a9af8c3f8` bestand 225 von 227 Gruppen einschließlich der IO-Gruppen und des 512-MiB-Paranoia-Struktur-/Reparaturtests. Die beiden Fehler `gui.resource-policy` und `zpaq.full-matrix` bleiben im ursprünglichen Ergebnis unter `work/v13-evidence/final-run-253b5fa-20260929/phase-1/` erhalten. Der Plain-Adapter hatte manipulierte Daten abgewiesen, jedoch einen falschen Ausnahmevertrag gemeldet; der korrigierte Adapter erhält beide Hashprüfungen und die gemeinsame Freigabegrenze.
+
+Alle sieben gezielten Korrekturgruppen bestanden anschließend mit Seed `0x5EED0313`, darunter die neue neunfache Plain-Manifest-Ablehnungsprüfung, Original-/Zustandscapture, vollständige ZPAQ-Matrix, GUI-Budgettest, Trust und Testinfrastruktur. `work/v13-evidence/postfix-check-20260929/` bindet den damaligen verwalteten Arbeitsbaum auf Basis `253b5fa`, die unveränderten zuvor installierten Natives und die Einzelresultate. Das ist kein nachträglicher Full-PASS.
+
+Der neue Freeze lautet `536d7c2afc47a27397f5a611b7ca4a0127067c82`. Nach Neubau und beiden tatsächlichen Slice-KATs blieben sämtliche 1.931 erfassten versionierten Dateien einschließlich 39 Native-Dateien unverändert. ARM64 und x86_64 unter Rosetta bestanden jeweils ihren frischen KAT; Zuordnung und Hashbelege: `work/v13-evidence/native-freeze-536d7c2-20260929/`. Der neue vollständige Produkttest- und Performanceablauf läuft noch. Seine Ergebnisse werden ausschließlich aus `work/v13-evidence/final-run-536d7c2-20260929/` und dem zugehörigen Builderlog übernommen, nicht aus den historischen PASS-Zeilen. Siehe [aktueller Teststand](KEEP_VAULT_5_0_3_TEST_REPORT.md#eingefrorener-kandidat-536d7c2).
 
 ## Grenze der Aussage
 

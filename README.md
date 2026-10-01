@@ -527,7 +527,7 @@ drivers and printers can create their own temporary data outside the app.
 
 ## Streaming and parallelism
 
-Encrypted v13 input uses a private ciphertext spool with a local dual-MAC range index. Each complete 1 MiB range is reverified in a private buffer before consumption. Normal consumers gain access only after both global container MACs pass. A trusted resource policy bounds sizes, memory, CPU workers and queues; archive bytes cannot raise its limits. Regular `.zpaq` input binds the original file and stores only a local authentication index. The normal 256 MiB test cap and the explicit 512 MiB Paranoia structural fixture do not establish real multi-TiB evidence.
+REV11 opens and binds the original encrypted v13 input once. The first payload pass creates a local dual-MAC range index while calculating both global authenticators from the same buffers; no additional full ciphertext copy is created. The shared index cache starts small, grows on demand up to 16 MiB and spills authenticated metadata only when required. Each complete 1 MiB range is reverified in a private buffer before consumption. Normal consumers gain access only after both global container MACs pass. A trusted resource policy bounds sizes, memory, CPU workers and queues; archive bytes cannot raise its limits. Regular `.zpaq` input binds the original file and stores only a local authentication index. The normal 256 MiB test cap and the explicit 512 MiB Paranoia structural fixture do not establish real multi-TiB evidence.
 
 ZPAQ lives under `external/zpaq`, the licensed v13 Kalyna implementation in
 Crypto++ 8.9.0 under `external/cryptopp`, and the official Skein 1.3 /
@@ -557,17 +557,23 @@ and uncompressed lengths and checksum. Frames are produced and consumed in
 index order, while bounded worker sets compress or decompress independent
 blocks concurrently. A frame is limited to 24 MiB compressed data, 32 MiB
 uncompressed data and a 128 MiB model. At most 512 MiB of compressed pipe data
-may wait for an ordered consumer. Regular archives use a 64 MiB output and
-512 MiB model limit per job. A shared 6 GiB processing budget admits only as
-many 384 MiB compression or 592 MiB regular jobs as fit; the requested worker
-count also respects the shared operation CPU budget. Truncated, reordered, non-canonical or
+may wait for an ordered consumer. Regular archives retain bounded per-job output/model parser limits. REV11 admits
+actual buffers and model allocations against a shared live memory ledger,
+including current OS pressure and protected entropy records. It does not reserve
+a fixed 6 GiB processing amount. Numeric maxima authorize work; they do not
+allocate or reserve that amount of RAM or disk. The requested worker count also
+respects the shared operation CPU budget. Truncated, reordered, non-canonical or
 checksum-invalid frames are rejected without resynchronising past damage.
 
 Regular `.zpaq` extraction and listing use the bounded duplex `KV13RA` protocol. The parent opens the original archive once, builds a private dual-MAC index over its 1 MiB ranges, and verifies both required whole-archive hash sidecars. The native parser receives no archive file descriptor. It requests bounded ranges by 64-bit offset and a length of at most 1 MiB; the parent verifies each complete source range again in private memory before sending the requested slice. Mutation, truncation, malformed requests and incomplete responses fail closed. Parallel parser readers serialize complete request/response transactions.
 
 This route creates neither a plaintext archive copy nor a whole-archive SHM/VM allocation. The global `.sha3` and `.skein` sidecars remain unkeyed corruption checks; an attacker who can replace the source and both sidecars can replace their contents. The ephemeral local MAC index binds the verified bytes throughout the current operation. Parser model, index, output and entry budgets remain enforced by the trusted resource policy.
 
-Native ZPAQ teams, container cipher teams, MAC leaf workers and Argon2 execution threads share CPU reservations. A ZPAQ process reserves at most the approved budget minus one, preserving a worker for its parent's streaming/authentication work, including when several native children are queued. Streaming operations therefore require a budget of at least two workers. Argon2's four cryptographic lanes remain unchanged when fewer execution threads are granted.
+Native ZPAQ teams, container cipher teams, MAC leaf workers and Argon2 execution threads share CPU permits. REV11 native workers release their compute permits around blocking pipe, I/O and control waits and reacquire them for computation. A manual CPU ceiling of one is supported. Argon2's four cryptographic lanes remain unchanged when fewer execution threads are granted.
+
+The Resources tab defaults to Automatic. Explicit manual ceilings are optional and remain separate from currently resolved values. Small operations begin with one memory slot; larger ready work may obtain more after admission. Unknown extraction output has an initial, visible 256 MiB authorization, adjustable explicitly under Resources. That authorization is not a disk-space reservation. Argon2id still temporarily requires 1 GiB to just under 2 GiB plus overhead, even for tiny archives.
+
+Archiving, extraction and repair have no application-imposed wall-time, CPU-time or no-progress deadline. Manual cancellation, real failures and bounded cleanup escalation remain. Progress reports actual phase units and elapsed time; phase ETA appears only after sufficient fresh measurements. Unknown overall work remains unknown. See the [REV11 progress review](docs/KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md).
 
 The container processes bounded groups of 16 MiB chunks. Memory slots are separate from CPU workers: each slot owns two locked 16 MiB buffers and small counter/nonce/tag storage. Even one chunk may use multiple approved cipher workers. The shared budget reserves each team including its caller; native ciphers borrow work through the common executor. There is no fixed aggregate cap of 64 or 1024 CPUs. Actual process CPU availability and RAM/queue budgets remain limits. Output is ordered, active work is joined and temporary secrets are erased before publication. Failure publishes no partial container. Numerical many-core tests do not establish measurements on such hardware.
 

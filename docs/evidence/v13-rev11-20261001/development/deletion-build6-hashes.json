@@ -1,0 +1,309 @@
+{
+  "captured_utc": "2026-10-01T08:43:01.636511+00:00",
+  "build": "Verified SDK shared final build6, 0 warnings / 0 errors",
+  "command": "work/v13-evidence/rev11-development/run-dotnet.zsh /Users/michael/Developer/GPT-Codex/Kalyna/work/rev11-resource-tests-20261001/KeepVaultMac.Tests.dll --full --no-smoke --category Deletion --parallel 1",
+  "result": "5 passed, 0 failed, 0 blocked",
+  "native_scope": "Trusted installed native artifacts copied from private IO stage; newly signed release integration is a separate root gate",
+  "files": [
+    {
+      "path": "KeepVaultMac/Services/MacOriginalDeletionService.cs",
+      "sha256": "ee20cfbef70c63c20c27d36aa38f132573f5e91d44d4aa8de9fece94b9f05438"
+    },
+    {
+      "path": "KeepVaultMac/Services/MacOriginalCreationSnapshot.cs",
+      "sha256": "93968fbff73ea456d2fb22e13f3ca45e5865931593a4da997fdec3962b81bd8f"
+    },
+    {
+      "path": "KeepVaultMac.Tests/OriginalDeletionCreationTests.cs",
+      "sha256": "1363132f4e265d14e89d334cba46e08343ec17512f1f2aa6268731df4f81f6a2"
+    },
+    {
+      "path": "KeepVaultMac.Tests/MacComprehensiveTests.cs",
+      "sha256": "dd29122b67fa3d45c22247250e6209f2d8679e78a77d502233b30194ec7edfe0"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/KeepVaultMac.Tests.dll",
+      "sha256": "f39dd60f811a78ca76ca0818d11c32e2e8d12ddc307911e626b107c65650dc10"
+    },
+    {
+      "path": "work/v13-evidence/rev11-resources/deletion-final.log",
+      "sha256": "efe8dd69de3e1bf466d30c56261a8a7212fa030adaf72ef7c9f125e43e54068b"
+    },
+    {
+      "path": "work/v13-evidence/rev11-resources/deletion-final-results.json",
+      "sha256": "6dce359efba02b60ab48a1541afd56da40430f083df53657f482ed15eb2132a3"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/argon2",
+      "sha256": "155ee52f3759e7670c35af624bc1cd10fc0a232fd088f983100949ec187b6c7e"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/argon2.khsig",
+      "sha256": "b4cba90ce3d93486e373fa611923b512798d033c90d2c038aa2993756cc648e8"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/argon2.sha3",
+      "sha256": "d5d3c645943e99f4b0784f75e6daee6f47fa775ac9522aeca765260879e878ca"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/argon2.sha3.khsig",
+      "sha256": "37237b2ed17a094b434a00baaa726a95cc341d271e94c2087205d30b387fd71d"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/argon2.skein",
+      "sha256": "7b969b8bc98e016a20fe78f74c4e2ff53cbeb2314d1012732f3597b13f955ab5"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/argon2.skein.khsig",
+      "sha256": "e864cf88ea5509eaa22c01ccaba38111fbd8f036238c0753acd989b562ebb7ea"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libaes_ref.dylib",
+      "sha256": "106f32708582d9b69dfcdb1eb1abe6839da146852caabb7b7eec0abad16e620b"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libaes_ref.dylib.khsig",
+      "sha256": "58009f69a1532eecdf49c7afc10493c9efea71721db512ee1b230cea4aedff53"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libaes_ref.dylib.sha3",
+      "sha256": "dc12e8071015c7ce93bb7a2f65901e766294b234f17584bafcf065f5c68f47ec"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libaes_ref.dylib.sha3.khsig",
+      "sha256": "fbee285e6f6f7727ac66cf477a9e317b20e7d1dc18f738f79f8e4892977cb705"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libaes_ref.dylib.skein",
+      "sha256": "cf5d05cde09c7061caa254bbe6ad78403cd2f474ad37e30992ecf568ae12528e"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libaes_ref.dylib.skein.khsig",
+      "sha256": "268e4144864b034588789c2da79c606befedaf31deb6c2cd63a55752971ca3bf"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libargon2_ref.dylib",
+      "sha256": "d5c10729b08ba721d7ee8b02a62d4bee2dd81a1d47ee32724e874b36408e63f9"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libargon2_ref.dylib.khsig",
+      "sha256": "1a3960ea236456c229018d609c9144da36bcddbb3a094dd5b8fd1d0892ece5df"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libargon2_ref.dylib.sha3",
+      "sha256": "76f450ceb581874405c68bc1702ecdae80c05705aaaa58f167c6d76836148cfc"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libargon2_ref.dylib.sha3.khsig",
+      "sha256": "9951f2bf2c099c1c207dadb75093d66504aab7596f24cbd6bfacb33dd5c7b7c9"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libargon2_ref.dylib.skein",
+      "sha256": "f02bce11ad71d4bb38f958ae047c6393a2e7174b17ad0b8d3aebd4be45b17c90"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libargon2_ref.dylib.skein.khsig",
+      "sha256": "21e010c75fd92d9405604ecb594641656786c05627d1703a9dce85ff53d4c1c3"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libcamellia_v13.dylib",
+      "sha256": "015534be3d76ff56a824523aa99be29d047dd962f1dcc11ec8e356f9cd995444"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libcamellia_v13.dylib.khsig",
+      "sha256": "f0aa726b8275f1d5dd59326d712df405b11fb51b88430ace5b2359b88d8ee3ee"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libcamellia_v13.dylib.sha3",
+      "sha256": "c4747ba6148d74c8158069b3855e42c09aa9cf5d46b8f9d3819d1c9aea9bd6db"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libcamellia_v13.dylib.sha3.khsig",
+      "sha256": "95c275a4f30084b82570090f77742f12c76e8a8707b64b650a444a67295a9784"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libcamellia_v13.dylib.skein",
+      "sha256": "c312338251518ea38d5ec76c8eba0cf36f4cb29c089779a5f774593dbd88c378"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libcamellia_v13.dylib.skein.khsig",
+      "sha256": "6395bc56ba24d36a57cb36264ae6aa1c338f8efa14c00caf5bb0d405b7351f1e"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libkalyna_v13.dylib",
+      "sha256": "d079e691e79ad9878d1095da6483969d434617ea6631701d2a20f3cc68e0d296"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libkalyna_v13.dylib.khsig",
+      "sha256": "6c3e1e4e68a32d532284c8ba61dcdc1002cf437026c36b8a7b66463cb797a404"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libkalyna_v13.dylib.sha3",
+      "sha256": "87cd10b8a6a2e320ad15b016818787990c2756f213bee6eb36f6de7df02dc801"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libkalyna_v13.dylib.sha3.khsig",
+      "sha256": "49ef7478eaf2a0337b194b8b169d14a8a718c1d262e1aad88344c8fa9e7fbba6"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libkalyna_v13.dylib.skein",
+      "sha256": "fe68f225c125ff8f2a385562a7166845a50c768aad0d5c7893204391aa34873e"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libkalyna_v13.dylib.skein.khsig",
+      "sha256": "610c1548f2d89a8f9a20c0a404c79b64b7d87bc1bdbd21c5117c52bad4964214"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libmars_ref.dylib",
+      "sha256": "77789abe774e35974d4e6a507054c04d7d1790935492cacbba01fb263966bf51"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libmars_ref.dylib.khsig",
+      "sha256": "bcb2d6b59ed62dff817ec518280fcab4c0894eeaa67edbec2fca1f078b0ef840"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libmars_ref.dylib.sha3",
+      "sha256": "bee8600c91b74da1c2c8b7dc67d67e9983fc7488badb34e2a4f1a655d7b259b5"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libmars_ref.dylib.sha3.khsig",
+      "sha256": "64e67b4a2b0775c8e1239966cd8a510dd826d64059cf5cf7f1b79176e9ec4df9"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libmars_ref.dylib.skein",
+      "sha256": "5e2a2956d9016dad9aa782a68417bee3b880004499ad80a45223e6b98f64da03"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libmars_ref.dylib.skein.khsig",
+      "sha256": "f60c1472e0c4f4b58856bc0e0ebb8fee4f5cb6b670a6c46a84067d6c12bf2dbb"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libmldsa87_ref.dylib",
+      "sha256": "14544e9dbc2ab6d1ad0d38d49eab95cc42ed80acc27a2cb615836362cd545382"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libserpent_v13.dylib",
+      "sha256": "ed431d701bbebb31344b04615009a5015e4fb04288491ef010d4df93ab5b5cdf"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libserpent_v13.dylib.khsig",
+      "sha256": "0ad5e5bac3fb947e6b539d1b5046829eb58353e9302e25b28dd4193937ca5a97"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libserpent_v13.dylib.sha3",
+      "sha256": "b77f0e8b56df1d9963837931200057dcaab613f237bfa3c8a1d0c9516047e452"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libserpent_v13.dylib.sha3.khsig",
+      "sha256": "6099e54cfc5bc5dfe605f68729e5ceaefae7fdc8bfc00eb690041148f9431123"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libserpent_v13.dylib.skein",
+      "sha256": "c5d506b0fb5f25929df49bf1c43304c41d8118478154e4880b44af248c032a97"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libserpent_v13.dylib.skein.khsig",
+      "sha256": "80038c43ac7ede7688e508b0f8886b801802fb6264cd15a2ce88b4873a9ad268"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libsha3_ref.dylib",
+      "sha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libshacal2_ref.dylib",
+      "sha256": "bab586fa2f15b898ff93aafc248e6b33fd7bf7f3290e5fb0306172d480a9e7f3"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libshacal2_ref.dylib.khsig",
+      "sha256": "4df0b38a6143b1eff64e34fdc10472477e9cf14d813c967bc738abe7eccc2dc1"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libshacal2_ref.dylib.sha3",
+      "sha256": "5d4f9a0026b1c98fce08b6afdc7159dbabf582e4fe1e382cfd9115425623f75e"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libshacal2_ref.dylib.sha3.khsig",
+      "sha256": "810523ecaa432ffcfdef334560a575533378e1d94b7c3efd6d83ee4b27bac2ef"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libshacal2_ref.dylib.skein",
+      "sha256": "2149a07f35b4f0a3d68360fa4143450d2675669521e88d703abe66acbe2536fa"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libshacal2_ref.dylib.skein.khsig",
+      "sha256": "7ef7140c15d07a1c769b860923976517b8eebc380bf0c012b06bd9398a50538e"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libthreefish_ref.dylib",
+      "sha256": "81b2b6a7ab53411e38eee6492667279bd53db708274c5456259ab2ae97f6583b"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libthreefish_ref.dylib.khsig",
+      "sha256": "351e53bdf90f3bc2a2c79b2aba518f814f768f9cbe21472b403dc64491b1ea3c"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libthreefish_ref.dylib.sha3",
+      "sha256": "58b7699b218fe5a94db8625a99b038067c6c3cabb6c7ddb522ea0dfd14aa3585"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libthreefish_ref.dylib.sha3.khsig",
+      "sha256": "f2361dee49db398ba118e2a5bea3f458f8221592ffd41aa6dda82c09ab192d66"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libthreefish_ref.dylib.skein",
+      "sha256": "7c3fc3d202597b2906f40d7dca320d81fa72756884e60bd475e87f5c6de7f342"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libthreefish_ref.dylib.skein.khsig",
+      "sha256": "48ec46f5265f599600035adc1f1c7554b983d2541ee61561f51a017817566939"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libxchachapoly_v13.dylib",
+      "sha256": "23b0a84c95a19a964c83659cbc439107be3be61e3be34845b956350a6d634d1a"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libxchachapoly_v13.dylib.khsig",
+      "sha256": "bc4fde406e3473ae4180eb298c3cccbaee325718f88eb3a1b4d8f34bf222d1d7"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libxchachapoly_v13.dylib.sha3",
+      "sha256": "9c1fb9e7638e19caf8c112df7d885d12c441ca59c8637463758468892e836de5"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libxchachapoly_v13.dylib.sha3.khsig",
+      "sha256": "98e9c81bf4d21c3040a83301f244b1c7d73feacd825bbcad5fd319bb317c88ac"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libxchachapoly_v13.dylib.skein",
+      "sha256": "5f9a089005039fab1ca5c124af4a584effd6cae7a1ba2070cc6d3e42b5900d3b"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/libxchachapoly_v13.dylib.skein.khsig",
+      "sha256": "204ce9153c9b6225c27d90af9112c53a021d1b30389cb24023ea78ad50de81c3"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/zpaq",
+      "sha256": "23e9f67a8bf8de9c6e04e7504343410f60215857df91ae9c6c68fb765cc6f977"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/zpaq.khsig",
+      "sha256": "a5362882f2d9dcf86d27618749954790f774e8cda9473e946797986a9467918f"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/zpaq.sha3",
+      "sha256": "4c5020854700e003a9b33ba53abd56efb86b9cc75564240d3c5e747d4b2737c1"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/zpaq.sha3.khsig",
+      "sha256": "d0211fe74a96ccbd09c678caf3ee6a1e27edadbda3aeee73733f062046c9c3a9"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/zpaq.skein",
+      "sha256": "6eacf0d32774a8e58dec28d103ec257e4f0fd3c89bd56189886b17c1c3447b5c"
+    },
+    {
+      "path": "work/rev11-resource-tests-20261001/Native/zpaq.skein.khsig",
+      "sha256": "325cd3fed816b82c2aff92e20757075c508dd90c6949dd12e8bc0ce76e6cb7be"
+    }
+  ]
+}

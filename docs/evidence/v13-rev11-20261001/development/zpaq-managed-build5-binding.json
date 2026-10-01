@@ -1,0 +1,22 @@
+{
+  "KalynaArchiver/Services/ZpaqService.cs": {
+    "sha256": "f19bc200fa808abfbac7112acfc36142cf234bc3da79d49ee81321d9fe6d73eb",
+    "mtime_ns": 1790843682129565578
+  },
+  "KalynaArchiver/Services/ZpaqBoundSources.cs": {
+    "sha256": "1b30754c1ef1ab4bfce5d8e16f905ebfbe1c6db292cd56dfab2eaf655e4234fe",
+    "mtime_ns": 1790843645873503759
+  },
+  "KeepVaultMac.Tests/ZpaqControlTests.cs": {
+    "sha256": "edf72a2abd58811e4205f58c52d8dbe6641ddf1f8b740759eebeae2c42ec5e88",
+    "mtime_ns": 1790843605909704605
+  },
+  "work/rev11-zpaq-control/managed-final5/Keep Vault.dll": {
+    "sha256": "560eca9806df738fe56f520abdb62134f56244492069120093f4e660c66306b0",
+    "mtime_ns": 1790843684458064394
+  },
+  "work/rev11-zpaq-control/managed-final5/KeepVaultMac.Tests.dll": {
+    "sha256": "8a3062f3dea7b382aca11a0ee099b654baa4d3f693e135192a7bd7774b4297c1",
+    "mtime_ns": 1790843684868805823
+  }
+}

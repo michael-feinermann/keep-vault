@@ -1,0 +1,233 @@
+{
+  "baseline_commit": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+  "captured_utc": "2026-10-01T08:13:15.427699+00:00",
+  "whole_files": [
+    {
+      "path": "KalynaArchiver/Services/SuiteKeySchedule.cs",
+      "unchanged": true,
+      "baseline_sha256": "a641f52bd434dcb3563f73947492844b0cb2332465c68f8709e6eab888f4dd5e",
+      "current_sha256": "a641f52bd434dcb3563f73947492844b0cb2332465c68f8709e6eab888f4dd5e"
+    },
+    {
+      "path": "KalynaArchiver/Services/ContainerKeyDerivation.cs",
+      "unchanged": true,
+      "baseline_sha256": "8959f03aeedfaaad2eaf42659ce3a1359cbc301ae3b4d0b2d3150fa5438e37a8",
+      "current_sha256": "8959f03aeedfaaad2eaf42659ce3a1359cbc301ae3b4d0b2d3150fa5438e37a8"
+    },
+    {
+      "path": "KalynaArchiver/Services/KdfPrimitives.cs",
+      "unchanged": true,
+      "baseline_sha256": "060b2f19dbac01fc22b5aca83d3d7d1f35fa1029d09354fe3a5350d489d34964",
+      "current_sha256": "060b2f19dbac01fc22b5aca83d3d7d1f35fa1029d09354fe3a5350d489d34964"
+    },
+    {
+      "path": "KalynaArchiver/Services/KdfSalts.cs",
+      "unchanged": true,
+      "baseline_sha256": "086b363fadb1b463322b9be0faf2068959d5a76c28299c213fde0416da4c4154",
+      "current_sha256": "086b363fadb1b463322b9be0faf2068959d5a76c28299c213fde0416da4c4154"
+    },
+    {
+      "path": "KalynaArchiver/Services/ChunkNoncePlan.cs",
+      "unchanged": true,
+      "baseline_sha256": "187f57238e1a4fa0b000e84cba040c7ef8887ddb0bee5ce7cd68a2ed834b94b5",
+      "current_sha256": "187f57238e1a4fa0b000e84cba040c7ef8887ddb0bee5ce7cd68a2ed834b94b5"
+    },
+    {
+      "path": "KalynaArchiver/Services/CryptoUsageBudget.cs",
+      "unchanged": true,
+      "baseline_sha256": "c4a52c81ac1b343787a70f02dcc8fe57f7345a4707b2af4a61cb8998b3b65df2",
+      "current_sha256": "c4a52c81ac1b343787a70f02dcc8fe57f7345a4707b2af4a61cb8998b3b65df2"
+    },
+    {
+      "path": "KalynaArchiver/Services/EncryptionSuite.cs",
+      "unchanged": true,
+      "baseline_sha256": "1bb034129f9220725a50766a5d71dc46f22f17895bb42c1f820f8f1e3c878b5a",
+      "current_sha256": "1bb034129f9220725a50766a5d71dc46f22f17895bb42c1f820f8f1e3c878b5a"
+    },
+    {
+      "path": "KalynaArchiver/Services/PasswordKeyService.cs",
+      "unchanged": true,
+      "baseline_sha256": "d40cae633a2e064299ac2f67b3580a24465adf95a880742b7dbd4e294ef7e2aa",
+      "current_sha256": "d40cae633a2e064299ac2f67b3580a24465adf95a880742b7dbd4e294ef7e2aa"
+    },
+    {
+      "path": "KalynaArchiver/Services/NativeArgon2id.cs",
+      "unchanged": true,
+      "baseline_sha256": "7b05a668f2f3d04ae1742bbc84cfa58ce24c32d03d5e8b2dc91a7b4935a22620",
+      "current_sha256": "7b05a668f2f3d04ae1742bbc84cfa58ce24c32d03d5e8b2dc91a7b4935a22620"
+    },
+    {
+      "path": "KalynaArchiver/Services/NativeCascadeCiphers.cs",
+      "unchanged": true,
+      "baseline_sha256": "a1fd9137cfba4997dbf1f6bcba3fe1ef91a583f1f253b3dc2c6df251bd3f1d03",
+      "current_sha256": "a1fd9137cfba4997dbf1f6bcba3fe1ef91a583f1f253b3dc2c6df251bd3f1d03"
+    },
+    {
+      "path": "KalynaArchiver/Services/NativeCipherExecutor.cs",
+      "unchanged": true,
+      "baseline_sha256": "b361713a38dd755d37ce9dcdbfd0bf4aa943c8655bbdaec748ce4077778d6591",
+      "current_sha256": "b361713a38dd755d37ce9dcdbfd0bf4aa943c8655bbdaec748ce4077778d6591"
+    },
+    {
+      "path": "KalynaArchiver/Services/Skein1024Service.cs",
+      "unchanged": true,
+      "baseline_sha256": "4aee152745f969cd7c7c2508d1644a73f40974a5c73fbef4e6f786f2249f386f",
+      "current_sha256": "4aee152745f969cd7c7c2508d1644a73f40974a5c73fbef4e6f786f2249f386f"
+    },
+    {
+      "path": "KalynaArchiver/Services/SecureMemory.cs",
+      "unchanged": true,
+      "baseline_sha256": "78bad22e1db00105c5c11d601bc3c23ed3e13cc0eb7467f2e08f42bb1f373f5e",
+      "current_sha256": "78bad22e1db00105c5c11d601bc3c23ed3e13cc0eb7467f2e08f42bb1f373f5e"
+    },
+    {
+      "path": "KalynaArchiver/Services/EntropyMixer.cs",
+      "unchanged": true,
+      "baseline_sha256": "058cadd11972ed80a27439fa39f6e46e1e3bbf6061f753e783176fc7cc5a620a",
+      "current_sha256": "058cadd11972ed80a27439fa39f6e46e1e3bbf6061f753e783176fc7cc5a620a"
+    },
+    {
+      "path": "KalynaArchiver/Services/PoolShuffleRandomSource.cs",
+      "unchanged": true,
+      "baseline_sha256": "aea6aed7cfe0c41bafab96c0127ea80efc3d7524dc8180c3ad2f7bfdd13447e5",
+      "current_sha256": "aea6aed7cfe0c41bafab96c0127ea80efc3d7524dc8180c3ad2f7bfdd13447e5"
+    },
+    {
+      "path": "KalynaArchiver/Services/SensitiveMouseRecordStore.cs",
+      "unchanged": true,
+      "baseline_sha256": "58154466a97a0f5884388cf3b4a6d3cf27c985db6e4459839cc335ba8f884adc",
+      "current_sha256": "58154466a97a0f5884388cf3b4a6d3cf27c985db6e4459839cc335ba8f884adc"
+    },
+    {
+      "path": "native/aes_ref_export.cpp",
+      "unchanged": true,
+      "baseline_sha256": "023ed2eff6a7afc36d3e5f1700c4cf6b5dd9d175a648bca096d85c51a2c7ef73",
+      "current_sha256": "023ed2eff6a7afc36d3e5f1700c4cf6b5dd9d175a648bca096d85c51a2c7ef73"
+    },
+    {
+      "path": "native/mars_ref_export.cpp",
+      "unchanged": true,
+      "baseline_sha256": "67ac31b72622c3d40019f5100ae29cf80e64d5af594a079734f8de9aeb354efe",
+      "current_sha256": "67ac31b72622c3d40019f5100ae29cf80e64d5af594a079734f8de9aeb354efe"
+    },
+    {
+      "path": "native/shacal2_ref_export.cpp",
+      "unchanged": true,
+      "baseline_sha256": "efbc715476a4181154af42d27c95134bd76276dc6c601e851d5f13c0b69c5a0e",
+      "current_sha256": "efbc715476a4181154af42d27c95134bd76276dc6c601e851d5f13c0b69c5a0e"
+    },
+    {
+      "path": "native/threefish_ref_export.c",
+      "unchanged": false,
+      "baseline_sha256": "eaa651c075d7ea04039c146f64146b975aeaae7be84fbbbb0f51392ed9cdb215",
+      "current_sha256": "d01e3722382200dc9828599db10e6fca5b6d2dd0d94c7f281d517bfec40c3e89",
+      "only_line_endings_differ": true
+    },
+    {
+      "path": "native/xchachapoly_ref_export.cpp",
+      "unchanged": true,
+      "baseline_sha256": "c7dd33a138127ba7beaba7057debeeb1ac4a84c02e2319bf040e0ee8203b01ba",
+      "current_sha256": "c7dd33a138127ba7beaba7057debeeb1ac4a84c02e2319bf040e0ee8203b01ba"
+    },
+    {
+      "path": "native/sha3_ref_export.c",
+      "unchanged": true,
+      "baseline_sha256": "1eda5eb4ce3a37ded275f0d20c3d02309e4e2d79ee1b56305923e0252a765609",
+      "current_sha256": "1eda5eb4ce3a37ded275f0d20c3d02309e4e2d79ee1b56305923e0252a765609"
+    },
+    {
+      "path": "native/argon2_ref_export.c",
+      "unchanged": true,
+      "baseline_sha256": "7b562680e73f61411ce565c9fb088e9071cde9127e4f65780c731d48111e3492",
+      "current_sha256": "7b562680e73f61411ce565c9fb088e9071cde9127e4f65780c731d48111e3492"
+    },
+    {
+      "path": "native/mldsa87_ref_export.c",
+      "unchanged": true,
+      "baseline_sha256": "96be0386e6d921b1ed3f81fa01a04a6ae18585d65f6b07e135bc67b30884811f",
+      "current_sha256": "96be0386e6d921b1ed3f81fa01a04a6ae18585d65f6b07e135bc67b30884811f"
+    }
+  ],
+  "container_unchanged_methods": [
+    {
+      "method": "DeserializeAndValidateHeader",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "cbdf9b09720850f720da203a87632b11007254e85585f1349c4ffa1319b9c0e9",
+      "current_sha256": "cbdf9b09720850f720da203a87632b11007254e85585f1349c4ffa1319b9c0e9"
+    },
+    {
+      "method": "EncryptChunk",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "199f8c2a20f78d4488cc33bdf59198deaac0fc89d4536437e3c73dbd22a4486a",
+      "current_sha256": "199f8c2a20f78d4488cc33bdf59198deaac0fc89d4536437e3c73dbd22a4486a"
+    },
+    {
+      "method": "DecryptChunk",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "91278536877d75e2b7636c5406340a5d230917a1f3fa8db7261d358344f275a9",
+      "current_sha256": "91278536877d75e2b7636c5406340a5d230917a1f3fa8db7261d358344f275a9"
+    },
+    {
+      "method": "BuildChunkNonceBase",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "25d7f173f7ce9429c2d9ce9b6a0834ac95f6631cf0110d2566484f115951a67c",
+      "current_sha256": "25d7f173f7ce9429c2d9ce9b6a0834ac95f6631cf0110d2566484f115951a67c"
+    },
+    {
+      "method": "DeriveChunkNonce",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "3470b02d595ff34200b571102a459d5832d07a5cee54f0ddcafd4c2b7910f85c",
+      "current_sha256": "3470b02d595ff34200b571102a459d5832d07a5cee54f0ddcafd4c2b7910f85c"
+    },
+    {
+      "method": "CreateSuiteTweak",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "4e9791f1c4180ea91f101939e45c4a9182f3f6ffffecdace6a06942569803aaa",
+      "current_sha256": "4e9791f1c4180ea91f101939e45c4a9182f3f6ffffecdace6a06942569803aaa"
+    },
+    {
+      "method": "CreateSuiteTweak",
+      "overload": 1,
+      "unchanged": true,
+      "baseline_sha256": "f11ccfd6637ef84fff23b0ff974297113d1f2606f83d0bc334e64cb1af174689",
+      "current_sha256": "f11ccfd6637ef84fff23b0ff974297113d1f2606f83d0bc334e64cb1af174689"
+    },
+    {
+      "method": "ValidateHeader",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "0aba8c3bc41b5eafb71eac35402293d8a4d85449917e72100b43b9329c67a891",
+      "current_sha256": "0aba8c3bc41b5eafb71eac35402293d8a4d85449917e72100b43b9329c67a891"
+    },
+    {
+      "method": "ValidateSecondRound",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "fe5c94f3b577ceae29eb0909041c9e1570185d56ac8c8b87d8428ab918624142",
+      "current_sha256": "fe5c94f3b577ceae29eb0909041c9e1570185d56ac8c8b87d8428ab918624142"
+    },
+    {
+      "method": "ValidatePasswordMode",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "61d035a7e5650155e1526f40f67116aa0f7b4b277078f44b29ef381347e4686a",
+      "current_sha256": "61d035a7e5650155e1526f40f67116aa0f7b4b277078f44b29ef381347e4686a"
+    },
+    {
+      "method": "DeriveContainerKeyMaterialAsync",
+      "overload": 0,
+      "unchanged": true,
+      "baseline_sha256": "7c3aaf80f4d6c20aa72f3eeefa3d9255349e00edf35178f36beaa871d4d7b6fa",
+      "current_sha256": "7c3aaf80f4d6c20aa72f3eeefa3d9255349e00edf35178f36beaa871d4d7b6fa"
+    }
+  ],
+  "container_header_creation_unchanged": true,
+  "v13_kdf_only_progress_changes": true,
+  "scope": "Source byte-equality and bounded diff review, not a proof of correctness or an external audit. Native JIT and Windows runtime not exercised."
+}

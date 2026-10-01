@@ -1,0 +1,81 @@
+{
+  "evidence_copied_utc": "2026-10-01T08:42:27.936809+00:00",
+  "scope": "Development evidence; source at an uncommitted descendant of the recorded HEAD. Not a signed or installed REV11 release proof. Build5 precedes the separately identified final reader/deletion ownership fixes. Exact tested binary hashes are retained. Native protocol harness is isolated and not the product trust anchor.",
+  "files": [
+    {
+      "source": "work/v13-evidence/rev11-development/gui-final5-results.json",
+      "copy": "gui-build5.json",
+      "sha256": "efe0efd3a3416e016fe3d0d69ff05fd8899d31a29023f11004b98385f53202ef"
+    },
+    {
+      "source": "work/v13-evidence/rev11-development/progress-final5-results.json",
+      "copy": "progress-build5.json",
+      "sha256": "2aa5acab626898c5a1400542f161b5a3aa28ec0fc2fdf2f759b4e6edc1a4bed2"
+    },
+    {
+      "source": "work/v13-evidence/rev11-development/golden-final5-results.json",
+      "copy": "golden-build5.json",
+      "sha256": "0b3fdb50b322c2c13d82956dda677bbd1801efeee570ed43c8d2c8470ffab811"
+    },
+    {
+      "source": "work/v13-evidence/rev11-development/spec-final5-results.json",
+      "copy": "spec-build5.json",
+      "sha256": "a414dc8dfe21429e03da8cc03578c839f917db65238b32c219bab9d3e9612422"
+    },
+    {
+      "source": "work/v13-evidence/rev11-development/root-final5-binaries.json",
+      "copy": "build5-binaries.json",
+      "sha256": "d1ae098bda6df01b9c4fc5da57ba8e5c90f6d47e9724e08d6df80013f2479717"
+    },
+    {
+      "source": "work/v13-evidence/rev11-development/native-final-build-hashes.json",
+      "copy": "native-build.json",
+      "sha256": "708fe9255badea2fcae2d28ca72c8caa1e8f75a8f885ad38f5e2e0e43b4edbad"
+    },
+    {
+      "source": "work/rev11-zpaq-control/managed-final5-summary.json",
+      "copy": "zpaq-managed-build5.json",
+      "sha256": "18df164d51952c0eb32308365499b671565def62bd01624f704201ac3c6c8879"
+    },
+    {
+      "source": "work/rev11-zpaq-control/managed-final5-binding.json",
+      "copy": "zpaq-managed-build5-binding.json",
+      "sha256": "10410674a902148de6cf41bc0a18d74aec3332a760692b8d8818c9b4790d95c9"
+    },
+    {
+      "source": "work/rev11-zpaq-control/protocol-level5-sanitized.json",
+      "copy": "zpaq-sanitized-level5.json",
+      "sha256": "53bbf4b3f6d862f952b3f2de90447fc6047a9468a7d82762d72fcebf9afc2965"
+    },
+    {
+      "source": "work/v13-evidence/rev11-resources/crypto-core-baseline-audit.json",
+      "copy": "crypto-core-baseline-audit.json",
+      "sha256": "d7f3eb29cc1cea0139f468e1094cf9582e9be5690a0f0c675132814106577421"
+    },
+    {
+      "source": "work/v13-evidence/rev11-resources/deletion-final-results.json",
+      "copy": "deletion-build6.json",
+      "sha256": "6dce359efba02b60ab48a1541afd56da40430f083df53657f482ed15eb2132a3"
+    },
+    {
+      "source": "work/v13-evidence/rev11-resources/deletion-final-hashes.json",
+      "copy": "deletion-build6-hashes.json",
+      "sha256": "56c769ffa977747a4d1b8b4045525afcaf50cbd8b68b5105ac949f29222cc2f6"
+    },
+    {
+      "source": "aggregated from work/v13-evidence/rev11-development/io-sixth-build; each input hash retained",
+      "copy": "io-build6.json",
+      "sha256": "c937598f13d46090013431afbbf9df0d53c2a136351a9b4bef00518129ba8616"
+    },
+    {
+      "source": "work/v13-evidence/rev11-development/io-sixth-build/binaries.json",
+      "copy": "io-build6-binaries.json",
+      "sha256": "fb3c431afe7032df5ce3cb6100c5f0f264d1e00c8d49048c7b8446c2d4425de4"
+    },
+    {
+      "source": "work/v13-evidence/rev11-development/io-sixth-build/source-files.json",
+      "copy": "io-build6-source.json",
+      "sha256": "16f6a630a56ba8332aac48e4ecead386f9de1836355e4e75f7cc5068efacf7e5"
+    }
+  ]
+}

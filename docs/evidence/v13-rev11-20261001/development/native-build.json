@@ -1,0 +1,284 @@
+{
+  "utc": "2026-10-01T08:40:24.745964+00:00",
+  "build_log": "native-final-build.log",
+  "architectures": [
+    "arm64",
+    "x86_64",
+    "universal"
+  ],
+  "files": [
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/argon2",
+      "previous_sha256": "3151f5274fa6bdb8f665ab0c6d68f3996962c218d85a3cb4f75d572b4dec1b02",
+      "current_sha256": "3151f5274fa6bdb8f665ab0c6d68f3996962c218d85a3cb4f75d572b4dec1b02",
+      "changed": false,
+      "bytes": 69960
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libaes_ref.dylib",
+      "previous_sha256": "f0dad7807456ae59d5cc0b471933081a5aaa992c459f784b40858bff3d5de34f",
+      "current_sha256": "f0dad7807456ae59d5cc0b471933081a5aaa992c459f784b40858bff3d5de34f",
+      "changed": false,
+      "bytes": 147968
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libargon2_ref.dylib",
+      "previous_sha256": "a5d20afe53cbbc6504f2b364ed28911d7e2d31a6b9a24ecaf7bdeac2034de039",
+      "current_sha256": "a5d20afe53cbbc6504f2b364ed28911d7e2d31a6b9a24ecaf7bdeac2034de039",
+      "changed": false,
+      "bytes": 52880
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libcamellia_v13.dylib",
+      "previous_sha256": "2406ef353a627cbf3f1ef030d93ebe3ab11287e8cdf79b01f527b8af26ebef0e",
+      "current_sha256": "2406ef353a627cbf3f1ef030d93ebe3ab11287e8cdf79b01f527b8af26ebef0e",
+      "changed": false,
+      "bytes": 147608
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libkalyna_v13.dylib",
+      "previous_sha256": "e7a79b8d9989291ce77689ee4519d39e7c58e9653f0e10339385668bf74a5882",
+      "current_sha256": "e7a79b8d9989291ce77689ee4519d39e7c58e9653f0e10339385668bf74a5882",
+      "changed": false,
+      "bytes": 136496
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libmars_ref.dylib",
+      "previous_sha256": "ffb679b0d6aff77af0ea40d069a6704ceb14446cf86e0f9abf55308c11608e71",
+      "current_sha256": "ffb679b0d6aff77af0ea40d069a6704ceb14446cf86e0f9abf55308c11608e71",
+      "changed": false,
+      "bytes": 129520
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libmldsa87_ref.dylib",
+      "previous_sha256": "14544e9dbc2ab6d1ad0d38d49eab95cc42ed80acc27a2cb615836362cd545382",
+      "current_sha256": "14544e9dbc2ab6d1ad0d38d49eab95cc42ed80acc27a2cb615836362cd545382",
+      "changed": false,
+      "bytes": 55880
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libserpent_v13.dylib",
+      "previous_sha256": "2ae8c5fcf8893d32b06b19087a80633eceb067da061bb30bda09509f8da1c751",
+      "current_sha256": "2ae8c5fcf8893d32b06b19087a80633eceb067da061bb30bda09509f8da1c751",
+      "changed": false,
+      "bytes": 130392
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libsha3_ref.dylib",
+      "previous_sha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45",
+      "current_sha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45",
+      "changed": false,
+      "bytes": 34080
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libshacal2_ref.dylib",
+      "previous_sha256": "9930e72e935b2d7edcb3e5de3d1ca5663b7cc2233fc7073a25ca9377163c5113",
+      "current_sha256": "9930e72e935b2d7edcb3e5de3d1ca5663b7cc2233fc7073a25ca9377163c5113",
+      "changed": false,
+      "bytes": 129928
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libthreefish_ref.dylib",
+      "previous_sha256": "7899d0334c23d9f78423f19713c9bbe8dd6875255191711ce18e648c65cd87a6",
+      "current_sha256": "7899d0334c23d9f78423f19713c9bbe8dd6875255191711ce18e648c65cd87a6",
+      "changed": false,
+      "bytes": 35768
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/libxchachapoly_v13.dylib",
+      "previous_sha256": "7ce5062de2aadb34a66ce5fb6d7418765817576b5f5b6ed44a934d03808a099a",
+      "current_sha256": "7ce5062de2aadb34a66ce5fb6d7418765817576b5f5b6ed44a934d03808a099a",
+      "changed": false,
+      "bytes": 271928
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-arm64/zpaq",
+      "previous_sha256": "3caba39fc05924644a4055724a63a6432b235893d6cbe552d5aef4567b7e11f4",
+      "current_sha256": "82b72fb9ff32f9da794127b19f04901f08319745dbe6bf9cff30a8ad0260b7ea",
+      "changed": true,
+      "bytes": 463912
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/argon2",
+      "previous_sha256": "0ed033e0c8b7b3e19ecbf68c9c46d332cdd2cd87ae51309e292085bc5eb07839",
+      "current_sha256": "0ed033e0c8b7b3e19ecbf68c9c46d332cdd2cd87ae51309e292085bc5eb07839",
+      "changed": false,
+      "bytes": 119112
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libaes_ref.dylib",
+      "previous_sha256": "1002d74c230affe1026806ba28086e54dde297aae32fd6e29e219518370c5380",
+      "current_sha256": "1002d74c230affe1026806ba28086e54dde297aae32fd6e29e219518370c5380",
+      "changed": false,
+      "bytes": 279040
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libargon2_ref.dylib",
+      "previous_sha256": "4c0ba0a4aa4c40f235b8bfa6840ac0da91066abfdb9e308c07c7e89b0dd972cb",
+      "current_sha256": "4c0ba0a4aa4c40f235b8bfa6840ac0da91066abfdb9e308c07c7e89b0dd972cb",
+      "changed": false,
+      "bytes": 102032
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libcamellia_v13.dylib",
+      "previous_sha256": "f18333078ac97301a55e1f91198fd01218403d159585c4d6d8171e7dc4f2a656",
+      "current_sha256": "f18333078ac97301a55e1f91198fd01218403d159585c4d6d8171e7dc4f2a656",
+      "changed": false,
+      "bytes": 278680
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libkalyna_v13.dylib",
+      "previous_sha256": "e1bd231a468fbebad97a5d8e3e7d440a50385101ca04351a196b1e9da2c02772",
+      "current_sha256": "e1bd231a468fbebad97a5d8e3e7d440a50385101ca04351a196b1e9da2c02772",
+      "changed": false,
+      "bytes": 251184
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libmars_ref.dylib",
+      "previous_sha256": "f3353a7b06c62eff16ed6cea6c954b022aca71dfc74751b389caab07af3a7aec",
+      "current_sha256": "f3353a7b06c62eff16ed6cea6c954b022aca71dfc74751b389caab07af3a7aec",
+      "changed": false,
+      "bytes": 244208
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libmldsa87_ref.dylib",
+      "previous_sha256": "f8eacd08b209d1fff3d7b5f205526e8848d63b709f6e47362741b5c49e135726",
+      "current_sha256": "f8eacd08b209d1fff3d7b5f205526e8848d63b709f6e47362741b5c49e135726",
+      "changed": false,
+      "bytes": 105032
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libserpent_v13.dylib",
+      "previous_sha256": "ced2ff0160cd55c1fe9dd8fd490b02138585657c378e8946d3b14cb449fed718",
+      "current_sha256": "ced2ff0160cd55c1fe9dd8fd490b02138585657c378e8946d3b14cb449fed718",
+      "changed": false,
+      "bytes": 245080
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libsha3_ref.dylib",
+      "previous_sha256": "6d18e0ba4bc58867b1ebfa790d6b0fb601ce8753aba0bffaa93f524da40a6f33",
+      "current_sha256": "6d18e0ba4bc58867b1ebfa790d6b0fb601ce8753aba0bffaa93f524da40a6f33",
+      "changed": false,
+      "bytes": 66848
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libshacal2_ref.dylib",
+      "previous_sha256": "733562bf7e3a5f4e23aae542c0b857883f4d14f96f1ffd9259401af935de6711",
+      "current_sha256": "733562bf7e3a5f4e23aae542c0b857883f4d14f96f1ffd9259401af935de6711",
+      "changed": false,
+      "bytes": 244616
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libthreefish_ref.dylib",
+      "previous_sha256": "ca11097485c79b37c9a9dcb298b0ada3c77b65c1b06eaaeb288de02e88520648",
+      "current_sha256": "ca11097485c79b37c9a9dcb298b0ada3c77b65c1b06eaaeb288de02e88520648",
+      "changed": false,
+      "bytes": 68536
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/libxchachapoly_v13.dylib",
+      "previous_sha256": "d441c47302f6a1090b5c733b7511ed1e3ed3150cc038548030171c3531e12a2c",
+      "current_sha256": "d441c47302f6a1090b5c733b7511ed1e3ed3150cc038548030171c3531e12a2c",
+      "changed": false,
+      "bytes": 550456
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-universal/zpaq",
+      "previous_sha256": "a39e0487f425a81a984fb9203e0547255c0bc9c87a3e6899cfc853ed0236abc7",
+      "current_sha256": "05edb56b7a3915a513c25fd8300a7d86f1fe0c04440e98493324364129d987b2",
+      "changed": true,
+      "bytes": 1004584
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/argon2",
+      "previous_sha256": "085ad11143a03df0cc71676459d2bfefd18f1524328330acbecb6527ce5eb5bc",
+      "current_sha256": "085ad11143a03df0cc71676459d2bfefd18f1524328330acbecb6527ce5eb5bc",
+      "changed": false,
+      "bytes": 44680
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libaes_ref.dylib",
+      "previous_sha256": "ccb5363a46efd3b12d48758c39a30d4a3769a912431fc0baa9f7b0c239327f06",
+      "current_sha256": "ccb5363a46efd3b12d48758c39a30d4a3769a912431fc0baa9f7b0c239327f06",
+      "changed": false,
+      "bytes": 114520
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libargon2_ref.dylib",
+      "previous_sha256": "d0eeea4a5bc5f68330dc02cf5ac277a8e030869814bc75acb5d1cf91bd57f34b",
+      "current_sha256": "d0eeea4a5bc5f68330dc02cf5ac277a8e030869814bc75acb5d1cf91bd57f34b",
+      "changed": false,
+      "bytes": 31864
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libcamellia_v13.dylib",
+      "previous_sha256": "6f6ce25b9c2c1feb8f20ff080068a47e19dd689946c3d00c638862e50386447d",
+      "current_sha256": "6f6ce25b9c2c1feb8f20ff080068a47e19dd689946c3d00c638862e50386447d",
+      "changed": false,
+      "bytes": 126328
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libkalyna_v13.dylib",
+      "previous_sha256": "abf35395c06218f03f9215ebe4932d773aa30f67ecde9d58d29dd129a5cfe65f",
+      "current_sha256": "abf35395c06218f03f9215ebe4932d773aa30f67ecde9d58d29dd129a5cfe65f",
+      "changed": false,
+      "bytes": 105216
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libmars_ref.dylib",
+      "previous_sha256": "f100c09f41638258943b8fe885c540fdf50a42f7724afec868c01587a4009394",
+      "current_sha256": "f100c09f41638258943b8fe885c540fdf50a42f7724afec868c01587a4009394",
+      "changed": false,
+      "bytes": 104248
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libmldsa87_ref.dylib",
+      "previous_sha256": "952f13f1cfd0cf147c03792645ee594298fa954a09606900bcd7d9cc93ef4c1f",
+      "current_sha256": "952f13f1cfd0cf147c03792645ee594298fa954a09606900bcd7d9cc93ef4c1f",
+      "changed": false,
+      "bytes": 38952
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libserpent_v13.dylib",
+      "previous_sha256": "531ba0c4b7efda7531ad57261776ee2a042fba2187487f617552820009c2b169",
+      "current_sha256": "531ba0c4b7efda7531ad57261776ee2a042fba2187487f617552820009c2b169",
+      "changed": false,
+      "bytes": 109208
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libsha3_ref.dylib",
+      "previous_sha256": "5d069ec3e137906c2cf6627a1ef7895fb7429aaa7a72ab9fbe4c9e5c8bb394ef",
+      "current_sha256": "5d069ec3e137906c2cf6627a1ef7895fb7429aaa7a72ab9fbe4c9e5c8bb394ef",
+      "changed": false,
+      "bytes": 13176
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libshacal2_ref.dylib",
+      "previous_sha256": "c0ca7f967ece0745d2d04f125d50d37befc9930e24f47b2cf3a76c652a49ed59",
+      "current_sha256": "c0ca7f967ece0745d2d04f125d50d37befc9930e24f47b2cf3a76c652a49ed59",
+      "changed": false,
+      "bytes": 104736
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libthreefish_ref.dylib",
+      "previous_sha256": "fcfbcfff70142f507db8c9aed28197d1ef384eea3bd08a54877758f09bce33cc",
+      "current_sha256": "fcfbcfff70142f507db8c9aed28197d1ef384eea3bd08a54877758f09bce33cc",
+      "changed": false,
+      "bytes": 23064
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/libxchachapoly_v13.dylib",
+      "previous_sha256": "bfb7f395a628608cca64561378dc17fab33c88f3255e9f9467140fa8277fb8ba",
+      "current_sha256": "bfb7f395a628608cca64561378dc17fab33c88f3255e9f9467140fa8277fb8ba",
+      "changed": false,
+      "bytes": 265728
+    },
+    {
+      "path": "KeepVaultMac/Native/osx-x64/zpaq",
+      "previous_sha256": "728b52498280fd3a47c9ce7becb0d49f98783af4235bd95433e370926e08ae9b",
+      "current_sha256": "baa5d8383c3488c098c115208983456c1ca47a4997eac41e4b091552c1ad523e",
+      "changed": true,
+      "bytes": 529872
+    }
+  ]
+}

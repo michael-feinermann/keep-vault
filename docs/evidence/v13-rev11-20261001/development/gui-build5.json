@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 3,
+  "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+  "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "gui.resource-policy",
+      "name": "GUI resource choices freeze validated per-operation limits in both languages",
+      "status": "PASS",
+      "seconds": 0.61,
+      "peakRssMiB": 125,
+      "seed": "0x02490D77",
+      "failure": null
+    },
+    {
+      "id": "gui.entropy-display",
+      "name": "GUI eleven-pool entropy display beyond the 1024 minimum",
+      "status": "PASS",
+      "seconds": 4.177,
+      "peakRssMiB": 132,
+      "seed": "0x78CC7639",
+      "failure": null
+    },
+    {
+      "id": "gui.encryption-toggle-target",
+      "name": "GUI encryption toggle and target normalization",
+      "status": "PASS",
+      "seconds": 0.38,
+      "peakRssMiB": 118,
+      "seed": "0x13B22339",
+      "failure": null
+    },
+    {
+      "id": "gui.folder-target",
+      "name": "GUI folder target lands beside the folder",
+      "status": "PASS",
+      "seconds": 0.378,
+      "peakRssMiB": 117,
+      "seed": "0x15A5389E",
+      "failure": null
+    },
+    {
+      "id": "gui.destination-folder-target",
+      "name": "GUI destination picker keeps the archive inside its retained folder",
+      "status": "PASS",
+      "seconds": 0.38,
+      "peakRssMiB": 118,
+      "seed": "0x6F580B63",
+      "failure": null
+    },
+    {
+      "id": "gui.archive-picker-filter-reset",
+      "name": "GUI archive picker does not poison the shared macOS folder panel",
+      "status": "PASS",
+      "seconds": 0.403,
+      "peakRssMiB": 116,
+      "seed": "0x621BF1F8",
+      "failure": null
+    },
+    {
+      "id": "gui.password-policy",
+      "name": "GUI password policy feedback",
+      "status": "PASS",
+      "seconds": 0.603,
+      "peakRssMiB": 219,
+      "seed": "0x61DCBA97",
+      "failure": null
+    },
+    {
+      "id": "gui.credential-policy-boundary",
+      "name": "GUI creation pair policy and extraction without model evaluation in both languages",
+      "status": "PASS",
+      "seconds": 0.637,
+      "peakRssMiB": 233,
+      "seed": "0x5B1A7551",
+      "failure": null
+    },
+    {
+      "id": "gui.original-deletion-localization",
+      "name": "GUI verified-original-deletion localization",
+      "status": "PASS",
+      "seconds": 0.433,
+      "peakRssMiB": 122,
+      "seed": "0x614123DD",
+      "failure": null
+    },
+    {
+      "id": "gui.erase-completion-status",
+      "name": "GUI erase completion survives deferred text events and language changes",
+      "status": "PASS",
+      "seconds": 0.578,
+      "peakRssMiB": 123,
+      "seed": "0x1D59B452",
+      "failure": null
+    },
+    {
+      "id": "gui.rev11-preference-restart",
+      "name": "Auto/manual preferences survive restart and obsolete time fields stay inactive",
+      "status": "PASS",
+      "seconds": 0.426,
+      "peakRssMiB": 124,
+      "seed": "0x60BF32FD",
+      "failure": null
+    },
+    {
+      "id": "gui.rev11-progress",
+      "name": "real phase widgets, unknown work, DE/EN, cancellation and authoritative completion",
+      "status": "PASS",
+      "seconds": 0.475,
+      "peakRssMiB": 124,
+      "seed": "0x76198478",
+      "failure": null
+    },
+    {
+      "id": "gui.rev11-observer-isolation",
+      "name": "throwing progress presentation and observer cleanup cannot retain operation ownership",
+      "status": "PASS",
+      "seconds": 0.515,
+      "peakRssMiB": 118,
+      "seed": "0x67ACFC9D",
+      "failure": null
+    },
+    {
+      "id": "gui.control-inventory",
+      "name": "GUI reference control inventory",
+      "status": "PASS",
+      "seconds": 0.471,
+      "peakRssMiB": 117,
+      "seed": "0x79B671A2",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-normalization",
+      "name": "GUI 256-character factor normalization and field handling",
+      "status": "PASS",
+      "seconds": 0.467,
+      "peakRssMiB": 118,
+      "seed": "0x55B44C4B",
+      "failure": null
+    },
+    {
+      "id": "gui.secret-clearing",
+      "name": "GUI secret clearing wipes password, PIN, and factors",
+      "status": "PASS",
+      "seconds": 0.46,
+      "peakRssMiB": 121,
+      "seed": "0x68D39005",
+      "failure": null
+    },
+    {
+      "id": "gui.streaming-thread-boundary",
+      "name": "GUI streaming callbacks execute off-thread without accessing controls",
+      "status": "PASS",
+      "seconds": 0.436,
+      "peakRssMiB": 118,
+      "seed": "0x378A3352",
+      "failure": null
+    },
+    {
+      "id": "gui.create-failure-secret-clearing",
+      "name": "GUI create handler wipes credentials after an adversarial failure",
+      "status": "PASS",
+      "seconds": 0.446,
+      "peakRssMiB": 124,
+      "seed": "0x4E61868F",
+      "failure": null
+    },
+    {
+      "id": "gui.extract-list-failure-secret-clearing",
+      "name": "GUI extract/list handlers wipe credentials after adversarial failures",
+      "status": "PASS",
+      "seconds": 0.425,
+      "peakRssMiB": 125,
+      "seed": "0x32479A8D",
+      "failure": null
+    },
+    {
+      "id": "gui.recovery-failure-secret-clearing",
+      "name": "GUI recovery handler wipes credentials after an adversarial failure",
+      "status": "PASS",
+      "seconds": 0.414,
+      "peakRssMiB": 124,
+      "seed": "0x3DD7C26A",
+      "failure": null
+    },
+    {
+      "id": "gui.kdf-entropy-localization",
+      "name": "GUI KDF and entropy profile description localization",
+      "status": "PASS",
+      "seconds": 0.438,
+      "peakRssMiB": 122,
+      "seed": "0x5CE61996",
+      "failure": null
+    },
+    {
+      "id": "gui.cups-spool-warning-localization",
+      "name": "GUI warns about CUPS and printer spool persistence in both languages",
+      "status": "PASS",
+      "seconds": 0.483,
+      "peakRssMiB": 123,
+      "seed": "0x17D876FF",
+      "failure": null
+    },
+    {
+      "id": "gui.failed-archive-preservation",
+      "name": "GUI downstream failure preserves committed path replacements",
+      "status": "PASS",
+      "seconds": 0.396,
+      "peakRssMiB": 118,
+      "seed": "0x659A65D4",
+      "failure": null
+    },
+    {
+      "id": "gui.verification-root-cleanup-identity",
+      "name": "GUI verification plaintext cleanup stays descriptor-bound",
+      "status": "PASS",
+      "seconds": 0.411,
+      "peakRssMiB": 119,
+      "seed": "0x2CC305C1",
+      "failure": null
+    },
+    {
+      "id": "keysheet.pair-cleanup-identity",
+      "name": "key-sheet pair rollback preserves pathname replacements",
+      "status": "PASS",
+      "seconds": 0.499,
+      "peakRssMiB": 128,
+      "seed": "0x080D82AC",
+      "failure": null
+    },
+    {
+      "id": "keysheet.cleanup-failure-visible",
+      "name": "key-sheet cleanup failures remain visible with the export failure",
+      "status": "PASS",
+      "seconds": 0.488,
+      "peakRssMiB": 130,
+      "seed": "0x0F2429CE",
+      "failure": null
+    },
+    {
+      "id": "keysheet.pair-atomic-commit",
+      "name": "key-sheet pair final gate rolls both outputs back safely",
+      "status": "PASS",
+      "seconds": 0.545,
+      "peakRssMiB": 128,
+      "seed": "0x366D55A4",
+      "failure": null
+    },
+    {
+      "id": "gui.entropy-rev9-phases-cancel",
+      "name": "GUI REV9 single/dual phases, eleven counters and joined cancellation",
+      "status": "PASS",
+      "seconds": 9.149,
+      "peakRssMiB": 139,
+      "seed": "0x491EC85C",
+      "failure": null
+    },
+    {
+      "id": "gui.operation-cancel-lifetime",
+      "name": "GUI operation cancellation stays separate from disposed window lifetime",
+      "status": "PASS",
+      "seconds": 0.419,
+      "peakRssMiB": 118,
+      "seed": "0x43E42BD2",
+      "failure": null
+    },
+    {
+      "id": "gui.full-creation-flow",
+      "name": "GUI full creation flow with mouse sampling and factor generation",
+      "status": "PASS",
+      "seconds": 4.056,
+      "peakRssMiB": 198,
+      "seed": "0x66850FDD",
+      "failure": null
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "scope": "isolated native protocol fixture, not installed/release evidence",
+  "binary_sha256": "280ecc87b7e08ae59152e23aa00030a98a8bc42d81b8a9d1d4782ede564f31f9",
+  "input_bytes": 2097152,
+  "compression_level": 5,
+  "results": [
+    {
+      "test": "plain-add",
+      "exit": 0,
+      "archive_bytes": 2324,
+      "sha256": "147e6da2d534d7c899b482a2027bc5cbf15866ce699f0f286e00f9e3f6926733",
+      "frames": {
+        "1": 23,
+        "3": 5,
+        "2": 23,
+        "7": 12,
+        "8": 12,
+        "4": 2,
+        "5": 1,
+        "6": 2,
+        "10": 2,
+        "9": 1
+      },
+      "peak_cpu": 1,
+      "peak_model_bytes": 134061371,
+      "write_bytes": 2428
+    },
+    {
+      "test": "plain-extract",
+      "exit": 0,
+      "frames": {
+        "1": 15,
+        "2": 15,
+        "7": 7,
+        "8": 7,
+        "6": 32,
+        "10": 32,
+        "5": 1,
+        "9": 1
+      },
+      "peak_cpu": 1,
+      "peak_model_bytes": 134171421,
+      "write_bytes": 2097152
+    },
+    {
+      "test": "pipe-add",
+      "exit": 0,
+      "archive_bytes": 1055,
+      "sha256": "e6c6e367035f9868350952e2d9e9dd8ae4e02dc90079c92521932c02e3f40885",
+      "frames": {
+        "1": 24,
+        "3": 5,
+        "2": 24,
+        "7": 8,
+        "8": 8,
+        "4": 2,
+        "5": 1,
+        "9": 1
+      },
+      "peak_cpu": 1,
+      "peak_model_bytes": 92732329,
+      "write_bytes": 0
+    },
+    {
+      "test": "pipe-extract",
+      "exit": 0,
+      "frames": {
+        "1": 10,
+        "2": 10,
+        "7": 8,
+        "8": 8,
+        "6": 32,
+        "10": 32,
+        "5": 1,
+        "9": 1
+      },
+      "peak_cpu": 1,
+      "peak_model_bytes": 92842379,
+      "write_bytes": 2097152
+    }
+  ],
+  "negative": [
+    {
+      "test": "wrong-sequence",
+      "exit": 2,
+      "joined": true,
+      "normal_success": false
+    },
+    {
+      "test": "oversize-reply",
+      "exit": 2,
+      "joined": true,
+      "normal_success": false
+    },
+    {
+      "test": "short-source",
+      "exit": 2,
+      "joined": true,
+      "normal_success": false
+    },
+    {
+      "test": "deny-output",
+      "exit": 1,
+      "joined": true,
+      "normal_success": false
+    },
+    {
+      "test": "stall-source",
+      "exit": -9,
+      "joined": true,
+      "normal_success": false
+    }
+  ]
+}

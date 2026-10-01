@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 3,
+  "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+  "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "deletion.rev11-creation-binding",
+      "name": "pre-creation file/directory identities, topology, bounded inventory and final deletion authority",
+      "status": "PASS",
+      "seconds": 0.052,
+      "peakRssMiB": 61,
+      "seed": "0x4D557D89",
+      "failure": null
+    },
+    {
+      "id": "deletion.secure-file-object-binding",
+      "name": "secure deletion destroys and deletes the same object",
+      "status": "PASS",
+      "seconds": 0.05,
+      "peakRssMiB": 61,
+      "seed": "0x68E734C8",
+      "failure": null
+    },
+    {
+      "id": "deletion.original-verification",
+      "name": "verified original deletion refuses on any mismatch",
+      "status": "PASS",
+      "seconds": 0.036,
+      "peakRssMiB": 61,
+      "seed": "0x1D3A2160",
+      "failure": null
+    },
+    {
+      "id": "deletion.quarantine-symlink",
+      "name": "quarantine rollback object binding and symlink-safe directory traversal",
+      "status": "PASS",
+      "seconds": 0.029,
+      "peakRssMiB": 64,
+      "seed": "0x4AB31725",
+      "failure": null
+    },
+    {
+      "id": "deletion.cryptographic-erase",
+      "name": "cryptographic erase ordering and hard-link refusal",
+      "status": "PASS",
+      "seconds": 5.413,
+      "peakRssMiB": 1322,
+      "seed": "0x5A613AC7",
+      "failure": null
+    }
+  ]
+}

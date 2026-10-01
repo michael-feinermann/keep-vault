@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 3,
+  "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+  "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "v13-progress-bounds",
+      "name": "size seams, Int64 overflow, bounded sources and impossible counts",
+      "status": "PASS",
+      "seconds": 0.005,
+      "peakRssMiB": 55,
+      "seed": "0x76CA4E35",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-eta",
+      "name": "independent constant-rate example, EWMA, zero-work intervals and warmup",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 54,
+      "seed": "0x31900F20",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-counts",
+      "name": "disjoint sources aggregate absolute counts exactly once",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 55,
+      "seed": "0x08744613",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-unknown",
+      "name": "unknown totals and KDF do not gain a fabricated ETA",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 55,
+      "seed": "0x38B9E68B",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-order",
+      "name": "stale source, phase, operation and terminal messages cannot overwrite ownership",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 55,
+      "seed": "0x3BB38515",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-clock",
+      "name": "UTC jumps, resource pause, resume and invalid monotonic observations",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 55,
+      "seed": "0x501367A9",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-finish",
+      "name": "full data phase cannot authorize success before outer commit and cleanup",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 55,
+      "seed": "0x339C9A26",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-overlap",
+      "name": "mixed-unit phases and unknown future work have no invented overall duration",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 55,
+      "seed": "0x1E618EA5",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-stale",
+      "name": "heartbeats do not refresh work, stalls recover without time abort",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 55,
+      "seed": "0x0A5785FF",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-equivalence",
+      "name": "twelve actual suite outputs remain byte-identical with a polling observer and a broken clock",
+      "status": "PASS",
+      "seconds": 2.543,
+      "peakRssMiB": 191,
+      "seed": "0x36233F52",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-privacy",
+      "name": "progress DTO permits only public counters, identifiers, enums and durations",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 55,
+      "seed": "0x2AC85F26",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-perf",
+      "name": "hot updates allocate no per-message objects; polling storage remains bounded",
+      "status": "PASS",
+      "seconds": 0.054,
+      "peakRssMiB": 58,
+      "seed": "0x6DEBAFB2",
+      "failure": null
+    }
+  ]
+}

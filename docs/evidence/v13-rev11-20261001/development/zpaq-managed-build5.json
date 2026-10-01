@@ -1,0 +1,61 @@
+{
+  "tests": [
+    {
+      "test": "v13-zpaq-phase-readiness",
+      "exit_code": 0,
+      "command": [
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-development/run-dotnet.zsh",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/rev11-zpaq-control/managed-final5/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "v13-zpaq-phase-readiness",
+        "--parallel",
+        "1"
+      ]
+    },
+    {
+      "test": "v13-zpaq-owner-lifetime",
+      "exit_code": 0,
+      "command": [
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-development/run-dotnet.zsh",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/rev11-zpaq-control/managed-final5/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "v13-zpaq-owner-lifetime",
+        "--parallel",
+        "1"
+      ]
+    },
+    {
+      "test": "v13-progress-native-ipc",
+      "exit_code": 0,
+      "command": [
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-development/run-dotnet.zsh",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/rev11-zpaq-control/managed-final5/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "v13-progress-native-ipc",
+        "--parallel",
+        "1"
+      ]
+    },
+    {
+      "test": "v13-zpaq-bound-source",
+      "exit_code": 0,
+      "command": [
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-development/run-dotnet.zsh",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/rev11-zpaq-control/managed-final5/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "v13-zpaq-bound-source",
+        "--parallel",
+        "1"
+      ]
+    }
+  ],
+  "assembly_sha256": "8a3062f3dea7b382aca11a0ee099b654baa4d3f693e135192a7bd7774b4297c1"
+}

@@ -1,0 +1,29 @@
+{
+  "base_head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+  "uncommitted_development_sources": true,
+  "scope": "reader/recovery sources and directly relevant shared policy and tests, not complete release inventory",
+  "specification_sha256": "7bfa1f0f7f9b1848f6c4d61a0332313fbe494f11e997a9cec06d4f2e5bf9f5f1",
+  "files": {
+    "KalynaArchiver/Services/VerifiedArchiveInput.cs": "5e8db85c00d30b9a031f5559a569aa7a126c0ba3707b7eb9018779aaae21e77d",
+    "KalynaArchiver/Services/AuthenticatedRangeIndex.cs": "742c5febbb3d3bd4397161ebde02a387ea1ebf54e9f6d21d15724098392b2425",
+    "KalynaArchiver/Services/IPreparedArchiveSource.cs": "f7711db0e7e8f769e61cc2c6d211e2953c2f2f0c18fe5906bcf62dd4c1c37afe",
+    "KalynaArchiver/Services/RecoveryMetadataBudget.cs": "685c081ba916f50169c72e172679e7ce75da708fa1d93234188c2563c754529b",
+    "KalynaArchiver/Services/RecoveryMetadataStream.cs": "2721a66d91db7740c3e469032296d239daaee9150a511ccce53a76882b0a45c9",
+    "KalynaArchiver/Services/RecoveryRecordTable.cs": "f4e92980d28257af1edb3093d3e27119a5930e5af6d91e9d88672781fd9fe622",
+    "KalynaArchiver/Services/RecoveryManifestCodec.cs": "420be6f77ecc3c5cdd226798bbec0016014d25a658df8546189c09197f0bba56",
+    "KalynaArchiver/Services/RecoveryService.cs": "18cdfb4d79c23cc249c534d11771633f3586d11953a3440cd76537ee1b288393",
+    "KalynaArchiver/Services/ArchiveIntegrityService.cs": "b4653de5c53e9f7859310271c70d5d674dd9c5f7f2647dd364574d575e30dd88",
+    "KalynaArchiver/Services/ParallelContainerAuthenticator.cs": "1ed8405e12db7ca8d68dc6a95208c55a7cb69c1dd74a5f58cbab34020c6b751f",
+    "KalynaArchiver/Services/KalynaContainerService.cs": "07698a41f164d5f83d3a26035d4ba113368668c1396d67139f4e72c3ce48031a",
+    "KalynaArchiver/Services/ArchiveOperationPolicy.cs": "203e0ae3a6e2d185b46a661c89abf1d55273ead783169ed0f5d80bb6c99fef62",
+    "KalynaArchiver/Services/OperationMemoryBudget.cs": "b94d715238beeeaf375f3e6eda2999303f32150cb2986f2fd9f8d849192f37d5",
+    "KalynaArchiver/Services/ResourcePlanning.cs": "37c369fcb72d31ec2e46529cbfe18d074b94c11daf09265439b874a213104553",
+    "KeepVaultMac.Tests/Rev11VerifiedInputTests.cs": "58f9c3ec1d1819463a0e1e098a4edf11aad867812119687b5628e95269fbf76f",
+    "KeepVaultMac.Tests/Rev11VerifiedInputFuzzTests.cs": "08db503200578627739cc71f384de453543838c9c43b46a959f58dfbc2754b85",
+    "KeepVaultMac.Tests/VerifiedArchiveInputTests.cs": "617a8312fa0e7a15db41c5fc9a0a6f6891a7b1ab26e7384349b3fb4ceabb27fd",
+    "KeepVaultMac.Tests/VerifiedArchiveInputAttack.cs": "aa6173f4d6b4de01b600ddcad8bae6fb675fd1792a203c3c35203d90ef5fb7f1",
+    "KeepVaultMac.Tests/VerifiedIoFuzzTests.cs": "fc30277347c5ab3d81033275d0c7df8ce60b4f436a4724530fd590daf9dd417b",
+    "KeepVaultMac.Tests/RecoveryRecordTableTests.cs": "e6f4574e564374b459b0f947ca74e61b40c1646a01fd0fd65c96b2370aabbc0d",
+    "KeepVaultMac.Tests/MacComprehensiveTests.cs": "dd29122b67fa3d45c22247250e6209f2d8679e78a77d502233b30194ec7edfe0"
+  }
+}
