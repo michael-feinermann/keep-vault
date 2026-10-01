@@ -153,23 +153,15 @@ public sealed class ArchiveIntegrityService
         byte[] expectedSkein = ParseManifest(await ReadManifestAsync(skeinPath, cancellationToken).ConfigureAwait(false), 128, "Skein-1024");
         byte[] actualSha3 = [];
         byte[] actualSkein = [];
-#if KEEPVAULT_MACOS
         VerifiedArchiveInput? snapshot = await VerifiedArchiveInput
-            .CaptureOriginalAsync(fullPath, ArchiveOperationPolicy.Current, cancellationToken)
+            .BindPlainAsync(fullPath, ArchiveOperationPolicy.Current, cancellationToken)
             .ConfigureAwait(false);
         Stream? stream = snapshot;
-#else
-        FileStream? stream = SecureFile.OpenReadNoReparse(
-            fullPath,
-            FileShare.Read,
-            bufferSize: 1024 * 1024,
-            requireSingleLink: true);
-#endif
+        Exception? operationFailure = null;
         try
         {
-#if KEEPVAULT_MACOS
             const string resolvedPath = "-";
-            await snapshot.VerifyGloballyAsync(async (view, token) =>
+            await snapshot.VerifyPlainIntegrityAsync(async (view, token) =>
             {
                 (actualSha3, actualSkein) = await IntegrityService.HashStreamAsync(view, token).ConfigureAwait(false);
                 // Preserve the plain-archive error contract before the shared
@@ -181,48 +173,34 @@ public sealed class ArchiveIntegrityService
                     throw new InvalidDataException("Plain ZPAQ archive failed its SHA3-512/Skein-1024 dual-integrity check.");
                 return new VerifiedArchiveAuthentication(expectedSha3, actualSha3, expectedSkein, actualSkein);
             }, cancellationToken).ConfigureAwait(false);
-#else
-            string resolvedPath = ResolveCanonicalArchivePath(stream, fullPath);
-            (actualSha3, actualSkein) = await IntegrityService.HashStreamAsync(stream, cancellationToken).ConfigureAwait(false);
-            bool sha3Matches = CryptographicOperations.FixedTimeEquals(expectedSha3, actualSha3);
-            bool skeinMatches = CryptographicOperations.FixedTimeEquals(expectedSkein, actualSkein);
-            if (!(sha3Matches & skeinMatches))
-                throw new InvalidDataException("Plain ZPAQ archive failed its SHA3-512/Skein-1024 dual-integrity check.");
-#endif
 
             var lease = new ArchiveIntegrityLease(
                 resolvedPath,
                 stream,
-#if KEEPVAULT_MACOS
                 snapshot
-#else
-                owner: null
-#endif
             );
             stream = null;
-#if KEEPVAULT_MACOS
             snapshot = null;
-#endif
             return lease;
         }
+        catch (Exception failure) { operationFailure = failure; throw; }
         finally
         {
-#if KEEPVAULT_MACOS
-            if (snapshot is not null)
-            {
-                snapshot.Dispose();
-                stream = null;
-            }
-#endif
-            if (stream is not null)
-            {
-                await stream.DisposeAsync().ConfigureAwait(false);
-            }
-
             CryptographicOperations.ZeroMemory(expectedSha3);
             CryptographicOperations.ZeroMemory(expectedSkein);
             CryptographicOperations.ZeroMemory(actualSha3);
             CryptographicOperations.ZeroMemory(actualSkein);
+            try
+            {
+                if (snapshot is not null) snapshot.Dispose();
+                else if (stream is not null) await stream.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception cleanup)
+            {
+                if (operationFailure is not null)
+                    throw new AggregateException("Plain archive verification and cleanup failed.", operationFailure, cleanup);
+                throw;
+            }
         }
     }
 
@@ -451,6 +429,7 @@ internal sealed class ArchiveIntegrityLease : IDisposable
 {
     private Stream? _stream;
     private IDisposable? _owner;
+    private readonly object _disposeGate = new();
 
     internal ArchiveIntegrityLease(string path, Stream stream, IDisposable? owner = null)
     {
@@ -471,22 +450,18 @@ internal sealed class ArchiveIntegrityLease : IDisposable
         await stream.CopyToAsync(destination, 1024 * 1024, cancellationToken).ConfigureAwait(false);
     }
 
-#if KEEPVAULT_MACOS
     internal Task ServeVerifiedReadAtAsync(Stream requestSource, Stream responseDestination, CancellationToken cancellationToken) =>
         VerifiedArchiveReadAtServer.ServeAsync(Stream, requestSource, responseDestination, cancellationToken);
-#endif
 
     public void Dispose()
     {
-        IDisposable? owner = Interlocked.Exchange(ref _owner, null);
-        if (owner is not null)
+        lock (_disposeGate)
         {
+            // Retain the failed owner for retry, including locked-key failures.
+            if (_owner is not null) _owner.Dispose();
+            else _stream?.Dispose();
+            _owner = null;
             _stream = null;
-            owner.Dispose();
-        }
-        else
-        {
-            Interlocked.Exchange(ref _stream, null)?.Dispose();
         }
     }
 }

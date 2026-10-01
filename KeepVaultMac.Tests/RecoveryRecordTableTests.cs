@@ -20,6 +20,7 @@ internal static class RecoveryRecordTableTests
 
     private static Task LayoutAsync()
     {
+        using var disk = new DiskScope();
         using var table = new RecoveryRecordTable<string>();
         string digest = Convert.ToBase64String(Enumerable.Range(0, 64).Select(i => (byte)i).ToArray()) + ":" + Convert.ToBase64String(Enumerable.Range(64, 128).Select(i => (byte)i).ToArray());
         table.Add(digest); table.Add(digest);
@@ -57,6 +58,7 @@ internal static class RecoveryRecordTableTests
 
     private static Task TamperAsync()
     {
+        using var disk = new DiskScope();
         string digest = Convert.ToBase64String(new byte[64]) + ":" + Convert.ToBase64String(new byte[128]);
         foreach (string kind in new[] { "payload", "hmac", "skein", "identity", "position", "kind", "length", "truncate", "extend", "replay", "swap" })
         {
@@ -121,16 +123,48 @@ internal static class RecoveryRecordTableTests
             table.Dispose();
         }
         Expect<ObjectDisposedException>(() => _ = table.Count);
+
+        var stream = new RecoveryMetadataStream();
+        stream.Write(new byte[65537]); stream.Seal();
+        Require(stream.ReadByte() == 0, "Metadata cleanup fixture did not establish a read cache.");
+        try
+        {
+            SecureMemory.SensitiveBufferBeforeUnlockForTests = () => throw new IOException("injected stream table unlock failure");
+            Expect<AggregateException>(stream.Dispose);
+            foreach (string field in new[] { "_pendingMemory", "_cacheMemory" })
+                Require(typeof(RecoveryMetadataStream).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(stream) is null,
+                    "A failed child unlock retained a wiped public metadata buffer's RAM lease.");
+            Expect<InvalidOperationException>(() => stream.ReadByte());
+        }
+        finally
+        {
+            SecureMemory.SensitiveBufferBeforeUnlockForTests = null;
+            stream.Dispose();
+        }
+        using (RecoveryMetadataBudget.Begin(1))
+        using (var failed = new RecoveryMetadataStream())
+        {
+            Expect<IOException>(() => failed.Write(new byte[65536]));
+            Expect<InvalidOperationException>(failed.Seal);
+            Expect<InvalidOperationException>(() => failed.WriteByte(1));
+        }
         return Task.CompletedTask;
+    }
+
+    private sealed class DiskScope : IDisposable
+    {
+        private readonly bool _previous = AuthenticatedRangeIndex.ForceDiskForTests.Value;
+        internal DiskScope() => AuthenticatedRangeIndex.ForceDiskForTests.Value = true;
+        public void Dispose() => AuthenticatedRangeIndex.ForceDiskForTests.Value = _previous;
     }
 
     private static FileStream Storage<T>(RecoveryRecordTable<T> table)
     {
         FieldInfo field = typeof(RecoveryRecordTable<T>).GetField("_file", BindingFlags.Instance | BindingFlags.NonPublic)
             ?? throw new InvalidOperationException("Recovery table storage fixture no longer matches the production field.");
-        BoundFileTransaction owner = field.GetValue(table) as BoundFileTransaction
-            ?? throw new InvalidOperationException("Recovery table has no live bound storage owner.");
-        return owner.Stream;
+        AuthenticatedRangeIndex store = field.GetValue(table) as AuthenticatedRangeIndex
+            ?? throw new InvalidOperationException("Recovery table has no record store.");
+        return store.FileForTests?.Stream ?? throw new InvalidOperationException("This attack requires an explicitly spilled index.");
     }
     private static byte[] Secret<T>(RecoveryRecordTable<T> table, string name) =>
         ((LockedSensitiveBuffer)typeof(RecoveryRecordTable<T>).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(table)!).Bytes;

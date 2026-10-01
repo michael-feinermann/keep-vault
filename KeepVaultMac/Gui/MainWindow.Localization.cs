@@ -29,6 +29,7 @@ public sealed partial class MainWindow
         ExtractTab.Header = T("extractTab");
         EraseTab.Header = T("eraseTab");
         ApplyResourceLanguage();
+        RenderOperationProgress();
         ApplyIntegrityStatus();
         CaptureText.Text = T("captureUnavailable");
         PrivacyShieldText.Text = T("privacyShield");
@@ -188,7 +189,7 @@ public sealed partial class MainWindow
             "pin" => en ? "PIN" : "PIN",
             "repeatPin" => en ? "Repeat PIN" : "PIN wiederholen",
             "pinHelp" => en
-                ? "6 to 16 digits. The PIN is a credential of its own and is required together with the passphrase and both factors."
+                ? "6 to 16 digits. The PIN is a credential of its own and is required together with the password and both factors."
                 : "6 bis 16 Ziffern. Die PIN ist ein eigener Faktor und wird zusammen mit dem Passwort und beiden Faktoren benötigt.",
             "pinInvalid" => en
                 ? "The PIN must consist of {0} to {1} digits."

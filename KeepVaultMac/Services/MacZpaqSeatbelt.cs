@@ -77,6 +77,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
     private string _unixSocketPath = string.Empty;
     private string _allowedShmName = string.Empty;
     private string _deniedShmName = string.Empty;
+    private string? _controlAddress;
     private string? _inputRoot;
     private string? _outputPath;
     private string? _outputRoot;
@@ -121,7 +122,17 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
         InitializationHookForTests?.Invoke("policy-root");
 
         _operation = Classify(arguments);
-        string requestedWorkingDirectory = _operation is MacZpaqSandboxOperation.ListVerified
+        bool boundSources = arguments.Contains("-kv-bound-sources", StringComparer.Ordinal);
+        int controlIndex = Array.IndexOf(arguments.ToArray(), "-kv-control");
+        if (controlIndex >= 0)
+        {
+            if (controlIndex + 2 >= arguments.Count || arguments[controlIndex + 2] != Environment.ProcessId.ToString(CultureInfo.InvariantCulture))
+                throw new InvalidDataException("Invalid parent-bound native control endpoint.");
+            _controlAddress = arguments[controlIndex + 1];
+            if (!Path.IsPathFullyQualified(_controlAddress)) throw new InvalidDataException("Invalid native control path.");
+        }
+        if (boundSources && _controlAddress is null) throw new InvalidDataException("Bound sources require a control endpoint.");
+        string requestedWorkingDirectory = boundSources || _operation is MacZpaqSandboxOperation.ListVerified
             or MacZpaqSandboxOperation.ListStreaming
             ? _profileRootPath
             : workingDirectory;
@@ -181,7 +192,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
             ProfileName,
             OwnerFileMode);
         _profile = CreateOwnedFileStream(profileHandle, 4096);
-        _profileText = BuildProfile(_operation);
+        _profileText = BuildProfile(_operation, boundSources, _controlAddress is not null);
         byte[] profileBytes = Encoding.UTF8.GetBytes(_profileText);
         try
         {
@@ -495,9 +506,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
             RequireValidAfterStart(validationStage, process.Id);
             stdout = process.StandardOutput.ReadToEndAsync(cancellationToken);
             stderr = process.StandardError.ReadToEndAsync(cancellationToken);
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeout.CancelAfter(TimeSpan.FromSeconds(15));
-            await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             capturedOutput = await stdout.ConfigureAwait(false);
             capturedError = await stderr.ConfigureAwait(false);
             if (process.ExitCode != 0
@@ -611,10 +620,8 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
         AddProfileParameter(start, "EXECUTABLE", _executablePath);
         AddProfileParameter(start, "WORKING_DIRECTORY", _workingDirectory);
         AddProfileParameter(start, "CANARY_UNIX_SOCKET", _unixSocketPath);
-        if (_inputRoot is not null)
-        {
-            AddProfileParameter(start, "INPUT_ROOT", _inputRoot);
-        }
+        if (_inputRoot is not null) AddProfileParameter(start, "INPUT_ROOT", _inputRoot);
+        if (_controlAddress is not null) AddProfileParameter(start, "CONTROL_SOCKET", _controlAddress);
         if (_outputPath is not null)
         {
             AddProfileParameter(start, "OUTPUT_FILE", _outputPath);
@@ -646,7 +653,7 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
         }
     }
 
-    private static string BuildProfile(MacZpaqSandboxOperation operation)
+    private static string BuildProfile(MacZpaqSandboxOperation operation, bool boundSources = false, bool control = false)
     {
         var profile = new StringBuilder(
             "(version 1)\n"
@@ -661,15 +668,18 @@ internal sealed partial class MacZpaqSeatbelt : IDisposable
             + "(allow file-read-metadata\n"
             + "  (literal (param \"WORKING_DIRECTORY\"))\n"
             + "  (literal (param \"CANARY_UNIX_SOCKET\")))\n");
+        if (control)
+            profile.Append("(allow network-outbound (remote unix-socket (path-literal (param \"CONTROL_SOCKET\"))))\n"
+                + "(allow file-read-metadata (literal (param \"CONTROL_SOCKET\")))\n");
         switch (operation)
         {
             case MacZpaqSandboxOperation.AddFile:
+                if (!boundSources) profile.Append("(allow file-read* (subpath (param \"INPUT_ROOT\")))\n");
                 profile.Append(
-                    "(allow file-read* (subpath (param \"INPUT_ROOT\")))\n"
-                    + "(allow file-write* (literal (param \"OUTPUT_FILE\")))\n");
+                    "(allow file-write* (literal (param \"OUTPUT_FILE\")))\n");
                 break;
             case MacZpaqSandboxOperation.AddStreaming:
-                profile.Append("(allow file-read* (subpath (param \"INPUT_ROOT\")))\n");
+                if (!boundSources) profile.Append("(allow file-read* (subpath (param \"INPUT_ROOT\")))\n");
                 break;
             case MacZpaqSandboxOperation.ExtractVerified:
             case MacZpaqSandboxOperation.ExtractStreaming:

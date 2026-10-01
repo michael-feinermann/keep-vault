@@ -113,12 +113,12 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     (int scannerExit, string scannerOutput, _) = await RunProcessAsync(
         scannerBuilder,
         "--preflight",
-        "--version", "4.0.2",
-        "--build-number", "6").ConfigureAwait(false);
+        "--version", "5.0.3",
+        "--build-number", "15").ConfigureAwait(false);
     Require(scannerExit == 0, "QR-Scanner rejected valid release version/build arguments.");
     Require(
-        scannerOutput.Contains("preflight_version=4.0.2", StringComparison.Ordinal)
-            && scannerOutput.Contains("preflight_build=6", StringComparison.Ordinal)
+        scannerOutput.Contains("preflight_version=5.0.3", StringComparison.Ordinal)
+            && scannerOutput.Contains("preflight_build=15", StringComparison.Ordinal)
             && scannerOutput.Contains("preflight_single_instance=true", StringComparison.Ordinal),
         "QR-Scanner did not render the requested release metadata and single-instance policy in preflight.");
 
@@ -127,6 +127,12 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string installerBoundDeleteSourceText = await File.ReadAllTextAsync(installerBoundDeleteSource).ConfigureAwait(false);
     string installerBoundDeleteSelfTestSource = await File.ReadAllTextAsync(installerBoundDeleteSelfTest).ConfigureAwait(false);
     string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
+    string installationManifestVerifierSource = await File.ReadAllTextAsync(
+        Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier", "InstallationManifestVerifier.cs")).ConfigureAwait(false);
+    Require(keepVaultBuilderSource.Contains("build_version='15'", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"15\"", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"15\")", StringComparison.Ordinal),
+        "The release builder and strict installation manifest/bundle build pins differ.");
     string portableBuilderSource = await File.ReadAllTextAsync(portableBuilder).ConfigureAwait(false);
     string releasePublishRenameSource = await File.ReadAllTextAsync(releasePublishRename).ConfigureAwait(false);
     string[] installerFailurePoints =

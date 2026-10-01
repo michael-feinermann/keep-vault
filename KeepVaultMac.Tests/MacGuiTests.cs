@@ -49,6 +49,9 @@ internal static class MacGuiTests
         new("gui.original-deletion-localization", "GUI verified-original-deletion localization", () => RunOnUiThread(TestDeleteOriginalsLocalization), TestResource.Gui, "GUI"),
         new("gui.erase-completion-status", "GUI erase completion survives deferred text events and language changes", () => RunOnUiThread(TestEraseCompletionSurvivesDeferredTextChange), TestResource.Gui, "GUI"),
         new("gui.resource-policy", "GUI resource choices freeze validated per-operation limits in both languages", () => RunOnUiThread(TestResourcePolicy), TestResource.Gui, "GUI"),
+        new("gui.rev11-preference-restart", "Auto/manual preferences survive restart and obsolete time fields stay inactive", () => RunOnUiThread(TestResourcePreferenceRestart), TestResource.Gui, "GUI"),
+        new("gui.rev11-progress", "real phase widgets, unknown work, DE/EN, cancellation and authoritative completion", () => RunOnUiThread(TestRev11Progress), TestResource.Gui, "GUI"),
+        new("gui.rev11-observer-isolation", "throwing progress presentation and observer cleanup cannot retain operation ownership", () => RunOnUiThread(TestRev11ObserverIsolation), TestResource.Gui, "GUI"),
         new("gui.control-inventory", "GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
         new("gui.factor-normalization", "GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
         new("gui.secret-clearing", "GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
@@ -716,34 +719,140 @@ internal static class MacGuiTests
     /// </summary>
     private static void TestResourcePolicy(MainWindow window)
     {
-        Control<TextBox>(window, "WorkingDirectoryBox").Text = Path.GetFullPath(Path.GetTempPath());
-        Control<TextBox>(window, "ResourceBudgetBox").Text = "4096";
-        // The total and single-file limits are independent GUI choices.
-        Control<TextBox>(window, "ResourceSingleFileBox").Text = "4096";
-        Control<TextBox>(window, "ResourceHoursBox").Text = "24";
-        Control<TextBox>(window, "ResourceWorkersBox").Text = "2";
-        FieldInfo field = typeof(MainWindow).GetField("_resourcePolicy", BindingFlags.Instance | BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Resource policy field missing.");
-        ArchiveOperationPolicy original = (ArchiveOperationPolicy)field.GetValue(window)!;
-        foreach (string languageCode in new[] { "de", "en" })
+        FieldInfo field = typeof(MainWindow).GetField("_resourcePolicy", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        Control<TextBox>(window, "WorkingDirectoryBox").Text = "/nonexistent-unused-keep-vault-work";
+        foreach (string code in new[] { "de", "en" })
         {
-            SelectLanguage(Control<ComboBox>(window, "LanguageBox"), languageCode);
+            SelectLanguage(Control<ComboBox>(window, "LanguageBox"), code);
             Control<Button>(window, "ApplyResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
-            ArchiveOperationPolicy applied = (ArchiveOperationPolicy)field.GetValue(window)!;
-            MacComprehensiveTests.Require(applied.MaxContainerBytes == 4L << 40
-                && applied.MaxSingleFileBytes == 4L << 40 && applied.WallTimeBudget == TimeSpan.FromHours(24)
-                && applied.MaxCpuWorkers == 2, "GUI did not apply the chosen 64-bit resource policy.");
-            MacComprehensiveTests.Require(!ReferenceEquals(applied, original)
-                && ArchiveOperationPolicy.Current != applied, "GUI changed policy in place or leaked ambient state.");
-            string status = Control<TextBlock>(window, "ResourceStatusText").Text ?? string.Empty;
-            MacComprehensiveTests.Require(status.Contains(languageCode == "de" ? "Übernommen" : "Applied", StringComparison.Ordinal),
-                "Resource status did not use the selected language.");
-            Control<TextBox>(window, "ResourceBudgetBox").Text = "8192";
-            MacComprehensiveTests.Require(applied.MaxContainerBytes == 4L << 40,
-                "Editing a resource field changed an already frozen policy.");
+            ArchiveOperationPolicy automatic = (ArchiveOperationPolicy)field.GetValue(window)!;
+            MacComprehensiveTests.Require(automatic.Preferences.CpuMode == ResourceMode.Auto
+                && automatic.Preferences.MemoryMode == ResourceMode.Auto
+                && automatic.RequestedCpuWorkers == 0
+                && string.IsNullOrEmpty(Control<TextBox>(window, "ResourceWorkersBox").Text),
+                "Apply/language resolved Auto into a persisted manual number.");
+            MacComprehensiveTests.Require(window.FindControl<Control>("ResourceHoursBox") is null, "A product time-limit field survived.");
             Control<TextBox>(window, "ResourceBudgetBox").Text = "4096";
+            Control<TextBox>(window, "ResourceExtractionBox").Text = "1024";
+            Control<TextBox>(window, "ResourceSingleFileBox").Text = "512";
+            Control<TextBox>(window, "ResourceWorkersBox").Text = "1";
+            Control<Button>(window, "ApplyResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            ArchiveOperationPolicy manual = (ArchiveOperationPolicy)field.GetValue(window)!;
+            MacComprehensiveTests.Require(manual.MaxContainerBytes == 4L << 30 && manual.MaxExtractedTotalBytes == 1L << 30
+                && manual.MaxSingleFileBytes == 512L << 20 && manual.RequestedCpuWorkers == 1,
+                "Independent archive/output limits or manual CPU=1 were not retained.");
+            MacComprehensiveTests.Require(ArchiveOperationPolicy.Current != manual, "Applying preferences leaked ambient policy.");
+            Control<TextBox>(window, "ResourceBudgetBox").Text = "8192";
+            MacComprehensiveTests.Require(manual.MaxContainerBytes == 4L << 30, "Editing a field mutated an active policy.");
+            Control<Button>(window, "ResetResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
         }
+    }
+
+    private static void TestResourcePreferenceRestart(MainWindow window)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        var store = (IAppSettingsStore)typeof(MainWindow).GetField("_settingsStore", flags)!.GetValue(window)!;
+        FieldInfo policyField = typeof(MainWindow).GetField("_resourcePolicy", flags)!;
+        store.Write("resource-hours", "1");
+        store.Write("resource-cpu-hours", "1");
+        Control<TextBox>(window, "ResourceWorkersBox").Text = "1";
+        Control<TextBox>(window, "ResourceExtractionBox").Text = "512";
+        Control<TextBox>(window, "WorkingDirectoryBox").Text = "/missing-unused-rev11-workspace";
+        Control<Button>(window, "ApplyResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        using (var restarted = new MainWindow(store))
+        {
+            var policy = (ArchiveOperationPolicy)policyField.GetValue(restarted)!;
+            MacComprehensiveTests.Require(policy.RequestedCpuWorkers == 1 && policy.MaxExtractedTotalBytes == 512L << 20,
+                "Restart lost the explicit manual choice.");
+            MacComprehensiveTests.Require(policy.Preferences.MemoryMode == ResourceMode.Auto
+                && typeof(ArchiveOperationPolicy).GetProperty("WallTimeBudget") is null,
+                "Restart converted Auto or reintroduced a time limit.");
+            Control<Button>(restarted, "ResetResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+        using var automaticRestart = new MainWindow(store);
+        var automatic = (ArchiveOperationPolicy)policyField.GetValue(automaticRestart)!;
+        MacComprehensiveTests.Require(automatic.RequestedCpuWorkers == 0 && automatic.RequestedMemoryBudgetBytes == 0
+            && automatic.Preferences.WorkingDirectory is null && automatic.MaxExtractedTotalBytes == 256L << 20,
+            "Automatic reset persisted effective values or a stale working folder.");
+    }
+
+    private static void TestRev11Progress(MainWindow window)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        void Invoke(string method) => typeof(MainWindow).GetMethod(method, flags)!.Invoke(window, null);
+        foreach (string language in new[] { "de", "en" })
+        {
+            EnableProtectedOperationsForFailureTest(window);
+            Invoke("TryBeginProtectedOperation");
+            var tracker = (OperationProgressTracker)typeof(MainWindow).GetField("_operationProgress", flags)!.GetValue(window)!;
+            SelectLanguage(Control<ComboBox>(window, "LanguageBox"), language);
+            using var source = tracker.BeginPhase(OperationPhase.GlobalVerification, totalUnits: 10, origin: ProgressTotalOrigin.KnownInput)!;
+            source.Advance(5); Invoke("RenderOperationProgress");
+            var bar = Control<ProgressBar>(window, "OperationPhaseProgress");
+            MacComprehensiveTests.Require(!bar.IsIndeterminate && bar.Value == 50, "Actual phase counts did not reach the real progress widget.");
+            source.Advance(5); Invoke("RenderOperationProgress");
+            MacComprehensiveTests.Require(tracker.Snapshot().State == OperationProgressState.Running
+                && Control<TextBlock>(window, "OperationPhaseText").Text!.StartsWith("Phase:"),
+                "Full phase counter claimed global success.");
+            using var cleanup = tracker.BeginPhase(OperationPhase.Cleanup)!;
+            Invoke("RenderOperationProgress");
+            MacComprehensiveTests.Require(bar.IsIndeterminate, "Unknown cleanup work received invented progress.");
+            Invoke("MarkOperationSucceeded"); Invoke("EndProtectedOperation");
+            MacComprehensiveTests.Require(bar.Value == 100 && !bar.IsIndeterminate
+                && Control<TextBlock>(window, "OperationPhaseText").Text == (language == "en" ? "Completed" : "Abgeschlossen"),
+                "Authoritative completion or its translation was lost.");
+            Invoke("TryBeginProtectedOperation");
+            Invoke("MarkOperationFailed"); Invoke("EndProtectedOperation");
+            MacComprehensiveTests.Require(Control<TextBlock>(window, "OperationPhaseText").Text == (language == "en" ? "Failed" : "Fehlgeschlagen"),
+                "A failed operation was converted to ready/completed by cleanup.");
+        }
+    }
+
+    private static void TestRev11ObserverIsolation(MainWindow window)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        void Invoke(string method) => typeof(MainWindow).GetMethod(method, flags)!.Invoke(window, null);
+        EnableProtectedOperationsForFailureTest(window);
+        OperationProgressTracker? previous = OperationProgressTracker.Current;
+        Invoke("TryBeginProtectedOperation");
+        var scopeField = typeof(MainWindow).GetField("_operationProgressScope", flags)!;
+        var tracker = (OperationProgressTracker)typeof(MainWindow).GetField("_operationProgress", flags)!.GetValue(window)!;
+        scopeField.SetValue(window, new ThrowingObserverCleanup((IDisposable)scopeField.GetValue(window)!));
+        TextBlock phase = Control<TextBlock>(window, "OperationPhaseText");
+        TextBlock details = Control<TextBlock>(window, "OperationProgressDetailsText");
+        int failures = 0;
+        void Fail(object? sender, AvaloniaPropertyChangedEventArgs change)
+        {
+            if (change.Property == TextBlock.TextProperty)
+            { failures++; throw new InvalidOperationException("Injected observer-only UI failure."); }
+        }
+        phase.PropertyChanged += Fail;
+        details.PropertyChanged += Fail;
+        try
+        {
+            using var source = tracker.BeginPhase(OperationPhase.Extraction)!;
+            Invoke("RenderOperationProgress");
+            Invoke("MarkOperationSucceeded");
+            Invoke("EndProtectedOperation");
+        }
+        finally { phase.PropertyChanged -= Fail; details.PropertyChanged -= Fail; }
+        MacComprehensiveTests.Require(failures > 0, "The observer fault injection did not execute.");
+        MacComprehensiveTests.Require((int)typeof(MainWindow).GetField("_operationActive", flags)!.GetValue(window)! == 0
+            && typeof(MainWindow).GetField("_operationCancellation", flags)!.GetValue(window) is null
+            && scopeField.GetValue(window) is null && tracker.RegisterSource() is null
+            && ReferenceEquals(previous, OperationProgressTracker.Current),
+            "A cosmetic observer fault retained CTS, operation, scope or tracker ownership.");
+    }
+
+    private sealed class ThrowingObserverCleanup(IDisposable inner) : IDisposable
+    {
+        public void Dispose()
+        { inner.Dispose(); throw new InvalidOperationException("Injected observer cleanup failure."); }
     }
 
     private static void TestReferenceControlsPresent(MainWindow window)

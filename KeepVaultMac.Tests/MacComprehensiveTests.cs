@@ -115,6 +115,12 @@ internal static partial class MacComprehensiveTests
         .. VerifiedArchiveInputTests.Tests,
         .. RecoveryStreamingMetadataTests.Tests,
         .. OperationMemoryBudgetTests.Tests,
+        .. OperationProgressTests.Tests,
+        .. ProgressIsolationTests.Tests,
+        .. GoldenVerifierTests.Tests,
+        .. ZpaqControlTests.Tests,
+        .. OriginalDeletionCreationTests.Tests,
+        .. Rev11VerifiedInputTests.Tests,
         .. RecoveryRecordTableTests.Tests,
         new("resources.cpu-worker-budget", "aggregate CPU reservations, cancellation and policy ceilings", CpuWorkBudgetTests.RunAsync, TestResource.ProcessGlobal, "Security"),
         // Source- and documentation-level gates. Cheap enough to run on every
@@ -2209,6 +2215,7 @@ internal static partial class MacComprehensiveTests
         string inside = Path.Combine(folder, "inside.bin");
         await File.WriteAllBytesAsync(inside, payload).ConfigureAwait(false);
         string[] inputs = [folder];
+        using var creation = MacOriginalDeletionService.CaptureCreationSnapshot(inputs, CancellationToken.None);
 
         Directory.CreateDirectory(Path.Combine(extracted, "folder"));
         await File.WriteAllBytesAsync(Path.Combine(extracted, "folder", "inside.bin"), payload)
@@ -2220,7 +2227,7 @@ internal static partial class MacComprehensiveTests
             MacOriginalDeletionService.CaptureArchiveIdentity(archive);
 
         MacOriginalDeletionService.VerificationResult verified =
-            await MacOriginalDeletionService.VerifyExtractionAsync(inputs, extracted, null, CancellationToken.None)
+            await MacOriginalDeletionService.VerifyExtractionAsync(inputs, extracted, null, CancellationToken.None, creation)
                 .ConfigureAwait(false);
         Require(verified.Verified && verified.Originals is not null, "The drift fixture did not verify.");
 
@@ -2248,6 +2255,14 @@ internal static partial class MacComprehensiveTests
         await File.WriteAllBytesAsync(inside, payload).ConfigureAwait(false);
         File.SetLastWriteTimeUtc(inside, new DateTime(verified.Originals!.Files[inside].ModifiedUtcTicks, DateTimeKind.Utc));
         string vanished = Path.Combine(folder, "second.bin");
+        IReadOnlyList<string> restored = MacOriginalDeletionService.DeleteOriginals(
+            inputs, archive, identity, verified.Originals!);
+        Require(restored.Count > 0 && File.Exists(inside), "Restored bytes/mtime adopted a changed original identity/ctime.");
+        // A new creation-and-verification cycle can authorize the now-current
+        // source again; the old creation proof remains invalid.
+        using var recreated = MacOriginalDeletionService.CaptureCreationSnapshot(inputs, CancellationToken.None);
+        verified = await MacOriginalDeletionService.VerifyExtractionAsync(inputs, extracted, null, CancellationToken.None, recreated);
+        Require(verified.Verified && verified.Originals is not null, "Recreated drift fixture did not verify.");
         IReadOnlyList<string> clean = MacOriginalDeletionService.DeleteOriginals(
             inputs, archive, identity, verified.Originals!);
         Require(clean.Count == 0, $"An unchanged original set was refused: {string.Join("; ", clean)}");
@@ -5605,13 +5620,14 @@ internal static partial class MacComprehensiveTests
             await File.WriteAllBytesAsync(Path.Combine(extDir, "victim.bin"), content).ConfigureAwait(false);
             await File.WriteAllBytesAsync(Path.Combine(extDir, "victim2.bin"), content2).ConfigureAwait(false);
 
+            using var creation = MacOriginalDeletionService.CaptureCreationSnapshot([fileToDel, fileToDel2], CancellationToken.None);
             string archivePath = Path.Combine(root, "archive.kzpaq");
             await File.WriteAllBytesAsync(archivePath, RandomNumberGenerator.GetBytes(512)).ConfigureAwait(false);
             MacOriginalDeletionService.ArchiveIdentity archiveId =
                 MacOriginalDeletionService.CaptureArchiveIdentity(archivePath);
 
             MacOriginalDeletionService.VerificationResult ver =
-                await MacOriginalDeletionService.VerifyExtractionAsync([fileToDel, fileToDel2], extDir, null, CancellationToken.None).ConfigureAwait(false);
+                await MacOriginalDeletionService.VerifyExtractionAsync([fileToDel, fileToDel2], extDir, null, CancellationToken.None, creation).ConfigureAwait(false);
             Require(ver.Verified && ver.Originals != null, $"Verification failed for deletion test: {ver.Failure}");
 
             // Corrupt archive so pre-commit stage fails and triggers rollback:

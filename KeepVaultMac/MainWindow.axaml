@@ -323,6 +323,7 @@
                   </Grid>
                 </StackPanel>
                 <StackPanel Spacing="6">
+                  <TextBlock x:Name="ResourceOutputAuthorizationText" TextWrapping="Wrap" Classes="muted" />
                   <TextBlock x:Name="OutputFolderLabel" Text="Zielordner" Classes="label" Margin="0" />
                   <TextBlock x:Name="OutputFolderDropHintText" Text="Wird aus dem Archivnamen vorgeschlagen." Classes="muted" FontSize="12" />
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
@@ -415,34 +416,44 @@
         <Border x:Name="ResourcesPanel" Classes="card" Padding="20" Margin="0,10,0,0">
           <ScrollViewer>
             <StackPanel Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
-              <TextBlock x:Name="ResourcesTitle" Text="Arbeitsplatz und Grenzen" Classes="sectionTitle" />
+              <TextBlock x:Name="ResourcesTitle" Text="Automatische Ressourcenplanung" Classes="sectionTitle" />
               <TextBlock x:Name="ResourcesDescription" TextWrapping="Wrap" Classes="muted" />
-              <TextBlock x:Name="WorkingDirectoryLabel" Text="Arbeitsordner" />
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                <TextBox x:Name="WorkingDirectoryBox" MinWidth="400" MaxLength="4096" />
-                <Button x:Name="ChooseWorkingDirectoryButton" Grid.Column="1" Content="Auswählen" Click="ChooseWorkingDirectory_Click" Classes="secondary" />
-              </Grid>
-              <TextBlock x:Name="ResourceBudgetLabel" Text="Archiv und gesamte Extraktion, maximal in GiB" TextWrapping="Wrap" />
-              <TextBox x:Name="ResourceBudgetBox" Text="500" MaxLength="12" />
-              <TextBlock x:Name="ResourceSingleFileLabel" Text="Einzeldatei, maximal in GiB" TextWrapping="Wrap" />
-              <TextBox x:Name="ResourceSingleFileBox" Text="500" MaxLength="12" />
-              <TextBlock x:Name="ResourceRecoveryLabel" Text="Recovery-Sidecar oder Reparaturkandidat, maximal in GiB" TextWrapping="Wrap" />
-              <TextBox x:Name="ResourceRecoveryBox" Text="1024" MaxLength="12" />
-              <TextBlock x:Name="ResourceMetadataLabel" Text="Temporäre Metadaten, maximal in GiB" TextWrapping="Wrap" />
-              <TextBox x:Name="ResourceMetadataBox" Text="2" MaxLength="12" />
-              <TextBlock x:Name="ResourceMemoryLabel" Text="Arbeitsspeicherbudget in GiB" TextWrapping="Wrap" />
-              <TextBox x:Name="ResourceMemoryBox" Text="6" MaxLength="12" />
-              <TextBlock x:Name="ResourceIoLabel" Text="Gleichzeitige I/O-Anfragen" TextWrapping="Wrap" />
-              <TextBox x:Name="ResourceIoBox" Text="2" MaxLength="12" />
-              <TextBlock x:Name="ResourceQueueLabel" Text="Bereitgehaltene Chunks" TextWrapping="Wrap" />
-              <TextBox x:Name="ResourceQueueBox" Text="4" MaxLength="12" />
-              <TextBlock x:Name="ResourceEntriesLabel" Text="Dateien und Verzeichnisse, maximal" TextWrapping="Wrap" />
-              <TextBox x:Name="ResourceEntriesBox" Text="500000" MaxLength="12" />
-              <TextBlock x:Name="ResourceHoursLabel" Text="Laufzeit, maximal in Stunden" />
-              <TextBox x:Name="ResourceHoursBox" Text="4" MaxLength="6" />
-              <TextBlock x:Name="ResourceWorkersLabel" Text="CPU-Worker, maximal" />
-              <TextBox x:Name="ResourceWorkersBox" Text="0" MaxLength="10" />
-              <Button x:Name="ApplyResourcesButton" Content="Für diese Sitzung übernehmen" Click="ApplyResources_Click" HorizontalAlignment="Left" />
+              <TextBlock x:Name="ResourceModeSummaryText" TextWrapping="Wrap" />
+              <TextBlock x:Name="ResourceEffectiveSummaryText" TextWrapping="Wrap" Classes="muted" />
+              <TextBlock x:Name="ResourceAllowanceText" TextWrapping="Wrap" Classes="muted" />
+              <Expander x:Name="ResourceAdvancedExpander" Header="Erweiterte manuelle Grenzen" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="9" Margin="0,10,0,0">
+                  <TextBlock x:Name="ResourceWorkersLabel" Text="CPU-Worker, maximal" />
+                  <TextBox x:Name="ResourceWorkersBox" PlaceholderText="Automatisch" MaxLength="10" />
+                  <TextBlock x:Name="ResourceMemoryLabel" Text="Arbeitsspeicher, maximal in MiB" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceMemoryBox" PlaceholderText="Automatisch" MaxLength="16" />
+                  <TextBlock x:Name="ResourceIoLabel" Text="Gleichzeitige I/O-Anfragen" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceIoBox" PlaceholderText="Automatisch" MaxLength="10" />
+                  <TextBlock x:Name="ResourceQueueLabel" Text="Bereitgehaltene Chunks" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceQueueBox" PlaceholderText="Automatisch" MaxLength="10" />
+                  <TextBlock x:Name="WorkingDirectoryLabel" Text="Arbeitsordner, nur bei benötigter Auslagerung" TextWrapping="Wrap" />
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <TextBox x:Name="WorkingDirectoryBox" MinWidth="320" MaxLength="4096" PlaceholderText="Automatisch" />
+                    <Button x:Name="ChooseWorkingDirectoryButton" Grid.Column="1" Content="Auswählen" Click="ChooseWorkingDirectory_Click" Classes="secondary" />
+                  </Grid>
+                  <TextBlock x:Name="ResourceBudgetLabel" Text="Archiv, maximal in MiB" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceBudgetBox" PlaceholderText="Auftragsbezogen" MaxLength="16" />
+                  <TextBlock x:Name="ResourceExtractionLabel" Text="Gesamte Extraktion, maximal in MiB" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceExtractionBox" PlaceholderText="256" MaxLength="16" />
+                  <TextBlock x:Name="ResourceSingleFileLabel" Text="Einzeldatei, maximal in MiB" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceSingleFileBox" PlaceholderText="Wie Extraktionsfreigabe" MaxLength="16" />
+                  <TextBlock x:Name="ResourceRecoveryLabel" Text="Recovery, maximal in MiB" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceRecoveryBox" PlaceholderText="Auftragsbezogen" MaxLength="16" />
+                  <TextBlock x:Name="ResourceMetadataLabel" Text="Metadaten, maximal in MiB" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceMetadataBox" PlaceholderText="Auftragsbezogen" MaxLength="16" />
+                  <TextBlock x:Name="ResourceEntriesLabel" Text="Dateien und Verzeichnisse, maximal" TextWrapping="Wrap" />
+                  <TextBox x:Name="ResourceEntriesBox" PlaceholderText="Auftragsbezogen" MaxLength="12" />
+                </StackPanel>
+              </Expander>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button x:Name="ApplyResourcesButton" Content="Einstellungen speichern" Click="ApplyResources_Click" />
+                <Button x:Name="ResetResourcesButton" Content="Automatische Standards" Classes="secondary" Click="ResetResources_Click" />
+              </StackPanel>
               <TextBlock x:Name="ResourceStatusText" TextWrapping="Wrap" Classes="muted" />
             </StackPanel>
           </ScrollViewer>
@@ -451,7 +462,7 @@
     </TabControl>
 
     <Border Grid.Row="2" Classes="card" Background="#050B14" Padding="14">
-      <Grid RowDefinitions="Auto,*">
+      <Grid RowDefinitions="Auto,Auto,*">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <TextBlock x:Name="LogTitleText" Text="Sicherheitsprotokoll" FontWeight="SemiBold" />
@@ -462,8 +473,13 @@
             <Button x:Name="ClearLogButton" Content="Leeren" Classes="secondary" Click="ClearLog_Click" />
           </StackPanel>
         </Grid>
+        <StackPanel x:Name="OperationProgressPanel" Grid.Row="1" Spacing="4" Margin="0,8,0,0" IsVisible="False">
+          <TextBlock x:Name="OperationPhaseText" TextWrapping="Wrap" />
+          <ProgressBar x:Name="OperationPhaseProgress" Minimum="0" Maximum="100" Height="8" IsIndeterminate="True" />
+          <TextBlock x:Name="OperationProgressDetailsText" TextWrapping="Wrap" Classes="muted" FontSize="11" />
+        </StackPanel>
         <TextBox x:Name="LogBox"
-                 Grid.Row="1"
+                 Grid.Row="2"
                  Margin="0,9,0,0"
                  IsReadOnly="True"
                  AcceptsReturn="True"

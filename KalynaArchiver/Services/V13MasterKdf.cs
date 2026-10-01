@@ -373,6 +373,8 @@ internal static class V13MasterKdf
         using OperationMemoryBudget.HeavyLease matrix = OperationMemoryBudget.AcquireHeavyAsync(
             checked((long)memoryKiB * 1024), cancellationToken).AsTask().GetAwaiter().GetResult();
 
+        using OperationProgressSource? branchProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.KeyDerivation, ProgressUnit.Steps, 2, ProgressTotalOrigin.ValidatedPlan, round);
         LockedSensitiveBuffer? left = null;
         LockedSensitiveBuffer? right = null;
         Exception? operationFailure = null;
@@ -384,9 +386,11 @@ internal static class V13MasterKdf
             RunBranch(
                 algorithm, round, sha3Branch: true,
                 sha3CredentialHash, sha3Salt, secret, memoryKiB, left.Bytes, cancellationToken);
+            branchProgress?.Advance(1);
             RunBranch(
                 algorithm, round, sha3Branch: false,
                 skeinCredentialHash, skeinSalt, secret, memoryKiB, right.Bytes, cancellationToken);
+            branchProgress?.Advance(1);
 
             MasterInterleave.Interleave(left.Bytes, right.Bytes, destination);
         }

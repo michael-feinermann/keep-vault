@@ -19,14 +19,18 @@ internal sealed class RecoveryRecordTable<T> : IReadOnlyList<T>, IDisposable
     private const int TagBytes = 192;
     private static readonly byte[] HmacDomain = LengthPrefix.Encode("Kalyna-ZPAQ/v13/RecoveryRecordTable/HMAC-SHA3-512");
     private const string SkeinDomain = "Kalyna-ZPAQ/v13/RecoveryRecordTable/Skein-MAC-1024-1024";
+    private static readonly object OwnersGate = new();
+    private static readonly HashSet<RecoveryRecordTable<T>> Owners = [];
     private readonly object _gate = new();
+    private volatile bool _cleanupPending;
     private readonly ArchiveOperationPolicy _policy;
     private readonly RecoveryMetadataBudget _budget;
     private long _reservedBytes;
     private readonly int _kind;
     private readonly int _payloadBytes;
     private readonly int _recordBytes;
-    private BoundFileTransaction? _file;
+    private AuthenticatedRangeIndex? _file;
+    private OperationMemoryBudget.HeavyLease? _working;
     private LockedSensitiveBuffer? _hmacKey;
     private LockedSensitiveBuffer? _skeinKey;
     private LockedSensitiveBuffer? _operationId;
@@ -43,22 +47,29 @@ internal sealed class RecoveryRecordTable<T> : IReadOnlyList<T>, IDisposable
             : throw new NotSupportedException("Only fixed-width recovery digest, parity and bounded byte records are supported.");
         _payloadBytes = _kind switch { 1 => DigestBytes, 2 => 20 + DigestBytes, _ => 4 + MaximumByteRecordLength };
         _recordBytes = checked(PrefixBytes + _payloadBytes + TagBytes);
+        RecoveryRecordTable<T>[] pending;
+        lock (OwnersGate) pending = Owners.Where(owner => owner._cleanupPending).ToArray();
+        foreach (RecoveryRecordTable<T> owner in pending) owner.Dispose();
+        lock (OwnersGate) Owners.Add(this);
         try
         {
+            _working = OperationMemoryBudget.AcquireWorking(checked(_recordBytes + 224));
             _hmacKey = LockedSensitiveBuffer.Create(64);
             _skeinKey = LockedSensitiveBuffer.Create(128);
             _operationId = LockedSensitiveBuffer.Create(32);
             _record = LockedSensitiveBuffer.Create(_recordBytes);
+            _working.CommitAllocation();
             RandomNumberGenerator.Fill(_hmacKey.Bytes);
             RandomNumberGenerator.Fill(_skeinKey.Bytes);
             RandomNumberGenerator.Fill(_operationId.Bytes);
-            Directory.CreateDirectory(_policy.WorkingDirectory);
-            _file = BoundFileTransaction.CreateNew(Path.Combine(_policy.WorkingDirectory,
-                $".keep-vault-recovery-index.{Guid.NewGuid():N}"), 1, FileOptions.RandomAccess);
-            _policy.RequireWorkingFileVolume(_file.Stream.SafeFileHandle);
-            _file.DeleteBound();
+            _file = new AuthenticatedRangeIndex(_policy, _budget);
         }
-        catch { Dispose(); throw; }
+        catch (Exception failure)
+        {
+            try { Dispose(); }
+            catch (Exception cleanup) { throw new AggregateException("Recovery metadata construction and cleanup failed; the owner is retained.", failure, cleanup); }
+            throw;
+        }
     }
 
     public int Count { get { lock (_gate) { RequireUsable(); return _count; } } }
@@ -83,11 +94,10 @@ internal sealed class RecoveryRecordTable<T> : IReadOnlyList<T>, IDisposable
                 BinaryPrimitives.WriteInt32BigEndian(record[44..], _payloadBytes);
                 Encode(value, record.Slice(PrefixBytes, _payloadBytes));
                 ComputeTags(record[..(PrefixBytes + _payloadBytes)], record[(PrefixBytes + _payloadBytes)..]);
-                _file!.Stream.Position = checked((long)_count * _recordBytes);
                 _budget.Reserve(_recordBytes);
                 try
                 {
-                    _file.Stream.Write(record);
+                    _file!.WriteAt(record, checked((long)_count * _recordBytes));
                     _reservedBytes = checked(_reservedBytes + _recordBytes);
                 }
                 catch { _budget.Release(_recordBytes); throw; }
@@ -111,8 +121,7 @@ internal sealed class RecoveryRecordTable<T> : IReadOnlyList<T>, IDisposable
                 {
                     ValidateLength();
                     Span<byte> record = _record!.Bytes;
-                    _file!.Stream.Position = checked((long)index * _recordBytes);
-                    _file.Stream.ReadExactly(record);
+                    _file!.ReadExactlyAt(record, checked((long)index * _recordBytes));
                     Span<byte> expected = stackalloc byte[TagBytes];
                     ComputeTags(record[..(PrefixBytes + _payloadBytes)], expected);
                     bool first = CryptographicOperations.FixedTimeEquals(record.Slice(PrefixBytes + _payloadBytes, 64), expected[..64]);
@@ -133,6 +142,9 @@ internal sealed class RecoveryRecordTable<T> : IReadOnlyList<T>, IDisposable
 
     private void ComputeTags(ReadOnlySpan<byte> transcript, Span<byte> tags)
     {
+        using CpuWorkBudget.Lease? cpu = CpuWorkBudget.IsOwnedByCurrentContext ? null
+            : CpuWorkBudget.AcquireAsync(_policy.MaxCpuWorkers, 1, CancellationToken.None).AsTask().GetAwaiter().GetResult();
+        using IDisposable? scope = cpu?.EnterScope();
         using (var hmac = new HmacSha3_512(_hmacKey!.Bytes))
         {
             hmac.AppendData(HmacDomain);
@@ -199,7 +211,7 @@ internal sealed class RecoveryRecordTable<T> : IReadOnlyList<T>, IDisposable
 
     private void ValidateLength()
     {
-        if (_file!.Stream.Length != checked((long)_count * _recordBytes))
+        if (_file!.Length != checked((long)_count * _recordBytes))
             throw new IOException("The recovery metadata file was truncated or extended.");
     }
 
@@ -216,6 +228,7 @@ internal sealed class RecoveryRecordTable<T> : IReadOnlyList<T>, IDisposable
         {
             if (_disposed) return;
             _failed = true;
+            _cleanupPending = true;
             List<Exception> failures = [];
             // Erase every sensitive member before the first unlock, and retain
             // owners on any failure so Dispose can be retried after a denied unlock.
@@ -231,7 +244,10 @@ internal sealed class RecoveryRecordTable<T> : IReadOnlyList<T>, IDisposable
             catch (Exception failure) { failures.Add(failure); }
             if (failures.Count != 0)
                 throw new AggregateException("Recovery metadata cleanup failed; retained owners allow a retry.", failures);
+            _working?.Dispose(); _working = null;
             _disposed = true;
+            _cleanupPending = false;
+            lock (OwnersGate) Owners.Remove(this);
         }
     }
 }

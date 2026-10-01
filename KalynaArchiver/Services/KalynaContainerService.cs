@@ -84,8 +84,7 @@ public sealed partial class KalynaContainerService
         get
         {
             ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
-            return Math.Min(Math.Min(policy.MaxCpuWorkers, policy.MaxQueuedChunks), CalculatePipelineWorkerCount(
-                Environment.ProcessorCount, Math.Min(policy.MemoryBudgetBytes, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes)));
+            return Math.Max(1, Math.Min(policy.MaxCpuWorkers, policy.MaxQueuedChunks));
         }
     }
 
@@ -322,6 +321,9 @@ public sealed partial class KalynaContainerService
                 CryptographicOperations.ZeroMemory(kdfSecondSalt);
             }
 
+            if (plainZpaqStream is IPreparedArchiveSource preparedSource)
+                await preparedSource.PrepareForConsumptionAsync(cancellationToken).ConfigureAwait(false);
+
             chunkNonceBase = BuildChunkNonceBase(nonce, secondNonce);
 
             tweak = CreateSuiteTweak(suite, nonce);
@@ -541,7 +543,7 @@ public sealed partial class KalynaContainerService
         cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(plainZpaqDestination);
         await using VerifiedArchiveInput input = await VerifiedArchiveInput
-            .CaptureAsync(encryptedPath, _operationPolicy, cancellationToken)
+            .BindEncryptedAsync(encryptedPath, _operationPolicy, cancellationToken)
             .ConfigureAwait(false);
         byte[] magic = new byte[Magic.Length];
         byte[] headerLengthBytes = new byte[sizeof(int)];
@@ -654,6 +656,8 @@ public sealed partial class KalynaContainerService
             // contents.
             nonceLock = SecureMemory.TryLock(nonce);
             tweakLock = SecureMemory.TryLock(tweak);
+            if (plainZpaqDestination is IPreparedArchiveDestination preparedDestination)
+                await preparedDestination.PrepareForConsumptionAsync(cancellationToken).ConfigureAwait(false);
             input.Position = cipherStart;
             await DecryptPayloadParallelAsync(
                 input,
@@ -1084,6 +1088,7 @@ public sealed partial class KalynaContainerService
         byte[] headerBytes,
         CancellationToken cancellationToken)
     {
+        VerifiedArchiveInput.BeginFusedAuthentication(input, cipherStart);
         return await ParallelContainerAuthenticator
             .ComputeAsync(
                 input,
@@ -1095,21 +1100,47 @@ public sealed partial class KalynaContainerService
             .ConfigureAwait(false);
     }
 
-    private static async ValueTask<int> ReadChunkAsync(Stream source, byte[] buffer, CancellationToken cancellationToken)
+    // A short read is not EOF. Capacity grows only after the current protected
+    // buffer has actually filled, with a protected one-byte lookahead so an
+    // exact small EOF never causes a needless large allocation.
+    internal static async ValueTask<int> ReadChunkAsync(Stream source, ContainerChunkSlot slot,
+        int maximum, CancellationToken cancellationToken)
     {
         int total = 0;
-        while (total < buffer.Length)
+        while (total < maximum)
         {
-            int read = await source.ReadAsync(buffer.AsMemory(total, buffer.Length - total), cancellationToken).ConfigureAwait(false);
-            if (read == 0)
+            if (total == slot.Input.Length)
             {
-                break;
+                int probe = await source.ReadAsync(slot.Counter.AsMemory(0, 1), cancellationToken).ConfigureAwait(false);
+                if (probe == 0) break;
+                int capacity = Math.Min(maximum, checked(Math.Max(1, slot.Input.Length) * 2));
+                slot.EnsureInputCapacity(capacity, total);
+                slot.Input[total++] = slot.Counter[0];
+                slot.Counter[0] = 0;
             }
-
-            total += read;
+            int read = await source.ReadAsync(slot.Input.AsMemory(total, Math.Min(slot.Input.Length, maximum) - total),
+                cancellationToken).ConfigureAwait(false);
+            if (read == 0) break;
+            total = checked(total + read);
         }
-
         return total;
+    }
+
+    private static int InitialChunkCapacity(Stream input, int maximum)
+    {
+        if (input.CanSeek) return (int)Math.Clamp(input.Length - input.Position, 1, Math.Min(maximum, 64 * 1024));
+        return Math.Min(maximum, 64 * 1024);
+    }
+
+    private static int ResolveNextChunkWindow(Stream input, int current, int healthySamples, bool improved)
+    {
+        if (PipelineWorkerOverride.Value is int forced) return forced;
+        ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
+        long ready = input.CanSeek ? Math.Max(0, input.Length - input.Position) : 2L * BufferSize;
+        ResolvedOperationPlan plan = ResourcePlanner.Resolve(policy.Preferences, PlatformResourceObserver.Capture(),
+            new(ResourcePlanner.OperationBaseBytes, ready, policy.MaxCpuWorkers, current,
+                input.CanSeek ? healthySamples : 0, input.CanSeek && improved));
+        return plan.ActiveSlots;
     }
 
     private static async Task<long> EncryptPayloadParallelAsync(
@@ -1123,11 +1154,16 @@ public sealed partial class KalynaContainerService
     {
         ChunkNoncePlan noncePlan = ChunkNoncePlan.Create(parameters);
         byte[] associatedTemplate = CreateChunkAssociatedDataTemplate(parameters, chunkNonceBase, CurrentVersion);
-        int workerCount = PipelineWorkerCount;
+        long? knownPayload = plaintext.CanSeek ? plaintext.Length - plaintext.Position : null;
+        using OperationProgressSource? progress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.Encryption,
+            ProgressUnit.Bytes, knownPayload, knownPayload.HasValue ? ProgressTotalOrigin.KnownInput : ProgressTotalOrigin.Unknown);
+        int workerCount = PipelineWorkerOverride.Value ?? 1;
         long prefixBytes = ciphertext.CanSeek ? ciphertext.Position : 0;
         long maximumContainerBytes = ArchiveOperationPolicy.Current.MaxContainerBytes;
         int tagBytes = parameters.Cascade is { OutermostIsAead: true } ? NativeXChaChaPoly.TagBytes : 0;
         var slots = new ContainerChunkSlot[workerCount];
+        int healthySamples = 0;
+        double previousRate = 0;
         Exception? operationFailure = null;
         try
         {
@@ -1136,19 +1172,23 @@ public sealed partial class KalynaContainerService
             long expectedWriteIndex = 0;
             while (true)
             {
+                long batchStarted = Stopwatch.GetTimestamp();
+                long batchBytes = 0;
                 int active = 0;
-                for (; active < slots.Length; active++)
+                for (; active < workerCount; active++)
                 {
                     ContainerChunkSlot slot = slots[active] ??= new ContainerChunkSlot(
-                        BufferSize, BufferSize, parameters.StageNonceBytes);
-                    int read = await ReadChunkAsync(plaintext, slot.Input, cancellationToken).ConfigureAwait(false);
+                        InitialChunkCapacity(plaintext, BufferSize), 0, parameters.StageNonceBytes);
+                    int read = await ReadChunkAsync(plaintext, slot, BufferSize, cancellationToken).ConfigureAwait(false);
                     if (read == 0)
                     {
                         break;
                     }
 
                     CryptoUsageBudget.ValidateChunk(chunkIndex, read);
+                    slot.EnsureOutputCapacity(read);
                     slot.Prepare(chunkIndex, read);
+                    batchBytes = checked(batchBytes + read);
                     total = checked(total + read);
                     chunkIndex = checked(chunkIndex + 1);
                     if (checked(prefixBytes + total + checked(chunkIndex * tagBytes)) > maximumContainerBytes)
@@ -1191,6 +1231,9 @@ public sealed partial class KalynaContainerService
 
                     try
                     {
+                        using IDisposable? outputWrite = ciphertext is FileStream outputFile
+                            ? ArchiveOperationPolicy.Current.ReserveOutputWrite(outputFile.SafeFileHandle,
+                                checked(slot.PayloadLength + (slot.HasTag ? slot.Tag.Length : 0))) : null;
                         await ciphertext.WriteAsync(
                             slot.Output.AsMemory(0, slot.PayloadLength),
                             cancellationToken).ConfigureAwait(false);
@@ -1198,6 +1241,7 @@ public sealed partial class KalynaContainerService
                         {
                             await ciphertext.WriteAsync(slot.Tag, cancellationToken).ConfigureAwait(false);
                         }
+                        progress?.Advance(slot.PayloadLength);
                     }
                     finally
                     {
@@ -1206,6 +1250,20 @@ public sealed partial class KalynaContainerService
 
                     expectedWriteIndex = checked(expectedWriteIndex + 1);
                 }
+                double seconds = Stopwatch.GetElapsedTime(batchStarted).TotalSeconds;
+                double rate = seconds > 0 ? batchBytes / seconds : 0;
+                bool improved = previousRate > 0 && rate >= previousRate * 1.05;
+                healthySamples = improved ? checked(healthySamples + 1) : 0;
+                previousRate = rate;
+                int nextWindow = ResolveNextChunkWindow(plaintext, workerCount, healthySamples, improved);
+                if (nextWindow < workerCount)
+                    for (int index = nextWindow; index < slots.Length; index++)
+                    {
+                        slots[index]?.Dispose();
+                        slots[index] = null!;
+                    }
+                if (nextWindow > slots.Length) Array.Resize(ref slots, nextWindow);
+                workerCount = nextWindow;
             }
 
             if (expectedWriteIndex != chunkIndex)
@@ -1297,8 +1355,14 @@ public sealed partial class KalynaContainerService
             : 0;
         ChunkNoncePlan noncePlan = ChunkNoncePlan.Create(parameters);
         byte[] associatedTemplate = CreateChunkAssociatedDataTemplate(parameters, chunkNonceBase, version);
-        int workerCount = PipelineWorkerCount;
+        long? knownPayload = ciphertext.CanSeek
+            ? CryptoUsageBudget.ValidateCiphertextLength(parameters, ciphertext.Length - ciphertext.Position) : null;
+        using OperationProgressSource? progress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.Extraction,
+            ProgressUnit.Bytes, knownPayload, knownPayload.HasValue ? ProgressTotalOrigin.KnownInput : ProgressTotalOrigin.Unknown, passId: 2);
+        int workerCount = PipelineWorkerOverride.Value ?? 1;
         var slots = new ContainerChunkSlot[workerCount];
+        int healthySamples = 0;
+        double previousRate = 0;
         Exception? operationFailure = null;
         try
         {
@@ -1306,12 +1370,14 @@ public sealed partial class KalynaContainerService
             long expectedWriteIndex = 0;
             while (true)
             {
+                long batchStarted = Stopwatch.GetTimestamp();
+                long batchBytes = 0;
                 int active = 0;
-                for (; active < slots.Length; active++)
+                for (; active < workerCount; active++)
                 {
                     ContainerChunkSlot slot = slots[active] ??= new ContainerChunkSlot(
-                        BufferSize + tagBytes, BufferSize, parameters.StageNonceBytes);
-                    int read = await ReadChunkAsync(ciphertext, slot.Input, cancellationToken).ConfigureAwait(false);
+                        InitialChunkCapacity(ciphertext, BufferSize + tagBytes), 0, parameters.StageNonceBytes);
+                    int read = await ReadChunkAsync(ciphertext, slot, BufferSize + tagBytes, cancellationToken).ConfigureAwait(false);
                     if (read == 0)
                     {
                         break;
@@ -1327,7 +1393,9 @@ public sealed partial class KalynaContainerService
                     }
 
                     CryptoUsageBudget.ValidateChunk(chunkIndex, payloadLength);
+                    slot.EnsureOutputCapacity(payloadLength);
                     slot.Prepare(chunkIndex, payloadLength, read);
+                    batchBytes = checked(batchBytes + payloadLength);
                     chunkIndex = checked(chunkIndex + 1);
                     if (read < BufferSize + tagBytes)
                     {
@@ -1366,9 +1434,12 @@ public sealed partial class KalynaContainerService
 
                     try
                     {
+                        using IDisposable? outputWrite = plaintext is FileStream outputFile
+                            ? ArchiveOperationPolicy.Current.ReserveOutputWrite(outputFile.SafeFileHandle, slot.PayloadLength) : null;
                         await plaintext.WriteAsync(
                             slot.Output.AsMemory(0, slot.PayloadLength),
                             cancellationToken).ConfigureAwait(false);
+                        progress?.Advance(slot.PayloadLength);
                     }
                     finally
                     {
@@ -1377,6 +1448,20 @@ public sealed partial class KalynaContainerService
 
                     expectedWriteIndex = checked(expectedWriteIndex + 1);
                 }
+                double seconds = Stopwatch.GetElapsedTime(batchStarted).TotalSeconds;
+                double rate = seconds > 0 ? batchBytes / seconds : 0;
+                bool improved = previousRate > 0 && rate >= previousRate * 1.05;
+                healthySamples = improved ? checked(healthySamples + 1) : 0;
+                previousRate = rate;
+                int nextWindow = ResolveNextChunkWindow(ciphertext, workerCount, healthySamples, improved);
+                if (nextWindow < workerCount)
+                    for (int index = nextWindow; index < slots.Length; index++)
+                    {
+                        slots[index]?.Dispose();
+                        slots[index] = null!;
+                    }
+                if (nextWindow > slots.Length) Array.Resize(ref slots, nextWindow);
+                workerCount = nextWindow;
             }
 
             if (expectedWriteIndex != chunkIndex)
@@ -2488,65 +2573,76 @@ public sealed partial class KalynaContainerService
 
     internal sealed class ContainerChunkSlot : IDisposable
     {
-        private IDisposable? _inputLock;
-        private IDisposable? _outputLock;
-        private IDisposable? _counterLock;
+        private readonly List<SlotBuffer> _owned = [];
+        private SlotBuffer _input = null!, _output = null!, _counter = null!, _tag = null!;
         private bool _disposed;
         private bool _disposeStarted;
 
         internal ContainerChunkSlot(int inputBytes, int outputBytes, int counterBytes)
         {
-            Input = new byte[inputBytes];
-            Output = new byte[outputBytes];
-            Counter = new byte[counterBytes];
-            Tag = new byte[NativeXChaChaPoly.TagBytes];
+            if (inputBytes < 1 || outputBytes < 0 || counterBytes < 1) throw new ArgumentOutOfRangeException(nameof(inputBytes));
             try
             {
-                _inputLock = SecureMemory.TryLock(Input);
-                _outputLock = SecureMemory.TryLock(Output);
-                _counterLock = SecureMemory.TryLock(Counter);
+                _input = Allocate(inputBytes);
+                _output = Allocate(outputBytes);
+                _counter = Allocate(counterBytes);
+                _tag = Allocate(NativeXChaChaPoly.TagBytes);
             }
             catch (Exception operationFailure)
             {
-                ZeroForDisposal();
-                try
-                {
-                    Dispose();
-                }
-                catch (Exception cleanupFailure)
-                {
-                    throw new AggregateException(
-                        "Container chunk-slot construction failed and one or more sensitive buffers could not be released.",
-                        operationFailure,
-                        cleanupFailure);
-                }
+                try { Dispose(); }
+                catch (Exception cleanupFailure) { throw new AggregateException(operationFailure, cleanupFailure); }
                 throw;
             }
         }
 
-        internal byte[] Input { get; }
-        internal byte[] Output { get; }
-        internal byte[] Counter { get; }
-        internal byte[] Tag { get; }
+        private SlotBuffer Allocate(int length)
+        {
+            var owner = new SlotBuffer();
+            _owned.Add(owner); // Retain ownership even if allocation/locking fails.
+            owner.Allocate(length);
+            return owner;
+        }
+
+        internal byte[] Input => _input.Bytes;
+        internal byte[] Output => _output.Bytes;
+        internal byte[] Counter => _counter.Bytes;
+        internal byte[] Tag => _tag.Bytes;
         internal long Index { get; private set; }
         internal int InputLength { get; private set; }
         internal int PayloadLength { get; private set; }
         internal bool HasTag { get; set; }
 
-        internal void Prepare(long index, int payloadLength) =>
-            Prepare(index, payloadLength, payloadLength);
+        internal void EnsureInputCapacity(int capacity, int used)
+        {
+            ObjectDisposedException.ThrowIf(_disposeStarted, this);
+            if (capacity <= Input.Length) return;
+            if (capacity > BufferSize + NativeXChaChaPoly.TagBytes || used < 0 || used > Input.Length)
+                throw new ArgumentOutOfRangeException(nameof(capacity));
+            SlotBuffer next = Allocate(capacity);
+            Input.AsSpan(0, used).CopyTo(next.Bytes);
+            _input.Dispose();
+            _owned.Remove(_input);
+            _input = next;
+        }
 
+        internal void EnsureOutputCapacity(int capacity)
+        {
+            ObjectDisposedException.ThrowIf(_disposeStarted, this);
+            if (capacity <= Output.Length) return;
+            if (capacity > BufferSize) throw new ArgumentOutOfRangeException(nameof(capacity));
+            SlotBuffer next = Allocate(capacity);
+            _output.Dispose();
+            _owned.Remove(_output);
+            _output = next;
+        }
+
+        internal void Prepare(long index, int payloadLength) => Prepare(index, payloadLength, payloadLength);
         internal void Prepare(long index, int payloadLength, int inputLength)
         {
             ObjectDisposedException.ThrowIf(_disposeStarted, this);
-            if (payloadLength <= 0
-                || payloadLength > Output.Length
-                || inputLength < payloadLength
-                || inputLength > Input.Length)
-            {
+            if (payloadLength <= 0 || payloadLength > Output.Length || inputLength < payloadLength || inputLength > Input.Length)
                 throw new ArgumentOutOfRangeException(nameof(payloadLength));
-            }
-
             Index = index;
             PayloadLength = payloadLength;
             InputLength = inputLength;
@@ -2557,49 +2653,55 @@ public sealed partial class KalynaContainerService
 
         internal void ClearForReuse()
         {
-            if (_disposeStarted)
-            {
-                return;
-            }
-
+            if (_disposeStarted) return;
             CryptographicOperations.ZeroMemory(Input.AsSpan(0, InputLength));
             CryptographicOperations.ZeroMemory(Output.AsSpan(0, PayloadLength));
             CryptographicOperations.ZeroMemory(Counter);
             CryptographicOperations.ZeroMemory(Tag);
-            Index = 0;
-            InputLength = 0;
-            PayloadLength = 0;
-            HasTag = false;
+            Index = 0; InputLength = 0; PayloadLength = 0; HasTag = false;
         }
 
         public void Dispose()
         {
-            if (_disposed)
-            {
-                return;
-            }
-
+            if (_disposed) return;
             _disposeStarted = true;
             ZeroForDisposal();
             var failures = new List<Exception>();
-            DisposeLock(ref _counterLock, failures);
-            DisposeLock(ref _outputLock, failures);
-            DisposeLock(ref _inputLock, failures);
-            _disposed = _counterLock is null && _outputLock is null && _inputLock is null;
-            if (failures.Count > 0)
-            {
-                throw new AggregateException(
-                    "One or more container chunk-slot locks could not be released; failed locks remain retryable.",
-                    failures);
-            }
+            foreach (SlotBuffer owner in _owned)
+                try { owner.Dispose(); } catch (Exception failure) { failures.Add(failure); }
+            _disposed = _owned.All(owner => owner.IsDisposed);
+            if (failures.Count > 0) throw new AggregateException("Chunk buffer cleanup failed; failed locks and their leases remain retryable.", failures);
         }
 
         internal void ZeroForDisposal()
         {
-            CryptographicOperations.ZeroMemory(Input);
-            CryptographicOperations.ZeroMemory(Output);
-            CryptographicOperations.ZeroMemory(Counter);
-            CryptographicOperations.ZeroMemory(Tag);
+            foreach (SlotBuffer owner in _owned) CryptographicOperations.ZeroMemory(owner.Bytes);
+        }
+
+        private sealed class SlotBuffer : IDisposable
+        {
+            private IDisposable? _lock;
+            private OperationMemoryBudget.HeavyLease? _memory;
+            internal byte[] Bytes { get; private set; } = [];
+            internal bool IsDisposed { get; private set; }
+            internal void Allocate(int length)
+            {
+                if (length == 0) return;
+                _memory = OperationMemoryBudget.AcquireWorking(length);
+                Bytes = new byte[length];
+                _memory.CommitAllocation();
+                _lock = SecureMemory.TryLock(Bytes);
+            }
+            public void Dispose()
+            {
+                if (IsDisposed) return;
+                CryptographicOperations.ZeroMemory(Bytes);
+                _lock?.Dispose(); // If unlock fails, retain array and memory charge for retry.
+                _lock = null;
+                _memory?.Dispose();
+                _memory = null;
+                IsDisposed = true;
+            }
         }
     }
 

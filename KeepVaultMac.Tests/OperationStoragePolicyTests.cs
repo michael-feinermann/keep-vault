@@ -4,153 +4,193 @@ internal static class OperationStoragePolicyTests
 {
     internal static IReadOnlyList<TestCase> Tests =>
     [
-        new("resources.operation-storage-plan", "combined per-volume space budgets and descriptor-bound filesystem approval", RunAsync, TestResource.Light, "Security"),
+        new("resources.operation-storage-plan", "real additional writes, live shared volume ledger and lazy workspace", RunAsync, TestResource.Light, "Security"),
+        new("resources.rev11-auto-planner", "persistent Auto, phase slots, real OS observations and pressure hysteresis", PlannerAsync, TestResource.Light, "Resources"),
+        new("resources.rev11-chunk-window", "small locked buffers, actual leases, short-read aggregation and exact chunk boundaries", ChunkWindowAsync, TestResource.ProcessGlobal, "Resources"),
     ];
+
+    private static Task PlannerAsync()
+    {
+        var auto = new ResourcePreferences();
+        ResourceObservation large = new(1031, 1L << 40, 1L << 40, 64L << 20, 500L << 30, MemoryPressure.Normal, true);
+        ResolvedOperationPlan small = ResourcePlanner.Resolve(auto, large, new(64L << 10, 1024));
+        Require(small.ActiveSlots == 1 && small.IoRequests == 1 && small.EffectiveCpuCeiling == 1031,
+            "Tiny work created per-core slots or imposed a fixed global CPU cap.");
+        var longWork = new PhaseResourceDemand(64L << 10, 256L << 20, ReadyWorkers: 7);
+        Require(ResourcePlanner.Resolve(auto, large, longWork).ActiveSlots == 2, "Longer input did not begin with two slots.");
+        Require(ResourcePlanner.Resolve(auto, large, longWork with { HealthySamples = 2, ThroughputImproved = true, PreviousSlots = 2 }).ActiveSlots == 2,
+            "Insufficient healthy samples bypassed growth hysteresis.");
+        Require(ResourcePlanner.Resolve(auto, large, longWork with { HealthySamples = 3, ThroughputImproved = true, PreviousSlots = 2 }).ActiveSlots == 3,
+            "Measured beneficial growth was not admitted.");
+        Require(ResourcePlanner.Resolve(auto, large with { Pressure = MemoryPressure.Elevated }, longWork).ActiveSlots == 1,
+            "Pressure retained optional pipeline slots.");
+        foreach (int cpu in new[] { 1, 2, 7, 2049 })
+        {
+            var manual = auto with { CpuMode = ResourceMode.Manual, ManualCpuLimit = cpu };
+            Require(ResourcePlanner.Resolve(manual, large, longWork).EffectiveCpuCeiling == Math.Min(cpu, 1031),
+                "Manual CPU authority or topology clamp failed.");
+        }
+        Throws<IOException>(() => ResourcePlanner.Resolve(auto, large with { Reliable = false }, longWork));
+        Require(PlatformResourceObserver.MacVmPrefixBytes == 152, "Darwin VM revision-1 ABI prefix changed.");
+        ResourceObservation actual = PlatformResourceObserver.Capture();
+        Require(actual.Reliable && actual.PhysicalMemoryBytes > 0 && actual.ReclaimableMemoryBytes >= 0
+            && actual.ReclaimableMemoryBytes <= actual.PhysicalMemoryBytes && actual.ProcessResidentBytes > 0,
+            "Live macOS observer did not report sane documented OS quantities.");
+        string root = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var policy = new ArchiveOperationPolicy("", root, preferences: auto);
+        var copy = policy.WithOutputDirectory(root);
+        Require(copy.RequestedCpuWorkers == 0 && copy.RequestedMemoryBudgetBytes == 0
+            && copy.Preferences == auto && copy.Preferences.WorkingDirectory is null,
+            "Resolving or copying persisted effective values as manual preferences.");
+        var manualPolicy = policy.WithPreferences(auto with { CpuMode = ResourceMode.Manual, ManualCpuLimit = 1, MaxExtractedTotalBytes = 128L << 20 });
+        Require(manualPolicy.MaxCpuWorkers == 1 && manualPolicy.MaxExtractedTotalBytes == 128L << 20,
+            "Applying manual preferences did not resolve their independent caps.");
+        Require(manualPolicy.WithPreferences(auto).MaxExtractedTotalBytes == 256L << 20,
+            "Clearing a manual output cap silently preserved its old effective value.");
+        var larger = policy.WithPreferences(auto with { MaxExtractedTotalBytes = 1024L << 20 });
+        Require(larger.MaxSingleFileBytes == larger.MaxExtractedTotalBytes,
+            "An empty single-file preference did not follow the explicit total allowance.");
+        Require(larger.WithPreferences(larger.Preferences with { MaxSingleFileBytes = 4L << 20 }).MaxSingleFileBytes == (4L << 20),
+            "An independent explicit single-file allowance was ignored.");
+        int observation = 0;
+        PlatformResourceObserver.ObservationForTests = () => large with { AvailableCpuWorkers = ++observation == 1 ? 7 : 3 };
+        try
+        {
+            ArchiveOperationPolicy phase = policy.ForPhase(longWork);
+            Require(phase.MaxCpuWorkers == phase.InitialPlan.EffectiveCpuCeiling
+                && phase.MemoryBudgetBytes == phase.InitialPlan.MemoryCeilingBytes,
+                "The phase's published limits differ from its resolved observation.");
+        }
+        finally { PlatformResourceObserver.ObservationForTests = null; }
+        return Task.CompletedTask;
+    }
+
+    private static async Task ChunkWindowAsync()
+    {
+        long baseline = OperationMemoryBudget.WorkingReservedBytesForTests;
+        long locked = SecureMemory.LockedAllocationsForTests;
+        string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var policy = new ArchiveOperationPolicy("", path, memoryBudgetBytes: 128L << 20);
+        using (policy.EnterScope())
+        {
+            foreach (int length in new[] { 1024, (16 << 20) - 1, 16 << 20, (16 << 20) + 1 })
+            {
+                byte[] data = new byte[length];
+                for (int i = 0; i < data.Length; ++i) data[i] = (byte)(i * 17 + 165);
+                using var source = new ShortReadStream(data);
+                using var slot = new KalynaContainerService.ContainerChunkSlot(1024, 0, 24);
+                int first = await KalynaContainerService.ReadChunkAsync(source, slot, 16 << 20, default);
+                Require(first == Math.Min(length, 16 << 20) && data.AsSpan(0, first).SequenceEqual(slot.Input.AsSpan(0, first)),
+                    "Short reads changed a product chunk or its bytes.");
+                slot.EnsureOutputCapacity(first);
+                slot.Prepare(0, first);
+                if (length == 1024)
+                    Require(slot.Input.Length == 1024 && slot.Output.Length == 1024
+                        && policy.Usage.LeasedMemoryBytes < 4096, "A tiny complete input allocated a full product chunk.");
+                slot.ClearForReuse();
+                int last = await KalynaContainerService.ReadChunkAsync(source, slot, 16 << 20, default);
+                Require(last == length - first && data.AsSpan(first).SequenceEqual(slot.Input.AsSpan(0, last)),
+                    "Exact chunk boundary or actual EOF was lost.");
+                Require(slot.Input.Length <= (16 << 20), "A slot exceeded the unchanged product chunk limit.");
+            }
+        }
+        Require(OperationMemoryBudget.WorkingReservedBytesForTests == baseline && SecureMemory.LockedAllocationsForTests == locked,
+            "A grown slot retained memory ownership or a sensitive-memory lock.");
+    }
+
+    private sealed class ShortReadStream(byte[] bytes) : Stream
+    {
+        private int _offset;
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => _offset; set => throw new NotSupportedException(); }
+        public override ValueTask<int> ReadAsync(Memory<byte> destination, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int count = Math.Min(Math.Min(destination.Length, 97 + _offset % 4096), bytes.Length - _offset);
+            bytes.AsMemory(_offset, count).CopyTo(destination);
+            _offset += count;
+            return ValueTask.FromResult(count);
+        }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
 
     private static Task RunAsync()
     {
-        const long reserve = 256L << 20;
-        // Existing A and a rename target are deliberately absent: only five
-        // simultaneously additional allocations and one reserve are counted.
-        Require(ArchiveOperationPolicy.RequiredAdditionalCapacity(11, 23, 37, 41, 53) == reserve + 165,
-            "The per-volume plan omitted or duplicated an additional allocation.");
-        Require(ArchiveOperationPolicy.RequiredAdditionalCapacity(0, 0, 0, 0, 0) == reserve,
-            "The safety reserve is not applied exactly once.");
+        Require(ArchiveOperationPolicy.RequiredAdditionalCapacity(11, 23, 37, 41, 53) == 4096 + (64L << 10),
+            "Actual additional bytes were lost, duplicated or charged as maxima.");
+        Require(ArchiveOperationPolicy.RequiredAdditionalCapacity(0, 0, 0, 0, 0) == 0,
+            "An idle operation reserved phantom disk space.");
         Throws<ArgumentOutOfRangeException>(() => ArchiveOperationPolicy.RequiredAdditionalCapacity(1, 1, -1, 1, 1));
         Throws<OverflowException>(() => ArchiveOperationPolicy.RequiredAdditionalCapacity(long.MaxValue, 1, 0, 0, 0));
-        // These are abstract device identities, not a claimed multi-mount run.
-        Require(ArchiveOperationPolicy.ReservedBytesForVolume("repair", "work", "extract", 23, 53) == 0
-            && ArchiveOperationPolicy.ReservedBytesForVolume("work", "work", "extract", 23, 53) == 53
-            && ArchiveOperationPolicy.ReservedBytesForVolume("extract", "work", "extract", 23, 53) == 23
-            && ArchiveOperationPolicy.ReservedBytesForVolume("shared", "shared", "shared", 23, 53) == 76,
-            "Recovery output rebinding moved extraction or metadata onto the wrong device.");
-        Require(ArchiveOperationPolicy.ReservedBytesForVolume("work", "work", null, 0, 53) == 53,
-            "A missing extraction reservation changed the working metadata budget.");
-        Throws<ArgumentOutOfRangeException>(() => ArchiveOperationPolicy.ReservedBytesForVolume("w", "w", "u", -1, 1));
-        Throws<OverflowException>(() => ArchiveOperationPolicy.ReservedBytesForVolume("w", "w", "w", long.MaxValue, 1));
-        Require(MacOperationVolume.NativeLayoutBytes == 2168, "Darwin statfs ABI width differs from the SDK.");
-        foreach (string supported in new[] { "apfs", "hfs" }) MacOperationVolume.RequireSupported(supported, 0x1000);
-        foreach ((string format, uint flags) in new[] { ("smbfs", 0u), ("exfat", 0x1000u),
-            ("apfs", 0u), ("apfs", 0x1001u), ("apfs", 0x00201000u), ("unknown", 0x1000u) })
-            Throws<IOException>(() => MacOperationVolume.RequireSupported(format, flags));
-        string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        foreach (string relative in new[] { "Library/CloudStorage/OneDrive/test", "Library/Mobile Documents/test", "Dropbox/test", "OneDrive/test" })
-            Throws<IOException>(() => MacOperationVolume.RequireNonCloudWorkingPath(Path.Combine(home, relative)));
-        MacOperationVolume.RequireNonCloudWorkingPath(Path.Combine(home, "Dropbox-not-synchronized"));
-
         string root = Path.Combine(MacSafeFileSystem.ResolveExistingRealPath(Path.GetTempPath()), "keep-vault-storage-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         try
         {
-            using (BoundFileTransaction descriptor = BoundFileTransaction.CreateNew(
-                Path.Combine(root, "descriptor"), 1, FileOptions.RandomAccess))
+            Throws<ArgumentOutOfRangeException>(() => new ArchiveOperationPolicy(root, root, maxExtractedTotalBytes: 1, maxSingleFileBytes: 2));
+            var policy = new ArchiveOperationPolicy(Path.Combine(root, "missing-workspace"), root,
+                maxExtractedTotalBytes: 500L << 30, maxSingleFileBytes: 500L << 30,
+                maxRecoveryBytes: 1L << 40, maxMetadataBytes: 2L << 30);
+            ArchiveOperationPolicy extraction = policy.ForExtraction(root);
+            ArchiveOperationPolicy recovery = extraction.ForRecovery(root);
+            Require(extraction.ReservedExtractionBytes == 0 && recovery.ReservedMetadataBytes == 0,
+                "Allowed output or metadata maxima became disk reservations.");
+            policy.RequireCaptureCapacity(1024, 0, copyInput: false);
+            Require(policy.CaptureAdditionalBytes(1024, 204, false) == 204,
+                "The original or extraction authorization was counted as an index allocation.");
+            Throws<DirectoryNotFoundException>(() => policy.RequireCaptureCapacity(1024, 204, copyInput: false));
+            MacOperationVolume.Info actual = MacOperationVolume.Inspect(root, false);
+            long need = ArchiveOperationPolicy.RequiredAdditionalCapacity(1024, 0, 0, 0, 0);
+            extraction.RequireBoundOutputVolume(actual with { AvailableBytes = need }, 1024);
+            Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { AvailableBytes = need - 1 }, 1024));
+            Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { Identity = "foreign" }, 1024));
+            Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { Flags = 0x1001 }, 1024));
+            Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { Format = "exfat" }, 1024));
+            extraction.RequireRemainingExtractionCapacity(128L << 10, 1024);
+            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(1, 1024));
+            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(1L << 30, (500L << 30) + 1));
+            long simulatedFree = ArchiveOperationPolicy.RequiredAdditionalCapacity(4096, 0, 0, 0, 0);
+            using (OperationVolumeLedger.Reserve("test-volume", 4096, () => simulatedFree))
             {
-                var identity = MacSafeFileSystem.GetIdentity(descriptor.Stream.SafeFileHandle);
-                foreach (bool enabled in new[] { false, true, false, true })
+                Require(OperationVolumeLedger.PendingBytes("test-volume") == 4096, "The live write was not reserved.");
+                Throws<IOException>(() => OperationVolumeLedger.Reserve("test-volume", 4096, () => simulatedFree));
+                simulatedFree = 0;
+                Throws<IOException>(() => OperationVolumeLedger.Reserve("test-volume", 1, () => simulatedFree));
+            }
+            Require(OperationVolumeLedger.PendingBytes("test-volume") == 0, "Completed/failed writes retained volume reservations.");
+            using BoundFileTransaction output = BoundFileTransaction.CreateNew(Path.Combine(root, "result"), 1, FileOptions.RandomAccess);
+            using (policy.ReserveOutputWrite(output.Stream.SafeFileHandle, 1024)) output.Stream.Write(new byte[1024]);
+            Require(OperationVolumeLedger.PendingBytes(actual.Identity) == 0, "Descriptor write did not release the live volume charge.");
+            output.DeleteBound();
+            const string capacityFixture = "/Volumes/KEEPVAULT REV11 RESOURCE TEST";
+            if (Directory.Exists(capacityFixture))
+            {
+                string separateWork = Path.Combine(capacityFixture, "rev11-resource-volume-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(separateWork);
+                try
                 {
-                    MacSafeFileSystem.SetCloseOnExec(descriptor.Stream.SafeFileHandle, enabled);
-                    Require(identity.SameObject(MacSafeFileSystem.GetIdentity(descriptor.Stream.SafeFileHandle)),
-                        "Descriptor flag changes switched the held object.");
+                    var split = new ArchiveOperationPolicy(separateWork, root);
+                    Require(split.WorkingVolumeIdentity != split.OutputVolumeIdentity, "The named capacity fixture is not a separate device.");
+                    using BoundFileTransaction index = BoundFileTransaction.CreateNew(Path.Combine(separateWork, "index"), 1, FileOptions.RandomAccess);
+                    Throws<IOException>(() => split.ReserveOutputWrite(index.Stream.SafeFileHandle, 204));
+                    using (split.ReserveWorkingWrite(index.Stream.SafeFileHandle, 204)) index.Stream.Write(new byte[204]);
+                    index.DeleteBound();
+                    Console.WriteLine("separate_working_volume_write=PASS (owned 256-MiB capacity fixture)");
                 }
-                descriptor.DeleteBound();
+                finally { Directory.Delete(separateWork, recursive: true); }
             }
-            var policy = new ArchiveOperationPolicy(root, root, maxContainerBytes: 64L << 20,
-                maxExtractedTotalBytes: 256L << 20, maxSingleFileBytes: 128L << 20);
-            MacOperationVolume.Info actual = MacOperationVolume.Inspect(root, workingDirectory: true);
-            Require(actual.Identity == policy.WorkingVolumeIdentity && actual.AvailableBytes > reserve,
-                "The held directory's volume and free-space result differ from its approved identity.");
-            var extraction = policy.ForExtraction(root);
-            Require(extraction.ReservedExtractionBytes == 256L << 20 && policy.ReservedExtractionBytes == 0
-                && extraction.ReservedExtractionDirectory == root
-                && extraction.ReservedExtractionVolumeIdentity == actual.Identity,
-                "The immutable extraction plan was not created independently.");
-            extraction.RequireCaptureCapacity(17, 204);
-            Require(extraction.CaptureAdditionalBytes(17, 204, true) == (256L << 20) + 221,
-                "Capture did not include both the ciphertext copy and extraction allowance.");
-            Require(extraction.CaptureAdditionalBytes(17, 204, false) == (256L << 20) + 204,
-                "Plain input was incorrectly counted as an additional copy.");
-            extraction.RequireBoundExtractionVolume(actual);
-            Throws<IOException>(() => extraction.RequireBoundExtractionVolume(actual with { Identity = "device:foreign" }));
-            Throws<IOException>(() => extraction.RequireBoundExtractionVolume(actual with { Flags = 0x1001 }));
-            long boundOutputNeed = reserve + (256L << 20) + 17;
-            extraction.RequireBoundOutputVolume(actual with { AvailableBytes = boundOutputNeed }, 17);
-            Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { AvailableBytes = boundOutputNeed - 1 }, 17));
-            Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { Identity = "device:foreign" }, 17));
-            Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { Flags = 0x1001 }, 17));
-            Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { Format = "exfat" }, 17));
-            Throws<ArgumentOutOfRangeException>(() => extraction.RequireBoundOutputVolume(actual, -1));
-            Throws<OverflowException>(() => extraction.RequireBoundOutputVolume(actual, long.MaxValue));
-            using (BoundFileTransaction boundOutput = BoundFileTransaction.CreateNew(
-                Path.Combine(root, "bound-output"), 1, FileOptions.RandomAccess))
-            {
-                // A removed name cannot influence the descriptor-based check.
-                boundOutput.DeleteBound();
-                extraction.RequireBoundOutputFileVolume(boundOutput.Stream.SafeFileHandle, 17);
-                Require(boundOutput.Stream.Length == 0, "Output-volume approval wrote to its candidate.");
-            }
-            using (var staging = new MacExtractionStaging(Path.Combine(root, "output")))
-            {
-                extraction.RequireBoundExtractionVolume(staging.GetOperationVolume());
-                staging.Cleanup();
-            }
-            extraction.RequireRemainingExtractionCapacity(reserve + (128L << 20), 128L << 20);
-            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(reserve + (128L << 20) - 1, 128L << 20));
-            extraction.RequireRemainingExtractionCapacity(reserve, 256L << 20);
-            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(reserve - 1, 256L << 20));
-            Throws<IOException>(() => policy.RequireCaptureCapacity(0, -1));
-            using (RecoveryMetadataBudget.Begin(policy.MaxMetadataBytes))
-            {
-                var recovery = extraction.ForRecovery(root);
-                Require(recovery.ReservedMetadataBytes == policy.MaxMetadataBytes
-                    && recovery.ReservedExtractionBytes == extraction.ReservedExtractionBytes,
-                    "Recovery dropped the shared output or working-metadata reservation.");
-                RecoveryMetadataBudget budget = RecoveryMetadataBudget.Capture(policy.MaxMetadataBytes);
-                budget.Reserve(204);
-                Require(RecoveryMetadataBudget.CurrentReservedBytes == 204,
-                    "Already existing metadata was not available to the remaining-capacity plan.");
-                Require(recovery.CaptureAdditionalBytes(17, 204, true)
-                    == 17 + (256L << 20) + policy.MaxMetadataBytes - 204,
-                    "The capture index or already stored metadata was counted twice.");
-                long recoveryOutputNeed = reserve + 37 + (256L << 20) + policy.MaxMetadataBytes - 204;
-                recovery.RequireBoundOutputVolume(actual with { AvailableBytes = recoveryOutputNeed }, 37);
-                Throws<IOException>(() => recovery.RequireBoundOutputVolume(
-                    actual with { AvailableBytes = recoveryOutputNeed - 1 }, 37));
-                budget.Release(204);
-            }
-            string recoveryDirectory = Path.Combine(root, "separate-recovery-output");
-            Directory.CreateDirectory(recoveryDirectory);
-            try
-            {
-                ArchiveOperationPolicy recovery = extraction.ForRecovery(recoveryDirectory);
-                Require(recovery.OutputDirectory == recoveryDirectory
-                    && recovery.OutputVolumeIdentity == MacOperationVolume.Inspect(recoveryDirectory, false).Identity
-                    && recovery.ReservedExtractionDirectory == root
-                    && recovery.ReservedExtractionVolumeIdentity == extraction.ReservedExtractionVolumeIdentity
-                    && extraction.OutputDirectory == root,
-                    "Binding the actual recovery directory mutated or moved the existing extraction plan.");
-                using (recovery.EnterScope())
-                    Require(ArchiveOperationPolicy.Current.OutputDirectory == recoveryDirectory
-                        && ArchiveOperationPolicy.Current.ReservedExtractionDirectory == root,
-                        "The recovery scope did not retain two independent output-directory decisions.");
-                ArchiveOperationPolicy copied = recovery.WithOutputDirectory(root);
-                Require(copied.ReservedExtractionDirectory == root
-                    && copied.ReservedExtractionVolumeIdentity == extraction.ReservedExtractionVolumeIdentity,
-                    "Changing an output preference reassigned a live extraction reservation.");
-            }
-            finally { Directory.Delete(recoveryDirectory); }
-            var impossible = new ArchiveOperationPolicy(root, root,
-                maxExtractedTotalBytes: long.MaxValue - reserve, maxSingleFileBytes: 1);
-            Throws<IOException>(() => impossible.ForExtraction(root));
-            Require(!Directory.EnumerateFileSystemEntries(root).Any(), "A failed capacity plan created output data.");
+            else Console.WriteLine("separate_working_volume_write=NOT_RUN (optional owned capacity fixture not mounted)");
         }
-        finally { Directory.Delete(root); }
+        finally { Directory.Delete(root, recursive: true); }
         return Task.CompletedTask;
     }
-
-    private static void Require(bool valid, string message) { if (!valid) throw new InvalidOperationException(message); }
+    private static void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
     private static void Throws<T>(Action action) where T : Exception
-    {
-        try { action(); } catch (T) { return; }
-        throw new InvalidOperationException("Expected " + typeof(T).Name);
-    }
+    { try { action(); } catch (T) { return; } throw new Exception($"Expected {typeof(T).Name}."); }
 }

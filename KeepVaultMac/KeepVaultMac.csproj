@@ -103,8 +103,14 @@
     <Compile Include="../KalynaArchiver/Services/SuiteKeySchedule.cs" Link="Services/SuiteKeySchedule.cs" />
     <Compile Include="../KalynaArchiver/Services/KdfSalts.cs" Link="Services/KdfSalts.cs" />
     <Compile Include="../KalynaArchiver/Services/ArchiveOperationPolicy.cs" Link="Services/ArchiveOperationPolicy.cs" />
+    <Compile Include="../KalynaArchiver/Services/ResourcePlanning.cs" Link="Services/ResourcePlanning.cs" />
     <Compile Include="../KalynaArchiver/Services/OperationMemoryBudget.cs" Link="Services/OperationMemoryBudget.cs" />
     <Compile Include="../KalynaArchiver/Services/OperationExecutionBudget.cs" Link="Services/OperationExecutionBudget.cs" />
+    <Compile Include="../KalynaArchiver/Services/OperationProgressTracker.cs" Link="Services/OperationProgressTracker.cs" />
+    <Compile Include="../KalynaArchiver/Services/ZpaqControlSession.cs" Link="Services/ZpaqControlSession.cs" />
+    <Compile Include="../KalynaArchiver/Services/ZpaqBoundSources.cs" Link="Services/ZpaqBoundSources.cs" />
+    <Compile Include="../KalynaArchiver/Services/AuthenticatedRangeIndex.cs" Link="Services/AuthenticatedRangeIndex.cs" />
+    <Compile Include="../KalynaArchiver/Services/IPreparedArchiveSource.cs" Link="Services/IPreparedArchiveSource.cs" />
     <Compile Include="../KalynaArchiver/Services/CryptoUsageBudget.cs" Link="Services/CryptoUsageBudget.cs" />
     <Compile Include="../KalynaArchiver/Services/CpuWorkBudget.cs" Link="Services/CpuWorkBudget.cs" />
     <Compile Include="../KalynaArchiver/Services/VerifiedArchiveInput.cs" Link="Services/VerifiedArchiveInput.cs" />

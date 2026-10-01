@@ -12,7 +12,7 @@ internal static class VerifiedIoFuzzTests
     private const byte Canary = 0xA7;
     internal static IReadOnlyList<TestCase> Tests =>
     [
-        new("fuzz.verified-input-10000", "10000 seeded sealed-spool states, mutations and guarded range oracles", SpoolAsync, TestResource.ProcessGlobal, "Security"),
+        new("fuzz.verified-input-10000", "10000 seeded locally sealed original states, mutations and guarded range oracles", SpoolAsync, TestResource.ProcessGlobal, "Security"),
         new("fuzz.verified-read-at-server-10000", "10000 seeded bounded read-at request frames with guarded response oracles", ReadAtServerAsync, TestResource.ProcessGlobal, "Security"),
         new("fuzz.recovery-streaming-10000", "10000 seeded canonical/hostile KPAR4 metadata streams with fragmented reads", RecoveryAsync, TestResource.ProcessGlobal, "Security"),
     ];
@@ -78,6 +78,7 @@ internal static class VerifiedIoFuzzTests
                             case 7: spool.SetLength(length - 1 - random.Below(Math.Min(length, 7))); break;
                             case 8: records.SetLength(records.Length + 1 + random.Below(7)); break;
                             case 9:
+                                AuthenticatedRangeIndex.ForceDiskForTests.Value = true;
                                 using (VerifiedArchiveInput other = await VerifiedArchiveInput.CaptureAsync(scope.Source, scope.Policy, default))
                                 {
                                     byte[] foreign = new byte[VerifiedArchiveInput.RecordBytes];
@@ -282,8 +283,7 @@ internal static class VerifiedIoFuzzTests
         Org.BouncyCastle.Crypto.IDigest digest = skein ? new SkeinDigest(1024, 1024) : new Sha3Digest(512);
         digest.BlockUpdate(bytes); byte[] output = new byte[digest.GetDigestSize()]; digest.DoFinal(output); return output;
     }
-    private static FileStream Storage(VerifiedArchiveInput input, string name) =>
-        ((BoundFileTransaction)typeof(VerifiedArchiveInput).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(input)!).Stream;
+    private static FileStream Storage(VerifiedArchiveInput input, string name) => VerifiedArchiveInputAttack.Storage(input, name);
     private static void ReadExactlyAt(FileStream stream, Span<byte> target, long offset)
     {
         int read = 0;

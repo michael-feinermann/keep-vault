@@ -15,12 +15,12 @@ internal static class VerifiedArchiveInputTests
     internal static IReadOnlyList<TestCase> Tests =>
     [
         new("io.verified-input-domain-kats", "fixed local HMAC/Skein domain vectors from independent oracles", DomainKatsAsync, TestResource.Light, "Security"),
-        new("io.verified-input-state", "disk input requires both global tags and revokes verifier view", StateAsync, TestResource.Light, "Security"),
+        new("io.verified-input-state", "bound original input requires both global tags and revokes verifier view", StateAsync, TestResource.Light, "Security"),
         new("io.verified-input-ranges", "unaligned authenticated ranges and exact disk record framing", RangesAsync, TestResource.Light, "Security"),
         new("io.verified-input-descriptor-capture", "parallel multi-range captures retain descriptor ownership without buffered cursor races", DescriptorCaptureAsync, TestResource.ProcessGlobal, "Security"),
         new("io.verified-input-read-only-seal", "kernel read-only handles replace capture writers and reject substitution before unlink", ReadOnlySealAsync, TestResource.ProcessGlobal, "Security"),
-        new("io.verified-input-tamper", "spool, index, truncation, extension and cross-operation replay rejection", TamperAsync, TestResource.Light, "Security"),
-        new("io.verified-input-private-copy", "verified private bytes survive later spool mutation; reread fails", PrivateCopyAsync, TestResource.Light, "Security"),
+        new("io.verified-input-tamper", "original, index, truncation, extension and cross-operation replay rejection", TamperAsync, TestResource.Light, "Security"),
+        new("io.verified-input-private-copy", "verified private bytes survive later original mutation; reread fails", PrivateCopyAsync, TestResource.Light, "Security"),
         new("io.verified-original", "plain original index avoids plaintext copy and rejects later source mutation", OriginalAsync, TestResource.Light, "Security"),
         new("io.plain-manifest-rejection", "plain archive rejects either digest or changed bytes before lease and extraction publication", PlainManifestContractAsync, TestResource.ProcessGlobal, "Security"),
         new("io.verified-input-policy", "64-bit policy arithmetic, capacity and cancellation", PolicyAsync, TestResource.Light, "Security"),
@@ -33,8 +33,8 @@ internal static class VerifiedArchiveInputTests
         using var fixture = new Fixture();
         using (var attacker = await VerifiedArchiveInputAttack.CaptureAsync(fixture.Source, fixture.Policy, default))
         {
-            Require(attacker.OriginalSpoolWriter.IsClosed && attacker.OriginalIndexWriter.IsClosed,
-                "Capture retained an original writable descriptor after sealing.");
+            Require(!attacker.OriginalSpoolWriter.IsClosed && attacker.OriginalIndexWriter.IsClosed,
+                "Index sealing retained its writer or closed the pre-existing foreign source writer.");
             RequireKernelReadOnly(Storage(attacker.Input, "_spool"));
             RequireKernelReadOnly(Storage(attacker.Input, "_index"));
             Require(!attacker.Spool.SafeFileHandle.IsClosed && !attacker.Index.SafeFileHandle.IsClosed,
@@ -46,11 +46,12 @@ internal static class VerifiedArchiveInputTests
             CryptographicOperations.ZeroMemory(actual);
             Flip(attacker.Spool, 0);
             attacker.Input.Position = 0;
-            await ExpectAsync<CryptographicException>(() => attacker.Input.ReadExactlyAsync(actual).AsTask());
+            await ExpectMutationAsync(() => attacker.Input.ReadExactlyAsync(actual).AsTask());
             Require(actual.AsSpan().IndexOfAnyExcept((byte)0) < 0,
                 "A pre-existing writer bypassed the post-seal authenticated read or its complete-slice wipe.");
         }
 
+        File.WriteAllBytes(fixture.Source, fixture.Bytes);
         SafeFileHandle? originalIndexWriter = null;
         Action<VerifiedArchiveInput>? previous = VerifiedArchiveInput.BeforeSealForTests;
         try
@@ -75,9 +76,10 @@ internal static class VerifiedArchiveInputTests
             VerifiedArchiveInput.BeforeSealForTests = input =>
             {
                 failedInput = input;
-                foreach (string field in new[] { "_spool", "_index" })
+                foreach (string field in new[] { "_index" })
                 {
-                    var storage = (BoundFileTransaction)typeof(VerifiedArchiveInput).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(input)!;
+                    var store = (AuthenticatedRangeIndex)typeof(VerifiedArchiveInput).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(input)!;
+                    var storage = store.FileForTests!;
                     handles.Add(storage.Stream.SafeFileHandle);
                     handles.Add(((FileStream)typeof(BoundFileTransaction).GetField("_preparedReadOnly", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(storage)!).SafeFileHandle);
                 }
@@ -86,7 +88,7 @@ internal static class VerifiedArchiveInputTests
             await ExpectAsync<IOException>(async () => { using var unexpected = await fixture.CaptureAsync(); });
         }
         finally { VerifiedArchiveInput.BeforeSealForTests = previous; }
-        Require(handles.Count == 4 && handles.All(handle => handle.IsClosed)
+        Require(handles.Count == 2 && handles.All(handle => handle.IsClosed)
             && failedInput?.State == VerifiedArchiveInputState.Disposed
             && VerifiedArchiveInput.RetainedOwnersForTests == owners,
             "A failed seal retained a writer, reader or protected capture owner.");
@@ -211,7 +213,7 @@ internal static class VerifiedArchiveInputTests
 
     private static async Task ParallelLifetimeAsync()
     {
-        using var fixture = new Fixture();
+        using var fixture = new Fixture((32 << 20) + 37, parallel: true);
         using VerifiedArchiveInput input = await fixture.CaptureAsync();
         await input.VerifyGloballyAsync((view, token) =>
         {
@@ -349,6 +351,7 @@ internal static class VerifiedArchiveInputTests
         using var fixture = new Fixture();
         foreach (string mutation in new[] { "spool", "hmac", "skein", "index", "length", "truncate-spool", "append-spool", "truncate-index", "append-index", "replay" })
         {
+            File.WriteAllBytes(fixture.Source, fixture.Bytes);
             using VerifiedArchiveInputAttack attacker = await VerifiedArchiveInputAttack.CaptureAsync(fixture.Source, fixture.Policy, default);
             VerifiedArchiveInput input = attacker.Input;
             await input.VerifyGloballyAsync(fixture.VerifyAsync, default);
@@ -392,7 +395,7 @@ internal static class VerifiedArchiveInputTests
         await input.ReadAtAsync(output, 0, default);
         Flip(attacker.Spool, 0);
         Require(output.AsSpan().SequenceEqual(fixture.Bytes.AsSpan(0, output.Length)), "A caller's authenticated buffer aliases the mutable spool.");
-        await ExpectAsync<CryptographicException>(async () => { await input.ReadAtAsync(new byte[113], 0, default); });
+        await ExpectMutationAsync(async () => { await input.ReadAtAsync(new byte[113], 0, default); });
     }
 
     private static async Task PolicyAsync()
@@ -411,7 +414,8 @@ internal static class VerifiedArchiveInputTests
         using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
         await ExpectAsync<OperationCanceledException>(() => VerifiedArchiveInput.CaptureAsync(fixture.Source, fixture.Policy, cancelled.Token));
         Expect<ArgumentOutOfRangeException>(() => new ArchiveOperationPolicy(fixture.Root, fixture.Root, maxExtractedTotalBytes: 1, maxSingleFileBytes: 2));
-        Expect<ArgumentException>(() => new ArchiveOperationPolicy(fixture.Root, fixture.Root, memoryBudgetBytes: 256L << 20, maxCpuWorkers: 64));
+        var insufficientKdfMemory = new ArchiveOperationPolicy(fixture.Root, fixture.Root, memoryBudgetBytes: 256L << 20);
+        Expect<IOException>(() => insufficientKdfMemory.RequireKdfMatrixFits(1024 * 1024));
         var smallRecovery = new ArchiveOperationPolicy(fixture.Root, fixture.Root, maxRecoveryBytes: 1);
         using (smallRecovery.EnterScope())
             await ExpectAsync<IOException>(() => new RecoveryService().CreateAsync(fixture.Source, null, default));
@@ -422,15 +426,19 @@ internal static class VerifiedArchiveInputTests
     {
         using var fixture = new Fixture();
         using VerifiedArchiveInput input = await VerifiedArchiveInput.CaptureOriginalAsync(fixture.Source, fixture.Policy, default);
-        Require(typeof(VerifiedArchiveInput).GetField("_spool", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(input) is null,
-            "Plain original input wrote a plaintext spool.");
+        FileStream original = Storage(input, "_original");
+        MacSafeFileSystem.RequirePathStillNamesHandle(original.SafeFileHandle, fixture.Source);
+        Require(ReferenceEquals(typeof(VerifiedArchiveInput).GetField("_dataHandle", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(input), original.SafeFileHandle),
+            "The protected reader did not retain the original source descriptor.");
         await input.VerifyGloballyAsync(fixture.VerifyAsync, default);
         byte[] bytes = new byte[64]; input.ReadExactly(bytes);
         Require(bytes.AsSpan().SequenceEqual(fixture.Bytes.AsSpan(0, 64)), "Protected original read differs.");
         using (FileStream attacker = new(fixture.Source, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)) Flip(attacker, 0);
         input.Position = 0;
-        await ExpectAsync<CryptographicException>(() => input.ReadExactlyAsync(bytes).AsTask());
-        Require(bytes.AsSpan().IndexOfAnyExcept((byte)0) < 0, "Failed read did not clear the caller buffer.");
+        try { await input.ReadExactlyAsync(bytes); throw new InvalidOperationException("A changed original was accepted."); }
+        catch (Exception failure) when (failure is CryptographicException or IOException) { }
+        Require(input.State == VerifiedArchiveInputState.Failed && bytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
+            "Failed read did not poison the reader and clear the caller buffer.");
     }
 
     private static async Task PlainManifestContractAsync()
@@ -446,7 +454,7 @@ internal static class VerifiedArchiveInputTests
         using IDisposable policyScope = policy.EnterScope();
         var integrity = new ArchiveIntegrityService();
         var captures = new List<VerifiedArchiveInput>();
-        Action<VerifiedArchiveInput>? previous = VerifiedArchiveInput.BeforeSealForTests;
+        Action<VerifiedArchiveInput>? previous = VerifiedArchiveInput.FirstPassStartedForTests.Value;
         int ownersBefore = VerifiedArchiveInput.RetainedOwnersForTests;
         try
         {
@@ -468,7 +476,7 @@ internal static class VerifiedArchiveInputTests
                 finally { CryptographicOperations.ZeroMemory(actual); }
             }
 
-            VerifiedArchiveInput.BeforeSealForTests = captures.Add;
+            VerifiedArchiveInput.FirstPassStartedForTests.Value = captures.Add;
             foreach (string mutation in new[] { "sha3", "skein", "archive" })
             {
                 File.WriteAllBytes(source, original);
@@ -511,7 +519,7 @@ internal static class VerifiedArchiveInputTests
         }
         finally
         {
-            VerifiedArchiveInput.BeforeSealForTests = previous;
+            VerifiedArchiveInput.FirstPassStartedForTests.Value = previous;
             CryptographicOperations.ZeroMemory(original);
             Directory.Delete(root, recursive: true);
         }
@@ -529,8 +537,9 @@ internal static class VerifiedArchiveInputTests
         throw new Exception("A corrupted plain archive passed dual-manifest verification.");
     }
 
-    private static FileStream Storage(VerifiedArchiveInput input, string name) =>
-        ((BoundFileTransaction)typeof(VerifiedArchiveInput).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(input)!).Stream;
+    private static FileStream Storage(VerifiedArchiveInput input, string name) => VerifiedArchiveInputAttack.Storage(input, name);
+    private static async Task ExpectMutationAsync(Func<Task> action)
+    { try { await action(); } catch (Exception e) when (e is CryptographicException or IOException) { return; } throw new Exception("A changed original was accepted."); }
     private static byte[] Secret(VerifiedArchiveInput input, string name) =>
         ((LockedSensitiveBuffer)typeof(VerifiedArchiveInput).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(input)!).Bytes;
     private static void Flip(FileStream stream, long offset)
@@ -560,13 +569,15 @@ internal static class VerifiedArchiveInputTests
         private readonly OperationMemoryBudget.Lease _memory;
         private readonly IDisposable _memoryScope;
         private readonly IDisposable _policyScope;
-        internal Fixture(int length = (2 << 20) + 37)
+        private readonly bool _previousDisk = AuthenticatedRangeIndex.ForceDiskForTests.Value;
+        internal Fixture(int length = (2 << 20) + 37, bool parallel = false)
         {
+            AuthenticatedRangeIndex.ForceDiskForTests.Value = true;
             Bytes = RandomNumberGenerator.GetBytes(length);
             Directory.CreateDirectory(Root, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             "KZPAQ2\0"u8.CopyTo(Bytes);
             File.WriteAllBytes(Source, Bytes);
-            Policy = new ArchiveOperationPolicy(Root, Root, maxContainerBytes: Math.Max(16L << 20, length), maxMetadataBytes: 16L << 20);
+            Policy = new ArchiveOperationPolicy(Root, Root, maxContainerBytes: Math.Max(16L << 20, length), maxMetadataBytes: 16L << 20, maxCpuWorkers: parallel ? 2 : 0, maxIoRequests: parallel ? 2 : 0);
             _policyScope = Policy.EnterScope();
             _memory = OperationMemoryBudget.AcquireAsync(Policy, default).AsTask().GetAwaiter().GetResult();
             _memoryScope = _memory.EnterScope();
@@ -590,6 +601,7 @@ internal static class VerifiedArchiveInputTests
             CryptographicOperations.ZeroMemory(Bytes);
             _memoryScope.Dispose(); _memory.Dispose(); _policyScope.Dispose();
             Directory.Delete(Root, recursive: true);
+            AuthenticatedRangeIndex.ForceDiskForTests.Value = _previousDisk;
         }
     }
 }

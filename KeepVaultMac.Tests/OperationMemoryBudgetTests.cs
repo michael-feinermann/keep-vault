@@ -5,51 +5,41 @@ internal static class OperationMemoryBudgetTests
     internal static IReadOnlyList<TestCase> Tests =>
     [
         new("resources.shared-memory-budget", "nested reuse, aggregate contention, cancellation and live entropy accounting", RunAsync, TestResource.ProcessGlobal, "Resources"),
-        new("resources.shared-runtime-budget", "finite wall time, parent/child CPU time and byte-progress stall deadlines", RuntimeAsync, TestResource.Light, "Resources"),
+        new("resources.shared-runtime-budget", "unbounded wall/CPU/stall observations, manual cancellation and real failures", RuntimeAsync, TestResource.Light, "Resources"),
     ];
 
     private static Task RuntimeAsync()
     {
         string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var policy = new ArchiveOperationPolicy(path, path, wallTimeBudget: TimeSpan.FromSeconds(10),
-            cpuTimeBudget: TimeSpan.FromSeconds(5), noProgressTimeout: TimeSpan.FromSeconds(2));
+        var policy = new ArchiveOperationPolicy(path, path);
         TimeSpan wall = TimeSpan.Zero, cpu = TimeSpan.Zero;
-        using (var budget = new OperationExecutionBudget(policy, default, () => wall, () => cpu, enableTimer: false))
+        using var cancel = new CancellationTokenSource();
+        using (var budget = new OperationExecutionBudget(policy, cancel.Token, () => wall, () => cpu))
         {
-            wall = TimeSpan.FromSeconds(1);
-            budget.RecordProgress(1);
-            wall = TimeSpan.FromSeconds(2.5);
-            budget.CheckLimits();
-            Require(!budget.Token.IsCancellationRequested, "Actual byte progress did not renew the stall interval.");
-            budget.RecordProgress(0);
-            wall = TimeSpan.FromSeconds(3);
-            budget.CheckLimits();
-            Require(budget.Token.IsCancellationRequested && budget.Failure is TimeoutException,
-                "Zero-byte/status activity bypassed the exact stall deadline.");
-            Expect<TimeoutException>(() => budget.RecordProgress(1));
-        }
-        wall = TimeSpan.Zero;
-        using (var budget = new OperationExecutionBudget(policy, default, () => wall, () => cpu, enableTimer: false))
-        {
-            cpu = TimeSpan.FromSeconds(3);
-            budget.RecordChildCpu(TimeSpan.FromSeconds(2));
-            budget.CheckLimits();
-            Require(budget.Token.IsCancellationRequested && budget.Failure!.Message.Contains("CPU-time", StringComparison.Ordinal),
-                "Parent and child CPU consumption were not combined.");
-        }
-        cpu = TimeSpan.Zero;
-        using (var budget = new OperationExecutionBudget(policy, default, () => wall, () => cpu, enableTimer: false))
-        {
-            for (int second = 1; second < 10; second++)
+            foreach (TimeSpan elapsed in new[] { TimeSpan.FromHours(4), TimeSpan.FromHours(24), TimeSpan.FromDays(12) })
             {
-                wall = TimeSpan.FromSeconds(second);
+                wall = elapsed;
+                cpu = elapsed * 4;
+                budget.RecordChildCpu(elapsed * 2);
+                _ = budget.Observe();
+                budget.RecordProgress(0);
+                Require(!budget.Token.IsCancellationRequested && budget.Failure is null,
+                    "Elapsed wall/CPU/stall observations gained cancellation authority.");
                 budget.RecordProgress(1);
             }
-            wall = TimeSpan.FromSeconds(10);
-            Expect<TimeoutException>(() => budget.RecordProgress(1));
-            budget.CheckLimits();
-            Require(budget.Token.IsCancellationRequested && budget.Failure!.Message.Contains("wall-time", StringComparison.Ordinal),
-                "Byte progress bypassed the absolute wall deadline.");
+            Require(budget.Observe().Cpu > TimeSpan.FromHours(32), "Child CPU observations were not retained.");
+            cancel.Cancel();
+            Require(budget.Token.IsCancellationRequested, "Manual cancellation was lost.");
+        }
+        using (var budget = new OperationExecutionBudget(policy, default, () => throw new IOException(), () => cpu))
+        {
+            budget.RecordProgress(1);
+            Require(budget.Observe().Elapsed is null && !budget.Token.IsCancellationRequested,
+                "A broken observer cancelled the operation.");
+            var error = new IOException("test operation failure");
+            budget.ReportFailure(error);
+            Require(budget.Token.IsCancellationRequested && ReferenceEquals(budget.Failure, error),
+                "A real failure did not retain its cause and cancel the operation.");
         }
         return Task.CompletedTask;
     }
@@ -58,81 +48,87 @@ internal static class OperationMemoryBudgetTests
     {
         long initialWorking = OperationMemoryBudget.WorkingReservedBytesForTests;
         long initialEntropy = OperationMemoryBudget.EntropyReservedBytes;
-        Require(initialWorking == 0 && initialEntropy == 0, "Memory-budget fixture requires no active operation or mouse collection.");
-        Require(OperationExecutionBudget.ActiveOwnersForTests == 0, "A previous operation retained a runtime owner.");
-        string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        long maximum = OperationMemoryBudget.HostMemoryCeilingBytes;
-        var policy = new ArchiveOperationPolicy(path, path, memoryBudgetBytes: maximum, maxCpuWorkers: 1, maxQueuedChunks: 1);
-        foreach (string phase in new[] { "runtime", "lease" })
+        Require(initialWorking == 0 && initialEntropy == 0, "Memory fixture requires no active operation or records.");
+        ResourceObservation observed = new(7, 16L << 30, 16L << 30, 64L << 20, 12L << 30, MemoryPressure.Normal, true);
+        PlatformResourceObserver.ObservationForTests = () => observed;
+        try
         {
-            OperationMemoryBudget.ConstructionHookForTests = current => { if (current == phase) throw new IOException("injected construction failure"); };
-            try
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var policy = new ArchiveOperationPolicy(path, path, memoryBudgetBytes: 512L << 20, maxCpuWorkers: 1);
+            foreach (string phase in new[] { "runtime", "lease" })
             {
-                try { using var unexpected = await OperationMemoryBudget.AcquireAsync(policy, default); throw new Exception("Construction fault was ignored."); }
-                catch (IOException) { }
-            }
-            finally { OperationMemoryBudget.ConstructionHookForTests = null; }
-            Require(OperationExecutionBudget.ActiveOwnersForTests == 0 && OperationMemoryBudget.WorkingReservedBytesForTests == 0,
-                "Failed construction retained a timer, runtime owner or memory reservation.");
-        }
-        long native = ZpaqService.NativeResidentBudget(policy, reserveKdf: true);
-        Require(native + checked((long)V13MasterKdf.MemoryMaxKiB * 1024) == policy.HeavyWorkerMemoryBudgetBytes,
-            "The child and maximum KDF matrix do not share exactly one approved heavy-worker budget.");
-        using (OperationMemoryBudget.Lease outer = await OperationMemoryBudget.AcquireAsync(policy, default))
-        {
-            long reserved = OperationMemoryBudget.WorkingReservedBytesForTests;
-            using (outer.EnterScope())
-            using (policy.EnterScope())
-            using (OperationMemoryBudget.Lease nested = await OperationMemoryBudget.AcquireAsync(policy, default))
-            {
-                OperationMemoryBudget.ConstructionHookForTests = current => { if (current == "nested-lease") throw new IOException("injected nested construction failure"); };
-                try
-                {
-                    try { using var unexpected = await OperationMemoryBudget.AcquireAsync(policy, default); throw new Exception("Nested construction fault was ignored."); }
-                    catch (IOException) { }
-                }
+                OperationMemoryBudget.ConstructionHookForTests = current => { if (current == phase) throw new IOException("injected construction failure"); };
+                try { try { using var unexpected = await OperationMemoryBudget.AcquireAsync(policy, default); throw new Exception("Construction fault ignored."); } catch (IOException) { } }
                 finally { OperationMemoryBudget.ConstructionHookForTests = null; }
-                Require(OperationExecutionBudget.ActiveOwnersForTests == 1 && OperationMemoryBudget.WorkingReservedBytesForTests == reserved,
-                    "A failed nested owner changed the parent's reservation or deadline lifetime.");
-                Require(OperationMemoryBudget.WorkingReservedBytesForTests == reserved, "Nested service reserved the same memory twice.");
-                using (OperationMemoryBudget.HeavyLease child = await OperationMemoryBudget.AcquireHeavyAsync(
-                    policy.HeavyWorkerMemoryBudgetBytes - 1, default))
+                Require(OperationExecutionBudget.ActiveOwnersForTests == 0 && OperationMemoryBudget.WorkingReservedBytesForTests == 0,
+                    "Failed construction retained ownership or a memory charge.");
+            }
+            using (policy.EnterScope())
+            using (OperationMemoryBudget.Lease outer = await OperationMemoryBudget.AcquireAsync(policy, default))
+            using (outer.EnterScope())
+            {
+                Require(OperationMemoryBudget.WorkingReservedBytesForTests == ResourcePlanner.OperationBaseBytes,
+                    "The operation reserved its allowed maximum instead of its base.");
+                object? context = OperationMemoryBudget.CurrentContextIdentity;
+                using (OperationMemoryBudget.Lease nested = await OperationMemoryBudget.AcquireAsync(policy, default))
+                using (nested.EnterScope())
+                    Require(ReferenceEquals(context, OperationMemoryBudget.CurrentContextIdentity)
+                        && OperationMemoryBudget.WorkingReservedBytesForTests == ResourcePlanner.OperationBaseBytes,
+                        "A nested operation duplicated memory or changed the owner.");
+                using (OperationMemoryBudget.HeavyLease matrix = await OperationMemoryBudget.AcquireHeavyAsync(400L << 20, default))
                 {
-                    using (OperationMemoryBudget.HeavyLease matrix = await OperationMemoryBudget.AcquireHeavyAsync(1, default))
-                        Require(child.Bytes + matrix.Bytes == policy.HeavyWorkerMemoryBudgetBytes,
-                            "Overlapping child and matrix charges did not exactly fit their shared budget.");
-                    using var heavyCancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-                    try
-                    {
-                        using var excess = await OperationMemoryBudget.AcquireHeavyAsync(2, heavyCancellation.Token);
-                        throw new Exception("A matrix bypassed the active native worker's memory charge.");
-                    }
+                    Require(OperationMemoryBudget.WorkingReservedBytesForTests == ResourcePlanner.OperationBaseBytes + (400L << 20),
+                        "The concrete matrix/model charge is missing.");
+                    try { using var excess = await OperationMemoryBudget.AcquireWorkingAsync(120L << 20, default); throw new Exception("Overlap bypassed the operation ceiling."); }
+                    catch (IOException) { }
+                    using var cancel = new CancellationTokenSource();
+                    cancel.Cancel();
+                    try { using var cancelled = await OperationMemoryBudget.AcquireWorkingAsync(1, cancel.Token); throw new Exception("Cancelled admission acquired memory."); }
                     catch (OperationCanceledException) { }
                 }
-                using OperationMemoryBudget.HeavyLease all = await OperationMemoryBudget.AcquireHeavyAsync(
-                    policy.HeavyWorkerMemoryBudgetBytes, default);
+                Require(OperationMemoryBudget.WorkingReservedBytesForTests == ResourcePlanner.OperationBaseBytes,
+                    "The completed phase retained its large reservation.");
+                // An opaque native model has a proven peak admission, not an
+                // allocator ACK for every live byte. Keep that lease pending
+                // even after OS free memory falls, accepting conservative denial.
+                long reserve = observed.PhysicalMemoryBytes / 32;
+                observed = observed with { ReclaimableMemoryBytes = reserve + (180L << 20) };
+                using (OperationMemoryBudget.HeavyLease opaque = await OperationMemoryBudget.AcquireWorkingAsync(100L << 20, default))
+                {
+                    observed = observed with { ReclaimableMemoryBytes = reserve + (80L << 20) };
+                    try { using var denied = await OperationMemoryBudget.AcquireWorkingAsync(1, default); throw new Exception("Opaque native pending peak disappeared before free."); }
+                    catch (IOException) { }
+                    Require(!outer.Token.IsCancellationRequested,
+                        "Conservative optional admission denial cancelled the operation.");
+                }
+                observed = observed with { ReclaimableMemoryBytes = 12L << 30 };
+                using (OperationMemoryBudget.HeavyLease buffer = await OperationMemoryBudget.AcquireWorkingAsync(204, default))
+                {
+                    byte[] actual = new byte[204];
+                    buffer.CommitAllocation();
+                    Require(policy.Usage.LeasedMemoryBytes == ResourcePlanner.OperationBaseBytes + actual.Length,
+                        "Actual index bytes were rounded to a maximum frame.");
+                    System.Security.Cryptography.CryptographicOperations.ZeroMemory(actual);
+                }
+                using (IDisposable records = OperationMemoryBudget.ReserveEntropy(32L << 20, policy.EntropyCaptureBudgetBytes))
+                    Require(OperationMemoryBudget.EntropyReservedBytes == 32L << 20, "Live records were not charged.");
+                observed = observed with { ReclaimableMemoryBytes = 1L << 20, Pressure = MemoryPressure.Critical };
+                try { using var denied = await OperationMemoryBudget.AcquireWorkingAsync(204, default); throw new Exception("OS pressure was ignored."); }
+                catch (IOException) { }
+                observed = observed with { ReclaimableMemoryBytes = 12L << 30, Pressure = MemoryPressure.Normal };
             }
-            using IDisposable entropy = OperationMemoryBudget.ReserveEntropy(policy.EntropyCaptureBudgetBytes, policy.EntropyCaptureBudgetBytes);
-            Require(OperationMemoryBudget.WorkingReservedBytesForTests + OperationMemoryBudget.EntropyReservedBytes <= maximum,
-                "Live entropy exceeded the shared host memory ceiling.");
-            Expect<IOException>(() => OperationMemoryBudget.ReserveEntropy(1, long.MaxValue));
-            using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-            Task contender;
-            using (ExecutionContext.SuppressFlow())
-                contender = Task.Run(async () => { using var other = await OperationMemoryBudget.AcquireAsync(policy, cancellation.Token); });
-            try { await contender; throw new Exception("A competing operation bypassed the aggregate budget."); }
-            catch (OperationCanceledException) { }
+            Require(OperationMemoryBudget.WorkingReservedBytesForTests == initialWorking
+                && OperationMemoryBudget.EntropyReservedBytes == initialEntropy && policy.Usage.LeasedMemoryBytes == 0
+                && OperationExecutionBudget.ActiveOwnersForTests == 0, "Phase/lifetime charges were not released.");
+            using (policy.EnterScope())
+            using (OperationMemoryBudget.HeavyLease standalone = OperationMemoryBudget.AcquireWorking(204))
+                Require(OperationMemoryBudget.WorkingReservedBytesForTests == 204,
+                    "The standalone pre-KDF index did not share the global actual-memory ledger.");
         }
-        Require(OperationMemoryBudget.WorkingReservedBytesForTests == initialWorking
-            && OperationMemoryBudget.EntropyReservedBytes == initialEntropy
-            && OperationExecutionBudget.ActiveOwnersForTests == 0, "Memory/runtime reservations were not released.");
-        Expect<ArgumentOutOfRangeException>(() => new ArchiveOperationPolicy(path, path, memoryBudgetBytes: checked(maximum + 1)));
-        using (OperationMemoryBudget.Lease small = await OperationMemoryBudget.AcquireAsync(
-            new ArchiveOperationPolicy(path, path, memoryBudgetBytes: maximum / 2), default))
-        using (small.EnterScope())
+        finally
         {
-            try { using var invalid = await OperationMemoryBudget.AcquireAsync(policy, default); throw new Exception("Nested budget increased."); }
-            catch (InvalidOperationException) { }
+            PlatformResourceObserver.ObservationForTests = null;
+            OperationMemoryBudget.ConstructionHookForTests = null;
         }
     }
     private static void Require(bool condition, string message) { if (!condition) throw new Exception(message); }

@@ -17,13 +17,15 @@ internal sealed class VerifiedArchiveInputAttack : IDisposable
         string path, ArchiveOperationPolicy policy, CancellationToken token)
     {
         var attacker = new VerifiedArchiveInputAttack();
+        bool previousDisk = AuthenticatedRangeIndex.ForceDiskForTests.Value;
+        AuthenticatedRangeIndex.ForceDiskForTests.Value = true;
+        attacker.Spool = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.RandomAccess);
+        attacker.OriginalSpoolWriter = attacker.Spool.SafeFileHandle;
         Action<VerifiedArchiveInput>? previous = VerifiedArchiveInput.BeforeSealForTests;
         VerifiedArchiveInput.BeforeSealForTests = input =>
         {
             previous?.Invoke(input);
-            attacker.OriginalSpoolWriter = Storage(input, "_spool").SafeFileHandle;
             attacker.OriginalIndexWriter = Storage(input, "_index").SafeFileHandle;
-            attacker.Spool = DuplicateWriter(attacker.OriginalSpoolWriter);
             attacker.Index = DuplicateWriter(attacker.OriginalIndexWriter);
         };
         try
@@ -32,12 +34,16 @@ internal sealed class VerifiedArchiveInputAttack : IDisposable
             return attacker;
         }
         catch { attacker.Dispose(); throw; }
-        finally { VerifiedArchiveInput.BeforeSealForTests = previous; }
+        finally { VerifiedArchiveInput.BeforeSealForTests = previous; AuthenticatedRangeIndex.ForceDiskForTests.Value = previousDisk; }
     }
 
-    internal static FileStream Storage(VerifiedArchiveInput input, string name) =>
-        ((BoundFileTransaction)typeof(VerifiedArchiveInput).GetField(name,
-            BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(input)!).Stream;
+    internal static FileStream Storage(VerifiedArchiveInput input, string name)
+    {
+        if (name == "_spool" || name == "_original")
+            return (FileStream)typeof(VerifiedArchiveInput).GetField("_original", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(input)!;
+        var store = (AuthenticatedRangeIndex)typeof(VerifiedArchiveInput).GetField("_index", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(input)!;
+        return store.FileForTests?.Stream ?? throw new InvalidOperationException("The attack requires an explicitly forced spilled index.");
+    }
 
     private static FileStream DuplicateWriter(SafeFileHandle source)
     {

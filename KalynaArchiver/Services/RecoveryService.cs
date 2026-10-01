@@ -216,7 +216,21 @@ public sealed partial class RecoveryService
         ReadOnlyMemory<byte> bytes, long offset, CancellationToken token)
     {
         using RecoveryIoLease lease = await AcquireRecoveryIoAsync(token).ConfigureAwait(false);
+        using IDisposable reservation = ArchiveOperationPolicy.Current.ReserveOutputWrite(handle, bytes.Length);
         await RandomAccess.WriteAsync(handle, bytes, offset, token).ConfigureAwait(false);
+        OperationMemoryBudget.ReportProgress(bytes.Length);
+    }
+
+    private static async ValueTask WriteOutputAsync(FileStream stream, ReadOnlyMemory<byte> bytes, CancellationToken token)
+    {
+        using RecoveryIoLease lease = await AcquireRecoveryIoAsync(token).ConfigureAwait(false);
+        long offset = stream.Position;
+        Microsoft.Win32.SafeHandles.SafeFileHandle handle = stream.SafeFileHandle;
+        using IDisposable reservation = ArchiveOperationPolicy.Current.ReserveOutputWrite(handle, bytes.Length);
+        // Do not release a disk reservation while these bytes remain only in a
+        // managed FileStream buffer. This sequential writer uses real offsets.
+        await RandomAccess.WriteAsync(handle, bytes, offset, token).ConfigureAwait(false);
+        stream.Position = checked(offset + bytes.Length);
         OperationMemoryBudget.ReportProgress(bytes.Length);
     }
 
@@ -378,7 +392,7 @@ public sealed partial class RecoveryService
         {
             if (userPassword is null || pin is null || firstGeneratedPassword is null || secondGeneratedPassword is null)
                 throw new ArgumentException("All four credentials are required for authenticated recovery metadata.");
-            VerifiedArchiveInput input = await VerifiedArchiveInput.CaptureAsync(
+            VerifiedArchiveInput input = await VerifiedArchiveInput.BindEncryptedAsync(
                 path, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
             try
             {
@@ -387,29 +401,23 @@ public sealed partial class RecoveryService
                     cancellationToken).ConfigureAwait(false);
                 return (input, input);
             }
-            catch { input.Dispose(); throw; }
+            catch (Exception failure)
+            {
+                try { input.Dispose(); }
+                catch (Exception cleanup) { throw new AggregateException("Recovery input verification and cleanup failed.", failure, cleanup); }
+                throw;
+            }
         }
-        // Plain recovery supplies integrity, never origin authenticity. Two full
-        // independent dual-hash passes over the locally authenticated original
-        // establish the same captured bytes without a plaintext working copy.
+        // A locally sealed plain input claims captured-byte consistency only.
         VerifiedArchiveInput plain = await VerifiedArchiveInput.CaptureOriginalAsync(
             path, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
-        try
+        try { return (plain.OpenPlainCapture(), plain); }
+        catch (Exception failure)
         {
-            await plain.VerifyGloballyAsync(async (view, token) =>
-            {
-                (byte[] firstSha3, byte[] firstSkein) = await IntegrityService.HashStreamAsync(view, token).ConfigureAwait(false);
-                try
-                {
-                    view.Position = 0;
-                    (byte[] secondSha3, byte[] secondSkein) = await IntegrityService.HashStreamAsync(view, token).ConfigureAwait(false);
-                    return new VerifiedArchiveAuthentication(firstSha3, secondSha3, firstSkein, secondSkein);
-                }
-                catch { CryptographicOperations.ZeroMemory(firstSha3); CryptographicOperations.ZeroMemory(firstSkein); throw; }
-            }, cancellationToken).ConfigureAwait(false);
-            return (plain, plain);
+            try { plain.Dispose(); }
+            catch (Exception cleanup) { throw new AggregateException("Plain recovery input and cleanup failed.", failure, cleanup); }
+            throw;
         }
-        catch { plain.Dispose(); throw; }
     }
 
     private async Task<string> CreateCoreAsync(
@@ -650,13 +658,13 @@ public sealed partial class RecoveryService
                         await WriteEncodedMetadataAsync(recovery, envelope, locator, cancellationToken).ConfigureAwait(false);
                         for (int i = 0; i < SuffixLocatorCopies; i++)
                         {
-                            await recovery.WriteAsync(locatorBlock, cancellationToken).ConfigureAwait(false);
+                            await WriteOutputAsync(recovery, locatorBlock, cancellationToken).ConfigureAwait(false);
                         }
 
                         recovery.Position = 0;
                         for (int i = 0; i < PrefixLocatorCopies; i++)
                         {
-                            await recovery.WriteAsync(locatorBlock, cancellationToken).ConfigureAwait(false);
+                            await WriteOutputAsync(recovery, locatorBlock, cancellationToken).ConfigureAwait(false);
                         }
 
                         long expectedLength = checked(
@@ -671,6 +679,8 @@ public sealed partial class RecoveryService
                         recovery.Flush(flushToDisk: true);
 #pragma warning restore CA1849
 
+                        using OperationProgressSource? finalProgress = OperationProgressTracker.Current?.BeginPhase(
+                            OperationPhase.ResultVerification, ProgressUnit.Bytes, passId: 5);
                         await sidecarTransaction.CommitAsync(
                             (boundSidecar, validationCancellation) => ValidateGeneratedSidecarForCommitAsync(
                                 boundSidecar,
@@ -829,9 +839,12 @@ public sealed partial class RecoveryService
         {
             for (int stripe = 0; stripe < locator.MetadataStripeCount; stripe++)
             {
-                byte[][] data = AllocateShards(DataShardCount, MetadataPayloadSize);
-                byte[][] writtenParity = AllocateShards(ParityShardCount, MetadataPayloadSize);
-                byte[][] computedParity = AllocateShards(ParityShardCount, MetadataPayloadSize);
+                using var dataOwner = new RecoveryShards(DataShardCount, MetadataPayloadSize);
+                byte[][] data = dataOwner.Bytes;
+                using var writtenParityOwner = new RecoveryShards(ParityShardCount, MetadataPayloadSize);
+                byte[][] writtenParity = writtenParityOwner.Bytes;
+                using var computedParityOwner = new RecoveryShards(ParityShardCount, MetadataPayloadSize);
+                byte[][] computedParity = computedParityOwner.Bytes;
                 try
                 {
                     for (int shardIndex = 0; shardIndex < DataShardCount + ParityShardCount; shardIndex++)
@@ -910,9 +923,12 @@ public sealed partial class RecoveryService
     {
         foreach (RecoverySection section in manifest.Sections)
         {
-            byte[][] data = AllocateShards(section.DataShardCount, section.ShardSize);
-            byte[][] writtenParity = AllocateShards(section.ParityShardCount, section.ShardSize);
-            byte[][] computedParity = AllocateShards(section.ParityShardCount, section.ShardSize);
+            using var dataOwner = new RecoveryShards(section.DataShardCount, section.ShardSize);
+            byte[][] data = dataOwner.Bytes;
+            using var writtenParityOwner = new RecoveryShards(section.ParityShardCount, section.ShardSize);
+            byte[][] writtenParity = writtenParityOwner.Bytes;
+            using var computedParityOwner = new RecoveryShards(section.ParityShardCount, section.ShardSize);
+            byte[][] computedParity = computedParityOwner.Bytes;
             try
             {
                 for (int stripe = 0; stripe < section.StripeCount; stripe++)
@@ -932,12 +948,13 @@ public sealed partial class RecoveryService
                     }
 
                     await Task.WhenAll(dataReads).ConfigureAwait(false);
+                    string[] expectedData = Enumerable.Range(0, section.DataShardCount)
+                        .Select(i => section.DataDigests[checked(stripe * section.DataShardCount + i)]).ToArray();
                     var validData = new bool[section.DataShardCount];
                     RunRecoveryParallel(0, section.DataShardCount, cancellationToken,
                         dataIndex =>
                         {
-                        string expectedDataDigest = section.DataDigests[
-                            (stripe * section.DataShardCount) + dataIndex];
+                        string expectedDataDigest = expectedData[dataIndex];
                             validData[dataIndex] = DualDigestMatches(data[dataIndex], expectedDataDigest);
                         });
                     for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
@@ -963,12 +980,13 @@ public sealed partial class RecoveryService
                     }
 
                     bool[] parityReadable = await Task.WhenAll(parityReads).ConfigureAwait(false);
+                    RecoveryParityShard[] expectedParity = Enumerable.Range(0, section.ParityShardCount)
+                        .Select(i => section.Parity[checked(stripe * section.ParityShardCount + i)]).ToArray();
                     var validParity = new bool[section.ParityShardCount];
                     RunRecoveryParallel(0, section.ParityShardCount, cancellationToken,
                         parityIndex =>
                         {
-                            RecoveryParityShard parity = section.Parity[
-                                (stripe * section.ParityShardCount) + parityIndex];
+                            RecoveryParityShard parity = expectedParity[parityIndex];
                             validParity[parityIndex] = parityReadable[parityIndex]
                                 && DualDigestMatches(writtenParity[parityIndex], parity.Digest);
                         });
@@ -1104,21 +1122,12 @@ public sealed partial class RecoveryService
                 secondGeneratedPassword,
                 cancellationToken).ConfigureAwait(false);
 
-#if KEEPVAULT_MACOS
-            using MacRecoveryReadLease archiveLease = MacRecoveryReadLease.Open(
-                fullArchivePath,
-                Math.Min(MaxArchiveBytes, ArchiveOperationPolicy.Current.MaxContainerBytes));
-            FileStream archive = archiveLease.Stream;
-#else
-            await using FileStream archive = SecureFile.OpenReadNoReparse(
-                fullArchivePath,
-                FileShare.None,
-                bufferSize: 1024 * 1024,
-                randomAccess: true);
-#endif
-            var archiveSource = new FileRecoveryRandomAccessSource(
-                archive,
-                enableTestFaults: true);
+            using VerifiedArchiveInput repairCapture = await VerifiedArchiveInput.CaptureForRepairAsync(
+                fullArchivePath, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+            using VerifiedArchiveInput.RepairCiphertextRead repairInput = repairCapture.OpenRepairCiphertext();
+            if (repairCapture.CapturedUnreadableBlocks != 0)
+                progress?.Report($"KPAR2 locally sealed {repairCapture.CapturedUnreadableBlocks} unreadable 4096-byte source blocks as explicit repair erasures.");
+            var archiveSource = new CapturedRecoveryRandomAccessSource(repairInput, enableTestFaults: true);
             using var archiveVerification = new RecoveryRandomAccessStream(archiveSource);
             if (archiveSource.Length != package.Manifest.ArchiveLength)
             {
@@ -1167,9 +1176,7 @@ public sealed partial class RecoveryService
             }
             if (archiveHealthy && !emergencyMode)
             {
-#if KEEPVAULT_MACOS
-                archiveLease.ValidateUnchanged();
-#endif
+                repairCapture.ValidateSource();
                 progress?.Report("KPAR2 verification: archive is unchanged.");
                 return new RecoveryRepairResult(
                     true,
@@ -1209,9 +1216,7 @@ public sealed partial class RecoveryService
                     candidate,
                     package.Manifest.ArchiveLength,
                     cancellationToken).ConfigureAwait(false);
-#if KEEPVAULT_MACOS
-                archiveLease.ValidateUnchanged();
-#endif
+                repairCapture.ValidateSource();
                 if (unreadableBlocks > 0)
                 {
                     progress?.Report(
@@ -1244,6 +1249,8 @@ public sealed partial class RecoveryService
                 candidate.Flush(flushToDisk: true);
 #pragma warning restore CA1849
 
+                using OperationProgressSource? resultProgress = OperationProgressTracker.Current?.BeginPhase(
+                    OperationPhase.ResultVerification, ProgressUnit.Bytes, passId: 4);
                 if (!await ArchiveMatchesManifestAsync(candidate, package.Manifest, cancellationToken).ConfigureAwait(false))
                 {
                     throw new InvalidDataException(
@@ -1264,7 +1271,7 @@ public sealed partial class RecoveryService
                     // Damaged source bytes only enter the bounded RS repair
                     // path. A fresh protected context authenticates the entire
                     // completed candidate; repair never grants decrypt access.
-                    using VerifiedArchiveInput verifiedCandidate = await VerifiedArchiveInput.CaptureOriginalAsync(
+                    using VerifiedArchiveInput verifiedCandidate = await VerifiedArchiveInput.BindEncryptedAsync(
                         candidatePath, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
                     await verifiedCandidate.VerifyGloballyAsync((view, token) => _containers.VerifyAuthenticationResultAsync(
                         view, userPassword!, pin!, firstGeneratedPassword!, secondGeneratedPassword!, token),
@@ -1855,8 +1862,13 @@ public sealed partial class RecoveryService
         };
 
         progress?.Report($"Recovery {name}: {section.StripeCount} stripe(s), RS(20,3), 15% redundancy ...");
-        byte[][] data = AllocateShards(DataShardCount, shardSize);
-        byte[][] parity = AllocateShards(ParityShardCount, shardSize);
+        using OperationProgressSource? sectionProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.Recovery, ProgressUnit.Stripes, section.StripeCount, ProgressTotalOrigin.ValidatedPlan,
+            passId: name == "Header" ? 2 : 3);
+        using var dataOwner = new RecoveryShards(DataShardCount, shardSize);
+        byte[][] data = dataOwner.Bytes;
+        using var parityOwner = new RecoveryShards(ParityShardCount, shardSize);
+        byte[][] parity = parityOwner.Bytes;
         try
         {
             for (int stripe = 0; stripe < section.StripeCount; stripe++)
@@ -1890,7 +1902,7 @@ public sealed partial class RecoveryService
                     long parityOffset = recovery.Position;
                     if (checked(recovery.Position + parity[parityIndex].Length) > ArchiveOperationPolicy.Current.MaxRecoveryBytes)
                         throw new IOException("The KPAR2 parity exceeds the approved recovery resource budget.");
-                    await recovery.WriteAsync(parity[parityIndex], cancellationToken).ConfigureAwait(false);
+                    await WriteOutputAsync(recovery, parity[parityIndex], cancellationToken).ConfigureAwait(false);
                     section.Parity.Add(new RecoveryParityShard(
                         stripe,
                         parityIndex,
@@ -1898,6 +1910,7 @@ public sealed partial class RecoveryService
                         shardSize,
                         DualDigestBase64(parity[parityIndex])));
                 }
+                sectionProgress?.Advance(1);
             }
         }
         catch { section.Dispose(); throw; }
@@ -1917,8 +1930,12 @@ public sealed partial class RecoveryService
         CancellationToken cancellationToken)
     {
         int repaired = 0;
-        byte[][] data = AllocateShards(section.DataShardCount, section.ShardSize);
-        byte[][] parity = AllocateShards(section.ParityShardCount, section.ShardSize);
+        using OperationProgressSource? sectionProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.Recovery, ProgressUnit.Stripes, section.StripeCount, ProgressTotalOrigin.ValidatedPlan, passId: 3);
+        using var dataOwner = new RecoveryShards(section.DataShardCount, section.ShardSize);
+        byte[][] data = dataOwner.Bytes;
+        using var parityOwner = new RecoveryShards(section.ParityShardCount, section.ShardSize);
+        byte[][] parity = parityOwner.Bytes;
         try
         {
             for (int stripe = 0; stripe < section.StripeCount; stripe++)
@@ -1940,11 +1957,13 @@ public sealed partial class RecoveryService
                 }
 
                 await Task.WhenAll(dataReads).ConfigureAwait(false);
+                string[] expectedData = Enumerable.Range(0, section.DataShardCount)
+                    .Select(i => section.DataDigests[checked(stripe * section.DataShardCount + i)]).ToArray();
                 var validData = new bool[section.DataShardCount];
                 RunRecoveryParallel(0, section.DataShardCount, cancellationToken,
                     dataIndex =>
                     {
-                    string expected = section.DataDigests[(stripe * section.DataShardCount) + dataIndex];
+                    string expected = expectedData[dataIndex];
                         validData[dataIndex] = DualDigestMatches(data[dataIndex], expected);
                     });
                 for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
@@ -1957,6 +1976,7 @@ public sealed partial class RecoveryService
 
                 if (badData.Count == 0)
                 {
+                    sectionProgress?.Advance(1);
                     continue;
                 }
 
@@ -1980,12 +2000,13 @@ public sealed partial class RecoveryService
                 }
 
                 bool[] parityReadable = await Task.WhenAll(parityReads).ConfigureAwait(false);
+                RecoveryParityShard[] expectedParity = Enumerable.Range(0, section.ParityShardCount)
+                    .Select(i => section.Parity[checked(stripe * section.ParityShardCount + i)]).ToArray();
                 var validParity = new bool[section.ParityShardCount];
                 RunRecoveryParallel(0, section.ParityShardCount, cancellationToken,
                     parityIndex =>
                     {
-                        RecoveryParityShard parityInfo = section.Parity[
-                            (stripe * section.ParityShardCount) + parityIndex];
+                        RecoveryParityShard parityInfo = expectedParity[parityIndex];
                         validParity[parityIndex] = parityReadable[parityIndex]
                             && DualDigestMatches(parity[parityIndex], parityInfo.Digest);
                     });
@@ -2014,7 +2035,7 @@ public sealed partial class RecoveryService
                     repairIndex =>
                     {
                         int dataIndex = badData[repairIndex];
-                        string expected = section.DataDigests[(stripe * section.DataShardCount) + dataIndex];
+                        string expected = expectedData[dataIndex];
                         repairedValid[repairIndex] = DualDigestMatches(data[dataIndex], expected);
                     });
                 for (int repairIndex = 0; repairIndex < badData.Count; repairIndex++)
@@ -2041,6 +2062,7 @@ public sealed partial class RecoveryService
                 }
 
                 await Task.WhenAll(writes).ConfigureAwait(false);
+                sectionProgress?.Advance(1);
                 repaired = checked(repaired + badData.Count);
             }
         }
@@ -2064,12 +2086,16 @@ public sealed partial class RecoveryService
             throw new InvalidDataException("Internal KPAR2 metadata offset mismatch.");
         }
 
+        using OperationProgressSource? metadataProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.Recovery, ProgressUnit.Stripes, locator.MetadataStripeCount, ProgressTotalOrigin.ValidatedPlan, passId: 4);
         envelope.Position = 0;
         long envelopeOffset = 0;
         for (int stripe = 0; stripe < locator.MetadataStripeCount; stripe++)
         {
-            byte[][] data = AllocateShards(DataShardCount, MetadataPayloadSize);
-            byte[][] parity = AllocateShards(ParityShardCount, MetadataPayloadSize);
+            using var dataOwner = new RecoveryShards(DataShardCount, MetadataPayloadSize);
+            byte[][] data = dataOwner.Bytes;
+            using var parityOwner = new RecoveryShards(ParityShardCount, MetadataPayloadSize);
+            byte[][] parity = parityOwner.Bytes;
             try
             {
                 int[] payloadLengths = new int[DataShardCount];
@@ -2109,6 +2135,7 @@ public sealed partial class RecoveryService
                         parity[parityIndex],
                         cancellationToken).ConfigureAwait(false);
                 }
+                metadataProgress?.Advance(1);
             }
             finally
             {
@@ -2149,7 +2176,7 @@ public sealed partial class RecoveryService
             (sha3, skein) = ComputeDualHash(block.AsSpan(0, MetadataBlockSkeinOffset));
             skein.CopyTo(block, MetadataBlockSkeinOffset);
             sha3.CopyTo(block, MetadataBlockSha3Offset);
-            await recovery.WriteAsync(block, cancellationToken).ConfigureAwait(false);
+            await WriteOutputAsync(recovery, block, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -2171,8 +2198,10 @@ public sealed partial class RecoveryService
         {
             for (int stripe = 0; stripe < locator.MetadataStripeCount; stripe++)
             {
-                byte[][] data = AllocateShards(DataShardCount, MetadataPayloadSize);
-                byte[][] parity = AllocateShards(ParityShardCount, MetadataPayloadSize);
+                using var dataOwner = new RecoveryShards(DataShardCount, MetadataPayloadSize);
+                byte[][] data = dataOwner.Bytes;
+                using var parityOwner = new RecoveryShards(ParityShardCount, MetadataPayloadSize);
+                byte[][] parity = parityOwner.Bytes;
                 var badData = new List<int>();
                 var goodParity = new List<int>();
                 try
@@ -3338,7 +3367,7 @@ public sealed partial class RecoveryService
             while (remaining > 0)
             {
                 int write = Math.Min(remaining, zeroBlock.Length);
-                await stream.WriteAsync(zeroBlock.AsMemory(0, write), cancellationToken).ConfigureAwait(false);
+                await WriteOutputAsync(stream, zeroBlock.AsMemory(0, write), cancellationToken).ConfigureAwait(false);
                 remaining -= write;
             }
         }
@@ -3365,6 +3394,8 @@ public sealed partial class RecoveryService
                 nameof(destination));
         }
 
+        using OperationProgressSource? copyProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.Recovery, ProgressUnit.Bytes, length, ProgressTotalOrigin.ValidatedPlan, passId: 2);
         int chunkCount = checked((int)DivideRoundUp(length, RecoveryCopyChunkBytes));
         if (chunkCount == 0)
         {
@@ -3372,12 +3403,10 @@ public sealed partial class RecoveryService
             return 0;
         }
 
-        using CpuWorkBudget.Lease copyLease = await CpuWorkBudget.AcquireAsync(
-            ArchiveOperationPolicy.Current.MaxCpuWorkers,
-            Math.Min(RecoveryWorkerCount, chunkCount),
-            cancellationToken).ConfigureAwait(false);
-        using IDisposable cpuScope = copyLease.EnterScope();
-        int workerCount = copyLease.Workers;
+        // Copy workers are I/O jobs. A protected source acquires its own CPU
+        // permit only for local MAC computation after its read has completed.
+        int workerCount = Math.Min(chunkCount,
+            RecoveryWorkerOverride.Value ?? ArchiveOperationPolicy.Current.MaxIoRequests);
         int unreadableBlocks = 0;
         using var workerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         CancellationToken workerToken = workerCts.Token;
@@ -3451,7 +3480,9 @@ public sealed partial class RecoveryService
                 [capturedPrimary.SourceException, .. capturedSecondary]);
         }
 
-        destination.SetLength(length);
+        using (IDisposable growth = ArchiveOperationPolicy.Current.ReserveOutputWrite(destination.SafeFileHandle,
+            Math.Max(0, length - destination.Length)))
+            destination.SetLength(length);
         return unreadableBlocks;
 
         void RecordFailureAndCancelSiblings(Exception failure)
@@ -3492,12 +3523,16 @@ public sealed partial class RecoveryService
         {
             byte[]? chunk = null;
             byte[]? block = null;
+            OperationMemoryBudget.HeavyLease? bufferLease = null;
             int localUnreadableBlocks = 0;
             try
             {
                 workerToken.ThrowIfCancellationRequested();
-                chunk = new byte[RecoveryCopyChunkBytes];
+                int allocatedChunk = checked((int)Math.Min(RecoveryCopyChunkBytes, length));
+                bufferLease = OperationMemoryBudget.AcquireWorking(checked(allocatedChunk + RecoveryBlockAlignment + 64L));
+                chunk = new byte[allocatedChunk];
                 block = new byte[RecoveryBlockAlignment];
+                bufferLease.CommitAllocation();
                 for (int chunkIndex = workerIndex;
                      chunkIndex < chunkCount;
                      chunkIndex = checked(chunkIndex + workerCount))
@@ -3526,6 +3561,7 @@ public sealed partial class RecoveryService
                             chunk.AsMemory(0, chunkLength),
                             chunkOffset,
                             workerToken).ConfigureAwait(false);
+                        copyProgress?.Advance(chunkLength);
                         CryptographicOperations.ZeroMemory(chunk.AsSpan(0, chunkLength));
                         continue;
                     }
@@ -3554,6 +3590,7 @@ public sealed partial class RecoveryService
                             block.AsMemory(0, blockLength),
                             sourceOffset,
                             workerToken).ConfigureAwait(false);
+                        copyProgress?.Advance(blockLength);
                         CryptographicOperations.ZeroMemory(block.AsSpan(0, blockLength));
                     }
                 }
@@ -3570,6 +3607,7 @@ public sealed partial class RecoveryService
                 }
                 ZeroIfNotNull(chunk);
                 ZeroIfNotNull(block);
+                bufferLease?.Dispose();
             }
         }
     }
@@ -3828,7 +3866,8 @@ public sealed partial class RecoveryService
         }
 
         int missingCount = badData.Count;
-        byte[][] syndromes = AllocateShards(missingCount, parity[0].Length);
+        using var syndromesOwner = new RecoveryShards(missingCount, parity[0].Length);
+        byte[][] syndromes = syndromesOwner.Bytes;
         byte[,] matrix = new byte[missingCount, missingCount];
         try
         {
@@ -3922,15 +3961,30 @@ public sealed partial class RecoveryService
         }
     }
 
-    private static byte[][] AllocateShards(int count, int shardSize)
+    private sealed class RecoveryShards : IDisposable
     {
-        byte[][] shards = new byte[count][];
-        for (int i = 0; i < shards.Length; i++)
+        private OperationMemoryBudget.HeavyLease? _lease;
+        internal byte[][] Bytes { get; }
+        internal RecoveryShards(int count, int shardSize)
         {
-            shards[i] = new byte[shardSize];
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+            ArgumentOutOfRangeException.ThrowIfNegative(shardSize);
+            _lease = OperationMemoryBudget.AcquireWorking(checked((long)count * (shardSize + 32L) + 32));
+            Bytes = [];
+            try
+            {
+                Bytes = new byte[count][];
+                for (int i = 0; i < Bytes.Length; i++) Bytes[i] = new byte[shardSize];
+                _lease.CommitAllocation();
+            }
+            catch { Dispose(); throw; }
         }
-
-        return shards;
+        public void Dispose()
+        {
+            foreach (byte[]? shard in Bytes)
+                if (shard is not null) CryptographicOperations.ZeroMemory(shard);
+            _lease?.Dispose(); _lease = null;
+        }
     }
 
     private static void ZeroShards(byte[][] shards)
@@ -4027,12 +4081,15 @@ public sealed partial class RecoveryService
         CancellationToken cancellationToken = default)
     {
         ValidateCodingFixtureForTests(data, expectedCount: DataShardCount);
-        byte[][] parity = AllocateShards(ParityShardCount, data[0].Length);
+        using var parityOwner = new RecoveryShards(ParityShardCount, data[0].Length);
+        byte[][] parity = parityOwner.Bytes;
         try
         {
             using IDisposable scope = UseRecoveryWorkerCountForTests(workers);
             ComputeParity(data, parity, cancellationToken);
-            return parity;
+            // The test caller owns its returned oracle arrays. Production
+            // scratch remains leased and is wiped when this scope ends.
+            return parity.Select(shard => shard.ToArray()).ToArray();
         }
         catch
         {
@@ -4326,6 +4383,21 @@ public sealed partial class RecoveryService
             Memory<byte> destination,
             long offset,
             CancellationToken cancellationToken);
+    }
+
+    private sealed class CapturedRecoveryRandomAccessSource(
+        VerifiedArchiveInput.RepairCiphertextRead stream, bool enableTestFaults) : IRecoveryRandomAccessSource
+    {
+        public long Length => stream.Length;
+        private void CheckFault(long offset, int count)
+        {
+            if (enableTestFaults && count != 0 && RecoverySourceReadFaultOverride.Value?.Invoke(offset, count) == true)
+                throw new IOException("Injected damaged recovery source region.");
+        }
+        public int ReadAt(Span<byte> destination, long offset)
+        { CheckFault(offset, destination.Length); return stream.ReadAt(destination, offset); }
+        public ValueTask<int> ReadAtAsync(Memory<byte> destination, long offset, CancellationToken cancellationToken)
+        { CheckFault(offset, destination.Length); return stream.ReadAtAsync(destination, offset, cancellationToken); }
     }
 
     private sealed class FileRecoveryRandomAccessSource(

@@ -7,8 +7,10 @@ namespace KalynaArchiver.Services;
 internal sealed class RecoveryMetadataStream : Stream
 {
     private const int ChunkBytes = RecoveryRecordTable<byte[]>.MaximumByteRecordLength;
-    private readonly RecoveryRecordTable<byte[]> _chunks = new();
-    private readonly byte[] _pending = new byte[ChunkBytes];
+    private RecoveryRecordTable<byte[]>? _chunks;
+    private readonly byte[] _pending;
+    private OperationMemoryBudget.HeavyLease? _pendingMemory;
+    private OperationMemoryBudget.HeavyLease? _cacheMemory;
     private byte[]? _cache;
     private int _cacheIndex = -1;
     private int _pendingCount;
@@ -18,20 +20,44 @@ internal sealed class RecoveryMetadataStream : Stream
     private bool _disposed;
     private bool _failed;
 
+    internal RecoveryMetadataStream()
+    {
+        _pending = [];
+        try
+        {
+            _pendingMemory = OperationMemoryBudget.AcquireWorking(ChunkBytes);
+            _pending = new byte[ChunkBytes];
+            _pendingMemory.CommitAllocation();
+            _chunks = new RecoveryRecordTable<byte[]>();
+        }
+        catch (Exception failure)
+        {
+            try { Dispose(); }
+            catch (Exception cleanup) { throw new AggregateException("Recovery stream construction and cleanup failed.", failure, cleanup); }
+            throw;
+        }
+    }
+
     internal void Seal()
     {
         RequireUsable();
         if (_sealed) throw new InvalidOperationException("Metadata cannot be sealed twice.");
-        FlushPending();
-        _sealed = true;
-        _position = 0;
+        try
+        {
+            FlushPending();
+            _sealed = true;
+            _position = 0;
+        }
+        catch { _failed = true; throw; }
     }
 
     private void FlushPending()
     {
         if (_pendingCount == 0) return;
+        using OperationMemoryBudget.HeavyLease temporary = OperationMemoryBudget.AcquireWorking(_pendingCount);
         byte[] bytes = _pending.AsSpan(0, _pendingCount).ToArray();
-        try { _chunks.Add(bytes); }
+        temporary.CommitAllocation();
+        try { _chunks!.Add(bytes); }
         finally { CryptographicOperations.ZeroMemory(bytes); CryptographicOperations.ZeroMemory(_pending); }
         _pendingCount = 0;
     }
@@ -40,18 +66,22 @@ internal sealed class RecoveryMetadataStream : Stream
     {
         RequireUsable();
         if (_sealed) throw new InvalidOperationException("Sealed metadata is immutable.");
-        while (!buffer.IsEmpty)
+        try
         {
-            int take = Math.Min(ChunkBytes - _pendingCount, buffer.Length);
-            long nextLength = checked(_length + take);
-            if (nextLength > ArchiveOperationPolicy.Current.MaxMetadataBytes)
-                throw new IOException("Recovery metadata exceeds the approved byte budget.");
-            buffer[..take].CopyTo(_pending.AsSpan(_pendingCount));
-            _pendingCount += take;
-            _length = nextLength;
-            buffer = buffer[take..];
-            if (_pendingCount == ChunkBytes) FlushPending();
+            while (!buffer.IsEmpty)
+            {
+                int take = Math.Min(ChunkBytes - _pendingCount, buffer.Length);
+                long nextLength = checked(_length + take);
+                if (nextLength > ArchiveOperationPolicy.Current.MaxMetadataBytes)
+                    throw new IOException("Recovery metadata exceeds the approved byte budget.");
+                buffer[..take].CopyTo(_pending.AsSpan(_pendingCount));
+                _pendingCount += take;
+                _length = nextLength;
+                buffer = buffer[take..];
+                if (_pendingCount == ChunkBytes) FlushPending();
+            }
         }
+        catch { _failed = true; throw; }
     }
     public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan(offset, count));
     public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
@@ -73,10 +103,14 @@ internal sealed class RecoveryMetadataStream : Stream
             if (_cacheIndex != index)
             {
                 if (_cache is not null) CryptographicOperations.ZeroMemory(_cache);
-                _cache = _chunks[index];
-                _cacheIndex = index;
+                _cache = null; _cacheIndex = -1;
+                _cacheMemory?.Dispose(); _cacheMemory = null;
                 int expectedLength = checked((int)Math.Min(ChunkBytes, _length - (long)index * ChunkBytes));
+                _cacheMemory = OperationMemoryBudget.AcquireWorking(expectedLength);
+                _cache = _chunks![index];
+                _cacheMemory.CommitAllocation();
                 if (_cache.Length != expectedLength) throw new InvalidDataException("Authenticated metadata chunk has an inconsistent length.");
+                _cacheIndex = index;
             }
             int inside = checked((int)(_position % ChunkBytes));
             int take = Math.Min(requested - copied, _cache!.Length - inside);
@@ -127,7 +161,12 @@ internal sealed class RecoveryMetadataStream : Stream
             _failed = true;
             CryptographicOperations.ZeroMemory(_pending);
             if (_cache is not null) CryptographicOperations.ZeroMemory(_cache);
-            _chunks.Dispose();
+            List<Exception> failures = [];
+            try { _chunks?.Dispose(); _chunks = null; } catch (Exception failure) { failures.Add(failure); }
+            try { _cacheMemory?.Dispose(); _cacheMemory = null; } catch (Exception failure) { failures.Add(failure); }
+            try { _pendingMemory?.Dispose(); _pendingMemory = null; } catch (Exception failure) { failures.Add(failure); }
+            if (failures.Count != 0)
+                throw new AggregateException("Recovery stream cleanup failed; retained members allow a retry.", failures);
             _disposed = true;
         }
         base.Dispose(disposing);

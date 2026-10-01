@@ -203,6 +203,10 @@ internal static class ParallelContainerAuthenticator
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     int batchCount = checked((int)Math.Min(workers, leafCount - nextLeaf));
+                    long batchBytes = checked(Math.Min((long)batchCount * LeafBytes, logicalLength - reader.BytesRead)
+                        + (long)batchCount * 512);
+                    using OperationMemoryBudget.HeavyLease batchMemory = await OperationMemoryBudget
+                        .AcquireWorkingAsync(batchBytes, cancellationToken).ConfigureAwait(false);
                     var inputs = new LeafInput[batchCount];
                     int initializedInputs = 0;
                     try
@@ -226,6 +230,8 @@ internal static class ParallelContainerAuthenticator
                                 }
                             }
                         }
+
+                        batchMemory.CommitAllocation();
 
                         PhaseTimer leafBatches = Measure(PhaseForTests.LeafBatches);
                         LeafResult[] results = workers == 1

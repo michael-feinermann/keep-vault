@@ -86,8 +86,7 @@ public sealed partial class MainWindow : Window, IDisposable
         PopulateSuites();
         SelectSuite(LoadSuite());
         CompressionBox.SelectedIndex = LoadCompression();
-        WorkingDirectoryBox.Text = _resourcePolicy.WorkingDirectory;
-        ResourceWorkersBox.Text = _resourcePolicy.MaxCpuWorkers.ToString(CultureInfo.InvariantCulture);
+        LoadResourcePreferences();
         EncryptBox.PropertyChanged += EncryptBox_PropertyChanged;
         _componentsReady = true;
 
@@ -212,6 +211,7 @@ public sealed partial class MainWindow : Window, IDisposable
         }
 
         _disposed = true;
+        DisposeProgressObserver();
         Interlocked.Increment(ref _hintLoadVersion);
         _lifetime.Cancel();
         EntropyMixer.Reset();
@@ -579,6 +579,10 @@ public sealed partial class MainWindow : Window, IDisposable
             int compression = CompressionBox.SelectedIndex is >= 0 and <= MaxCompressionLevel
                 ? CompressionBox.SelectedIndex
                 : DefaultCompressionLevel;
+            bool deleteOriginals = DeleteOriginalsBox.IsChecked == true;
+            using MacOriginalDeletionService.CreationSnapshot? creationSnapshot = deleteOriginals
+                ? await Task.Run(() => MacOriginalDeletionService.CaptureCreationSnapshot(inputs, OperationToken), OperationToken)
+                : null;
             OperationStatusText.Text = T("working");
             Log(T("creatingZpaq"));
             ProcessResult result;
@@ -636,14 +640,14 @@ public sealed partial class MainWindow : Window, IDisposable
             // Deleting the originals is gated on proving the archive reproduces
             // them, so it happens before the secrets are cleared: an encrypted
             // archive can only be read back with the factors still in hand.
-            bool deleteOriginals = DeleteOriginalsBox.IsChecked == true;
             bool originalsDeleted = false;
             if (deleteOriginals)
             {
-                originalsDeleted = await VerifyAndDeleteOriginalsAsync(archivePath, inputs, encrypted);
+                originalsDeleted = await VerifyAndDeleteOriginalsAsync(archivePath, inputs, encrypted, creationSnapshot!);
             }
 
             createdArchive = null;
+            MarkOperationSucceeded();
             Log($"{T("done")}: {archivePath}");
             await InfoAsync(deleteOriginals && originalsDeleted
                 ? T("archiveCreatedOriginalsDeleted")
@@ -675,6 +679,7 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 ClearCreateSecrets();
             }
+            catch { MarkOperationFailed(); throw; }
             finally
             {
                 EndProtectedOperation();
@@ -760,6 +765,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
             ClearExtractSecrets();
             Log($"{T("extractedTo")}: {output}");
+            MarkOperationSucceeded();
             await InfoAsync(T("archiveExtracted"));
         }
         catch (Exception exception)
@@ -769,8 +775,9 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { ClearExtractSecrets(); }
+            catch { MarkOperationFailed(); throw; }
+            finally { EndProtectedOperation(); }
         }
     }
 
@@ -831,6 +838,7 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 Log(result.StandardError);
                 ClearExtractSecrets();
+                MarkOperationSucceeded();
             }
             else
             {
@@ -845,8 +853,9 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { ClearExtractSecrets(); }
+            catch { MarkOperationFailed(); throw; }
+            finally { EndProtectedOperation(); }
         }
     }
 
@@ -918,6 +927,7 @@ public sealed partial class MainWindow : Window, IDisposable
             ClearExtractSecrets();
             Log(result.Message);
             Log(string.Format(CultureInfo.CurrentCulture, T("recoveryNewFile"), effective));
+            MarkOperationSucceeded();
             await InfoAsync(result.Message);
         }
         catch (Exception exception)
@@ -927,8 +937,9 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { ClearExtractSecrets(); }
+            catch { MarkOperationFailed(); throw; }
+            finally { EndProtectedOperation(); }
         }
     }
 
@@ -954,6 +965,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 if (!_disposed && Volatile.Read(ref _operationActive) != 0 && OperationToken == token)
                     OperationStatusText.Text = T("entropyPhase." + phase);
             });
+            using OperationProgressSource? entropyProgress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.Entropy, ProgressUnit.Steps);
             next = await Task.Run(() => EntropyMixer.CreateArchiveEntropy(kind, token, progress), token);
             token.ThrowIfCancellationRequested();
             if (_disposed) return;
@@ -967,6 +979,7 @@ public sealed partial class MainWindow : Window, IDisposable
             ResetKeySheetStatus();
             UpdateEntropyStatus(force: true);
             UpdatePasswordPolicyStatus();
+            MarkOperationSucceeded();
             Log(T("generatedPasswordLog"));
         }
         catch (OperationCanceledException) { if (!_disposed) Log(T("cancelled")); }
@@ -977,6 +990,7 @@ public sealed partial class MainWindow : Window, IDisposable
         finally
         {
             try { next?.Dispose(); }
+            catch { MarkOperationFailed(); throw; }
             finally { EndProtectedOperation(); }
         }
     }
@@ -1121,7 +1135,8 @@ public sealed partial class MainWindow : Window, IDisposable
     /// The extraction goes to a private directory that is removed afterwards,
     /// so the round trip never leaves a second plaintext copy behind.
     /// </remarks>
-    private async Task<bool> VerifyAndDeleteOriginalsAsync(string archivePath, string[] inputs, bool encrypted)
+    private async Task<bool> VerifyAndDeleteOriginalsAsync(string archivePath, string[] inputs, bool encrypted,
+        MacOriginalDeletionService.CreationSnapshot creationSnapshot)
     {
         // The temporary directory sits below /var/folders, and /var is itself a
         // symlink to /private/var. Every read here goes through the
@@ -1161,7 +1176,8 @@ public sealed partial class MainWindow : Window, IDisposable
                     inputs,
                     verifyRoot,
                     Progress(),
-                    OperationToken);
+                    OperationToken,
+                    creationSnapshot);
             if (!verification.Verified || verification.Originals is null)
             {
                 Log($"{T("verifyMismatch")} — {verification.Failure}");
@@ -1389,6 +1405,7 @@ public sealed partial class MainWindow : Window, IDisposable
             EraseConfirmBox.IsChecked = false;
             SetEraseStatus("eraseCompleted");
             Log(result.Message);
+            MarkOperationSucceeded();
             await InfoAsync(T("eraseCompleted"));
         }
         catch (Exception exception)
@@ -2061,8 +2078,19 @@ public sealed partial class MainWindow : Window, IDisposable
             return false;
         }
 
-        try { _operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token); }
-        catch { Interlocked.Exchange(ref _operationActive, 0); throw; }
+        try
+        {
+            _operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+            BeginOperationProgress();
+        }
+        catch
+        {
+            DisposeProgressObserver();
+            _operationCancellation?.Dispose();
+            _operationCancellation = null;
+            Interlocked.Exchange(ref _operationActive, 0);
+            throw;
+        }
         OperationStatusText.Text = T("working");
         UpdateProtectedOperationControls();
         return true;
@@ -2071,17 +2099,27 @@ public sealed partial class MainWindow : Window, IDisposable
     private void CancelOperation_Click(object? sender, RoutedEventArgs e)
     {
         if (_operationCancellation is not { } cancellation) return;
-        CancelOperationButton.IsEnabled = false;
-        OperationStatusText.Text = T("cancelling");
-        cancellation.Cancel();
+        try
+        {
+            CancelOperationButton.IsEnabled = false;
+            OperationStatusText.Text = T("cancelling");
+            _operationProgress?.SetState(OperationProgressState.Cancelling);
+            RenderOperationProgress();
+        }
+        catch { ShowProgressUnavailable(); }
+        finally { cancellation.Cancel(); }
     }
 
     private void EndProtectedOperation()
     {
         CancellationTokenSource? completed = _operationCancellation;
-        _operationCancellation = null;
-        completed?.Dispose();
-        Interlocked.Exchange(ref _operationActive, 0);
+        try { FinishOperationProgress(completed?.IsCancellationRequested == true); }
+        finally
+        {
+            _operationCancellation = null;
+            try { completed?.Dispose(); }
+            finally { Interlocked.Exchange(ref _operationActive, 0); }
+        }
         if (_disposed)
         {
             DisposeStorageAccess();
@@ -2152,7 +2190,11 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private Task InfoAsync(string message) => ShowAsync(message, SecurityDialogKind.Information);
     private Task WarnAsync(string message) => ShowAsync(message, SecurityDialogKind.Warning);
-    private Task ErrorAsync(string message) => ShowAsync(message, SecurityDialogKind.Error);
+    private Task ErrorAsync(string message)
+    {
+        if (Volatile.Read(ref _operationActive) != 0) MarkOperationFailed();
+        return ShowAsync(message, SecurityDialogKind.Error);
+    }
 
     private async Task ShowAsync(string message, SecurityDialogKind kind)
     {

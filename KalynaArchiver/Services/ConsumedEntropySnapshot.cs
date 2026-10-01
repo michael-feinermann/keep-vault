@@ -32,6 +32,10 @@ internal sealed class ConsumedEntropySnapshot(
         Exception? failure = null;
         try
         {
+            using OperationProgressSource? progress = OperationProgressTracker.Current?.BeginPhase(
+                OperationPhase.Entropy, ProgressUnit.Steps,
+                checked(records.Length * (kind == EntropyPreparationKind.DualRound ? 2L : 1L)),
+                ProgressTotalOrigin.ValidatedPlan);
             first = LockedSensitiveBuffer.Create(checked(records.Length * 64));
             second = kind == EntropyPreparationKind.DualRound ? LockedSensitiveBuffer.Create(checked(records.Length * 64)) : null;
             ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
@@ -53,6 +57,7 @@ internal sealed class ConsumedEntropySnapshot(
                     Shuffle(pool, EntropyRandomRole.PoolShuffleRound1, fill, _cancel.Token);
                     phase?.Invoke("sha3");
                     Replay(pool, purpose, epochs[purpose], sha512: false, first.Bytes.AsSpan(purpose * 64, 64), _cancel.Token);
+                    progress?.Advance(1);
                     if (second is not null)
                     {
                         // Round one has fully returned, including the disposal
@@ -61,6 +66,7 @@ internal sealed class ConsumedEntropySnapshot(
                         Shuffle(pool, EntropyRandomRole.PoolShuffleRound2, fill, _cancel.Token);
                         phase?.Invoke("sha512");
                         Replay(pool, purpose, epochs[purpose], sha512: true, second.Bytes.AsSpan(purpose * 64, 64), _cancel.Token);
+                        progress?.Advance(1);
                     }
                 }
                 catch (Exception error) { poolFailure = error; _cancel.Cancel(); throw; }

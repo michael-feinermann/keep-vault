@@ -840,9 +840,11 @@ Use at your own risk.
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
+#include <memory>
 
 // Keep Vault's process-wide allocation gate includes libzpaq's C allocations.
 void* keepvault_budget_malloc(size_t);
+size_t keepvault_budget_allocation_overhead() noexcept;
 void* keepvault_budget_calloc(size_t, size_t);
 void* keepvault_budget_realloc(void*, size_t);
 void keepvault_budget_free(void*) noexcept;
@@ -856,6 +858,16 @@ typedef uint8_t U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
 typedef uint64_t U64;
+
+// The application installs this once before starting worker threads. A factory
+// failure must throw; a non-null factory may not return a null reservation.
+// Owners release admission only after the associated buffers have been freed.
+class MemoryReservation {
+public:
+  virtual ~MemoryReservation() {}
+};
+typedef MemoryReservation* (*MemoryReservationFactory)(uint64_t bytes);
+void setMemoryReservationFactory(MemoryReservationFactory factory);
 
 // Tables for parsing ZPAQL source code
 extern const char* compname[256];    // list of ZPAQL component types
@@ -1126,6 +1138,7 @@ public:
   Predictor(ZPAQL&);
   ~Predictor();
   void init();          // build model
+  void clearMemory();   // release model arrays, preserving fixed tables
   int predict();        // probability that next bit is a 1 (0..4095)
   void update(int y);   // train on bit y (0..1)
   int stat(int);        // Defined externally
@@ -1209,6 +1222,7 @@ public:
   int decompress();  // return a byte or EOF
   int skip();        // skip to the end of the segment, return next byte
   void init();       // initialize at start of block
+  void clearModel() {pr.clearMemory();} // preserve buffered compressed input
   int stat(int x) {return pr.stat(x);}
   int get() {        // return 1 byte of buffered input or EOF
     if (rpos==wpos) {
@@ -1250,7 +1264,7 @@ public:
 // For decompression and listing archive contents
 class Decompresser {
 public:
-  Decompresser(): z(), dec(z), pp(), state(BLOCK), decode_state(FIRSTSEG) {}
+  Decompresser();
   void setInput(Reader* in) {dec.in=in;}
   bool findBlock(double* memptr = 0);
   void hcomp(Writer* out2) {z.write(out2, false);}
@@ -1264,6 +1278,9 @@ public:
   int stat(int x) {return dec.stat(x);}
   int buffered() {return dec.buffered();}
 private:
+  // Declaration order is intentional: reservations outlive all model owners.
+  std::unique_ptr<MemoryReservation> fixed_memory;
+  std::unique_ptr<MemoryReservation> model_memory;
   ZPAQL z;
   Decoder dec;
   PostProcessor pp;

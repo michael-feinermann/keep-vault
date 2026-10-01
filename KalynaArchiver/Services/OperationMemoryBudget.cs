@@ -14,25 +14,18 @@ internal static class OperationMemoryBudget
     private static TaskCompletionSource Changed = NewSignal();
     private static long _workingBytes;
     private static long _entropyBytes;
-    // This runtime value reflects the process/container memory limit where the
-    // runtime supports it. Reserve one quarter for OS, GUI, runtime and caches.
-    internal static readonly long HostMemoryCeilingBytes = GetHostCeiling();
+    private static long _pendingBytes;
+    internal static long HostMemoryCeilingBytes => ResourcePlanner.HostCeiling(PlatformResourceObserver.Capture());
     internal static long EntropyReservedBytes { get { lock (Gate) return _entropyBytes; } }
     internal static long WorkingReservedBytesForTests { get { lock (Gate) return _workingBytes; } }
+    internal static object? CurrentContextIdentity => Ambient.Value?._root;
     internal static Action<string>? ConstructionHookForTests;
-
-    private static long GetHostCeiling()
-    {
-        long available = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
-        if (available <= 0) throw new InvalidOperationException("The process memory limit is unavailable.");
-        return checked(available - available / 4);
-    }
 
     internal static async ValueTask<Lease> AcquireAsync(ArchiveOperationPolicy policy, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(policy);
-        long bytes = checked(policy.MemoryBudgetBytes - policy.EntropyCaptureBudgetBytes);
-        if (bytes <= 0 || policy.MemoryBudgetBytes > HostMemoryCeilingBytes)
+        long bytes = ResourcePlanner.OperationBaseBytes;
+        if (policy.MemoryBudgetBytes < bytes || policy.MemoryBudgetBytes > HostMemoryCeilingBytes)
             throw new InvalidOperationException("The approved operation memory exceeds the process memory ceiling.");
         for (;;)
         {
@@ -46,8 +39,7 @@ internal static class OperationMemoryBudget
                 {
                     ObjectDisposedException.ThrowIf(parent._disposed, parent);
                     if (policy.MemoryBudgetBytes > parent._root.ApprovedBytes
-                        || bytes > parent._root.Bytes
-                        || policy.WorkingBufferBudgetBytes > parent._root.WorkingBufferCapacity)
+)
                         throw new InvalidOperationException("A nested operation cannot raise the approved memory reservation.");
                     int owners = checked(parent._root.Owners + 1);
                     var nested = new Lease(parent._root, policy.EntropyCaptureBudgetBytes, token);
@@ -62,6 +54,7 @@ internal static class OperationMemoryBudget
                 }
                 if (bytes <= HostMemoryCeilingBytes - _workingBytes - _entropyBytes)
                 {
+                    RequireCurrentOsAdmission(bytes);
                     long working = checked(_workingBytes + bytes);
                     var runtime = new OperationExecutionBudget(policy, token);
                     Lease? lease = null;
@@ -70,10 +63,11 @@ internal static class OperationMemoryBudget
                         ConstructionHookForTests?.Invoke("runtime");
                         lease = new Lease(new Reservation(bytes, policy.MemoryBudgetBytes,
                             policy.HeavyWorkerMemoryBudgetBytes, policy.WorkingBufferBudgetBytes,
-                            runtime), policy.EntropyCaptureBudgetBytes, token);
+                            runtime, policy.Usage), policy.EntropyCaptureBudgetBytes, token);
                         ConstructionHookForTests?.Invoke("lease");
                         AddEntropyCeiling(lease._entropyCeiling);
                         _workingBytes = working;
+                        policy.Usage.AddMemory(bytes);
                         return lease;
                     }
                     catch
@@ -97,35 +91,69 @@ internal static class OperationMemoryBudget
     /// as the native compressor and an Argon2 matrix. Nested service scopes do
     /// not create more capacity. A cancelled wait never acquires a reservation.
     /// </summary>
-    internal static async ValueTask<HeavyLease> AcquireHeavyAsync(long bytes, CancellationToken token)
+    internal static ValueTask<HeavyLease> AcquireHeavyAsync(long bytes, CancellationToken token)
+        => AcquireComponentAsync(bytes, token, requireOwner: true);
+
+    internal static ValueTask<HeavyLease> AcquireWorkingAsync(long bytes, CancellationToken token)
+        => AcquireComponentAsync(bytes, token, requireOwner: false);
+
+    internal static HeavyLease AcquireWorking(long bytes)
+        => AcquireWorkingAsync(bytes, CancellationToken.None).AsTask().GetAwaiter().GetResult();
+
+    private static async ValueTask<HeavyLease> AcquireComponentAsync(long bytes, CancellationToken token, bool requireOwner)
     {
         if (bytes <= 0) throw new ArgumentOutOfRangeException(nameof(bytes));
-        Lease parent = Ambient.Value ?? throw new InvalidOperationException("A heavy allocation requires an operation memory reservation.");
+        Lease? parent = Ambient.Value;
+        if (requireOwner && parent is null) throw new InvalidOperationException("A heavy allocation requires an operation owner.");
+        ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
         for (;;)
         {
             token.ThrowIfCancellationRequested();
             Task wait;
             lock (Gate)
             {
-                ObjectDisposedException.ThrowIf(parent._disposed, parent);
-                long capacity = Math.Min(parent._root.HeavyCapacity,
-                    ArchiveOperationPolicy.Current.HeavyWorkerMemoryBudgetBytes);
-                if (bytes > capacity)
-                    throw new IOException("A native worker or Argon2 matrix exceeds the approved heavy-worker memory budget.");
-                if (bytes <= capacity - parent._root.HeavyBytes)
+                if (parent is not null) ObjectDisposedException.ThrowIf(parent._disposed, parent);
+                Reservation? root = parent?._root;
+                long approved = Math.Min(root?.ApprovedBytes ?? policy.MemoryBudgetBytes, policy.MemoryBudgetBytes);
+                long held = Math.Max(policy.Usage.LeasedMemoryBytes, root is null ? 0 : checked(root.Bytes + root.HeavyBytes));
+                long entropy = Math.Min(_entropyBytes, approved);
+                if (bytes > approved - ResourcePlanner.OperationBaseBytes - entropy)
+                    throw new IOException("The actual allocation cannot fit the approved memory allowance alongside live protected records.");
+                // Waiting for our own currently held buffers can deadlock a
+                // synchronous index/producer which is their sole releaser.
+                // A caller must spill/replan or fail at this safe boundary.
+                if (bytes > approved - held - entropy)
+                    throw new IOException("Current operation allocations leave insufficient room for the requested component; replan or release optional buffers first.");
+                if (bytes <= HostMemoryCeilingBytes - _workingBytes - _entropyBytes)
                 {
-                    int owners = checked(parent._root.Owners + 1);
-                    long heavy = checked(parent._root.HeavyBytes + bytes);
-                    var lease = new HeavyLease(parent._root, parent._entropyCeiling, bytes);
-                    AddEntropyCeiling(parent._entropyCeiling);
-                    parent._root.Owners = owners;
-                    parent._root.HeavyBytes = heavy;
+                    RequireCurrentOsAdmission(bytes);
+                    int owners = root is null ? 0 : checked(root.Owners + 1);
+                    long heavy = root is null ? 0 : checked(root.HeavyBytes + bytes);
+                    long working = checked(_workingBytes + bytes);
+                    long pending = checked(_pendingBytes + bytes);
+                    var lease = new HeavyLease(root, policy.EntropyCaptureBudgetBytes, bytes, policy.Usage);
+                    if (root is not null)
+                    {
+                        AddEntropyCeiling(policy.EntropyCaptureBudgetBytes);
+                        root.Owners = owners;
+                        root.HeavyBytes = heavy;
+                    }
+                    _workingBytes = working;
+                    _pendingBytes = pending;
+                    policy.Usage.AddMemory(bytes);
                     return lease;
                 }
                 wait = Changed.Task;
             }
             await wait.WaitAsync(token).ConfigureAwait(false);
         }
+    }
+
+    private static void RequireCurrentOsAdmission(long bytes)
+    {
+        ResourceObservation observed = PlatformResourceObserver.Capture();
+        if (bytes > ResourcePlanner.AdditionalAdmission(observed, _pendingBytes))
+            throw new IOException("Current operating-system memory pressure cannot admit this allocation. Existing records remain intact; no cryptographic parameter was reduced.");
     }
 
     internal static IDisposable ReserveEntropy(long bytes, long approvedEntropyBytes)
@@ -138,6 +166,7 @@ internal static class OperationMemoryBudget
             ceiling = Math.Min(ceiling, HostMemoryCeilingBytes - _workingBytes);
             if (bytes > ceiling - _entropyBytes)
                 throw new IOException("The shared protected mouse-record budget is exhausted. Finish or explicitly reset preparation before collecting more events.");
+            RequireCurrentOsAdmission(bytes);
             var reservation = new EntropyReservation(bytes);
             _entropyBytes = checked(_entropyBytes + bytes);
             return reservation;
@@ -163,25 +192,42 @@ internal static class OperationMemoryBudget
         if (--root.Owners == 0)
         {
             _workingBytes -= root.Bytes;
+            root.Usage.AddMemory(-root.Bytes);
             root.Runtime.Dispose();
         }
         WakeWaiters(replacement);
     }
     internal sealed class Reservation(long bytes, long approvedBytes, long heavyCapacity, long workingBufferCapacity,
-        OperationExecutionBudget runtime)
+        OperationExecutionBudget runtime, ResourceUsage usage)
     {
         internal readonly long Bytes = bytes;
         internal readonly long ApprovedBytes = approvedBytes;
         internal readonly long HeavyCapacity = heavyCapacity;
         internal readonly long WorkingBufferCapacity = workingBufferCapacity;
         internal readonly OperationExecutionBudget Runtime = runtime;
+        internal readonly ResourceUsage Usage = usage;
         internal long HeavyBytes;
         internal int Owners = 1;
     }
-    internal sealed class HeavyLease(Reservation root, long entropyCeiling, long bytes) : IDisposable
+    internal sealed class HeavyLease(Reservation? root, long entropyCeiling, long bytes, ResourceUsage usage) : IDisposable
     {
         private bool _disposed;
+        private bool _allocated;
         internal long Bytes => bytes;
+        // Call only after the represented allocation actually exists. Opaque
+        // native routines retain a conservative pending charge until their
+        // allocate/use/wipe/free invocation returns and this lease is released.
+        internal void CommitAllocation()
+        {
+            lock (Gate)
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                if (_allocated) return;
+                _allocated = true;
+                _pendingBytes -= bytes;
+                WakeWaiters(NewSignal());
+            }
+        }
         public void Dispose()
         {
             lock (Gate)
@@ -189,8 +235,15 @@ internal static class OperationMemoryBudget
                 if (_disposed) return;
                 TaskCompletionSource replacement = NewSignal();
                 _disposed = true;
-                root.HeavyBytes -= bytes;
-                ReleaseOwner(root, entropyCeiling, replacement);
+                _workingBytes -= bytes;
+                if (!_allocated) _pendingBytes -= bytes;
+                usage.AddMemory(-bytes);
+                if (root is not null)
+                {
+                    root.HeavyBytes -= bytes;
+                    ReleaseOwner(root, entropyCeiling, replacement);
+                }
+                else WakeWaiters(replacement);
             }
         }
     }

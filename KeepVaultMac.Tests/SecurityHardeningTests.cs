@@ -64,7 +64,7 @@ internal static class SecurityHardeningTests
             "Recovery"),
         new(
             "zpaq.process-resource-limits",
-            "ZPAQ wall, CPU, RSS and process-count limits",
+            "ZPAQ has no product deadlines; explicit cancellation, RSS and process-count limits remain",
             TestZpaqProcessResourceLimitsAsync,
             TestResource.ZpaqGlobal,
             "ZPAQ"),
@@ -812,88 +812,35 @@ internal static class SecurityHardeningTests
             Require(
                 ZpaqService.DefaultMaxZpaqResidentBytes == 4L * 1024 * 1024 * 1024,
                 "The production ZPAQ RSS cap is not exactly 4 GiB.");
-            Require(
-                ZpaqService.DefaultMaxZpaqWallTime == TimeSpan.FromHours(4),
-                "The production ZPAQ wall-time cap is not exactly four hours.");
-            Require(
-                ZpaqService.DefaultMaxZpaqCpuTime == TimeSpan.FromHours(32),
-                "The production ZPAQ aggregate CPU cap is not exactly 32 hours.");
-            Require(
-                ZpaqService.DefaultMaxZpaqProgressStall == TimeSpan.FromMinutes(10),
-                "The production ZPAQ measurable-progress stall cap is not exactly ten minutes.");
-
-            ZpaqService.MaxZpaqWallTimeOverride = TimeSpan.FromMilliseconds(75);
-            ZpaqService.MaxZpaqCpuTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
-            ZpaqService.MaxZpaqChildProcessesOverride = 0;
-            ZpaqService.ProcessMonitorIntervalOverride = TimeSpan.FromMilliseconds(10);
-            var elapsed = Stopwatch.StartNew();
-            Exception wallFailure = await CaptureThrowsAsync(
-                () => ZpaqService.RunTextProcessAsync(
-                    "/bin/sleep",
-                    ["30"],
-                    Path.GetTempPath(),
-                    progress: null,
-                    CancellationToken.None),
-                "A ZPAQ process exceeded its wall-time limit without rejection.").ConfigureAwait(false);
-            elapsed.Stop();
-            Require(
-                ContainsException<TimeoutException>(wallFailure),
-                $"The wall-time gate reported the wrong failure: {wallFailure}");
-            Require(elapsed.Elapsed < TimeSpan.FromSeconds(8), "The wall-time violation did not stop and join the process promptly.");
-
-            ResetZpaqResourceOverrides();
-            ZpaqService.MaxZpaqWallTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqCpuTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
-            ZpaqService.MaxZpaqChildProcessesOverride = 0;
-            ZpaqService.MaxZpaqProgressStallOverrideForTests = TimeSpan.FromMilliseconds(75);
-            ZpaqService.ProcessMonitorIntervalOverride = TimeSpan.FromMilliseconds(10);
-            elapsed.Restart();
-            Exception stallFailure = await CaptureThrowsAsync(
-                () => ZpaqService.RunTextProcessAsync(
-                    "/bin/sleep",
-                    ["30"],
-                    Path.GetTempPath(),
-                    progress: null,
-                    CancellationToken.None),
-                "A ZPAQ process with no measurable progress was not rejected.").ConfigureAwait(false);
-            elapsed.Stop();
-            Require(
-                ContainsException<TimeoutException>(stallFailure)
-                    && stallFailure.ToString().Contains("no measurable", StringComparison.Ordinal),
-                $"The progress-stall gate reported the wrong failure: {stallFailure}");
-            Require(
-                elapsed.Elapsed < TimeSpan.FromSeconds(8),
-                "The progress-stall violation did not stop and join the process promptly.");
-
-            // A hostile decoder can consume CPU forever without advancing its
-            // input, output, or extraction tree. CPU time therefore must not
-            // reset the independently observable progress-stall clock.
-            ResetZpaqResourceOverrides();
-            ZpaqService.MaxZpaqWallTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqCpuTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
-            ZpaqService.MaxZpaqChildProcessesOverride = 0;
-            ZpaqService.MaxZpaqProgressStallOverrideForTests = TimeSpan.FromMilliseconds(75);
-            ZpaqService.ProcessMonitorIntervalOverride = TimeSpan.FromMilliseconds(10);
-            elapsed.Restart();
-            Exception busyLoopFailure = await CaptureThrowsAsync(
-                () => ZpaqService.RunTextProcessAsync(
-                    "/bin/sh",
-                    ["-c", "while :; do :; done"],
-                    Path.GetTempPath(),
-                    progress: null,
-                    CancellationToken.None),
-                "A CPU-burning ZPAQ process without observable forward progress was not rejected.").ConfigureAwait(false);
-            elapsed.Stop();
-            Require(
-                ContainsException<TimeoutException>(busyLoopFailure)
-                    && busyLoopFailure.ToString().Contains("no measurable", StringComparison.Ordinal),
-                $"The CPU-busy progress-stall gate reported the wrong failure: {busyLoopFailure}");
-            Require(
-                elapsed.Elapsed < TimeSpan.FromSeconds(8),
-                "The CPU-busy progress-stall violation did not stop and join the process promptly.");
+            // REV11: neither elapsed time nor absent byte progress is an
+            // operation failure. The finite timeout here belongs exclusively
+            // to this test and explicitly requests caller cancellation.
+            foreach ((string executable, string[] arguments) in new[]
+            {
+                ("/bin/sleep", new[] { "30" }),
+                ("/bin/sh", new[] { "-c", "while :; do :; done" }),
+            })
+            {
+                ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
+                ZpaqService.MaxZpaqChildProcessesOverride = 0;
+                ZpaqService.ProcessMonitorIntervalOverride = TimeSpan.FromMilliseconds(10);
+                using var caller = new CancellationTokenSource();
+                Task<ProcessResult> running = ZpaqService.RunTextProcessAsync(
+                    executable, arguments, Path.GetTempPath(), null, caller.Token);
+                try
+                {
+                    await Task.Delay(300).ConfigureAwait(false);
+                    Require(!running.IsCompleted, "A live native job was ended by a product time/stall deadline.");
+                }
+                finally { caller.Cancel(); }
+                Exception cancellation = await CaptureThrowsAsync(
+                    async () => { _ = await running.WaitAsync(TimeSpan.FromSeconds(10)).ConfigureAwait(false); },
+                    "Explicit caller cancellation was ignored.").ConfigureAwait(false);
+                Require(ContainsException<OperationCanceledException>(cancellation)
+                    && !ContainsException<TimeoutException>(cancellation),
+                    $"Explicit cancellation did not safely stop/join the native job: {cancellation}");
+                ResetZpaqResourceOverrides();
+            }
 
             ResetZpaqResourceOverrides();
             ZpaqService.MaxZpaqResidentBytesOverride = 1;
@@ -905,12 +852,8 @@ internal static class SecurityHardeningTests
 
             ResetZpaqResourceOverrides();
             ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
-            ZpaqService.MaxZpaqCpuTimeOverride = TimeSpan.FromTicks(1);
             ZpaqService.MaxZpaqChildProcessesOverride = 1024;
-            IOException cpuFailure = CaptureThrows<IOException>(
-                () => ZpaqService.ValidateZpaqProcessResources(Process.GetCurrentProcess(), TimeSpan.Zero))
-                ?? throw new InvalidOperationException("The CPU limit accepted an already-running process at one tick.");
-            Require(cpuFailure.Message.Contains("CPU-time", StringComparison.Ordinal), "The CPU limit returned an unrelated error.");
+            ZpaqService.ValidateZpaqProcessResources(Process.GetCurrentProcess(), TimeSpan.FromDays(3651));
 
             ResetZpaqResourceOverrides();
             ZpaqService.MaxZpaqChildProcessesOverride = 0;
@@ -1380,9 +1323,6 @@ internal static class SecurityHardeningTests
     {
         ZpaqService.MaxZpaqResidentBytesOverride = -1;
         ZpaqService.MaxZpaqChildProcessesOverride = -1;
-        ZpaqService.MaxZpaqWallTimeOverride = null;
-        ZpaqService.MaxZpaqCpuTimeOverride = null;
-        ZpaqService.MaxZpaqProgressStallOverrideForTests = null;
         ZpaqService.ProcessMonitorIntervalOverride = null;
         ZpaqService.ProcessTaskJoinTimeoutOverrideForTests = null;
     }

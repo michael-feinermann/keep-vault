@@ -15,6 +15,8 @@ internal interface IAppSettingsStore
 internal sealed class IsolatedStorageAppSettingsStore : IAppSettingsStore
 {
     internal const int MaxValueBytes = 64;
+    internal const string ResourcePreferencesKey = "resources-v13-rev11";
+    private static int ValueLimit(string key) => key == ResourcePreferencesKey ? 8192 : MaxValueBytes;
     private const int MaxKeyCharacters = 64;
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
@@ -30,14 +32,14 @@ internal sealed class IsolatedStorageAppSettingsStore : IAppSettingsStore
             }
 
             using var stream = new IsolatedStorageFileStream(key, FileMode.Open, FileAccess.Read, FileShare.Read, store);
-            if (stream.Length is <= 0 or > MaxValueBytes)
+            if (stream.Length <= 0 || stream.Length > ValueLimit(key))
             {
                 return null;
             }
 
             byte[] encoded = new byte[(int)stream.Length];
             stream.ReadExactly(encoded);
-            return DecodeValue(encoded);
+            return DecodeValue(encoded, ValueLimit(key));
         }
         catch (IOException)
         {
@@ -66,9 +68,9 @@ internal sealed class IsolatedStorageAppSettingsStore : IAppSettingsStore
         ValidateKey(key);
         ArgumentNullException.ThrowIfNull(value);
         byte[] encoded = StrictUtf8.GetBytes(value);
-        if (encoded.Length is <= 0 or > MaxValueBytes)
+        if (encoded.Length <= 0 || encoded.Length > ValueLimit(key))
         {
-            throw new ArgumentOutOfRangeException(nameof(value), $"A setting value must contain 1 to {MaxValueBytes} UTF-8 bytes.");
+            throw new ArgumentOutOfRangeException(nameof(value), $"A setting value must contain 1 to {ValueLimit(key)} UTF-8 bytes.");
         }
 
         try
@@ -96,9 +98,11 @@ internal sealed class IsolatedStorageAppSettingsStore : IAppSettingsStore
         }
     }
 
-    internal static string? DecodeValue(ReadOnlySpan<byte> encoded)
+    internal static string? DecodeValue(ReadOnlySpan<byte> encoded) => DecodeValue(encoded, MaxValueBytes);
+
+    private static string? DecodeValue(ReadOnlySpan<byte> encoded, int limit)
     {
-        if (encoded.Length is <= 0 or > MaxValueBytes)
+        if (encoded.Length <= 0 || encoded.Length > limit)
         {
             return null;
         }

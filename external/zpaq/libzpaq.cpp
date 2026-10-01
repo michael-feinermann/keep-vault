@@ -31,6 +31,8 @@ See libzpaq.h for additional documentation.
 #include <stdexcept>
 #include <limits.h>
 #include <stdio.h>
+#include <atomic>
+#include <limits>
 
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #ifndef unix
@@ -48,6 +50,82 @@ See libzpaq.h for additional documentation.
 #endif
 
 namespace libzpaq {
+
+namespace {
+std::atomic<MemoryReservationFactory> memory_factory(0);
+MemoryReservation* reserve_memory(uint64_t bytes) {
+  MemoryReservationFactory factory=memory_factory.load(std::memory_order_acquire);
+  if (!factory || !bytes) return 0;
+  MemoryReservation* owner=factory(bytes);
+  if (!owner) error("memory admission returned no owner");
+  return owner;
+}
+uint64_t memory_add(uint64_t a, uint64_t b) {
+  if (b>std::numeric_limits<uint64_t>::max()-a)
+    error("model memory size overflow");
+  return a+b;
+}
+uint64_t memory_mul(uint64_t a, uint64_t b) {
+  if (b && a>std::numeric_limits<uint64_t>::max()/b)
+    error("model memory size overflow");
+  return a*b;
+}
+uint64_t memory_power(int bits) {
+  if (bits<0 || bits>32) error("model memory exponent outside supported range");
+  return uint64_t(1)<<bits;
+}
+uint64_t allocation_memory(uint64_t bytes) {
+  return memory_add(bytes,keepvault_budget_allocation_overhead());
+}
+uint64_t array_memory(uint64_t elements, uint64_t element_bytes) {
+  // Array::resize adds 128 bytes for alignment and guard space.
+  return elements ? allocation_memory(memory_add(memory_mul(elements, element_bytes), 128)) : 0;
+}
+uint64_t machine_memory(int hbits, int mbits) {
+  return memory_add(memory_add(array_memory(memory_power(hbits), 4),
+    array_memory(memory_power(mbits), 1)), array_memory(256, 4));
+}
+// Dynamic model arrays only. Header, byte buffers and object storage have a
+// separate fixed lease. The generated macOS product uses NOJIT; executable
+// mappings on JIT builds remain subject to the process allocation gate.
+uint64_t model_memory(ZPAQL& z, bool include_postprocessor) {
+  z.memory(); // validate the full component stream before indexing it below
+  uint64_t bytes=machine_memory(z.header[2], z.header[3]);
+  if (include_postprocessor)
+    bytes=memory_add(bytes, machine_memory(z.header[4], z.header[5]));
+  int cp=7;
+  for (int i=0; i<z.header[6]; ++i) {
+    const int kind=z.header[cp];
+    const int sizebits=z.header[cp+1];
+    switch (kind) {
+      case CONS: case AVG: break;
+      case CM: bytes=memory_add(bytes, array_memory(memory_power(sizebits),4)); break;
+      case ICM:
+        if (sizebits>26) error("max size for ICM is 26");
+        bytes=memory_add(bytes, memory_add(array_memory(256,4),
+          array_memory(memory_mul(64,memory_power(sizebits)),1))); break;
+      case MATCH:
+        bytes=memory_add(bytes, memory_add(array_memory(memory_power(sizebits),4),
+          array_memory(memory_power(z.header[cp+2]),1))); break;
+      case MIX2: bytes=memory_add(bytes,array_memory(memory_power(sizebits),2)); break;
+      case MIX: bytes=memory_add(bytes,array_memory(
+        memory_mul(memory_power(sizebits),z.header[cp+3]),4)); break;
+      case ISSE:
+        bytes=memory_add(bytes,memory_add(array_memory(512,4),
+          array_memory(memory_mul(64,memory_power(sizebits)),1))); break;
+      case SSE: bytes=memory_add(bytes,array_memory(
+        memory_mul(32,memory_power(sizebits)),4)); break;
+      default: error("unknown model component in memory plan");
+    }
+    cp+=compsize[kind];
+  }
+  return bytes;
+}
+} // namespace
+
+void setMemoryReservationFactory(MemoryReservationFactory factory) {
+  memory_factory.store(factory, std::memory_order_release);
+}
 
 // Read 16 bit little-endian number
 int toU16(const char* p) {
@@ -1765,6 +1843,11 @@ Predictor::~Predictor() {
   allocx(pcode, pcode_size, 0);  // free executable memory
 }
 
+void Predictor::clearMemory() {
+  allocx(pcode, pcode_size, 0);
+  for (int i=0; i<256; ++i) comp[i].init();
+}
+
 // Initialize the predictor with a new model in z
 void Predictor::init() {
 
@@ -2299,10 +2382,24 @@ int PostProcessor::write(int c) {
 
 /////////////////////// Decompresser /////////////////////
 
+Decompresser::Decompresser():
+    // The two format headers have 16-bit lengths, plus the parser's 300-byte
+    // guards. Decoder owns a 64 KiB input buffer; each VM owns 16 KiB output.
+    fixed_memory(reserve_memory(sizeof(Decompresser)
+      +2*array_memory(65535+300,1)+array_memory(1<<16,1)
+      +2*array_memory(1<<14,1))),
+    z(), dec(z), pp(), state(BLOCK), decode_state(FIRSTSEG) {}
+
 // Find the start of a block and return true if found. Set memptr
 // to memory used.
 bool Decompresser::findBlock(double* memptr) {
   assert(state==BLOCK);
+  // Release previous model allocations before returning their admission.
+  // Preserve Decoder's unread bytes, which may already contain this block.
+  dec.clearModel();
+  pp.init(0,0);
+  z.clear();
+  model_memory.reset();
 
   // Find start of block
   U32 h1=0x3D49B113, h2=0x29EB7F93, h3=0x2614BE13, h4=0x3828EB13;
@@ -2378,6 +2475,9 @@ bool Decompresser::decompress(int n) {
 
   // Initialize models to start decompressing block
   if (decode_state==FIRSTSEG) {
+    // Listing/skipping a block never reserves its declared model maximum.
+    // Actual decoding admits both predictor and postprocessor before init.
+    model_memory.reset(reserve_memory(::libzpaq::model_memory(z,true)));
     dec.init();
     assert(z.header.size()>5);
     pp.init(z.header[4], z.header[5]);
@@ -2979,7 +3079,7 @@ bool Compressor::compress(int n) {
   assert(state==SEG2);
 
   const int BUFSIZE=1<<14;
-  StringBuffer storage(BUFSIZE);  // destructor wipes plaintext on every exit
+  StringBuffer storage(BUFSIZE+1);  // exact one-window capacity; wipes on every exit
   storage.write(0, BUFSIZE);
   char* const buf=reinterpret_cast<char*>(storage.data());
   while (n) {
@@ -6658,10 +6758,18 @@ int LZBuffer::read(char* p, int n) {
   return nr;
 }
 
+// Shared by admission and allocation: no independent approximation of the
+// input-dependent suffix-array / hash-table selection can drift from this.
+static uint64_t lz_table_elements(uint64_t input_size, const int args[], bool supplied_sa) {
+  uint64_t count=(args[1]&3)==3 ? (supplied_sa ? 0 : memory_add(input_size,1))
+    : args[5]-args[0]<21 ? memory_power(args[5])
+    : memory_add(supplied_sa ? 0 : input_size,memory_power(17+args[0]));
+  if (count>std::numeric_limits<size_t>::max()) error("LZ table too large");
+  return count;
+}
+
 LZBuffer::LZBuffer(StringBuffer& inbuf, int args[], const unsigned* sap):
-    ht((args[1]&3)==3 ? (inbuf.size()+1)*!sap      // for BWT suffix array
-        : args[5]-args[0]<21 ? size_t(1)<<args[5]  // for LZ77 hash table
-        : (inbuf.size()*!sap)+(size_t(1)<<(17+args[0]))), // LZ77 SA and ISA
+    ht(size_t(lz_table_elements(inbuf.size(),args,sap!=0))),
     in(inbuf.data()),
     checkbits(args[5]-args[0]<21 ? 12-args[0] : 17+args[0]),
     level(args[1]&3),
@@ -6699,7 +6807,8 @@ LZBuffer::LZBuffer(StringBuffer& inbuf, int args[], const unsigned* sap):
       assert(ht.size()>=n);
       assert(ht.size()>0);
       sa=&ht[0];
-      if (n>0) divsufsort((const unsigned char*)in, (int*)sa, n);
+      if (n>0 && divsufsort((const unsigned char*)in, (int*)sa, n)!=0)
+        error("suffix array construction failed");
     }
     if (level<3) {
       assert(ht.size()>=(n*(sap==0))+(1u<<17<<args[0]));
@@ -7762,16 +7871,54 @@ void compressBlock(StringBuffer* in, Writer* out, const char* method_,
   int args[9]={0};
   config=makeConfig(method.c_str(), args);
   assert(n<=(0x100000u<<args[0])-4096);
+  std::string cs=itos(n);
+  if (comment) cs=cs+" "+comment;
+  uint64_t compressor_bytes=0;
+  {
+    // Compile the actual expanded method, after its input-dependent period
+    // analysis. This small bounded parse never initializes model/VM arrays.
+    // Its lease ends before requesting the concrete runtime model below.
+    std::unique_ptr<MemoryReservation> preparation(reserve_memory(
+      2*sizeof(ZPAQL)+sizeof(Compiler)+2*array_memory(68000,1)
+      +2*array_memory(1<<14,1)+2*array_memory(1000,2)));
+    ZPAQL hz,pz;
+    Compiler compiled(config.c_str(),args,hz,pz,0);
+    compressor_bytes=memory_add(allocation_memory(sizeof(Compressor)),model_memory(hz,false));
+    compressor_bytes=memory_add(compressor_bytes,
+      memory_add(array_memory(hz.header.size(),1),array_memory(pz.header.size(),1)));
+    compressor_bytes=memory_add(compressor_bytes,2*array_memory(1<<14,1));
+    // Compressor::compress owns one 16 KiB plaintext read window. The extra
+    // byte avoids StringBuffer's grow-at-equality rule tripling this buffer.
+    compressor_bytes=memory_add(compressor_bytes,allocation_memory((1<<14)+1)+sizeof(StringBuffer));
+    // startBlock's bounded compiler stacks overlap the live Compressor.
+    compressor_bytes=memory_add(compressor_bytes,
+      sizeof(Compiler)+2*array_memory(1000,2));
+    if (!hz.header[6]) compressor_bytes=memory_add(compressor_bytes,array_memory(1<<16,1));
+#ifdef DEBUG
+    if (pz.header.size()) compressor_bytes=memory_add(compressor_bytes,
+      machine_memory(hz.header[4],hz.header[5]));
+#endif
+  }
+  if (args[1]>=1 && args[1]<=7 && args[1]!=4) {
+    compressor_bytes=memory_add(compressor_bytes,allocation_memory(sizeof(LZBuffer)));
+    compressor_bytes=memory_add(compressor_bytes,
+      array_memory(lz_table_elements(in->size(),args,false),sizeof(unsigned)));
+    // divsufsort's two scratch buckets are allocated only for n >= 3.
+    if (n>=3 && (args[5]-args[0]>=21 || (args[1]&3)==3))
+      compressor_bytes=memory_add(compressor_bytes,
+        allocation_memory(uint64_t(BUCKET_A_SIZE)*sizeof(int))
+        +allocation_memory(uint64_t(BUCKET_B_SIZE)*sizeof(int)));
+  }
+  // Declared before the Compressor so that wipe/free always precedes release,
+  // including constructor, preprocessor and output-write exceptions.
+  std::unique_ptr<MemoryReservation> model_admission(reserve_memory(compressor_bytes));
   std::unique_ptr<libzpaq::Compressor> co(new libzpaq::Compressor());
   co->setOutput(out);
 #ifdef DEBUG
   co->setVerify(true);
 #endif
-  StringBuffer pcomp_cmd;
   co->writeTag();
-  co->startBlock(config.c_str(), args, &pcomp_cmd);
-  std::string cs=itos(n);
-  if (comment) cs=cs+" "+comment;
+  co->startBlock(config.c_str(), args, 0);
   co->startSegment(filename, cs.c_str());
   if (args[1]>=1 && args[1]<=7 && args[1]!=4) {  // LZ77 or BWT
     std::unique_ptr<LZBuffer> lz(new LZBuffer(*in, args));

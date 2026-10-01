@@ -21,9 +21,6 @@ public sealed partial class ZpaqService
     private const int MaxProgressCharactersPerStream = 256 * 1024;
     internal const long DefaultMaxZpaqResidentBytes = 4L * 1024 * 1024 * 1024;
     internal const int DefaultMaxZpaqChildProcesses = 0;
-    internal static readonly TimeSpan DefaultMaxZpaqWallTime = TimeSpan.FromHours(4);
-    internal static readonly TimeSpan DefaultMaxZpaqCpuTime = TimeSpan.FromHours(32);
-    internal static readonly TimeSpan DefaultMaxZpaqProgressStall = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan DefaultProcessMonitorInterval = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan DefaultProcessTaskJoinTimeout = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan MinimumTreeScanInterval = TimeSpan.FromSeconds(1);
@@ -221,34 +218,28 @@ public sealed partial class ZpaqService
         BoundFileTransaction? archiveObject = null;
         BoundFileTransaction? sha3Object = null;
         BoundFileTransaction? skeinObject = null;
-#if KEEPVAULT_MACOS
-        using MacInputSnapshot inputSnapshot = MacInputSnapshot.Create(workingDirectory, normalizedInputs);
-#else
-        using WindowsInputSnapshot inputSnapshot = WindowsInputSnapshot.Create(workingDirectory, normalizedInputs);
-#endif
-        workingDirectory = inputSnapshot.WorkingDirectory;
-        normalizedInputs = inputSnapshot.InputPaths;
+        using ZpaqBoundSources sources = ZpaqBoundSources.Bind(workingDirectory, normalizedInputs, cancellationToken);
         using TrustedNativeFileLease executable = AcquireExecutable();
         var arguments = new List<string> { "add", temporaryArchivePath };
         arguments.Add($"-m{compressionLevel}");
         arguments.Add("-threads");
         arguments.Add(EffectiveWorkerCountArgument);
-        arguments.Add("--");
-        arguments.AddRange(normalizedInputs.Select(path => Path.GetRelativePath(workingDirectory, path)));
+        arguments.Add("-kv-bound-sources");
         try
         {
-            inputSnapshot.RequireReadyForUse();
+            sources.ValidateAll();
             ProcessResult result = await RunTextProcessAsync(
                 executable.Path,
                 arguments,
                 workingDirectory,
                 progress,
-                cancellationToken
+                cancellationToken,
+                sources: sources
 #if KEEPVAULT_MACOS
                 , macTrustedExecutable: executable
 #endif
                 ).ConfigureAwait(false);
-            inputSnapshot.RequireReadyForUse();
+            sources.ValidateAll();
             if (!result.Succeeded)
             {
                 return PreserveUnboundProducerOutput(result, temporaryArchivePath, progress);
@@ -451,7 +442,7 @@ public sealed partial class ZpaqService
                 monitorStagingDirectory: staging.StagingPath,
                 macStaging: staging,
                 macTrustedExecutable: executable,
-                macReadAtArchive: archive).ConfigureAwait(false);
+                verifiedReadAtArchive: archive).ConfigureAwait(false);
             if (result.Succeeded)
             {
                 ValidateExtractedDirectoryLimits(staging.StagingPath, staging);
@@ -482,15 +473,17 @@ public sealed partial class ZpaqService
         using var target = new WindowsExtractionStaging(outputFolder);
         try
         {
-            ProcessResult result = await RunTextProcessAsync(
+            ProcessResult result = await RunStdinPipeAsync(
                 executable.Path,
                 WithNativeExtractionLimits(
                     target.StagingIdentity,
-                    "extract", archive.Path, "-threads", EffectiveWorkerCountArgument),
+                    "--verified-read-at", "extract", "-", "-threads", EffectiveWorkerCountArgument),
                 target.StagingPath,
+                archive.CopyToAsync,
                 progress,
                 cancellationToken,
                 monitorStagingDirectory: target.StagingPath,
+                verifiedReadAtArchive: archive,
                 windowsStaging: target).ConfigureAwait(false);
             if (result.Succeeded)
             {
@@ -543,14 +536,16 @@ public sealed partial class ZpaqService
             progress,
             cancellationToken,
             macTrustedExecutable: executable,
-            macReadAtArchive: archive).ConfigureAwait(false);
+            verifiedReadAtArchive: archive).ConfigureAwait(false);
 #else
-        return await RunTextProcessAsync(
+        return await RunStdinPipeAsync(
             executable.Path,
-            new[] { "list", archive.Path, "-threads", EffectiveWorkerCountArgument },
+            new[] { "--verified-read-at", "list", "-", "-threads", EffectiveWorkerCountArgument },
             Environment.CurrentDirectory,
+            archive.CopyToAsync,
             progress,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            verifiedReadAtArchive: archive).ConfigureAwait(false);
 #endif
     }
 
@@ -576,34 +571,28 @@ public sealed partial class ZpaqService
         ValidateCompressionLevel(compressionLevel);
         string[] normalizedInputs = NormalizeAndValidateInputPaths(inputPaths);
         string workingDirectory = GetArchiveWorkingDirectory(normalizedInputs);
-#if KEEPVAULT_MACOS
-        using MacInputSnapshot inputSnapshot = MacInputSnapshot.Create(workingDirectory, normalizedInputs);
-#else
-        using WindowsInputSnapshot inputSnapshot = WindowsInputSnapshot.Create(workingDirectory, normalizedInputs);
-#endif
-        workingDirectory = inputSnapshot.WorkingDirectory;
-        normalizedInputs = inputSnapshot.InputPaths;
+        using ZpaqBoundSources sources = ZpaqBoundSources.Bind(workingDirectory, normalizedInputs, cancellationToken);
         using TrustedNativeFileLease executable = AcquireExecutable();
         var arguments = new List<string> { "--pipe", "add", "-" };
         arguments.Add("-method");
         arguments.Add(GetStreamingMethod(compressionLevel));
         arguments.Add("-threads");
         arguments.Add(EffectiveWorkerCountArgument);
-        arguments.Add("--");
-        arguments.AddRange(normalizedInputs.Select(path => Path.GetRelativePath(workingDirectory, path)));
-        inputSnapshot.RequireReadyForUse();
-        ProcessResult result = await RunStdoutPipeAsync(
+        arguments.Add("-kv-bound-sources");
+        sources.ValidateAll();
+        ProcessResult result = await RunPreparedArchiveAsync(consumeArchive, async (preparedConsumer, preparedToken) => await RunStdoutPipeAsync(
             executable.Path,
             arguments,
             workingDirectory,
-            consumeArchive,
+            preparedConsumer,
             progress,
-            cancellationToken
+            preparedToken,
+            sources: sources
 #if KEEPVAULT_MACOS
             , macTrustedExecutable: executable
 #endif
-            ).ConfigureAwait(false);
-        inputSnapshot.RequireReadyForUse();
+            ).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+        sources.ValidateAll();
         return result;
     }
 
@@ -625,18 +614,18 @@ public sealed partial class ZpaqService
         try
         {
             ArchiveOperationPolicy.Current.RequireBoundExtractionVolume(staging.GetOperationVolume());
-            ProcessResult result = await RunStdinPipeAsync(
+            ProcessResult result = await RunPreparedArchiveAsync(writeArchive, async (preparedWriter, preparedToken) => await RunStdinPipeAsync(
                 executable.Path,
                 WithNativeExtractionLimits(
                     staging.StagingIdentity,
                     "--pipe", "extract", "-", "-threads", EffectiveWorkerCountArgument),
                 staging.StagingPath,
-                writeArchive,
+                preparedWriter,
                 progress,
-                cancellationToken,
+                preparedToken,
                 monitorStagingDirectory: staging.StagingPath,
                 macStaging: staging,
-                macTrustedExecutable: executable).ConfigureAwait(false);
+                macTrustedExecutable: executable).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
             if (result.Succeeded)
             {
                 ValidateExtractedDirectoryLimits(staging.StagingPath, staging);
@@ -667,17 +656,17 @@ public sealed partial class ZpaqService
         using var target = new WindowsExtractionStaging(outputFolder);
         try
         {
-            ProcessResult result = await RunStdinPipeAsync(
+            ProcessResult result = await RunPreparedArchiveAsync(writeArchive, async (preparedWriter, preparedToken) => await RunStdinPipeAsync(
                 executable.Path,
                 WithNativeExtractionLimits(
                     target.StagingIdentity,
                     "--pipe", "extract", "-", "-threads", EffectiveWorkerCountArgument),
                 target.StagingPath,
-                writeArchive,
+                preparedWriter,
                 progress,
-                cancellationToken,
+                preparedToken,
                 monitorStagingDirectory: target.StagingPath,
-                windowsStaging: target).ConfigureAwait(false);
+                windowsStaging: target).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
             if (result.Succeeded)
             {
                 ValidateExtractedDirectoryLimits(target.StagingPath, target);
@@ -720,17 +709,17 @@ public sealed partial class ZpaqService
         cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(writeArchive);
         using TrustedNativeFileLease executable = AcquireExecutable();
-        return await RunStdinPipeAsync(
+        return await RunPreparedArchiveAsync(writeArchive, async (preparedWriter, preparedToken) => await RunStdinPipeAsync(
             executable.Path,
             new[] { "--pipe", "list", "-", "-threads", EffectiveWorkerCountArgument },
             Environment.CurrentDirectory,
-            writeArchive,
+            preparedWriter,
             progress,
-            cancellationToken
+            preparedToken
 #if KEEPVAULT_MACOS
             , macTrustedExecutable: executable
 #endif
-            ).ConfigureAwait(false);
+            ).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
     }
 
     private sealed class WorkerCountScope(int? previous) : IDisposable
@@ -852,7 +841,7 @@ public sealed partial class ZpaqService
         return results;
     }
 
-    private static string GetArchiveWorkingDirectory(IEnumerable<string> inputPaths)
+    internal static string GetArchiveWorkingDirectory(IEnumerable<string> inputPaths)
     {
         string[] anchors = inputPaths
             .Select(path =>
@@ -982,9 +971,6 @@ public sealed partial class ZpaqService
     internal static long MinFreeDiskSpaceBytesOverride = -1;
     internal static long MaxZpaqResidentBytesOverride = -1;
     internal static int MaxZpaqChildProcessesOverride = -1;
-    internal static TimeSpan? MaxZpaqWallTimeOverride;
-    internal static TimeSpan? MaxZpaqCpuTimeOverride;
-    internal static TimeSpan? MaxZpaqProgressStallOverrideForTests;
     internal static TimeSpan? ProcessMonitorIntervalOverride;
     internal static TimeSpan? ProcessTaskJoinTimeoutOverrideForTests;
     internal static Action<string>? PlainArchiveCommitHookAfterRenameForTests { get; set; }
@@ -1099,15 +1085,10 @@ public sealed partial class ZpaqService
             && configuredInterval > TimeSpan.Zero
             ? configuredInterval
             : DefaultProcessMonitorInterval;
-        TimeSpan maxProgressStall = MaxZpaqProgressStallOverrideForTests is { } configuredStall
-            && configuredStall > TimeSpan.Zero
-            ? configuredStall
-            : ArchiveOperationPolicy.Current.NoProgressTimeout;
         TimeSpan nextTreeScan = TimeSpan.Zero;
         TimeSpan treeScanInterval = MinimumTreeScanInterval;
         var wallClock = Stopwatch.StartNew();
         long lastActivitySequence = activity.Snapshot;
-        TimeSpan lastMeasuredProgress = TimeSpan.Zero;
         TimeSpan previousChildCpu = TimeSpan.Zero;
         DirectoryProgressMeasurement? lastTreeMeasurement = null;
         using var archiveOutput = new ArchiveOutputProgress(archiveOutputPath);
@@ -1127,10 +1108,9 @@ public sealed partial class ZpaqService
             if (resources.CpuTime >= previousChildCpu)
                 OperationMemoryBudget.ReportChildCpu(resources.CpuTime - previousChildCpu);
             previousChildCpu = resources.CpuTime;
-            // CPU consumption alone is not evidence that an adversarial
-            // archive is making forward progress. A tight decoder loop must
-            // hit the independent progress-stall limit instead of running
-            // until the much larger aggregate CPU budget is exhausted.
+            // These measurements are observations. Elapsed/CPU/stall time
+            // never cancels legitimate archive work; only resource violations,
+            // actual failures or an explicit caller cancellation do so.
             bool madeProgress = false;
             if (archiveOutput.ObserveGrowth()) madeProgress = true;
 
@@ -1204,19 +1184,13 @@ public sealed partial class ZpaqService
             if (madeProgress)
             {
                 OperationMemoryBudget.ReportProgress(1);
-                lastMeasuredProgress = wallClock.Elapsed;
-            }
-            else if (wallClock.Elapsed - lastMeasuredProgress > maxProgressStall)
-            {
-                throw new TimeoutException(
-                    $"ZPAQ made no measurable pipe-I/O or extraction-tree progress for {maxProgressStall}.");
             }
 
             // Poll on the monitor's own schedule instead of racing a
             // WaitForExitAsync task. On macOS the sandbox-exec wrapper can
             // briefly report its parent as exited while the exec'd workload
             // is still alive; letting that task win would silently disable
-            // the stall/resource gates for a CPU-busy child. The next loop
+            // the resource gates for a CPU-busy child. The next loop
             // observes a genuinely exited process through HasExited().
             await Task.Delay(monitorInterval, cancellationToken).ConfigureAwait(false);
         }
@@ -1277,26 +1251,12 @@ public sealed partial class ZpaqService
         TimeSpan wallTime,
         long? nativeResidentLimit = null)
     {
-        TimeSpan maxWallTime = MaxZpaqWallTimeOverride is { } configuredWall
-            && configuredWall > TimeSpan.Zero
-            ? configuredWall
-            : ArchiveOperationPolicy.Current.WallTimeBudget;
-        TimeSpan maxCpuTime = MaxZpaqCpuTimeOverride is { } configuredCpu
-            && configuredCpu > TimeSpan.Zero
-            ? configuredCpu
-            : ArchiveOperationPolicy.Current.CpuTimeBudget;
         long maxResidentBytes = MaxZpaqResidentBytesOverride > 0
             ? MaxZpaqResidentBytesOverride
             : nativeResidentLimit ?? Math.Min(DefaultMaxZpaqResidentBytes, ArchiveOperationPolicy.Current.HeavyWorkerMemoryBudgetBytes);
         int maxChildProcesses = MaxZpaqChildProcessesOverride >= 0
             ? MaxZpaqChildProcessesOverride
             : DefaultMaxZpaqChildProcesses;
-
-        if (wallTime > maxWallTime)
-        {
-            throw new TimeoutException(
-                $"ZPAQ exceeded its wall-clock limit of {maxWallTime}.");
-        }
 
         ProcessResourceMeasurement measurement = MeasureProcessTree(
             process,
@@ -1311,12 +1271,6 @@ public sealed partial class ZpaqService
             throw new IOException(
                 $"ZPAQ exceeded its resident-memory limit of {maxResidentBytes} bytes.");
         }
-        if (measurement.CpuTime > maxCpuTime)
-        {
-            throw new IOException(
-                $"ZPAQ exceeded its aggregate CPU-time limit of {maxCpuTime}.");
-        }
-
         return measurement;
     }
 
@@ -1402,7 +1356,8 @@ public sealed partial class ZpaqService
         return [.. descendants];
 #else
         // Windows publication is deliberately out of scope for the macOS v13
-        // release. The root process still receives RSS, CPU and wall limits;
+        // release. The root process still receives its RSS limit, while CPU
+        // and elapsed time remain diagnostic observations;
         // Windows descendant enumeration must be implemented before that port
         // is released.
         _ = rootProcessId;
@@ -1469,7 +1424,7 @@ public sealed partial class ZpaqService
 
     /// <summary>
     /// Preserves the exact pipe semantics while making successful byte
-    /// transfers visible to the independent process-stall monitor. Merely
+    /// transfers visible to the independent process activity observer. Merely
     /// attempting an I/O operation is not progress.
     /// </summary>
     private sealed class ProcessActivityStream : Stream
@@ -1594,7 +1549,8 @@ public sealed partial class ZpaqService
         string workingDirectory,
         IProgress<string>? progress,
         CancellationToken cancellationToken,
-        string? monitorStagingDirectory = null
+        string? monitorStagingDirectory = null,
+        ZpaqBoundSources? sources = null
 #if KEEPVAULT_MACOS
         , MacExtractionStaging? macStaging = null
         , TrustedNativeFileLease? macTrustedExecutable = null
@@ -1605,9 +1561,10 @@ public sealed partial class ZpaqService
     {
         string[] stableArguments = arguments.ToArray();
         using OperationMemoryBudget.HeavyLease? nativeMemory = await ReserveNativeMemoryAsync(
-            stableArguments, reserveKdf: false, cancellationToken).ConfigureAwait(false);
+            stableArguments, sources, cancellationToken).ConfigureAwait(false);
         stableArguments = WithNativeMemoryBudget(stableArguments, nativeMemory);
-        using CpuWorkBudget.Lease? nativeCpu = await ReserveNativeWorkersAsync(stableArguments, cancellationToken).ConfigureAwait(false);
+        using ZpaqControlSession? control = CreateNativeControl(stableArguments, sources: sources, outputDirectory: monitorStagingDirectory);
+        stableArguments = WithNativeControl(stableArguments, control);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 #if KEEPVAULT_MACOS
         using MacZpaqSeatbelt sandbox = macTrustedExecutable is null
@@ -1638,6 +1595,7 @@ public sealed partial class ZpaqService
 #if KEEPVAULT_MACOS
             sandbox.RequireValidAfterStart("text", process.Id);
 #endif
+            if (control is not null) startedTasks.Add(control.RunAsync(process.Id, linkedCts.Token));
             var activity = new ProcessActivityTracker();
             Task outputTask = ReadLinesAsync(process.StandardOutput, output, progress, activity, linkedCts.Token);
             startedTasks.Add(outputTask);
@@ -1653,11 +1611,11 @@ public sealed partial class ZpaqService
 #else
                     , windowsStaging
 #endif
-                    , nativeResidentLimit: nativeMemory?.Bytes
+                    , nativeResidentLimit: nativeMemory is null ? null : NativeResidentBudget(ArchiveOperationPolicy.Current, false)
                     , archiveOutputPath: nativeMemory is not null && stableArguments[0] == "add" ? stableArguments[1] : null
                   );
             startedTasks.Add(monitorTask);
-            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, nativeCpu, nativeMemory, linkedCts.Token);
+            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, null, nativeMemory, linkedCts.Token);
             startedTasks.Add(waitTask);
 
             taskCoordinatorEntered = true;
@@ -1678,43 +1636,78 @@ public sealed partial class ZpaqService
                 primaryFailure).ConfigureAwait(false);
             throw new UnreachableException();
         }
+        finally
+        {
+            // Bounded cleanup reports diagnostics; it cannot end ownership.
+            // Never release native/source/credential owners while work lives.
+            await JoinStartedOwnersAsync(process, startedTasks).ConfigureAwait(false);
+        }
     }
 
-    private static async ValueTask<CpuWorkBudget.Lease?> ReserveNativeWorkersAsync(
-        string[] arguments, CancellationToken token)
-    {
-        int index = Array.IndexOf(arguments, "-threads");
-        if (index < 0) return null; // System-tool fault fixtures do not run ZPAQ worker teams.
-        ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
-        if (policy.MaxCpuWorkers < 2)
-            throw new InvalidOperationException("ZPAQ requires at least two CPU workers in the operation budget: one for the native worker and one for authenticated input processing.");
-        if (index + 1 >= arguments.Length || !int.TryParse(arguments[index + 1], NumberStyles.None,
-            CultureInfo.InvariantCulture, out int requested) || requested < 1)
-            throw new InvalidDataException("Invalid native ZPAQ worker budget.");
-        CpuWorkBudget.Lease lease = await CpuWorkBudget.AcquireAsync(policy.MaxCpuWorkers,
-            Math.Min(requested, policy.MaxCpuWorkers - 1), token, reservedHeadroom: 1).ConfigureAwait(false);
-        arguments[index + 1] = lease.Workers.ToString(CultureInfo.InvariantCulture);
-        return lease;
-    }
-
-    // Both pipe directions can overlap the child with the parent KDF. Reserve
-    // the maximum matrix before starting the child, so waiting for matrix memory
-    // can never deadlock against a compressor blocked on the parent pipe.
-    internal static long NativeResidentBudget(ArchiveOperationPolicy policy, bool reserveKdf)
-    {
-        long matrixHeadroom = reserveKdf ? checked((long)V13MasterKdf.MemoryMaxKiB * 1024) : 0;
-        long bytes = checked(policy.HeavyWorkerMemoryBudgetBytes - matrixHeadroom);
-        if (bytes < (1L << 30))
-            throw new IOException("The approved memory budget leaves less than 1 GiB for ZPAQ alongside the required Argon2 matrix and protected buffers. Increase the memory budget; KDF costs are never reduced.");
-        return bytes;
-    }
-
-    private static async ValueTask<OperationMemoryBudget.HeavyLease?> ReserveNativeMemoryAsync(
-        string[] arguments, bool reserveKdf, CancellationToken token)
+    private static ZpaqControlSession? CreateNativeControl(string[] arguments, ZpaqBoundSources? sources, string? outputDirectory = null)
     {
         if (Array.IndexOf(arguments, "-threads") < 0) return null;
-        return await OperationMemoryBudget.AcquireHeavyAsync(
-            NativeResidentBudget(ArchiveOperationPolicy.Current, reserveKdf), token).ConfigureAwait(false);
+        var phase = arguments.Contains("add", StringComparer.Ordinal) ? OperationPhase.Compression : OperationPhase.Extraction;
+        OperationProgressSource? progress = OperationProgressTracker.Current?.BeginPhase(phase, ProgressUnit.Bytes,
+            sources?.TotalBytes, sources is null ? ProgressTotalOrigin.Unknown : ProgressTotalOrigin.KnownInput);
+        var session = new ZpaqControlSession(ArchiveOperationPolicy.Current)
+        {
+            ReadSourceEntry = sources is null ? null : sources.EntryAsync,
+            ReadSourceBytes = sources is null ? null : sources.ReadAsync,
+            ObserveProgress = (phaseId, completed, sequence) =>
+            {
+                if (phaseId == (phase == OperationPhase.Compression ? 1UL : 2UL) && completed <= long.MaxValue && sequence <= long.MaxValue)
+                    progress?.Report((long)completed, (long)sequence);
+            },
+        };
+        try
+        {
+            if (!string.IsNullOrEmpty(outputDirectory)) session.BindOutput(outputDirectory, ArchiveOperationPolicy.Current.MaxExtractedTotalBytes);
+            else if (arguments[0] == "add") session.BindOutput(Path.GetDirectoryName(Path.GetFullPath(arguments[1]))!, ArchiveOperationPolicy.Current.MaxContainerBytes);
+            return session;
+        }
+        catch { session.Dispose(); throw; }
+    }
+
+    private static string[] WithNativeControl(string[] arguments, ZpaqControlSession? control)
+    {
+        if (control is null) return arguments;
+        if (arguments.Contains("-kv-control", StringComparer.Ordinal)) throw new InvalidDataException("Duplicate native control endpoint.");
+        int position = Array.IndexOf(arguments, "--");
+        if (position < 0) position = arguments.Length;
+        return [.. arguments[..position], "-kv-control", control.Address, Environment.ProcessId.ToString(CultureInfo.InvariantCulture), .. arguments[position..]];
+    }
+
+    // This owner covers the concrete runtime, stack and bounded queue windows.
+    // Models obtain separate byte-exact library leases through the control IPC.
+    internal static long NativeResidentBudget(ArchiveOperationPolicy policy, bool reserveKdf)
+        => policy.HeavyWorkerMemoryBudgetBytes;
+
+    private static async ValueTask<OperationMemoryBudget.HeavyLease?> ReserveNativeMemoryAsync(
+        string[] arguments, ZpaqBoundSources? sources, CancellationToken token)
+    {
+        int index = Array.IndexOf(arguments, "-threads");
+        if (index < 0) return null;
+        if (index + 1 >= arguments.Length || !int.TryParse(arguments[index + 1], NumberStyles.None,
+            CultureInfo.InvariantCulture, out int requested) || requested < 1)
+            throw new InvalidDataException("Invalid native worker request.");
+        ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
+        ArchiveOperationPolicy phasePolicy = policy.ForPhase(new PhaseResourceDemand(128L << 20, sources?.TotalBytes ?? 0));
+        int slots = Math.Max(1, phasePolicy.MaxQueuedChunks);
+        int workers = Math.Min(requested, Math.Min(policy.MaxCpuWorkers, slots));
+        arguments[index + 1] = workers.ToString(CultureInfo.InvariantCulture);
+        // Queue buffers have a finite per-slot format bound. Runtime/stack
+        // allowance is independent of machine RAM and archive expansion limits.
+        long blockBytes = sources is null ? 32L << 20 : Math.Max(64L << 10,
+            Math.Min(sources.LargestFileBytes, arguments[0] == "--pipe" ? 16L << 20 : 64L << 20));
+        // StringBuffer grows geometrically; old/new buffers can coexist during
+        // realloc, and a compressed output can coexist with its input.
+        long queueBytes = checked((workers + 1L) * (4 * blockBytes + (1L << 20)));
+        long metadataBytes = sources?.NativeMetadataBytes ?? (16L << 20);
+        if (sources is not null && arguments[0] == "add")
+            metadataBytes = checked(metadataBytes + ((sources.TotalBytes + 4095) / 4096) * 96);
+        long bytes = checked((128L << 20) + (workers + 4L) * (8L << 20) + queueBytes + metadataBytes);
+        return await OperationMemoryBudget.AcquireWorkingAsync(bytes, token).ConfigureAwait(false);
     }
 
     private static string[] WithNativeMemoryBudget(string[] arguments, OperationMemoryBudget.HeavyLease? memory)
@@ -1724,7 +1717,99 @@ public sealed partial class ZpaqService
             throw new InvalidDataException("A native memory budget cannot be supplied twice.");
         int position = Array.IndexOf(arguments, "--");
         if (position < 0) position = arguments.Length;
-        return [.. arguments[..position], "-kv-memory-budget", memory.Bytes.ToString(CultureInfo.InvariantCulture), .. arguments[position..]];
+        return [.. arguments[..position], "-kv-memory-budget", NativeResidentBudget(ArchiveOperationPolicy.Current, false).ToString(CultureInfo.InvariantCulture),
+            "-kv-base-memory", memory.Bytes.ToString(CultureInfo.InvariantCulture),
+            "-kv-queue-slots", arguments[Array.IndexOf(arguments, "-threads") + 1], .. arguments[position..]];
+    }
+
+    // KDF/global verification may run before the native producer/consumer owns
+    // any model memory or CPU permits. No payload is buffered in this bridge.
+    internal static async Task<ProcessResult> RunPreparedArchiveAsync(
+        Func<Stream, CancellationToken, Task> prepareAndProcess,
+        Func<Func<Stream, CancellationToken, Task>, CancellationToken, Task<ProcessResult>> launch,
+        CancellationToken token)
+    {
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(token);
+        using var deferred = new DeferredArchiveStream();
+        async Task ProcessAsync()
+        {
+            await Task.Yield();
+            await prepareAndProcess(deferred, lifetime.Token).ConfigureAwait(false);
+        }
+        Task consumer = ProcessAsync();
+        Exception? primary = null;
+        try
+        {
+            Task ready = deferred.Ready;
+            if (await Task.WhenAny(ready, consumer).ConfigureAwait(false) == consumer)
+            {
+                await consumer.ConfigureAwait(false);
+                throw new InvalidOperationException("The archive operation completed without consuming its native stream.");
+            }
+            await ready.WaitAsync(lifetime.Token).ConfigureAwait(false);
+            return await launch(async (stream, _) =>
+            {
+                deferred.Attach(stream);
+                await consumer.ConfigureAwait(false);
+            }, lifetime.Token).ConfigureAwait(false);
+        }
+        catch (Exception failure)
+        {
+            primary = failure;
+            deferred.Fail(failure);
+            lifetime.Cancel();
+            throw;
+        }
+        finally
+        {
+            // A failed launch does not free credentials or stream owners while
+            // the caller's KDF/verification still runs. Cancellation is not join.
+            if (!consumer.IsCompleted) deferred.Fail(primary ?? new IOException("The native archive stream closed before processing completed."));
+            try { await consumer.ConfigureAwait(false); }
+            catch (Exception joinFailure) when (primary is not null)
+            {
+                if (!ReferenceEquals(primary, joinFailure) && joinFailure is not OperationCanceledException)
+                    throw new AggregateException("Archive startup and caller processing both failed.", primary, joinFailure);
+            }
+        }
+    }
+
+    private sealed class DeferredArchiveStream : Stream, IPreparedArchiveSource, IPreparedArchiveDestination
+    {
+        private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<Stream> _stream = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal Task Ready => _ready.Task;
+        internal void Attach(Stream stream) => _stream.TrySetResult(stream);
+        internal void Fail(Exception failure) { _ready.TrySetException(failure); _stream.TrySetException(failure); }
+        public async ValueTask PrepareForConsumptionAsync(CancellationToken token)
+        {
+            _ready.TrySetResult();
+            _ = await _stream.Task.WaitAsync(token).ConfigureAwait(false);
+        }
+        private async ValueTask<Stream> GetAsync(CancellationToken token)
+        {
+            await PrepareForConsumptionAsync(token).ConfigureAwait(false);
+            return await _stream.Task.ConfigureAwait(false);
+        }
+        public override bool CanRead => true;
+        public override bool CanWrite => true;
+        public override bool CanSeek => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() => GetAsync(default).AsTask().GetAwaiter().GetResult().Flush();
+        public override async Task FlushAsync(CancellationToken token) => await (await GetAsync(token).ConfigureAwait(false)).FlushAsync(token).ConfigureAwait(false);
+        public override int Read(byte[] buffer, int offset, int count) => ReadAsync(buffer.AsMemory(offset, count)).AsTask().GetAwaiter().GetResult();
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken token = default) =>
+            await (await GetAsync(token).ConfigureAwait(false)).ReadAsync(buffer, token).ConfigureAwait(false);
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token) => ReadAsync(buffer.AsMemory(offset, count), token).AsTask();
+        public override void Write(byte[] buffer, int offset, int count) => WriteAsync(buffer.AsMemory(offset, count)).AsTask().GetAwaiter().GetResult();
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken token = default) =>
+            await (await GetAsync(token).ConfigureAwait(false)).WriteAsync(buffer, token).ConfigureAwait(false);
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken token) => WriteAsync(buffer.AsMemory(offset, count), token).AsTask();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long length) => throw new NotSupportedException();
+        // Native runner owns the attached process stream. This bridge never
+        // closes a stream while its producer/consumer is still using it.
     }
 
     private static async Task<ProcessResult> RunStdoutPipeAsync(
@@ -1733,7 +1818,8 @@ public sealed partial class ZpaqService
         string workingDirectory,
         Func<Stream, CancellationToken, Task> consumeArchive,
         IProgress<string>? progress,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        ZpaqBoundSources? sources = null
 #if KEEPVAULT_MACOS
         , TrustedNativeFileLease? macTrustedExecutable = null
 #endif
@@ -1741,9 +1827,10 @@ public sealed partial class ZpaqService
     {
         string[] stableArguments = arguments.ToArray();
         using OperationMemoryBudget.HeavyLease? nativeMemory = await ReserveNativeMemoryAsync(
-            stableArguments, reserveKdf: true, cancellationToken).ConfigureAwait(false);
+            stableArguments, sources, cancellationToken).ConfigureAwait(false);
         stableArguments = WithNativeMemoryBudget(stableArguments, nativeMemory);
-        using CpuWorkBudget.Lease? nativeCpu = await ReserveNativeWorkersAsync(stableArguments, cancellationToken).ConfigureAwait(false);
+        using ZpaqControlSession? control = CreateNativeControl(stableArguments, sources: sources);
+        stableArguments = WithNativeControl(stableArguments, control);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 #if KEEPVAULT_MACOS
         using MacZpaqSeatbelt sandbox = macTrustedExecutable is null
@@ -1773,6 +1860,7 @@ public sealed partial class ZpaqService
 #if KEEPVAULT_MACOS
             sandbox.RequireValidAfterStart("stdout", process.Id);
 #endif
+            if (control is not null) startedTasks.Add(control.RunAsync(process.Id, linkedCts.Token));
             var activity = new ProcessActivityTracker();
             // Enter the caller-supplied delegate inside an async boundary. A
             // synchronous throw must become a failed task so the common fail-fast
@@ -1790,9 +1878,9 @@ public sealed partial class ZpaqService
                 process,
                 activity,
                 linkedCts.Token,
-                nativeResidentLimit: nativeMemory?.Bytes);
+                nativeResidentLimit: nativeMemory is null ? null : NativeResidentBudget(ArchiveOperationPolicy.Current, false));
             startedTasks.Add(monitorTask);
-            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, nativeCpu, nativeMemory, linkedCts.Token);
+            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, null, nativeMemory, linkedCts.Token);
             startedTasks.Add(waitTask);
 
             taskCoordinatorEntered = true;
@@ -1815,6 +1903,12 @@ public sealed partial class ZpaqService
                 taskCoordinatorEntered,
                 primaryFailure).ConfigureAwait(false);
             throw new UnreachableException();
+        }
+        finally
+        {
+            // Bounded cleanup reports diagnostics; it cannot end ownership.
+            // Never release native/source/credential owners while work lives.
+            await JoinStartedOwnersAsync(process, startedTasks).ConfigureAwait(false);
         }
     }
 
@@ -1849,11 +1943,11 @@ public sealed partial class ZpaqService
         Func<Stream, CancellationToken, Task> writeArchive,
         IProgress<string>? progress,
         CancellationToken cancellationToken,
-        string? monitorStagingDirectory = null
+        string? monitorStagingDirectory = null,
+        ArchiveIntegrityLease? verifiedReadAtArchive = null
 #if KEEPVAULT_MACOS
         , MacExtractionStaging? macStaging = null
         , TrustedNativeFileLease? macTrustedExecutable = null
-        , ArchiveIntegrityLease? macReadAtArchive = null
 #else
         , WindowsExtractionStaging? windowsStaging = null
 #endif
@@ -1861,9 +1955,10 @@ public sealed partial class ZpaqService
     {
         string[] stableArguments = arguments.ToArray();
         using OperationMemoryBudget.HeavyLease? nativeMemory = await ReserveNativeMemoryAsync(
-            stableArguments, reserveKdf: true, cancellationToken).ConfigureAwait(false);
+            stableArguments, sources: null, cancellationToken).ConfigureAwait(false);
         stableArguments = WithNativeMemoryBudget(stableArguments, nativeMemory);
-        using CpuWorkBudget.Lease? nativeCpu = await ReserveNativeWorkersAsync(stableArguments, cancellationToken).ConfigureAwait(false);
+        using ZpaqControlSession? control = CreateNativeControl(stableArguments, sources: null, outputDirectory: monitorStagingDirectory);
+        stableArguments = WithNativeControl(stableArguments, control);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 #if KEEPVAULT_MACOS
         using MacZpaqSeatbelt sandbox = macTrustedExecutable is null
@@ -1895,15 +1990,14 @@ public sealed partial class ZpaqService
 #if KEEPVAULT_MACOS
             sandbox.RequireValidAfterStart("stdin", process.Id);
 #endif
+            if (control is not null) startedTasks.Add(control.RunAsync(process.Id, linkedCts.Token));
             var activity = new ProcessActivityTracker();
-#if KEEPVAULT_MACOS
-            if (macReadAtArchive is not null)
+            if (verifiedReadAtArchive is not null)
             {
-                startedTasks.Add(ServeVerifiedReadAtAndCloseAsync(macReadAtArchive,
+                startedTasks.Add(ServeVerifiedReadAtAndCloseAsync(verifiedReadAtArchive,
                     process.StandardOutput.BaseStream, process.StandardInput.BaseStream, activity, linkedCts.Token));
             }
             else
-#endif
             {
                 Task inputTask = WriteInputAndCloseAsync(process.StandardInput, writeArchive, activity, linkedCts.Token);
                 startedTasks.Add(inputTask);
@@ -1922,10 +2016,10 @@ public sealed partial class ZpaqService
 #else
                     , windowsStaging
 #endif
-                    , nativeResidentLimit: nativeMemory?.Bytes
+                    , nativeResidentLimit: nativeMemory is null ? null : NativeResidentBudget(ArchiveOperationPolicy.Current, false)
                   );
             startedTasks.Add(monitorTask);
-            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, nativeCpu, nativeMemory, linkedCts.Token);
+            Task waitTask = WaitForExitAndReleaseResourcesAsync(process, null, nativeMemory, linkedCts.Token);
             startedTasks.Add(waitTask);
 
             taskCoordinatorEntered = true;
@@ -1934,10 +2028,8 @@ public sealed partial class ZpaqService
             sandbox.RequireValid();
             sandbox.RequireNoSharedMemoryResidue();
 #endif
-#if KEEPVAULT_MACOS
-            if (macReadAtArchive is not null)
+            if (verifiedReadAtArchive is not null)
                 return new ProcessResult(process.ExitCode, errors.ToString(), process.ExitCode == 0 ? string.Empty : errors.ToString());
-#endif
             return new ProcessResult(process.ExitCode, output.ToString(), errors.ToString());
         }
         catch (Exception primaryFailure)
@@ -1950,9 +2042,14 @@ public sealed partial class ZpaqService
                 primaryFailure).ConfigureAwait(false);
             throw new UnreachableException();
         }
+        finally
+        {
+            // Bounded cleanup reports diagnostics; it cannot end ownership.
+            // Never release native/source/credential owners while work lives.
+            await JoinStartedOwnersAsync(process, startedTasks).ConfigureAwait(false);
+        }
     }
 
-#if KEEPVAULT_MACOS
     private static async Task ServeVerifiedReadAtAndCloseAsync(
         ArchiveIntegrityLease archive, Stream requests, Stream responses,
         ProcessActivityTracker activity, CancellationToken token)
@@ -1964,7 +2061,6 @@ public sealed partial class ZpaqService
         }
         finally { await responses.DisposeAsync().ConfigureAwait(false); }
     }
-#endif
 
 #if !KEEPVAULT_MACOS
     private static Process CreateProcess(string executable, IEnumerable<string> arguments, string workingDirectory)
@@ -1983,6 +2079,39 @@ public sealed partial class ZpaqService
         return process;
     }
 #endif
+
+    internal static async Task JoinStartedOwnersAsync(Process process, IReadOnlyCollection<Task> startedTasks)
+    {
+        bool confirmedExit;
+        try { confirmedExit = process.HasExited; } catch { confirmedExit = false; }
+        if (!confirmedExit || startedTasks.Any(static task => !task.IsCompleted))
+        {
+            try { OperationProgressTracker.Current?.BeginPhase(OperationPhase.Cleanup, ProgressUnit.Steps); }
+            catch { /* An observer cannot bypass the ownership barrier. */ }
+        }
+        // This is a lifetime barrier, not a deadline. A failed kill or broken
+        // OS wait retains every outer owner and keeps Cleanup visible. Only
+        // positively observed process termination authorizes release.
+        while (!confirmedExit)
+        {
+            try
+            {
+                await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+                confirmedExit = process.HasExited;
+            }
+            catch
+            {
+                // The fail-fast coordinator already preserves the primary
+                // failure. A transient wait failure must not free live owners.
+                await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+        foreach (Task task in startedTasks)
+        {
+            try { await task.ConfigureAwait(false); }
+            catch { /* Already observed by the fail-fast cleanup coordinator. */ }
+        }
+    }
 
     private static async Task RethrowAfterStartedProcessFailureAsync(
         Process process,

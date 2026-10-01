@@ -460,7 +460,7 @@ core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
 marketing_version='5.0.3'
-build_version='14'
+build_version='15'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
@@ -2126,8 +2126,46 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     fuzz.verified-input-10000
     fuzz.recovery-streaming-10000
     fuzz.verified-read-at-server-10000
+    fuzz.rev11-original-reader-10000
+    fuzz.rev11-range-index-10000
     resources.cpu-worker-budget
     resources.operation-storage-plan
+    resources.rev11-auto-planner
+    resources.rev11-chunk-window
+    io.rev11-input-fused
+    io.rev11-index-ram-small
+    io.rev11-index-spill
+    io.rev11-header-binding
+    io.rev11-repair-capability
+    gui.resource-policy
+    gui.rev11-preference-restart
+    gui.rev11-progress
+    gui.rev11-observer-isolation
+    v13-golden-readonly
+    v13-progress-native-ipc
+    v13-zpaq-bound-source
+    v13-zpaq-cpu-one
+    v13-zpaq-phase-readiness
+    v13-zpaq-owner-lifetime
+    deletion.rev11-creation-binding
+    io.rev11-repair-erasures
+    io.rev11-index-identical
+    io.rev11-index-cache-boundary
+    v13-time-no-wall
+    v13-time-no-cpu
+    v13-time-no-stall-abort
+    v13-progress-counts
+    v13-progress-order
+    v13-progress-unknown
+    v13-progress-eta
+    v13-progress-stale
+    v13-progress-clock
+    v13-progress-overlap
+    v13-progress-finish
+    v13-progress-bounds
+    v13-progress-equivalence
+    v13-progress-privacy
+    v13-progress-perf
     entropy.rev9-shuffle
     entropy.rev9-dual-composition
     entropy.rev9-suite-plans

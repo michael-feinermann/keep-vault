@@ -11,12 +11,13 @@ internal readonly record struct VerifiedArchiveAuthentication(
 
 internal enum VerifiedArchiveInputState
 {
-    Created, Capturing, CapturedUnverified, VerifyingGlobal, Verified, Consuming, Closed, Failed, Disposed,
+    Created, BoundUntrusted, PreflightBoundedHeader, IndexingAndGlobalVerify, Capturing, CapturedUnverified,
+    LocalCaptureSealed, PlainIntegrityVerified, VerifyingGlobal, Verified, Consuming, Closed, Failed, Disposed,
 }
 
 /// <summary>
-/// Disk-backed ciphertext capture or descriptor-bound plaintext input with an
-/// authenticated disk index. Every read authenticates complete physical
+/// Descriptor-bound original input with a RAM-first authenticated range index.
+/// The fused first pass binds its bounded header and both global transcripts. Every read authenticates complete physical
 /// ranges into a private buffer before copying the requested slice to the caller.
 /// No raw handle or mapping is exposed to consumers.
 /// </summary>
@@ -35,6 +36,9 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
     private readonly object _gate = new();
     private readonly object _positionGate = new();
     private readonly Queue<LockedSensitiveBuffer> _availableBuffers = new();
+    private readonly Dictionary<LockedSensitiveBuffer, long> _verifiedBufferRanges = [];
+    private long _secondPassBytes;
+    internal long SecondPassBytesForTests { get { lock (_gate) return _secondPassBytes; } }
     private LockedSensitiveBuffer?[] _buffers = [];
     private SemaphoreSlim? _readSlots;
     private SemaphoreSlim? _ioSlots;
@@ -46,8 +50,27 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
     private static readonly AsyncLocal<Action<VerifiedArchiveInput>?> BeforeSealHook = new();
     internal static Action<VerifiedArchiveInput>? BeforeSealForTests
     { get => BeforeSealHook.Value; set => BeforeSealHook.Value = value; }
-    private BoundFileTransaction? _spool;
-    private BoundFileTransaction? _index;
+    private AuthenticatedRangeIndex? _index;
+    private readonly List<OperationMemoryBudget.HeavyLease> _bufferMemory = [];
+    private OperationMemoryBudget.HeavyLease? _contextMemory;
+    private string? _originalPath;
+#if KEEPVAULT_MACOS
+    private MacFileIdentity _originalIdentity;
+#endif
+    private bool _fused;
+    private bool _plainIntegrity;
+    private bool _repairOnlyCapture;
+    private RecoveryRecordTable<byte[]>? _repairErasures;
+    private long _unreadableBlocks;
+    internal long CapturedUnreadableBlocks => _unreadableBlocks;
+    internal static readonly AsyncLocal<Func<long, int, bool>?> RepairReadFaultForTests = new();
+    private long _capturedRecords;
+    private long _firstPassBytes;
+    internal long FirstPassBytesForTests => Interlocked.Read(ref _firstPassBytes);
+    internal long ResidentIndexBytes => _index?.ResidentBytes ?? 0;
+    internal long DiskIndexBytes => _index?.DiskBytes ?? 0;
+    internal static Action? BeforeFirstPassForTests;
+    internal static readonly AsyncLocal<Action<VerifiedArchiveInput>?> FirstPassStartedForTests = new();
     private RecoveryMetadataBudget? _metadataBudget;
     private long _reservedIndexBytes;
     private FileStream? _original;
@@ -55,7 +78,6 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
     // each handle once: FileStream.SafeFileHandle flushes its buffered cursor
     // and is therefore not a thread-safe accessor during parallel file I/O.
     private SafeFileHandle? _dataHandle;
-    private SafeFileHandle? _indexHandle;
     private LockedSensitiveBuffer? _hmacKey;
     private LockedSensitiveBuffer? _skeinKey;
     private LockedSensitiveBuffer? _operationId;
@@ -90,180 +112,249 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
 
     internal VerifiedArchiveInputState State { get { lock (_gate) return _state; } }
 
+    // Conservative, copy-free three-pass comparison oracle. Production encrypted
+    // readers use BindEncryptedAsync and the fused first-pass view below.
     internal static Task<VerifiedArchiveInput> CaptureAsync(
         string path, ArchiveOperationPolicy? policy, CancellationToken cancellationToken) =>
-        Task.Run(() => Capture(path, policy ?? ArchiveOperationPolicy.Current, copyCiphertext: true, cancellationToken), cancellationToken);
+        CaptureOriginalAsync(path, policy, cancellationToken);
 
     internal static Task<VerifiedArchiveInput> CaptureOriginalAsync(
         string path, ArchiveOperationPolicy? policy, CancellationToken cancellationToken) =>
-        Task.Run(() => Capture(path, policy ?? ArchiveOperationPolicy.Current, copyCiphertext: false, cancellationToken), cancellationToken);
+        Task.Run(() => CaptureLocally(path, policy ?? ArchiveOperationPolicy.Current, cancellationToken), cancellationToken);
 
-    private static VerifiedArchiveInput Capture(string path, ArchiveOperationPolicy policy, bool copyCiphertext, CancellationToken token)
+    internal static Task<VerifiedArchiveInput> CaptureForRepairAsync(
+        string path, ArchiveOperationPolicy? policy, CancellationToken cancellationToken) =>
+        Task.Run(() => CaptureLocally(path, policy ?? ArchiveOperationPolicy.Current, cancellationToken, repairOnly: true), cancellationToken);
+
+    internal static Task<VerifiedArchiveInput> BindEncryptedAsync(
+        string path, ArchiveOperationPolicy? policy, CancellationToken cancellationToken) =>
+        Task.FromResult(Bind(path, policy ?? ArchiveOperationPolicy.Current, cancellationToken));
+
+    internal static Task<VerifiedArchiveInput> BindPlainAsync(
+        string path, ArchiveOperationPolicy? policy, CancellationToken cancellationToken) =>
+        BindEncryptedAsync(path, policy, cancellationToken);
+
+    private static VerifiedArchiveInput Bind(string path, ArchiveOperationPolicy policy, CancellationToken token)
     {
         using IDisposable policyScope = policy.EnterScope();
         token.ThrowIfCancellationRequested();
         RetryFailedCleanup();
         string fullPath = Path.GetFullPath(path);
-#if KEEPVAULT_MACOS
-        FileStream source = MacSafeFileSystem.OpenReadNoSymlinks(fullPath);
-#else
-        FileStream source = SecureFile.OpenReadNoReparse(fullPath, FileShare.Read, randomAccess: true);
-#endif
-        bool retainedOriginal = false;
-        try
-        {
-        SafeFileHandle sourceHandle = source.SafeFileHandle;
-#if KEEPVAULT_MACOS
-        MacFileIdentity sourceIdentity = MacSafeFileSystem.GetIdentity(sourceHandle);
-#endif
-        _ = NativePathResolver.RequireCanonicalFilePath(sourceHandle, fullPath, "Verified archive input");
-        if (copyCiphertext)
-        {
-            Span<byte> magic = stackalloc byte[7];
-            ReadExactlyAt(sourceHandle, magic, 0);
-            if (!magic.SequenceEqual("KZPAQ2\0"u8))
-                throw new InvalidDataException("Verified ciphertext capture requires an encrypted Keep Vault container.");
-        }
-        long length = RandomAccess.GetLength(sourceHandle);
-        long records = GetRecordCount(length);
-        long indexLength = checked(records * RecordBytes);
-        policy.RequireCaptureCapacity(length, indexLength, copyCiphertext);
-        Directory.CreateDirectory(policy.WorkingDirectory);
         var input = new VerifiedArchiveInput(policy);
         try
         {
-            input._state = VerifiedArchiveInputState.Capturing;
+#if KEEPVAULT_MACOS
+            input._original = MacSafeFileSystem.OpenReadNoSymlinks(fullPath);
+#else
+            input._original = SecureFile.OpenReadNoReparse(fullPath, FileShare.Read, randomAccess: true);
+#endif
+            input._dataHandle = input._original.SafeFileHandle;
+            input._originalPath = fullPath;
+#if KEEPVAULT_MACOS
+            input._originalIdentity = MacSafeFileSystem.GetIdentity(input._dataHandle);
+#endif
+            _ = NativePathResolver.RequireCanonicalFilePath(input._dataHandle, fullPath, "Verified archive input");
+            input._length = RandomAccess.GetLength(input._dataHandle);
+            if (input._length > policy.MaxContainerBytes) throw new IOException("The input exceeds the approved container byte limit.");
+            input._records = GetRecordCount(input._length);
+            long indexLength = checked(input._records * RecordBytes);
+            if (indexLength > policy.MaxMetadataBytes) throw new IOException("The range index exceeds the approved metadata limit.");
             input._memory = OperationMemoryBudget.AcquireAsync(policy, token).AsTask().GetAwaiter().GetResult();
             using IDisposable memoryScope = input._memory.EnterScope();
-            token = input._memory.Token;
             input._metadataBudget = RecoveryMetadataBudget.Capture(policy.MaxMetadataBytes);
             input._metadataBudget.Reserve(indexLength);
             input._reservedIndexBytes = indexLength;
-            input._length = length;
-            input._records = records;
+            input._contextMemory = OperationMemoryBudget.AcquireWorking(224);
             input._hmacKey = LockedSensitiveBuffer.Create(64);
             input._skeinKey = LockedSensitiveBuffer.Create(128);
             input._operationId = LockedSensitiveBuffer.Create(32);
+            input._contextMemory.CommitAllocation();
             RandomNumberGenerator.Fill(input._hmacKey.Bytes);
             RandomNumberGenerator.Fill(input._skeinKey.Bytes);
             RandomNumberGenerator.Fill(input._operationId.Bytes);
-            if (copyCiphertext) input._spool = CreatePrivateSpool(policy.WorkingDirectory, "ciphertext");
-            else input._original = source;
-            input._index = CreatePrivateSpool(policy.WorkingDirectory, "index");
-            input._dataHandle = input._spool?.Stream.SafeFileHandle ?? sourceHandle;
-            input._indexHandle = input._index.Stream.SafeFileHandle;
-            if (input._spool is not null) policy.RequireWorkingFileVolume(input._dataHandle);
-            policy.RequireWorkingFileVolume(input._indexHandle);
-            // One fixed private range buffer per admitted worker. Archive length
-            // only changes disk offsets, never the number of live buffers/tasks.
-            using CpuWorkBudget.Lease cpu = CpuWorkBudget.AcquireAsync(policy.MaxCpuWorkers,
-                checked((int)Math.Max(1, Math.Min(records, policy.MaxCpuWorkers))), token).AsTask().GetAwaiter().GetResult();
-            using IDisposable cpuScope = cpu.EnterScope();
-            int workers = cpu.Workers;
-            int buffers = checked((int)Math.Max(1, Math.Min(records, policy.MaxCpuWorkers)));
-            input._buffers = new LockedSensitiveBuffer?[buffers];
-            input._readSlots = new SemaphoreSlim(buffers, buffers);
-            input._ioSlots = new SemaphoreSlim(policy.MaxIoRequests, policy.MaxIoRequests);
-            for (int worker = 0; worker < buffers; worker++)
-            {
-                input._buffers[worker] = LockedSensitiveBuffer.Create(RangeBytes + TranscriptPrefixBytes);
-                input._availableBuffers.Enqueue(input._buffers[worker]!);
-            }
-            CaptureReadyForTests?.Invoke();
-            if (input._spool is not null) RandomAccess.SetLength(input._dataHandle, length);
-            RandomAccess.SetLength(input._indexHandle, indexLength);
-            long nextRange = -1;
-            Parallel.For(0, workers, new ParallelOptions { MaxDegreeOfParallelism = workers, CancellationToken = token }, worker =>
-            {
-#if KEEPVAULT_MACOS
-                using var qos = MacCpuWorkerQos.EnterSynchronousScope();
-#endif
-                Span<byte> record = stackalloc byte[RecordBytes];
-                LockedSensitiveBuffer buffer = input._buffers[worker]!;
-                for (;;)
-                {
-                    token.ThrowIfCancellationRequested();
-                    long index = Interlocked.Increment(ref nextRange);
-                    if (index >= records) break;
-                    int count = input.ExpectedRangeLength(index);
-                    Span<byte> captured = buffer.Bytes.AsSpan(TranscriptPrefixBytes, count);
-                    input._ioSlots.Wait(token);
-                    try { ReadExactlyAt(sourceHandle, captured, checked(index * RangeBytes)); }
-                    finally { input._ioSlots.Release(); }
-                    input.ComputeRecord(index, count, record, buffer.Bytes);
-                    input._ioSlots.Wait(token);
-                    try
-                    {
-                        if (input._spool is not null)
-                            RandomAccess.Write(input._dataHandle, captured, checked(index * RangeBytes));
-                        RandomAccess.Write(input._indexHandle, record, checked(index * RecordBytes));
-                    }
-                    finally { input._ioSlots.Release(); }
-                    OperationMemoryBudget.ReportProgress(count);
-                    CryptographicOperations.ZeroMemory(buffer.Bytes);
-                }
-            });
-            token.ThrowIfCancellationRequested();
-            Span<byte> eofProbe = stackalloc byte[1];
-            if (RandomAccess.Read(sourceHandle, eofProbe, length) != 0 || RandomAccess.GetLength(sourceHandle) != length)
-                throw new IOException("The source length changed during verified capture.");
-#if KEEPVAULT_MACOS
-            MacSafeFileSystem.RequirePathStillNamesHandle(sourceHandle, fullPath);
-            if (!sourceIdentity.SameObjectAndMetadata(MacSafeFileSystem.GetIdentity(sourceHandle)))
-                throw new IOException("The source object changed during verified capture.");
-#endif
-            input._spool?.Stream.Flush(flushToDisk: true);
-            input._index.Stream.Flush(flushToDisk: true);
-            input.ValidateLengths();
-            BeforeSealForTests?.Invoke(input);
-            // The independent kernel read-only handles were identity-bound
-            // before early unlink. No namespace lookup occurs after capture.
-            input._spool?.SealReadOnly();
-            input._index.SealReadOnly();
-            input._dataHandle = input._spool?.Stream.SafeFileHandle ?? sourceHandle;
-            input._indexHandle = input._index.Stream.SafeFileHandle;
-            input.ValidateLengths();
-            foreach (LockedSensitiveBuffer? buffer in input._buffers) CryptographicOperations.ZeroMemory(buffer!.Bytes);
-            input._state = VerifiedArchiveInputState.CapturedUnverified;
-            retainedOriginal = !copyCiphertext;
+            input._state = VerifiedArchiveInputState.BoundUntrusted;
             return input;
         }
         catch (Exception failure)
         {
             input._state = VerifiedArchiveInputState.Failed;
             try { input.Dispose(); }
-            catch (Exception cleanupFailure)
-            {
-                throw new AggregateException("Verified capture failed and its resources could not all be released.", failure, cleanupFailure);
-            }
+            catch (Exception cleanup) { throw new AggregateException("Input binding and cleanup failed.", failure, cleanup); }
             throw;
         }
-        }
-        finally { if (!retainedOriginal) source.Dispose(); }
     }
 
-    private static BoundFileTransaction CreatePrivateSpool(string directory, string purpose)
+    private void InitializeIndexAndBuffers()
     {
-        BoundFileTransaction file = BoundFileTransaction.CreateNew(
-            Path.Combine(directory, $".keep-vault-{purpose}.{Guid.NewGuid():N}"), 1, FileOptions.RandomAccess);
+        if (_index is not null) return;
+        _index = new AuthenticatedRangeIndex(_policy, _metadataBudget!, checked(_records * RecordBytes));
+        // Re-resolve the joined first-pass boundary from the real bound length
+        // and fresh pressure, instead of freezing the initial one-slot plan.
+        ArchiveOperationPolicy phase = _policy.ForPhase(new PhaseResourceDemand(
+            checked(224 + Math.Min(_length, RangeBytes) + TranscriptPrefixBytes), _length));
+        int buffers = checked((int)Math.Max(1, Math.Min(_records, Math.Min(phase.MaxIoRequests, phase.MaxCpuWorkers))));
+        _buffers = new LockedSensitiveBuffer?[buffers];
+        _readSlots = new SemaphoreSlim(buffers, buffers);
+        _ioSlots = new SemaphoreSlim(phase.MaxIoRequests, phase.MaxIoRequests);
+        // Establish owner slots before acquiring a lease; a List growth failure
+        // must not strand an admitted RAM charge outside the retryable owner.
+        _bufferMemory.EnsureCapacity(buffers);
+        for (int worker = 0; worker < buffers; worker++)
+        {
+            int size = checked((int)Math.Min(RangeBytes, Math.Max(1, _length)) + TranscriptPrefixBytes + RecordBytes);
+            OperationMemoryBudget.HeavyLease lease = OperationMemoryBudget.AcquireWorking(size);
+            _bufferMemory.Add(lease);
+            _buffers[worker] = LockedSensitiveBuffer.Create(size);
+            lease.CommitAllocation();
+            _availableBuffers.Enqueue(_buffers[worker]!);
+            _verifiedBufferRanges.Add(_buffers[worker]!, -1);
+        }
+    }
+
+    private static VerifiedArchiveInput CaptureLocally(string path, ArchiveOperationPolicy policy, CancellationToken token, bool repairOnly = false)
+    {
+        VerifiedArchiveInput input = Bind(path, policy, token);
         try
         {
-            file.PrepareReadOnly();
-            // unlink on macOS; object-bound delete-on-close on Windows. This is
-            // cleanup, not the security proof: existing writers are covered by MACs.
-            file.DeleteBound();
-            return file;
+            using IDisposable memoryScope = input._memory!.EnterScope();
+            using IDisposable policyScope = policy.EnterScope();
+            input._repairOnlyCapture = repairOnly;
+            input._state = VerifiedArchiveInputState.Capturing;
+            input.InitializeIndexAndBuffers();
+            using OperationProgressSource? captureProgress = OperationProgressTracker.Current?.BeginPhase(
+                repairOnly ? OperationPhase.Recovery : OperationPhase.Inventory, ProgressUnit.Bytes,
+                input._length, ProgressTotalOrigin.KnownInput, passId: 1);
+            CaptureReadyForTests?.Invoke();
+            Span<byte> record = stackalloc byte[RecordBytes];
+            for (long index = 0; index < input._records; index++)
+            {
+                token.ThrowIfCancellationRequested();
+                int count = input.ExpectedRangeLength(index);
+                LockedSensitiveBuffer buffer = input._buffers[0]!;
+                input.CaptureRange(index, buffer.Bytes.AsSpan(TranscriptPrefixBytes, count));
+                using (CpuWorkBudget.Lease? localCpu = CpuWorkBudget.IsOwnedByCurrentContext ? null
+                    : CpuWorkBudget.AcquireAsync(policy.MaxCpuWorkers, 1, token).AsTask().GetAwaiter().GetResult())
+                using (IDisposable? localScope = localCpu?.EnterScope())
+                    input.ComputeRecord(index, count, record, buffer.Bytes);
+                input._index!.WriteAt(record, checked(index * RecordBytes));
+                input._capturedRecords++;
+                input._firstPassBytes = checked(input._firstPassBytes + count);
+                captureProgress?.Advance(count);
+                OperationMemoryBudget.ReportProgress(count);
+                CryptographicOperations.ZeroMemory(buffer.Bytes);
+            }
+            input.CompleteCapture();
+            input._state = VerifiedArchiveInputState.CapturedUnverified;
+            return input;
         }
         catch (Exception failure)
         {
-            var failures = new List<Exception> { failure };
-            try { file.DeleteBound(); }
-            catch (Exception cleanupFailure) { failures.Add(cleanupFailure); }
-            try { file.Dispose(); }
-            catch (Exception cleanupFailure) { failures.Add(cleanupFailure); }
-            if (failures.Count == 1) throw;
-            throw new AggregateException("Private working-file binding or its bound cleanup failed.", failures);
+            input._state = VerifiedArchiveInputState.Failed;
+            try { input.Dispose(); }
+            catch (Exception cleanup) { throw new AggregateException("Local capture and cleanup failed.", failure, cleanup); }
+            throw;
         }
+    }
+
+    private void ReadOriginal(Span<byte> bytes, long offset)
+    {
+        if (_repairOnlyCapture && RepairReadFaultForTests.Value?.Invoke(offset, bytes.Length) == true)
+            throw new IOException("Injected original-source read failure.");
+        ReadExactlyAt(_dataHandle!, bytes, offset);
+    }
+
+    private void CaptureRange(long index, Span<byte> bytes)
+    {
+        ValidateSource();
+        long offset = checked(index * RangeBytes);
+        try { ReadOriginal(bytes, offset); }
+        catch (IOException) when (_repairOnlyCapture)
+        {
+            // Erasures are an explicit property of the repair capability only.
+            // A new candidate must still satisfy its independently certified
+            // manifest and both full container MACs before publication.
+            ValidateSource();
+            byte[] mask = new byte[40];
+            BinaryPrimitives.WriteInt64BigEndian(mask, index);
+            try
+            {
+                for (int inside = 0; inside < bytes.Length; inside += 4096)
+                {
+                    int count = Math.Min(4096, bytes.Length - inside);
+                    try { ReadOriginal(bytes.Slice(inside, count), checked(offset + inside)); }
+                    catch (IOException)
+                    {
+                        ValidateSource();
+                        bytes.Slice(inside, count).Clear();
+                        int block = inside / 4096;
+                        mask[8 + block / 8] |= (byte)(1 << (block % 8));
+                        _unreadableBlocks = checked(_unreadableBlocks + 1);
+                    }
+                }
+                if (mask.AsSpan(8).IndexOfAnyExcept((byte)0) >= 0)
+                {
+                    _repairErasures ??= new RecoveryRecordTable<byte[]>(_policy);
+                    _repairErasures.Add(mask);
+                }
+            }
+            finally { CryptographicOperations.ZeroMemory(mask); }
+        }
+    }
+
+    private bool FindErasureMask(long range, Span<byte> mask)
+    {
+        if (_repairErasures is null) return false;
+        int lower = 0, upper = _repairErasures.Count - 1;
+        while (lower <= upper)
+        {
+            int middle = lower + (upper - lower) / 2;
+            byte[] record = _repairErasures[middle];
+            try
+            {
+                if (record.Length != 40) throw new CryptographicException("Invalid authenticated repair-erasure record.");
+                long index = BinaryPrimitives.ReadInt64BigEndian(record);
+                if (index < 0 || index >= _records) throw new CryptographicException("Invalid repair-erasure position.");
+                if (index == range) { record.AsSpan(8).CopyTo(mask); return true; }
+                if (index < range) lower = middle + 1; else upper = middle - 1;
+            }
+            finally { CryptographicOperations.ZeroMemory(record); }
+        }
+        return false;
+    }
+
+    private void ReadCapturedRange(long index, Span<byte> bytes)
+    {
+        Span<byte> mask = stackalloc byte[32];
+        if (!_repairOnlyCapture || !FindErasureMask(index, mask))
+        { ReadOriginal(bytes, checked(index * RangeBytes)); return; }
+        // Only captured erasures can be substituted. No later read failure
+        // creates a new expected range tag or widens this frozen mask.
+        long offset = checked(index * RangeBytes);
+        for (int inside = 0; inside < bytes.Length; inside += 4096)
+        {
+            int count = Math.Min(4096, bytes.Length - inside), block = inside / 4096;
+            if ((mask[block / 8] & (1 << (block % 8))) != 0) bytes.Slice(inside, count).Clear();
+            else ReadOriginal(bytes.Slice(inside, count), checked(offset + inside));
+        }
+    }
+
+    private void CompleteCapture()
+    {
+        ValidateSource();
+        if (_capturedRecords != _records || _firstPassBytes != _length)
+            throw new IOException("The original input was not completely captured.");
+        Span<byte> probe = stackalloc byte[1];
+        if (RandomAccess.Read(_dataHandle!, probe, _length) != 0) throw new IOException("The source grew during capture.");
+        BeforeSealForTests?.Invoke(this);
+        _index!.Seal();
+        ValidateLengths();
+    }
+
+    internal Task VerifyPlainIntegrityAsync(
+        Func<Stream, CancellationToken, Task<VerifiedArchiveAuthentication>> verifier, CancellationToken token)
+    {
+        _plainIntegrity = true;
+        return VerifyGloballyAsync(verifier, token);
     }
 
     internal async Task VerifyGloballyAsync(
@@ -273,9 +364,12 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
         ArgumentNullException.ThrowIfNull(verifier);
         lock (_gate)
         {
-            RequireState(VerifiedArchiveInputState.CapturedUnverified);
-            _state = VerifiedArchiveInputState.VerifyingGlobal;
+            if (_repairOnlyCapture || _state is not (VerifiedArchiveInputState.CapturedUnverified or VerifiedArchiveInputState.BoundUntrusted))
+                throw new InvalidOperationException("Input is not available for first verification.");
+            _fused = _state == VerifiedArchiveInputState.BoundUntrusted;
+            _state = _fused ? VerifiedArchiveInputState.PreflightBoundedHeader : VerifiedArchiveInputState.VerifyingGlobal;
             _position = 0;
+            _activeReads++; // Own every first-pass buffer until callback and hash jobs have joined.
         }
         VerifiedArchiveAuthentication result = default;
         try
@@ -286,8 +380,10 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
                 cancellationToken, _closing.Token, _memory?.Token ?? CancellationToken.None);
             cancellationToken = verificationCancellation.Token;
             cancellationToken.ThrowIfCancellationRequested();
-            using var view = new VerificationView(this);
+            using Stream view = _fused ? new FirstPassView(this, cancellationToken) : new VerificationView(this);
+            if (_plainIntegrity && view is FirstPassView plainView) plainView.BeginFirstPass(0);
             result = await verifier(view, cancellationToken).ConfigureAwait(false);
+            if (_fused) ((FirstPassView)view).Complete();
             cancellationToken.ThrowIfCancellationRequested();
             bool hmac = result.ExpectedSha3 is { Length: 64 } && result.ActualSha3 is { Length: 64 }
                 && CryptographicOperations.FixedTimeEquals(result.ExpectedSha3, result.ActualSha3);
@@ -296,10 +392,10 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
             if (!(hmac & skein)) throw new CryptographicException("Wrong password or manipulated container.");
             lock (_gate)
             {
-                RequireState(VerifiedArchiveInputState.VerifyingGlobal);
+                RequireState(_fused ? VerifiedArchiveInputState.IndexingAndGlobalVerify : VerifiedArchiveInputState.VerifyingGlobal);
                 ValidateLengths();
                 _position = 0;
-                _state = VerifiedArchiveInputState.Verified;
+                _state = _plainIntegrity ? VerifiedArchiveInputState.PlainIntegrityVerified : VerifiedArchiveInputState.Verified;
             }
         }
         catch
@@ -314,6 +410,7 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
             if (result.ActualSha3 is not null) CryptographicOperations.ZeroMemory(result.ActualSha3);
             if (result.ExpectedSkein is not null) CryptographicOperations.ZeroMemory(result.ExpectedSkein);
             if (result.ActualSkein is not null) CryptographicOperations.ZeroMemory(result.ActualSkein);
+            lock (_gate) { _activeReads--; Monitor.PulseAll(_gate); }
         }
     }
 
@@ -361,11 +458,22 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
 
     private void ValidateLengths()
     {
-        if (RandomAccess.GetLength(_dataHandle!) != _length || RandomAccess.GetLength(_indexHandle!) != checked(_records * RecordBytes))
-            throw new IOException("The verified spool or range index was truncated or extended.");
+        ValidateSource();
+        if (_index is null || _index.Length != checked(_records * RecordBytes))
+            throw new IOException("The range index was truncated or extended.");
     }
 
-    private int ReadProtected(Span<byte> destination, long offset, bool verification, CancellationToken token)
+    internal void ValidateSource()
+    {
+        if (RandomAccess.GetLength(_dataHandle!) != _length) throw new IOException("The bound source length changed.");
+#if KEEPVAULT_MACOS
+        MacSafeFileSystem.RequirePathStillNamesHandle(_dataHandle!, _originalPath!);
+        if (!_originalIdentity.SameObjectAndMetadata(MacSafeFileSystem.GetIdentity(_dataHandle!)))
+            throw new IOException("The bound source identity or metadata changed.");
+#endif
+    }
+
+    private int ReadProtected(Span<byte> destination, long offset, bool verification, CancellationToken token, bool localCapture = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         lock (_gate) RequireLiveContext();
@@ -374,25 +482,32 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
         token = readCancellation.Token;
         using IDisposable policyScope = _policy.EnterScope();
         using IDisposable? memoryScope = _memory?.EnterScope();
-        using CpuWorkBudget.Lease? cpu = CpuWorkBudget.IsOwnedByCurrentContext ? null
-            : CpuWorkBudget.AcquireAsync(_policy.MaxCpuWorkers, 1, token).AsTask().GetAwaiter().GetResult();
-        using IDisposable? cpuScope = cpu?.EnterScope();
         _readSlots!.Wait(token);
         LockedSensitiveBuffer? privateBuffer = null;
         int requested = 0;
+        long cachedRange = -1;
+        bool succeeded = false;
         try
         {
             lock (_gate)
             {
-                if (verification) RequireState(VerifiedArchiveInputState.VerifyingGlobal);
+                if (localCapture) RequireState(VerifiedArchiveInputState.LocalCaptureSealed);
+                else if (verification) RequireState(VerifiedArchiveInputState.VerifyingGlobal);
                 else
                 {
-                    if (_state is not (VerifiedArchiveInputState.Verified or VerifiedArchiveInputState.Consuming))
+                    if (_state is not (VerifiedArchiveInputState.Verified or VerifiedArchiveInputState.PlainIntegrityVerified or VerifiedArchiveInputState.Consuming))
                         throw new InvalidOperationException("Archive bytes are unavailable before both global MACs pass.");
                     _state = VerifiedArchiveInputState.Consuming;
                 }
                 requested = checked((int)Math.Min(destination.Length, Math.Max(0, _length - offset)));
+                // Prefer the immutable verified range already held by this
+                // pool. Only the exclusive borrower may replace its contents.
+                long requestedRange = offset / RangeBytes;
+                LockedSensitiveBuffer? preferred = _availableBuffers.FirstOrDefault(buffer => _verifiedBufferRanges[buffer] == requestedRange);
+                if (preferred is not null)
+                    while (!ReferenceEquals(_availableBuffers.Peek(), preferred)) _availableBuffers.Enqueue(_availableBuffers.Dequeue());
                 privateBuffer = _availableBuffers.Dequeue();
+                cachedRange = _verifiedBufferRanges[privateBuffer];
                 _activeReads++;
             }
             int copied = 0;
@@ -410,18 +525,30 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
                 try
                 {
                     ValidateLengths();
-                    ReadExactlyAt(_dataHandle!, bytes, checked(index * RangeBytes));
-                    ReadExactlyAt(_indexHandle!, stored, checked(index * RecordBytes));
+                    if (cachedRange != index)
+                    {
+                        ReadCapturedRange(index, bytes);
+                        lock (_gate) _secondPassBytes = checked(_secondPassBytes + count);
+                    }
+                    _index!.ReadExactlyAt(stored, checked(index * RecordBytes));
                 }
                 finally { _ioSlots.Release(); }
                 // Neither untrusted index field determines an allocation or offset.
                 if (BinaryPrimitives.ReadInt64BigEndian(stored) != index
                     || BinaryPrimitives.ReadInt32BigEndian(stored[8..]) != count)
                     throw new CryptographicException("The verified range record has an invalid position or length.");
-                ComputeRecord(index, count, actual, privateBuffer.Bytes);
-                bool hmac = CryptographicOperations.FixedTimeEquals(stored.Slice(12, 64), actual.Slice(12, 64));
-                bool skein = CryptographicOperations.FixedTimeEquals(stored.Slice(76, 128), actual.Slice(76, 128));
-                if (!(hmac & skein)) throw new CryptographicException("The captured archive range changed.");
+                using (CpuWorkBudget.Lease? cpu = CpuWorkBudget.IsOwnedByCurrentContext ? null
+                    : CpuWorkBudget.AcquireAsync(_policy.MaxCpuWorkers, 1, token).AsTask().GetAwaiter().GetResult())
+                using (IDisposable? cpuScope = cpu?.EnterScope())
+                {
+                    if (cachedRange == index) privateBuffer.Bytes.AsSpan(privateBuffer.Bytes.Length - RecordBytes).CopyTo(actual);
+                    else ComputeRecord(index, count, actual, privateBuffer.Bytes);
+                    bool hmac = CryptographicOperations.FixedTimeEquals(stored.Slice(12, 64), actual.Slice(12, 64));
+                    bool skein = CryptographicOperations.FixedTimeEquals(stored.Slice(76, 128), actual.Slice(76, 128));
+                    if (!(hmac & skein)) throw new CryptographicException("The captured archive range changed.");
+                }
+                actual.CopyTo(privateBuffer.Bytes.AsSpan(privateBuffer.Bytes.Length - RecordBytes));
+                cachedRange = index;
                 RangeVerifiedForTests?.Invoke(index);
                 int take = Math.Min(requested - copied, count - inside);
                 bytes.Slice(inside, take).CopyTo(destination[copied..]);
@@ -433,10 +560,12 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
             finally { _ioSlots.Release(); }
             lock (_gate)
             {
-                if (verification) RequireState(VerifiedArchiveInputState.VerifyingGlobal);
-                else if (_state is not (VerifiedArchiveInputState.Verified or VerifiedArchiveInputState.Consuming))
+                if (localCapture) RequireState(VerifiedArchiveInputState.LocalCaptureSealed);
+                else if (verification) RequireState(VerifiedArchiveInputState.VerifyingGlobal);
+                else if (_state is not (VerifiedArchiveInputState.Verified or VerifiedArchiveInputState.PlainIntegrityVerified or VerifiedArchiveInputState.Consuming))
                     throw new InvalidOperationException("The verified input closed or failed while a read was pending.");
             }
+            succeeded = true;
             return copied;
         }
         catch
@@ -451,9 +580,10 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
         {
             if (privateBuffer is not null)
             {
-                CryptographicOperations.ZeroMemory(privateBuffer.Bytes);
+                if (!succeeded) CryptographicOperations.ZeroMemory(privateBuffer.Bytes);
                 lock (_gate)
                 {
+                    _verifiedBufferRanges[privateBuffer] = succeeded ? cachedRange : -1;
                     _availableBuffers.Enqueue(privateBuffer);
                     _activeReads--;
                     Monitor.PulseAll(_gate);
@@ -498,7 +628,7 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
     }
     public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
         ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
-    public override bool CanRead => State is VerifiedArchiveInputState.Verified or VerifiedArchiveInputState.Consuming;
+    public override bool CanRead => State is VerifiedArchiveInputState.Verified or VerifiedArchiveInputState.PlainIntegrityVerified or VerifiedArchiveInputState.Consuming;
     public override bool CanSeek => State is not (VerifiedArchiveInputState.Disposed or VerifiedArchiveInputState.Failed or VerifiedArchiveInputState.Closed);
     public override bool CanWrite => false;
     public override long Length { get { lock (_gate) { RequireLiveContext(); return _length; } } }
@@ -547,18 +677,227 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
             _operationId?.ZeroForDisposal();
             // Retain owners in Closed after a cleanup failure. Reads stay
             // forbidden, while a later Dispose can retry every failed resource.
-            SecureMemory.DisposeAll([.. _buffers, _hmacKey, _skeinKey, _operationId, _spool, _index, _original]);
+            SecureMemory.DisposeAll([.. _buffers, _hmacKey, _skeinKey, _operationId, _index, _repairErasures, _original]);
             _metadataBudget?.Release(_reservedIndexBytes);
             _reservedIndexBytes = 0;
             _metadataBudget = null;
-            _buffers = []; _availableBuffers.Clear(); _hmacKey = null; _skeinKey = null; _operationId = null;
-            _spool = null; _index = null; _original = null;
-            _dataHandle = null; _indexHandle = null;
+            _buffers = []; _availableBuffers.Clear(); _verifiedBufferRanges.Clear(); _hmacKey = null; _skeinKey = null; _operationId = null;
+            _index = null; _repairErasures = null; _original = null;
+            _dataHandle = null;
+            foreach (OperationMemoryBudget.HeavyLease lease in _bufferMemory) lease.Dispose();
+            _bufferMemory.Clear();
+            _contextMemory?.Dispose(); _contextMemory = null;
             _memory?.Dispose(); _memory = null;
             _state = VerifiedArchiveInputState.Disposed;
             lock (OwnersGate) Owners.Remove(this);
         }
         base.Dispose(disposing);
+    }
+
+    internal Stream OpenPlainCapture()
+    {
+        lock (_gate)
+        {
+            RequireState(VerifiedArchiveInputState.CapturedUnverified);
+            if (_repairOnlyCapture) throw new InvalidOperationException("A repair capture cannot authorize a plain archive consumer.");
+            _state = VerifiedArchiveInputState.LocalCaptureSealed;
+            return new PlainCapturedRead(this);
+        }
+    }
+
+    internal RepairCiphertextRead OpenRepairCiphertext()
+    {
+        lock (_gate)
+        {
+            RequireState(VerifiedArchiveInputState.CapturedUnverified);
+            _state = VerifiedArchiveInputState.LocalCaptureSealed;
+            return new RepairCiphertextRead(this);
+        }
+    }
+
+    // These local capabilities cannot make the owner globally verified. The
+    // repair caller can read only captured ciphertext and must independently
+    // bind/authenticate a completed candidate before publication.
+    internal sealed class RepairCiphertextRead : LocalCapturedRead
+    { internal RepairCiphertextRead(VerifiedArchiveInput owner) : base(owner) { } }
+    private sealed class PlainCapturedRead(VerifiedArchiveInput owner) : LocalCapturedRead(owner);
+    internal abstract class LocalCapturedRead(VerifiedArchiveInput owner) : Stream, IPrivateSnapshotRandomAccess
+    {
+        private readonly object _positionGate = new();
+        private long _position;
+        private bool _closed;
+        public override bool CanRead => !_closed;
+        public override bool CanSeek => !_closed;
+        public override bool CanWrite => false;
+        public override long Length { get { ObjectDisposedException.ThrowIf(_closed, this); return owner.Length; } }
+        public override long Position
+        {
+            get { lock (_positionGate) return _position; }
+            set { lock (_positionGate) { if (value < 0 || value > Length) throw new ArgumentOutOfRangeException(nameof(value)); _position = value; } }
+        }
+        internal int ReadAt(Span<byte> bytes, long offset, CancellationToken token = default)
+        { ObjectDisposedException.ThrowIf(_closed, this); return owner.ReadProtected(bytes, offset, false, token, localCapture: true); }
+        public ValueTask<int> ReadAtAsync(Memory<byte> bytes, long offset, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(ReadAt(bytes.Span, offset, cancellationToken));
+        public override int Read(Span<byte> bytes)
+        { lock (_positionGate) { int count = ReadAt(bytes, _position); _position += count; return count; } }
+        public override int Read(byte[] bytes, int offset, int count) => Read(bytes.AsSpan(offset, count));
+        public override ValueTask<int> ReadAsync(Memory<byte> bytes, CancellationToken cancellationToken = default)
+        { lock (_positionGate) { int count = ReadAt(bytes.Span, _position, cancellationToken); _position += count; return ValueTask.FromResult(count); } }
+        public override Task<int> ReadAsync(byte[] bytes, int offset, int count, CancellationToken cancellationToken) => ReadAsync(bytes.AsMemory(offset, count), cancellationToken).AsTask();
+        public override long Seek(long offset, SeekOrigin origin)
+        { lock (_positionGate) { Position = origin switch { SeekOrigin.Begin => offset, SeekOrigin.Current => checked(_position + offset), SeekOrigin.End => checked(Length + offset), _ => throw new ArgumentOutOfRangeException(nameof(origin)) }; return Position; } }
+        public override void Flush() { }
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] bytes, int offset, int count) => throw new NotSupportedException();
+        protected override void Dispose(bool disposing) { _closed = true; base.Dispose(disposing); }
+    }
+
+    internal static void BeginFusedAuthentication(Stream stream, long ciphertextOffset)
+    {
+        if (stream is FirstPassView first) first.BeginFirstPass(ciphertextOffset);
+    }
+
+    private sealed class FirstPassView : Stream
+    {
+        private const int MaximumPreflightBytes = 16 * 1024 + 7 + 4 + 64 + 128;
+        private readonly VerifiedArchiveInput owner;
+        private readonly MemoryStream _header;
+        private readonly CancellationToken _token;
+        private readonly OperationMemoryBudget.HeavyLease _headerMemory;
+        internal FirstPassView(VerifiedArchiveInput input, CancellationToken token)
+        {
+            owner = input; _token = token;
+            _headerMemory = OperationMemoryBudget.AcquireWorking(MaximumPreflightBytes);
+            try { _header = new MemoryStream(MaximumPreflightBytes); _headerMemory.CommitAllocation(); }
+            catch { _headerMemory.Dispose(); throw; }
+        }
+        private long _position;
+        private long _batchStart = -1;
+        private int _batchCount;
+        private long _nextRange;
+        private bool _started, _closed;
+        private OperationProgressSource? _progress;
+        public override bool CanRead => !_closed;
+        public override bool CanSeek => !_closed;
+        public override bool CanWrite => false;
+        public override long Length => owner.Length;
+        public override long Position
+        {
+            get => _position;
+            set { if (value != _position) throw new InvalidOperationException("The fused verification view is strictly ordered."); }
+        }
+        internal void BeginFirstPass(long offset)
+        {
+            _token.ThrowIfCancellationRequested();
+            if (_closed || _started || offset != _position || offset != _header.Length)
+                throw new InvalidOperationException("Invalid frozen header boundary.");
+            owner.InitializeIndexAndBuffers();
+            lock (owner._gate)
+            {
+                owner.RequireState(VerifiedArchiveInputState.PreflightBoundedHeader);
+                owner._state = VerifiedArchiveInputState.IndexingAndGlobalVerify;
+            }
+            BeforeFirstPassForTests?.Invoke();
+            FirstPassStartedForTests.Value?.Invoke(owner);
+            _progress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.GlobalVerification,
+                ProgressUnit.Bytes, owner._length, ProgressTotalOrigin.KnownInput, passId: 1);
+            _started = true;
+            // Header-only physical ranges must be captured too, even when the
+            // logical global transcript starts after a physical range boundary.
+            for (long range = 0; range <= offset / RangeBytes && range < owner._records; range++) Load(range);
+        }
+        private LockedSensitiveBuffer BufferForRange(long range) => owner._buffers[checked((int)(range - _batchStart))]!;
+        private void Load(long range)
+        {
+            if (range >= _batchStart && range < _batchStart + _batchCount) return;
+            if (range != _nextRange) throw new InvalidOperationException("A fused range may be captured exactly once, in order.");
+            _token.ThrowIfCancellationRequested();
+            int count = checked((int)Math.Min(owner._buffers.Length, owner._records - range));
+            int workers = CpuWorkBudget.IsOwnedByCurrentContext ? 1 : count;
+            Parallel.For(0, count, new ParallelOptions { MaxDegreeOfParallelism = workers, CancellationToken = _token }, slot =>
+            {
+#if KEEPVAULT_MACOS
+                using var qos = MacCpuWorkerQos.EnterSynchronousScope();
+#endif
+                long index = checked(range + slot);
+                owner.ValidateSource();
+                int length = owner.ExpectedRangeLength(index);
+                LockedSensitiveBuffer buffer = owner._buffers[slot]!;
+                Span<byte> bytes = buffer.Bytes.AsSpan(TranscriptPrefixBytes, length);
+                ReadExactlyAt(owner._dataHandle!, bytes, checked(index * RangeBytes));
+                long start = checked(index * RangeBytes);
+                int prefixCount = checked((int)Math.Max(0, Math.Min(length, _header.Length - start)));
+                if (prefixCount != 0 && !CryptographicOperations.FixedTimeEquals(bytes[..prefixCount],
+                        _header.GetBuffer().AsSpan(checked((int)start), prefixCount)))
+                    throw new CryptographicException("The preflight header or stored authentication tags changed during KDF.");
+                Span<byte> record = stackalloc byte[RecordBytes];
+                using (CpuWorkBudget.Lease? cpu = CpuWorkBudget.IsOwnedByCurrentContext ? null
+                    : CpuWorkBudget.AcquireAsync(owner._policy.MaxCpuWorkers, 1, _token).AsTask().GetAwaiter().GetResult())
+                using (IDisposable? cpuScope = cpu?.EnterScope())
+                    owner.ComputeRecord(index, length, record, buffer.Bytes);
+                owner._index!.WriteAt(record, checked(index * RecordBytes));
+                lock (owner._gate)
+                {
+                    owner._capturedRecords = checked(owner._capturedRecords + 1);
+                    owner._firstPassBytes = checked(owner._firstPassBytes + length);
+                }
+                _progress?.Advance(length);
+            });
+            _batchStart = range; _batchCount = count; _nextRange = checked(range + count);
+        }
+        public override int Read(Span<byte> destination)
+        {
+            ObjectDisposedException.ThrowIf(_closed, this);
+            _token.ThrowIfCancellationRequested();
+            lock (owner._gate) owner.RequireState(_started ? VerifiedArchiveInputState.IndexingAndGlobalVerify : VerifiedArchiveInputState.PreflightBoundedHeader);
+            int count = checked((int)Math.Min(destination.Length, owner._length - _position));
+            if (!_started)
+            {
+                if (checked(_position + count) > MaximumPreflightBytes) throw new InvalidDataException("Preflight exceeds the bounded container header.");
+                ReadExactlyAt(owner._dataHandle!, destination[..count], _position);
+                _header.Write(destination[..count]);
+                _position += count;
+                return count;
+            }
+            int copied = 0;
+            while (copied < count)
+            {
+                long range = _position / RangeBytes;
+                Load(range);
+                int inside = checked((int)(_position % RangeBytes));
+                int take = Math.Min(count - copied, owner.ExpectedRangeLength(range) - inside);
+                BufferForRange(range).Bytes.AsSpan(TranscriptPrefixBytes + inside, take).CopyTo(destination[copied..]);
+                _position += take; copied += take;
+                OperationMemoryBudget.ReportProgress(take);
+            }
+            return copied;
+        }
+        internal void Complete()
+        {
+            if (!_started || _position != owner._length) throw new IOException("The global verifier did not consume the complete first pass.");
+            owner.CompleteCapture();
+            foreach (LockedSensitiveBuffer? buffer in owner._buffers) CryptographicOperations.ZeroMemory(buffer!.Bytes);
+        }
+        public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        { cancellationToken.ThrowIfCancellationRequested(); return ValueTask.FromResult(Read(buffer.Span)); }
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            long target = origin switch { SeekOrigin.Begin => offset, SeekOrigin.Current => checked(_position + offset),
+                SeekOrigin.End => checked(Length + offset), _ => throw new ArgumentOutOfRangeException(nameof(origin)) };
+            Position = target; return target;
+        }
+        public override void Flush() { }
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        protected override void Dispose(bool disposing)
+        {
+            if (!_closed) { CryptographicOperations.ZeroMemory(_header.GetBuffer()); _header.Dispose(); _headerMemory.Dispose(); _progress?.Dispose(); _closed = true; }
+            base.Dispose(disposing);
+        }
     }
 
     private sealed class VerificationView(VerifiedArchiveInput owner) : Stream, IPrivateSnapshotRandomAccess
