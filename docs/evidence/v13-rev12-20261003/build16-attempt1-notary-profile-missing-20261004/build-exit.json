@@ -1,0 +1,11 @@
+{
+  "completedUtc": "2026-10-04T10:03:51.141678+00:00",
+  "builderExitCode": 69,
+  "sourceHeadBefore": "591f2a524e0b6af1f366355afd0863693b95301c",
+  "sourceHeadAfter": "591f2a524e0b6af1f366355afd0863693b95301c",
+  "sourcesStable": true,
+  "gitCleanAfter": true,
+  "buildLogSha256": "c5520daf2c385fdee92c8c39129da4e2bba6e7716771fecb1a50723c5ffd20fe",
+  "status": "FAIL",
+  "scope": "Actual builder result only; installed native GUI and final release verification remain separate."
+}

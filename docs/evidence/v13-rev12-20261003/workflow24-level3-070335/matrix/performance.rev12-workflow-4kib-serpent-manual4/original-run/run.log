@@ -1,0 +1,8 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+    REV12 workflow Serpent256 requested=4 4096 source bytes: archive+encrypt 4,783 s (0,00 MiB/s); complete with KPAR2/original compare/cleanup 19,651 s (0,00 MiB/s), one measured run
+REV12_WORKFLOW_PROFILE_ARTIFACT=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-4kib-serpent-manual4-20261004T072555986-32ae20c4fdaa437d86059b5d4cdcd5da.json
+FULL PASS production-KDF level-3 complete archive/KPAR2/original-compare matrix: 4kib/serpent/manual4 (20,0s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 20,1s; sum of test times 20,0s; parallel speedup 0,99x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json

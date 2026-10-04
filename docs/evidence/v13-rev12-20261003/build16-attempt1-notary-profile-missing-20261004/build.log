@@ -1,0 +1,347 @@
+  Wiederherzustellende Projekte werden ermittelt...
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj" wiederhergestellt (in 26,22 Sek.).
+  Wiederherzustellende Projekte werden ermittelt...
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj" wiederhergestellt (in 465 ms.).
+  Wiederherzustellende Projekte werden ermittelt...
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj" wiederhergestellt (in 127 ms.).
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj" wiederhergestellt (in 292 ms.).
+  Wiederherzustellende Projekte werden ermittelt...
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.ReleaseVerifier/KeepVaultMac.ReleaseVerifier.csproj" wiederhergestellt (in 72 ms.).
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.cpp:7:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.h:11:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/filters.h:17:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/simple.h:17:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/misc.h:721:11: warning: comparison of integers of different signs: 'unsigned long' and 'long long' [-Wsign-compare]
+  721 |         if (from != to || (from > 0) != (to > 0))
+      |             ~~~~ ^  ~~
+/Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.cpp:215:7: note: in instantiation of function template specialization 'CryptoPP::SafeConvert<unsigned long, long long>' requested here
+  215 |         if (!SafeConvert(skipMax, offset))
+      |              ^
+1 warning generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:60:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.h:1300:25: warning: unused parameter 'size' [-Wunused-parameter]
+ 1300 |   Encoder(ZPAQL& z, int size=0):
+      |                         ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:5320:33: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 5320 |             const auto close_output = [this](FP& stream,
+      |                                        ^~~~
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:780:19: warning: unused variable 'WBPLUS' [-Wunused-const-variable]
+  780 | const char* const WBPLUS="wb+";
+      |                   ^~~~~~
+3 warnings generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:25:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.h:1300:25: warning: unused parameter 'size' [-Wunused-parameter]
+ 1300 |   Encoder(ZPAQL& z, int size=0):
+      |                         ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:155:33: warning: unused parameter 'newsize' [-Wunused-parameter]
+  155 | void allocx(U8* &p, int &n, int newsize) {
+      |                                 ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:683:24: warning: unused parameter 'c' [-Wunused-parameter]
+  683 |                    int c, char* buf, int dkLen) {
+      |                        ^
+3 warnings generated.
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/zpaq: Mach-O 64-bit executable arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/argon2: Mach-O 64-bit executable arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libaes_ref.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libargon2_ref.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libcamellia_v13.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libkalyna_v13.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libmars_ref.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libmldsa87_ref.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libserpent_v13.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libsha3_ref.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libshacal2_ref.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libthreefish_ref.dylib: Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-arm64/libxchachapoly_v13.dylib: Mach-O 64-bit dynamically linked shared library arm64
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.cpp:7:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.h:11:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/filters.h:17:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/simple.h:17:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/misc.h:721:11: warning: comparison of integers of different signs: 'unsigned long' and 'long long' [-Wsign-compare]
+  721 |         if (from != to || (from > 0) != (to > 0))
+      |             ~~~~ ^  ~~
+/Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.cpp:215:7: note: in instantiation of function template specialization 'CryptoPP::SafeConvert<unsigned long, long long>' requested here
+  215 |         if (!SafeConvert(skipMax, offset))
+      |              ^
+1 warning generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:60:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.h:1300:25: warning: unused parameter 'size' [-Wunused-parameter]
+ 1300 |   Encoder(ZPAQL& z, int size=0):
+      |                         ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:5320:33: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 5320 |             const auto close_output = [this](FP& stream,
+      |                                        ^~~~
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:780:19: warning: unused variable 'WBPLUS' [-Wunused-const-variable]
+  780 | const char* const WBPLUS="wb+";
+      |                   ^~~~~~
+3 warnings generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:25:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.h:1300:25: warning: unused parameter 'size' [-Wunused-parameter]
+ 1300 |   Encoder(ZPAQL& z, int size=0):
+      |                         ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:155:33: warning: unused parameter 'newsize' [-Wunused-parameter]
+  155 | void allocx(U8* &p, int &n, int newsize) {
+      |                                 ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:683:24: warning: unused parameter 'c' [-Wunused-parameter]
+  683 |                    int c, char* buf, int dkLen) {
+      |                        ^
+3 warnings generated.
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/zpaq: Mach-O 64-bit executable x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/argon2: Mach-O 64-bit executable x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libaes_ref.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libargon2_ref.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libcamellia_v13.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libkalyna_v13.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libmars_ref.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libmldsa87_ref.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libserpent_v13.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libsha3_ref.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libshacal2_ref.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libthreefish_ref.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-x64/libxchachapoly_v13.dylib: Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/zpaq: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit executable x86_64] [arm64:Mach-O 64-bit executable arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/zpaq (for architecture x86_64):	Mach-O 64-bit executable x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/zpaq (for architecture arm64):	Mach-O 64-bit executable arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/argon2: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit executable x86_64] [arm64:Mach-O 64-bit executable arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/argon2 (for architecture x86_64):	Mach-O 64-bit executable x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/argon2 (for architecture arm64):	Mach-O 64-bit executable arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libaes_ref.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libaes_ref.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libaes_ref.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libargon2_ref.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libargon2_ref.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libargon2_ref.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libxchachapoly_v13.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libxchachapoly_v13.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libxchachapoly_v13.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libkalyna_v13.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libkalyna_v13.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libkalyna_v13.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libmars_ref.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libmars_ref.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libmars_ref.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libcamellia_v13.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libcamellia_v13.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libcamellia_v13.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libserpent_v13.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libserpent_v13.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libserpent_v13.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libmldsa87_ref.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libmldsa87_ref.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libmldsa87_ref.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libshacal2_ref.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libshacal2_ref.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libshacal2_ref.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libsha3_ref.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libsha3_ref.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libsha3_ref.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libthreefish_ref.dylib: Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libthreefish_ref.dylib (for architecture x86_64):	Mach-O 64-bit dynamically linked shared library x86_64
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/.native-build.Jo9fun5g/Native/osx-universal/libthreefish_ref.dylib (for architecture arm64):	Mach-O 64-bit dynamically linked shared library arm64
+macOS native builds complete: osx-arm64, osx-x64, and osx-universal
+  KeepVaultMac -> /private/tmp/keep-vault-release.VwdsJpRO/artifacts/app/bin/KeepVaultMac/release_osx-arm64/Keep Vault.dll
+  Generating native code
+ILC : Trim analysis warning IL2026: KalynaArchiver.MainWindow.!XamlIlPopulate(IServiceProvider,MainWindow): Using member 'Avalonia.Markup.Xaml.MarkupExtensions.ReflectionBindingExtension.ReflectionBindingExtension(String)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. BindingExpression and ReflectionBinding heavily use reflection. Consider using CompiledBindings instead. [/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj]
+ILC : AOT analysis warning IL3050: KalynaArchiver.MainWindow.!XamlIlPopulate(IServiceProvider,MainWindow): Using member 'Avalonia.Markup.Xaml.MarkupExtensions.ReflectionBindingExtension.ReflectionBindingExtension(String)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. BindingExpression and ReflectionBinding require dynamic code. Consider using CompiledBindings instead. [/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj]
+ILC : Trim analysis warning IL2026: KalynaArchiver.MainWindow.!XamlIlPopulate(IServiceProvider,MainWindow): Using member 'Avalonia.Markup.Xaml.MarkupExtensions.ReflectionBindingExtension.ReflectionBindingExtension(String)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. BindingExpression and ReflectionBinding heavily use reflection. Consider using CompiledBindings instead. [/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj]
+ILC : AOT analysis warning IL3050: KalynaArchiver.MainWindow.!XamlIlPopulate(IServiceProvider,MainWindow): Using member 'Avalonia.Markup.Xaml.MarkupExtensions.ReflectionBindingExtension.ReflectionBindingExtension(String)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. BindingExpression and ReflectionBinding require dynamic code. Consider using CompiledBindings instead. [/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj]
+  KeepVaultMac -> /private/tmp/keep-vault-release.VwdsJpRO/publish-arm64/
+  KeepVaultMac -> /private/tmp/keep-vault-release.VwdsJpRO/artifacts/app/bin/KeepVaultMac/release_osx-x64/Keep Vault.dll
+  Generating native code
+ILC : Trim analysis warning IL2026: KalynaArchiver.MainWindow.!XamlIlPopulate(IServiceProvider,MainWindow): Using member 'Avalonia.Markup.Xaml.MarkupExtensions.ReflectionBindingExtension.ReflectionBindingExtension(String)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. BindingExpression and ReflectionBinding heavily use reflection. Consider using CompiledBindings instead. [/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj]
+ILC : AOT analysis warning IL3050: KalynaArchiver.MainWindow.!XamlIlPopulate(IServiceProvider,MainWindow): Using member 'Avalonia.Markup.Xaml.MarkupExtensions.ReflectionBindingExtension.ReflectionBindingExtension(String)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. BindingExpression and ReflectionBinding require dynamic code. Consider using CompiledBindings instead. [/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj]
+ILC : Trim analysis warning IL2026: KalynaArchiver.MainWindow.!XamlIlPopulate(IServiceProvider,MainWindow): Using member 'Avalonia.Markup.Xaml.MarkupExtensions.ReflectionBindingExtension.ReflectionBindingExtension(String)' which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code. BindingExpression and ReflectionBinding heavily use reflection. Consider using CompiledBindings instead. [/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj]
+ILC : AOT analysis warning IL3050: KalynaArchiver.MainWindow.!XamlIlPopulate(IServiceProvider,MainWindow): Using member 'Avalonia.Markup.Xaml.MarkupExtensions.ReflectionBindingExtension.ReflectionBindingExtension(String)' which has 'RequiresDynamicCodeAttribute' can break functionality when AOT compiling. BindingExpression and ReflectionBinding require dynamic code. Consider using CompiledBindings instead. [/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj]
+  KeepVaultMac -> /private/tmp/keep-vault-release.VwdsJpRO/publish-x64/
+third_party_notices_sha256=1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e
+password_model_notices_sha256=47e917a325d5bc39bf669f53c727752070b383a41fb50e6bdf037826891f6871
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/Info.plist: OK
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault: replacing existing signature
+  KeepVaultMac.HybridSigner -> /private/tmp/keep-vault-release.VwdsJpRO/artifacts/signer/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll
+
+Der Buildvorgang wurde erfolgreich ausgeführt.
+    0 Warnung(en)
+    0 Fehler
+
+Verstrichene Zeit 00:00:01.06
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+launcher_pins=/private/tmp/keep-vault-release.VwdsJpRO/HybridPins.swift
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor: replacing existing signature
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+launcher_pins=/private/tmp/keep-vault-release.VwdsJpRO/SupervisorHybridPins.swift
+relocated_sidecars=80
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Launcher: replacing existing signature
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app: replacing existing signature
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app: satisfies its Designated Requirement
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault
+--prepared:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+--validated:/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Launcher: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Launcher: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor: valid on disk
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor: satisfies its Designated Requirement
+  Wiederherzustellende Projekte werden ermittelt...
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj" wiederhergestellt (in 3,65 Sek.).
+  KeepVaultMac.HybridSigner -> /private/tmp/keep-vault-verifier.XQvBeBal/artifacts/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll
+
+Der Buildvorgang wurde erfolgreich ausgeführt.
+    0 Warnung(en)
+    0 Fehler
+
+Verstrichene Zeit 00:00:01.04
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/argon2
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/zpaq
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault
+hybrid_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+launcher_self_signature=absent (bundle not yet released)
+/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app: rejected
+source=Unnotarized Developer ID
+gatekeeper=awaiting-notarization (explicit preparation mode only)
+notarization=awaiting-required-final-check (Apple and hybrid signatures verified in explicit preparation mode)
+bundle_verified=/private/tmp/keep-vault-release.VwdsJpRO/Keep Vault.app
+hybrid_signed=/private/tmp/keep-vault-release.VwdsJpRO/dist-stage/Keep Vault.app/Contents/MacOS/Keep Vault Launcher
+launcher_pins=/private/tmp/keep-vault-release.VwdsJpRO/SelfHybridPins.swift
+launcher_self_signature=/private/tmp/keep-vault-release.VwdsJpRO/dist-stage/Keep Vault.app.launcher.khsig
+signing=developer-id (E8C06D4E89287BEC082E0EAD8DB01DD810A302AD)
+ArbiterTests: 127 checks passed
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.79XmOBen/QR-Scanner.app: replacing existing signature
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.79XmOBen/QR-Scanner.app: valid on disk
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.79XmOBen/QR-Scanner.app: satisfies its Designated Requirement
+entitlements=sandbox+camera (no injection-enabling entitlements present)
+hardened-runtime=enabled
+Conducting pre-submission checks for QR-Scanner-notary-submission.zip and initiating connection to the Apple notary service...
+Error: No Keychain password item found for profile: Keep Vault v13
+
+Run 'notarytool store-credentials' to create another credential profile.

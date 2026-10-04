@@ -1,0 +1,8 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+    REV12 workflow ParanoiaCascade requested=Auto 1073741824 source bytes: archive+encrypt 679,694 s (1,51 MiB/s); complete with KPAR2/original compare/cleanup 1461,957 s (0,70 MiB/s), one measured run
+REV12_WORKFLOW_PROFILE_ARTIFACT=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-paranoia-auto-20261003T185950312-bbb7123173b9435eb2830eabce9b2140.json
+FULL PASS explicit public one-GiB production-KDF level-5 complete archive/KPAR2/original-compare workflow: paranoia/auto (1463,2s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 1463,3s; sum of test times 1463,2s; parallel speedup 1,00x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json

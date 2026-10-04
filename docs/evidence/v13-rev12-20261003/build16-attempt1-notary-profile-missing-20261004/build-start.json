@@ -1,0 +1,14 @@
+{
+  "startedUtc": "2026-10-04T10:00:04.707289+00:00",
+  "sourceHead": "591f2a524e0b6af1f366355afd0863693b95301c",
+  "sourceFileCount": 393,
+  "sourceMapSha256": "6d8643fd75e3283ae29c191134985486aa411b223f9bc7ae9d6eb87eb457d1e9",
+  "launcherPid": 25927,
+  "launcherSha256": "c2806fe1808087a1d2c38c371dfb39207d432746488a7d8ef35f588cb3b1ac3d",
+  "builderSha256": "21561005e08d575e4d65354ad8de13343cd95850a7c21db115187fba34c2d76e",
+  "scope": "Declared project sources plus one explicitly public pin; private key contents are neither copied nor recorded.",
+  "compressionTestLevel": 3,
+  "requestedBuild": 16,
+  "status": "STARTED",
+  "builderPid": 25930
+}

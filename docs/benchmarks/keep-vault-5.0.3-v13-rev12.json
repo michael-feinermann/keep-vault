@@ -101657,5 +101657,23 @@
     "publicEvidence": "docs/evidence/v13-rev12-20261003/gui-dragover-acquire-20261004",
     "historicalHoverFixtureFailures": 5,
     "scope": "Fresh managed development using installed build15 natives; headless real handler/provider callbacks, no native AOT GUI/release approval. Base HEAD6bfd plus three captured source changes."
+  },
+  "finalUniversalBuild16Attempt1_20261004": {
+    "status": "FAIL",
+    "builderExitCode": 69,
+    "startedUtc": "2026-10-04T10:00:04.707289+00:00",
+    "completedUtc": "2026-10-04T10:03:51.141678+00:00",
+    "sourceHead": "591f2a524e0b6af1f366355afd0863693b95301c",
+    "sourceFiles": 393,
+    "sourceMapSha256": "6d8643fd75e3283ae29c191134985486aa411b223f9bc7ae9d6eb87eb457d1e9",
+    "sourcesStable": true,
+    "gitCleanAfter": true,
+    "failure": "Scanner notarytool could not find Keep Vault v13 Keychain profile.",
+    "fullFunctionalTests": "NOT RUN",
+    "performance36Level3": "NOT RUN",
+    "finalStructureRepair512": "NOT RUN",
+    "finalInstalledGui": "NOT RUN",
+    "release": "NOT PUBLISHED",
+    "evidence": "docs/evidence/v13-rev12-20261003/build16-attempt1-notary-profile-missing-20261004/README.md"
   }
 }
