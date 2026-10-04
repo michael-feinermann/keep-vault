@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "createdUtc": "2026-10-04T15:53:36.843275+00:00",
+  "status": "FUNCTIONAL_DEVELOPMENT_301_PASS_WITH_ORIGINAL_ENVELOPE_FAIL",
+  "actualTestGroups": 301,
+  "actualPass": 301,
+  "actualFail": 0,
+  "actualBlocked": 0,
+  "actualExecutionExit": 0,
+  "actualHelperExit": 0,
+  "originalOuterWrapperStatus": "FAIL",
+  "originalOuterHarnessInputsStable": false,
+  "derivedInputClassification": {
+    "originalInputCount": 127,
+    "originalInputsChanged": [],
+    "originalInputsRemoved": [],
+    "originalInputPinsAllStableAcrossOriginalBoundaries": true,
+    "addedPublicGeneratedOutputs": [
+      "progress-overhead-public.json"
+    ],
+    "sourceAuthorizedExactOutput": {
+      "sourcePath": "KeepVaultMac.Tests/ProgressIsolationTests.cs",
+      "sourceSha256": "5c2ac10e291128b0a6198cd646d35d31b9536f8cf90e280c3f11a2b8d42f8c0d",
+      "producerActualTestId": "v13-progress-perf",
+      "producerActualStatus": "PASS",
+      "exactFilename": "progress-overhead-public.json",
+      "outputSha256": "cfad9228c3f206878022f032bc5596a89f5b2bcfefb31b1df1cbb5f2448f81d1",
+      "outputRunUtc": "2026-10-04T10:22:48.372853+00:00",
+      "insideActualExecutionUtcInterval": true,
+      "publicSchemaKeys": [
+        "allocatedBytes",
+        "elapsedMilliseconds",
+        "runUtc",
+        "scope",
+        "updates"
+      ],
+      "scope": "Single macOS process, hot producer updates only; no many-core or UI performance claim"
+    }
+  },
+  "actualExecutionInterval": {
+    "startedUtc": "2026-10-04T10:16:11.308104+00:00",
+    "completedUtc": "2026-10-04T10:37:09.656685+00:00",
+    "seconds": 1258.348581,
+    "scope": "Actual helper coordinator execution interval, includes child launch/coordination, not sum of group times"
+  },
+  "headAtExecution": "6efc276afdb1469e64c7d47dffdd40b25c76a335",
+  "sourceInputCount": 284,
+  "sourceInventorySha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+  "testInventoryHash": "d1e834e3d4cbb621e32903dfa71fcf69ae562811ab47cb6a2fcb97966f888b43",
+  "harnessOriginalBinaryPins": {
+    "KeepVaultMac.Tests.dll": "d674ef9cf5e03cb4544d2d4f477b427ce4a5c17703d737340ddd6ec18133abd3",
+    "Keep Vault.dll": "7e18e90da049c1155a8fe8636f4271b7eeeadf91101b706e84dfa68b3439053d"
+  },
+  "testResultSha256": "95831a375d66fb48376a1f3528a9d20913ba834a1eaf54efd13ece4f60cf05f8",
+  "testTimingSha256": "7b39d457fb307242e2e4f690e1c95fa08d76cc86aeadfdd239ec3fe67a0f1401",
+  "afterOnlyObservationsReference": "AFTER_ONLY_OBSERVATIONS.json",
+  "scope": "Managed ARM64/Avalonia-Headless current sources with retained signed Build15 natives, not final Build16 Universal/AOT/installed GUI/release proof",
+  "finalUniversalAot": "NOT RUN",
+  "installedNativeGui": "NOT RUN",
+  "last512AfterNativeGui": "NOT RUN",
+  "releaseApproval": "NOT_GRANTED",
+  "laterRootToolchainObservationReference": {
+    "path": "toolchain/toolchain-after-observation.json",
+    "sha256": "76b007f2878fbc712e201b8249f0e01fbdab00d1e16ff2cd0cdec9f3c21f5d78",
+    "scope": "Original Root actual AFTER baseline comparison; used-build-packages AFTER_ONLY without own fresh pre-full cache map; no continuous proof"
+  }
+}

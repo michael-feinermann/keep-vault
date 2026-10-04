@@ -101675,5 +101675,23 @@
     "finalInstalledGui": "NOT RUN",
     "release": "NOT PUBLISHED",
     "evidence": "docs/evidence/v13-rev12-20261003/build16-attempt1-notary-profile-missing-20261004/README.md"
+  },
+  "completeFunctionalRegression08222820261004": {
+    "status": "PRODUCT_TESTS_PASS_ORIGINAL_INPUTS_VERIFIED",
+    "groups": 301,
+    "passed": 301,
+    "failed": 0,
+    "blocked": 0,
+    "actualHarnessExitCode": 0,
+    "sourceHeadAtExecution": "6efc276afdb1469e64c7d47dffdd40b25c76a335",
+    "compiledSourceMapSha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+    "compiledSourceEntries": 284,
+    "originalHarnessInputFiles": 127,
+    "allOriginalHarnessInputHashesUnchanged": true,
+    "originalOuterEnvelopeStatus": "FAIL",
+    "originalOuterEnvelopeReason": "After inventory includes one newly generated progress-overhead-public.json output; no original input is changed or removed.",
+    "observedWallClockSeconds": 1258.1,
+    "originalEvidenceDirectory": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/run-20261004T101611Z-1150e4ab",
+    "scope": "Managed development with retained Build15 signed natives; no final Build16 installed/AOT/release approval."
   }
 }

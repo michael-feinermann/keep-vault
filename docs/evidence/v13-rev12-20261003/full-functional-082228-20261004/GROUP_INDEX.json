@@ -1,0 +1,2413 @@
+{
+  "scope": "Derived301row index; exact group seconds from original timing catalog; original result rounded seconds retained separately",
+  "groups": [
+    {
+      "id": "infra.runner-invariants",
+      "status": "PASS",
+      "seconds": 0.4204742,
+      "resultRoundedSeconds": 0.42,
+      "peakRssMiB": 76,
+      "seed": "0x74D90CD9"
+    },
+    {
+      "id": "smoke.sha3-512-fips",
+      "status": "PASS",
+      "seconds": 0.011267,
+      "resultRoundedSeconds": 0.011,
+      "peakRssMiB": 60,
+      "seed": "0x2780AC01"
+    },
+    {
+      "id": "smoke.hmac-sha3-512",
+      "status": "PASS",
+      "seconds": 0.0026133,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 59,
+      "seed": "0x57DEF45A"
+    },
+    {
+      "id": "smoke.descriptor-identity",
+      "status": "PASS",
+      "seconds": 0.0005437,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x5473E3FD"
+    },
+    {
+      "id": "smoke.symlink-rejection",
+      "status": "PASS",
+      "seconds": 0.0010537,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x4702ADE9"
+    },
+    {
+      "id": "smoke.archive-input-symlink",
+      "status": "PASS",
+      "seconds": 0.0059495,
+      "resultRoundedSeconds": 0.006,
+      "peakRssMiB": 56,
+      "seed": "0x52832C92"
+    },
+    {
+      "id": "smoke.archive-input-snapshot-location",
+      "status": "PASS",
+      "seconds": 0.00991,
+      "resultRoundedSeconds": 0.01,
+      "peakRssMiB": 59,
+      "seed": "0x04363612"
+    },
+    {
+      "id": "smoke.archive-input-snapshot-races",
+      "status": "PASS",
+      "seconds": 0.0130615,
+      "resultRoundedSeconds": 0.013,
+      "peakRssMiB": 59,
+      "seed": "0x39FD3854"
+    },
+    {
+      "id": "smoke.archive-input-hardlink",
+      "status": "PASS",
+      "seconds": 0.0362441,
+      "resultRoundedSeconds": 0.036,
+      "peakRssMiB": 64,
+      "seed": "0x6EC7EF8F"
+    },
+    {
+      "id": "smoke.overlapping-input-normalization",
+      "status": "PASS",
+      "seconds": 0.010764,
+      "resultRoundedSeconds": 0.011,
+      "peakRssMiB": 60,
+      "seed": "0x601AE699"
+    },
+    {
+      "id": "smoke.trailing-separator-folder",
+      "status": "PASS",
+      "seconds": 0.5408879,
+      "resultRoundedSeconds": 0.541,
+      "peakRssMiB": 79,
+      "seed": "0x1CE53868"
+    },
+    {
+      "id": "smoke.descriptor-bound-snapshot",
+      "status": "PASS",
+      "seconds": 0.3337739,
+      "resultRoundedSeconds": 0.334,
+      "peakRssMiB": 71,
+      "seed": "0x3B4AB236"
+    },
+    {
+      "id": "smoke.private-snapshot-cleanup-identity",
+      "status": "PASS",
+      "seconds": 0.1373632,
+      "resultRoundedSeconds": 0.137,
+      "peakRssMiB": 71,
+      "seed": "0x317B2C2C"
+    },
+    {
+      "id": "smoke.private-snapshot-race-failclosed",
+      "status": "PASS",
+      "seconds": 0.133667,
+      "resultRoundedSeconds": 0.134,
+      "peakRssMiB": 74,
+      "seed": "0x27FAFFD2"
+    },
+    {
+      "id": "smoke.private-snapshot-resource-failures",
+      "status": "PASS",
+      "seconds": 0.1387594,
+      "resultRoundedSeconds": 0.139,
+      "peakRssMiB": 71,
+      "seed": "0x789D91BB"
+    },
+    {
+      "id": "smoke.private-authenticated-snapshot",
+      "status": "PASS",
+      "seconds": 0.1373956,
+      "resultRoundedSeconds": 0.137,
+      "peakRssMiB": 72,
+      "seed": "0x102EF449"
+    },
+    {
+      "id": "smoke.apple-signature-binding",
+      "status": "PASS",
+      "seconds": 0.0061912,
+      "resultRoundedSeconds": 0.006,
+      "peakRssMiB": 56,
+      "seed": "0x61E9F916"
+    },
+    {
+      "id": "smoke.locked-secret-lifecycle",
+      "status": "PASS",
+      "seconds": 0.002684,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 59,
+      "seed": "0x15024306"
+    },
+    {
+      "id": "smoke.password-policy",
+      "status": "PASS",
+      "seconds": 0.1497781,
+      "resultRoundedSeconds": 0.15,
+      "peakRssMiB": 147,
+      "seed": "0x1BF0D60F"
+    },
+    {
+      "id": "smoke.release-companion-version",
+      "status": "PASS",
+      "seconds": 0.7279519,
+      "resultRoundedSeconds": 0.728,
+      "peakRssMiB": 81,
+      "seed": "0x785CE2DF"
+    },
+    {
+      "id": "smoke.native-atomic-publish",
+      "status": "PASS",
+      "seconds": 0.4525629,
+      "resultRoundedSeconds": 0.453,
+      "peakRssMiB": 63,
+      "seed": "0x31E31583"
+    },
+    {
+      "id": "smoke.qr-atomic-publish",
+      "status": "PASS",
+      "seconds": 0.532353,
+      "resultRoundedSeconds": 0.532,
+      "peakRssMiB": 63,
+      "seed": "0x42D45C04"
+    },
+    {
+      "id": "smoke.release-atomic-publish",
+      "status": "PASS",
+      "seconds": 0.545514,
+      "resultRoundedSeconds": 0.546,
+      "peakRssMiB": 63,
+      "seed": "0x1266E287"
+    },
+    {
+      "id": "smoke.portable-rollback-binding",
+      "status": "PASS",
+      "seconds": 0.2616047,
+      "resultRoundedSeconds": 0.262,
+      "peakRssMiB": 63,
+      "seed": "0x6CFD86A7"
+    },
+    {
+      "id": "smoke.native-snapshot-cleanup-identity",
+      "status": "PASS",
+      "seconds": 0.0752439,
+      "resultRoundedSeconds": 0.075,
+      "peakRssMiB": 71,
+      "seed": "0x08AA73B5"
+    },
+    {
+      "id": "v13-header-canonical-fields",
+      "status": "PASS",
+      "seconds": 0.0236769,
+      "resultRoundedSeconds": 0.024,
+      "peakRssMiB": 66,
+      "seed": "0x11F3451E"
+    },
+    {
+      "id": "v13-std-catalog",
+      "status": "PASS",
+      "seconds": 0.0013081,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x474EB470"
+    },
+    {
+      "id": "v13-std-layout",
+      "status": "PASS",
+      "seconds": 0.0007009,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x2342CC57"
+    },
+    {
+      "id": "v13-std-rolekeys",
+      "status": "PASS",
+      "seconds": 0.2392507,
+      "resultRoundedSeconds": 0.239,
+      "peakRssMiB": 71,
+      "seed": "0x79C7724C"
+    },
+    {
+      "id": "v13-std-tweak",
+      "status": "PASS",
+      "seconds": 0.0032945,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 61,
+      "seed": "0x2F172F69"
+    },
+    {
+      "id": "v13-std-nonces-aad",
+      "status": "PASS",
+      "seconds": 0.0089879,
+      "resultRoundedSeconds": 0.009,
+      "peakRssMiB": 61,
+      "seed": "0x5CE3EAC3"
+    },
+    {
+      "id": "v13-std-composition",
+      "status": "PASS",
+      "seconds": 0.6927137,
+      "resultRoundedSeconds": 0.693,
+      "peakRssMiB": 73,
+      "seed": "0x73908700"
+    },
+    {
+      "id": "v13-std-default-api",
+      "status": "PASS",
+      "seconds": 1.1053922,
+      "resultRoundedSeconds": 1.105,
+      "peakRssMiB": 188,
+      "seed": "0x7FDAD2C7"
+    },
+    {
+      "id": "v13-std-header",
+      "status": "PASS",
+      "seconds": 0.6709767,
+      "resultRoundedSeconds": 0.671,
+      "peakRssMiB": 174,
+      "seed": "0x5D70259B"
+    },
+    {
+      "id": "v13-std-framing",
+      "status": "PASS",
+      "seconds": 2.7774634,
+      "resultRoundedSeconds": 2.777,
+      "peakRssMiB": 507,
+      "seed": "0x37774242"
+    },
+    {
+      "id": "v13-std-nolegacy",
+      "status": "PASS",
+      "seconds": 0.6773702,
+      "resultRoundedSeconds": 0.677,
+      "peakRssMiB": 174,
+      "seed": "0x63DA7FFD"
+    },
+    {
+      "id": "v13-std-tamper",
+      "status": "PASS",
+      "seconds": 0.7236373,
+      "resultRoundedSeconds": 0.724,
+      "peakRssMiB": 177,
+      "seed": "0x75CA3C9D"
+    },
+    {
+      "id": "v13-cascade-independent-composition",
+      "status": "PASS",
+      "seconds": 1.3077462,
+      "resultRoundedSeconds": 1.308,
+      "peakRssMiB": 80,
+      "seed": "0x35BAACB3"
+    },
+    {
+      "id": "v13-par8-header-auth",
+      "status": "PASS",
+      "seconds": 1.1544448,
+      "resultRoundedSeconds": 1.154,
+      "peakRssMiB": 183,
+      "seed": "0x7D067F79"
+    },
+    {
+      "id": "v13-par8-rolekeys",
+      "status": "PASS",
+      "seconds": 0.1257568,
+      "resultRoundedSeconds": 0.126,
+      "peakRssMiB": 71,
+      "seed": "0x544FFBEB"
+    },
+    {
+      "id": "v13-header-seeded-fuzz",
+      "status": "PASS",
+      "seconds": 0.5355296,
+      "resultRoundedSeconds": 0.536,
+      "peakRssMiB": 81,
+      "seed": "0x7DB4D9B8"
+    },
+    {
+      "id": "v13-nonce-seeded-fuzz",
+      "status": "PASS",
+      "seconds": 0.2145139,
+      "resultRoundedSeconds": 0.215,
+      "peakRssMiB": 73,
+      "seed": "0x3B0733CB"
+    },
+    {
+      "id": "fuzz.verified-input-10000",
+      "status": "PASS",
+      "seconds": 115.7037955,
+      "resultRoundedSeconds": 115.704,
+      "peakRssMiB": 242,
+      "seed": "0x163D8B1C"
+    },
+    {
+      "id": "fuzz.verified-read-at-server-10000",
+      "status": "PASS",
+      "seconds": 1.5188554,
+      "resultRoundedSeconds": 1.519,
+      "peakRssMiB": 72,
+      "seed": "0x549F93E0"
+    },
+    {
+      "id": "fuzz.recovery-streaming-10000",
+      "status": "PASS",
+      "seconds": 5.6415648,
+      "resultRoundedSeconds": 5.642,
+      "peakRssMiB": 91,
+      "seed": "0x5656EAEF"
+    },
+    {
+      "id": "crypto.hash-cleanup-regression",
+      "status": "PASS",
+      "seconds": 0.5360296,
+      "resultRoundedSeconds": 0.536,
+      "peakRssMiB": 63,
+      "seed": "0x38F2A021"
+    },
+    {
+      "id": "v13-nonce-vectors",
+      "status": "PASS",
+      "seconds": 0.0082874,
+      "resultRoundedSeconds": 0.008,
+      "peakRssMiB": 62,
+      "seed": "0x30B741C8"
+    },
+    {
+      "id": "v13-nonce-plan",
+      "status": "PASS",
+      "seconds": 0.0018414,
+      "resultRoundedSeconds": 0.002,
+      "peakRssMiB": 57,
+      "seed": "0x678AB070"
+    },
+    {
+      "id": "v13-nonce-isolation",
+      "status": "PASS",
+      "seconds": 0.1500611,
+      "resultRoundedSeconds": 0.15,
+      "peakRssMiB": 68,
+      "seed": "0x1A71A44C"
+    },
+    {
+      "id": "v13-nonce-capacity",
+      "status": "PASS",
+      "seconds": 0.010827,
+      "resultRoundedSeconds": 0.011,
+      "peakRssMiB": 61,
+      "seed": "0x1B40DC7A"
+    },
+    {
+      "id": "v13-nonce-faults",
+      "status": "PASS",
+      "seconds": 0.0077041,
+      "resultRoundedSeconds": 0.008,
+      "peakRssMiB": 61,
+      "seed": "0x4BAF0AC5"
+    },
+    {
+      "id": "entropy.rev9-finalization-golden",
+      "status": "PASS",
+      "seconds": 0.0085822,
+      "resultRoundedSeconds": 0.009,
+      "peakRssMiB": 61,
+      "seed": "0x41064161"
+    },
+    {
+      "id": "entropy.rev9-cache-equivalence",
+      "status": "PASS",
+      "seconds": 0.6864728,
+      "resultRoundedSeconds": 0.686,
+      "peakRssMiB": 79,
+      "seed": "0x4ED7D07D"
+    },
+    {
+      "id": "crypto.v13-camellia-reference",
+      "status": "PASS",
+      "seconds": 1.0401805,
+      "resultRoundedSeconds": 1.04,
+      "peakRssMiB": 174,
+      "seed": "0x11EB6D7E"
+    },
+    {
+      "id": "crypto.v13-serpent-reference",
+      "status": "PASS",
+      "seconds": 0.9515882,
+      "resultRoundedSeconds": 0.952,
+      "peakRssMiB": 167,
+      "seed": "0x28B1AE35"
+    },
+    {
+      "id": "v13-usage-boundaries",
+      "status": "PASS",
+      "seconds": 0.0013874,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x36B83FFC"
+    },
+    {
+      "id": "v13-usage-writer-guard",
+      "status": "PASS",
+      "seconds": 0.0051829,
+      "resultRoundedSeconds": 0.005,
+      "peakRssMiB": 59,
+      "seed": "0x2CE63033"
+    },
+    {
+      "id": "v13-usage-reader-guard",
+      "status": "PASS",
+      "seconds": 0.016769,
+      "resultRoundedSeconds": 0.017,
+      "peakRssMiB": 62,
+      "seed": "0x3A4B42F8"
+    },
+    {
+      "id": "v13-usage-model",
+      "status": "PASS",
+      "seconds": 0.0009324,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x34EEF4D7"
+    },
+    {
+      "id": "release.v13-paranoia-structure512",
+      "status": "PASS",
+      "seconds": 237.5135804,
+      "resultRoundedSeconds": 237.514,
+      "peakRssMiB": 1787,
+      "seed": "0x1EAC7B83"
+    },
+    {
+      "id": "io.verified-input-domain-kats",
+      "status": "PASS",
+      "seconds": 0.4448663,
+      "resultRoundedSeconds": 0.445,
+      "peakRssMiB": 71,
+      "seed": "0x6A8AFAE0"
+    },
+    {
+      "id": "io.verified-input-state",
+      "status": "PASS",
+      "seconds": 0.5569547,
+      "resultRoundedSeconds": 0.557,
+      "peakRssMiB": 90,
+      "seed": "0x2D0939EB"
+    },
+    {
+      "id": "io.verified-input-ranges",
+      "status": "PASS",
+      "seconds": 0.4081538,
+      "resultRoundedSeconds": 0.408,
+      "peakRssMiB": 88,
+      "seed": "0x547300BC"
+    },
+    {
+      "id": "io.verified-input-descriptor-capture",
+      "status": "PASS",
+      "seconds": 2.492279,
+      "resultRoundedSeconds": 2.492,
+      "peakRssMiB": 133,
+      "seed": "0x7CBDB55F"
+    },
+    {
+      "id": "io.verified-input-read-only-seal",
+      "status": "PASS",
+      "seconds": 0.6324994,
+      "resultRoundedSeconds": 0.632,
+      "peakRssMiB": 90,
+      "seed": "0x3E8C5F17"
+    },
+    {
+      "id": "io.verified-input-tamper",
+      "status": "PASS",
+      "seconds": 1.0917577,
+      "resultRoundedSeconds": 1.092,
+      "peakRssMiB": 91,
+      "seed": "0x00486DC9"
+    },
+    {
+      "id": "io.verified-input-private-copy",
+      "status": "PASS",
+      "seconds": 0.3681277,
+      "resultRoundedSeconds": 0.368,
+      "peakRssMiB": 88,
+      "seed": "0x4A5D3528"
+    },
+    {
+      "id": "io.verified-original",
+      "status": "PASS",
+      "seconds": 0.3642812,
+      "resultRoundedSeconds": 0.364,
+      "peakRssMiB": 88,
+      "seed": "0x69908E6D"
+    },
+    {
+      "id": "io.plain-manifest-rejection",
+      "status": "PASS",
+      "seconds": 0.1604594,
+      "resultRoundedSeconds": 0.16,
+      "peakRssMiB": 76,
+      "seed": "0x1A8719C5"
+    },
+    {
+      "id": "io.verified-input-policy",
+      "status": "PASS",
+      "seconds": 0.016105,
+      "resultRoundedSeconds": 0.016,
+      "peakRssMiB": 62,
+      "seed": "0x5069A14D"
+    },
+    {
+      "id": "io.verified-input-parallel-lifetime",
+      "status": "PASS",
+      "seconds": 1.2678883,
+      "resultRoundedSeconds": 1.268,
+      "peakRssMiB": 121,
+      "seed": "0x27EEF085"
+    },
+    {
+      "id": "io.verified-input-cleanup-retry",
+      "status": "PASS",
+      "seconds": 0.179872,
+      "resultRoundedSeconds": 0.18,
+      "peakRssMiB": 85,
+      "seed": "0x1FB54C47"
+    },
+    {
+      "id": "recovery.streaming-metadata-canonical",
+      "status": "PASS",
+      "seconds": 0.1408557,
+      "resultRoundedSeconds": 0.141,
+      "peakRssMiB": 71,
+      "seed": "0x1B4B9971"
+    },
+    {
+      "id": "recovery.streaming-metadata-negative",
+      "status": "PASS",
+      "seconds": 0.1418154,
+      "resultRoundedSeconds": 0.142,
+      "peakRssMiB": 71,
+      "seed": "0x381B22B0"
+    },
+    {
+      "id": "recovery.streaming-metadata-large-logical",
+      "status": "PASS",
+      "seconds": 0.6451153,
+      "resultRoundedSeconds": 0.645,
+      "peakRssMiB": 84,
+      "seed": "0x04A84FA6"
+    },
+    {
+      "id": "resources.shared-memory-budget",
+      "status": "PASS",
+      "seconds": 0.0055272,
+      "resultRoundedSeconds": 0.006,
+      "peakRssMiB": 59,
+      "seed": "0x47BE6BF7"
+    },
+    {
+      "id": "resources.shared-runtime-budget",
+      "status": "PASS",
+      "seconds": 0.0015847,
+      "resultRoundedSeconds": 0.002,
+      "peakRssMiB": 56,
+      "seed": "0x66599657"
+    },
+    {
+      "id": "v13-time-no-wall",
+      "status": "PASS",
+      "seconds": 0.003258,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 56,
+      "seed": "0x7FD3E756"
+    },
+    {
+      "id": "v13-time-no-cpu",
+      "status": "PASS",
+      "seconds": 0.000636,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x27BB9C4C"
+    },
+    {
+      "id": "v13-time-no-stall-abort",
+      "status": "PASS",
+      "seconds": 0.0006654,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x584E53AA"
+    },
+    {
+      "id": "v13-progress-counts",
+      "status": "PASS",
+      "seconds": 0.001259,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x0385AED6"
+    },
+    {
+      "id": "v13-progress-order",
+      "status": "PASS",
+      "seconds": 0.0013041,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x13E13A77"
+    },
+    {
+      "id": "v13-progress-unknown",
+      "status": "PASS",
+      "seconds": 0.0013057,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x24E7D670"
+    },
+    {
+      "id": "v13-progress-eta",
+      "status": "PASS",
+      "seconds": 0.0013239,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x41E38E78"
+    },
+    {
+      "id": "v13-progress-stale",
+      "status": "PASS",
+      "seconds": 0.0012833,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x79D37945"
+    },
+    {
+      "id": "v13-progress-clock",
+      "status": "PASS",
+      "seconds": 0.0013409,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x2F05443D"
+    },
+    {
+      "id": "v13-progress-overlap",
+      "status": "PASS",
+      "seconds": 0.0012423,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x36166F5B"
+    },
+    {
+      "id": "v13-progress-finish",
+      "status": "PASS",
+      "seconds": 0.0012907,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x53003A13"
+    },
+    {
+      "id": "v13-progress-bounds",
+      "status": "PASS",
+      "seconds": 0.003666,
+      "resultRoundedSeconds": 0.004,
+      "peakRssMiB": 56,
+      "seed": "0x2D5BEF64"
+    },
+    {
+      "id": "v13-progress-equivalence",
+      "status": "PASS",
+      "seconds": 2.7896828,
+      "resultRoundedSeconds": 2.79,
+      "peakRssMiB": 200,
+      "seed": "0x7AB00B73"
+    },
+    {
+      "id": "v13-progress-privacy",
+      "status": "PASS",
+      "seconds": 0.0007655,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x2A412066"
+    },
+    {
+      "id": "v13-progress-perf",
+      "status": "PASS",
+      "seconds": 0.0457435,
+      "resultRoundedSeconds": 0.046,
+      "peakRssMiB": 60,
+      "seed": "0x3F04B004"
+    },
+    {
+      "id": "v13-golden-readonly",
+      "status": "PASS",
+      "seconds": 1.5731289,
+      "resultRoundedSeconds": 1.573,
+      "peakRssMiB": 68,
+      "seed": "0x19DBF4C1"
+    },
+    {
+      "id": "v13-progress-native-ipc",
+      "status": "PASS",
+      "seconds": 0.0214083,
+      "resultRoundedSeconds": 0.021,
+      "peakRssMiB": 63,
+      "seed": "0x7EF50C8F"
+    },
+    {
+      "id": "v13-zpaq-bound-source",
+      "status": "PASS",
+      "seconds": 0.0113795,
+      "resultRoundedSeconds": 0.011,
+      "peakRssMiB": 61,
+      "seed": "0x02A853F8"
+    },
+    {
+      "id": "v13-zpaq-cpu-one",
+      "status": "PASS",
+      "seconds": 9.1200031,
+      "resultRoundedSeconds": 9.12,
+      "peakRssMiB": 93,
+      "seed": "0x54A13559"
+    },
+    {
+      "id": "v13-zpaq-phase-readiness",
+      "status": "PASS",
+      "seconds": 0.0053516,
+      "resultRoundedSeconds": 0.005,
+      "peakRssMiB": 57,
+      "seed": "0x24677045"
+    },
+    {
+      "id": "v13-zpaq-owner-lifetime",
+      "status": "PASS",
+      "seconds": 0.1816675,
+      "resultRoundedSeconds": 0.182,
+      "peakRssMiB": 60,
+      "seed": "0x15E6DE6E"
+    },
+    {
+      "id": "deletion.rev11-creation-binding",
+      "status": "PASS",
+      "seconds": 0.0481963,
+      "resultRoundedSeconds": 0.048,
+      "peakRssMiB": 63,
+      "seed": "0x78829D80"
+    },
+    {
+      "id": "fuzz.rev11-original-reader-10000",
+      "status": "PASS",
+      "seconds": 37.5846442,
+      "resultRoundedSeconds": 37.585,
+      "peakRssMiB": 147,
+      "seed": "0x7BE1047F"
+    },
+    {
+      "id": "fuzz.rev11-range-index-10000",
+      "status": "PASS",
+      "seconds": 97.1025927,
+      "resultRoundedSeconds": 97.103,
+      "peakRssMiB": 232,
+      "seed": "0x67A592E8"
+    },
+    {
+      "id": "io.rev11-input-fused",
+      "status": "PASS",
+      "seconds": 1.5476876,
+      "resultRoundedSeconds": 1.548,
+      "peakRssMiB": 178,
+      "seed": "0x46154F35"
+    },
+    {
+      "id": "io.rev11-index-ram-small",
+      "status": "PASS",
+      "seconds": 0.1400533,
+      "resultRoundedSeconds": 0.14,
+      "peakRssMiB": 75,
+      "seed": "0x2C76098D"
+    },
+    {
+      "id": "io.rev11-index-cache-boundary",
+      "status": "PASS",
+      "seconds": 0.0932428,
+      "resultRoundedSeconds": 0.093,
+      "peakRssMiB": 100,
+      "seed": "0x3EE24AFB"
+    },
+    {
+      "id": "io.rev11-index-identical",
+      "status": "PASS",
+      "seconds": 1.0598519,
+      "resultRoundedSeconds": 1.06,
+      "peakRssMiB": 179,
+      "seed": "0x2F8BC883"
+    },
+    {
+      "id": "io.rev11-index-spill",
+      "status": "PASS",
+      "seconds": 0.0219795,
+      "resultRoundedSeconds": 0.022,
+      "peakRssMiB": 66,
+      "seed": "0x58D3D8BA"
+    },
+    {
+      "id": "io.rev11-header-binding",
+      "status": "PASS",
+      "seconds": 0.2116773,
+      "resultRoundedSeconds": 0.212,
+      "peakRssMiB": 85,
+      "seed": "0x129FE6D9"
+    },
+    {
+      "id": "io.rev11-repair-erasures",
+      "status": "PASS",
+      "seconds": 0.1986372,
+      "resultRoundedSeconds": 0.199,
+      "peakRssMiB": 78,
+      "seed": "0x2686F7FA"
+    },
+    {
+      "id": "io.rev11-repair-capability",
+      "status": "PASS",
+      "seconds": 0.1399332,
+      "resultRoundedSeconds": 0.14,
+      "peakRssMiB": 75,
+      "seed": "0x3B922A7E"
+    },
+    {
+      "id": "recovery.record-table-layout",
+      "status": "PASS",
+      "seconds": 0.1503374,
+      "resultRoundedSeconds": 0.15,
+      "peakRssMiB": 76,
+      "seed": "0x05F9A2C2"
+    },
+    {
+      "id": "recovery.record-table-tamper",
+      "status": "PASS",
+      "seconds": 0.1834056,
+      "resultRoundedSeconds": 0.183,
+      "peakRssMiB": 76,
+      "seed": "0x62249C26"
+    },
+    {
+      "id": "recovery.record-table-cleanup",
+      "status": "PASS",
+      "seconds": 0.1269771,
+      "resultRoundedSeconds": 0.127,
+      "peakRssMiB": 70,
+      "seed": "0x0E70BBF6"
+    },
+    {
+      "id": "recovery.record-table-budget",
+      "status": "PASS",
+      "seconds": 0.1360895,
+      "resultRoundedSeconds": 0.136,
+      "peakRssMiB": 75,
+      "seed": "0x6B03DE35"
+    },
+    {
+      "id": "resources.cpu-worker-budget",
+      "status": "PASS",
+      "seconds": 0.0085865,
+      "resultRoundedSeconds": 0.009,
+      "peakRssMiB": 57,
+      "seed": "0x3B1229DF"
+    },
+    {
+      "id": "spec.no-legacy-source",
+      "status": "PASS",
+      "seconds": 0.1606767,
+      "resultRoundedSeconds": 0.161,
+      "peakRssMiB": 72,
+      "seed": "0x7338CCA1"
+    },
+    {
+      "id": "spec.normative-v13-docs",
+      "status": "PASS",
+      "seconds": 0.0155286,
+      "resultRoundedSeconds": 0.016,
+      "peakRssMiB": 61,
+      "seed": "0x35B7EDDC"
+    },
+    {
+      "id": "spec.lockfile-runtimes",
+      "status": "PASS",
+      "seconds": 1.5749206,
+      "resultRoundedSeconds": 1.575,
+      "peakRssMiB": 76,
+      "seed": "0x33CAC759"
+    },
+    {
+      "id": "security.process-hardening",
+      "status": "PASS",
+      "seconds": 0.0010159,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x74FCB066"
+    },
+    {
+      "id": "trust.native-tools",
+      "status": "PASS",
+      "seconds": 0.4151035,
+      "resultRoundedSeconds": 0.415,
+      "peakRssMiB": 76,
+      "seed": "0x50AF88EF"
+    },
+    {
+      "id": "packaging.macho-signature-closure",
+      "status": "PASS",
+      "seconds": 0.0034913,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 56,
+      "seed": "0x20040746"
+    },
+    {
+      "id": "packaging.companion-qr",
+      "status": "PASS",
+      "seconds": 0.151307,
+      "resultRoundedSeconds": 0.151,
+      "peakRssMiB": 84,
+      "seed": "0x79B30107"
+    },
+    {
+      "id": "packaging.installer-lock-cleanup",
+      "status": "PASS",
+      "seconds": 0.4980305,
+      "resultRoundedSeconds": 0.498,
+      "peakRssMiB": 63,
+      "seed": "0x598BDD40"
+    },
+    {
+      "id": "crypto.kdf-primitives",
+      "status": "PASS",
+      "seconds": 0.1213546,
+      "resultRoundedSeconds": 0.121,
+      "peakRssMiB": 71,
+      "seed": "0x0BF0D546"
+    },
+    {
+      "id": "zpaq.verified-read-at",
+      "status": "PASS",
+      "seconds": 0.5275447,
+      "resultRoundedSeconds": 0.528,
+      "peakRssMiB": 69,
+      "seed": "0x72C17366"
+    },
+    {
+      "id": "zpaq.verified-staging-vm",
+      "status": "PASS",
+      "seconds": 0.4038844,
+      "resultRoundedSeconds": 0.404,
+      "peakRssMiB": 63,
+      "seed": "0x436B5A98"
+    },
+    {
+      "id": "policy.pin-creation",
+      "status": "PASS",
+      "seconds": 0.0145829,
+      "resultRoundedSeconds": 0.015,
+      "peakRssMiB": 59,
+      "seed": "0x604C1A5E"
+    },
+    {
+      "id": "policy.password",
+      "status": "PASS",
+      "seconds": 0.1414092,
+      "resultRoundedSeconds": 0.141,
+      "peakRssMiB": 148,
+      "seed": "0x5489D511"
+    },
+    {
+      "id": "kdf.properties",
+      "status": "PASS",
+      "seconds": 7.5548824,
+      "resultRoundedSeconds": 7.555,
+      "peakRssMiB": 1463,
+      "seed": "0x16416041"
+    },
+    {
+      "id": "kdf.peak-memory-and-header",
+      "status": "PASS",
+      "seconds": 6.6798805,
+      "resultRoundedSeconds": 6.68,
+      "peakRssMiB": 1748,
+      "seed": "0x6607E455"
+    },
+    {
+      "id": "crypto.primitive-vectors",
+      "status": "PASS",
+      "seconds": 0.4540414,
+      "resultRoundedSeconds": 0.454,
+      "peakRssMiB": 169,
+      "seed": "0x558C6D1B"
+    },
+    {
+      "id": "security.skein-workspace-wipe",
+      "status": "PASS",
+      "seconds": 1.2789223,
+      "resultRoundedSeconds": 1.279,
+      "peakRssMiB": 64,
+      "seed": "0x6EF83FAA"
+    },
+    {
+      "id": "crypto.mldsa87-interop",
+      "status": "PASS",
+      "seconds": 0.1805413,
+      "resultRoundedSeconds": 0.181,
+      "peakRssMiB": 64,
+      "seed": "0x36116C0A"
+    },
+    {
+      "id": "crypto.reference-differential",
+      "status": "PASS",
+      "seconds": 0.3939986,
+      "resultRoundedSeconds": 0.394,
+      "peakRssMiB": 74,
+      "seed": "0x0A917F2D"
+    },
+    {
+      "id": "crypto.v13-parallel-mac-kat",
+      "status": "PASS",
+      "seconds": 0.2355527,
+      "resultRoundedSeconds": 0.236,
+      "peakRssMiB": 94,
+      "seed": "0x75C9D39D"
+    },
+    {
+      "id": "crypto.aes-ctr-differential",
+      "status": "PASS",
+      "seconds": 0.6532811,
+      "resultRoundedSeconds": 0.653,
+      "peakRssMiB": 1096,
+      "seed": "0x4D8942E3"
+    },
+    {
+      "id": "crypto.kalyna-fast-path-differential",
+      "status": "PASS",
+      "seconds": 19.2743691,
+      "resultRoundedSeconds": 19.274,
+      "peakRssMiB": 1323,
+      "seed": "0x6608EDA3"
+    },
+    {
+      "id": "crypto.chacha20-fast-path-differential",
+      "status": "PASS",
+      "seconds": 1.5366415,
+      "resultRoundedSeconds": 1.537,
+      "peakRssMiB": 1068,
+      "seed": "0x4BD337B6"
+    },
+    {
+      "id": "crypto.xchacha20-poly1305-draft03",
+      "status": "PASS",
+      "seconds": 5.376816,
+      "resultRoundedSeconds": 5.377,
+      "peakRssMiB": 1264,
+      "seed": "0x1051668D"
+    },
+    {
+      "id": "keysheet.full-factor-print",
+      "status": "PASS",
+      "seconds": 0.014192,
+      "resultRoundedSeconds": 0.014,
+      "peakRssMiB": 58,
+      "seed": "0x1D2E6836"
+    },
+    {
+      "id": "security.pipeline-worker-policy",
+      "status": "PASS",
+      "seconds": 0.0007484,
+      "resultRoundedSeconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x11B4E054"
+    },
+    {
+      "id": "security.pipeline-native-concurrency",
+      "status": "PASS",
+      "seconds": 0.0064471,
+      "resultRoundedSeconds": 0.006,
+      "peakRssMiB": 57,
+      "seed": "0x4D2D10BD"
+    },
+    {
+      "id": "security.secure-memory-unlock-accounting",
+      "status": "PASS",
+      "seconds": 0.0029075,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 59,
+      "seed": "0x7A6824AD"
+    },
+    {
+      "id": "security.composite-secret-cleanup",
+      "status": "PASS",
+      "seconds": 0.0065706,
+      "resultRoundedSeconds": 0.007,
+      "peakRssMiB": 60,
+      "seed": "0x38A8886E"
+    },
+    {
+      "id": "security.production-secret-cleanup-faults",
+      "status": "PASS",
+      "seconds": 0.14455,
+      "resultRoundedSeconds": 0.145,
+      "peakRssMiB": 79,
+      "seed": "0x62424A9E"
+    },
+    {
+      "id": "security.container-worker-multifailure",
+      "status": "PASS",
+      "seconds": 0.0031726,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 56,
+      "seed": "0x5DEDAFC6"
+    },
+    {
+      "id": "security.authenticator-worker-multifailure",
+      "status": "PASS",
+      "seconds": 0.0087154,
+      "resultRoundedSeconds": 0.009,
+      "peakRssMiB": 59,
+      "seed": "0x4B83DABD"
+    },
+    {
+      "id": "security.extraction-parent-no-side-effects",
+      "status": "PASS",
+      "seconds": 0.0015174,
+      "resultRoundedSeconds": 0.002,
+      "peakRssMiB": 56,
+      "seed": "0x341E08DB"
+    },
+    {
+      "id": "recovery.manifest-json-preflight",
+      "status": "PASS",
+      "seconds": 0.0042722,
+      "resultRoundedSeconds": 0.004,
+      "peakRssMiB": 57,
+      "seed": "0x5FE2F58A"
+    },
+    {
+      "id": "zpaq.process-resource-limits",
+      "status": "PASS",
+      "seconds": 0.7837637,
+      "resultRoundedSeconds": 0.784,
+      "peakRssMiB": 80,
+      "seed": "0x77A2B256"
+    },
+    {
+      "id": "zpaq.fail-fast-error-preservation",
+      "status": "PASS",
+      "seconds": 0.1247968,
+      "resultRoundedSeconds": 0.125,
+      "peakRssMiB": 68,
+      "seed": "0x46F6B87A"
+    },
+    {
+      "id": "zpaq.sync-consumer-fail-fast",
+      "status": "PASS",
+      "seconds": 0.1286095,
+      "resultRoundedSeconds": 0.129,
+      "peakRssMiB": 96,
+      "seed": "0x568B136A"
+    },
+    {
+      "id": "zpaq.native-hardening-selftests",
+      "status": "PASS",
+      "seconds": 0.2434827,
+      "resultRoundedSeconds": 0.243,
+      "peakRssMiB": 64,
+      "seed": "0x62F37953"
+    },
+    {
+      "id": "zpaq.three-file-commit-binding",
+      "status": "PASS",
+      "seconds": 0.4575238,
+      "resultRoundedSeconds": 0.458,
+      "peakRssMiB": 82,
+      "seed": "0x02A946E9"
+    },
+    {
+      "id": "packaging.keychain-secret-not-in-argv",
+      "status": "PASS",
+      "seconds": 0.0025679,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 56,
+      "seed": "0x4364E609"
+    },
+    {
+      "id": "packaging.usb-wrapping-key-input",
+      "status": "PASS",
+      "seconds": 0.0083983,
+      "resultRoundedSeconds": 0.008,
+      "peakRssMiB": 59,
+      "seed": "0x65A069F2"
+    },
+    {
+      "id": "packaging.hybrid-key-separation",
+      "status": "PASS",
+      "seconds": 64.0860824,
+      "resultRoundedSeconds": 64.086,
+      "peakRssMiB": 76,
+      "seed": "0x68477DF1"
+    },
+    {
+      "id": "packaging.private-directory-lease",
+      "status": "PASS",
+      "seconds": 0.0574796,
+      "resultRoundedSeconds": 0.057,
+      "peakRssMiB": 65,
+      "seed": "0x112D748B"
+    },
+    {
+      "id": "kdf.argon2-equivalence",
+      "status": "PASS",
+      "seconds": 5.6551113,
+      "resultRoundedSeconds": 5.655,
+      "peakRssMiB": 1276,
+      "seed": "0x7FC505F7"
+    },
+    {
+      "id": "zpaq.seatbelt-runtime",
+      "status": "PASS",
+      "seconds": 32.0311829,
+      "resultRoundedSeconds": 32.031,
+      "peakRssMiB": 93,
+      "seed": "0x0602C2CB"
+    },
+    {
+      "id": "zpaq.full-matrix",
+      "status": "PASS",
+      "seconds": 21.5531493,
+      "resultRoundedSeconds": 21.553,
+      "peakRssMiB": 110,
+      "seed": "0x6BAF0318"
+    },
+    {
+      "id": "zpaq.free-space-descriptor",
+      "status": "PASS",
+      "seconds": 0.0036424,
+      "resultRoundedSeconds": 0.004,
+      "peakRssMiB": 56,
+      "seed": "0x794580C3"
+    },
+    {
+      "id": "kdf.v13-master-factor-split",
+      "status": "PASS",
+      "seconds": 4.0931145,
+      "resultRoundedSeconds": 4.093,
+      "peakRssMiB": 1824,
+      "seed": "0x1C34AAF6"
+    },
+    {
+      "id": "containers.v13-production-worker-equivalence",
+      "status": "PASS",
+      "seconds": 12.4793916,
+      "resultRoundedSeconds": 12.479,
+      "peakRssMiB": 777,
+      "seed": "0x7FF9D72C"
+    },
+    {
+      "id": "containers.v13-kpar2-roundtrip",
+      "status": "PASS",
+      "seconds": 24.6620811,
+      "resultRoundedSeconds": 24.662,
+      "peakRssMiB": 2052,
+      "seed": "0x4FD81C44"
+    },
+    {
+      "id": "deletion.quarantine-symlink",
+      "status": "PASS",
+      "seconds": 0.0301905,
+      "resultRoundedSeconds": 0.03,
+      "peakRssMiB": 65,
+      "seed": "0x3B18E75C"
+    },
+    {
+      "id": "entropy.exception-safety",
+      "status": "PASS",
+      "seconds": 0.0031945,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 59,
+      "seed": "0x49E54413"
+    },
+    {
+      "id": "crypto.cascade-layering",
+      "status": "PASS",
+      "seconds": 0.3852838,
+      "resultRoundedSeconds": 0.385,
+      "peakRssMiB": 72,
+      "seed": "0x4EB9AFA7"
+    },
+    {
+      "id": "crypto.two-round-derivation",
+      "status": "PASS",
+      "seconds": 0.1532916,
+      "resultRoundedSeconds": 0.153,
+      "peakRssMiB": 72,
+      "seed": "0x1E2313E1"
+    },
+    {
+      "id": "crypto.unprepared-parameters",
+      "status": "PASS",
+      "seconds": 0.7302847,
+      "resultRoundedSeconds": 0.73,
+      "peakRssMiB": 74,
+      "seed": "0x03995F60"
+    },
+    {
+      "id": "crypto.per-chunk-nonces",
+      "status": "PASS",
+      "seconds": 47.2651785,
+      "resultRoundedSeconds": 47.265,
+      "peakRssMiB": 2423,
+      "seed": "0x298D83B0"
+    },
+    {
+      "id": "crypto.mars-shacal-vectors",
+      "status": "PASS",
+      "seconds": 1.4129232,
+      "resultRoundedSeconds": 1.413,
+      "peakRssMiB": 112,
+      "seed": "0x073770DE"
+    },
+    {
+      "id": "deletion.secure-file-object-binding",
+      "status": "PASS",
+      "seconds": 0.0449511,
+      "resultRoundedSeconds": 0.045,
+      "peakRssMiB": 63,
+      "seed": "0x5C59D280"
+    },
+    {
+      "id": "recovery.sidecar-transaction",
+      "status": "PASS",
+      "seconds": 1.0867082,
+      "resultRoundedSeconds": 1.087,
+      "peakRssMiB": 97,
+      "seed": "0x3AAED0A9"
+    },
+    {
+      "id": "recovery.kpar2-v4-adversarial",
+      "status": "PASS",
+      "seconds": 14.0335214,
+      "resultRoundedSeconds": 14.034,
+      "peakRssMiB": 1469,
+      "seed": "0x5046EADA"
+    },
+    {
+      "id": "recovery.parallel-worker-equivalence",
+      "status": "PASS",
+      "seconds": 0.089602,
+      "resultRoundedSeconds": 0.09,
+      "peakRssMiB": 119,
+      "seed": "0x311BBF1E"
+    },
+    {
+      "id": "recovery.physical-eio-repair",
+      "status": "PASS",
+      "seconds": 0.8348242,
+      "resultRoundedSeconds": 0.835,
+      "peakRssMiB": 93,
+      "seed": "0x225FA3CC"
+    },
+    {
+      "id": "recovery.key-derivation-failure-cleanup",
+      "status": "PASS",
+      "seconds": 0.1217762,
+      "resultRoundedSeconds": 0.122,
+      "peakRssMiB": 71,
+      "seed": "0x27849029"
+    },
+    {
+      "id": "recovery.parallel-copy-fail-fast",
+      "status": "PASS",
+      "seconds": 0.0111336,
+      "resultRoundedSeconds": 0.011,
+      "peakRssMiB": 64,
+      "seed": "0x7197818F"
+    },
+    {
+      "id": "recovery.parallel-copy-concurrency",
+      "status": "PASS",
+      "seconds": 0.0128826,
+      "resultRoundedSeconds": 0.013,
+      "peakRssMiB": 64,
+      "seed": "0x64EA85AD"
+    },
+    {
+      "id": "recovery.parallel-copy-scheduling-failure",
+      "status": "PASS",
+      "seconds": 0.0079943,
+      "resultRoundedSeconds": 0.008,
+      "peakRssMiB": 60,
+      "seed": "0x677851C7"
+    },
+    {
+      "id": "deletion.cryptographic-erase",
+      "status": "PASS",
+      "seconds": 4.5564362,
+      "resultRoundedSeconds": 4.556,
+      "peakRssMiB": 1474,
+      "seed": "0x3A3C4684"
+    },
+    {
+      "id": "deletion.original-verification",
+      "status": "PASS",
+      "seconds": 0.0359412,
+      "resultRoundedSeconds": 0.036,
+      "peakRssMiB": 63,
+      "seed": "0x7C2863B8"
+    },
+    {
+      "id": "containers.suite.kalyna512-512",
+      "status": "PASS",
+      "seconds": 13.832667,
+      "resultRoundedSeconds": 13.833,
+      "peakRssMiB": 1886,
+      "seed": "0x542FC30B"
+    },
+    {
+      "id": "containers.suite.threefish1024",
+      "status": "PASS",
+      "seconds": 12.2235526,
+      "resultRoundedSeconds": 12.224,
+      "peakRssMiB": 1783,
+      "seed": "0x26B39479"
+    },
+    {
+      "id": "containers.suite.threefish-over-kalyna",
+      "status": "PASS",
+      "seconds": 15.9762335,
+      "resultRoundedSeconds": 15.976,
+      "peakRssMiB": 2129,
+      "seed": "0x10A50691"
+    },
+    {
+      "id": "containers.suite.paranoia-cascade",
+      "status": "PASS",
+      "seconds": 24.6116198,
+      "resultRoundedSeconds": 24.612,
+      "peakRssMiB": 2241,
+      "seed": "0x64E3986D"
+    },
+    {
+      "id": "containers.suite.chacha-over-aes",
+      "status": "PASS",
+      "seconds": 13.4697675,
+      "resultRoundedSeconds": 13.47,
+      "peakRssMiB": 1853,
+      "seed": "0x3D87DD51"
+    },
+    {
+      "id": "containers.suite.aes256",
+      "status": "PASS",
+      "seconds": 12.6508079,
+      "resultRoundedSeconds": 12.651,
+      "peakRssMiB": 1764,
+      "seed": "0x4553D0C8"
+    },
+    {
+      "id": "containers.suite.mars448",
+      "status": "PASS",
+      "seconds": 14.9703243,
+      "resultRoundedSeconds": 14.97,
+      "peakRssMiB": 2259,
+      "seed": "0x4E0F0625"
+    },
+    {
+      "id": "containers.suite.shacal2-512",
+      "status": "PASS",
+      "seconds": 13.1362465,
+      "resultRoundedSeconds": 13.136,
+      "peakRssMiB": 1819,
+      "seed": "0x13FEA79A"
+    },
+    {
+      "id": "containers.suite.chacha20-poly1305",
+      "status": "PASS",
+      "seconds": 13.3390235,
+      "resultRoundedSeconds": 13.339,
+      "peakRssMiB": 1996,
+      "seed": "0x377A215B"
+    },
+    {
+      "id": "containers.suite.mixed-cascade",
+      "status": "PASS",
+      "seconds": 11.8453229,
+      "resultRoundedSeconds": 11.845,
+      "peakRssMiB": 1865,
+      "seed": "0x08C4265E"
+    },
+    {
+      "id": "containers.suite.camellia256",
+      "status": "PASS",
+      "seconds": 12.5559987,
+      "resultRoundedSeconds": 12.556,
+      "peakRssMiB": 2141,
+      "seed": "0x573F8B48"
+    },
+    {
+      "id": "containers.suite.serpent256",
+      "status": "PASS",
+      "seconds": 14.4976584,
+      "resultRoundedSeconds": 14.498,
+      "peakRssMiB": 1975,
+      "seed": "0x4A47E363"
+    },
+    {
+      "id": "recovery.suite.threefish-over-kalyna",
+      "status": "PASS",
+      "seconds": 14.1822539,
+      "resultRoundedSeconds": 14.182,
+      "peakRssMiB": 2190,
+      "seed": "0x1CBE55B6"
+    },
+    {
+      "id": "recovery.suite.chacha-over-aes",
+      "status": "PASS",
+      "seconds": 13.4347727,
+      "resultRoundedSeconds": 13.435,
+      "peakRssMiB": 2085,
+      "seed": "0x22BF3207"
+    },
+    {
+      "id": "recovery.suite.mixed-cascade",
+      "status": "PASS",
+      "seconds": 12.6112282,
+      "resultRoundedSeconds": 12.611,
+      "peakRssMiB": 2183,
+      "seed": "0x2D8388BA"
+    },
+    {
+      "id": "recovery.suite.paranoia-cascade",
+      "status": "PASS",
+      "seconds": 21.657643,
+      "resultRoundedSeconds": 21.658,
+      "peakRssMiB": 2223,
+      "seed": "0x3D141520"
+    },
+    {
+      "id": "recovery.suite.threefish1024",
+      "status": "PASS",
+      "seconds": 12.3364886,
+      "resultRoundedSeconds": 12.336,
+      "peakRssMiB": 2068,
+      "seed": "0x233A491D"
+    },
+    {
+      "id": "recovery.suite.kalyna512-512",
+      "status": "PASS",
+      "seconds": 9.0671995,
+      "resultRoundedSeconds": 9.067,
+      "peakRssMiB": 1550,
+      "seed": "0x2EEAF0A9"
+    },
+    {
+      "id": "recovery.suite.shacal2-512",
+      "status": "PASS",
+      "seconds": 10.5868645,
+      "resultRoundedSeconds": 10.587,
+      "peakRssMiB": 1810,
+      "seed": "0x41146621"
+    },
+    {
+      "id": "recovery.suite.mars448",
+      "status": "PASS",
+      "seconds": 12.5516512,
+      "resultRoundedSeconds": 12.552,
+      "peakRssMiB": 2180,
+      "seed": "0x71B8A134"
+    },
+    {
+      "id": "recovery.suite.aes256",
+      "status": "PASS",
+      "seconds": 11.468809,
+      "resultRoundedSeconds": 11.469,
+      "peakRssMiB": 2172,
+      "seed": "0x2950AAE8"
+    },
+    {
+      "id": "recovery.suite.camellia256",
+      "status": "PASS",
+      "seconds": 9.6601817,
+      "resultRoundedSeconds": 9.66,
+      "peakRssMiB": 2085,
+      "seed": "0x0A6542B6"
+    },
+    {
+      "id": "recovery.suite.serpent256",
+      "status": "PASS",
+      "seconds": 10.7278599,
+      "resultRoundedSeconds": 10.728,
+      "peakRssMiB": 1993,
+      "seed": "0x5738223E"
+    },
+    {
+      "id": "recovery.suite.chacha20-poly1305",
+      "status": "PASS",
+      "seconds": 9.8463819,
+      "resultRoundedSeconds": 9.846,
+      "peakRssMiB": 1812,
+      "seed": "0x6C09B1F2"
+    },
+    {
+      "id": "gui.entropy-display",
+      "status": "PASS",
+      "seconds": 3.999576,
+      "resultRoundedSeconds": 4,
+      "peakRssMiB": 135,
+      "seed": "0x33534E5F"
+    },
+    {
+      "id": "gui.encryption-toggle-target",
+      "status": "PASS",
+      "seconds": 0.3708365,
+      "resultRoundedSeconds": 0.371,
+      "peakRssMiB": 117,
+      "seed": "0x5C4D70D4"
+    },
+    {
+      "id": "gui.folder-target",
+      "status": "PASS",
+      "seconds": 0.3657762,
+      "resultRoundedSeconds": 0.366,
+      "peakRssMiB": 115,
+      "seed": "0x60A99F4F"
+    },
+    {
+      "id": "gui.destination-folder-target",
+      "status": "PASS",
+      "seconds": 0.3665308,
+      "resultRoundedSeconds": 0.367,
+      "peakRssMiB": 115,
+      "seed": "0x6C24975D"
+    },
+    {
+      "id": "gui.archive-picker-filter-reset",
+      "status": "PASS",
+      "seconds": 0.3655501,
+      "resultRoundedSeconds": 0.366,
+      "peakRssMiB": 115,
+      "seed": "0x69650EDA"
+    },
+    {
+      "id": "gui.password-policy",
+      "status": "PASS",
+      "seconds": 0.5470212,
+      "resultRoundedSeconds": 0.547,
+      "peakRssMiB": 218,
+      "seed": "0x5043ADA7"
+    },
+    {
+      "id": "gui.credential-policy-boundary",
+      "status": "PASS",
+      "seconds": 0.6141884,
+      "resultRoundedSeconds": 0.614,
+      "peakRssMiB": 228,
+      "seed": "0x0FD3DD7A"
+    },
+    {
+      "id": "gui.original-deletion-localization",
+      "status": "PASS",
+      "seconds": 0.3854183,
+      "resultRoundedSeconds": 0.385,
+      "peakRssMiB": 120,
+      "seed": "0x00DC5882"
+    },
+    {
+      "id": "gui.erase-completion-status",
+      "status": "PASS",
+      "seconds": 0.4728723,
+      "resultRoundedSeconds": 0.473,
+      "peakRssMiB": 123,
+      "seed": "0x76499C2C"
+    },
+    {
+      "id": "gui.resource-policy",
+      "status": "PASS",
+      "seconds": 0.4012541,
+      "resultRoundedSeconds": 0.401,
+      "peakRssMiB": 123,
+      "seed": "0x6B24CB49"
+    },
+    {
+      "id": "gui.rev11-preference-restart",
+      "status": "PASS",
+      "seconds": 0.3962391,
+      "resultRoundedSeconds": 0.396,
+      "peakRssMiB": 123,
+      "seed": "0x6585C543"
+    },
+    {
+      "id": "gui.rev11-progress",
+      "status": "PASS",
+      "seconds": 0.4028128,
+      "resultRoundedSeconds": 0.403,
+      "peakRssMiB": 122,
+      "seed": "0x72236A74"
+    },
+    {
+      "id": "gui.rev11-observer-isolation",
+      "status": "PASS",
+      "seconds": 0.3708224,
+      "resultRoundedSeconds": 0.371,
+      "peakRssMiB": 117,
+      "seed": "0x1169ABE6"
+    },
+    {
+      "id": "gui.control-inventory",
+      "status": "PASS",
+      "seconds": 0.365698,
+      "resultRoundedSeconds": 0.366,
+      "peakRssMiB": 115,
+      "seed": "0x090CC8EF"
+    },
+    {
+      "id": "gui.factor-normalization",
+      "status": "PASS",
+      "seconds": 0.3657948,
+      "resultRoundedSeconds": 0.366,
+      "peakRssMiB": 115,
+      "seed": "0x2F0DD65A"
+    },
+    {
+      "id": "gui.secret-clearing",
+      "status": "PASS",
+      "seconds": 0.3759777,
+      "resultRoundedSeconds": 0.376,
+      "peakRssMiB": 118,
+      "seed": "0x075AED2E"
+    },
+    {
+      "id": "gui.streaming-thread-boundary",
+      "status": "PASS",
+      "seconds": 0.3705431,
+      "resultRoundedSeconds": 0.371,
+      "peakRssMiB": 117,
+      "seed": "0x24BB6120"
+    },
+    {
+      "id": "gui.create-failure-secret-clearing",
+      "status": "PASS",
+      "seconds": 0.3907973,
+      "resultRoundedSeconds": 0.391,
+      "peakRssMiB": 125,
+      "seed": "0x23949501"
+    },
+    {
+      "id": "gui.extract-list-failure-secret-clearing",
+      "status": "PASS",
+      "seconds": 0.3865517,
+      "resultRoundedSeconds": 0.387,
+      "peakRssMiB": 123,
+      "seed": "0x709B51C3"
+    },
+    {
+      "id": "gui.recovery-failure-secret-clearing",
+      "status": "PASS",
+      "seconds": 0.3803013,
+      "resultRoundedSeconds": 0.38,
+      "peakRssMiB": 122,
+      "seed": "0x4AE94903"
+    },
+    {
+      "id": "gui.kdf-entropy-localization",
+      "status": "PASS",
+      "seconds": 0.3839553,
+      "resultRoundedSeconds": 0.384,
+      "peakRssMiB": 120,
+      "seed": "0x2A03C267"
+    },
+    {
+      "id": "gui.cups-spool-warning-localization",
+      "status": "PASS",
+      "seconds": 0.4125339,
+      "resultRoundedSeconds": 0.413,
+      "peakRssMiB": 123,
+      "seed": "0x7096D3AF"
+    },
+    {
+      "id": "gui.failed-archive-preservation",
+      "status": "PASS",
+      "seconds": 0.3650762,
+      "resultRoundedSeconds": 0.365,
+      "peakRssMiB": 115,
+      "seed": "0x214E0DE3"
+    },
+    {
+      "id": "gui.verification-root-cleanup-identity",
+      "status": "PASS",
+      "seconds": 0.3740139,
+      "resultRoundedSeconds": 0.374,
+      "peakRssMiB": 118,
+      "seed": "0x2AA0A4E3"
+    },
+    {
+      "id": "keysheet.pair-cleanup-identity",
+      "status": "PASS",
+      "seconds": 0.4633825,
+      "resultRoundedSeconds": 0.463,
+      "peakRssMiB": 129,
+      "seed": "0x44909267"
+    },
+    {
+      "id": "keysheet.cleanup-failure-visible",
+      "status": "PASS",
+      "seconds": 0.4491268,
+      "resultRoundedSeconds": 0.449,
+      "peakRssMiB": 128,
+      "seed": "0x5CD4CFF3"
+    },
+    {
+      "id": "keysheet.pair-atomic-commit",
+      "status": "PASS",
+      "seconds": 0.5214161,
+      "resultRoundedSeconds": 0.521,
+      "peakRssMiB": 129,
+      "seed": "0x01C8744A"
+    },
+    {
+      "id": "gui.entropy-rev9-phases-cancel",
+      "status": "PASS",
+      "seconds": 8.3176864,
+      "resultRoundedSeconds": 8.318,
+      "peakRssMiB": 134,
+      "seed": "0x44DD7A5A"
+    },
+    {
+      "id": "gui.operation-cancel-lifetime",
+      "status": "PASS",
+      "seconds": 0.3738213,
+      "resultRoundedSeconds": 0.374,
+      "peakRssMiB": 117,
+      "seed": "0x5C2A9155"
+    },
+    {
+      "id": "gui.full-creation-flow",
+      "status": "PASS",
+      "seconds": 3.6517714,
+      "resultRoundedSeconds": 3.652,
+      "peakRssMiB": 209,
+      "seed": "0x5ADC1CE2"
+    },
+    {
+      "id": "factor.rev12-whitespace",
+      "status": "PASS",
+      "seconds": 0.0087109,
+      "resultRoundedSeconds": 0.009,
+      "peakRssMiB": 60,
+      "seed": "0x68D6D376"
+    },
+    {
+      "id": "factor.rev12-boundaries",
+      "status": "PASS",
+      "seconds": 0.0062374,
+      "resultRoundedSeconds": 0.006,
+      "peakRssMiB": 60,
+      "seed": "0x5F639551"
+    },
+    {
+      "id": "factor.rev12-invalid",
+      "status": "PASS",
+      "seconds": 0.0016622,
+      "resultRoundedSeconds": 0.002,
+      "peakRssMiB": 56,
+      "seed": "0x12689F66"
+    },
+    {
+      "id": "factor.rev12-password-pin",
+      "status": "PASS",
+      "seconds": 0.1982802,
+      "resultRoundedSeconds": 0.198,
+      "peakRssMiB": 71,
+      "seed": "0x06F6BC3C"
+    },
+    {
+      "id": "factor.rev12-allpaths",
+      "status": "PASS",
+      "seconds": 1.4866934,
+      "resultRoundedSeconds": 1.487,
+      "peakRssMiB": 209,
+      "seed": "0x25E2DA27"
+    },
+    {
+      "id": "gui.factor-rev12-clear-pending-paste",
+      "status": "PASS",
+      "seconds": 0.4115606,
+      "resultRoundedSeconds": 0.412,
+      "peakRssMiB": 122,
+      "seed": "0x356BC255"
+    },
+    {
+      "id": "gui.factor-rev12-clear-undo",
+      "status": "PASS",
+      "seconds": 0.4319445,
+      "resultRoundedSeconds": 0.432,
+      "peakRssMiB": 122,
+      "seed": "0x3C2CFACE"
+    },
+    {
+      "id": "gui.factor-rev12-paste",
+      "status": "PASS",
+      "seconds": 0.4576353,
+      "resultRoundedSeconds": 0.458,
+      "peakRssMiB": 125,
+      "seed": "0x1C900EB0"
+    },
+    {
+      "id": "gui.factor-rev12-atomic-nowrap",
+      "status": "PASS",
+      "seconds": 0.8076857,
+      "resultRoundedSeconds": 0.808,
+      "peakRssMiB": 159,
+      "seed": "0x1A54E9F3"
+    },
+    {
+      "id": "gui.factor-rev12-atomic",
+      "status": "PASS",
+      "seconds": 0.8214122,
+      "resultRoundedSeconds": 0.821,
+      "peakRssMiB": 165,
+      "seed": "0x1F2E588E"
+    },
+    {
+      "id": "gui.factor-rev12-layout-spaces-nowrap",
+      "status": "PASS",
+      "seconds": 0.455253,
+      "resultRoundedSeconds": 0.455,
+      "peakRssMiB": 132,
+      "seed": "0x0307A780"
+    },
+    {
+      "id": "gui.factor-rev12-layout-spaces",
+      "status": "PASS",
+      "seconds": 0.456774,
+      "resultRoundedSeconds": 0.457,
+      "peakRssMiB": 134,
+      "seed": "0x3909E517"
+    },
+    {
+      "id": "gui.factor-rev12-edit-undo",
+      "status": "PASS",
+      "seconds": 0.4175301,
+      "resultRoundedSeconds": 0.418,
+      "peakRssMiB": 122,
+      "seed": "0x26E8F6B7"
+    },
+    {
+      "id": "gui.factor-rev12-editor-drop",
+      "status": "PASS",
+      "seconds": 0.4512706,
+      "resultRoundedSeconds": 0.451,
+      "peakRssMiB": 124,
+      "seed": "0x57ABCCD9"
+    },
+    {
+      "id": "gui.rev12-preflight-state",
+      "status": "PASS",
+      "seconds": 0.9181724,
+      "resultRoundedSeconds": 0.918,
+      "peakRssMiB": 210,
+      "seed": "0x6A2178A2"
+    },
+    {
+      "id": "gui.rev12-extract-preflight",
+      "status": "PASS",
+      "seconds": 0.6406246,
+      "resultRoundedSeconds": 0.641,
+      "peakRssMiB": 122,
+      "seed": "0x1217B6D8"
+    },
+    {
+      "id": "gui.rev12-verification-cleanup",
+      "status": "PASS",
+      "seconds": 2.4305975,
+      "resultRoundedSeconds": 2.431,
+      "peakRssMiB": 251,
+      "seed": "0x7ABB1BF8"
+    },
+    {
+      "id": "gui.rev12-kdf-minimum-preflight",
+      "status": "PASS",
+      "seconds": 0.8052117,
+      "resultRoundedSeconds": 0.805,
+      "peakRssMiB": 201,
+      "seed": "0x103A648B"
+    },
+    {
+      "id": "container.rev12-kdf-minimum-preflight",
+      "status": "PASS",
+      "seconds": 0.5414799,
+      "resultRoundedSeconds": 0.541,
+      "peakRssMiB": 160,
+      "seed": "0x5ABAD1E1"
+    },
+    {
+      "id": "entropy.rev12-consume-boundary",
+      "status": "PASS",
+      "seconds": 0.0038491,
+      "resultRoundedSeconds": 0.004,
+      "peakRssMiB": 59,
+      "seed": "0x5941F0A6"
+    },
+    {
+      "id": "container.rev12-preflight-race",
+      "status": "PASS",
+      "seconds": 1.9749852,
+      "resultRoundedSeconds": 1.975,
+      "peakRssMiB": 1478,
+      "seed": "0x5C53660F"
+    },
+    {
+      "id": "gui.rev12-dispose-failure",
+      "status": "PASS",
+      "seconds": 0.6700945,
+      "resultRoundedSeconds": 0.67,
+      "peakRssMiB": 123,
+      "seed": "0x0B467BA8"
+    },
+    {
+      "id": "gui.rev12-dispose-storage-ownership",
+      "status": "PASS",
+      "seconds": 0.6391039,
+      "resultRoundedSeconds": 0.639,
+      "peakRssMiB": 122,
+      "seed": "0x09D65B26"
+    },
+    {
+      "id": "gui.rev12-storage-transitions",
+      "status": "PASS",
+      "seconds": 0.7124635,
+      "resultRoundedSeconds": 0.712,
+      "peakRssMiB": 137,
+      "seed": "0x6BC36CF1"
+    },
+    {
+      "id": "gui.rev12-drop-storage-ownership",
+      "status": "PASS",
+      "seconds": 2.9693609,
+      "resultRoundedSeconds": 2.969,
+      "peakRssMiB": 387,
+      "seed": "0x56D0CF4C"
+    },
+    {
+      "id": "gui.rev12-storage-path-callbacks",
+      "status": "PASS",
+      "seconds": 0.8287889,
+      "resultRoundedSeconds": 0.829,
+      "peakRssMiB": 158,
+      "seed": "0x04BB3CA2"
+    },
+    {
+      "id": "gui.rev12-storage-path-events",
+      "status": "PASS",
+      "seconds": 2.6361235,
+      "resultRoundedSeconds": 2.636,
+      "peakRssMiB": 216,
+      "seed": "0x0D8B7119"
+    },
+    {
+      "id": "gui.rev12-file-activation-ownership",
+      "status": "PASS",
+      "seconds": 0.746232,
+      "resultRoundedSeconds": 0.746,
+      "peakRssMiB": 132,
+      "seed": "0x2D09FFED"
+    },
+    {
+      "id": "resources.rev12-adaptive-window",
+      "status": "PASS",
+      "seconds": 0.0164615,
+      "resultRoundedSeconds": 0.016,
+      "peakRssMiB": 60,
+      "seed": "0x6F89D48C"
+    },
+    {
+      "id": "resources.rev12-kdf-minimum-admission",
+      "status": "PASS",
+      "seconds": 0.0036905,
+      "resultRoundedSeconds": 0.004,
+      "peakRssMiB": 56,
+      "seed": "0x766C7AD1"
+    },
+    {
+      "id": "diagnostics.rev12-phase-bounds",
+      "status": "PASS",
+      "seconds": 0.0168488,
+      "resultRoundedSeconds": 0.017,
+      "peakRssMiB": 60,
+      "seed": "0x7886CF60"
+    },
+    {
+      "id": "diagnostics.rev12-phase-equivalence",
+      "status": "PASS",
+      "seconds": 2.2297784,
+      "resultRoundedSeconds": 2.23,
+      "peakRssMiB": 209,
+      "seed": "0x601F1216"
+    },
+    {
+      "id": "gui.rev12-console-text",
+      "status": "PASS",
+      "seconds": 7.1460616,
+      "resultRoundedSeconds": 7.146,
+      "peakRssMiB": 473,
+      "seed": "0x4DA385E1"
+    },
+    {
+      "id": "gui.rev12-console-text-nowrap",
+      "status": "PASS",
+      "seconds": 7.1187605,
+      "resultRoundedSeconds": 7.119,
+      "peakRssMiB": 435,
+      "seed": "0x6B7779EF"
+    },
+    {
+      "id": "gui.rev12-console-horizontal",
+      "status": "PASS",
+      "seconds": 2.1931145,
+      "resultRoundedSeconds": 2.193,
+      "peakRssMiB": 128,
+      "seed": "0x436C4989"
+    },
+    {
+      "id": "security.pin-password-pair",
+      "status": "PASS",
+      "seconds": 0.0142314,
+      "resultRoundedSeconds": 0.014,
+      "peakRssMiB": 59,
+      "seed": "0x02694BE7"
+    },
+    {
+      "id": "security.pin-local-dates",
+      "status": "PASS",
+      "seconds": 0.003305,
+      "resultRoundedSeconds": 0.003,
+      "peakRssMiB": 56,
+      "seed": "0x0E634F09"
+    },
+    {
+      "id": "security.pin-pattern-monotonicity",
+      "status": "PASS",
+      "seconds": 0.0676035,
+      "resultRoundedSeconds": 0.068,
+      "peakRssMiB": 66,
+      "seed": "0x78A10562"
+    },
+    {
+      "id": "security.credential-encoding-only",
+      "status": "PASS",
+      "seconds": 0.0075641,
+      "resultRoundedSeconds": 0.008,
+      "peakRssMiB": 68,
+      "seed": "0x4ECDF9B5"
+    },
+    {
+      "id": "credentials.static-fixture-provenance",
+      "status": "PASS",
+      "seconds": 0.0320211,
+      "resultRoundedSeconds": 0.032,
+      "peakRssMiB": 65,
+      "seed": "0x5730A24E"
+    },
+    {
+      "id": "credentials.creation-still-rejects",
+      "status": "PASS",
+      "seconds": 0.5309214,
+      "resultRoundedSeconds": 0.531,
+      "peakRssMiB": 166,
+      "seed": "0x00F05722"
+    },
+    {
+      "id": "credentials.read-empty",
+      "status": "PASS",
+      "seconds": 0.0473985,
+      "resultRoundedSeconds": 0.047,
+      "peakRssMiB": 67,
+      "seed": "0x5EB61079"
+    },
+    {
+      "id": "credentials.read-short",
+      "status": "PASS",
+      "seconds": 0.046975,
+      "resultRoundedSeconds": 0.047,
+      "peakRssMiB": 67,
+      "seed": "0x1D0675FA"
+    },
+    {
+      "id": "credentials.read-oversized-raw",
+      "status": "PASS",
+      "seconds": 0.0470198,
+      "resultRoundedSeconds": 0.047,
+      "peakRssMiB": 67,
+      "seed": "0x74F0BA34"
+    },
+    {
+      "id": "credentials.read-pin-substring",
+      "status": "PASS",
+      "seconds": 0.0470931,
+      "resultRoundedSeconds": 0.047,
+      "peakRssMiB": 67,
+      "seed": "0x46C38159"
+    },
+    {
+      "id": "credentials.read-date-2026-09-06",
+      "status": "PASS",
+      "seconds": 0.046976,
+      "resultRoundedSeconds": 0.047,
+      "peakRssMiB": 67,
+      "seed": "0x63807187"
+    },
+    {
+      "id": "credentials.read-model-and-old-pattern",
+      "status": "PASS",
+      "seconds": 0.0472936,
+      "resultRoundedSeconds": 0.047,
+      "peakRssMiB": 67,
+      "seed": "0x51FCD32E"
+    },
+    {
+      "id": "security.password-model-data",
+      "status": "PASS",
+      "seconds": 0.2598345,
+      "resultRoundedSeconds": 0.26,
+      "peakRssMiB": 220,
+      "seed": "0x5E6AF800"
+    },
+    {
+      "id": "security.password-model-phrases",
+      "status": "PASS",
+      "seconds": 0.4471928,
+      "resultRoundedSeconds": 0.447,
+      "peakRssMiB": 237,
+      "seed": "0x0FCAB9B9"
+    },
+    {
+      "id": "security.password-model-bip39",
+      "status": "PASS",
+      "seconds": 1.0968807,
+      "resultRoundedSeconds": 1.097,
+      "peakRssMiB": 245,
+      "seed": "0x25A467F1"
+    },
+    {
+      "id": "security.password-model-boundaries",
+      "status": "PASS",
+      "seconds": 0.8469534,
+      "resultRoundedSeconds": 0.847,
+      "peakRssMiB": 165,
+      "seed": "0x3B5268C5"
+    },
+    {
+      "id": "security.password-model-isolation",
+      "status": "PASS",
+      "seconds": 0.1527042,
+      "resultRoundedSeconds": 0.153,
+      "peakRssMiB": 149,
+      "seed": "0x74246822"
+    },
+    {
+      "id": "security.password-model-bounded",
+      "status": "PASS",
+      "seconds": 0.8018851,
+      "resultRoundedSeconds": 0.802,
+      "peakRssMiB": 164,
+      "seed": "0x33E3337F"
+    },
+    {
+      "id": "entropy.rev9-golden",
+      "status": "PASS",
+      "seconds": 0.2233183,
+      "resultRoundedSeconds": 0.223,
+      "peakRssMiB": 76,
+      "seed": "0x6FD7C7B8"
+    },
+    {
+      "id": "entropy.rev9-routing",
+      "status": "PASS",
+      "seconds": 0.0670927,
+      "resultRoundedSeconds": 0.067,
+      "peakRssMiB": 70,
+      "seed": "0x6AFB6EB7"
+    },
+    {
+      "id": "entropy.rev9-shuffle",
+      "status": "PASS",
+      "seconds": 0.2026453,
+      "resultRoundedSeconds": 0.203,
+      "peakRssMiB": 74,
+      "seed": "0x00A60628"
+    },
+    {
+      "id": "entropy.rev9-dual-composition",
+      "status": "PASS",
+      "seconds": 0.0505546,
+      "resultRoundedSeconds": 0.051,
+      "peakRssMiB": 69,
+      "seed": "0x6C980E00"
+    },
+    {
+      "id": "entropy.rev9-suite-plans",
+      "status": "PASS",
+      "seconds": 4.3618425,
+      "resultRoundedSeconds": 4.362,
+      "peakRssMiB": 81,
+      "seed": "0x3529EFAC"
+    },
+    {
+      "id": "entropy.rev9-output",
+      "status": "PASS",
+      "seconds": 0.8493167,
+      "resultRoundedSeconds": 0.849,
+      "peakRssMiB": 77,
+      "seed": "0x58DF3AC7"
+    },
+    {
+      "id": "entropy.rev9-faults",
+      "status": "PASS",
+      "seconds": 0.3668333,
+      "resultRoundedSeconds": 0.367,
+      "peakRssMiB": 73,
+      "seed": "0x6E46788B"
+    },
+    {
+      "id": "entropy.rev9-lifecycle",
+      "status": "PASS",
+      "seconds": 3.6052325,
+      "resultRoundedSeconds": 3.605,
+      "peakRssMiB": 81,
+      "seed": "0x008CA234"
+    },
+    {
+      "id": "resources.operation-storage-plan",
+      "status": "PASS",
+      "seconds": 0.0062434,
+      "resultRoundedSeconds": 0.006,
+      "peakRssMiB": 60,
+      "seed": "0x47C978DB"
+    },
+    {
+      "id": "resources.rev11-auto-planner",
+      "status": "PASS",
+      "seconds": 0.0015423,
+      "resultRoundedSeconds": 0.002,
+      "peakRssMiB": 57,
+      "seed": "0x24B822D6"
+    },
+    {
+      "id": "resources.rev11-chunk-window",
+      "status": "PASS",
+      "seconds": 0.0629143,
+      "resultRoundedSeconds": 0.063,
+      "peakRssMiB": 238,
+      "seed": "0x3C41108D"
+    },
+    {
+      "id": "zpaq.small-volume-capacity",
+      "status": "PASS",
+      "seconds": 7.5202134,
+      "resultRoundedSeconds": 7.52,
+      "peakRssMiB": 102,
+      "seed": "0x7116DE81"
+    }
+  ]
+}

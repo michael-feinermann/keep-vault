@@ -1,0 +1,9 @@
+{
+  "startedUtc": "2026-10-04T10:16:11.056794+00:00",
+  "sourceHead": "6efc276afdb1469e64c7d47dffdd40b25c76a335",
+  "launcherPid": 88165,
+  "harnessBuild": "082228",
+  "harnessInputCount": 127,
+  "scope": "Fresh complete managed functional regression on current unchanged sources with retained signed Build15 natives. Not a final Build16/AOT/installed GUI release gate.",
+  "helperPid": 88167
+}

@@ -1,0 +1,30 @@
+{
+  "observedUtc": "2026-10-04T15:51:16.227924+00:00",
+  "status": "PASS",
+  "toolchains": [
+    {
+      "scope": "sdk",
+      "entriesMatched": 5630,
+      "manifestSha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+      "status": "PASS",
+      "observation": "AFTER observation against same original manifest validated before full."
+    },
+    {
+      "scope": "reference-packages",
+      "entriesMatched": 3223,
+      "manifestSha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "status": "PASS",
+      "observation": "AFTER observation against same original manifest validated before full."
+    },
+    {
+      "scope": "used-build-packages",
+      "entriesMatched": 3223,
+      "manifestSha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "status": "PASS",
+      "observation": "AFTER_ONLY; used-build-packages has no fresh pre-full cache map."
+    }
+  ],
+  "helperSha256": "86c3d5e66f6858c9a59e428e79779f4a441bcf55b87660670956d3583f4820a4",
+  "helperMatchesExplicitPreFullPin": true,
+  "scope": "Observed after completed actual Full301; no continuous monitoring proof. Actual compiled DLL/native before/after map remains the product input proof."
+}
