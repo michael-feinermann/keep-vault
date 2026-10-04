@@ -556,6 +556,7 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.ZpaqArchive);
         using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
         using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
             ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
@@ -602,6 +603,7 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.ZpaqExtract);
         using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).ForExtraction(outputFolder).EnterScope();
         using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
             ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
@@ -702,6 +704,7 @@ public sealed partial class ZpaqService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.ZpaqList);
         using IDisposable policyScope = (_operationPolicy ?? ArchiveOperationPolicy.Current).EnterScope();
         using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
             ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
@@ -963,12 +966,10 @@ public sealed partial class ZpaqService
     public const long DefaultMaxExtractedBytes = 500L * 1024 * 1024 * 1024; // 500 GiB
     public const long DefaultMaxSingleFileBytes = 500L * 1024 * 1024 * 1024; // 500 GiB
     public const int DefaultMaxExtractedFiles = 500_000;
-    public const long DefaultMinFreeDiskSpaceBytes = 256L * 1024 * 1024; // 256 MiB
 
     internal static long MaxExtractedBytesOverride = -1;
     internal static long MaxSingleFileBytesOverride = -1;
     internal static int MaxExtractedFilesOverride = -1;
-    internal static long MinFreeDiskSpaceBytesOverride = -1;
     internal static long MaxZpaqResidentBytesOverride = -1;
     internal static int MaxZpaqChildProcessesOverride = -1;
     internal static TimeSpan? ProcessMonitorIntervalOverride;
@@ -1018,17 +1019,12 @@ public sealed partial class ZpaqService
         }
 #endif
 
-        long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
-
 #if KEEPVAULT_MACOS
         DirectoryTreeMeasurement measurement = macStaging.MeasureTree(allowWriters: false);
         ValidateExtractedTreeMeasurement(measurement);
 
-        long freeSpace = macStaging.GetFreeDiskSpaceBytes();
-        if (freeSpace < 0 || freeSpace < minFreeSpace)
-        {
-            throw new IOException($"ZPAQ-Extraktion abgebrochen: Unzureichender freier Speicherplatz auf dem Ziellaufwerk ({freeSpace} Bytes verbleibend).");
-        }
+        ArchiveOperationPolicy.Current.RequireRemainingExtractionCapacity(
+            macStaging.GetFreeDiskSpaceBytes(), measurement.TotalBytes, extractionComplete: true);
 #else
         DirectoryTreeMeasurement measurement = windowsStaging?.MeasureTree(allowWriters: false)
             ?? WindowsExtractionStaging.MeasureTreeNoFollow(stagingDirectory, allowWriters: false);
@@ -1080,7 +1076,6 @@ public sealed partial class ZpaqService
         , string? archiveOutputPath = null
     )
     {
-        long minFreeSpace = MinFreeDiskSpaceBytesOverride > 0 ? MinFreeDiskSpaceBytesOverride : DefaultMinFreeDiskSpaceBytes;
         TimeSpan monitorInterval = ProcessMonitorIntervalOverride is { } configuredInterval
             && configuredInterval > TimeSpan.Zero
             ? configuredInterval
@@ -1129,12 +1124,11 @@ public sealed partial class ZpaqService
                     throw new IOException("The descriptor-bound macOS extraction staging object is unavailable.");
                 }
 
-                long freeSpace = macStaging.GetFreeDiskSpaceBytes();
-                if (freeSpace < 0 || freeSpace < minFreeSpace)
-                {
-                    throw new IOException(
-                        $"ZPAQ-Extraktion abgebrochen: Unzureichender freier Speicherplatz auf dem Ziellaufwerk ({freeSpace} Bytes verbleibend).");
-                }
+                // Keep the cheap check between tree scans descriptor-bound.
+                // The last scan is a conservative lower bound on bytes written;
+                // it cannot admit more than the policy's next bounded window.
+                ArchiveOperationPolicy.Current.RequireRemainingExtractionCapacity(
+                    macStaging.GetFreeDiskSpaceBytes(), lastTreeMeasurement?.TotalBytes ?? 0);
 #else
                 if (!Directory.Exists(stagingDirectory) && windowsStaging is null)
                 {
@@ -1455,22 +1449,28 @@ public sealed partial class ZpaqService
 
         public override int Read(byte[] buffer, int offset, int count)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeRead, 0);
             int read = _inner.Read(buffer, offset, count);
             if (read > 0) _activity.RecordActivity();
+            ioProfile.Complete(read);
             return read;
         }
 
         public override int Read(Span<byte> buffer)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeRead, 0);
             int read = _inner.Read(buffer);
             if (read > 0) _activity.RecordActivity();
+            ioProfile.Complete(read);
             return read;
         }
 
         public override int ReadByte()
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeRead, 0);
             int value = _inner.ReadByte();
             if (value >= 0) _activity.RecordActivity();
+            ioProfile.Complete(value >= 0 ? 1 : 0);
             return value;
         }
 
@@ -1480,8 +1480,10 @@ public sealed partial class ZpaqService
             int count,
             CancellationToken cancellationToken)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeRead, 0);
             int read = await _inner.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
             if (read > 0) _activity.RecordActivity();
+            ioProfile.Complete(read);
             return read;
         }
 
@@ -1489,25 +1491,30 @@ public sealed partial class ZpaqService
             Memory<byte> buffer,
             CancellationToken cancellationToken = default)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeRead, 0);
             int read = await _inner.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
             if (read > 0) _activity.RecordActivity();
+            ioProfile.Complete(read);
             return read;
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeWrite, count);
             _inner.Write(buffer, offset, count);
             if (count > 0) _activity.RecordActivity();
         }
 
         public override void Write(ReadOnlySpan<byte> buffer)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeWrite, buffer.Length);
             _inner.Write(buffer);
             if (!buffer.IsEmpty) _activity.RecordActivity();
         }
 
         public override void WriteByte(byte value)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeWrite, 1);
             _inner.WriteByte(value);
             _activity.RecordActivity();
         }
@@ -1518,6 +1525,7 @@ public sealed partial class ZpaqService
             int count,
             CancellationToken cancellationToken)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeWrite, count);
             await _inner.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
             if (count > 0) _activity.RecordActivity();
         }
@@ -1526,6 +1534,7 @@ public sealed partial class ZpaqService
             ReadOnlyMemory<byte> buffer,
             CancellationToken cancellationToken = default)
         {
+            using var ioProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.PipeWrite, buffer.Length);
             await _inner.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
             if (!buffer.IsEmpty) _activity.RecordActivity();
         }
@@ -1915,6 +1924,7 @@ public sealed partial class ZpaqService
     private static async Task WaitForExitAndReleaseResourcesAsync(Process process,
         CpuWorkBudget.Lease? cpu, OperationMemoryBudget.HeavyLease? memory, CancellationToken token)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.ZpaqNativeExitWait);
         await process.WaitForExitAsync(token).ConfigureAwait(false);
         if (!HasExited(process)) throw new IOException("The native process exit was not confirmed.");
         // The consumer may still finish its authenticated MAC root after EOF.
@@ -1930,6 +1940,7 @@ public sealed partial class ZpaqService
         ProcessActivityTracker activity,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.ZpaqPipeConsumer);
         await consumeArchive(
                 new ProcessActivityStream(archiveOutput, activity),
                 cancellationToken)
@@ -2157,6 +2168,7 @@ public sealed partial class ZpaqService
         ProcessActivityTracker activity,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.ZpaqPipeProducer);
         Exception? primaryFailure = null;
         try
         {

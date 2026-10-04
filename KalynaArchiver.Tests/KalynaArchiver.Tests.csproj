@@ -13,6 +13,8 @@
     <Compile Include="..\KeepVaultInstaller\InstallerWindow.cs" Link="InstallerWindow.cs" />
     <ProjectReference Include="..\KalynaArchiver\KalynaArchiver.csproj" />
     <ProjectReference Include="..\KalynaArchiver.Signing\KalynaArchiver.Signing.csproj" />
+    <Compile Include="../KeepVaultMac.Tests/FactorInputRev12Tests.cs" Link="FactorInputRev12Tests.cs" />
+    <Compile Include="../KeepVaultMac.Tests/OperationPhaseProfileTests.cs" Link="OperationPhaseProfileTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

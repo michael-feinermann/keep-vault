@@ -1,0 +1,26 @@
+{
+  "scope": "Bound managed Release development snapshot with build15 trusted natives. Current service sources match frozen build inputs; unrelated GUI source can advance. Not installed AOT GUI or release approval.",
+  "startedUtc": "2026-10-03T10:51:23.247036+00:00",
+  "completedUtc": "2026-10-03T11:01:46.196762+00:00",
+  "exitCode": 1,
+  "sourceInputsSha256": "b99c06e1f229238fd051388f97bc6f1622c1fcf164accf81a748b9a4e4baa5fb",
+  "binaryInputsSha256": "dff7eaf0373d17c02dbb92e4682083bef94bac3d3661e06d2cafe2d96f4f9db8",
+  "logSha256": "3e3b02ef4b208da62ae19bdfcade1530b649ae1d7ef667fffadbc32d9400025d",
+  "files": {
+    "test-results.json": "0b653f8d18f377588c6be1831919bd35321c1798e7543b04e1dcbb97903d2599",
+    "test-timings.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "commandTestArguments": [
+    "--performance",
+    "--only",
+    "performance.cipher-suites",
+    "--parallel",
+    "1"
+  ],
+  "publicReceipt": "Derived from original execution receipt; absolute CLI paths omitted. Original content bound below.",
+  "originalExecutionSha256": "56f3703eed4c9ecddc981b438508a144cda27d6fef318597783909cfbc5a4f57",
+  "baseline": {
+    "sha256": "0caa36a1f5cbf165118eaf731cc7fdc9e1d4829663b3dcb07d9cf63d4c3fd822",
+    "scope": "Independent historical primitive-only same-host reference; historical overall group FAIL preserved."
+  }
+}

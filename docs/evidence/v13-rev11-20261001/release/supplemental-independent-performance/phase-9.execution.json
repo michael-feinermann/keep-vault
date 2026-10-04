@@ -1,0 +1,28 @@
+{
+  "phase": 9,
+  "testId": "performance.entropy-rev9-phases",
+  "startedUtc": "2026-10-01T10:27:31.493288+00:00",
+  "completedUtc": "2026-10-01T10:27:47.456585+00:00",
+  "exitCode": 0,
+  "command": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/sdk/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+    "--performance",
+    "--only",
+    "performance.entropy-rev9-phases",
+    "--parallel",
+    "1"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/KeepVaultMac",
+  "files": {
+    "phase-9.test-results.json": "c0be1cadb574454737f2eb8fc8ce7c5536fac32c88dd9c8e6e6815271e16ebbd",
+    "phase-9.test-timings.json": "325d4a86c94f29d01251db6c92fe897521c7d4585c6a4802973d45657f9c2ba5"
+  },
+  "logSha256": "e541e1d31b67aaec2155f4060f85ee5c6e7ba66b7875e0616a774f3e8e4e7b13",
+  "artifacts": [
+    {
+      "name": "entropy-rev9-phase-performance.json",
+      "sha256": "c1018a0cdab0b3a3dc31b4363c35d7ffdba05541788d674371d3fbb0b7e2fb4a"
+    }
+  ]
+}

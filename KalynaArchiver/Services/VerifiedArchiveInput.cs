@@ -361,6 +361,7 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
         Func<Stream, CancellationToken, Task<VerifiedArchiveAuthentication>> verifier,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.VerifiedGlobalBinding);
         ArgumentNullException.ThrowIfNull(verifier);
         lock (_gate)
         {
@@ -442,6 +443,8 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
     internal static void ComputeLocalTags(ReadOnlySpan<byte> hmacKey, ReadOnlySpan<byte> skeinKey,
         ReadOnlySpan<byte> transcript, Span<byte> tags)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.LocalRangeTags,
+            Math.Max(0, transcript.Length - TranscriptPrefixBytes));
         if (hmacKey.Length != 64 || skeinKey.Length != 128 || tags.Length != 192
             || transcript.Length <= TranscriptPrefixBytes || transcript.Length > TranscriptPrefixBytes + RangeBytes
             || BinaryPrimitives.ReadInt64BigEndian(transcript[32..]) < 0
@@ -541,6 +544,7 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
                     : CpuWorkBudget.AcquireAsync(_policy.MaxCpuWorkers, 1, token).AsTask().GetAwaiter().GetResult())
                 using (IDisposable? cpuScope = cpu?.EnterScope())
                 {
+                    using var rangeProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.LocalRangeVerification, count);
                     if (cachedRange == index) privateBuffer.Bytes.AsSpan(privateBuffer.Bytes.Length - RecordBytes).CopyTo(actual);
                     else ComputeRecord(index, count, actual, privateBuffer.Bytes);
                     bool hmac = CryptographicOperations.FixedTimeEquals(stored.Slice(12, 64), actual.Slice(12, 64));

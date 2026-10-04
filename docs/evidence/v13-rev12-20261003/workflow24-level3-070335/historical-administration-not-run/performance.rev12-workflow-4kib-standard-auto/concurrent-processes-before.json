@@ -1,0 +1,21 @@
+{
+  "observedUtc": "2026-10-04T07:06:49.852230+00:00",
+  "command": [
+    "/bin/ps",
+    "-axo",
+    "pid=,ppid=,pgid=,stat=,command="
+  ],
+  "exitCode": 0,
+  "ownAdministrationPids": [
+    15103
+  ],
+  "relevantLiveProcesses": [
+    {
+      "pid": 15104,
+      "ppid": 15103,
+      "pgid": 15103,
+      "state": "S",
+      "command": "/usr/bin/caffeinate -i -s /usr/bin/python3 /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/run-workflow24-level3-pinned.py --binding-json /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/binding.ready-20261004T0707.json"
+    }
+  ]
+}

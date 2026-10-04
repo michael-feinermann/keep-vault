@@ -12,6 +12,7 @@ public sealed class ArchiveOperationPolicy
     public const long DefaultMaxRecoveryBytes = DefaultMaxContainerBytes;
     public const long DefaultMaxMetadataBytes = ((DefaultMaxContainerBytes + (1L << 20) - 1) / (1L << 20)) * 204 * 4;
     public const long DefaultMaxExtractedTotalBytes = 256L << 20;
+    private const long TransactionHeadroomBytes = 64L << 10;
     private static readonly AsyncLocal<ArchiveOperationPolicy?> Ambient = new();
     private static readonly Lazy<ArchiveOperationPolicy> Default = new(() => new ArchiveOperationPolicy(
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KeepVault", "Work"),
@@ -211,20 +212,24 @@ public sealed class ArchiveOperationPolicy
         // Up to sixteen 4-KiB filesystem blocks cover the directory entry,
         // private transaction and commit bookkeeping of this write window.
         // This is additional headroom, not a promise of an OS disk reservation.
-        return bytes == 0 ? 0 : checked(((bytes + 4095) / 4096) * 4096 + (64L << 10));
+        return bytes == 0 ? 0 : checked(((bytes + 4095) / 4096) * 4096 + TransactionHeadroomBytes);
     }
 
-    internal void RequireRemainingExtractionCapacity(long freeBytes, long writtenBytes)
+    internal void RequireRemainingExtractionCapacity(long freeBytes, long writtenBytes, bool extractionComplete = false)
     {
         if (freeBytes < 0 || writtenBytes < 0) throw new IOException("Invalid extraction capacity measurement.");
         if (writtenBytes > MaxExtractedTotalBytes)
             throw new IOException("The extracted output exceeds its explicit finite authorization.");
         // Unknown expansion is checked by the native writer against its finite
         // byte allowance; do not invent a whole-output free-space requirement.
-        long needed = RequiredAdditionalCapacity(Math.Min(64L << 10, MaxExtractedTotalBytes - writtenBytes),
-            0, 0, 0, 0);
-        if (freeBytes < checked(needed + OperationVolumeLedger.PendingBytes(ReservedExtractionVolumeIdentity ?? OutputVolumeIdentity)))
-            throw new IOException("The bound extraction volume cannot admit its next write window.");
+        // Once the child has completed, only commit metadata remains. A large
+        // user authorization is not an unfinished payload allocation.
+        long nextWrite = extractionComplete ? 0 : Math.Min(64L << 10, MaxExtractedTotalBytes - writtenBytes);
+        long pending = OperationVolumeLedger.PendingBytes(ReservedExtractionVolumeIdentity ?? OutputVolumeIdentity);
+        long additional = checked(nextWrite + pending);
+        long needed = additional == 0 ? TransactionHeadroomBytes : RequiredAdditionalCapacity(additional, 0, 0, 0, 0);
+        if (freeBytes < needed)
+            throw new IOException($"The bound extraction volume needs {needed} additional bytes including outstanding writes and transaction headroom; only {freeBytes} bytes are available.");
     }
 
 #if KEEPVAULT_MACOS

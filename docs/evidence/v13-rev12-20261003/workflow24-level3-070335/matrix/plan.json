@@ -1,0 +1,156 @@
+{
+  "build": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z",
+  "predecessorMatrix": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/workflow-1gib-matrix-pinned-20261003T172229Z-c571f026",
+  "cases": [
+    {
+      "testId": "performance.rev12-workflow-4kib-standard-auto",
+      "suite": "StandardCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": null
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-standard-manual1",
+      "suite": "StandardCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": 1
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-standard-manual4",
+      "suite": "StandardCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": 4
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-standard-auto",
+      "suite": "StandardCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": null
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-standard-manual1",
+      "suite": "StandardCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 1
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-standard-manual4",
+      "suite": "StandardCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 4
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-paranoia-auto",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": null
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-paranoia-manual1",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": 1
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-paranoia-manual4",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": 4
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-paranoia-auto",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": null
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-paranoia-manual1",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 1
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-paranoia-manual4",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 4
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-camellia-auto",
+      "suite": "Camellia256",
+      "sourceBytes": 4096,
+      "requestedWorkers": null
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-camellia-manual1",
+      "suite": "Camellia256",
+      "sourceBytes": 4096,
+      "requestedWorkers": 1
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-camellia-manual4",
+      "suite": "Camellia256",
+      "sourceBytes": 4096,
+      "requestedWorkers": 4
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-camellia-auto",
+      "suite": "Camellia256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": null
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-camellia-manual1",
+      "suite": "Camellia256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 1
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-camellia-manual4",
+      "suite": "Camellia256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 4
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-serpent-auto",
+      "suite": "Serpent256",
+      "sourceBytes": 4096,
+      "requestedWorkers": null
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-serpent-manual1",
+      "suite": "Serpent256",
+      "sourceBytes": 4096,
+      "requestedWorkers": 1
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-serpent-manual4",
+      "suite": "Serpent256",
+      "sourceBytes": 4096,
+      "requestedWorkers": 4
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-serpent-auto",
+      "suite": "Serpent256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": null
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-serpent-manual1",
+      "suite": "Serpent256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 1
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-serpent-manual4",
+      "suite": "Serpent256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 4
+    }
+  ],
+  "compressionLevel": 3,
+  "measuredWorkflowsPerCase": 1,
+  "warmups": 0,
+  "bindingPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/binding.ready-20261004T0707.json",
+  "bindingSha256": "b39aacda763897675469f261ba792a44ec45f27344d6e7b5741a4389ad03ded2",
+  "scope": "One new execution for each existing ID; no imported or retried PASS and no median"
+}

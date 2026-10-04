@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Diagnostics;
 
 namespace KalynaArchiver.Services;
 
@@ -7,6 +8,65 @@ namespace KalynaArchiver.Services;
 // caller already owns all CPU permits; children must never acquire new permits.
 internal static unsafe class NativeCipherExecutor
 {
+    private static readonly AsyncLocal<Measurements?> Observer = new();
+    internal static IDisposable ObserveForTests(Measurements measurements)
+    {
+        ArgumentNullException.ThrowIfNull(measurements);
+        var scope = new ObservationScope(Observer.Value);
+        Observer.Value = measurements;
+        return scope;
+    }
+    private sealed class ObservationScope(Measurements? previous) : IDisposable
+    {
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Observer.Value = previous;
+            _disposed = true;
+        }
+    }
+    // Aggregate public scheduling observations only. This seam has no callback,
+    // data/key reference, queue mutation, permit or cancellation authority.
+    internal sealed class Measurements
+    {
+        private readonly object _gate = new();
+        private long _batches, _callbacks, _queueTicks, _callbackTicks, _joinTicks;
+        private int _active, _peak, _minimumGrant = int.MaxValue, _maximumGrant;
+        private int _unavailable;
+        internal void Batch(int grant)
+        {
+            try { lock (_gate) { _batches = Add(_batches, 1); _minimumGrant = Math.Min(_minimumGrant, grant); _maximumGrant = Math.Max(_maximumGrant, grant); } }
+            catch { Volatile.Write(ref _unavailable, 1); }
+        }
+        internal bool Start(long queued)
+        {
+            try { lock (_gate) { _queueTicks = Add(_queueTicks, Math.Max(0, Stopwatch.GetTimestamp() - queued)); _active++; _peak = Math.Max(_peak, _active); } return true; }
+            catch { Volatile.Write(ref _unavailable, 1); return false; }
+        }
+        internal void Finish(long started)
+        {
+            try { lock (_gate) { _active--; _callbacks = Add(_callbacks, 1); _callbackTicks = Add(_callbackTicks, Math.Max(0, Stopwatch.GetTimestamp() - started)); } }
+            catch { Volatile.Write(ref _unavailable, 1); }
+        }
+        internal void Joined(long started)
+        {
+            try { lock (_gate) _joinTicks = Add(_joinTicks, Math.Max(0, Stopwatch.GetTimestamp() - started)); }
+            catch { Volatile.Write(ref _unavailable, 1); }
+        }
+        private static long Add(long a, long b) => b > long.MaxValue - a ? long.MaxValue : a + b;
+        internal SchedulingSnapshot Snapshot()
+        {
+            lock (_gate) return new SchedulingSnapshot(_batches, _callbacks, _active, _peak,
+                _batches == 0 ? 0 : _minimumGrant, _maximumGrant,
+                (double)_queueTicks / Stopwatch.Frequency, (double)_callbackTicks / Stopwatch.Frequency,
+                (double)_joinTicks / Stopwatch.Frequency, Volatile.Read(ref _unavailable) == 0,
+                "Submission-to-callback includes handle allocation, submission and observer locking. Callback intervals overlap; their sums are not operation walltime or CPU time. Join includes useful callback work. No executor callbacks is possible for an inline single-worker native path.");
+        }
+    }
+    internal sealed record SchedulingSnapshot(long batches, long completedCallbacks, int activeCallbacks,
+        int peakActiveCallbacks, int minimumGrant, int maximumGrant, double submissionToCallbackSecondsSum,
+        double callbackWallSecondsSum, double callerJoinWallSecondsSum, bool observationAvailable, string note);
 #if KEEPVAULT_EXECUTOR_TESTING
     [ThreadStatic] internal static int? RejectSubmissionAfterForTests;
     [ThreadStatic] internal static nuint LastDispatchCountForTests;
@@ -94,7 +154,7 @@ internal static unsafe class NativeCipherExecutor
         return status;
     }
 
-    private sealed class MacBatch(nint callback, nint context)
+    private sealed class MacBatch(nint callback, nint context, Measurements? measurements)
     {
         // The submission sentinel prevents completion while a fast first job
         // finishes before the remaining jobs have been enqueued.
@@ -102,6 +162,7 @@ internal static unsafe class NativeCipherExecutor
         private int _remaining = 1;
         internal readonly nint Callback = callback;
         internal readonly nint Context = context;
+        internal readonly Measurements? Measurements = measurements;
         internal int Status;
         internal void AddWorker() => Interlocked.Increment(ref _remaining);
         internal void Signal()
@@ -109,7 +170,7 @@ internal static unsafe class NativeCipherExecutor
             if (Interlocked.Decrement(ref _remaining) == 0) Completion.TrySetResult();
         }
     }
-    private sealed record MacJob(MacBatch Batch, nuint Identity);
+    private sealed record MacJob(MacBatch Batch, nuint Identity, long Queued);
 
     private static int ExecuteMac(nuint count, nint callback, nint context)
     {
@@ -117,7 +178,9 @@ internal static unsafe class NativeCipherExecutor
         {
             nint queue = dispatch_get_global_queue(0x11, 0); // QOS_CLASS_UTILITY
             if (queue == 0) return 3;
-            var batch = new MacBatch(callback, context);
+            Measurements? measurements = Observer.Value;
+            measurements?.Batch(checked((int)count));
+            var batch = new MacBatch(callback, context, measurements);
             try
             {
                 for (nuint index = 0; index < count; ++index)
@@ -126,7 +189,8 @@ internal static unsafe class NativeCipherExecutor
                     if (index > 0 && (int)index - 1 == RejectSubmissionAfterForTests)
                         throw new InvalidOperationException("Injected test scheduling failure.");
 #endif
-                    GCHandle handle = GCHandle.Alloc(new MacJob(batch, index));
+                    GCHandle handle = GCHandle.Alloc(new MacJob(batch, index,
+                        measurements is null ? 0 : Stopwatch.GetTimestamp()));
                     bool counted = false;
                     try
                     {
@@ -157,6 +221,7 @@ internal static unsafe class NativeCipherExecutor
             finally { batch.Signal(); }
             // No cancellation or submission exception may release the native
             // stack-backed context while an accepted callback can still use it.
+            long joinStarted = measurements is null ? 0 : Stopwatch.GetTimestamp();
             while (!batch.Completion.Task.IsCompleted)
             {
                 try
@@ -179,6 +244,7 @@ internal static unsafe class NativeCipherExecutor
                     Thread.Yield();
                 }
             }
+            measurements?.Joined(joinStarted);
             return batch.Status;
         }
         catch { return 3; }
@@ -193,9 +259,20 @@ internal static unsafe class NativeCipherExecutor
 #if KEEPVAULT_EXECUTOR_TESTING
         Interlocked.Decrement(ref OutstandingDispatchHandlesForTests);
 #endif
-        try { InvokeWorker(job.Batch.Callback, job.Batch.Context, job.Identity); }
+        Measurements? measurements = job.Batch.Measurements;
+        long started = measurements is null ? 0 : Stopwatch.GetTimestamp();
+        bool observed = false;
+        try
+        {
+            observed = measurements?.Start(job.Queued) == true;
+            InvokeWorker(job.Batch.Callback, job.Batch.Context, job.Identity);
+        }
         catch { Interlocked.Exchange(ref job.Batch.Status, 3); }
-        finally { job.Batch.Signal(); }
+        finally
+        {
+            if (observed) measurements?.Finish(started);
+            job.Batch.Signal();
+        }
     }
 
     [DllImport("/usr/lib/libSystem.B.dylib")]

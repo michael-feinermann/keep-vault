@@ -1,3 +1,4 @@
+using KeepVaultMac.Controls;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
@@ -162,7 +163,7 @@ internal static class MacGuiTests
         }
     }
 
-    private static async Task RunOnUiThread(Action<MainWindow> body)
+    internal static async Task RunOnUiThread(Action<MainWindow> body)
     {
         EnsureUiThread();
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -447,8 +448,8 @@ internal static class MacGuiTests
 
             TextBox password = Control<TextBox>(window, "ExtractPasswordBox");
             TextBox pin = Control<TextBox>(window, "ExtractPinBox");
-            Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = new string('A', 256);
-            Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox").Text = new string('B', 256);
+            Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = new string('A', 256);
+            Control<FactorTextBox>(window, "ExtractGeneratedPasswordSecondBox").Text = new string('B', 256);
             int evaluationAttempts = 0;
             using (PasswordGuessabilityService.ForbidEvaluationForTesting(() => evaluationAttempts++))
             {
@@ -485,7 +486,7 @@ internal static class MacGuiTests
                     }
                 }
                 pin.Text = string.Empty;
-                Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = "invalid";
+                Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = new string('A', 255);
                 try
                 {
                     extraction.Invoke(window, null);
@@ -885,8 +886,8 @@ internal static class MacGuiTests
     /// </summary>
     private static void TestFactorBoxesLengthAndNormalization(MainWindow window)
     {
-        TextBox extractFactorA = Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox");
-        TextBox extractFactorB = Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox");
+        FactorTextBox extractFactorA = Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox");
+        FactorTextBox extractFactorB = Control<FactorTextBox>(window, "ExtractGeneratedPasswordSecondBox");
 
         // 256-hex characters factor (128 bytes)
         string rawHexA = new string('A', 256);
@@ -956,8 +957,8 @@ internal static class MacGuiTests
 
         TextBox extractPassword = Control<TextBox>(window, "ExtractPasswordBox");
         TextBox extractPin = Control<TextBox>(window, "ExtractPinBox");
-        TextBox extractFactorA = Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox");
-        TextBox extractFactorB = Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox");
+        FactorTextBox extractFactorA = Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox");
+        FactorTextBox extractFactorB = Control<FactorTextBox>(window, "ExtractGeneratedPasswordSecondBox");
 
         extractPassword.Text = "SecretPassword123!456";
         extractPin.Text = "428317";
@@ -975,8 +976,8 @@ internal static class MacGuiTests
     }
 
     /// <summary>
-    /// The real Create button route must erase every creation credential from
-    /// its finally boundary, including failures before input validation.
+    /// An unclassified injected safety failure remains fatal, even during
+    /// preflight. Expected prerequisite warnings are tested separately.
     /// </summary>
     private static void TestCreateFailureSecretClearing(MainWindow window)
     {
@@ -1026,6 +1027,7 @@ internal static class MacGuiTests
             MainWindow.TestHookShowDialogAsync = null;
         }
 
+        typeof(MainWindow).GetMethod("FlushConsoleEntries", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, null);
         MacComprehensiveTests.Require(errorDialogs == 1, $"Expected one create failure dialog, got {errorDialogs}.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(password.Text), "Create failure retained the password.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(confirm.Text), "Create failure retained the confirmation password.");
@@ -1104,14 +1106,14 @@ internal static class MacGuiTests
     {
         TextBox extractPassword = Control<TextBox>(window, "ExtractPasswordBox");
         TextBox extractPin = Control<TextBox>(window, "ExtractPinBox");
-        TextBox extractFactorA = Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox");
-        TextBox extractFactorB = Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox");
+        FactorTextBox extractFactorA = Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox");
+        FactorTextBox extractFactorB = Control<FactorTextBox>(window, "ExtractGeneratedPasswordSecondBox");
         TextBox log = Control<TextBox>(window, "LogBox");
 
         extractPassword.Text = "synthetic-password";
         extractPin.Text = "123456";
-        extractFactorA.Text = "synthetic-factor-a";
-        extractFactorB.Text = "synthetic-factor-b";
+        extractFactorA.Text = new string('A', 255);
+        extractFactorB.Text = new string('B', 255);
         log.Text = string.Empty;
         const string Diagnostic = "injected credential-operation failure";
         MainWindow.TestHookBeforeCredentialOperation = actualOperation =>
@@ -1133,6 +1135,7 @@ internal static class MacGuiTests
             MainWindow.TestHookBeforeCredentialOperation = null;
         }
 
+        typeof(MainWindow).GetMethod("FlushConsoleEntries", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, null);
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractPassword.Text), $"{operation} failure retained the password.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractPin.Text), $"{operation} failure retained the PIN.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractFactorA.Text), $"{operation} failure retained factor A.");

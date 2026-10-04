@@ -1,0 +1,706 @@
+{
+  "utc": "2026-10-01T10:23:09.615104+00:00",
+  "originalHarnessWasDeletedByBuilderExitCleanup": true,
+  "originalTestManifestSha256": "1baf2d149dc46dc85ad88b1c240ef2597448860fdcdde5cb1bda5e26ee57e9bc",
+  "sourceCommit": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "replacementBuild": "Release, officialSDK10.0.400, lockedrestore, original source worktree; only test assembly and its managed project reference built. No AOT/publish/nativebuild/signing.",
+  "testRoot": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64",
+  "originalInputCount": 114,
+  "nativeCount": 68,
+  "allNativeMatch": true,
+  "allDllMatch": false,
+  "differingInputs": [
+    {
+      "path": "KeepVaultMac.Tests.dll",
+      "originalSha256": "47ba665b40fbacae3bcfd64056adad8cbed6e779b23a91dfc6d1d2db151bf11a",
+      "currentSha256": "6a3c2d08156895c52697c6ce2b4ee60f191c4276fa8e561ea5fdf7e8f145b33f",
+      "equal": false
+    }
+  ],
+  "inputs": [
+    {
+      "path": "Avalonia.Base.dll",
+      "originalSha256": "19596afa3c31f1643812b6bacf7dead04889e61c3b465714eb3e818b9ecb1bb3",
+      "currentSha256": "19596afa3c31f1643812b6bacf7dead04889e61c3b465714eb3e818b9ecb1bb3",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Controls.dll",
+      "originalSha256": "5a2540f4e27a59a7390b13be11bfbac484773ee98843a08ef00ae442e4aafb0c",
+      "currentSha256": "5a2540f4e27a59a7390b13be11bfbac484773ee98843a08ef00ae442e4aafb0c",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.DesignerSupport.dll",
+      "originalSha256": "a2bcc2ad2236015ee69d7fd7d47ea3448596620cc83b0562318688c39746cd59",
+      "currentSha256": "a2bcc2ad2236015ee69d7fd7d47ea3448596620cc83b0562318688c39746cd59",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Desktop.dll",
+      "originalSha256": "12d0af0c34912242b4b66fe561dc6aa6b073dcd67427488573deedd721993b70",
+      "currentSha256": "12d0af0c34912242b4b66fe561dc6aa6b073dcd67427488573deedd721993b70",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Dialogs.dll",
+      "originalSha256": "b90af0559fa3eae9664e13649300da2e054636aef959b24df897f1a324d56824",
+      "currentSha256": "b90af0559fa3eae9664e13649300da2e054636aef959b24df897f1a324d56824",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Fonts.Inter.dll",
+      "originalSha256": "85a3a9f15fe255c60c0fb71f646fd8feebbee53cc80dad180c8bef6c35e540d6",
+      "currentSha256": "85a3a9f15fe255c60c0fb71f646fd8feebbee53cc80dad180c8bef6c35e540d6",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.FreeDesktop.AtSpi.dll",
+      "originalSha256": "be8ef27f44ec61b0af1ea58d6a04c08c4ae05e3ecdcb0c852a0c536b80b981a3",
+      "currentSha256": "be8ef27f44ec61b0af1ea58d6a04c08c4ae05e3ecdcb0c852a0c536b80b981a3",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.FreeDesktop.dll",
+      "originalSha256": "caf2505151490cc075f919613e78d6b962d35bf1f9965845b21659d2698ef57b",
+      "currentSha256": "caf2505151490cc075f919613e78d6b962d35bf1f9965845b21659d2698ef57b",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.HarfBuzz.dll",
+      "originalSha256": "7e896b33d3ba0c78347398d33112c6ca4dbd810a6f3b6caf22d3de3686332a40",
+      "currentSha256": "7e896b33d3ba0c78347398d33112c6ca4dbd810a6f3b6caf22d3de3686332a40",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Headless.dll",
+      "originalSha256": "7a426851ca19375d02d976b626ac594e4d15ee8ad9bf74160526b73de6034117",
+      "currentSha256": "7a426851ca19375d02d976b626ac594e4d15ee8ad9bf74160526b73de6034117",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Markup.Xaml.dll",
+      "originalSha256": "3bc2fb3c368256a7ca328e82d6b1296779d459a19fe1ed8a306f0088748d2cc3",
+      "currentSha256": "3bc2fb3c368256a7ca328e82d6b1296779d459a19fe1ed8a306f0088748d2cc3",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Markup.dll",
+      "originalSha256": "061c8f2b9734f3befcf38f4b009b66190514c17c312ffd8db6fdbcbf45bffdc1",
+      "currentSha256": "061c8f2b9734f3befcf38f4b009b66190514c17c312ffd8db6fdbcbf45bffdc1",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Metal.dll",
+      "originalSha256": "79c7505aa2ac04564e4966d168d38ce60fc47982d8661a6ebcbf3eefc8061c22",
+      "currentSha256": "79c7505aa2ac04564e4966d168d38ce60fc47982d8661a6ebcbf3eefc8061c22",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.MicroCom.dll",
+      "originalSha256": "bd86aff78404bb8d09f38c3d7cc8f523df4b4a0af393291afd4e589512923689",
+      "currentSha256": "bd86aff78404bb8d09f38c3d7cc8f523df4b4a0af393291afd4e589512923689",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Native.dll",
+      "originalSha256": "1873d288024bda285b7d9b9d06ae69183fc421667e9bd44d8da0fe0fe54010f9",
+      "currentSha256": "1873d288024bda285b7d9b9d06ae69183fc421667e9bd44d8da0fe0fe54010f9",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.OpenGL.dll",
+      "originalSha256": "60c753cc3f5d118deb82ff6131c99bb873153c081c05483f55406a7c3f60c3ad",
+      "currentSha256": "60c753cc3f5d118deb82ff6131c99bb873153c081c05483f55406a7c3f60c3ad",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Remote.Protocol.dll",
+      "originalSha256": "e0f3ccd76a47210367e9b2d1127ef499fb82eb283612cbf388a590a5ddf7e71b",
+      "currentSha256": "e0f3ccd76a47210367e9b2d1127ef499fb82eb283612cbf388a590a5ddf7e71b",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Skia.dll",
+      "originalSha256": "9eb06b804efe57cacf6f60e8f451dabe2b5dd743d5b563ff51d6bab84476782e",
+      "currentSha256": "9eb06b804efe57cacf6f60e8f451dabe2b5dd743d5b563ff51d6bab84476782e",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Themes.Fluent.dll",
+      "originalSha256": "43b9888e28f6f635a5926e3cc228b29282c825d7078a66dfc7dfa5a8041ec401",
+      "currentSha256": "43b9888e28f6f635a5926e3cc228b29282c825d7078a66dfc7dfa5a8041ec401",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Vulkan.dll",
+      "originalSha256": "790aad1467b5d6b48cabb5e6e68fb6e4960923998c9e67fba5758b44815da031",
+      "currentSha256": "790aad1467b5d6b48cabb5e6e68fb6e4960923998c9e67fba5758b44815da031",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Win32.Automation.dll",
+      "originalSha256": "b805d7fcaacff732fbc3951cfeeababc56a8cbe56b01ee6937daeeef5b4c4b42",
+      "currentSha256": "b805d7fcaacff732fbc3951cfeeababc56a8cbe56b01ee6937daeeef5b4c4b42",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.Win32.dll",
+      "originalSha256": "9d7fb93a2d0ed176341ff27396f1969933ca746f53595b55a9e39d411e190e09",
+      "currentSha256": "9d7fb93a2d0ed176341ff27396f1969933ca746f53595b55a9e39d411e190e09",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.X11.dll",
+      "originalSha256": "a03ca44de21f07e286cc1a690fe12f40c6bfcc6d5c9dd1f71c5b433bb2b9aebd",
+      "currentSha256": "a03ca44de21f07e286cc1a690fe12f40c6bfcc6d5c9dd1f71c5b433bb2b9aebd",
+      "equal": true
+    },
+    {
+      "path": "Avalonia.dll",
+      "originalSha256": "e373a92e9539efc989429b4cfd9ff8e898ca604ac1d283782168011f8978db6e",
+      "currentSha256": "e373a92e9539efc989429b4cfd9ff8e898ca604ac1d283782168011f8978db6e",
+      "equal": true
+    },
+    {
+      "path": "BouncyCastle.Cryptography.dll",
+      "originalSha256": "e5eeaf6d263c493619982fd3638e6135077311d08c961e1fe128f9107d29ebc6",
+      "currentSha256": "e5eeaf6d263c493619982fd3638e6135077311d08c961e1fe128f9107d29ebc6",
+      "equal": true
+    },
+    {
+      "path": "HarfBuzzSharp.dll",
+      "originalSha256": "55e72ac23263f8e12484f3435e02ec22fac9eff6e6d169bb0a8c246be6b99d29",
+      "currentSha256": "55e72ac23263f8e12484f3435e02ec22fac9eff6e6d169bb0a8c246be6b99d29",
+      "equal": true
+    },
+    {
+      "path": "Keep Vault.dll",
+      "originalSha256": "fcec0f0c7956cfd628d87da7be7b72eefff81fbf12db501833778f729e34a9c1",
+      "currentSha256": "fcec0f0c7956cfd628d87da7be7b72eefff81fbf12db501833778f729e34a9c1",
+      "equal": true
+    },
+    {
+      "path": "KeepVaultMac.Tests.dll",
+      "originalSha256": "47ba665b40fbacae3bcfd64056adad8cbed6e779b23a91dfc6d1d2db151bf11a",
+      "currentSha256": "6a3c2d08156895c52697c6ce2b4ee60f191c4276fa8e561ea5fdf7e8f145b33f",
+      "equal": false
+    },
+    {
+      "path": "MicroCom.Runtime.dll",
+      "originalSha256": "2538ec6f3c24e901a90e33c37788b9a4e4b6ae8158cab7328a00a00bb28eab9e",
+      "currentSha256": "2538ec6f3c24e901a90e33c37788b9a4e4b6ae8158cab7328a00a00bb28eab9e",
+      "equal": true
+    },
+    {
+      "path": "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+      "originalSha256": "67fa4325000db017dc0c35829b416f024f042d24efb868bcf17a895ee6500a93",
+      "currentSha256": "67fa4325000db017dc0c35829b416f024f042d24efb868bcf17a895ee6500a93",
+      "equal": true
+    },
+    {
+      "path": "Microsoft.Extensions.Logging.Abstractions.dll",
+      "originalSha256": "bb853130f5afaf335be7858d661f8212ec653835100f5a4e3aa2c66a4d4f685d",
+      "currentSha256": "bb853130f5afaf335be7858d661f8212ec653835100f5a4e3aa2c66a4d4f685d",
+      "equal": true
+    },
+    {
+      "path": "Microsoft.Win32.SystemEvents.dll",
+      "originalSha256": "ca495bf6c86b7f092d624928101985a941532d149dcd8acfea170f8a53be8850",
+      "currentSha256": "ca495bf6c86b7f092d624928101985a941532d149dcd8acfea170f8a53be8850",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.BarCodes.dll",
+      "originalSha256": "bafc4175afaef8629c6122cab01e90c8f8cdf72e2b957d328c42229d12d02fdd",
+      "currentSha256": "bafc4175afaef8629c6122cab01e90c8f8cdf72e2b957d328c42229d12d02fdd",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.Charting.dll",
+      "originalSha256": "fce1973d6474160e736112b215410244310f47983853fd5afd776086a7392469",
+      "currentSha256": "fce1973d6474160e736112b215410244310f47983853fd5afd776086a7392469",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.Cryptography.dll",
+      "originalSha256": "25fc17414785592ca4cdc5efd93f2a9c245812a97cb66b986a63112f61552944",
+      "currentSha256": "25fc17414785592ca4cdc5efd93f2a9c245812a97cb66b986a63112f61552944",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.Quality.dll",
+      "originalSha256": "3f88ec2601d13607ec81a8f7cbc14bd710ff10e2730626ffece48c86098df0d1",
+      "currentSha256": "3f88ec2601d13607ec81a8f7cbc14bd710ff10e2730626ffece48c86098df0d1",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.Shared.dll",
+      "originalSha256": "4b21196cf18cb3b971ec02d1f66f2da0d98d77aa5ed5767754f5de2cf36cb737",
+      "currentSha256": "4b21196cf18cb3b971ec02d1f66f2da0d98d77aa5ed5767754f5de2cf36cb737",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.Snippets.dll",
+      "originalSha256": "b8191aac4339b25dd54be0bc61206b873c69a4d0150ea9f16fdcecfc0f1907a4",
+      "currentSha256": "b8191aac4339b25dd54be0bc61206b873c69a4d0150ea9f16fdcecfc0f1907a4",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.System.dll",
+      "originalSha256": "5e8dc5ed655d223be9f9b5b3dfecadb607b00e695c34c60aac4e037af9e557e6",
+      "currentSha256": "5e8dc5ed655d223be9f9b5b3dfecadb607b00e695c34c60aac4e037af9e557e6",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.WPFonts.dll",
+      "originalSha256": "35a3ae0d7ee749e77a6db7c938ac2c41684d50a792b069e3a3723e9fdd6aafd3",
+      "currentSha256": "35a3ae0d7ee749e77a6db7c938ac2c41684d50a792b069e3a3723e9fdd6aafd3",
+      "equal": true
+    },
+    {
+      "path": "PdfSharp.dll",
+      "originalSha256": "1a77754d9b06c077f339eb33c0cdef28927ae8ee46ecca84e7874b15dabc85a1",
+      "currentSha256": "1a77754d9b06c077f339eb33c0cdef28927ae8ee46ecca84e7874b15dabc85a1",
+      "equal": true
+    },
+    {
+      "path": "QRCoder.dll",
+      "originalSha256": "5cacb8e071ef6b355615e8cae1d02d94b9d191ec33db12a05d82099cddb16e9a",
+      "currentSha256": "5cacb8e071ef6b355615e8cae1d02d94b9d191ec33db12a05d82099cddb16e9a",
+      "equal": true
+    },
+    {
+      "path": "SkiaSharp.dll",
+      "originalSha256": "aaaaa18c68ba1f3a3408b00dff28b11d5705198e17ba9d3aa59222bfd35407c8",
+      "currentSha256": "aaaaa18c68ba1f3a3408b00dff28b11d5705198e17ba9d3aa59222bfd35407c8",
+      "equal": true
+    },
+    {
+      "path": "System.Drawing.Common.dll",
+      "originalSha256": "89ea595ccb1fd1384480c1e30bd487c92af5d06d3b06f295323eff601acd9019",
+      "currentSha256": "89ea595ccb1fd1384480c1e30bd487c92af5d06d3b06f295323eff601acd9019",
+      "equal": true
+    },
+    {
+      "path": "System.Security.Cryptography.Pkcs.dll",
+      "originalSha256": "e2352938ed4f664f770a5c98ef067cb145304456d014d2c311d725c95c8a21a9",
+      "currentSha256": "e2352938ed4f664f770a5c98ef067cb145304456d014d2c311d725c95c8a21a9",
+      "equal": true
+    },
+    {
+      "path": "Tmds.DBus.Protocol.dll",
+      "originalSha256": "60a1c5255731d8ac843cab53108be8ba1ed02759ce3db0da5b49939ebe97bd8a",
+      "currentSha256": "60a1c5255731d8ac843cab53108be8ba1ed02759ce3db0da5b49939ebe97bd8a",
+      "equal": true
+    },
+    {
+      "path": "Native/argon2",
+      "originalSha256": "d32b2cdf6b23a009854ef3b3157bc75f41f9214305ef18ee6e936343394492fe",
+      "currentSha256": "d32b2cdf6b23a009854ef3b3157bc75f41f9214305ef18ee6e936343394492fe",
+      "equal": true
+    },
+    {
+      "path": "Native/argon2.khsig",
+      "originalSha256": "b6da027d9b3e3e9c6ea01ccdeea7ff1e1aecf2542b68610408cb9d45ee656323",
+      "currentSha256": "b6da027d9b3e3e9c6ea01ccdeea7ff1e1aecf2542b68610408cb9d45ee656323",
+      "equal": true
+    },
+    {
+      "path": "Native/argon2.sha3",
+      "originalSha256": "150055aa9b567011b43dec4004abb8da85667615dcbfeff4619f3d462be44b13",
+      "currentSha256": "150055aa9b567011b43dec4004abb8da85667615dcbfeff4619f3d462be44b13",
+      "equal": true
+    },
+    {
+      "path": "Native/argon2.sha3.khsig",
+      "originalSha256": "b0a12d9ca2e732611494621e7055ed40756662653173d28354a618f3b4c40a67",
+      "currentSha256": "b0a12d9ca2e732611494621e7055ed40756662653173d28354a618f3b4c40a67",
+      "equal": true
+    },
+    {
+      "path": "Native/argon2.skein",
+      "originalSha256": "fbbe2b125ada3d1c6ace3cb598f446e5e174013a8b4529c6d0535459e2b344cd",
+      "currentSha256": "fbbe2b125ada3d1c6ace3cb598f446e5e174013a8b4529c6d0535459e2b344cd",
+      "equal": true
+    },
+    {
+      "path": "Native/argon2.skein.khsig",
+      "originalSha256": "2f69c9a0ab0ac6f013962d744c651a36a062834e335eaf3a0f35b2ea8c41a438",
+      "currentSha256": "2f69c9a0ab0ac6f013962d744c651a36a062834e335eaf3a0f35b2ea8c41a438",
+      "equal": true
+    },
+    {
+      "path": "Native/libaes_ref.dylib",
+      "originalSha256": "acb6aae2cc1c89186e7f66eccf87e0256944ce4648f746ab9ab45e8631c7b8f2",
+      "currentSha256": "acb6aae2cc1c89186e7f66eccf87e0256944ce4648f746ab9ab45e8631c7b8f2",
+      "equal": true
+    },
+    {
+      "path": "Native/libaes_ref.dylib.khsig",
+      "originalSha256": "a4fb914eadefeac33b0a0510c5be6b8e9f13dd6a89b3f9a923749ee861deae1a",
+      "currentSha256": "a4fb914eadefeac33b0a0510c5be6b8e9f13dd6a89b3f9a923749ee861deae1a",
+      "equal": true
+    },
+    {
+      "path": "Native/libaes_ref.dylib.sha3",
+      "originalSha256": "f15c89171a19367af877148d19993d4a85ebd49d7c27d3a4c0f4b166c021b353",
+      "currentSha256": "f15c89171a19367af877148d19993d4a85ebd49d7c27d3a4c0f4b166c021b353",
+      "equal": true
+    },
+    {
+      "path": "Native/libaes_ref.dylib.sha3.khsig",
+      "originalSha256": "e39c8086dd3ecc1e013cd3471bab1772da3c70926e2fd7c9fea972d8623ccf4f",
+      "currentSha256": "e39c8086dd3ecc1e013cd3471bab1772da3c70926e2fd7c9fea972d8623ccf4f",
+      "equal": true
+    },
+    {
+      "path": "Native/libaes_ref.dylib.skein",
+      "originalSha256": "1a5b758c22130bdde1ebd3ffb019143bbde63c040f0c25b818c6dc8c41882b8e",
+      "currentSha256": "1a5b758c22130bdde1ebd3ffb019143bbde63c040f0c25b818c6dc8c41882b8e",
+      "equal": true
+    },
+    {
+      "path": "Native/libaes_ref.dylib.skein.khsig",
+      "originalSha256": "e8a7a26a2e33a3813fb8d6e9ce00e73b561db5257c866ac0634827bec032fd14",
+      "currentSha256": "e8a7a26a2e33a3813fb8d6e9ce00e73b561db5257c866ac0634827bec032fd14",
+      "equal": true
+    },
+    {
+      "path": "Native/libargon2_ref.dylib",
+      "originalSha256": "8b25eaf59d321bfc601ee5e55c73ca84441a3f5019a7095eb30e88f9e0a920a2",
+      "currentSha256": "8b25eaf59d321bfc601ee5e55c73ca84441a3f5019a7095eb30e88f9e0a920a2",
+      "equal": true
+    },
+    {
+      "path": "Native/libargon2_ref.dylib.khsig",
+      "originalSha256": "7e2603a7b8a4c2ff65924d7070d2461a94320a167a941023ea92ef88f214730d",
+      "currentSha256": "7e2603a7b8a4c2ff65924d7070d2461a94320a167a941023ea92ef88f214730d",
+      "equal": true
+    },
+    {
+      "path": "Native/libargon2_ref.dylib.sha3",
+      "originalSha256": "5585144af42ecd299d1f21a9f15e5c323838455851bc0674209e52374128755d",
+      "currentSha256": "5585144af42ecd299d1f21a9f15e5c323838455851bc0674209e52374128755d",
+      "equal": true
+    },
+    {
+      "path": "Native/libargon2_ref.dylib.sha3.khsig",
+      "originalSha256": "aaa106a972c8ec317e6b1a115f0e4482d6f81fab703366d0428575170b52d3e8",
+      "currentSha256": "aaa106a972c8ec317e6b1a115f0e4482d6f81fab703366d0428575170b52d3e8",
+      "equal": true
+    },
+    {
+      "path": "Native/libargon2_ref.dylib.skein",
+      "originalSha256": "e85617fa5939e6dd850813b6a31c96a8f5f2df71820d5467317dfad7f015eb21",
+      "currentSha256": "e85617fa5939e6dd850813b6a31c96a8f5f2df71820d5467317dfad7f015eb21",
+      "equal": true
+    },
+    {
+      "path": "Native/libargon2_ref.dylib.skein.khsig",
+      "originalSha256": "cbe116141ff83d6063a2300bb0921bb06a420a7de30d883d561abeb2a2c85950",
+      "currentSha256": "cbe116141ff83d6063a2300bb0921bb06a420a7de30d883d561abeb2a2c85950",
+      "equal": true
+    },
+    {
+      "path": "Native/libcamellia_v13.dylib",
+      "originalSha256": "4cd3eefbba4c1491d53e17811e1e084146f543581d61dab8cfbed256a35201ab",
+      "currentSha256": "4cd3eefbba4c1491d53e17811e1e084146f543581d61dab8cfbed256a35201ab",
+      "equal": true
+    },
+    {
+      "path": "Native/libcamellia_v13.dylib.khsig",
+      "originalSha256": "a47c4938b843326fe7593a2fb6f9e70c1a3a1d6747606ce75dd0b93da679dc0e",
+      "currentSha256": "a47c4938b843326fe7593a2fb6f9e70c1a3a1d6747606ce75dd0b93da679dc0e",
+      "equal": true
+    },
+    {
+      "path": "Native/libcamellia_v13.dylib.sha3",
+      "originalSha256": "555bc818d7f09dd81025146a8c57600d0869679d8fcc13b8f74868acec6ab901",
+      "currentSha256": "555bc818d7f09dd81025146a8c57600d0869679d8fcc13b8f74868acec6ab901",
+      "equal": true
+    },
+    {
+      "path": "Native/libcamellia_v13.dylib.sha3.khsig",
+      "originalSha256": "a2d8f1ee1faf16c2799dac51bcef4d396c8a44f43ebfafe82d560feb30a2a9ee",
+      "currentSha256": "a2d8f1ee1faf16c2799dac51bcef4d396c8a44f43ebfafe82d560feb30a2a9ee",
+      "equal": true
+    },
+    {
+      "path": "Native/libcamellia_v13.dylib.skein",
+      "originalSha256": "ace52a95ef26fbfdb8805f4f5a792f71b86ed11f204d4dbd519395f5a0c986f4",
+      "currentSha256": "ace52a95ef26fbfdb8805f4f5a792f71b86ed11f204d4dbd519395f5a0c986f4",
+      "equal": true
+    },
+    {
+      "path": "Native/libcamellia_v13.dylib.skein.khsig",
+      "originalSha256": "2422a5fcecdc3be62f24679641772fbf7c74ede0ae5336e1d30a26311e50261a",
+      "currentSha256": "2422a5fcecdc3be62f24679641772fbf7c74ede0ae5336e1d30a26311e50261a",
+      "equal": true
+    },
+    {
+      "path": "Native/libkalyna_v13.dylib",
+      "originalSha256": "f68a3dff964bd27bacd31fe272ee8f289689efe6e095d5972d3b1e2fba36c7f7",
+      "currentSha256": "f68a3dff964bd27bacd31fe272ee8f289689efe6e095d5972d3b1e2fba36c7f7",
+      "equal": true
+    },
+    {
+      "path": "Native/libkalyna_v13.dylib.khsig",
+      "originalSha256": "d636d34b583e9bd78c23d1e455ea5851e86c31d5075db6d439b95ec4c9b3f611",
+      "currentSha256": "d636d34b583e9bd78c23d1e455ea5851e86c31d5075db6d439b95ec4c9b3f611",
+      "equal": true
+    },
+    {
+      "path": "Native/libkalyna_v13.dylib.sha3",
+      "originalSha256": "d547343533220d39e2485921ef2aa4a2fb9964d00db631be69be8ced36369e00",
+      "currentSha256": "d547343533220d39e2485921ef2aa4a2fb9964d00db631be69be8ced36369e00",
+      "equal": true
+    },
+    {
+      "path": "Native/libkalyna_v13.dylib.sha3.khsig",
+      "originalSha256": "4f1d956a57a50569df49cc074a73473fe543a1cb13a200093b343c0bcd62e1c6",
+      "currentSha256": "4f1d956a57a50569df49cc074a73473fe543a1cb13a200093b343c0bcd62e1c6",
+      "equal": true
+    },
+    {
+      "path": "Native/libkalyna_v13.dylib.skein",
+      "originalSha256": "3244b87a5837e3bf3581e46f309564e3b0e87a7734f0c3e82c0cae45398f48b4",
+      "currentSha256": "3244b87a5837e3bf3581e46f309564e3b0e87a7734f0c3e82c0cae45398f48b4",
+      "equal": true
+    },
+    {
+      "path": "Native/libkalyna_v13.dylib.skein.khsig",
+      "originalSha256": "055670d17cfb2e6d16289250909fadb35b695ac4558bda6144df2234f9d53323",
+      "currentSha256": "055670d17cfb2e6d16289250909fadb35b695ac4558bda6144df2234f9d53323",
+      "equal": true
+    },
+    {
+      "path": "Native/libmars_ref.dylib",
+      "originalSha256": "8b26d47b80408ea7f8b6eada93764ccea8e81563ce78b53877c0cd454221287b",
+      "currentSha256": "8b26d47b80408ea7f8b6eada93764ccea8e81563ce78b53877c0cd454221287b",
+      "equal": true
+    },
+    {
+      "path": "Native/libmars_ref.dylib.khsig",
+      "originalSha256": "70dffc3ca7db2731cc24841fb62b0e8b3e8d20e4ff16db0ce43f0888cf5bbd06",
+      "currentSha256": "70dffc3ca7db2731cc24841fb62b0e8b3e8d20e4ff16db0ce43f0888cf5bbd06",
+      "equal": true
+    },
+    {
+      "path": "Native/libmars_ref.dylib.sha3",
+      "originalSha256": "a9fe9e0361a2308bf3b7351e87b1e9a48a2d94a6bef32b9e99014b116a901ad3",
+      "currentSha256": "a9fe9e0361a2308bf3b7351e87b1e9a48a2d94a6bef32b9e99014b116a901ad3",
+      "equal": true
+    },
+    {
+      "path": "Native/libmars_ref.dylib.sha3.khsig",
+      "originalSha256": "84f7a6426b11befc0f2c6fc39aaa7b7cfe839525c53b56b95d754b6fd18addcd",
+      "currentSha256": "84f7a6426b11befc0f2c6fc39aaa7b7cfe839525c53b56b95d754b6fd18addcd",
+      "equal": true
+    },
+    {
+      "path": "Native/libmars_ref.dylib.skein",
+      "originalSha256": "59193d0879bd61ec218725f0d33df69c464e7def01bb32d85c39aa9786359e48",
+      "currentSha256": "59193d0879bd61ec218725f0d33df69c464e7def01bb32d85c39aa9786359e48",
+      "equal": true
+    },
+    {
+      "path": "Native/libmars_ref.dylib.skein.khsig",
+      "originalSha256": "2fb28dc6cb5afd5212049bd6cd6ce441415b4188db3441eecf0661efa3c0ce7b",
+      "currentSha256": "2fb28dc6cb5afd5212049bd6cd6ce441415b4188db3441eecf0661efa3c0ce7b",
+      "equal": true
+    },
+    {
+      "path": "Native/libmldsa87_ref.dylib",
+      "originalSha256": "14544e9dbc2ab6d1ad0d38d49eab95cc42ed80acc27a2cb615836362cd545382",
+      "currentSha256": "14544e9dbc2ab6d1ad0d38d49eab95cc42ed80acc27a2cb615836362cd545382",
+      "equal": true
+    },
+    {
+      "path": "Native/libserpent_v13.dylib",
+      "originalSha256": "1aae78dfc55df08df61ae81ca2b2a55f011bfb3a616bf205a94a48bf56846c0b",
+      "currentSha256": "1aae78dfc55df08df61ae81ca2b2a55f011bfb3a616bf205a94a48bf56846c0b",
+      "equal": true
+    },
+    {
+      "path": "Native/libserpent_v13.dylib.khsig",
+      "originalSha256": "0cf32017742e617139d6682eca27d547324e8f6f37a4f6aee1e818f19b36a7ba",
+      "currentSha256": "0cf32017742e617139d6682eca27d547324e8f6f37a4f6aee1e818f19b36a7ba",
+      "equal": true
+    },
+    {
+      "path": "Native/libserpent_v13.dylib.sha3",
+      "originalSha256": "6d970d92d0fe35d306a231c3d01c9aacd8f906e2228bae86a93070d52bcdee17",
+      "currentSha256": "6d970d92d0fe35d306a231c3d01c9aacd8f906e2228bae86a93070d52bcdee17",
+      "equal": true
+    },
+    {
+      "path": "Native/libserpent_v13.dylib.sha3.khsig",
+      "originalSha256": "a232f1be6602f21a3492f44c21ca9288175b596e47c28fe4979a0a8c0343bccf",
+      "currentSha256": "a232f1be6602f21a3492f44c21ca9288175b596e47c28fe4979a0a8c0343bccf",
+      "equal": true
+    },
+    {
+      "path": "Native/libserpent_v13.dylib.skein",
+      "originalSha256": "452e1e59676832ac900c6fb4daaf694968f25fa2efd104991637879387dd8654",
+      "currentSha256": "452e1e59676832ac900c6fb4daaf694968f25fa2efd104991637879387dd8654",
+      "equal": true
+    },
+    {
+      "path": "Native/libserpent_v13.dylib.skein.khsig",
+      "originalSha256": "0124768fd5cfe3650cae44b7d639d02f65208016dff88690f22725c7a1e6e296",
+      "currentSha256": "0124768fd5cfe3650cae44b7d639d02f65208016dff88690f22725c7a1e6e296",
+      "equal": true
+    },
+    {
+      "path": "Native/libsha3_ref.dylib",
+      "originalSha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45",
+      "currentSha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45",
+      "equal": true
+    },
+    {
+      "path": "Native/libshacal2_ref.dylib",
+      "originalSha256": "8de1b7cf4c69e75a1705cfa1148a4b8f9ddc97af27551b3f6c85e159db4ed9cf",
+      "currentSha256": "8de1b7cf4c69e75a1705cfa1148a4b8f9ddc97af27551b3f6c85e159db4ed9cf",
+      "equal": true
+    },
+    {
+      "path": "Native/libshacal2_ref.dylib.khsig",
+      "originalSha256": "5628aedc7696bf94c7b43b5e24521ccf8e7ecea4e1e56e93fe748c26585a589f",
+      "currentSha256": "5628aedc7696bf94c7b43b5e24521ccf8e7ecea4e1e56e93fe748c26585a589f",
+      "equal": true
+    },
+    {
+      "path": "Native/libshacal2_ref.dylib.sha3",
+      "originalSha256": "6727f3dc08f63513d2d6e6bcd96f97d346c6caa21d8dc13bc1374e75f6100c3a",
+      "currentSha256": "6727f3dc08f63513d2d6e6bcd96f97d346c6caa21d8dc13bc1374e75f6100c3a",
+      "equal": true
+    },
+    {
+      "path": "Native/libshacal2_ref.dylib.sha3.khsig",
+      "originalSha256": "e4485bf1bad55542c35b973a6c522f6f7db228ffaa65c2005160e06526eb68e9",
+      "currentSha256": "e4485bf1bad55542c35b973a6c522f6f7db228ffaa65c2005160e06526eb68e9",
+      "equal": true
+    },
+    {
+      "path": "Native/libshacal2_ref.dylib.skein",
+      "originalSha256": "fbaa5783db367028b699a55829a747f74f078fffa9ca9f70720c04c3e8a6ccd7",
+      "currentSha256": "fbaa5783db367028b699a55829a747f74f078fffa9ca9f70720c04c3e8a6ccd7",
+      "equal": true
+    },
+    {
+      "path": "Native/libshacal2_ref.dylib.skein.khsig",
+      "originalSha256": "1446b5d1c7ff21df5d9eda3752237a22bc50aecc0c9501f521b06335800d0e02",
+      "currentSha256": "1446b5d1c7ff21df5d9eda3752237a22bc50aecc0c9501f521b06335800d0e02",
+      "equal": true
+    },
+    {
+      "path": "Native/libthreefish_ref.dylib",
+      "originalSha256": "f8986bfc20c2c56215bc0ee733bcc728bc07b4de1b85a76253748867b919d45c",
+      "currentSha256": "f8986bfc20c2c56215bc0ee733bcc728bc07b4de1b85a76253748867b919d45c",
+      "equal": true
+    },
+    {
+      "path": "Native/libthreefish_ref.dylib.khsig",
+      "originalSha256": "395ddd65544f407474a7492dd39b8e3a3de9570e7c02915f625dd89a82ae2437",
+      "currentSha256": "395ddd65544f407474a7492dd39b8e3a3de9570e7c02915f625dd89a82ae2437",
+      "equal": true
+    },
+    {
+      "path": "Native/libthreefish_ref.dylib.sha3",
+      "originalSha256": "b3f45018d8d04a019b90aecc9070fe226abad31be97c914b02d36e75e3a461b0",
+      "currentSha256": "b3f45018d8d04a019b90aecc9070fe226abad31be97c914b02d36e75e3a461b0",
+      "equal": true
+    },
+    {
+      "path": "Native/libthreefish_ref.dylib.sha3.khsig",
+      "originalSha256": "ab1602c76facc838625be7ab39bc2500e25d71a1531c9a03be68279f3423fcd1",
+      "currentSha256": "ab1602c76facc838625be7ab39bc2500e25d71a1531c9a03be68279f3423fcd1",
+      "equal": true
+    },
+    {
+      "path": "Native/libthreefish_ref.dylib.skein",
+      "originalSha256": "9738d5d3e68967c2b220831da44c44648b90cf47da53b7920d47d23c6a903445",
+      "currentSha256": "9738d5d3e68967c2b220831da44c44648b90cf47da53b7920d47d23c6a903445",
+      "equal": true
+    },
+    {
+      "path": "Native/libthreefish_ref.dylib.skein.khsig",
+      "originalSha256": "fbc4e5557d3fc7108fd5e1a3f81b1e096838f8e42532b073c8dd3f2acd07ad36",
+      "currentSha256": "fbc4e5557d3fc7108fd5e1a3f81b1e096838f8e42532b073c8dd3f2acd07ad36",
+      "equal": true
+    },
+    {
+      "path": "Native/libxchachapoly_v13.dylib",
+      "originalSha256": "a17d448ce591d15336823a28572be238385eb65a077f90d495cf53cbed11e401",
+      "currentSha256": "a17d448ce591d15336823a28572be238385eb65a077f90d495cf53cbed11e401",
+      "equal": true
+    },
+    {
+      "path": "Native/libxchachapoly_v13.dylib.khsig",
+      "originalSha256": "f117f3e714d4a148a4a0dd0d748635c50e6c2268a991b7671affef66f5514c12",
+      "currentSha256": "f117f3e714d4a148a4a0dd0d748635c50e6c2268a991b7671affef66f5514c12",
+      "equal": true
+    },
+    {
+      "path": "Native/libxchachapoly_v13.dylib.sha3",
+      "originalSha256": "6573f402b0a0674d639aab7ba8d6564897066c7b43f8afcb30027086e97d2066",
+      "currentSha256": "6573f402b0a0674d639aab7ba8d6564897066c7b43f8afcb30027086e97d2066",
+      "equal": true
+    },
+    {
+      "path": "Native/libxchachapoly_v13.dylib.sha3.khsig",
+      "originalSha256": "c0a09c014a6771fde1510c1e62676646ed3ad593e14497aa7e3e0cf4755f5298",
+      "currentSha256": "c0a09c014a6771fde1510c1e62676646ed3ad593e14497aa7e3e0cf4755f5298",
+      "equal": true
+    },
+    {
+      "path": "Native/libxchachapoly_v13.dylib.skein",
+      "originalSha256": "de06c9971389a1c1288576847c95faa5d2c42a6e5aff0b830a6a794dcb64e600",
+      "currentSha256": "de06c9971389a1c1288576847c95faa5d2c42a6e5aff0b830a6a794dcb64e600",
+      "equal": true
+    },
+    {
+      "path": "Native/libxchachapoly_v13.dylib.skein.khsig",
+      "originalSha256": "14eb74d5776db10bda0f1cf84e12944b9405c6628f9f1d3f9e659a1f20fb974e",
+      "currentSha256": "14eb74d5776db10bda0f1cf84e12944b9405c6628f9f1d3f9e659a1f20fb974e",
+      "equal": true
+    },
+    {
+      "path": "Native/zpaq",
+      "originalSha256": "34ee8d3ce378560bc4f56f55d8780bcba2ee0bcc01f77a483c0ee9d2590a549a",
+      "currentSha256": "34ee8d3ce378560bc4f56f55d8780bcba2ee0bcc01f77a483c0ee9d2590a549a",
+      "equal": true
+    },
+    {
+      "path": "Native/zpaq.khsig",
+      "originalSha256": "c4fc67900d3e2b11565a9279dc127a438dc974b3556b41e529dc83050d9770f2",
+      "currentSha256": "c4fc67900d3e2b11565a9279dc127a438dc974b3556b41e529dc83050d9770f2",
+      "equal": true
+    },
+    {
+      "path": "Native/zpaq.sha3",
+      "originalSha256": "27d3b730b5104a9929e1108eefacbdc4aba14b5354f212fe86dfa5c0b07a1578",
+      "currentSha256": "27d3b730b5104a9929e1108eefacbdc4aba14b5354f212fe86dfa5c0b07a1578",
+      "equal": true
+    },
+    {
+      "path": "Native/zpaq.sha3.khsig",
+      "originalSha256": "fa96d59352a4b1f32df2894e060f5be316ac142ddf41be55c121c243d738a4a0",
+      "currentSha256": "fa96d59352a4b1f32df2894e060f5be316ac142ddf41be55c121c243d738a4a0",
+      "equal": true
+    },
+    {
+      "path": "Native/zpaq.skein",
+      "originalSha256": "f1601f2f32a907054815fbb074e485868613a39575ea76dcf384c257f5869f81",
+      "currentSha256": "f1601f2f32a907054815fbb074e485868613a39575ea76dcf384c257f5869f81",
+      "equal": true
+    },
+    {
+      "path": "Native/zpaq.skein.khsig",
+      "originalSha256": "c2f49b1773f4a76989cc4532243bf8d79066ea5f6fc543fd9ef45d761d01aea5",
+      "currentSha256": "c2f49b1773f4a76989cc4532243bf8d79066ea5f6fc543fd9ef45d761d01aea5",
+      "equal": true
+    }
+  ]
+}

@@ -1,6 +1,14 @@
 # Keep Vault 5.0.3: Prüfstand Eingabe und Ressourcen
 
-## Aktueller REV11-Stand, 1. Oktober 2026
+## Aktueller REV12-Arbeitsstand, 3. Oktober 2026
+
+REV12 setzt die bedarfsabhängige RAM-/Datenträgerzulassung und den gebundenen Originalreader fort. Die aktuelle Containerregelung bewahrt den Durchsatz des angenommenen Fensters während begrenzter größerer Proben; unbekannte Pipes erfinden keine zweite bereite Arbeit. Die früheren REV11-/REV9-Abschnitte unten behalten ihre eigenen Quell-, Binär- und Laufbezüge. Ein alter Deadline-, Spool-, Komponenten- oder Kandidaten-PASS ersetzt keine aktuelle Produktabnahme.
+
+Die gebundene Entwicklungsgruppe `zpaq.small-volume-capacity` bestand im Build `build-20261003T102259Z`: 64 MiB öffentliche Quelldaten auf einem eigenen realen 256-MiB-APFS-Volume, normale und gestreamte Extraktion mit vollständigem Struktur-/Hashvergleich sowie tatsächlicher Platzmangel ohne veröffentlichte Teilausgabe. Ihr konkreter Beleg steht im [Adaptive-/Kapazitätsreview](KEEP_VAULT_5_0_3_RESOURCE_ADAPTATION_REV12_REVIEW.md#reale-kleine-ausgabekapazität). Das ist ein datierter kleiner Entwicklungslauf, kein neu installierter GUI-, finaler AOT- oder Mehr-TB-Nachweis.
+
+Der ausdrücklich vereinbarte macOS-Umfang bleibt regulär höchstens 256 MiB je Fixture, mit der zusätzlich beauftragten 512-MiB-Paranoiastruktur: 256-MiB-Baum plus eine weitere 256-MiB-Datei, Beschädigung, KPAR2-Reparatur und anschließender vollständiger Struktur-/Hashvergleich. Dieser abschließende Lauf und die produktive Archivierungs-/Recovery-Matrix benötigen ihre eigene aktuelle Ausführungsbindung. Windows und reale 1-/4-TiB-Läufe liegen außerhalb dieses Durchgangs. Den tatsächlichen Abschlussstatus halten die [REV12-Abnahmematrix](KEEP_VAULT_5_0_3_REV12_GATE_STATUS.md), der [Testbericht](KEEP_VAULT_5_0_3_TEST_REPORT.md) und der [Releasebericht](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) fest; diese Datei behauptet keine fertige Veröffentlichung.
+
+## Historischer REV11-Stand, 1. Oktober 2026
 
 Für REV11 werden dynamische Speicher-/Datenträgerzulassung, RAM-Index, gebundener Originalreader und getrennte Reparaturfähigkeit neu geprüft. Kein alter Deadline- oder Spool-Test gilt unverändert als neuer Architekturbeleg. Neue technische Einzelheiten stehen in den verlinkten Ressourcen- und Originalreader-Berichten. Windows sowie reale TiB-Läufe bleiben gemäß direkter Benutzeranweisung außerhalb dieses Durchgangs.
 

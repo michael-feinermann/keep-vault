@@ -1,4 +1,737 @@
 {
+  "historical_fields_scope": "All pre-existing top-level measurement fields, including source_commit, results and mac_phase_measurement, describe historical REV9 measurements. Current REV11 observations are exclusively in rev11_supplemental_performance; keep their provenance and rates separate.",
+  "rev11_supplemental_performance": {
+    "evidence_checkpoint_utc": "2026-10-01T10:45:21.615144+00:00",
+    "source_commit": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+    "product_version": "5.0.3",
+    "product_build": 15,
+    "status": "INCOMPLETE: first and controlled cipher-suite runs FAIL; independent phases 9-12 PASS; package verification 18/18 PASS; local handoff CANDIDATE_ONLY_NOT_FINAL_RELEASE",
+    "original_builder_status": "Configuration Exit 2 after functional phases 1-7 due to missing KEEPVAULT_PERF_BASELINE. Supplemental runs are separate; the later phase-8 FAIL remains preserved.",
+    "harness_binding": {
+      "comparison_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/resume-harness/original-input-comparison.json",
+        "sha256": "82f0e8db90526d191848a0605de0a8ceefb55fc3a351022b0a2f4413f258add8"
+      },
+      "all_inputs_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/resume-harness/harness-all-inputs.json",
+        "sha256": "68a0a9ed8aba7844c57e9f24c7ff9b7f7b4894eb8377b800ea232c66ebe3bf71"
+      },
+      "build_description": "Release, officialSDK10.0.400, lockedrestore, original source worktree; only test assembly and its managed project reference built. No AOT/publish/nativebuild/signing.",
+      "source_worktree_clean_at_preflight": true,
+      "original_manifest_input_count": 114,
+      "byte_identical_original_inputs": 113,
+      "native_and_sidecar_entries": 68,
+      "all_native_and_sidecar_entries_identical": true,
+      "managed_product_dll": {
+        "path": "Keep Vault.dll",
+        "originalSha256": "fcec0f0c7956cfd628d87da7be7b72eefff81fbf12db501833778f729e34a9c1",
+        "currentSha256": "fcec0f0c7956cfd628d87da7be7b72eefff81fbf12db501833778f729e34a9c1",
+        "equal": true
+      },
+      "only_differing_original_input": {
+        "path": "KeepVaultMac.Tests.dll",
+        "originalSha256": "47ba665b40fbacae3bcfd64056adad8cbed6e779b23a91dfc6d1d2db151bf11a",
+        "currentSha256": "6a3c2d08156895c52697c6ce2b4ee60f191c4276fa8e561ea5fdf7e8f145b33f",
+        "equal": false
+      },
+      "candidate_bytes_changed": false,
+      "scope": "The rebuilt test assembly is the only differing original manifest input. Clean unchanged b41144e source; no native build, signing, AOT publish or candidate mutation."
+    },
+    "phase_results": [
+      {
+        "phase": 8,
+        "id": "performance.cipher-suites",
+        "status": "FAIL",
+        "seconds": 38.111,
+        "peak_rss_mib": 720,
+        "seed": "0x48FCA2F9",
+        "exit_code": 1,
+        "completed_utc": "2026-10-01T10:25:58.374551+00:00",
+        "result_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-performance/phase-8.test-results.json",
+          "sha256": "cdd8e935e3f20f5b66de848b4ab0f88345d0fde49750a539d9e048cf8ec03328"
+        },
+        "log_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-performance/phase-8.log",
+          "sha256": "d2abb5d13e88999594b35c7371464ab0209d7585e7742acf8b385d4ea2f0e969"
+        }
+      },
+      {
+        "phase": 9,
+        "id": "performance.entropy-rev9-phases",
+        "status": "PASS",
+        "seconds": 15.736,
+        "peak_rss_mib": 220,
+        "seed": "0x0375CD66",
+        "exit_code": 0,
+        "completed_utc": "2026-10-01T10:27:47.456585+00:00",
+        "result_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-9.test-results.json",
+          "sha256": "c0be1cadb574454737f2eb8fc8ce7c5536fac32c88dd9c8e6e6815271e16ebbd"
+        },
+        "log_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-9.log",
+          "sha256": "e541e1d31b67aaec2155f4060f85ee5c6e7ba66b7875e0616a774f3e8e4e7b13"
+        }
+      },
+      {
+        "phase": 10,
+        "id": "performance.mac-root-phases",
+        "status": "PASS",
+        "seconds": 2.285,
+        "peak_rss_mib": 465,
+        "seed": "0x7BC2754D",
+        "exit_code": 0,
+        "completed_utc": "2026-10-01T10:27:50.039565+00:00",
+        "result_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-10.test-results.json",
+          "sha256": "c0eecd81ede52bc296ae000b81cc63d5ad0b9aa4b20796689a8cfe147b569fd5"
+        },
+        "log_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-10.log",
+          "sha256": "a8b531930b3a9f2de828815aa3d7ec059635784d72dfb0c9eed5717a1f013632"
+        }
+      },
+      {
+        "phase": 11,
+        "id": "performance.paranoia-256mib-e2e",
+        "status": "PASS",
+        "seconds": 293.915,
+        "peak_rss_mib": 2173,
+        "seed": "0x485F093E",
+        "exit_code": 0,
+        "completed_utc": "2026-10-01T10:32:44.270511+00:00",
+        "result_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-11.test-results.json",
+          "sha256": "479f802cfe0e519d42d6878d54af60f56f7c1497439350e6c6f15bfe4f134e90"
+        },
+        "log_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-11.log",
+          "sha256": "2bebf023903fc1471499be4a2536cca2cd6f96094be4a58fe7ff1becdec82ea0"
+        }
+      },
+      {
+        "phase": 12,
+        "id": "performance.paranoia-complex-tree-e2e",
+        "status": "PASS",
+        "seconds": 267.626,
+        "peak_rss_mib": 1761,
+        "seed": "0x3EB0F4F2",
+        "exit_code": 0,
+        "completed_utc": "2026-10-01T10:37:12.269942+00:00",
+        "result_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-12.test-results.json",
+          "sha256": "b9fed6cb6ce7ff1bb69d95f9f2981e46ab6909cfbd2240a59b9d6ed442bbd42d"
+        },
+        "log_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-12.log",
+          "sha256": "6c976b5adfa9fa4cdbfc7dc7034f380ed4b2c42efe42aaa5ac5298d5f9c52f7d"
+        }
+      }
+    ],
+    "phase_8": {
+      "failure_preserved": true,
+      "failure_summary": "InvalidOperationException: ParanoiaCascade regressed by more than 25 %: 106,2 MiB/s now, 160,8 MiB/s baseline.",
+      "method": "Release; 16 MiB warmup, five measured 256 MiB passes, 16 MiB native chunks, 10 aggregate CPU permits; chunk copies included; no KDF, nonce-hash, global MAC or archive I/O.",
+      "scope": "All 12 primitive rates measured. Baseline assertion failed before full-container and pipeline phases; no complete PERF_RESULT_JSON emitted for this failed group.",
+      "precision": "Current rates and samples are preserved one-decimal log values. Ratios are approximate; full-precision medians were not recovered.",
+      "baseline_used_by_failed_run": {
+        "evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/publication/rev9-dev-v13-same-host-baseline.json",
+          "sha256": "9ab9379c8da5c28dc950921be2b52b5e2a6acd2da1b1916eb859051fd7786113"
+        },
+        "scope": "September 28 baseline before macOS scheduling changed to bounded GCD Utility jobs; retained as the actual phase-8 comparator.",
+        "paranoia_median_mib_s": 160.8190413262847
+      },
+      "appropriate_historical_comparison": {
+        "evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/publication/historical-536d7c2-complete-performance-baseline.json",
+          "sha256": "4b76be3c3b403dd1fb981b82ae080890358a04c4194643ecf58685a8c8c3d2ab"
+        },
+        "provenance_evidence": {
+          "path": "work/v13-evidence/rev11-release-b41144e/publication/historical-536d7c2-baseline-provenance.json",
+          "sha256": "c3b1f66b2adc5ae833b627007f2b9a6d4309248a6559cd302f436954e5fa5fd2"
+        },
+        "source_commit": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "historical_complete_group_seconds": 685.081,
+        "historical_complete_group_seed": "0x2B6FF0AB",
+        "host_identity_matches": true,
+        "scope": "Faithful extraction of the existing complete passing 536d7c2 group with GCD Utility scheduling. Not a new measurement or invented baseline. Used by the subsequent controlled rerun, which also failed; not the comparator of the original phase-8 run.",
+        "paranoia_median_mib_s": 145.0890940551954,
+        "unchanged_threshold_fraction": 0.75,
+        "paranoia_threshold_mib_s": 108.81682054139655,
+        "first_current_paranoia_median_mib_s_rounded": 106.2,
+        "approximate_fraction_of_historical": 0.7319640438281251,
+        "first_current_value_still_below_threshold": true,
+        "conclusion": "Appropriate historical comparison does not turn the observed failure into PASS. Cause of the remaining regression is not isolated."
+      },
+      "primitive_comparison": [
+        {
+          "suite": "Kalyna512_512",
+          "current_median_mib_s_rounded_from_log": 1447.3,
+          "current_five_samples_mib_s_rounded_from_log": [
+            1089.2,
+            1447.3,
+            1505.4,
+            1370.1,
+            1494.0
+          ],
+          "historical_536d7c2_median_mib_s": 1691.2123680474492,
+          "approximate_fraction_of_historical": 0.8557766176171874,
+          "unchanged_75_percent_threshold_mib_s": 1268.409276035587,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Threefish1024",
+          "current_median_mib_s_rounded_from_log": 2484.0,
+          "current_five_samples_mib_s_rounded_from_log": [
+            2023.6,
+            2566.6,
+            2484.0,
+            2527.5,
+            2471.9
+          ],
+          "historical_536d7c2_median_mib_s": 2948.8874861194945,
+          "approximate_fraction_of_historical": 0.84235156875,
+          "unchanged_75_percent_threshold_mib_s": 2211.665614589621,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "StandardCascade",
+          "current_median_mib_s_rounded_from_log": 575.3,
+          "current_five_samples_mib_s_rounded_from_log": [
+            592.2,
+            602.3,
+            575.3,
+            530.5,
+            488.7
+          ],
+          "historical_536d7c2_median_mib_s": 685.3991245097121,
+          "approximate_fraction_of_historical": 0.8393649472656248,
+          "unchanged_75_percent_threshold_mib_s": 514.0493433822841,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "ParanoiaCascade",
+          "current_median_mib_s_rounded_from_log": 106.2,
+          "current_five_samples_mib_s_rounded_from_log": [
+            123.4,
+            106.2,
+            105.6,
+            106.3,
+            104.7
+          ],
+          "historical_536d7c2_median_mib_s": 145.0890940551954,
+          "approximate_fraction_of_historical": 0.7319640438281251,
+          "unchanged_75_percent_threshold_mib_s": 108.81682054139655,
+          "below_threshold_using_rounded_current_value": true
+        },
+        {
+          "suite": "XChaChaOverAes",
+          "current_median_mib_s_rounded_from_log": 1617.7,
+          "current_five_samples_mib_s_rounded_from_log": [
+            1573.3,
+            1615.3,
+            1690.1,
+            1617.7,
+            1678.1
+          ],
+          "historical_536d7c2_median_mib_s": 2056.996479804071,
+          "approximate_fraction_of_historical": 0.7864379039453125,
+          "unchanged_75_percent_threshold_mib_s": 1542.7473598530532,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Aes256",
+          "current_median_mib_s_rounded_from_log": 8747.3,
+          "current_five_samples_mib_s_rounded_from_log": [
+            8852.9,
+            8484.2,
+            8946.4,
+            8747.3,
+            8600.3
+          ],
+          "historical_536d7c2_median_mib_s": 11396.56945452279,
+          "approximate_fraction_of_historical": 0.7675379889453124,
+          "unchanged_75_percent_threshold_mib_s": 8547.427090892093,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Mars448",
+          "current_median_mib_s_rounded_from_log": 1131.8,
+          "current_five_samples_mib_s_rounded_from_log": [
+            1149.5,
+            1131.8,
+            1156.3,
+            1130.3,
+            1123.4
+          ],
+          "historical_536d7c2_median_mib_s": 1188.8038821876778,
+          "approximate_fraction_of_historical": 0.952049380859375,
+          "unchanged_75_percent_threshold_mib_s": 891.6029116407583,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Shacal2_512",
+          "current_median_mib_s_rounded_from_log": 1407.8,
+          "current_five_samples_mib_s_rounded_from_log": [
+            1407.8,
+            1411.2,
+            1433.2,
+            1381.3,
+            1402.1
+          ],
+          "historical_536d7c2_median_mib_s": 1809.5875624784846,
+          "approximate_fraction_of_historical": 0.7779673275781249,
+          "unchanged_75_percent_threshold_mib_s": 1357.1906718588634,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "XChaCha20Poly1305",
+          "current_median_mib_s_rounded_from_log": 1850.9,
+          "current_five_samples_mib_s_rounded_from_log": [
+            1850.9,
+            1893.9,
+            1766.8,
+            1839.0,
+            1898.6
+          ],
+          "historical_536d7c2_median_mib_s": 2211.9898490403334,
+          "approximate_fraction_of_historical": 0.8367579086328125,
+          "unchanged_75_percent_threshold_mib_s": 1658.99238678025,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "MixedCascade",
+          "current_median_mib_s_rounded_from_log": 917.9,
+          "current_five_samples_mib_s_rounded_from_log": [
+            1031.0,
+            926.0,
+            917.9,
+            742.2,
+            772.3
+          ],
+          "historical_536d7c2_median_mib_s": 1210.5650170353924,
+          "approximate_fraction_of_historical": 0.7582409759765625,
+          "unchanged_75_percent_threshold_mib_s": 907.9237627765443,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Camellia256",
+          "current_median_mib_s_rounded_from_log": 275.9,
+          "current_five_samples_mib_s_rounded_from_log": [
+            281.7,
+            275.8,
+            277.5,
+            275.9,
+            273.8
+          ],
+          "historical_536d7c2_median_mib_s": 367.10077289052566,
+          "approximate_fraction_of_historical": 0.7515647483593749,
+          "unchanged_75_percent_threshold_mib_s": 275.32557966789426,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Serpent256",
+          "current_median_mib_s_rounded_from_log": 664.0,
+          "current_five_samples_mib_s_rounded_from_log": [
+            692.6,
+            665.8,
+            664.0,
+            645.1,
+            646.2
+          ],
+          "historical_536d7c2_median_mib_s": 829.5608836119599,
+          "approximate_fraction_of_historical": 0.80042346875,
+          "unchanged_75_percent_threshold_mib_s": 622.1706627089699,
+          "below_threshold_using_rounded_current_value": false
+        }
+      ]
+    },
+    "phase_9_entropy": {
+      "evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/entropy-rev9-phase-performance.json",
+        "sha256": "c1018a0cdab0b3a3dc31b4363c35d7ffdba05541788d674371d3fbb0b7e2fb4a"
+      },
+      "scope": "sequential production-component microbenchmark; no archive/release throughput claim",
+      "warmup_ms": 3000.5966,
+      "warmup_lifecycles": 1569,
+      "phase_repetitions": 5,
+      "record_scenarios": 5,
+      "phase_samples": 25,
+      "rng_cache_sizes_bytes": [
+        4096,
+        16384,
+        65536
+      ],
+      "limitations": "Sequential production-component microbenchmark with fresh OS randomness; no archive throughput or release completion claim."
+    },
+    "phase_10_mac": {
+      "scope": "actual ParallelContainerAuthenticator.ComputeAsync over public in-memory ciphertext",
+      "non_leaf_interval": "operation wall minus measured leaf batches; includes ordered root, key setup, memory-stream reads, cleanup, uninstrumented overhead and permit waits; not a universal serial CPU fraction",
+      "results": [
+        {
+          "worker_count": 1,
+          "payload_bytes": 67108864,
+          "authenticated_prefix_bytes": 59,
+          "leaf_bytes": 1048576,
+          "leaf_count": 65,
+          "warmup_runs": 1,
+          "measured_runs": 5,
+          "median_wall_seconds": 0.2364618,
+          "median_root_seconds": 7.779299999999999e-05,
+          "median_non_leaf_wall_seconds": 0.008951397
+        },
+        {
+          "worker_count": 10,
+          "payload_bytes": 67108864,
+          "authenticated_prefix_bytes": 59,
+          "leaf_bytes": 1048576,
+          "leaf_count": 65,
+          "warmup_runs": 1,
+          "measured_runs": 5,
+          "median_wall_seconds": 0.05291,
+          "median_root_seconds": 5.8875e-05,
+          "median_non_leaf_wall_seconds": 0.006235266000000003
+        }
+      ],
+      "raw_samples_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/supplemental-independent-performance/phase-10.log",
+        "sha256": "a8b531930b3a9f2de828815aa3d7ec059635784d72dfb0c9eed5717a1f013632"
+      }
+    },
+    "phase_11_paranoia_e2e": {
+      "SchemaVersion": 1,
+      "Label": "paranoia-256mib-level5",
+      "OperatingSystem": "macOS 26.6.2",
+      "Architecture": "Arm64",
+      "LogicalProcessors": 10,
+      "CompressionLevel": 5,
+      "Suite": "ParanoiaCascade",
+      "Argon2Iterations": 4,
+      "Argon2Parallelism": 4,
+      "InputFiles": 1,
+      "InputDirectories": 1,
+      "InputBytes": 268435456,
+      "ContainerBytes": 67129732,
+      "RecoveryBytes": 10215424,
+      "SetupAndInitialManifestSeconds": 0.245159,
+      "ArchiveEncryptSeconds": 133.1998429,
+      "RecoveryCreateSeconds": 10.1310917,
+      "RecoveryVerifySeconds": 4.6889829,
+      "RecoveryRepairSeconds": null,
+      "RepairedShards": 0,
+      "DecryptExtractSeconds": 145.1658346,
+      "FinalManifestSeconds": 0.1110981,
+      "WorkflowSeconds": 293.2975286
+    },
+    "phase_12_complex_tree_e2e": {
+      "SchemaVersion": 1,
+      "Label": "paranoia-complex-tree-level5-repair",
+      "OperatingSystem": "macOS 26.6.2",
+      "Architecture": "Arm64",
+      "LogicalProcessors": 10,
+      "CompressionLevel": 5,
+      "Suite": "ParanoiaCascade",
+      "Argon2Iterations": 4,
+      "Argon2Parallelism": 4,
+      "InputFiles": 18,
+      "InputDirectories": 20,
+      "InputBytes": 221327790,
+      "ContainerBytes": 67146553,
+      "RecoveryBytes": 10215424,
+      "SetupAndInitialManifestSeconds": 0.2216621,
+      "ArchiveEncryptSeconds": 118.7864847,
+      "RecoveryCreateSeconds": 8.8496399,
+      "RecoveryVerifySeconds": 4.2902716,
+      "RecoveryRepairSeconds": 8.9148546,
+      "RepairedShards": 1,
+      "DecryptExtractSeconds": 126.0798321,
+      "FinalManifestSeconds": 0.1041302,
+      "WorkflowSeconds": 267.110763
+    },
+    "controlled_cipher_rerun": {
+      "status": "FAIL",
+      "id": "performance.cipher-suites",
+      "started_utc": "2026-10-01T10:40:27.944142+00:00",
+      "completed_utc": "2026-10-01T10:41:08.863754+00:00",
+      "seconds": 40.666,
+      "peak_rss_mib": 720,
+      "seed": "0x66BD58AB",
+      "exit_code": 1,
+      "failure_summary": "InvalidOperationException: ParanoiaCascade regressed by more than 25 %: 102,7 MiB/s now, 145,1 MiB/s baseline.",
+      "result_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/controlled-cipher-historical-baseline/phase-8.test-results.json",
+        "sha256": "82dfea6d825f21560da421a9f1a8bddac31f79f3a7c86745483664241f2e38cf"
+      },
+      "execution_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/controlled-cipher-historical-baseline/phase-8.execution.json",
+        "sha256": "336b6e34c27d268fa0429cb7670cdf85e5f1fa62842819600a10efb8b2a53e27"
+      },
+      "plan_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/controlled-cipher-historical-baseline/execution-plan.json",
+        "sha256": "e1822a7db59852132bb88e19492d0030b5cd66a88be602c19363a237eb959e46"
+      },
+      "log_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/controlled-cipher-historical-baseline/phase-8.log",
+        "sha256": "dfd7201687cc6dbda9abf3ada089871221d383ab9fbfe1f7fa2ebba84fa6a3c9"
+      },
+      "runner_log_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/controlled-cipher-run.log",
+        "sha256": "0858a0014c19345abe7bc3609a317a1c704c6bc58c0607fbe19cd904d740622e"
+      },
+      "historical_preparation_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/resume-harness/controlled-cipher-preparation.json",
+        "sha256": "f9a7617250a4dd54bcff6668b497f9ee1774925b778732dcb43b9184b488597f"
+      },
+      "baseline_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/publication/historical-536d7c2-complete-performance-baseline.json",
+        "sha256": "4b76be3c3b403dd1fb981b82ae080890358a04c4194643ecf58685a8c8c3d2ab"
+      },
+      "host_before_evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/controlled-comparison-host-before.json",
+        "sha256": "ca7403ff96e775d8b2eedc3600a7788ac7a558bf82c27aa1e57a5afaca504ce8"
+      },
+      "method": "Same five measured 256 MiB passes after 16 MiB warmup and unchanged 75-percent baseline gate. Controlled rerun after independent phases 9-12 against complete passing historical 536d7c2 GCD Utility baseline.",
+      "harness_binding_unchanged": true,
+      "candidate_bytes_changed": false,
+      "original_failure_preserved": true,
+      "scope": "Primitive rates recorded; regression assertion failed before full-container/pipeline measurements and complete PERF_RESULT_JSON. This is a second real failed performance gate, not a configuration exit.",
+      "precision": "Medians and samples available only as one-decimal log values; ratios are approximate.",
+      "primitive_comparison": [
+        {
+          "suite": "Kalyna512_512",
+          "median_mib_s_rounded_from_log": 1413.2,
+          "five_samples_mib_s_rounded_from_log": [
+            1047.0,
+            1439.1,
+            1423.6,
+            1413.2,
+            1397.6
+          ],
+          "historical_536d7c2_median_mib_s": 1691.2123680474492,
+          "approximate_fraction_of_historical": 0.8356135673437499,
+          "unchanged_75_percent_threshold_mib_s": 1268.409276035587,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Threefish1024",
+          "median_mib_s_rounded_from_log": 2334.8,
+          "five_samples_mib_s_rounded_from_log": [
+            1938.8,
+            2447.1,
+            2407.6,
+            2285.9,
+            2334.8
+          ],
+          "historical_536d7c2_median_mib_s": 2948.8874861194945,
+          "approximate_fraction_of_historical": 0.7917562168750001,
+          "unchanged_75_percent_threshold_mib_s": 2211.665614589621,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "StandardCascade",
+          "median_mib_s_rounded_from_log": 522.5,
+          "five_samples_mib_s_rounded_from_log": [
+            574.4,
+            556.9,
+            522.5,
+            500.9,
+            477.8
+          ],
+          "historical_536d7c2_median_mib_s": 685.3991245097121,
+          "approximate_fraction_of_historical": 0.7623295410156249,
+          "unchanged_75_percent_threshold_mib_s": 514.0493433822841,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "ParanoiaCascade",
+          "median_mib_s_rounded_from_log": 102.7,
+          "five_samples_mib_s_rounded_from_log": [
+            119.0,
+            89.7,
+            101.2,
+            103.6,
+            102.7
+          ],
+          "historical_536d7c2_median_mib_s": 145.0890940551954,
+          "approximate_fraction_of_historical": 0.7078409350390625,
+          "unchanged_75_percent_threshold_mib_s": 108.81682054139655,
+          "below_threshold_using_rounded_current_value": true
+        },
+        {
+          "suite": "XChaChaOverAes",
+          "median_mib_s_rounded_from_log": 1592.3,
+          "five_samples_mib_s_rounded_from_log": [
+            1566.5,
+            1624.6,
+            1592.3,
+            1609.5,
+            1522.6
+          ],
+          "historical_536d7c2_median_mib_s": 2056.996479804071,
+          "approximate_fraction_of_historical": 0.7740898030859376,
+          "unchanged_75_percent_threshold_mib_s": 1542.7473598530532,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Aes256",
+          "median_mib_s_rounded_from_log": 8476.9,
+          "five_samples_mib_s_rounded_from_log": [
+            8162.4,
+            8884.5,
+            8476.9,
+            8874.6,
+            8323.8
+          ],
+          "historical_536d7c2_median_mib_s": 11396.56945452279,
+          "approximate_fraction_of_historical": 0.7438115508203125,
+          "unchanged_75_percent_threshold_mib_s": 8547.427090892093,
+          "below_threshold_using_rounded_current_value": true
+        },
+        {
+          "suite": "Mars448",
+          "median_mib_s_rounded_from_log": 1168.1,
+          "five_samples_mib_s_rounded_from_log": [
+            1168.1,
+            1185.7,
+            1056.6,
+            1144.5,
+            1185.3
+          ],
+          "historical_536d7c2_median_mib_s": 1188.8038821876778,
+          "approximate_fraction_of_historical": 0.9825842744140624,
+          "unchanged_75_percent_threshold_mib_s": 891.6029116407583,
+          "below_threshold_using_rounded_current_value": false
+        },
+        {
+          "suite": "Shacal2_512",
+          "median_mib_s_rounded_from_log": 1285.2,
+          "five_samples_mib_s_rounded_from_log": [
+            1446.2,
+            1394.5,
+            1285.2,
+            1282.1,
+            1243.5
+          ],
+          "historical_536d7c2_median_mib_s": 1809.5875624784846,
+          "approximate_fraction_of_historical": 0.7102170829687501,
+          "unchanged_75_percent_threshold_mib_s": 1357.1906718588634,
+          "below_threshold_using_rounded_current_value": true
+        },
+        {
+          "suite": "XChaCha20Poly1305",
+          "median_mib_s_rounded_from_log": 1616.0,
+          "five_samples_mib_s_rounded_from_log": [
+            1647.4,
+            1601.5,
+            1643.9,
+            1616.0,
+            1478.6
+          ],
+          "historical_536d7c2_median_mib_s": 2211.9898490403334,
+          "approximate_fraction_of_historical": 0.73056393125,
+          "unchanged_75_percent_threshold_mib_s": 1658.99238678025,
+          "below_threshold_using_rounded_current_value": true
+        },
+        {
+          "suite": "MixedCascade",
+          "median_mib_s_rounded_from_log": 762.5,
+          "five_samples_mib_s_rounded_from_log": [
+            778.7,
+            762.5,
+            777.4,
+            656.9,
+            586.5
+          ],
+          "historical_536d7c2_median_mib_s": 1210.5650170353924,
+          "approximate_fraction_of_historical": 0.6298711669921875,
+          "unchanged_75_percent_threshold_mib_s": 907.9237627765443,
+          "below_threshold_using_rounded_current_value": true
+        },
+        {
+          "suite": "Camellia256",
+          "median_mib_s_rounded_from_log": 238.8,
+          "five_samples_mib_s_rounded_from_log": [
+            238.8,
+            241.1,
+            232.7,
+            231.7,
+            245.2
+          ],
+          "historical_536d7c2_median_mib_s": 367.10077289052566,
+          "approximate_fraction_of_historical": 0.6505025803125001,
+          "unchanged_75_percent_threshold_mib_s": 275.32557966789426,
+          "below_threshold_using_rounded_current_value": true
+        },
+        {
+          "suite": "Serpent256",
+          "median_mib_s_rounded_from_log": 594.3,
+          "five_samples_mib_s_rounded_from_log": [
+            575.1,
+            594.3,
+            600.1,
+            599.1,
+            572.0
+          ],
+          "historical_536d7c2_median_mib_s": 829.5608836119599,
+          "approximate_fraction_of_historical": 0.716403113671875,
+          "unchanged_75_percent_threshold_mib_s": 622.1706627089699,
+          "below_threshold_using_rounded_current_value": true
+        }
+      ],
+      "root_cause": "UNKNOWN: no established causal attribution to scheduler, operating-system load, thermals or frequency.",
+      "screen_lock_ordering": {
+        "relative_order": "Screen lock occurred after this controlled test had completed.",
+        "basis": "Release coordinator observation supplied for this documentation update; no separate lock timestamp asserted.",
+        "interpretation": "The later screen lock is not an explanation for this measured failure."
+      }
+    },
+    "limitations": [
+      "Supplemental measurement evidence does not complete atomic dist publication or final release approval.",
+      "Historical REV9 top-level values remain unchanged and are not current REV11 results.",
+      "No causal attribution to scheduling, GUI load, frequency or thermals established."
+    ],
+    "package_verification": {
+      "status": "PASS",
+      "completed_utc": "2026-10-01T10:39:16.028248+00:00",
+      "evidence": {
+        "path": "work/v13-evidence/rev11-release-b41144e/package-verification-final/verification.json",
+        "sha256": "53ac14d93eeb8b4f28ee53aec5486243d74f2bd8ecfe09bcd936c0572063397e"
+      },
+      "successful_steps": 18,
+      "failed_steps": 0,
+      "scope": "Six pinned files, all3 Apple trust/stapling/Gatekeeper checks, arm64 plus Rosetta strict hybrid ZIP/hash and installation-inventory verification and bundle payload coverage. No installation, GUI or release approval.",
+      "architectures": [
+        "arm64",
+        "x86_64 via Rosetta"
+      ],
+      "hybrid_verification": "Strict ZIP/hash sidecars, installation inventory and main/scanner bundle coverage verified by both verifier slices.",
+      "release_approval": false
+    },
+    "local_downloads_handoff": {
+      "status": "CANDIDATE_ONLY_NOT_FINAL_RELEASE",
+      "prepared_utc": "2026-10-01T10:45:21.615144+00:00",
+      "directory": "/Users/michael/Downloads/Keep Vault 5.0.3 - macOS REV11 Build 15",
+      "status_evidence": {
+        "path": "/Users/michael/Downloads/Keep Vault 5.0.3 - macOS REV11 Build 15/FREIGABESTATUS.json",
+        "sha256": "0b1423ab33905d31abab854d210e4b4c8fe49967551810f12e160d0339628b9f"
+      },
+      "package_verification_sha256": "53ac14d93eeb8b4f28ee53aec5486243d74f2bd8ecfe09bcd936c0572063397e",
+      "scope": "Six unchanged candidate ZIP/sidecar files with separate status notices; no final dist or GitHub release and no complete GUI acceptance."
+    },
+    "versioned_public_evidence": {
+      "directory": "docs/evidence/v13-rev11-20261001/release",
+      "readme": "docs/evidence/v13-rev11-20261001/release/README.md",
+      "inventory": {
+        "path": "docs/evidence/v13-rev11-20261001/release/inventory.json",
+        "sha256": "9f30ba83d506a693dc574d68e2c80b6f6d79463ecd4206e15b1be796a14676fa"
+      },
+      "retained_files": 47,
+      "scope": "Byte-exact copies bound by inventory to local originals; both failed cipher runs and NOT_APPROVED release status retained."
+    },
+    "final_functional_ordering": "Independent phase 12 passed before the controlled cipher rerun; it does not establish the required last functional completion after the other release gates."
+  },
   "schema_version": 1,
   "source_commit": "305da05a123779a7c00dede97337c6c5773a4c30",
   "source_state": "uncommitted REV9 final worker-schedule source; exact source/binary maps in provenance-release-source.json",
@@ -1379,5 +2112,25 @@
       }
     ],
     "limitations": "operation wall minus measured leaf batches; includes ordered root, key setup, memory-stream reads, cleanup, uninstrumented overhead and permit waits; not a universal serial CPU fraction"
+  },
+  "rev12_supplemental_performance": {
+    "status": "IN_PROGRESS_NOT_RELEASE_APPROVED",
+    "measurements": [
+      {
+        "name": "canonical-after-window-fix-20261003",
+        "status": "PASS",
+        "sourceBuild": "build-20261003T113438Z",
+        "sourceSnapshotSha256": "3dae078f34d0b6f758d8ae830c4aec496328ec3f6d8aa1eeadf9b70591850555",
+        "binaryInputsSha256": "6002ebb2bcaa2f93b8955955dc96368fead669dafc019c28595bb3455145c8b4",
+        "scope": "Managed Release development with exact build15 trusted native inputs. All12 primitive medians and productive-KDF precompressed256MiB container cases. Final pipeline scaling isolates test KDF. Not installed AOT, ZPAQ/recovery/original-comparison or release approval.",
+        "seconds": 622.194,
+        "peakRssMiB": 3838,
+        "autoMiBPerSecond": 389.23509526072826,
+        "bestFixedMiBPerSecond": 408.1112753652715,
+        "autoPercentBest": 95.37474673110941,
+        "publicEvidence": "docs/evidence/v13-rev12-20261003/canonical-after-window-fix/README.md",
+        "fullResults": "docs/benchmarks/keep-vault-5.0.3-v13-rev12.json"
+      }
+    ]
   }
 }

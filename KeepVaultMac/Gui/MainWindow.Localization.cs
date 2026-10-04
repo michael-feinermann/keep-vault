@@ -65,6 +65,10 @@ public sealed partial class MainWindow
         PasswordGeneratorHelpText.Text = T("generatorHelp");
         GeneratedPasswordFirstLabel.Text = T("factorA");
         GeneratedPasswordSecondLabel.Text = T("factorB");
+        Avalonia.Automation.AutomationProperties.SetLabeledBy(GeneratedPasswordFirstBox, GeneratedPasswordFirstLabel);
+        Avalonia.Automation.AutomationProperties.SetLabeledBy(GeneratedPasswordSecondBox, GeneratedPasswordSecondLabel);
+        Avalonia.Automation.AutomationProperties.SetHelpText(GeneratedPasswordFirstBox, T("createPasswordHelp"));
+        Avalonia.Automation.AutomationProperties.SetHelpText(GeneratedPasswordSecondBox, T("createPasswordHelp"));
         PrintKeySheetButton.Content = T("printKeySheets");
         SaveKeySheetButton.Content = T("saveTestPdf");
         ClearCreateSecretsButton.Content = T("clearSecrets");
@@ -94,6 +98,13 @@ public sealed partial class MainWindow
         ExtractPinLabel.Text = T("pin");
         ExtractGeneratedPasswordFirstLabel.Text = T("factorAFromSheet");
         ExtractGeneratedPasswordSecondLabel.Text = T("factorBFromSheet");
+        FactorImportHelpText.Text = T("factorImportHelp");
+        Avalonia.Automation.AutomationProperties.SetLabeledBy(ExtractGeneratedPasswordFirstBox, ExtractGeneratedPasswordFirstLabel);
+        Avalonia.Automation.AutomationProperties.SetLabeledBy(ExtractGeneratedPasswordSecondBox, ExtractGeneratedPasswordSecondLabel);
+        Avalonia.Automation.AutomationProperties.SetHelpText(ExtractGeneratedPasswordFirstBox, T("factorImportHelp"));
+        Avalonia.Automation.AutomationProperties.SetHelpText(ExtractGeneratedPasswordSecondBox, T("factorImportHelp"));
+        ExtractGeneratedPasswordFirstBox.LanguageCode = _language;
+        ExtractGeneratedPasswordSecondBox.LanguageCode = _language;
         RenderExtractHint();
 
         EraseTitleText.Text = T("eraseTitle");
@@ -108,6 +119,7 @@ public sealed partial class MainWindow
         EraseContainerButton.Content = T("eraseButton");
         LogTitleText.Text = T("securityLog");
         ClearLogButton.Content = T("clear");
+        ApplyConsoleLanguage();
         CancelOperationButton.Content = T("cancel");
         OperationStatusText.Text = Volatile.Read(ref _operationActive) != 0 ? T("working") : _integrityTrusted ? T("ready") : T("blocked");
         UpdateEntropyStatus(force: true);
@@ -161,21 +173,21 @@ public sealed partial class MainWindow
                 ? "The archive is then extracted again and compared byte-for-byte with the original files. Files are deleted only after a complete match."
                 : "Das Archiv wird danach erneut entpackt und bitweise mit den Originalen verglichen. Gelöscht wird erst bei vollständiger Übereinstimmung.",
             "saveArchive" => en ? "Save archive" : "Archiv speichern",
-            "createPasswordTitle" => en ? "Four-part password" : "Vierteiliges Passwort",
+            "createPasswordTitle" => en ? "Decryption credentials" : "Entschlüsselungsdaten",
             "createPasswordHelp" => en
-                ? "Extraction requires the user password, the PIN and both independently generated factors A and B. All four are mandatory."
-                : "Zum Entpacken werden Userpasswort, PIN sowie beide unabhängig generierten Faktoren A und B benötigt. Alle vier sind zwingend.",
+                ? "Extracting the archive requires the password, the PIN, and both generated factors A and B."
+                : "Zum Entpacken sind das Passwort, die PIN und beide generierten Faktoren A und B erforderlich.",
             "userPassword" => en ? "User password" : "Userpasswort",
             "repeatPassword" => en ? "Repeat user password" : "Userpasswort wiederholen",
             "passwordHelp" => en
                 ? "24 to 256 characters, at least 3 character groups, 12 distinct and 12 non-hex characters, no hex run of 8+, and a conservative strength estimate of at least 128."
                 : "24 bis 256 Zeichen, mindestens 3 Zeichengruppen, 12 verschiedene und 12 Nicht-Hex-Zeichen, keine Hex-Folge ab 8 Zeichen und mindestens 128 Bit konservative Bewertung.",
-            "generatorTitle" => en ? "Two independent 1024-bit factors" : "Zwei unabhängige 1024-Bit-Faktoren",
+            "generatorTitle" => en ? "Two generated key factors" : "Zwei generierte Schlüsselfaktoren",
             "generatorHelp" => en
-                ? $"Eleven randomly assigned entropy pools need at least {EntropyMixer.RequiredMouseSamplesPerPurpose} mouse samples each. Generation atomically creates factors A and B, both salts and all five nonce parts, then consumes all source pools."
-                : $"Elf zufällig befüllte Entropiepools benötigen je mindestens {EntropyMixer.RequiredMouseSamplesPerPurpose} Maus-Samples. Generieren erzeugt die Faktoren A und B, beide Salts und alle fünf Nonce-Teile atomar und verbraucht danach alle Quellpools.",
-            "factorA" => en ? "Generated factor A" : "Generierter Faktor A",
-            "factorB" => en ? "Generated factor B" : "Generierter Faktor B",
+                ? $"Eleven entropy pools collect randomly assigned mouse events. Each pool requires at least {EntropyMixer.RequiredMouseSamplesPerPurpose.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en-US"))} events. Generate creates factors A and B together with the required salts and nonce values, and clears all source pools."
+                : $"Elf Entropiepools werden durch zufällig zugeordnete Mausereignisse befüllt. Jeder Pool benötigt mindestens {EntropyMixer.RequiredMouseSamplesPerPurpose} Ereignisse. Generieren erstellt die Faktoren A und B sowie die benötigten Salze und Nonce-Werte und leert alle Quellpools.",
+            "factorA" => en ? "Factor A" : "Faktor A",
+            "factorB" => en ? "Factor B" : "Faktor B",
             "generatedFactorInvalid" => en ? "Both key-sheet factors must contain 256 hexadecimal characters each." : "Beide Faktoren vom Schlüsselzettel müssen jeweils aus 256 Hexadezimalzeichen bestehen.",
             "printKeySheets" => en ? "Print separately" : "Getrennt drucken",
             "saveTestPdf" => en ? "Save test PDF" : "Test-PDF speichern",
@@ -189,8 +201,8 @@ public sealed partial class MainWindow
             "pin" => en ? "PIN" : "PIN",
             "repeatPin" => en ? "Repeat PIN" : "PIN wiederholen",
             "pinHelp" => en
-                ? "6 to 16 digits. The PIN is a credential of its own and is required together with the password and both factors."
-                : "6 bis 16 Ziffern. Die PIN ist ein eigener Faktor und wird zusammen mit dem Passwort und beiden Faktoren benötigt.",
+                ? "6 to 16 digits. The PIN is a separate credential. To extract the archive, you need the password, the PIN, and both generated factors A and B."
+                : "6 bis 16 Ziffern. Die PIN ist eine eigenständige geheime Eingabe. Zum Entpacken werden das Passwort, die PIN und die beiden generierten Faktoren A und B benötigt.",
             "pinInvalid" => en
                 ? "The PIN must consist of {0} to {1} digits."
                 : "Die PIN muss aus {0} bis {1} Ziffern bestehen.",
@@ -271,13 +283,21 @@ public sealed partial class MainWindow
             "extract" => en ? "Extract" : "Entpacken",
             "listContents" => en ? "Show contents" : "Inhalt anzeigen",
             "emergencyRecovery" => en ? "Emergency recovery" : "Notfallwiederherstellung",
-            "extractPasswordTitle" => en ? "Four factors for extraction" : "Vier Faktoren zum Entpacken",
+            "extractPasswordTitle" => en ? "Decryption credentials" : "Entschlüsselungsdaten",
             "extractPasswordHelp" => en
-                ? "Enter the user password, the PIN and both factors from the separately stored key sheets."
-                : "Userpasswort, PIN und beide Faktoren von den getrennt gelagerten Schlüsselzetteln eingeben.",
+                ? "Extracting the archive requires the password, the PIN, and both generated factors A and B."
+                : "Zum Entpacken sind das Passwort, die PIN und beide generierten Faktoren A und B erforderlich.",
             "extractHintLabel" => en ? "Public archive hint" : "Öffentlicher Archivhinweis",
-            "factorAFromSheet" => en ? "Factor A from key sheet" : "Faktor A vom Schlüsselzettel",
-            "factorBFromSheet" => en ? "Factor B from key sheet" : "Faktor B vom Schlüsselzettel",
+            "factorAFromSheet" => en ? "Factor A from the key sheet" : "Faktor A vom Schlüsselzettel",
+            "factorBFromSheet" => en ? "Factor B from the key sheet" : "Faktor B vom Schlüsselzettel",
+            "factorImportHelp" => en ? "256 hexadecimal characters each. Spaces and line breaks are ignored." : "Jeweils 256 Hexadezimalzeichen. Leerzeichen und Zeilenumbrüche werden ignoriert.",
+            "consoleShow" => en ? "Show console" : "Konsole anzeigen",
+            "consoleHide" => en ? "Hide console" : "Konsole ausblenden",
+            "consoleEnd" => en ? "Go to end" : "Zum Ende",
+            "consolePruned" => en ? "Older entries were removed from the bounded log." : "Ältere Einträge wurden aus dem begrenzten Verlauf entfernt.",
+            "consoleUnavailable" => en ? "Console display unavailable." : "Konsolenanzeige derzeit nicht verfügbar.",
+            "archiveTargetExists" => en ? "The target archive path already exists. Choose a different path. Your entries remain available." : "Der Zielpfad existiert bereits. Wähle einen anderen Pfad. Deine Eingaben bleiben erhalten.",
+            "draftChanged" => en ? "Your entries changed while the dialog was open. Check them and try again." : "Die Eingaben wurden während des Dialogs geändert. Prüfe sie und versuche es erneut.",
             "hintNotLoaded" => en ? "No container hint loaded." : "Noch kein Containerhinweis geladen.",
             "hintNone" => en ? "The container has no hint." : "Der Container enthält keinen Hinweis.",
             "hintUnavailable" => en ? "The public hint could not be read." : "Der öffentliche Hinweis konnte nicht gelesen werden.",
@@ -339,7 +359,6 @@ public sealed partial class MainWindow
             "saveTestKeySheetDialog" => en ? "Save test key-sheet PDF (writes secrets to disk)" : "Test-Schlüsselzettel-PDF speichern (schreibt Geheimwerte auf Datenträger)",
             "inputsMissing" => en ? "Select at least one file or folder." : "Bitte mindestens eine Datei oder einen Ordner auswählen.",
             "targetMissing" => en ? "Choose a target archive." : "Bitte ein Zielarchiv auswählen.",
-            "archiveTargetExists" => en ? "The archive target already exists. Choose a new numbered path." : "Das Archivziel existiert bereits. Bitte einen neuen nummerierten Pfad wählen.",
             "archiveTargetOverwritesInput" => en ? "The target archive would overwrite an input file." : "Das Zielarchiv würde eine Eingabedatei überschreiben.",
             "archiveTargetInsideInput" => en ? "The target archive must not be inside an input folder." : "Das Zielarchiv darf nicht innerhalb eines Eingabeordners liegen.",
             "passwordMismatch" => en ? "The user-password entries do not match." : "Die Userpasswort-Eingaben stimmen nicht überein.",

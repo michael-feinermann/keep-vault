@@ -1,0 +1,2 @@
+bcfb79fb03bd9df45791dbe9da7e6d27438445e226c48747fd8bc582c0ed4657  README.de.md
+dc32a5e278a9ed8a7d16b3285742b151cc5aba493fc4484b8a9b86f2b7ffdccc  comparison.json

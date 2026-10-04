@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "testInventoryHash": "d1e834e3d4cbb621e32903dfa71fcf69ae562811ab47cb6a2fcb97966f888b43",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.rev12-workflow-4kib-camellia-auto",
+      "name": "production-KDF level-3 complete archive/KPAR2/original-compare matrix: 4kib/camellia/auto",
+      "status": "PASS",
+      "seconds": 11.007,
+      "peakRssMiB": 1566,
+      "seed": "0x5B812A87",
+      "failure": null
+    }
+  ]
+}

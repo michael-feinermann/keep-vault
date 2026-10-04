@@ -18,7 +18,7 @@ gesperrt wiederhergestellten Keep-Vault-Signer auf Basis des gepinnten .NET-SDKs
 
 ```bash
 ./QrCodeScanner/tools/Build-QrScanner-macOS.sh \
-  --version 5.0.3 --build-number 14
+  --version 5.0.3 --build-number 16
 ```
 
 Das Skript baut universell (arm64 + x86_64), fuehrt die Tests aus, erzeugt das
@@ -91,11 +91,14 @@ Laengen, Positionen, Anzahlen und Entscheidungsmetadaten.
 
 ## Was die App nicht auf die SSD schreibt
 
-Die App besitzt **kein** Datei-Entitlement, auch kein
-`user-selected.read-only`. Sie hat nichts zu lesen und nichts zu schreiben, und
-die Sandbox macht daraus eine Regel des Systems statt eines Versprechens des
-Codes. Zusaetzlich sind die Wege abgeschaltet, auf denen AppKit von sich aus
-Text auf die Platte bringt:
+Die App besitzt kein Datei-Entitlement für ausgewählte Benutzerdateien, auch
+kein `user-selected.read-only`. Sie speichert keine Scaninhalte in Dateien.
+Für die Instanzsperre erstellt sie innerhalb ihres eigenen Sandboxcontainers
+ein Application-Support-Verzeichnis und öffnet dort eine Sperrdatei; diese
+enthält keinen Scaninhalt. Die Sandbox erlaubt solche eigenen Containerdateien
+und ist daher kein Nachweis, dass die App überhaupt nichts schreibt. Zusätzlich
+sind die Wege abgeschaltet, auf denen AppKit von sich aus Text auf die Platte
+bringt:
 
 - **Fensterwiederherstellung.** `NSWindow.isRestorable = false` und
   `applicationSupportsSecureRestorableState → false`. Sonst legt AppKit den
@@ -156,9 +159,10 @@ lokale `Apple Development`-Signatur ist nur für Entwicklungs-Gates zulässig un
 wird niemals als veröffentlichbarer Build ausgegeben.
 
 ```bash
-xcrun notarytool store-credentials "QR-Scanner" \
-  --apple-id DEINE-APPLE-ID --team-id TEAM-ID
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --notary-profile "Keep Vault v12"
+xcrun notarytool store-credentials "Keep Vault v13" --team-id TEAM-ID
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh \
+  --arch universal --version 5.0.3 --build-number 16 \
+  --notary-profile "Keep Vault v13"
 ```
 
 `notarytool` fragt das app-spezifische Passwort verdeckt ab und speichert das

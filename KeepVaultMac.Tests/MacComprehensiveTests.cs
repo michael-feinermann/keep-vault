@@ -158,7 +158,7 @@ internal static partial class MacComprehensiveTests
         {
             Cost = new TestCost(4, 3072, true, TestConstraint.HostExclusive),
         },
-        new("performance.pipeline-slot-scaling", "focused 1:4 chunk-slot scaling comparison with test-only KDF isolation",
+        new("performance.pipeline-slot-scaling", "adaptive Auto versus forced chunk-slot medians with test-only KDF isolation and verified output",
             CipherSuitePerformanceTests.RunPipelineSlotScalingAsync,
             TestResource.CpuHeavy,
             "Performance",
@@ -166,7 +166,7 @@ internal static partial class MacComprehensiveTests
         {
             Cost = new TestCost(9, 3072, true, TestConstraint.HostExclusive),
         },
-        new("performance.paranoia-256mib-e2e", "256 MiB level-5 Paranoia production Argon2id end-to-end measurement",
+        new("performance.paranoia-256mib-e2e", $"256 MiB level-{ArchiveWorkflowTestSettings.CompressionLevel} Paranoia production Argon2id end-to-end measurement",
             ReleaseEndToEndPerformanceTests.RunExact256MiBAsync,
             TestResource.ArgonPeakMemory,
             "Performance",
@@ -178,7 +178,7 @@ internal static partial class MacComprehensiveTests
                 true,
                 TestConstraint.HostExclusive | TestConstraint.EntropyState | TestConstraint.ZpaqProcess),
         },
-        new("performance.paranoia-complex-tree-e2e", "complex heterogeneous tree level-5 Paranoia and KPAR2 repair end-to-end measurement",
+        new("performance.paranoia-complex-tree-e2e", $"complex heterogeneous tree level-{ArchiveWorkflowTestSettings.CompressionLevel} Paranoia and KPAR2 repair end-to-end measurement",
             ReleaseEndToEndPerformanceTests.RunComplexTreeAsync,
             TestResource.ArgonPeakMemory,
             "Performance",
@@ -227,6 +227,22 @@ internal static partial class MacComprehensiveTests
         .. ContainerSuiteCases(),
         .. RecoverySuiteCases(),
         .. MacGuiTests.Tests,
+        .. FactorInputRev12Tests.Tests,
+        .. FactorInputRev12GuiTests.Tests,
+        .. FactorEditorDropRev12Tests.Tests,
+        .. PreflightLifetimeRev12Tests.Tests,
+        .. WindowDisposeRev12Tests.Tests,
+        .. AdaptiveWindowRev12Tests.Tests,
+        .. KdfAdmissionRev12Tests.Tests,
+        .. OperationPhaseProfileTests.Tests,
+        .. Rev12ArchiveWorkflowPerformanceTests.Tests,
+        new("gui.rev12-console-text", "REV12 approved DE/EN text, twelve-line console, retention and follow",
+            Rev12ConsoleTests.RunAsync, TestResource.Gui, "GUI"),
+        new("gui.rev12-console-text-nowrap", "REV12 historical NoWrap/Disabled console control with identical public corpus and gates",
+            Rev12ConsoleTests.RunNoWrapControlAsync, TestResource.Gui, "GUI"),
+        new("gui.rev12-console-horizontal", "REV12 native horizontal console chrome, twelve text lines, progress and reading context",
+            Rev12ConsoleTests.RunHorizontalAsync, TestResource.Gui, "GUI"),
+        Rev12StagePerformanceTests.Test,
         .. PinCreationPolicyTests.Tests,
         .. CredentialCompatibilityTests.Tests,
         new("security.password-model-data", "offline model integrity, completeness and fail-closed resources", TestPasswordModelDataAsync, TestResource.Light, "Security"),
@@ -2072,7 +2088,6 @@ internal static partial class MacComprehensiveTests
         {
             ZpaqService.MaxExtractedFilesOverride = -1;
             ZpaqService.MaxExtractedBytesOverride = -1;
-            ZpaqService.MinFreeDiskSpaceBytesOverride = -1;
         }
     }
 
@@ -2712,24 +2727,46 @@ internal static partial class MacComprehensiveTests
         {
             AddMouseSamplesUntilReady();
             using GeneratedArchiveEntropy rejectedEntropy = EntropyMixer.CreateArchiveEntropy();
-            await RequireThrowsAsync<IOException>(
-                async () =>
-                {
-                    await using var tiny = new MemoryStream([1, 2, 3, 4], writable: false);
-                    await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
-                        tiny,
-                        existing,
-                        UserPassword,
-                        UserPin,
-                        rejectedEntropy.FirstPassword,
-                        rejectedEntropy.SecondPassword,
-                        suite,
-                        rejectedEntropy,
-                        null,
-                        null,
-                        CancellationToken.None).ConfigureAwait(false);
-                },
-                $"{suite} overwrote an existing encrypted target.").ConfigureAwait(false);
+            string retainedFactorA = rejectedEntropy.FirstPassword;
+            string retainedFactorB = rejectedEntropy.SecondPassword;
+            var refusalLifetime = new ArchiveOperationLifetime();
+            string[] partObjectsBefore = Directory.GetFiles(root, "*.encrypted-part")
+                .Order(StringComparer.Ordinal).ToArray();
+            Require(rejectedEntropy.HasPendingEncryptionParameters && !rejectedEntropy.ConsumptionStarted,
+                $"{suite} did not prepare unconsumed entropy for the existing-target refusal.");
+            await using var tiny = new MemoryStream([1, 2, 3, 4], writable: false);
+            bool expectedRefusal = false;
+            try
+            {
+                await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
+                    tiny,
+                    existing,
+                    UserPassword,
+                    UserPin,
+                    retainedFactorA,
+                    retainedFactorB,
+                    suite,
+                    rejectedEntropy,
+                    null,
+                    null,
+                    CancellationToken.None,
+                    refusalLifetime).ConfigureAwait(false);
+            }
+            catch (ArchivePreflightException refusal) when (refusal.Reason == ArchivePreflightReason.Destination)
+            {
+                expectedRefusal = true;
+            }
+            Require(expectedRefusal, $"{suite} did not refuse the existing encrypted target with the destination preflight reason.");
+            Require(rejectedEntropy.HasPendingEncryptionParameters && !rejectedEntropy.ConsumptionStarted
+                && !refusalLifetime.ConsumptionStarted && !refusalLifetime.MustClearCredentials,
+                $"{suite} consumed entropy or began execution before refusing an existing target.");
+            Require(string.Equals(rejectedEntropy.FirstPassword, retainedFactorA, StringComparison.Ordinal)
+                && string.Equals(rejectedEntropy.SecondPassword, retainedFactorB, StringComparison.Ordinal),
+                $"{suite} changed prepared factors after the existing-target refusal.");
+            rejectedEntropy.ValidateForEncryption(suite, retainedFactorA, retainedFactorB);
+            Require(tiny.Position == 0 && Directory.GetFiles(root, "*.encrypted-part")
+                    .Order(StringComparer.Ordinal).SequenceEqual(partObjectsBefore, StringComparer.Ordinal),
+                $"{suite} read archive bytes or changed part objects before refusing an existing target.");
             byte[] after = await File.ReadAllBytesAsync(existing).ConfigureAwait(false);
             try
             {

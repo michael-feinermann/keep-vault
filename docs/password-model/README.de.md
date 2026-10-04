@@ -1,8 +1,8 @@
-# Keep Vault 5.0.2: lokales Passwort-Zusatzmodell
+# Keep Vault 5.0.3: lokales Passwort-Zusatzmodell
 
 [Deutsch](README.de.md) · [English](README.en.md) · [Dokumentationsverzeichnis](../README.md)
 
-Vollständige Dokumentationskopie des [eingebetteten Modelltextes](../../KalynaArchiver/Resources/PasswordModel/README.md). Die folgenden relativen Dateinamen beziehen sich auf dessen Ressourcenordner. Die signierten Ressourcen bleiben unverändert; Sprachfassungen werden ausschließlich hier gepflegt.
+Vollständige Dokumentationskopie des [eingebetteten Modelltextes](../../KalynaArchiver/Resources/PasswordModel/README.md). Die folgenden relativen Dateinamen beziehen sich auf dessen Ressourcenordner. Modellversion, Manifest, Wortlisten und Lizenzdateien bleiben unverändert. Der eingebettete Modelltext wird für 5.0.3 aktualisiert; Sprachfassungen werden hier gepflegt.
 
 Modellversion: `keep-vault-password-model-2026-09-06-v1`, Datenabruf am 6. September 2026. Die Dateien sind ausschließlich Analysedaten für die Archivierung. Keep Vault erzeugt daraus keine Nutzerpasswörter, PINs oder Wallets. Zur Laufzeit gibt es weder Netzwerkzugriffe noch Downloads, Telemetrie, eine HIBP-Abfrage oder eine Online-Aktivierung. Auch ein älterer mitgelieferter Stand bleibt vollständig offline nutzbar.
 
@@ -18,7 +18,7 @@ Nur die expliziten Wortlistenräume besitzen eine exakt berechenbare kombinatori
 
 Bei leerer Eingabe, unzulässiger Länge, Steuerzeichen oder ungültigem UTF-16 bleibt der Lazy-Datenbestand ungeladen. Fehlende, beschädigte oder inkonsistente Daten ergeben `ModelUnavailable` und verhindern eine positive Archivierungsentscheidung. Entpacken, Auflisten, Recovery und die Schlüsselableitung dürfen dieses Modell nicht aufrufen und sind nicht von dessen Verfügbarkeit abhängig. Ein interner, asynchron isolierter Test-Scope wirft bei jedem Evaluate- oder direkten Loaderaufruf, auch bei bereits gefülltem Cache; er kann keine Annahme erlauben.
 
-Analysevarianten verändern ausschließlich lokale Kopien. Passwort, Leerzeichen und PIN gelangen weiterhin unverändert über den bestehenden UTF-8-/ASCII-Pfad in die v12-KDF. Das Ergebnisobjekt enthält keine Eingabe, Trefferwörter, normalisierten Texte oder Schlüssel. Die temporären .NET-Analysezeichenfolgen sind verwaltete unveränderliche Strings; eine garantierte Löschung dieser zusätzlichen GC-Kopien wird nicht behauptet. Es werden keine Eingaben protokolliert oder dauerhaft gespeichert.
+Analysevarianten verändern ausschließlich lokale Kopien. Passwort, Leerzeichen und PIN gelangen weiterhin unverändert über den bestehenden UTF-8-/ASCII-Pfad in die v13-KDF. Das Ergebnisobjekt enthält keine Eingabe, Trefferwörter, normalisierten Texte oder Schlüssel. Die temporären .NET-Analysezeichenfolgen sind verwaltete unveränderliche Strings; eine garantierte Löschung dieser zusätzlichen GC-Kopien wird nicht behauptet. Es werden keine Eingaben protokolliert oder dauerhaft gespeichert.
 
 ## Daten und Attribution
 

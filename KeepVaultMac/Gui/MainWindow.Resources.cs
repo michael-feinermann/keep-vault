@@ -99,19 +99,19 @@ public sealed partial class MainWindow
 
     private async void ChooseWorkingDirectory_Click(object? sender, RoutedEventArgs e)
     {
-        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        try
         {
-            Title = IsEnglish ? "Choose working folder" : "Arbeitsordner auswählen", AllowMultiple = false,
-        });
-        foreach (IStorageFolder folder in folders)
-        {
-            if (GetLocalPath(folder) is { } path && TryAcquireStorageAccess(folder, out MacStorageAccessLease next))
+            var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
-                _resourceWorkingAccess?.Dispose();
-                _resourceWorkingAccess = next;
-                WorkingDirectoryBox.Text = path;
-            }
-            else folder.Dispose();
+                Title = IsEnglish ? "Choose working folder" : "Arbeitsordner auswählen", AllowMultiple = false,
+            });
+            await ApplyStoragePickerSelectionAsync(folders,
+                folder => ReplaceStorageAccess(ref _resourceWorkingAccess, folder),
+                path => WorkingDirectoryBox.Text = path);
+        }
+        catch (Exception failure)
+        {
+            await ReportStorageSelectionFailureAsync(failure);
         }
     }
 

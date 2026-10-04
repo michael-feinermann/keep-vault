@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-01T10:57:28.969495+00:00",
+  "scope": "Metadata-only diagnosis, not performance or release evidence",
+  "filesSha256": {
+    "A-builder-apphost-caffeinate.log": "017c9b6c888ff3f0a763d9e68e9a52b05a6cf7caf35d9fb9867c08bcc61918e6",
+    "build-probe.py": "c0f5679549a1ff67cd724e52d49f9cae53106cb84a3ca246fd4fedab82a3aee0",
+    "packages.lock.json": "a38a40d43bd1869a33ef79e9c0a0c0cee700ad86d409924d2c8d5dd1779257cf",
+    "summary.json": "ca431968dcfe8285b8368d31d42a17a4c84136d58d57d29b352fd527373e9d91",
+    "LaunchMetadata.csproj": "4d30b8613ad96931a48de388dfbaf2ca2575e1b0352658eb9f7237287e59264e",
+    "Directory.Build.props": "17284cb74605517cbec8a8153505da71a685b28694b67b5ef80608cd79b1c0ea",
+    "results.json": "d27d171b9103aba204a19b791de29e7393ddf0b053da7006118cda9b9cbcd1f3",
+    "build-provenance.json": "3b1a701676b1d1f44d875358b309e7668d097b3b9ea18efd94b919ea3998d261",
+    "Directory.Build.targets": "17284cb74605517cbec8a8153505da71a685b28694b67b5ef80608cd79b1c0ea",
+    "README.md": "975f3d4cd5aecf17250d9130f888be869f1a2a6d1c9a4ab3a6ac2c56a1d8c12b",
+    "old-launch.zsh": "cf566f823f5212015bebf1b1ce9d5b3776be27dc28cfe4fda3812e7019fb8863",
+    "C-builder-apphost-noassertion.log": "d865078f557131aea1488e3c0c014795b0a31eaf847aa9bb8ec7f3f64dd8c846",
+    "B-python-dotnet-noassertion.log": "12ef8580a885ec6e9b92c2c9ac4f4d21813f5c930b4a86a6c4d6260c1c0a6f63",
+    "D-python-dotnet-caffeinate.log": "090d84ca4742ee299eac5e3eb3b4f11bc98e96624a36c098bdd3f8170ed076bb",
+    "global.json": "fd6e906187e3c51e2d158c04ef5c9a5d1108ba1ff3c76227891f4e3e6ae4e51e",
+    "build-2.log": "08ae34c6f6e7bec44b253c8fd3ee2e39c5dd44fda6991a8919a5d542d5d53274",
+    "run-probe.py": "73d9e523c3eb50d52f9f019085dbd4b39f4e3ba17954d7b47a1b5ca8e80913cb",
+    "build-1.log": "ebf9dd9c512a15f0198f914fe499b2566ce48cf19a1d75e1e24371f2d730bd83",
+    "build-native.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "metadata.c": "3c708ac54ad2ee5441f891caa3b764c8a83c25fdfe2f5d3488fc1f2fa66aed0d",
+    "Program.cs": "26926fbb7b90a440e406c72fee37acefb04b90ce831b47408fec16d484a3296c"
+  },
+  "cases": 4,
+  "processes": 8,
+  "gcdCallbacks": 80,
+  "allObservedPolicyGettersSucceeded": true,
+  "noObservedSchedulingMetadataDifference": true,
+  "protectedHarnessInputsUnchanged": true
+}

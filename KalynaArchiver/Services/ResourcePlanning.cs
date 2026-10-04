@@ -45,16 +45,144 @@ internal sealed record ResourceObservation(int AvailableCpuWorkers, long Physica
     long ProcessLimitBytes, long ProcessResidentBytes, long ReclaimableMemoryBytes,
     MemoryPressure Pressure, bool Reliable);
 internal sealed record PhaseResourceDemand(long MandatoryBytes, long ReadyBytes = 0, int ReadyWorkers = 1,
-    int PreviousSlots = 1, int HealthySamples = 0, bool ThroughputImproved = false);
+    int PreviousSlots = 1, int HealthySamples = 0, bool ThroughputImproved = false,
+    bool ThroughputRegressed = false, int? RequestedSlots = null);
 
 /// <summary>Public, non-secret resolved information. No credential-dependent matrix sizes.</summary>
 public sealed record ResolvedOperationPlan(int EffectiveCpuCeiling, int ActiveSlots, int IoRequests,
     long MemoryCeilingBytes, long MandatoryBytes, long ResidentIndexTargetBytes, string ThrottleReason)
 {
-    public const int PlannerRevision = 11;
+    public const int PlannerRevision = 12;
     public long ApprovedOutputLimit { get; init; }
     public long? ExpectedOutputBytes { get; init; }
     public string ExpectedOutputOrigin { get; init; } = "unknown";
+    public int MaximumAdmittedSlots { get; init; } = 1;
+}
+
+internal enum AdaptiveWindowReason
+{
+    InitialCold, ProvenLongStreamStart, Retained, IncompleteBatch, ProbeStarted, ProbePending, ProbeAccepted,
+    ProbeRejectedLoss, ProbeRejectedNoBenefit, RejectedWindowHeld, InvalidRate,
+    ThroughputRegression, ResourceBound, FixedRequest,
+}
+
+internal readonly record struct AdaptiveWindowDecision(int RequestedSlots, AdaptiveWindowReason Reason);
+
+/// <summary>
+/// Joined, complete batches only. A probe keeps the accepted window's rate;
+/// its own slower rate can never become the comparison baseline by reset.
+/// All state is bounded scalars and cannot grant resource authority.
+/// </summary>
+internal struct AdaptiveChunkWindow
+{
+    private int _acceptedSlots;
+    private double _acceptedRate;
+    private double _previousRate;
+    private int _healthySamples;
+    private double _sample1, _sample2, _sample3;
+    private int _probeSlots;
+    private double _probeBaseline;
+    private int _probeSamples;
+    private int _rejectedSlots;
+    private bool _startupComplete;
+
+    internal readonly int AcceptedSlots => Math.Max(1, _acceptedSlots);
+    internal readonly int ProbeSlots => _probeSlots;
+    internal readonly int RejectedSlots => _rejectedSlots;
+    internal readonly double AcceptedRate => _acceptedRate;
+    internal readonly bool IsCold => !_startupComplete;
+
+    internal readonly AdaptiveWindowDecision RequestProvenLongStreamStart() =>
+        new(IsCold ? 2 : AcceptedSlots, IsCold ? AdaptiveWindowReason.ProvenLongStreamStart : AdaptiveWindowReason.Retained);
+
+    internal AdaptiveWindowDecision Observe(int currentSlots, double rate, bool completeBatch, bool allowProbe)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(currentSlots, 1);
+        if (_acceptedSlots == 0) _acceptedSlots = currentSlots;
+        if (currentSlots != (_probeSlots > 0 ? _probeSlots : _acceptedSlots)) ApplyResolvedWindow(currentSlots);
+        if (!completeBatch) return new(currentSlots, AdaptiveWindowReason.IncompleteBatch);
+        if (!double.IsFinite(rate) || rate <= 0)
+        {
+            if (_probeSlots > 0) return RejectProbe(AdaptiveWindowReason.InvalidRate);
+            ResetAccepted(Math.Max(1, currentSlots - 1));
+            return new(_acceptedSlots, AdaptiveWindowReason.InvalidRate);
+        }
+        // Initial one-slot work is provisional. It supplies no accepted rate
+        // for the first proven longer-stream two-slot policy value.
+        if (IsCold && currentSlots == 1) return new(1, AdaptiveWindowReason.Retained);
+        if (_probeSlots > 0)
+        {
+            if (rate <= _probeBaseline * 0.90) return RejectProbe(AdaptiveWindowReason.ProbeRejectedLoss);
+            AddSample(rate);
+            if (++_probeSamples < 3) return new(_probeSlots, AdaptiveWindowReason.ProbePending);
+            double candidateRate = Median(_sample1, _sample2, _sample3);
+            if (candidateRate < _probeBaseline * 1.05)
+                return RejectProbe(AdaptiveWindowReason.ProbeRejectedNoBenefit);
+            _acceptedSlots = _probeSlots;
+            _acceptedRate = candidateRate;
+            _previousRate = rate;
+            _probeSlots = _probeSamples = _healthySamples = 0;
+            return new(_acceptedSlots, AdaptiveWindowReason.ProbeAccepted);
+        }
+        if (_acceptedRate > 0 && rate <= _acceptedRate * 0.90)
+        {
+            ResetAccepted(Math.Max(1, currentSlots - 1));
+            return new(_acceptedSlots, AdaptiveWindowReason.ThroughputRegression);
+        }
+        bool healthy = _previousRate == 0 || rate >= _previousRate * 0.95;
+        _previousRate = rate;
+        if (!healthy) _healthySamples = 0;
+        else
+        {
+            AddSample(rate);
+            _healthySamples = Math.Min(3, _healthySamples + 1);
+        }
+        if (_healthySamples < 3) return new(_acceptedSlots, AdaptiveWindowReason.Retained);
+        _acceptedRate = Median(_sample1, _sample2, _sample3);
+        if (!allowProbe || currentSlots == int.MaxValue) return new(_acceptedSlots, AdaptiveWindowReason.Retained);
+        int candidate = currentSlots + 1;
+        if (candidate == _rejectedSlots) return new(_acceptedSlots, AdaptiveWindowReason.RejectedWindowHeld);
+        _probeSlots = candidate;
+        _probeBaseline = _acceptedRate;
+        _probeSamples = _healthySamples = 0;
+        return new(candidate, AdaptiveWindowReason.ProbeStarted);
+    }
+
+    internal void ApplyResolvedWindow(int slots)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(slots, 1);
+        if (slots > 1) _startupComplete = true;
+        if (_probeSlots > 0 && slots == _probeSlots) return;
+        if (_probeSlots > 0)
+        {
+            _probeSlots = _probeSamples = _healthySamples = 0;
+            _previousRate = 0;
+        }
+        if (slots != _acceptedSlots)
+        {
+            // A real admission change invalidates an earlier rejected-window
+            // conclusion. A normal probe rollback retains it because the
+            // accepted window itself has not changed.
+            _rejectedSlots = 0;
+            ResetAccepted(slots);
+        }
+    }
+
+    private AdaptiveWindowDecision RejectProbe(AdaptiveWindowReason reason)
+    {
+        _rejectedSlots = _probeSlots;
+        _probeSlots = _probeSamples = _healthySamples = 0;
+        _previousRate = 0;
+        return new(_acceptedSlots, reason);
+    }
+    private void ResetAccepted(int slots)
+    {
+        _acceptedSlots = slots;
+        _acceptedRate = _previousRate = _sample1 = _sample2 = _sample3 = 0;
+        _healthySamples = _probeSlots = _probeSamples = 0;
+    }
+    private void AddSample(double rate) { _sample1 = _sample2; _sample2 = _sample3; _sample3 = rate; }
+    private static double Median(double a, double b, double c) => Math.Max(Math.Min(a, b), Math.Min(Math.Max(a, b), c));
 }
 
 /// <summary>Pure policy: snapshots are observations, never promises or allocations.</summary>
@@ -86,7 +214,8 @@ internal static class ResourcePlanner
         ResourceObservation observation, PhaseResourceDemand demand)
     {
         preferences.Validate();
-        if (demand.MandatoryBytes < 0 || demand.ReadyBytes < 0 || demand.ReadyWorkers < 1)
+        if (demand.MandatoryBytes < 0 || demand.ReadyBytes < 0 || demand.ReadyWorkers < 1
+            || demand.PreviousSlots < 1 || demand.HealthySamples < 0 || demand.RequestedSlots is < 1)
             throw new ArgumentOutOfRangeException(nameof(demand));
         long ceiling = HostCeiling(observation);
         if (preferences.MemoryMode == ResourceMode.Manual)
@@ -95,23 +224,45 @@ internal static class ResourcePlanner
         if (preferences.CpuMode == ResourceMode.Manual) cpus = Math.Min(cpus, preferences.ManualCpuLimit!.Value);
         int slots = 1;
         string reason = "minimum-work-window";
+        // Admit only concrete ready chunks within the current OS/CPU and RAM
+        // observations. These are ceilings, not per-CPU buffer allocations.
+        long headroom = Math.Min(ceiling, AdditionalAdmission(observation, 0)) - demand.MandatoryBytes;
+        int allowedSlots = (int)Math.Min(cpus, Math.Max(1, headroom / SlotBytes));
+        if (preferences.QueueMode == ResourceMode.Manual)
+            allowedSlots = Math.Min(allowedSlots, preferences.ManualQueueLimit!.Value);
         if (observation.Pressure == MemoryPressure.Normal && demand.ReadyBytes > (16L << 20))
         {
-            slots = 2;
+            long readyChunks = (demand.ReadyBytes - 1) / (16L << 20) + 1;
+            allowedSlots = (int)Math.Min(allowedSlots, readyChunks);
+            // A stable measured window does not need a new 5% improvement on
+            // every batch merely to remain available. Only an explicit
+            // regression, pressure, reduced work or an admission cap shrinks it.
+            slots = Math.Min(allowedSlots, Math.Max(2, demand.PreviousSlots));
+            if (demand.RequestedSlots is int requested)
+            {
+                slots = Math.Min(allowedSlots, requested);
+                reason = "measured-window-request";
+            }
+            else if (demand.ThroughputRegressed)
+            {
+                slots = Math.Min(allowedSlots, Math.Max(2, demand.PreviousSlots - 1));
+                reason = "throughput-regression";
+            }
             // Grow only at a joined phase/chunk boundary after three healthy
             // samples showing useful independent work. Never allocate per CPU.
-            if (demand.HealthySamples >= 3 && demand.ThroughputImproved)
-                slots = checked(Math.Max(2, demand.PreviousSlots + 1));
-            slots = (int)Math.Min(slots, Math.Max(1, (demand.ReadyBytes - 1) / (16L << 20) + 1));
-            reason = "ready-work";
+            else if (demand.HealthySamples >= 3 && demand.ThroughputImproved && slots < allowedSlots)
+                slots++;
+            if (demand.RequestedSlots is null && !demand.ThroughputRegressed) reason = "ready-work";
         }
-        else if (observation.Pressure != MemoryPressure.Normal) reason = "memory-pressure";
-        if (preferences.QueueMode == ResourceMode.Manual) slots = Math.Min(slots, preferences.ManualQueueLimit!.Value);
-        long headroom = Math.Min(ceiling, AdditionalAdmission(observation, 0)) - demand.MandatoryBytes;
-        slots = (int)Math.Min(slots, Math.Max(1, headroom / SlotBytes));
+        else
+        {
+            allowedSlots = 1;
+            if (observation.Pressure != MemoryPressure.Normal) reason = "memory-pressure";
+        }
         int io = slots > 1 ? 2 : 1;
         if (preferences.IoMode == ResourceMode.Manual) io = Math.Min(io, preferences.ManualIoLimit!.Value);
-        return new(cpus, slots, io, ceiling, demand.MandatoryBytes, IndexCacheTargetBytes, reason);
+        return new(cpus, slots, io, ceiling, demand.MandatoryBytes, IndexCacheTargetBytes, reason)
+            { MaximumAdmittedSlots = allowedSlots };
     }
 }
 

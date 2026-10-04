@@ -1,0 +1,15 @@
+{
+  "scope": "Managed development evidence; installed release approval is separate",
+  "performance": true,
+  "executions": [
+    {
+      "testId": "performance.rev12-workflow-4kib-paranoia-auto",
+      "startedUtc": "2026-10-04T07:13:12.068831+00:00",
+      "completedUtc": "2026-10-04T07:13:30.301292+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z/run-20261004T071312Z-4d272b53",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z/run-20261004T071312Z-4d272b53\n",
+      "status": "PASS"
+    }
+  ]
+}

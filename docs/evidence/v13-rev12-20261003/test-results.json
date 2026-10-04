@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "testInventoryHash": "98de307771f5d7b76634e3adf02bce6d46e694e36212e8a6ef4e5bea276d2cb9",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.rev12-stage-profile",
+      "name": "public 256 MiB stage/cascade medians, actual granted teams and observation overhead",
+      "status": "PASS",
+      "seconds": 419.529,
+      "peakRssMiB": 719,
+      "seed": "0x1984AE61",
+      "failure": null
+    }
+  ]
+}

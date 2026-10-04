@@ -2,7 +2,7 @@
 
 [Deutsch](README.de.md) · [English](README.md) · [Dokumentationsverzeichnis](docs/README.md)
 
-Aktueller Arbeitsstand: 5.0.3/v13 wird umgesetzt und geprüft. Der aktuelle Auftrag umfasst macOS und Testdaten bis 256 MiB mit einer ausdrücklich gewünschten Paranoia-Ausnahme: ein 256-MiB-Verzeichnisbaum und eine zusätzliche Einzeldatei mit 256 MiB, zusammen 512 MiB. Ein Windows-Release und reale Mehr-TB-Freigabeläufe gehören nicht zu diesem Durchgang. Der letzte unten dokumentierte öffentliche Release 5.0.2 bleibt ein historischer, separat nachgewiesener Stand. Siehe [Implementierungsbericht](docs/KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md).
+Aktueller Arbeitsstand: 5.0.3/v13 wird umgesetzt und geprüft. Der aktuelle Auftrag umfasst macOS und Testdaten bis 256 MiB mit einer ausdrücklich gewünschten Paranoia-Ausnahme: ein 256-MiB-Verzeichnisbaum und eine zusätzliche Einzeldatei mit 256 MiB, zusammen 512 MiB. Zusätzlich beauftragt sind je ein vollständiger 1-GiB-Arbeitslauf über alle zwölf Suites mit separat ausgewiesenen Ergebnissen. Ein Windows-Release und reale Mehr-TB-Freigabeläufe gehören nicht zu diesem Durchgang. Der letzte unten dokumentierte öffentliche Release 5.0.2 bleibt ein historischer, separat nachgewiesener Stand. Siehe [Implementierungsbericht](docs/KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md). Maßgeblich ist jetzt REV12; die [Abnahmematrix](docs/KEEP_VAULT_5_0_3_REV12_GATE_STATUS.md) trennt Umsetzung, tatsächliche Entwicklungsbelege und finale installierte Freigabe.
 
 Archivierung, Entpackung und kryptografische Löschung von ZPAQ-Archiven. Die aktuelle
 Entwicklungsversion 5.0.3 verwendet das Containerformat v13:
@@ -254,6 +254,8 @@ den zwei 1024-Bit-Faktoren der gedruckten Schlüsselzettel. Neue Archive verlang
 (nur ASCII). Diese Auswahlgrenzen gelten nicht beim Lesen vorhandener v13-Archive.
 Es gibt weder einen reduzierten KDF-Modus noch eine Suite, die einen Zugangsfaktor
 überspringt.
+
+Die Faktoreingabe akzeptiert 256 ASCII-Hexzeichen zusammen mit dem ausdrücklich festgelegten Unicode-WhiteSpace-Satz. Rohtext ist auf 65.536 UTF-16-Einheiten begrenzt; nach Entfernen dieses Leerraums müssen genau 128 Byte entstehen. Einfügen, Drop und abgeschlossene Texteingabekomposition werden vollständig übernommen oder ohne stilles Abschneiden abgewiesen. Diese Verarbeitung normalisiert oder verändert weder Passwort noch PIN. In der englischen App heißt die Zugangskomponente „password“.
 
 Zunächst entstehen zwei unterschiedlich konstruierte Verarbeitungspfade. Der
 SHA3-Pfad teilt jeden Faktor in zwei binäre 512-Bit-Hälften und verknüpft sie
@@ -601,7 +603,11 @@ Native ZPAQ-Gruppen, Cipher-Gruppen, MAC-Blattarbeiter und Argon2-Ausführungsth
 
 Die Ressourcenseite startet mit Automatisch. Optionale manuelle Obergrenzen bleiben von den aktuell ermittelten Werten getrennt. Kleine Aufträge beginnen mit einem Speicherplatz; größere bereitstehende Arbeit kann nach Prüfung weitere erhalten. Für unbekannte Extraktionsmengen gilt zunächst eine sichtbare Freigabe von 256 MiB, die unter Ressourcen ausdrücklich angepasst werden kann. Sie reserviert keinen Datenträgerplatz. Argon2id benötigt auch bei winzigen Archiven weiterhin vorübergehend 1 GiB bis knapp 2 GiB zuzüglich Betriebsbedarf.
 
+REV12 behält das bewährte Chunkfenster während der Probe eines größeren Fensters. Der erste Auto-Batch nutzt einen Slot; ein zweiter verlangt konkret bekannte Restarbeit und frische Zulassung. Eine unbekannte Pipelänge allein erzeugt keine zusätzlichen bereiten Chunks. Eine langsamere Probe wird zurückgenommen, ohne Cipher-, MAC-, KDF- oder Recoveryarbeit zu reduzieren. Freier Datenträgerplatz wird für tatsächliche anstehende Schreibvorgänge geprüft; ein kleines gültiges Archiv scheitert dadurch nicht an einer unabhängigen festen 256-MiB-Reserve.
+
 Archivierung, Extraktion und Reparatur haben keine anwendungsseitige Wandzeit-, CPU-Zeit- oder Stillstandsfrist. Manueller Abbruch, echte Fehler und begrenzte Abbrucheskalation bleiben erhalten. Der Fortschritt zeigt erledigte Phaseneinheiten und verstrichene Zeit. Eine Phasenrestzeit erscheint erst nach ausreichenden frischen Messungen; unbekannte Gesamtarbeit bleibt unbekannt. Siehe [REV11-Fortschrittsprüfung](docs/KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md).
+
+Die Sicherheitskonsole startet zugeklappt. Der aufgeklappte Bereich berücksichtigt zwölf gerenderte Textzeilen und die tatsächlichen Scrollleisten; der Fortschritt bleibt außerhalb der Umschaltung. Lange Zeilen haben eine horizontale Scrollleiste. Neue Einträge erhalten eine markierte oder gescrollte Leseposition; automatisches Folgen bewegt nur vertikal, wenn zuvor bereits das Ende gelesen wurde. Ausdrückliches Leeren und begrenzte Aufbewahrung bleiben verfügbar.
 
 Die Containerschicht verarbeitet begrenzte Gruppen aus 16-MiB-Blöcken. Speicherplätze sind von CPU-Workern getrennt: Ein Slot besitzt zwei gesperrte 16-MiB-Puffer sowie kleine Zähler-/Nonce-/Tag-Puffer. Selbst ein einzelner Chunk kann mehrere genehmigte Cipher-Worker nutzen. Das gemeinsame Budget reserviert jedes Team einschließlich seines Aufrufers; native Cipher verwenden geliehene Arbeit über den gemeinsamen Executor. Es gibt keine feste Gesamtgrenze von 64 oder 1024 CPUs. Die tatsächliche Prozess-CPU-Verfügbarkeit und RAM-/Queue-Budgets bleiben Grenzen. Ausgaben bleiben geordnet; vor Freigabe werden aktive Arbeiten beendet und alle temporären Geheimnisse gelöscht. Fehler veröffentlichen keinen Teilcontainer. Numerische Viele-Kern-Tests belegen keine Messung einer solchen Maschine.
 
@@ -853,8 +859,8 @@ die externe PFX-Datei und die beiden v12-Hüllen, konfiguriert über
 
 ```sh
 ./tools/Build-Native-macOS.sh          # reference ciphers, Argon2, ZPAQ
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.3 --build-number 14
-./tools/Build-KeepVault-macOS.sh --version 5.0.3 --build-number 14
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.3 --build-number 16
+./tools/Build-KeepVault-macOS.sh --version 5.0.3 --build-number 16
 ./tools/Build-Portable-macOS.sh        # portable folder and ZIP
 ./tools/Install-KeepVault-macOS.sh     # verify and install to /Applications
 ./tools/Verify-KeepVault-macOS.sh      # check an installed or built bundle

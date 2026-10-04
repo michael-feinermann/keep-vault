@@ -1,0 +1,12 @@
+{
+  "startedUtc": "2026-10-03T17:25:48.401866+00:00",
+  "command": [
+    "/usr/bin/caffeinate",
+    "-i",
+    "-w",
+    "98746"
+  ],
+  "ownedAssertionPid": 98811,
+  "matrixPid": 98746,
+  "scope": "Temporary idle-sleep assertion bound to this matrix process; automatic exit at matrix completion. Announced before starting. No persistent energy-setting mutation."
+}

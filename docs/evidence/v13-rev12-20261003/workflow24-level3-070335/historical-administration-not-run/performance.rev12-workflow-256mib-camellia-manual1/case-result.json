@@ -1,0 +1,17 @@
+{
+  "testId": "performance.rev12-workflow-256mib-camellia-manual1",
+  "suite": "Camellia256",
+  "sourceBytes": 268435456,
+  "requestedWorkers": 1,
+  "attempted": false,
+  "status": "NOT RUN",
+  "errors": [
+    {
+      "stage": "blocked-after-binding-or-cleanup-failure",
+      "type": "ValueError",
+      "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+    }
+  ],
+  "startedUtc": "2026-10-04T07:06:49.996219+00:00",
+  "completedUtc": "2026-10-04T07:06:49.996224+00:00"
+}

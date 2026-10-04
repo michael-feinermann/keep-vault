@@ -1,0 +1,15 @@
+{
+  "scope": "Managed development evidence; installed release approval is separate",
+  "performance": true,
+  "executions": [
+    {
+      "testId": "performance.rev12-workflow-4kib-serpent-auto",
+      "startedUtc": "2026-10-04T07:24:56.706608+00:00",
+      "completedUtc": "2026-10-04T07:25:10.360475+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z/run-20261004T072456Z-4b3b0161",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z/run-20261004T072456Z-4b3b0161\n",
+      "status": "PASS"
+    }
+  ]
+}

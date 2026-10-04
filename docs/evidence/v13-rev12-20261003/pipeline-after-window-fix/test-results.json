@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "testInventoryHash": "917013747488b93e30643518368d247e60ef877a0b20512a10dc4021df7229db",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.pipeline-slot-scaling",
+      "name": "adaptive Auto versus forced chunk-slot medians with test-only KDF isolation and verified output",
+      "status": "PASS",
+      "seconds": 150.336,
+      "peakRssMiB": 2410,
+      "seed": "0x64C74595",
+      "failure": null
+    }
+  ]
+}

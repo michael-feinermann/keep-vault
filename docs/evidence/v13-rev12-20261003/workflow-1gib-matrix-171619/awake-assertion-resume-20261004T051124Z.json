@@ -1,0 +1,13 @@
+{
+  "createdUtc": "2026-10-04T05:11:24.116154+00:00",
+  "pid": 4395,
+  "command": [
+    "/usr/bin/caffeinate",
+    "-i",
+    "-s",
+    "-w",
+    "98746"
+  ],
+  "waitForParentPid": 98746,
+  "scope": "Fresh owned awake assertion on verified AC before original parent SIGCONT; old PID98811 assertion remains a historical ended record."
+}

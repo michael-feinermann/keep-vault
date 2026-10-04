@@ -215,6 +215,7 @@ public sealed partial class RecoveryService
     private static async ValueTask WriteAtOffsetAsync(Microsoft.Win32.SafeHandles.SafeFileHandle handle,
         ReadOnlyMemory<byte> bytes, long offset, CancellationToken token)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryOutputWrite, bytes.Length);
         using RecoveryIoLease lease = await AcquireRecoveryIoAsync(token).ConfigureAwait(false);
         using IDisposable reservation = ArchiveOperationPolicy.Current.ReserveOutputWrite(handle, bytes.Length);
         await RandomAccess.WriteAsync(handle, bytes, offset, token).ConfigureAwait(false);
@@ -223,6 +224,7 @@ public sealed partial class RecoveryService
 
     private static async ValueTask WriteOutputAsync(FileStream stream, ReadOnlyMemory<byte> bytes, CancellationToken token)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryOutputWrite, bytes.Length);
         using RecoveryIoLease lease = await AcquireRecoveryIoAsync(token).ConfigureAwait(false);
         long offset = stream.Position;
         Microsoft.Win32.SafeHandles.SafeFileHandle handle = stream.SafeFileHandle;
@@ -430,6 +432,7 @@ public sealed partial class RecoveryService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryCreate);
         string fullArchivePath = Path.GetFullPath(archivePath);
         using IDisposable recoveryPolicy = ArchiveOperationPolicy.Current.ForRecovery(
             Path.GetDirectoryName(GetRecoveryPath(fullArchivePath)) ?? Environment.CurrentDirectory).EnterScope();
@@ -1060,6 +1063,7 @@ public sealed partial class RecoveryService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryVerifyRepair);
         string fullArchivePath = Path.GetFullPath(archivePath);
         using IDisposable recoveryPolicy = ArchiveOperationPolicy.Current.ForRecovery(
             Path.GetDirectoryName(fullArchivePath) ?? Environment.CurrentDirectory).EnterScope();
@@ -3088,6 +3092,7 @@ public sealed partial class RecoveryService
         RecoveryManifest manifest,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryMatchOriginal);
         archive.Position = 0;
         (byte[] actualSha3, byte[] actualSkein) = await IntegrityService.HashStreamAsync(
             archive,

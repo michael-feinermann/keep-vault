@@ -21,6 +21,43 @@ internal static class OperationMemoryBudget
     internal static object? CurrentContextIdentity => Ambient.Value?._root;
     internal static Action<string>? ConstructionHookForTests;
 
+    /// <summary>
+    /// Read-only admission of the known KDF lower bound before entropy transfer.
+    /// This neither reserves memory nor waits, and does not derive the secret PMI.
+    /// Actual matrix admission is still repeated at the existing allocation boundary.
+    /// </summary>
+    internal static void RequireKnownMinimumKdfAdmission(ArchiveOperationPolicy policy)
+    {
+        ArgumentNullException.ThrowIfNull(policy);
+        long matrixBytes = checked((long)V13MasterKdf.AdmissionMinimumMemoryKiB * 1024);
+        lock (Gate)
+        {
+            Lease? parent = Ambient.Value;
+            if (parent is not null) ObjectDisposedException.ThrowIf(parent._disposed, parent);
+            Reservation? root = parent?._root;
+            // Observation/ownership failures remain ordinary fatal errors. Only
+            // a positively established capacity refusal uses the dedicated type.
+            ResourceObservation observed = PlatformResourceObserver.Capture();
+            long host = ResourcePlanner.HostCeiling(observed);
+            long approved = Math.Min(host, Math.Min(root?.ApprovedBytes ?? policy.MemoryBudgetBytes,
+                policy.MemoryBudgetBytes));
+            long held = Math.Max(policy.Usage.LeasedMemoryBytes,
+                root is null ? 0 : checked(root.Bytes + root.HeavyBytes));
+            long mandatory = Math.Max(ResourcePlanner.OperationBaseBytes, held);
+            if (mandatory > approved || _entropyBytes > approved - mandatory
+                || matrixBytes > approved - mandatory - _entropyBytes)
+                throw new KdfMinimumAdmissionRefusalException(
+                    "The known minimum Argon2 matrix cannot fit the approved memory allowance alongside current operation buffers and protected records. Increase the resource allowance; no encryption entropy was consumed.");
+
+            long additional = checked(matrixBytes + (root is null ? ResourcePlanner.OperationBaseBytes : 0));
+            if (_workingBytes > host || _entropyBytes > host - _workingBytes
+                || additional > host - _workingBytes - _entropyBytes
+                || additional > ResourcePlanner.AdditionalAdmission(observed, _pendingBytes))
+                throw new KdfMinimumAdmissionRefusalException(
+                    "Current memory capacity cannot admit the known minimum Argon2 matrix. Retry when capacity is available; no encryption entropy was consumed.");
+        }
+    }
+
     internal static async ValueTask<Lease> AcquireAsync(ArchiveOperationPolicy policy, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(policy);
@@ -308,3 +345,6 @@ internal static class OperationMemoryBudget
         }
     }
 }
+
+/// <summary>Only a confirmed public minimum-capacity refusal, never an arbitrary I/O error.</summary>
+internal sealed class KdfMinimumAdmissionRefusalException(string message) : IOException(message);

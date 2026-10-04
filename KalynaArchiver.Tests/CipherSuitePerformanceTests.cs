@@ -384,19 +384,16 @@ internal static class CipherSuitePerformanceTests
         const EncryptionSuite scalingSuite = EncryptionSuite.StandardCascade;
         const int scalingMeasurementRuns = 5;
         const int orderSeed = 0x534C4F54;
-        int production = KalynaContainerService.ProductionPipelineWorkerCount;
-        var candidates = new List<int>();
+        // Zero is the real adaptive Auto path: it installs no forced slot seam.
+        const int production = 0;
+        var candidates = new List<int> { production };
+        static string Label(int candidate) => candidate == production ? "Auto" : candidate.ToString(CultureInfo.InvariantCulture);
         foreach (int slots in new[] { 1, 2, 3, 4, 5, 6, 8, 10, 12, 16 })
         {
             if (slots <= Environment.ProcessorCount && !candidates.Contains(slots))
             {
                 candidates.Add(slots);
             }
-        }
-
-        if (!candidates.Contains(production))
-        {
-            candidates.Add(production);
         }
 
         candidates.Sort();
@@ -413,6 +410,7 @@ internal static class CipherSuitePerformanceTests
         }
 
         byte[] payload = CreateDeterministicBytes(PipelineScalingBytes, 0x5343414C494E4731UL);
+        byte[] expectedHash = SHA256.HashData(payload);
         var measured = new Dictionary<string, double>(StringComparer.Ordinal);
         try
         {
@@ -445,6 +443,7 @@ internal static class CipherSuitePerformanceTests
             var samplesBySlot = candidates.ToDictionary(slots => slots, _ => new double[scalingMeasurementRuns]);
             var warmupRates = new Dictionary<int, double>();
             var sampleRecords = new List<object>();
+            var pipelineProfiles = new Dictionary<int, OperationPhaseProfile.ProfileSnapshot>();
             int nextRunId = 0;
 
             async Task<double> MeasureSampleAsync(int slots, int runId)
@@ -454,8 +453,12 @@ internal static class CipherSuitePerformanceTests
                 // ID, so synthetic nonces are unique even across slot counts.
                 using GeneratedArchiveEntropy entropy = CreateContainerEntropy(scalingSuite, runId);
                 await using var input = new MemoryStream(payload, writable: false);
+                // Identical bounded pipeline observation for every candidate.
+                // Other cipher/KDF phases are not timed by this diagnostic scope.
+                var pipelineProfile = new OperationPhaseProfile.Measurements(128, pipelineOnly: true);
                 Stopwatch timer = Stopwatch.StartNew();
-                using (KalynaContainerService.UsePipelineWorkerCountForTests(slots))
+                using (OperationPhaseProfile.ObserveForTests(pipelineProfile))
+                using (slots == production ? null : KalynaContainerService.UsePipelineWorkerCountForTests(slots))
                 {
                     await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
                         input,
@@ -471,7 +474,32 @@ internal static class CipherSuitePerformanceTests
                         CancellationToken.None).ConfigureAwait(false);
                 }
                 timer.Stop();
+                OperationPhaseProfile.ProfileSnapshot profile = pipelineProfile.Snapshot();
+                Require(profile.ObservationAvailable && profile.OmittedWindowDecisions == 0
+                    && profile.WindowDecisions.Length > 0,
+                    "A pipeline scaling sample has no complete bounded diagnostic window trace.");
+                Require(profile.WindowDecisions.All(window => window.ResolvedSlots >= 1
+                    && window.ResolvedSlots <= window.AdmittedSlotCeiling
+                    && window.ActiveChunks <= window.PreviousSlots),
+                    "A pipeline request bypassed fresh resource or actual ready-work authority.");
+                Require(profile.Aggregates.Single(phase => phase.Phase == "ResourceObservation").Calls == profile.WindowDecisions.Length
+                    && profile.Aggregates.Single(phase => phase.Phase == "ResourcePlanning").Calls == profile.WindowDecisions.Length,
+                    "Auto and fixed candidates did not perform identical resource-observation and planning boundaries.");
+                pipelineProfiles[runId] = profile;
                 double rate = RateMiBPerSecond(PipelineScalingBytes, timer.Elapsed);
+                // Correctness is outside the timed encryption interval. Every
+                // candidate must authenticate and reproduce exactly the public input.
+                using var sink = new HashingWriteStream();
+                await containers.DecryptToStreamAsync(containerPath, ContainerPassword, ContainerPin,
+                    ContainerFactorA, ContainerFactorB, sink, null, CancellationToken.None).ConfigureAwait(false);
+                byte[] actualHash = sink.GetHashAndReset();
+                try
+                {
+                    Require(sink.BytesWritten == PipelineScalingBytes
+                        && CryptographicOperations.FixedTimeEquals(expectedHash, actualHash),
+                        $"Pipeline {Label(slots)} did not reproduce the complete input.");
+                }
+                finally { CryptographicOperations.ZeroMemory(actualHash); }
                 File.Delete(containerPath);
                 return rate;
             }
@@ -481,35 +509,39 @@ internal static class CipherSuitePerformanceTests
                 int runId = nextRunId++;
                 double rate = await MeasureSampleAsync(slots, runId).ConfigureAwait(false);
                 warmupRates[slots] = rate;
-                sampleRecords.Add(new { phase = "warmup", round = 0, slots, runId, rateMiBPerSecond = rate });
-                Console.WriteLine($"      warm-up {slots,2} slot(s), run {runId}: {rate:F1} MiB/s (excluded by design)");
+                sampleRecords.Add(new { phase = "warmup", round = 0, slots, mode = Label(slots), runId, rateMiBPerSecond = rate, pipelineProfile = pipelineProfiles[runId] });
+                Console.WriteLine($"      warm-up {Label(slots),4}, run {runId}: {rate:F1} MiB/s (excluded by design)");
             }
             for (int round = 0; round < scalingMeasurementRuns; round++)
             {
-                Console.WriteLine($"      measured round {round + 1}/{scalingMeasurementRuns}, slot order: {string.Join(", ", roundOrders[round])}");
+                Console.WriteLine($"      measured round {round + 1}/{scalingMeasurementRuns}, slot order: {string.Join(", ", roundOrders[round].Select(Label))}");
                 foreach (int slots in roundOrders[round])
                 {
                     int runId = nextRunId++;
                     double rate = await MeasureSampleAsync(slots, runId).ConfigureAwait(false);
                     samplesBySlot[slots][round] = rate;
-                    sampleRecords.Add(new { phase = "measured", round = round + 1, slots, runId, rateMiBPerSecond = rate });
-                    Console.WriteLine($"        {slots,2} slot(s), run {runId}: {rate:F1} MiB/s");
+                    sampleRecords.Add(new { phase = "measured", round = round + 1, slots, mode = Label(slots), runId, rateMiBPerSecond = rate, pipelineProfile = pipelineProfiles[runId] });
+                    Console.WriteLine($"        {Label(slots),4}, run {runId}: {rate:F1} MiB/s");
                 }
             }
             foreach (int slots in candidates)
             {
                 double[] samples = samplesBySlot[slots];
                 double median = Median(samples);
-                measured[slots.ToString(CultureInfo.InvariantCulture)] = median;
+                measured[Label(slots)] = median;
                 Console.WriteLine(
-                    $"      {slots,2} slot(s) {(slots == production ? "<- production" : "             ")}"
+                    $"      {Label(slots),4} {(slots == production ? "<- production" : "             ")}"
                     + $" {median,9:F1} MiB/s"
                     + $" (runs {string.Join(", ", samples.Select(value => value.ToString("F1")))})");
             }
 
             Console.WriteLine("    PIPELINE_SCALING_SAMPLES_JSON=" + JsonSerializer.Serialize(new
             {
-                schemaVersion = 1,
+                schemaVersion = 3,
+                productionMode = "Auto without a forced slot override",
+                measurementSemantics = "All candidates use fresh OS observation and the same pure resource planner at the initial and every joined chunk boundary. Fixed requests are capped by current CPU, RAM, pressure, queue and remaining work. All candidates carry the same bounded pipeline-only diagnostic scope within encryption timing; snapshot serialization and authenticated plaintext comparison remain outside timing. Schema 2 results retain their original semantics and outcome.",
+                correctness = "every sample authenticated and plaintext SHA-256 compared outside timing",
+                fixedCandidateZeroMeansAuto = true,
                 payloadBytes = PipelineScalingBytes,
                 warmupsPerCandidate = 1,
                 measurementRounds = scalingMeasurementRuns,
@@ -520,20 +552,20 @@ internal static class CipherSuitePerformanceTests
             }, JsonOptions));
 
             KeyValuePair<string, double> best = measured.OrderByDescending(pair => pair.Value).First();
-            double productionRate = measured[production.ToString(CultureInfo.InvariantCulture)];
+            double productionRate = measured[Label(production)];
             Console.WriteLine(
-                $"    best {best.Key} slot(s) at {best.Value:F1} MiB/s; production {production} slot(s) "
+                $"    best {best.Key} at {best.Value:F1} MiB/s; adaptive production Auto "
                 + $"at {productionRate:F1} MiB/s ({productionRate / best.Value * 100:F1}% of best)");
             Console.WriteLine(
                 "    PIPELINE_SCALING_JSON=" + JsonSerializer.Serialize(measured, JsonOptions));
             Require(
                 productionRate >= best.Value * PipelineSlotTolerance,
-                $"The production pipeline slot count {production} reaches only {productionRate:F1} MiB/s "
-                + $"while {best.Key} slot(s) reach {best.Value:F1} MiB/s. Revisit "
-                + "KalynaContainerService.LogicalProcessorsPerPipelineWorker.");
+                $"The adaptive production Auto pipeline reaches only {productionRate:F1} MiB/s "
+                + $"while {best.Key} reaches {best.Value:F1} MiB/s. Revisit the actual resource planner and joined-boundary growth.");
         }
         finally
         {
+            CryptographicOperations.ZeroMemory(expectedHash);
             CryptographicOperations.ZeroMemory(payload);
             if (Directory.Exists(root))
             {

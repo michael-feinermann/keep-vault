@@ -1,0 +1,23 @@
+{
+  "phase": 8,
+  "testId": "performance.cipher-suites",
+  "startedUtc": "2026-10-01T10:25:19.791656+00:00",
+  "completedUtc": "2026-10-01T10:25:58.374551+00:00",
+  "exitCode": 1,
+  "command": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/sdk/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+    "--performance",
+    "--only",
+    "performance.cipher-suites",
+    "--parallel",
+    "1"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/KeepVaultMac",
+  "files": {
+    "phase-8.test-results.json": "cdd8e935e3f20f5b66de848b4ab0f88345d0fde49750a539d9e048cf8ec03328",
+    "phase-8.test-timings.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "logSha256": "d2abb5d13e88999594b35c7371464ab0209d7585e7742acf8b385d4ea2f0e969",
+  "artifacts": []
+}

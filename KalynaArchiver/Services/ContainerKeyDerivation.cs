@@ -312,8 +312,9 @@ internal static partial class ContainerKeyDerivation
     /// Parses one key-sheet factor into locked memory.
     /// </summary>
     /// <remarks>
-    /// Only the exact 256-character form is accepted. Nothing is padded and
-    /// nothing is truncated: a factor that arrives one character short is a
+    /// Exactly 256 ASCII hexadecimal payload characters are accepted within the
+    /// shared formatting-whitespace and raw-text contract. Nothing is padded or
+    /// truncated: a factor that arrives one character short is a
     /// transcription error, and silently accepting it would derive a key the
     /// sheet cannot reproduce.
     /// </remarks>
@@ -325,46 +326,12 @@ internal static partial class ContainerKeyDerivation
 
     public static LockedSensitiveBuffer ParseFactor(ReadOnlySpan<char> factorChars, string name)
     {
+        // Validate the whole bounded input before allocating or writing factor bytes.
+        FactorInput.RequireComplete(factorChars);
         var buffer = LockedSensitiveBuffer.Create(FactorBytes);
         try
         {
-            int hexDigitCount = 0;
-            int currentHigh = -1;
-            int byteIndex = 0;
-
-            for (int i = 0; i < factorChars.Length; i++)
-            {
-                char c = factorChars[i];
-                if (char.IsWhiteSpace(c))
-                {
-                    continue;
-                }
-
-                int nibble = DecodeNibble(c, name);
-                hexDigitCount++;
-
-                if (currentHigh < 0)
-                {
-                    currentHigh = nibble;
-                }
-                else
-                {
-                    if (byteIndex >= FactorBytes)
-                    {
-                        throw new ArgumentException(
-                            $"{name} must be exactly {FactorHexLength} hexadecimal characters.", nameof(factorChars));
-                    }
-                    buffer.Bytes[byteIndex++] = (byte)((currentHigh << 4) | nibble);
-                    currentHigh = -1;
-                }
-            }
-
-            if (hexDigitCount != FactorHexLength || byteIndex != FactorBytes)
-            {
-                throw new ArgumentException(
-                    $"{name} must be exactly {FactorHexLength} hexadecimal characters.", nameof(factorChars));
-            }
-
+            FactorInput.Decode(factorChars, buffer.Bytes);
             return buffer;
         }
         catch (Exception operationFailure)
@@ -376,14 +343,6 @@ internal static partial class ContainerKeyDerivation
             throw;
         }
     }
-
-    private static int DecodeNibble(char c, string name) => c switch
-    {
-        >= '0' and <= '9' => c - '0',
-        >= 'A' and <= 'F' => c - 'A' + 10,
-        >= 'a' and <= 'f' => c - 'a' + 10,
-        _ => throw new ArgumentException($"{name} is not valid hexadecimal."),
-    };
 
     public static MasterResult DeriveMaster(
         EncryptionSuiteParameters parameters,
@@ -521,7 +480,8 @@ internal static partial class ContainerKeyDerivation
         {
             master = DeriveMaster(
                 parameters, userPassword, pin, factorAHex, factorBHex, salts, progress, cancellationToken);
-            completed = SuiteKeySchedule.DeriveSuiteKeys(master.Master.Bytes, parameters);
+            using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.KeySchedule))
+                completed = SuiteKeySchedule.DeriveSuiteKeys(master.Master.Bytes, parameters);
             return completed;
         }
         catch (Exception failure)

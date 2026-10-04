@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:KeepVaultMac.Controls"
         x:Class="KalynaArchiver.MainWindow"
         x:Name="RootWindow"
         Title="Keep Vault"
@@ -109,8 +110,11 @@
     </Style>
   </Window.Styles>
 
-  <Grid Margin="22" RowDefinitions="Auto,*,180">
-    <Border Grid.Row="0" Classes="card" Padding="22,18">
+  <Grid Margin="22" RowDefinitions="*,Auto,Auto">
+    <ScrollViewer x:Name="MainWorkspaceScrollViewer" Grid.Row="0"
+                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <Grid RowDefinitions="Auto,Auto">
+    <Border x:Name="HeaderCard" Grid.Row="0" Classes="card" Padding="22,18">
       <Grid ColumnDefinitions="*,Auto">
         <Grid ColumnDefinitions="78,*" ColumnSpacing="16">
           <Image x:Name="HeaderLogoImage"
@@ -153,7 +157,7 @@
                 DragDrop.AllowDrop="True"
                 DragDrop.DragOver="CreatePanel_DragOver"
                 DragDrop.Drop="CreatePanel_Drop">
-          <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ScrollViewer x:Name="CreateScrollViewer" VerticalScrollBarVisibility="Auto">
             <Grid ColumnDefinitions="1.02*,18,0.98*">
               <StackPanel Grid.Column="0" Spacing="12">
                 <StackPanel Spacing="4">
@@ -226,9 +230,9 @@
 
               <Border x:Name="CreatePasswordPanel" Grid.Column="2" Classes="innerCard" Padding="15">
                 <StackPanel Spacing="10">
-                  <TextBlock x:Name="CreatePasswordSetupTitle" Text="Dreiteiliges Passwort" FontSize="17" FontWeight="SemiBold" />
+                  <TextBlock x:Name="CreatePasswordSetupTitle" Text="Entschlüsselungsdaten" FontSize="17" FontWeight="SemiBold" />
                   <TextBlock x:Name="CreatePasswordSetupHelpText"
-                             Text="Zum Entpacken werden Userpasswort, PIN, Faktor A und Faktor B benötigt."
+                             Text="Zum Entpacken sind das Passwort, die PIN und beide generierten Faktoren A und B erforderlich."
                              Classes="muted" FontSize="12" TextWrapping="Wrap" />
 
                   <TextBlock x:Name="CreatePasswordLabel" Text="Userpasswort" Classes="label" Margin="0" />
@@ -240,7 +244,7 @@
                   <TextBlock x:Name="CreatePinConfirmLabel" Text="PIN wiederholen" Classes="label" Margin="0" />
                   <TextBox x:Name="CreatePinConfirmBox" MaxLength="16" PasswordChar="●" TextChanged="CreatePasswordBox_TextChanged" />
                   <TextBlock x:Name="PinHelpText"
-                             Text="6 bis 16 Ziffern. Die PIN ist ein eigener Faktor und wird zusammen mit dem Passwort benötigt."
+                             Text="6 bis 16 Ziffern. Die PIN ist eine eigenständige geheime Eingabe. Zum Entpacken werden das Passwort, die PIN und die beiden generierten Faktoren A und B benötigt."
                              Classes="muted" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock x:Name="PinPolicyStatusText" Text="PIN noch nicht vollständig." Foreground="#F29AA6" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock x:Name="PasswordHelpText"
@@ -257,9 +261,9 @@
 
                   <Border Classes="card" Padding="13">
                     <StackPanel Spacing="8">
-                      <TextBlock x:Name="PasswordGeneratorTitle" Text="Zwei unabhängige 1024-Bit-Faktoren" FontWeight="SemiBold" />
+                      <TextBlock x:Name="PasswordGeneratorTitle" Text="Zwei generierte Schlüsselfaktoren" FontWeight="SemiBold" />
                       <TextBlock x:Name="PasswordGeneratorHelpText"
-                                 Text="Neun getrennte Entropiepools benötigen je 1024 Maus-Samples."
+                                 Text="Elf Entropiepools werden durch zufällig zugeordnete Mausereignisse befüllt. Jeder Pool benötigt mindestens 1024 Ereignisse. Generieren erstellt die Faktoren A und B sowie die benötigten Salze und Nonce-Werte und leert alle Quellpools."
                                  Classes="muted" FontSize="12" TextWrapping="Wrap" />
                       <ProgressBar x:Name="EntropyProgress" Minimum="0" Height="7" Foreground="#5DE4EC" />
                       <TextBlock x:Name="EntropyStatusText" Text="Entropie wird gesammelt …" Foreground="#5DE4EC" FontSize="12" TextWrapping="Wrap" />
@@ -297,7 +301,7 @@
                 DragDrop.AllowDrop="True"
                 DragDrop.DragOver="ExtractPanel_DragOver"
                 DragDrop.Drop="ExtractPanel_Drop">
-          <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ScrollViewer x:Name="ExtractScrollViewer" VerticalScrollBarVisibility="Auto">
             <Grid ColumnDefinitions="1.05*,18,0.95*">
               <StackPanel Grid.Column="0" Spacing="12">
                 <StackPanel Spacing="4">
@@ -346,9 +350,9 @@
 
               <Border Grid.Column="2" Classes="innerCard" Padding="15">
                 <StackPanel Spacing="10">
-                  <TextBlock x:Name="ExtractPasswordTitle" Text="Vier Faktoren zum Entpacken" FontSize="17" FontWeight="SemiBold" />
+                  <TextBlock x:Name="ExtractPasswordTitle" Text="Entschlüsselungsdaten" FontSize="17" FontWeight="SemiBold" />
                   <TextBlock x:Name="ExtractPasswordHelpText"
-                             Text="Userpasswort, PIN und beide Faktoren von den getrennt gelagerten Schlüsselzetteln eingeben."
+                             Text="Zum Entpacken sind das Passwort, die PIN und beide generierten Faktoren A und B erforderlich."
                              Classes="muted" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock x:Name="ExtractHintLabel" Text="Öffentlicher Hinweis" Classes="label" Margin="0" />
                   <Border Classes="card" Padding="11">
@@ -358,10 +362,13 @@
                   <TextBox x:Name="ExtractPasswordBox" MaxLength="1048576" PasswordChar="●" />
                   <TextBlock x:Name="ExtractPinLabel" Text="PIN" Classes="label" Margin="0" />
                   <TextBox x:Name="ExtractPinBox" MaxLength="1048576" PasswordChar="●" />
+                  <TextBlock x:Name="FactorImportHelpText" Text="Jeweils 256 Hexadezimalzeichen. Leerzeichen und Zeilenumbrüche werden ignoriert." Classes="muted" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock x:Name="ExtractGeneratedPasswordFirstLabel" Text="Faktor A vom Schlüsselzettel" Classes="label" Margin="0" />
-                  <TextBox x:Name="ExtractGeneratedPasswordFirstBox" MaxLength="320" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Menlo" MinHeight="62" />
+                  <controls:FactorTextBox x:Name="ExtractGeneratedPasswordFirstBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Menlo" MinHeight="62" />
+                  <TextBlock x:Name="ExtractFactorFirstStatus" x:CompileBindings="False" Text="{Binding ValidationMessage, ElementName=ExtractGeneratedPasswordFirstBox, Mode=OneWay}" TextWrapping="Wrap" Foreground="#F29AA6" FontSize="12" />
                   <TextBlock x:Name="ExtractGeneratedPasswordSecondLabel" Text="Faktor B vom Schlüsselzettel" Classes="label" Margin="0" />
-                  <TextBox x:Name="ExtractGeneratedPasswordSecondBox" MaxLength="320" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Menlo" MinHeight="62" />
+                  <controls:FactorTextBox x:Name="ExtractGeneratedPasswordSecondBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Menlo" MinHeight="62" />
+                  <TextBlock x:Name="ExtractFactorSecondStatus" x:CompileBindings="False" Text="{Binding ValidationMessage, ElementName=ExtractGeneratedPasswordSecondBox, Mode=OneWay}" TextWrapping="Wrap" Foreground="#F29AA6" FontSize="12" />
                 </StackPanel>
               </Border>
             </Grid>
@@ -377,7 +384,7 @@
                 DragDrop.AllowDrop="True"
                 DragDrop.DragOver="ErasePanel_DragOver"
                 DragDrop.Drop="ErasePanel_Drop">
-          <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ScrollViewer x:Name="EraseScrollViewer" VerticalScrollBarVisibility="Auto">
             <StackPanel MaxWidth="830" Spacing="13">
               <StackPanel Spacing="4">
                 <TextBlock x:Name="EraseTitleText" Text="Kryptografisch löschen" Classes="sectionTitle" />
@@ -414,7 +421,7 @@
       </TabItem>
       <TabItem x:Name="ResourcesTab" Header="Ressourcen">
         <Border x:Name="ResourcesPanel" Classes="card" Padding="20" Margin="0,10,0,0">
-          <ScrollViewer>
+          <ScrollViewer x:Name="ResourcesScrollViewer">
             <StackPanel Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
               <TextBlock x:Name="ResourcesTitle" Text="Automatische Ressourcenplanung" Classes="sectionTitle" />
               <TextBlock x:Name="ResourcesDescription" TextWrapping="Wrap" Classes="muted" />
@@ -460,37 +467,44 @@
         </Border>
       </TabItem>
     </TabControl>
+      </Grid>
+    </ScrollViewer>
 
-    <Border Grid.Row="2" Classes="card" Background="#050B14" Padding="14">
-      <Grid RowDefinitions="Auto,Auto,*">
+    <Border Grid.Row="1" Classes="card" Background="#050B14" Padding="14">
+      <Grid RowDefinitions="Auto,Auto">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <TextBlock x:Name="LogTitleText" Text="Sicherheitsprotokoll" FontWeight="SemiBold" />
-            <TextBlock x:Name="OperationStatusText" Text="Start …" Classes="muted" FontSize="12" VerticalAlignment="Center" />
-          </StackPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-            <Button x:Name="CancelOperationButton" Content="Abbrechen" Classes="secondary" IsEnabled="False" Click="CancelOperation_Click" />
-            <Button x:Name="ClearLogButton" Content="Leeren" Classes="secondary" Click="ClearLog_Click" />
-          </StackPanel>
+          <TextBlock x:Name="OperationStatusText" Text="Start …" Classes="muted" FontSize="12" VerticalAlignment="Center" />
+          <Button x:Name="CancelOperationButton" Grid.Column="1" Content="Abbrechen" Classes="secondary" IsEnabled="False" Click="CancelOperation_Click" />
         </Grid>
         <StackPanel x:Name="OperationProgressPanel" Grid.Row="1" Spacing="4" Margin="0,8,0,0" IsVisible="False">
           <TextBlock x:Name="OperationPhaseText" TextWrapping="Wrap" />
           <ProgressBar x:Name="OperationPhaseProgress" Minimum="0" Maximum="100" Height="8" IsIndeterminate="True" />
           <TextBlock x:Name="OperationProgressDetailsText" TextWrapping="Wrap" Classes="muted" FontSize="11" />
         </StackPanel>
-        <TextBox x:Name="LogBox"
-                 Grid.Row="2"
-                 Margin="0,9,0,0"
-                 IsReadOnly="True"
-                 AcceptsReturn="True"
-                 TextWrapping="Wrap"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 FontFamily="Menlo"
-                 FontSize="11"
-                 Background="Transparent"
-                 BorderThickness="0" />
       </Grid>
     </Border>
+    <Expander x:Name="ConsoleExpander" Grid.Row="2" IsExpanded="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,8,0,0">
+      <Expander.Header>
+        <TextBlock x:Name="ConsoleToggleText" Text="Konsole anzeigen" FontWeight="SemiBold" />
+      </Expander.Header>
+      <Border Classes="card" Background="#050B14" Padding="14" HorizontalAlignment="Stretch">
+        <Grid RowDefinitions="Auto,Auto" RowSpacing="9">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <StackPanel Spacing="3" VerticalAlignment="Center">
+              <TextBlock x:Name="LogTitleText" Text="Sicherheitsprotokoll" FontWeight="SemiBold" />
+              <TextBlock x:Name="ConsoleRetentionText" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            </StackPanel>
+            <Button x:Name="ConsoleEndButton" Grid.Column="1" Content="Zum Ende" Classes="secondary" Click="ConsoleEnd_Click" />
+            <Button x:Name="ClearLogButton" Grid.Column="2" Content="Leeren" Classes="secondary" Click="ClearLog_Click" />
+          </Grid>
+          <TextBox x:Name="LogBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+                   ClearSelectionOnLostFocus="False"
+                   ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                   ScrollViewer.AllowAutoHide="False"
+                   FontFamily="Menlo" FontSize="11" Background="Transparent" BorderThickness="0" Padding="0" />
+        </Grid>
+      </Border>
+    </Expander>
 
     <Border x:Name="PrivacyShield"
             Grid.RowSpan="3"

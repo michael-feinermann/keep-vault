@@ -7,6 +7,7 @@ internal static class OperationStoragePolicyTests
         new("resources.operation-storage-plan", "real additional writes, live shared volume ledger and lazy workspace", RunAsync, TestResource.Light, "Security"),
         new("resources.rev11-auto-planner", "persistent Auto, phase slots, real OS observations and pressure hysteresis", PlannerAsync, TestResource.Light, "Resources"),
         new("resources.rev11-chunk-window", "small locked buffers, actual leases, short-read aggregation and exact chunk boundaries", ChunkWindowAsync, TestResource.ProcessGlobal, "Resources"),
+        new("zpaq.small-volume-capacity", "64 MiB plain and streaming extraction on private 256 MiB APFS, with real capacity exhaustion", ZpaqExtractionCapacityTests.RunAsync, TestResource.ZpaqGlobal, "ZPAQ"),
     ];
 
     private static Task PlannerAsync()
@@ -153,8 +154,25 @@ internal static class OperationStoragePolicyTests
             Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { Flags = 0x1001 }, 1024));
             Throws<IOException>(() => extraction.RequireBoundOutputVolume(actual with { Format = "exfat" }, 1024));
             extraction.RequireRemainingExtractionCapacity(128L << 10, 1024);
+            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity((128L << 10) - 1, 1024));
             Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(1, 1024));
             Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(1L << 30, (500L << 30) + 1));
+            extraction.RequireRemainingExtractionCapacity(64L << 10, 1024, extractionComplete: true);
+            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity((64L << 10) - 1, 1024, extractionComplete: true));
+            extraction.RequireRemainingExtractionCapacity(64L << 10, extraction.MaxExtractedTotalBytes);
+            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity((64L << 10) - 1, extraction.MaxExtractedTotalBytes));
+            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(-1, 1024, extractionComplete: true));
+            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(1L << 30, -1, extractionComplete: true));
+            Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity(1L << 30, extraction.MaxExtractedTotalBytes + 1, extractionComplete: true));
+            // A one-byte outstanding write must reserve its filesystem block;
+            // completion releases no other operation's live volume ownership.
+            using (OperationVolumeLedger.Reserve(actual.Identity, 1, () => 1L << 30))
+            {
+                extraction.RequireRemainingExtractionCapacity((64L << 10) + 4096, 1024, extractionComplete: true);
+                Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity((64L << 10) + 4095, 1024, extractionComplete: true));
+                extraction.RequireRemainingExtractionCapacity((128L << 10) + 4096, 1024);
+                Throws<IOException>(() => extraction.RequireRemainingExtractionCapacity((128L << 10) + 4095, 1024));
+            }
             long simulatedFree = ArchiveOperationPolicy.RequiredAdditionalCapacity(4096, 0, 0, 0, 0);
             using (OperationVolumeLedger.Reserve("test-volume", 4096, () => simulatedFree))
             {

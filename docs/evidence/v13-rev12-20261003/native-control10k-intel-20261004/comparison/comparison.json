@@ -1,0 +1,75 @@
+{
+  "status": "PASS",
+  "scope": "Separate historical actual ARM64 and newly actual x86_64/Rosetta framing runs; no architecture substitution",
+  "reporterSha256": "a7f5225351f491872eb5db7db25f29dfa55000809656df19034087b60f44ddaf",
+  "runs": [
+    {
+      "status": "VALIDATED ACTUAL PASS",
+      "architecture": "arm64",
+      "reportPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-arm64-20261003T2038/report.json",
+      "reportSha256": "d339c65be50e850776c8d3ff37be2391560dede9e8881792a1ef25f791f240ab",
+      "sourceProducerMode": "arm64",
+      "cases": 10000,
+      "accepted": 2500,
+      "rejected": 7500,
+      "seconds": 1.7584800420008833,
+      "binaryPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-arm64-20261003T2038/control-framing-arm64",
+      "binarySha256": "d68bb9b3881dfa87bc536b73617bdfb62e95cddeb705c883653bddf2007226a9",
+      "thinMachO": {
+        "architecture": "arm64",
+        "cpuType": 16777228,
+        "cpuSubtype": 0,
+        "fileType": 2
+      },
+      "inputFiles": 862,
+      "corpusSha256": "62fc5b7738245e7537ef320f73ee0d3ced2f30680111baa899247d0fa4f9b7d2",
+      "actualVerdictSha256": "d4102a27c87876bcf493197e41dc2cbf458e1dd7c87b9115a5e2fed22645b247",
+      "inputWireSha256": "673fd3b1120faf05363462b07c632df88a08a18a7478bec6e10a8ded7eca4601",
+      "outputWireSha256": "37106a8517c3fa2b3f9a74b695adb0c40d363a7727159ae0e07f6934f18c6857",
+      "parentPid": null,
+      "childPid": null,
+      "childExitCode": null,
+      "exitEvidence": "pinned original producer requires actual child exit0 before PASS; original report has no separate exit field",
+      "environment": "native ARM64 framing child",
+      "timingScope": "isolated framing harness walltime; not archive/cipher throughput; compile/inventory excluded"
+    },
+    {
+      "status": "VALIDATED ACTUAL PASS",
+      "architecture": "x86_64",
+      "reportPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-intel-rosetta-20261004T0702/report.json",
+      "reportSha256": "cc3c52dbc7376ff4ef017b202f1db8c6648657fedd31ad34fc4d6c6b5d822422",
+      "sourceProducerMode": "x86_64",
+      "cases": 10000,
+      "accepted": 2500,
+      "rejected": 7500,
+      "seconds": 2.317280750008649,
+      "binaryPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-intel-rosetta-20261004T0702/control-framing-x86_64",
+      "binarySha256": "80db156153f329ab2c75c506853cd01461ee45ae88929b747860077ae71e3c00",
+      "thinMachO": {
+        "architecture": "x86_64",
+        "cpuType": 16777223,
+        "cpuSubtype": 3,
+        "fileType": 2
+      },
+      "inputFiles": 866,
+      "corpusSha256": "62fc5b7738245e7537ef320f73ee0d3ced2f30680111baa899247d0fa4f9b7d2",
+      "actualVerdictSha256": "d4102a27c87876bcf493197e41dc2cbf458e1dd7c87b9115a5e2fed22645b247",
+      "inputWireSha256": "7eb2a720f87ef6a57e08603fb7d5ea50b57529bd307d8805ee203fb90f7168e4",
+      "outputWireSha256": "50e8994ee6db7c1541ef10d572ce07dae38376b08a8e949ec87fe8060a5b410b",
+      "parentPid": 14313,
+      "childPid": 14326,
+      "childExitCode": 0,
+      "exitEvidence": "recorded childExitCode=0",
+      "environment": "thin Intel child via explicit arch -x86_64 from native ARM64 parent",
+      "timingScope": "isolated framing harness walltime; not archive/cipher throughput; compile/inventory excluded"
+    }
+  ],
+  "limitations": [
+    "no invented ARM64 or Intel execution",
+    "same corpus and verdict; wire order/hashes may differ",
+    "actual marker transcript is producer-bound hash, not a separately saved stdout transcript",
+    "input maps bind dependency headers/compiler/SDK descriptor/Python/runner; not every linker/system/Rosetta runtime input",
+    "no native Intel hardware performance evidence; Rosetta semantics only",
+    "no full source_entry/CPU/memory lifecycle, sequence exhaustion, leak freedom, installed GUI or release approval"
+  ]
+}

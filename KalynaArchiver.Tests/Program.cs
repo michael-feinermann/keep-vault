@@ -247,6 +247,8 @@ comprehensiveTests.AddRange(CryptoUsageBudgetTests.Tests);
 comprehensiveTests.AddRange(PasswordModelReferenceTests.Tests);
 comprehensiveTests.AddRange(PinCreationPolicyTests.Tests);
 comprehensiveTests.AddRange(CredentialCompatibilityTests.Tests);
+comprehensiveTests.AddRange(FactorInputRev12Tests.Tests);
+comprehensiveTests.AddRange(OperationPhaseProfileTests.Tests);
 return await TestRunner.RunAsync(args, smokeTests, comprehensiveTests.Concat(EntropyRev9Tests.All).ToArray());
 
 // Wraps a synchronous group so it can be registered beside the asynchronous

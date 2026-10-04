@@ -1,0 +1,11 @@
+{
+  "observedUtc": "2026-10-04T07:09:16.369312+00:00",
+  "scope": "Administration-only launch correction, no original result changes, no test retries or bypassed concurrency guard",
+  "originalRejectedAdministration": "work/v13-evidence/rev12-development-level3-20261004/workflow24-level3-pinned-20261004T070649Z-c936f61c",
+  "originalExecutionsSha256": "a55f9811760165a186adcb2ca4b2382234d43d2191dd65a463953db2e9fb5e46",
+  "originalAttemptedProductCases": 0,
+  "cause": "Observed caffeinate child15104 of actual wrapper15103 retained wrapper command arguments and was rejected by unchanged strict live-process guard before first product child",
+  "correction": "Launch wrapper directly; separate caffeinate -i -s -w15171 holds awake without any wrapper command in its arguments. Product/test/source/script/READY pins unchanged.",
+  "actualFreshMatrix": "work/v13-evidence/rev12-development-level3-20261004/workflow24-level3-pinned-20261004T070752Z-c1f0551c",
+  "actualWrapperPid": 15171
+}

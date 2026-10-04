@@ -1,6 +1,18 @@
-# Keep Vault 5.0.3: Skalierbarkeit und Nachweisgrenzen nach REV9
+# Keep Vault 5.0.3: Skalierbarkeit und Nachweisgrenzen
 
-## Aktueller REV11-Stand, 1. Oktober 2026
+## Aktueller REV12-Quellstand, 3. Oktober 2026
+
+REV12 ergänzt den bedarfsabhängigen Ressourcenvertrag um den korrigierten gemeinsamen Containerregler. Auto beginnt mit einem tatsächlichen kalten Ein-Slot-Batch; nur konkret bekannte längere Restarbeit erlaubt danach das erste Zweierfenster unter frischer Zulassung. Drei vollständige gesunde Batches können eine angrenzende größere Probe anfordern. Die angenommene Vergleichsrate bleibt dabei erhalten: mindestens 10 % Verlust führen sofort zurück, ohne diesen Verlust zur neuen Baseline zu machen; nach genau drei vollständigen Probebatches sind mindestens 5 % Medianvorteil für die Annahme nötig. Ein abgelehnter Nachbar wird unter unverändertem Ressourcenfenster nicht wegen gewöhnlicher Schwankungen wiederholt. CPU, RAM, Druck, Queue und tatsächliche Restarbeit begrenzen jede Anfrage, auch feste Diagnosewerte.
+
+| Aktueller Bulkpfad | Echte Parallelität | Verbleibende Abhängigkeit |
+|---|---|---|
+| Seekbare Containerquelle | Begrenzte geordnete 16-MiB-Chunkslots, frische Admission und unveränderte native Blockteams | Vollständiger Join und geordnete Writes vor dem nächsten Fensterentscheid; kryptographische Stufenreihenfolge pro Chunk bleibt erhalten. |
+| Nicht seekbare Containerpipe | Ein äußerer Slot; native Worker bearbeiten disjunkte Blockbereiche des tatsächlich gelesenen Chunks | Ohne geprüfte Read-ahead-Schnittstelle ist ein zweiter unabhängiger bereitstehender Chunk nicht belegt. |
+| Fensterbeobachtung im Test | Begrenzter öffentlicher Entscheidungstrace mit getrennten Observation-/Planningzeiten | Keine neue Allokations-, CPU-, Cancel- oder Erfolgsautorität; unvollständige Tailbatches gelten nicht als Scalingbeleg. Ohne Testobserver entstehen dort keine zusätzlichen Uhren oder Sammlungen. |
+
+Die anderen Bulkverträge, kryptographischen Grenzen und seriellen Abhängigkeiten bleiben erhalten; die datierte Übersicht unten beschreibt ihren damaligen Prüfstand. [Ressourcenreview](KEEP_VAULT_5_0_3_AUTO_RESOURCES_REV10_REVIEW.md), [Adaptive Review](KEEP_VAULT_5_0_3_RESOURCE_ADAPTATION_REV12_REVIEW.md), [Leistungsbericht](KEEP_VAULT_5_0_3_PARANOIA_PERFORMANCE_REV12_REVIEW.md) und [REV12-Abnahmematrix](KEEP_VAULT_5_0_3_REV12_GATE_STATUS.md) binden die aktuellen Quellen und tatsächlichen Entwicklungsnachweise. Der gesonderte Schema-3-Pipelinevergleich ist kein Produktions-KDF-End-to-End-, finaler AOT-, Many-Core- oder installierter GUI-Nachweis. Vollständige aktuelle Regression, produktive Arbeitsläufe und die abschließende Paketfreigabe besitzen eigene Gates. Kein historischer PASS wird auf fortgeschriebene Bytes übertragen.
+
+## Historischer REV11-Stand, 1. Oktober 2026
 
 REV11 beseitigt pauschale Höchstreservierungen. Die gemeinsame Policy löst Auto je Phase auf, native Rechenfreigaben werden an blockierenden Wartegrenzen zurückgegeben, und normale Eingaben benötigen keine zusätzliche vollständige Payloadkopie. Die finalen Integrations- und Leistungsergebnisse dieses neuen Standes sind noch offen; historische REV9-Werte unten sind kein REV11-Benchmark.
 

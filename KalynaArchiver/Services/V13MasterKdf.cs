@@ -52,6 +52,10 @@ internal static class V13MasterKdf
     private const uint MinimumTestMemoryKiB = 8 * 1024;
     private static readonly AsyncLocal<uint?> TestMemoryOverride = new();
 
+    // Public production lower bound only. The existing internal scoped KAT
+    // override must use its own actual lower bound, never a UI/configuration value.
+    internal static uint AdmissionMinimumMemoryKiB => TestMemoryOverride.Value ?? MemoryMinKiB;
+
     public const string KdfMode = "DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024";
     public const string KdfInputMode = "DualBranch-v13: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024";
     public const string PasswordMode = "UserPassword24to256+PIN6to16+GeneratedHex1024x2";
@@ -79,6 +83,7 @@ internal static class V13MasterKdf
         ReadOnlySpan<byte> factorB,
         Span<byte> destination)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.CredentialSha3);
         RequireFactor(factorA, nameof(factorA));
         RequireFactor(factorB, nameof(factorB));
         if (destination.Length < CredentialHashBytes)
@@ -184,6 +189,7 @@ internal static class V13MasterKdf
         ReadOnlySpan<byte> factorB,
         Span<byte> destination)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.CredentialSkein);
         RequireFactor(factorA, nameof(factorA));
         RequireFactor(factorB, nameof(factorB));
         if (destination.Length < CredentialHashBytes)
@@ -276,6 +282,7 @@ internal static class V13MasterKdf
         ReadOnlySpan<byte> sha3Salt,
         ReadOnlySpan<byte> skeinSalt)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.KdfPmiDerivation);
         string domain = $"Kalyna-ZPAQ/v13/{algorithm}/SHA3-512/PMI/Round-{round}";
         byte[] domainBytes = Encoding.UTF8.GetBytes(domain);
 
@@ -311,7 +318,7 @@ internal static class V13MasterKdf
             uint memory = MemoryMinKiB + (MemoryStepKiB * pmi);
             if (memory is < MemoryMinKiB or > MemoryMaxKiB)
             {
-                throw new CryptographicException($"The derived Argon2id memory cost {memory} KiB is out of range.");
+                throw new CryptographicException("The derived Argon2id memory cost is outside the permitted range.");
             }
 
             return (pmi, TestMemoryOverride.Value ?? memory);
@@ -351,6 +358,7 @@ internal static class V13MasterKdf
         Span<byte> destination,
         CancellationToken cancellationToken = default)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(round == 1 ? OperationPhaseProfile.Phase.KdfRound1 : OperationPhaseProfile.Phase.KdfRound2);
         if (destination.Length < MasterBytes)
         {
             throw new ArgumentException($"Destination must be at least {MasterBytes} bytes.", nameof(destination));
@@ -362,7 +370,7 @@ internal static class V13MasterKdf
         if (!productiveMemory && !scopedTestMemory)
         {
             throw new CryptographicException(
-                $"The Argon2id memory cost {memoryKiB} KiB is not a value the v13 PMI can produce.");
+                "The Argon2id memory cost is outside the permitted v13 parameter contract.");
         }
 
         using OperationMemoryBudget.Lease memory = OperationMemoryBudget.AcquireAsync(
@@ -491,21 +499,31 @@ internal static class V13MasterKdf
 
             // Fixed Argon2 lanes remain four. The native adapter separately
             // limits executing threads to this process-wide CPU reservation.
-            using CpuWorkBudget.Lease cpu = CpuWorkBudget.AcquireAsync(
-                ArchiveOperationPolicy.Current.MaxCpuWorkers, 5, cancellationToken)
-                .AsTask().GetAwaiter().GetResult();
+            CpuWorkBudget.Lease acquiredCpu;
+            using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.CpuPermitWait))
+                acquiredCpu = CpuWorkBudget.AcquireAsync(
+                    ArchiveOperationPolicy.Current.MaxCpuWorkers, 5, cancellationToken)
+                    .AsTask().GetAwaiter().GetResult();
+            using CpuWorkBudget.Lease cpu = acquiredCpu;
             using IDisposable cpuScope = cpu.EnterScope();
-            NativeArgon2id.HashRaw(
-                Iterations,
-                memoryKiB,
-                Parallelism,
-                passwordCopy.Bytes,
-                saltCopy,
-                secretCopy?.Bytes,
-                associatedData,
-                output,
-                useKatProfile: TestMemoryOverride.Value == memoryKiB,
-                workerBudget: (uint)cpu.Workers);
+            using (OperationPhaseProfile.Measure((round, sha3Branch) switch
+            {
+                (1, true) => OperationPhaseProfile.Phase.Argon2Sha3Round1,
+                (1, false) => OperationPhaseProfile.Phase.Argon2SkeinRound1,
+                (2, true) => OperationPhaseProfile.Phase.Argon2Sha3Round2,
+                _ => OperationPhaseProfile.Phase.Argon2SkeinRound2,
+            }))
+                NativeArgon2id.HashRaw(
+                    Iterations,
+                    memoryKiB,
+                    Parallelism,
+                    passwordCopy.Bytes,
+                    saltCopy,
+                    secretCopy?.Bytes,
+                    associatedData,
+                    output,
+                    useKatProfile: TestMemoryOverride.Value == memoryKiB,
+                    workerBudget: (uint)cpu.Workers);
             cancellationToken.ThrowIfCancellationRequested();
             OperationMemoryBudget.ReportProgress(BranchOutputBytes);
         }

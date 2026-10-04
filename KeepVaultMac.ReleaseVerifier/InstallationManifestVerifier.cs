@@ -31,7 +31,7 @@ internal static class InstallationManifestVerifier
             new JsonDocumentOptions { AllowTrailingCommas = false, CommentHandling = JsonCommentHandling.Disallow, MaxDepth = 8 });
         Dictionary<string, JsonElement> document = Object(json.RootElement, ["schemaVersion", "version", "build", "entries"]);
         if (!document["schemaVersion"].TryGetInt32(out int schema) || schema != 1
-            || document["version"].GetString() != "5.0.3" || document["build"].GetString() != "15")
+            || document["version"].GetString() != "5.0.3" || document["build"].GetString() != "16")
             throw new InvalidDataException("The installation manifest has an unsupported schema, version or build.");
         JsonElement entries = document["entries"];
         if (entries.ValueKind != JsonValueKind.Array || entries.GetArrayLength() is < 1 or > MaximumEntries)
@@ -155,7 +155,7 @@ internal static class InstallationManifestVerifier
                 throw new InvalidDataException("Duplicate or malformed app property-list key.");
         }
         foreach ((string key, string value) in new[] {
-                     ("CFBundleIdentifier", identifier), ("CFBundleShortVersionString", "5.0.3"), ("CFBundleVersion", "15") })
+                     ("CFBundleIdentifier", identifier), ("CFBundleShortVersionString", "5.0.3"), ("CFBundleVersion", "16") })
         {
             if (!values.TryGetValue(key, out XElement? actual) || actual.Name != "string" || actual.HasElements || actual.Value != value)
                 throw new InvalidDataException("App metadata does not match the installation manifest: " + key);

@@ -1,0 +1,13 @@
+{
+  "observedUtc": "2026-10-04T07:20:52.274754+00:00",
+  "command": [
+    "/bin/ps",
+    "-axo",
+    "pid=,ppid=,pgid=,stat=,command="
+  ],
+  "exitCode": 0,
+  "ownAdministrationPids": [
+    15171
+  ],
+  "relevantLiveProcesses": []
+}

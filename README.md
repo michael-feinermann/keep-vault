@@ -2,7 +2,7 @@
 
 [Deutsch](README.de.md) · [English](README.md) · [Documentation index](docs/README.en.md)
 
-Current work: 5.0.3/v13 is being implemented and verified. This run covers macOS and test data up to 256 MiB, with one explicit Paranoia exception: a 256 MiB directory tree plus an additional 256 MiB file (512 MiB total). It does not include a Windows release or real multi-TiB release runs. The previously published 5.0.2 release described below remains a separate historical evidence baseline. See the [implementation report](docs/KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md).
+Current work: 5.0.3/v13 is being implemented and verified. This run covers macOS and test data up to 256 MiB, with one explicit Paranoia exception: a 256 MiB directory tree plus an additional 256 MiB file (512 MiB total). The user additionally authorized one complete 1-GiB workflow for each of the twelve suites, reported separately. It does not include a Windows release or real multi-TiB release runs. The previously published 5.0.2 release described below remains a separate historical evidence baseline. See the [implementation report](docs/KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md). The current specification is REV12; its [acceptance matrix](docs/KEEP_VAULT_5_0_3_REV12_GATE_STATUS.md) separates implemented behavior, actual development evidence and final installed-release gates.
 
 Archiving, extraction and cryptographic erasure of ZPAQ archives. The current
 5.0.3 development version uses container format v13: a chosen cascade of up to eight
@@ -238,6 +238,8 @@ the two 1024-bit factors from the printed key sheets. New archives require
 24 to 256 UTF-16 code units for the passphrase and a PIN of 6 to 16 digits
 (ASCII only). These selection limits are not applied when reading existing v13 archives.
 There is no reduced KDF mode and no suite that skips a credential input.
+
+Factor input accepts the 256 ASCII hexadecimal characters together with the explicitly supported Unicode WhiteSpace set. Raw input is limited to 65,536 UTF-16 code units; removing that whitespace must produce exactly 128 bytes. Paste, drop and composition commits are accepted as a complete edit or rejected without silently truncating the factor. This processing does not normalize or change the password or PIN. The English app labels this credential “password”.
 
 Two credential paths are built first, each a different shape of construction.
 The SHA3 path splits each factor into its two 512-bit binary halves and pairs
@@ -573,7 +575,11 @@ Native ZPAQ teams, container cipher teams, MAC leaf workers and Argon2 execution
 
 The Resources tab defaults to Automatic. Explicit manual ceilings are optional and remain separate from currently resolved values. Small operations begin with one memory slot; larger ready work may obtain more after admission. Unknown extraction output has an initial, visible 256 MiB authorization, adjustable explicitly under Resources. That authorization is not a disk-space reservation. Argon2id still temporarily requires 1 GiB to just under 2 GiB plus overhead, even for tiny archives.
 
+REV12 retains a measured accepted chunk window while probing a larger one. The first Auto batch uses one slot; a second slot requires concrete known remaining work and fresh admission. Unknown pipe length alone does not create additional ready chunks. A slower probe rolls back without reducing any cipher, MAC, KDF or recovery work. Free disk capacity is checked for actual pending writes, so a small valid archive is not rejected by an unrelated fixed 256-MiB reserve.
+
 Archiving, extraction and repair have no application-imposed wall-time, CPU-time or no-progress deadline. Manual cancellation, real failures and bounded cleanup escalation remain. Progress reports actual phase units and elapsed time; phase ETA appears only after sufficient fresh measurements. Unknown overall work remains unknown. See the [REV11 progress review](docs/KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md).
+
+The security console starts collapsed. Its expanded viewport accounts for twelve rendered text lines and real scrollbar chrome; progress remains outside the toggle. Long rows have a horizontal scrollbar. Appends retain a selected or scrolled reading position, and automatic following moves only vertically when the reader was already at the end. Explicit clear and bounded retention remain available.
 
 The container processes bounded groups of 16 MiB chunks. Memory slots are separate from CPU workers: each slot owns two locked 16 MiB buffers and small counter/nonce/tag storage. Even one chunk may use multiple approved cipher workers. The shared budget reserves each team including its caller; native ciphers borrow work through the common executor. There is no fixed aggregate cap of 64 or 1024 CPUs. Actual process CPU availability and RAM/queue budgets remain limits. Output is ordered, active work is joined and temporary secrets are erased before publication. Failure publishes no partial container. Numerical many-core tests do not establish measurements on such hardware.
 
@@ -811,8 +817,8 @@ through `KEEPVAULT_HYBRID_PFX`,
 
 ```sh
 ./tools/Build-Native-macOS.sh          # reference ciphers, Argon2, ZPAQ
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.3 --build-number 14
-./tools/Build-KeepVault-macOS.sh --version 5.0.3 --build-number 14
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.3 --build-number 16
+./tools/Build-KeepVault-macOS.sh --version 5.0.3 --build-number 16
 ./tools/Build-Portable-macOS.sh        # portable folder and ZIP
 ./tools/Install-KeepVault-macOS.sh     # verify and install to /Applications
 ./tools/Verify-KeepVault-macOS.sh      # check an installed or built bundle

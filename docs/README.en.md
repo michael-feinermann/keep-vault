@@ -4,16 +4,21 @@
 
 The paired guides and historical reports below have complete German and English editions. New 5.0.3/v13 reports identify their available language in the index; a complete bilingual translation is not claimed for them. Commands, hashes, test data and original log quotations are preserved as technical evidence.
 
-Published reference pending completion of the new release: [Keep Vault 5.0.2 for macOS](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2), build 13, container v12 and KPAR2 v4. The working source targets 5.0.3 and container v13 under REV11. Its [release report](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) records the actual validation, installation and publication status. This run covers macOS only; Windows requires separate evidence. Historical reports retain their dated results and do not approve 5.0.3.
+Published reference pending completion of the new release: [Keep Vault 5.0.2 for macOS](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2), build 13, container v12 and KPAR2 v4. The working source targets 5.0.3 and container v13 under REV12. Its [release report](KEEP_VAULT_5_0_3_RELEASE_REPORT.md) records the actual validation, installation and publication status. This run covers macOS only; Windows requires separate evidence. Historical reports retain their dated results and do not approve 5.0.3.
 
-## 5.0.3 / v13 / REV11: current source and evidence
+## 5.0.3 / v13 / REV12: current source and evidence
 
-The language of each document is listed explicitly. A link is a document index, not a PASS claim; the report itself distinguishes completed checks, pending gates and limits. Real test data is limited by the user to 256 MiB, with an explicit 512 MiB Paranoia structural exception. No physical multi-TiB run is implied.
+The language of each document is listed explicitly. A link is a document index, not a PASS claim; the report itself distinguishes completed checks, pending gates and limits. Real test data is limited by the user to 256 MiB, with an explicit 512 MiB Paranoia structural exception. The subsequent user instruction additionally permits one complete 1-GiB case for each of the twelve suites; those results retain their own provenance. No physical multi-TiB run is implied.
 
 | Document | Available edition |
 |---|---|
+| REV12 acceptance matrix and current evidence | [German](KEEP_VAULT_5_0_3_REV12_GATE_STATUS.md) |
+| REV12 GUI and console correction | [German](KEEP_VAULT_5_0_3_GUI_CORRECTIONS_REV12_REVIEW.md) |
+| REV12 preflight and consumed-draft ownership | [German](KEEP_VAULT_5_0_3_PREFLIGHT_LIFETIME_REV12_REVIEW.md) |
+| REV12 atomic factor input | [German](KEEP_VAULT_5_0_3_FACTOR_INPUT_REV12_REVIEW.md) |
+| REV12 Paranoia performance and measurement scope | [German](KEEP_VAULT_5_0_3_PARANOIA_PERFORMANCE_REV12_REVIEW.md) |
 | Implementation, baseline and toolchain | [German](KEEP_VAULT_5_0_3_V13_IMPLEMENTATION.md) |
-| REV11 automatic resources | [English](KEEP_VAULT_5_0_3_AUTO_RESOURCES_REV10_REVIEW.md) |
+| REV12 automatic resources | [English](KEEP_VAULT_5_0_3_AUTO_RESOURCES_REV10_REVIEW.md) |
 | REV11 original-input and recovery review | [German](KEEP_VAULT_5_0_3_ORIGINAL_INPUT_REVIEW.md) |
 | REV11 native ZPAQ control and ownership | [German](KEEP_VAULT_5_0_3_ZPAQ_REV11_REVIEW.md) |
 | REV11 progress and time-limit removal | [English](KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md) |

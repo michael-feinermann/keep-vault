@@ -1,0 +1,14 @@
+{
+  "startedUtc": "2026-10-03T15:52:43.377556+00:00",
+  "completedUtc": "2026-10-03T15:52:43.899524+00:00",
+  "exitCode": 0,
+  "logSha256": "38f60a65c991bcd712bb186c1152dcdac4ae419ef4956fd34b6fb12d2d304b12",
+  "files": {
+    "test-results.json": "1589dc7685613feea65af1bf7992fe892fc09bc8033eead1915552dec29e9f31",
+    "test-timings.json": "2c98472d3660e7c3c91abbf80ffaef3bcf13def27c4fa59749519c7ef06d892a"
+  },
+  "sourceInputsSha256": "8b1c17f98180c0a9f9628962dc141cf274ea57a46bef02150948c3ed06ffce5a",
+  "scope": "REV12 development evidence; no installed GUI or release approval.",
+  "originalExecutionSha256": "4a8e455cb19d270a733c421588ba83088fcfd28ec7660610279947f127ef0faf",
+  "publicDerivation": "Command paths omitted; timestamps, exit, actual result and source hashes preserved."
+}

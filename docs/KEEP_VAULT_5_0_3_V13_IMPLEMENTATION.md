@@ -1,6 +1,19 @@
 # Keep Vault 5.0.3 / v13: Implementierungsnachweis
 
-## Aktueller REV11-Stand, 1. Oktober 2026
+## Aktueller REV12-Arbeitsstand, 3. Oktober 2026
+
+Fortsetzung am 4. Oktober 2026, 07:11 MESZ (05:11 UTC): Netzstrom wurde tatsächlich verifiziert und der Originalparent nach vollständigem Quellen-/Binary-/Metadata-/Driverabgleich fortgesetzt. Acht Fälle sind jetzt auch vom unveränderten Gesamtrunner terminal PASS; AES 256, Camellia 256, Serpent 256 und XChaCha20-Poly1305 werden seriell ergänzt. [Echter separater Resume-Receipt](evidence/v13-rev12-20261003/workflow-1gib-matrix-171619/administrative-power-resume-20261004T051124Z.json) und frische Awake-Assertion erhalten den Verwaltungsverlauf. Die unabhängige Schlussauswertung bleibt bis zu zwölf terminalen Fällen offen.
+
+Historischer Leistungszwischenstand vom 3. Oktober 2026, 21:06 UTC: Acht tatsächliche 1-GiB-Produktläufe sind PASS; AES 256, Camellia 256, Serpent 256 und XChaCha20-Poly1305 sind noch nicht gestartet. [Vollständige Zwischenauswertung mit Zeiten und Geschwindigkeiten](evidence/v13-rev12-20261003/workflow-1gib-interim-eight-171619/report.de.md) und [Originalbelege](evidence/v13-rev12-20261003/workflow-1gib-interim-eight-171619/README.md) erhalten produktive KDF, Kompression 5, KPAR2 und Struktur-/Hashvergleich. Der Matrixparent ist wegen niedrigen Akkustands bis zu tatsächlichem Netzstrom angehalten. Sein Originalcheckpoint enthält sieben terminale PASS und den noch nicht gesammelten MARS-Fall; dessen eigener Originalproduktlauf ist mit Exit 0/PASS beendet und separat mit einem ausdrücklich später erfassten aktuellen Nachherinventar gebunden. Kein Gesamt-PASS der zwölfteiligen Matrix und keine finale Releasefreigabe.
+
+Verbindliche Grundlage ist jetzt die vom Benutzer freigegebene REV12; Plattform- und Fixturegrenzen bleiben macOS, regulär höchstens 256 MiB sowie der ausdrücklich zusätzlich beauftragte 512-MiB-Paranoiabaum. Der aktuelle Arbeitsbaum korrigiert Vorabwarnungs-/Consume-Ownership, atomare Faktoreingabe, dynamische Kleindateizulassung, Fehlerweitergabe beim Cleanup, Security-scope-Übergänge sowie die begrenzte Konsole. Produktive KDF, Cipher-, MAC-, Recovery- und Formatverträge bleiben erhalten.
+
+Das adaptive Fenster bewahrt den bewährten Durchsatz während begrenzter größerer Proben; Auto startet weiter mit einem Slot und erweitert nur aus konkret belegter Restarbeit. Der gezielte 90-%-Pipelinevergleich besteht im eingefrorenen Entwicklungsstand mit 92,89 %, ausdrücklich mit isolierter Test-KDF. Produktive Gesamtmessungen, vollständige Abschlussregression und ein neuer finaler Native-/Universal-/AOT-Build 16 bleiben getrennte Gates. Der bisher installierte Build 15 ist ein historischer REV11-Kandidat.
+
+Aktuellen Status und Belegbindung liefert die [REV12-Abnahmematrix](KEEP_VAULT_5_0_3_REV12_GATE_STATUS.md); die unten datierten Abschnitte behalten ihre historischen Ergebnisse. Frühere RUNNING/PENDING-Angaben beschreiben ihre damaligen Erfassungszeitpunkte. Der aktuelle Quellstand ist noch nicht eingefroren oder veröffentlicht.
+
+
+## Historischer REV11-Stand, 1. Oktober 2026
 
 Die verbindliche aktuelle Grundlage ist REV11. Die Benutzerfreigabe umfasst dynamische Ressourcen, Originaldatei-Lesepfade, Fortschritt ohne Laufzeitabbrüche und die englische Beschriftung „password“. Die untenstehenden REV9-Nachweise bleiben historische Entwicklungsbelege. Der neue signierte REV11-Kandidat und seine installierten Tests sind noch offen.
 

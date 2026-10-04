@@ -1,0 +1,4621 @@
+{
+  "schema": 1,
+  "startedUtc": "2026-10-01T11:13:53.587816+00:00",
+  "finishedUtc": "2026-10-01T11:13:54.057756+00:00",
+  "scope": "Eight ARM64 cipher library binary comparisons only; no benchmark or execution of cipher code.",
+  "scriptSha256": "e050ebd346e6edeec70a38a78785ba03c6f9085c43592cffc12f225e1103a575",
+  "manifestsBefore": {
+    "historical": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/historical-input-manifest.json",
+      "sha256": "a45bcf06b1c4989d81af23c94c3004ffa9da41683a0aa223e8446f78cf0115e2",
+      "bytes": 21932,
+      "device": 16777230,
+      "inode": 53801313,
+      "mtimeNs": 1790676762732317048,
+      "ctimeNs": 1790852566152340181,
+      "mode": "0o644"
+    },
+    "current": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/harness-all-inputs.json",
+      "sha256": "68a0a9ed8aba7844c57e9f24c7ff9b7f7b4894eb8377b800ea232c66ebe3bf71",
+      "bytes": 17897,
+      "device": 16777230,
+      "inode": 53791070,
+      "mtimeNs": 1790850189643171611,
+      "ctimeNs": 1790850189643171611,
+      "mode": "0o644"
+    }
+  },
+  "manifestsAfter": {
+    "historical": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/historical-input-manifest.json",
+      "sha256": "a45bcf06b1c4989d81af23c94c3004ffa9da41683a0aa223e8446f78cf0115e2",
+      "bytes": 21932,
+      "device": 16777230,
+      "inode": 53801313,
+      "mtimeNs": 1790676762732317048,
+      "ctimeNs": 1790852566152340181,
+      "mode": "0o644"
+    },
+    "current": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/harness-all-inputs.json",
+      "sha256": "68a0a9ed8aba7844c57e9f24c7ff9b7f7b4894eb8377b800ea232c66ebe3bf71",
+      "bytes": 17897,
+      "device": 16777230,
+      "inode": 53791070,
+      "mtimeNs": 1790850189643171611,
+      "ctimeNs": 1790850189643171611,
+      "mode": "0o644"
+    }
+  },
+  "originalsBefore": {
+    "historical": {
+      "libaes_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libaes_ref.dylib",
+        "sha256": "106f32708582d9b69dfcdb1eb1abe6839da146852caabb7b7eec0abad16e620b",
+        "bytes": 329312,
+        "device": 16777230,
+        "inode": 53801233,
+        "mtimeNs": 1790676211722265056,
+        "ctimeNs": 1790852566088930319,
+        "mode": "0o755"
+      },
+      "libkalyna_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libkalyna_v13.dylib",
+        "sha256": "d079e691e79ad9878d1095da6483969d434617ea6631701d2a20f3cc68e0d296",
+        "bytes": 301520,
+        "device": 16777230,
+        "inode": 53801251,
+        "mtimeNs": 1790676205607407677,
+        "ctimeNs": 1790852566092083740,
+        "mode": "0o755"
+      },
+      "libthreefish_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libthreefish_ref.dylib",
+        "sha256": "81b2b6a7ab53411e38eee6492667279bd53db708274c5456259ab2ae97f6583b",
+        "bytes": 119472,
+        "device": 16777230,
+        "inode": 53801277,
+        "mtimeNs": 1790676209056456384,
+        "ctimeNs": 1790852566096842287,
+        "mode": "0o755"
+      },
+      "libxchachapoly_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libxchachapoly_v13.dylib",
+        "sha256": "23b0a84c95a19a964c83659cbc439107be3be61e3be34845b956350a6d634d1a",
+        "bytes": 600016,
+        "device": 16777230,
+        "inode": 53801283,
+        "mtimeNs": 1790676208432084566,
+        "ctimeNs": 1790852566098295246,
+        "mode": "0o755"
+      },
+      "libmars_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libmars_ref.dylib",
+        "sha256": "77789abe774e35974d4e6a507054c04d7d1790935492cacbba01fb263966bf51",
+        "bytes": 294576,
+        "device": 16777230,
+        "inode": 53801257,
+        "mtimeNs": 1790676211021278152,
+        "ctimeNs": 1790852566093122533,
+        "mode": "0o755"
+      },
+      "libshacal2_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libshacal2_ref.dylib",
+        "sha256": "bab586fa2f15b898ff93aafc248e6b33fd7bf7f3290e5fb0306172d480a9e7f3",
+        "bytes": 294976,
+        "device": 16777230,
+        "inode": 53801271,
+        "mtimeNs": 1790676207326699963,
+        "ctimeNs": 1790852566095493952,
+        "mode": "0o755"
+      },
+      "libcamellia_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libcamellia_v13.dylib",
+        "sha256": "015534be3d76ff56a824523aa99be29d047dd962f1dcc11ec8e356f9cd995444",
+        "bytes": 328944,
+        "device": 16777230,
+        "inode": 53801245,
+        "mtimeNs": 1790676210315108159,
+        "ctimeNs": 1790852566091142489,
+        "mode": "0o755"
+      },
+      "libserpent_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libserpent_v13.dylib",
+        "sha256": "ed431d701bbebb31344b04615009a5015e4fb04288491ef010d4df93ab5b5cdf",
+        "bytes": 295440,
+        "device": 16777230,
+        "inode": 53801264,
+        "mtimeNs": 1790676207951746943,
+        "ctimeNs": 1790852566094424784,
+        "mode": "0o755"
+      }
+    },
+    "current": {
+      "libaes_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libaes_ref.dylib",
+        "sha256": "acb6aae2cc1c89186e7f66eccf87e0256944ce4648f746ab9ab45e8631c7b8f2",
+        "bytes": 329312,
+        "device": 16777230,
+        "inode": 53790953,
+        "mtimeNs": 1790844511729761739,
+        "ctimeNs": 1790850166441016466,
+        "mode": "0o755"
+      },
+      "libkalyna_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libkalyna_v13.dylib",
+        "sha256": "f68a3dff964bd27bacd31fe272ee8f289689efe6e095d5972d3b1e2fba36c7f7",
+        "bytes": 301520,
+        "device": 16777230,
+        "inode": 53790975,
+        "mtimeNs": 1790844505605905794,
+        "ctimeNs": 1790850166540890817,
+        "mode": "0o755"
+      },
+      "libthreefish_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libthreefish_ref.dylib",
+        "sha256": "f8986bfc20c2c56215bc0ee733bcc728bc07b4de1b85a76253748867b919d45c",
+        "bytes": 119472,
+        "device": 16777230,
+        "inode": 53791015,
+        "mtimeNs": 1790844509327321196,
+        "ctimeNs": 1790850166701389811,
+        "mode": "0o755"
+      },
+      "libxchachapoly_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libxchachapoly_v13.dylib",
+        "sha256": "a17d448ce591d15336823a28572be238385eb65a077f90d495cf53cbed11e401",
+        "bytes": 600016,
+        "device": 16777230,
+        "inode": 53790967,
+        "mtimeNs": 1790844508704353338,
+        "ctimeNs": 1790850166506506608,
+        "mode": "0o755"
+      },
+      "libmars_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libmars_ref.dylib",
+        "sha256": "8b26d47b80408ea7f8b6eada93764ccea8e81563ce78b53877c0cd454221287b",
+        "bytes": 294576,
+        "device": 16777230,
+        "inode": 53790983,
+        "mtimeNs": 1790844511086565950,
+        "ctimeNs": 1790850166573083383,
+        "mode": "0o755"
+      },
+      "libshacal2_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libshacal2_ref.dylib",
+        "sha256": "8de1b7cf4c69e75a1705cfa1148a4b8f9ddc97af27551b3f6c85e159db4ed9cf",
+        "bytes": 294976,
+        "device": 16777230,
+        "inode": 53791007,
+        "mtimeNs": 1790844507400945769,
+        "ctimeNs": 1790850166669239954,
+        "mode": "0o755"
+      },
+      "libcamellia_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libcamellia_v13.dylib",
+        "sha256": "4cd3eefbba4c1491d53e17811e1e084146f543581d61dab8cfbed256a35201ab",
+        "bytes": 328944,
+        "device": 16777230,
+        "inode": 53790991,
+        "mtimeNs": 1790844510615446182,
+        "ctimeNs": 1790850166604658611,
+        "mode": "0o755"
+      },
+      "libserpent_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libserpent_v13.dylib",
+        "sha256": "1aae78dfc55df08df61ae81ca2b2a55f011bfb3a616bf205a94a48bf56846c0b",
+        "bytes": 295440,
+        "device": 16777230,
+        "inode": 53790999,
+        "mtimeNs": 1790844508061284382,
+        "ctimeNs": 1790850166637440849,
+        "mode": "0o755"
+      }
+    }
+  },
+  "originalsAfter": {
+    "historical": {
+      "libaes_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libaes_ref.dylib",
+        "sha256": "106f32708582d9b69dfcdb1eb1abe6839da146852caabb7b7eec0abad16e620b",
+        "bytes": 329312,
+        "device": 16777230,
+        "inode": 53801233,
+        "mtimeNs": 1790676211722265056,
+        "ctimeNs": 1790852566088930319,
+        "mode": "0o755"
+      },
+      "libkalyna_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libkalyna_v13.dylib",
+        "sha256": "d079e691e79ad9878d1095da6483969d434617ea6631701d2a20f3cc68e0d296",
+        "bytes": 301520,
+        "device": 16777230,
+        "inode": 53801251,
+        "mtimeNs": 1790676205607407677,
+        "ctimeNs": 1790852566092083740,
+        "mode": "0o755"
+      },
+      "libthreefish_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libthreefish_ref.dylib",
+        "sha256": "81b2b6a7ab53411e38eee6492667279bd53db708274c5456259ab2ae97f6583b",
+        "bytes": 119472,
+        "device": 16777230,
+        "inode": 53801277,
+        "mtimeNs": 1790676209056456384,
+        "ctimeNs": 1790852566096842287,
+        "mode": "0o755"
+      },
+      "libxchachapoly_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libxchachapoly_v13.dylib",
+        "sha256": "23b0a84c95a19a964c83659cbc439107be3be61e3be34845b956350a6d634d1a",
+        "bytes": 600016,
+        "device": 16777230,
+        "inode": 53801283,
+        "mtimeNs": 1790676208432084566,
+        "ctimeNs": 1790852566098295246,
+        "mode": "0o755"
+      },
+      "libmars_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libmars_ref.dylib",
+        "sha256": "77789abe774e35974d4e6a507054c04d7d1790935492cacbba01fb263966bf51",
+        "bytes": 294576,
+        "device": 16777230,
+        "inode": 53801257,
+        "mtimeNs": 1790676211021278152,
+        "ctimeNs": 1790852566093122533,
+        "mode": "0o755"
+      },
+      "libshacal2_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libshacal2_ref.dylib",
+        "sha256": "bab586fa2f15b898ff93aafc248e6b33fd7bf7f3290e5fb0306172d480a9e7f3",
+        "bytes": 294976,
+        "device": 16777230,
+        "inode": 53801271,
+        "mtimeNs": 1790676207326699963,
+        "ctimeNs": 1790852566095493952,
+        "mode": "0o755"
+      },
+      "libcamellia_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libcamellia_v13.dylib",
+        "sha256": "015534be3d76ff56a824523aa99be29d047dd962f1dcc11ec8e356f9cd995444",
+        "bytes": 328944,
+        "device": 16777230,
+        "inode": 53801245,
+        "mtimeNs": 1790676210315108159,
+        "ctimeNs": 1790852566091142489,
+        "mode": "0o755"
+      },
+      "libserpent_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libserpent_v13.dylib",
+        "sha256": "ed431d701bbebb31344b04615009a5015e4fb04288491ef010d4df93ab5b5cdf",
+        "bytes": 295440,
+        "device": 16777230,
+        "inode": 53801264,
+        "mtimeNs": 1790676207951746943,
+        "ctimeNs": 1790852566094424784,
+        "mode": "0o755"
+      }
+    },
+    "current": {
+      "libaes_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libaes_ref.dylib",
+        "sha256": "acb6aae2cc1c89186e7f66eccf87e0256944ce4648f746ab9ab45e8631c7b8f2",
+        "bytes": 329312,
+        "device": 16777230,
+        "inode": 53790953,
+        "mtimeNs": 1790844511729761739,
+        "ctimeNs": 1790850166441016466,
+        "mode": "0o755"
+      },
+      "libkalyna_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libkalyna_v13.dylib",
+        "sha256": "f68a3dff964bd27bacd31fe272ee8f289689efe6e095d5972d3b1e2fba36c7f7",
+        "bytes": 301520,
+        "device": 16777230,
+        "inode": 53790975,
+        "mtimeNs": 1790844505605905794,
+        "ctimeNs": 1790850166540890817,
+        "mode": "0o755"
+      },
+      "libthreefish_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libthreefish_ref.dylib",
+        "sha256": "f8986bfc20c2c56215bc0ee733bcc728bc07b4de1b85a76253748867b919d45c",
+        "bytes": 119472,
+        "device": 16777230,
+        "inode": 53791015,
+        "mtimeNs": 1790844509327321196,
+        "ctimeNs": 1790850166701389811,
+        "mode": "0o755"
+      },
+      "libxchachapoly_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libxchachapoly_v13.dylib",
+        "sha256": "a17d448ce591d15336823a28572be238385eb65a077f90d495cf53cbed11e401",
+        "bytes": 600016,
+        "device": 16777230,
+        "inode": 53790967,
+        "mtimeNs": 1790844508704353338,
+        "ctimeNs": 1790850166506506608,
+        "mode": "0o755"
+      },
+      "libmars_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libmars_ref.dylib",
+        "sha256": "8b26d47b80408ea7f8b6eada93764ccea8e81563ce78b53877c0cd454221287b",
+        "bytes": 294576,
+        "device": 16777230,
+        "inode": 53790983,
+        "mtimeNs": 1790844511086565950,
+        "ctimeNs": 1790850166573083383,
+        "mode": "0o755"
+      },
+      "libshacal2_ref.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libshacal2_ref.dylib",
+        "sha256": "8de1b7cf4c69e75a1705cfa1148a4b8f9ddc97af27551b3f6c85e159db4ed9cf",
+        "bytes": 294976,
+        "device": 16777230,
+        "inode": 53791007,
+        "mtimeNs": 1790844507400945769,
+        "ctimeNs": 1790850166669239954,
+        "mode": "0o755"
+      },
+      "libcamellia_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libcamellia_v13.dylib",
+        "sha256": "4cd3eefbba4c1491d53e17811e1e084146f543581d61dab8cfbed256a35201ab",
+        "bytes": 328944,
+        "device": 16777230,
+        "inode": 53790991,
+        "mtimeNs": 1790844510615446182,
+        "ctimeNs": 1790850166604658611,
+        "mode": "0o755"
+      },
+      "libserpent_v13.dylib": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libserpent_v13.dylib",
+        "sha256": "1aae78dfc55df08df61ae81ca2b2a55f011bfb3a616bf205a94a48bf56846c0b",
+        "bytes": 295440,
+        "device": 16777230,
+        "inode": 53790999,
+        "mtimeNs": 1790844508061284382,
+        "ctimeNs": 1790850166637440849,
+        "mode": "0o755"
+      }
+    }
+  },
+  "originalBytesAndMetadataUnchanged": true,
+  "manifestBytesAndMetadataUnchanged": true,
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libaes_ref.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libaes_ref.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libaes_ref.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libaes_ref.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libaes_ref.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libaes_ref.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libkalyna_v13.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libkalyna_v13.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libkalyna_v13.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libkalyna_v13.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libkalyna_v13.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libkalyna_v13.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libthreefish_ref.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libthreefish_ref.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libthreefish_ref.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libthreefish_ref.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libthreefish_ref.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libthreefish_ref.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libxchachapoly_v13.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libxchachapoly_v13.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libxchachapoly_v13.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libxchachapoly_v13.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libxchachapoly_v13.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libxchachapoly_v13.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libmars_ref.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libmars_ref.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libmars_ref.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libmars_ref.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libmars_ref.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libmars_ref.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libshacal2_ref.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libshacal2_ref.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libshacal2_ref.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libshacal2_ref.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libshacal2_ref.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libshacal2_ref.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libcamellia_v13.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libcamellia_v13.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libcamellia_v13.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libcamellia_v13.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libcamellia_v13.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libcamellia_v13.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libserpent_v13.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libserpent_v13.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libserpent_v13.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/lipo",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libserpent_v13.dylib.original-copy",
+        "-thin",
+        "arm64",
+        "-output",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libserpent_v13.dylib.signed-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libserpent_v13.dylib.unsigned-arm64"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "comparisons": [
+    {
+      "library": "libaes_ref.dylib",
+      "sides": {
+        "historical": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libaes_ref.dylib",
+            "sha256": "106f32708582d9b69dfcdb1eb1abe6839da146852caabb7b7eec0abad16e620b",
+            "bytes": 329312,
+            "device": 16777230,
+            "inode": 53801233,
+            "mtimeNs": 1790676211722265056,
+            "ctimeNs": 1790852566088930319,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libaes_ref.dylib.signed-arm64",
+            "sha256": "53b0b3de77809f759a87996f140411d61165398490e238c1cb0ef09ff8c85f69",
+            "bytes": 165472,
+            "device": 16777230,
+            "inode": 53802531,
+            "mtimeNs": 1790853233649268775,
+            "ctimeNs": 1790853233649335608,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libaes_ref.dylib.unsigned-arm64",
+            "sha256": "6fef93bbb92cac8fc7a09bb0d69e93c029ddd6646ac8522509990e3c1f8ce337",
+            "bytes": 146680,
+            "device": 16777230,
+            "inode": 53802533,
+            "mtimeNs": 1790853233667791545,
+            "ctimeNs": 1790853233667857379,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "12c51de6b46a1563e994be187d9c59814c43e198fb9fbff96f74966d3510a12c"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "911da912dde8b5edbaef196d7b46d8d27e933eb15b80814a72e0f9be6a9a44ec"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "61a2c7c04e32c202f0ed36b935e2857102a261cdc87be589658e31020937fb05"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "59c053544c64bcdce86a085239c945431d35c2cf8f88b05fe54ea00cc8a7afcc"
+              },
+              {
+                "command": "0xd",
+                "bytes": 48,
+                "sha256": "3aee7a99a87bacceacfc853dc18bc59096679159e98bbaf24af5281878bd33d7"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "a0539f5b1803d28b7c660af36d336e813fa55241ab6623b3c9b6247f524990f9"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "a2bf04c8fdc24d76539dd3735f25fe850676535e8fe171c713fc2fdca68d6257"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "11eb7fce4e44141d8e6808f109e38d40ef8f0a0a9af8134ff84dd2f4487052ce"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "aa3efe5ef073f2ad70bfaacdcbbdec748b9f17b6a1ef918d05a419adf6a6f0b9"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "c4f800e5394b352d20a858dce6d4a8401d17fbb1c8f717c8985ac57b864be552"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "5c8de8c0473c1b65ea5a4a75d6c02b6aadc1ee7e97599bdec9e353905f34387f"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "8c99491df6f9eed77578a128b57d7ae0ebfb9de80d593f80e472d37774b2c409"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1728,
+                "bytes": 41724,
+                "offset": 1728,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "05d90f4b1efeca3942417d2ba742d53138380ce814f0c39ae88f5ddb419310ab"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 43452,
+                "bytes": 516,
+                "offset": 43452,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "373841ab2e09ce1cf50f6e8606eedc41cb555755277baf0a42d084022f5ffd92"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 43968,
+                "bytes": 8,
+                "offset": 43968,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "7c21d4a7c4630380ae3367f1303b0db8cf74b38042c72fca74031f2b707ce5dc"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 43976,
+                "bytes": 2204,
+                "offset": 43976,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "0733116aa48a741c7f974ab53f269917cf86e2b99b90fa80439434f462359dea"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 46180,
+                "bytes": 1121,
+                "offset": 46180,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "840d71524be172d6d05d3bb2765d41da2d8827ce2d1840a06ba2ad734a25cf1d"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 47312,
+                "bytes": 2982,
+                "offset": 47312,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "b90ba9b673b4d64378bc7d6672d8474ce75c34e1bfc52bcbf87b5cd3eabfdd20"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 50296,
+                "bytes": 1424,
+                "offset": 50296,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "e5749820ce24458b5320592dcfd516ca83a9dca49a38e28ce20d6e4b8a4cd86a"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 65536,
+                "bytes": 6152,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "7b143e71096198d8bf53a2c320bd037ac24dbb41864a8341d97e3cfbe4170b78"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 71688,
+                "bytes": 472,
+                "offset": 71688,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "0d7deaea72dd9b7aa0da40eccd06a677f41c2397beea353cf82d07895b81dfdf"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 81920,
+                "bytes": 16,
+                "offset": 81920,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 81936,
+                "bytes": 8305,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 90248,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        },
+        "current": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libaes_ref.dylib",
+            "sha256": "acb6aae2cc1c89186e7f66eccf87e0256944ce4648f746ab9ab45e8631c7b8f2",
+            "bytes": 329312,
+            "device": 16777230,
+            "inode": 53790953,
+            "mtimeNs": 1790844511729761739,
+            "ctimeNs": 1790850166441016466,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libaes_ref.dylib.signed-arm64",
+            "sha256": "ae45c133510a8700d05b982341d9346bbdf682af1e9d1eb0097ea731a2277130",
+            "bytes": 165472,
+            "device": 16777230,
+            "inode": 53802536,
+            "mtimeNs": 1790853233682581603,
+            "ctimeNs": 1790853233682641937,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libaes_ref.dylib.unsigned-arm64",
+            "sha256": "6fef93bbb92cac8fc7a09bb0d69e93c029ddd6646ac8522509990e3c1f8ce337",
+            "bytes": 146680,
+            "device": 16777230,
+            "inode": 53802538,
+            "mtimeNs": 1790853233692593073,
+            "ctimeNs": 1790853233692656656,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "12c51de6b46a1563e994be187d9c59814c43e198fb9fbff96f74966d3510a12c"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "911da912dde8b5edbaef196d7b46d8d27e933eb15b80814a72e0f9be6a9a44ec"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "61a2c7c04e32c202f0ed36b935e2857102a261cdc87be589658e31020937fb05"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "59c053544c64bcdce86a085239c945431d35c2cf8f88b05fe54ea00cc8a7afcc"
+              },
+              {
+                "command": "0xd",
+                "bytes": 48,
+                "sha256": "3aee7a99a87bacceacfc853dc18bc59096679159e98bbaf24af5281878bd33d7"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "a0539f5b1803d28b7c660af36d336e813fa55241ab6623b3c9b6247f524990f9"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "a2bf04c8fdc24d76539dd3735f25fe850676535e8fe171c713fc2fdca68d6257"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "11eb7fce4e44141d8e6808f109e38d40ef8f0a0a9af8134ff84dd2f4487052ce"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "aa3efe5ef073f2ad70bfaacdcbbdec748b9f17b6a1ef918d05a419adf6a6f0b9"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "c4f800e5394b352d20a858dce6d4a8401d17fbb1c8f717c8985ac57b864be552"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "5c8de8c0473c1b65ea5a4a75d6c02b6aadc1ee7e97599bdec9e353905f34387f"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "8c99491df6f9eed77578a128b57d7ae0ebfb9de80d593f80e472d37774b2c409"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1728,
+                "bytes": 41724,
+                "offset": 1728,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "05d90f4b1efeca3942417d2ba742d53138380ce814f0c39ae88f5ddb419310ab"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 43452,
+                "bytes": 516,
+                "offset": 43452,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "373841ab2e09ce1cf50f6e8606eedc41cb555755277baf0a42d084022f5ffd92"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 43968,
+                "bytes": 8,
+                "offset": 43968,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "7c21d4a7c4630380ae3367f1303b0db8cf74b38042c72fca74031f2b707ce5dc"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 43976,
+                "bytes": 2204,
+                "offset": 43976,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "0733116aa48a741c7f974ab53f269917cf86e2b99b90fa80439434f462359dea"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 46180,
+                "bytes": 1121,
+                "offset": 46180,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "840d71524be172d6d05d3bb2765d41da2d8827ce2d1840a06ba2ad734a25cf1d"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 47312,
+                "bytes": 2982,
+                "offset": 47312,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "b90ba9b673b4d64378bc7d6672d8474ce75c34e1bfc52bcbf87b5cd3eabfdd20"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 50296,
+                "bytes": 1424,
+                "offset": 50296,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "e5749820ce24458b5320592dcfd516ca83a9dca49a38e28ce20d6e4b8a4cd86a"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 65536,
+                "bytes": 6152,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "7b143e71096198d8bf53a2c320bd037ac24dbb41864a8341d97e3cfbe4170b78"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 71688,
+                "bytes": 472,
+                "offset": 71688,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "0d7deaea72dd9b7aa0da40eccd06a677f41c2397beea353cf82d07895b81dfdf"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 81920,
+                "bytes": 16,
+                "offset": 81920,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 81936,
+                "bytes": 8305,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 90248,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        }
+      },
+      "signedUniversalEqual": false,
+      "signedArm64Equal": false,
+      "unsignedArm64Equal": true,
+      "allUnsignedSectionsEqual": true,
+      "unsignedLoadCommandsEqual": true
+    },
+    {
+      "library": "libkalyna_v13.dylib",
+      "sides": {
+        "historical": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libkalyna_v13.dylib",
+            "sha256": "d079e691e79ad9878d1095da6483969d434617ea6631701d2a20f3cc68e0d296",
+            "bytes": 301520,
+            "device": 16777230,
+            "inode": 53801251,
+            "mtimeNs": 1790676205607407677,
+            "ctimeNs": 1790852566092083740,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libkalyna_v13.dylib.signed-arm64",
+            "sha256": "08c38bb07d02c434a463b323e179dc45b9ffed26c327090ccef65132f4f61946",
+            "bytes": 154064,
+            "device": 16777230,
+            "inode": 53802540,
+            "mtimeNs": 1790853233706436463,
+            "ctimeNs": 1790853233706500296,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libkalyna_v13.dylib.unsigned-arm64",
+            "sha256": "8cb39f8c4a7ec5c1b36b983a0c525d2e2a1acedb3e8ac733f2bd8a2cd93dca48",
+            "bytes": 135280,
+            "device": 16777230,
+            "inode": 53802542,
+            "mtimeNs": 1790853233721700855,
+            "ctimeNs": 1790853233721761605,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "38b51f2ef214ed263539d64473cb1bd7df9ae812bee82856b4fecc16274301de"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "ae2a994f17c81c94e9290798064ebff40dad6d3ec38083646936c0486f9223fa"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "84585bb34ffaf1bd8e1f38d52623d86d664c04136858afe2732b984140382a04"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "edc8204413445f10d824d930a0a4d3f3a4fdaab19cf9eb14f30e24beb3082f2f"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "33fdfc311a7e7cccca4466a41311b1e8aad181aec5ea5e2b49660ca1d4dd375b"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "ba93a584591928dfc27c67ce4961611d3f5fb905955d2d180cfc2fbd995b76c2"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "959d85eaff1ff21551477d3090b09d4d334b2b15a8e99a2f38f110f330817b77"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "686808ff0246ebd9d4cfcfa1a817e35bddfb3870988d694dca4961a1cdb2afea"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "180287374acf47d21546b077b989fbf06d0dc53442b25a65df2f68d756a84fec"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "a60c1df8bb970b107b25985d86926b99fd9858a99c2cf0dd098eb109a3950c77"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "049b60757ed4b6e9333f2b29383b7b13abc09968f5842604212978e126748cfd"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "d602d4bd44ffba2d70149a9b80f3a61a0dc767b72395e4b69a54e0e8b0f5c007"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 30568,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "067574ebd77a7a4570fedb523755f4d810fe91e5512c33edc60109969004dc60"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 32304,
+                "bytes": 564,
+                "offset": 32304,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "d8ffb8f394c33577c89553a80f2826bc53b217997928a2ab0ec48657038d0c2b"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 32868,
+                "bytes": 8,
+                "offset": 32868,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "6f2d599df8cf761d5264505b63ce8b2b501a88145909c3aa9946600010a9e33c"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 32876,
+                "bytes": 936,
+                "offset": 32876,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "8cbdede8ca21343f3a0b8d1cf990fe33677572863573420ebf8c3c709a3a4919"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 33824,
+                "bytes": 36214,
+                "offset": 33824,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "9d1f1d9d5d259d12f2a2a4b906da87bc07e3928e39ec4db57218d27ae200a4b3"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 70038,
+                "bytes": 529,
+                "offset": 70038,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "26a469d61bb54c23ac07552bc1a46da393f2c70260ef053a7ced86f6fad20720"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 70568,
+                "bytes": 720,
+                "offset": 70568,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "3bc987f3d9c4d3821579d9740ac1386b52fd0fbf1e474a6b3c9b7aecbe0ab49e"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 81920,
+                "bytes": 1456,
+                "offset": 81920,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "32577688f9555f1cce6dc4bb3c1af1fada14387359f1973987acc382e0ee70ee"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 83376,
+                "bytes": 472,
+                "offset": 83376,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "0cc803a783ae090c26b8557dc39e7360e04bd51c4b8bee5d25133be92a126f6f"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 98304,
+                "bytes": 16,
+                "offset": 98304,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 98320,
+                "bytes": 64,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 98384,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        },
+        "current": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libkalyna_v13.dylib",
+            "sha256": "f68a3dff964bd27bacd31fe272ee8f289689efe6e095d5972d3b1e2fba36c7f7",
+            "bytes": 301520,
+            "device": 16777230,
+            "inode": 53790975,
+            "mtimeNs": 1790844505605905794,
+            "ctimeNs": 1790850166540890817,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libkalyna_v13.dylib.signed-arm64",
+            "sha256": "dfd8be32481c8972faabdf7012e8380df64994bbac46541a69b67b54b487868e",
+            "bytes": 154064,
+            "device": 16777230,
+            "inode": 53802544,
+            "mtimeNs": 1790853233736220913,
+            "ctimeNs": 1790853233736282079,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libkalyna_v13.dylib.unsigned-arm64",
+            "sha256": "8cb39f8c4a7ec5c1b36b983a0c525d2e2a1acedb3e8ac733f2bd8a2cd93dca48",
+            "bytes": 135280,
+            "device": 16777230,
+            "inode": 53802546,
+            "mtimeNs": 1790853233746555799,
+            "ctimeNs": 1790853233746623007,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "38b51f2ef214ed263539d64473cb1bd7df9ae812bee82856b4fecc16274301de"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "ae2a994f17c81c94e9290798064ebff40dad6d3ec38083646936c0486f9223fa"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "84585bb34ffaf1bd8e1f38d52623d86d664c04136858afe2732b984140382a04"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "edc8204413445f10d824d930a0a4d3f3a4fdaab19cf9eb14f30e24beb3082f2f"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "33fdfc311a7e7cccca4466a41311b1e8aad181aec5ea5e2b49660ca1d4dd375b"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "ba93a584591928dfc27c67ce4961611d3f5fb905955d2d180cfc2fbd995b76c2"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "959d85eaff1ff21551477d3090b09d4d334b2b15a8e99a2f38f110f330817b77"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "686808ff0246ebd9d4cfcfa1a817e35bddfb3870988d694dca4961a1cdb2afea"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "180287374acf47d21546b077b989fbf06d0dc53442b25a65df2f68d756a84fec"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "a60c1df8bb970b107b25985d86926b99fd9858a99c2cf0dd098eb109a3950c77"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "049b60757ed4b6e9333f2b29383b7b13abc09968f5842604212978e126748cfd"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "d602d4bd44ffba2d70149a9b80f3a61a0dc767b72395e4b69a54e0e8b0f5c007"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 30568,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "067574ebd77a7a4570fedb523755f4d810fe91e5512c33edc60109969004dc60"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 32304,
+                "bytes": 564,
+                "offset": 32304,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "d8ffb8f394c33577c89553a80f2826bc53b217997928a2ab0ec48657038d0c2b"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 32868,
+                "bytes": 8,
+                "offset": 32868,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "6f2d599df8cf761d5264505b63ce8b2b501a88145909c3aa9946600010a9e33c"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 32876,
+                "bytes": 936,
+                "offset": 32876,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "8cbdede8ca21343f3a0b8d1cf990fe33677572863573420ebf8c3c709a3a4919"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 33824,
+                "bytes": 36214,
+                "offset": 33824,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "9d1f1d9d5d259d12f2a2a4b906da87bc07e3928e39ec4db57218d27ae200a4b3"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 70038,
+                "bytes": 529,
+                "offset": 70038,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "26a469d61bb54c23ac07552bc1a46da393f2c70260ef053a7ced86f6fad20720"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 70568,
+                "bytes": 720,
+                "offset": 70568,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "3bc987f3d9c4d3821579d9740ac1386b52fd0fbf1e474a6b3c9b7aecbe0ab49e"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 81920,
+                "bytes": 1456,
+                "offset": 81920,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "32577688f9555f1cce6dc4bb3c1af1fada14387359f1973987acc382e0ee70ee"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 83376,
+                "bytes": 472,
+                "offset": 83376,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "0cc803a783ae090c26b8557dc39e7360e04bd51c4b8bee5d25133be92a126f6f"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 98304,
+                "bytes": 16,
+                "offset": 98304,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 98320,
+                "bytes": 64,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 98384,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        }
+      },
+      "signedUniversalEqual": false,
+      "signedArm64Equal": false,
+      "unsignedArm64Equal": true,
+      "allUnsignedSectionsEqual": true,
+      "unsignedLoadCommandsEqual": true
+    },
+    {
+      "library": "libthreefish_ref.dylib",
+      "sides": {
+        "historical": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libthreefish_ref.dylib",
+            "sha256": "81b2b6a7ab53411e38eee6492667279bd53db708274c5456259ab2ae97f6583b",
+            "bytes": 119472,
+            "device": 16777230,
+            "inode": 53801277,
+            "mtimeNs": 1790676209056456384,
+            "ctimeNs": 1790852566096842287,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libthreefish_ref.dylib.signed-arm64",
+            "sha256": "7d9e256c9247a708d13de1f94504e952f81371331fdfd3622b4a502911ecb3fa",
+            "bytes": 53936,
+            "device": 16777230,
+            "inode": 53802548,
+            "mtimeNs": 1790853233760236106,
+            "ctimeNs": 1790853233760301731,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libthreefish_ref.dylib.unsigned-arm64",
+            "sha256": "0dc9818ceaf1ba2bde3422ad5d61e8f32cc9742af589f8a943a471f638187979",
+            "bytes": 35344,
+            "device": 16777230,
+            "inode": 53802550,
+            "mtimeNs": 1790853233770786701,
+            "ctimeNs": 1790853233770850951,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 472,
+                "sha256": "592189a40fdd4ffadb2d523bd941702f497d3152f6997415595bc5ccb25ca76f"
+              },
+              {
+                "command": "0x19",
+                "bytes": 152,
+                "sha256": "fee4a620df734414dbdc4f2fd3996d213d2406c34a5cfaf1fb8f9633c54f9ef7"
+              },
+              {
+                "command": "0x19",
+                "bytes": 152,
+                "sha256": "66fed1eeec7ba3c1b6bca99c989c6c57a4cefc94f624539c181cb71b5200844d"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "1ee8b9dcc3134986c6dc3a830a7ebefe22a0546fb48ae01dd3598e175114040c"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "a13c48cf28d5696e8bb3793f35562173d630100e0bf681b9dcf26604669a37a5"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "8ee80ed015fde614a26ed0ada096c489c42d1be5dc700a907473a46c2598304f"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "da9c03ab6d2c7e7f2e30a876b876afa078b6b7ea6329fc786100bc129d0b488a"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "4437b2d41b492994eea7f508aa924c32a26a93fc3eac0c868ca8d19f4632788d"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "d3bd6d88718d08b1ece674a6db4382d8218759a96a79818ac5eba9da0a57edfd"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "132d820d9d9bc5e2a5bb880df624e670af3a76f729406bdd2fcd5a3834acdb7b"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "43b93bd7ad52c4dfacde567418a22432eccf0eb545b308bcbf45288722cf9aa3"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "9cc22d388fbabe301240b01cd9760fcd6a644c69e31149314ff33a0f5e8475f4"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1280,
+                "bytes": 11852,
+                "offset": 1280,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "93d1385a80fd83ac1b48977ad915aac684541c83dde0709ff4b80259cd532828"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 13132,
+                "bytes": 228,
+                "offset": 13132,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "e2c5e663ee48385f1fe4800a74b4e83fbf751091292eba8e16fd63b95c419208"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 13360,
+                "bytes": 368,
+                "offset": 13360,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "c87019eb62ac92e468c883346dda6c172c3e9bc83cb5a8f27f26dc32e412af94"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 13728,
+                "bytes": 22,
+                "offset": 13728,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "c3746c7a2395758318507425ff3346054dcb7042a5feb2efc6910d71b238b5bd"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 13752,
+                "bytes": 200,
+                "offset": 13752,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "23c4423742c3e42f1fe0421e887252a0f723c20505e765c1c87a933707bb2fd1"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 16384,
+                "bytes": 160,
+                "offset": 16384,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "e1ba854d358239c6e6a74a213d2b90ec6d7c3b96c8a47eee30fdecadc3292fac"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 32768,
+                "bytes": 8,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        },
+        "current": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libthreefish_ref.dylib",
+            "sha256": "f8986bfc20c2c56215bc0ee733bcc728bc07b4de1b85a76253748867b919d45c",
+            "bytes": 119472,
+            "device": 16777230,
+            "inode": 53791015,
+            "mtimeNs": 1790844509327321196,
+            "ctimeNs": 1790850166701389811,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libthreefish_ref.dylib.signed-arm64",
+            "sha256": "460f60156d8567164ba218aae60aaf8a8ac5c25082361058325443523397fe24",
+            "bytes": 53936,
+            "device": 16777230,
+            "inode": 53802552,
+            "mtimeNs": 1790853233784544174,
+            "ctimeNs": 1790853233784611466,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libthreefish_ref.dylib.unsigned-arm64",
+            "sha256": "0dc9818ceaf1ba2bde3422ad5d61e8f32cc9742af589f8a943a471f638187979",
+            "bytes": 35344,
+            "device": 16777230,
+            "inode": 53802554,
+            "mtimeNs": 1790853233794792019,
+            "ctimeNs": 1790853233794862227,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 472,
+                "sha256": "592189a40fdd4ffadb2d523bd941702f497d3152f6997415595bc5ccb25ca76f"
+              },
+              {
+                "command": "0x19",
+                "bytes": 152,
+                "sha256": "fee4a620df734414dbdc4f2fd3996d213d2406c34a5cfaf1fb8f9633c54f9ef7"
+              },
+              {
+                "command": "0x19",
+                "bytes": 152,
+                "sha256": "66fed1eeec7ba3c1b6bca99c989c6c57a4cefc94f624539c181cb71b5200844d"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "1ee8b9dcc3134986c6dc3a830a7ebefe22a0546fb48ae01dd3598e175114040c"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "a13c48cf28d5696e8bb3793f35562173d630100e0bf681b9dcf26604669a37a5"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "8ee80ed015fde614a26ed0ada096c489c42d1be5dc700a907473a46c2598304f"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "da9c03ab6d2c7e7f2e30a876b876afa078b6b7ea6329fc786100bc129d0b488a"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "4437b2d41b492994eea7f508aa924c32a26a93fc3eac0c868ca8d19f4632788d"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "d3bd6d88718d08b1ece674a6db4382d8218759a96a79818ac5eba9da0a57edfd"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "132d820d9d9bc5e2a5bb880df624e670af3a76f729406bdd2fcd5a3834acdb7b"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "43b93bd7ad52c4dfacde567418a22432eccf0eb545b308bcbf45288722cf9aa3"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "9cc22d388fbabe301240b01cd9760fcd6a644c69e31149314ff33a0f5e8475f4"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1280,
+                "bytes": 11852,
+                "offset": 1280,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "93d1385a80fd83ac1b48977ad915aac684541c83dde0709ff4b80259cd532828"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 13132,
+                "bytes": 228,
+                "offset": 13132,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "e2c5e663ee48385f1fe4800a74b4e83fbf751091292eba8e16fd63b95c419208"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 13360,
+                "bytes": 368,
+                "offset": 13360,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "c87019eb62ac92e468c883346dda6c172c3e9bc83cb5a8f27f26dc32e412af94"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 13728,
+                "bytes": 22,
+                "offset": 13728,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "c3746c7a2395758318507425ff3346054dcb7042a5feb2efc6910d71b238b5bd"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 13752,
+                "bytes": 200,
+                "offset": 13752,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "23c4423742c3e42f1fe0421e887252a0f723c20505e765c1c87a933707bb2fd1"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 16384,
+                "bytes": 160,
+                "offset": 16384,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "e1ba854d358239c6e6a74a213d2b90ec6d7c3b96c8a47eee30fdecadc3292fac"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 32768,
+                "bytes": 8,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        }
+      },
+      "signedUniversalEqual": false,
+      "signedArm64Equal": false,
+      "unsignedArm64Equal": true,
+      "allUnsignedSectionsEqual": true,
+      "unsignedLoadCommandsEqual": true
+    },
+    {
+      "library": "libxchachapoly_v13.dylib",
+      "sides": {
+        "historical": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libxchachapoly_v13.dylib",
+            "sha256": "23b0a84c95a19a964c83659cbc439107be3be61e3be34845b956350a6d634d1a",
+            "bytes": 600016,
+            "device": 16777230,
+            "inode": 53801283,
+            "mtimeNs": 1790676208432084566,
+            "ctimeNs": 1790852566098295246,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libxchachapoly_v13.dylib.signed-arm64",
+            "sha256": "3446c29bbd71cf170f5cc89d791965e2a7c4062d9a5e0c567a02c54a571d42af",
+            "bytes": 288720,
+            "device": 16777230,
+            "inode": 53802556,
+            "mtimeNs": 1790853233813917832,
+            "ctimeNs": 1790853233813992040,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libxchachapoly_v13.dylib.unsigned-arm64",
+            "sha256": "bdee237609d0eda38c553fe8aa5f11fe8d79307b36a08582473ba29f5249ec2c",
+            "bytes": 269680,
+            "device": 16777230,
+            "inode": 53802558,
+            "mtimeNs": 1790853233824098635,
+            "ctimeNs": 1790853233824168093,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 712,
+                "sha256": "aa8a4d3a39c0b9caba049f7d8e506da253b06107baf71a6b8de2075d8c0c86f2"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "0b3b9652e02b3b110408337e19275ba2cb89ea3c8b6caab6df9501b2da0f5764"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "9755084b80d5fc84a18de37a1db54b5b1ab8d4d70ca8058e511cfefcae737d2a"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "6a0f3402825cc7b0346740485faed3d28dff012cedbdcfcd275d5674056d13ba"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "f224b4a4f65499a5092ffc3c48dd2d3b050b366317d7582e6d42496844f3b13c"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "4688270ad2146bba5422dfb1a6a8a494f6c7fafcf6edb2362edcb83f6c86302d"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "ca49cebd1bc7a450b9531d122f561d578721ababb6955ddc4caf21988dec3ef0"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "86a9e6f5cc461dcc27e6134e790fba428cf49b9c157cc83ee24b04f39b51e430"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "0b65e8af62428e3aa01c9c17e8f5c49477495125c2519e65e0e30f37175d3768"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "12ecffdfdab2158f164335ffdd85e54526683b77ccda9cbba3a44c660fb73f6b"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "62d1122edf5b65be7c38450fb631b24032128409eb5a16923d31a57e610b5f79"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "09660d0e573b708c9b5235fd4b9950315b6d6ddb69daedda80c785143c53d945"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1816,
+                "bytes": 120728,
+                "offset": 1816,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "44734c9bcd4cfefae660bd432131cb98b45950cd4ab3eedc01a0c4389b415c20"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 122544,
+                "bytes": 708,
+                "offset": 122544,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "26f2c8684a9fcca3cb1f14272907c74eddfb1a06f47e44d510d10b84f943b6d9"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 123252,
+                "bytes": 8,
+                "offset": 123252,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "13175c12cdac79ca2a6a17898479ba830dc17f93d17ff0aad1faa6449bbaf51b"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 123260,
+                "bytes": 5388,
+                "offset": 123260,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "aeb86c886016d46d01e61cce89125dcd6c69809bda8e2941da2950a36998627c"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 128656,
+                "bytes": 4934,
+                "offset": 128656,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "4ea1af4b3e83006768ba5a69cdb5e9be337ebae2cdc4e9770aa0b8f1107eacde"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 133590,
+                "bytes": 1827,
+                "offset": 133590,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "acf3b1390d6f5f7515e6a413a0a9141da14941bd67632b5e42af9babc6f5359f"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 135420,
+                "bytes": 3056,
+                "offset": 135420,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "a48f597220886d8fca6049310b10aef61b7fb3c4953040b71489ffe95b148779"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__eh_frame",
+                "address": 138480,
+                "bytes": 80,
+                "offset": 138480,
+                "flags": 1744830475,
+                "zeroFill": false,
+                "sha256": "89d8e0965d5d1cfe3ad69d1de19c8b62b2da578613b04b88f7ae8184782f4e46"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 147456,
+                "bytes": 11832,
+                "offset": 147456,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "c1b26ec55415e15222377c1234adf5d5654548253baaa0535bf5d0dd21bf4ceb"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 159288,
+                "bytes": 616,
+                "offset": 159288,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "afc0eed321ba7fcbaf9aac48de21ab206381b086f49fc297bd1e212d28d5df3f"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 163840,
+                "bytes": 304,
+                "offset": 163840,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "85b0678d1401c53a8a4fe1854c00ad6b856f62e8576fd31d08c818dec167eeea"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 164144,
+                "bytes": 96,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 164240,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        },
+        "current": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libxchachapoly_v13.dylib",
+            "sha256": "a17d448ce591d15336823a28572be238385eb65a077f90d495cf53cbed11e401",
+            "bytes": 600016,
+            "device": 16777230,
+            "inode": 53790967,
+            "mtimeNs": 1790844508704353338,
+            "ctimeNs": 1790850166506506608,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libxchachapoly_v13.dylib.signed-arm64",
+            "sha256": "17b7c7c54009073a8c1419634e7acd36dadfa5f19381b40237e9cd4d746c4ffe",
+            "bytes": 288720,
+            "device": 16777230,
+            "inode": 53802560,
+            "mtimeNs": 1790853233837984525,
+            "ctimeNs": 1790853233838044733,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libxchachapoly_v13.dylib.unsigned-arm64",
+            "sha256": "bdee237609d0eda38c553fe8aa5f11fe8d79307b36a08582473ba29f5249ec2c",
+            "bytes": 269680,
+            "device": 16777230,
+            "inode": 53802562,
+            "mtimeNs": 1790853233847775327,
+            "ctimeNs": 1790853233847838953,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 712,
+                "sha256": "aa8a4d3a39c0b9caba049f7d8e506da253b06107baf71a6b8de2075d8c0c86f2"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "0b3b9652e02b3b110408337e19275ba2cb89ea3c8b6caab6df9501b2da0f5764"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "9755084b80d5fc84a18de37a1db54b5b1ab8d4d70ca8058e511cfefcae737d2a"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "6a0f3402825cc7b0346740485faed3d28dff012cedbdcfcd275d5674056d13ba"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "f224b4a4f65499a5092ffc3c48dd2d3b050b366317d7582e6d42496844f3b13c"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "4688270ad2146bba5422dfb1a6a8a494f6c7fafcf6edb2362edcb83f6c86302d"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "ca49cebd1bc7a450b9531d122f561d578721ababb6955ddc4caf21988dec3ef0"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "86a9e6f5cc461dcc27e6134e790fba428cf49b9c157cc83ee24b04f39b51e430"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "0b65e8af62428e3aa01c9c17e8f5c49477495125c2519e65e0e30f37175d3768"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "12ecffdfdab2158f164335ffdd85e54526683b77ccda9cbba3a44c660fb73f6b"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "62d1122edf5b65be7c38450fb631b24032128409eb5a16923d31a57e610b5f79"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "09660d0e573b708c9b5235fd4b9950315b6d6ddb69daedda80c785143c53d945"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1816,
+                "bytes": 120728,
+                "offset": 1816,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "44734c9bcd4cfefae660bd432131cb98b45950cd4ab3eedc01a0c4389b415c20"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 122544,
+                "bytes": 708,
+                "offset": 122544,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "26f2c8684a9fcca3cb1f14272907c74eddfb1a06f47e44d510d10b84f943b6d9"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 123252,
+                "bytes": 8,
+                "offset": 123252,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "13175c12cdac79ca2a6a17898479ba830dc17f93d17ff0aad1faa6449bbaf51b"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 123260,
+                "bytes": 5388,
+                "offset": 123260,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "aeb86c886016d46d01e61cce89125dcd6c69809bda8e2941da2950a36998627c"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 128656,
+                "bytes": 4934,
+                "offset": 128656,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "4ea1af4b3e83006768ba5a69cdb5e9be337ebae2cdc4e9770aa0b8f1107eacde"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 133590,
+                "bytes": 1827,
+                "offset": 133590,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "acf3b1390d6f5f7515e6a413a0a9141da14941bd67632b5e42af9babc6f5359f"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 135420,
+                "bytes": 3056,
+                "offset": 135420,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "a48f597220886d8fca6049310b10aef61b7fb3c4953040b71489ffe95b148779"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__eh_frame",
+                "address": 138480,
+                "bytes": 80,
+                "offset": 138480,
+                "flags": 1744830475,
+                "zeroFill": false,
+                "sha256": "89d8e0965d5d1cfe3ad69d1de19c8b62b2da578613b04b88f7ae8184782f4e46"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 147456,
+                "bytes": 11832,
+                "offset": 147456,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "c1b26ec55415e15222377c1234adf5d5654548253baaa0535bf5d0dd21bf4ceb"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 159288,
+                "bytes": 616,
+                "offset": 159288,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "afc0eed321ba7fcbaf9aac48de21ab206381b086f49fc297bd1e212d28d5df3f"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 163840,
+                "bytes": 304,
+                "offset": 163840,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "85b0678d1401c53a8a4fe1854c00ad6b856f62e8576fd31d08c818dec167eeea"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 164144,
+                "bytes": 96,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 164240,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        }
+      },
+      "signedUniversalEqual": false,
+      "signedArm64Equal": false,
+      "unsignedArm64Equal": true,
+      "allUnsignedSectionsEqual": true,
+      "unsignedLoadCommandsEqual": true
+    },
+    {
+      "library": "libmars_ref.dylib",
+      "sides": {
+        "historical": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libmars_ref.dylib",
+            "sha256": "77789abe774e35974d4e6a507054c04d7d1790935492cacbba01fb263966bf51",
+            "bytes": 294576,
+            "device": 16777230,
+            "inode": 53801257,
+            "mtimeNs": 1790676211021278152,
+            "ctimeNs": 1790852566093122533,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libmars_ref.dylib.signed-arm64",
+            "sha256": "0515b696419b860adece3800c2b612526ed54803341f38c929d44621dea9d2b1",
+            "bytes": 147120,
+            "device": 16777230,
+            "inode": 53802564,
+            "mtimeNs": 1790853233862232343,
+            "ctimeNs": 1790853233862301969,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libmars_ref.dylib.unsigned-arm64",
+            "sha256": "6aa402ff949834ca76c9337f266350631078bdce7f2a982a08f0b83a49fea988",
+            "bytes": 128360,
+            "device": 16777230,
+            "inode": 53802566,
+            "mtimeNs": 1790853233872074438,
+            "ctimeNs": 1790853233872136354,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "1ed7a24ff22240f5c16936ee41d35629d2ad232ba89c5cff7911e06b8bd894d7"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "292b1fd52d741cf96e48b215bc14a942849ce6370da66d0b5aeccbe8799e7cd5"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "6b7749c4ed7fdb0d42009bce7e0c756b2a4ed66e1c24c34690b6eaddb8849018"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "275df0dbf763eb141bac3fcf7c41e9153d71715c34d2376508e356cbd073a776"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "856302560a93525d2bf54b0ca1ebd17f2ebebb35bc1fc0bbd364e1b05d175b36"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "d7059d86f9085c6db3a84641fdd9521f64ce9ed3e3116be3aef6b278c31c3b15"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "02fe8257cda4c7cdc3ff9faf259ce2790424d0f8b33dd1b42dc77bd0acdeff5e"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "68e7ab070646c6f0225af354c020d2659d755a76ddf3dae1f13d7c1800a82983"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "de2a94bdcc416666f59aa485aca56a468514c86ebaa23437a3f72b22734a3dbf"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "427a3ffca53ea7cb9e4abcd9f7bd41e622df62d8fc71f2daf4563420e79fa535"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "834a3fed0f12402afc36676de263c6593ab96891bea2d5005af23a1efe2292d1"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "47fec2023070148f0d0ac701a12e4a253d9e0cee13ef0a473d6d156a484cea0b"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 34932,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "89e334e47d20a112ebf53cc6cc393a0d428376e79ea0cc96a9a18758ba9a161f"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 36668,
+                "bytes": 516,
+                "offset": 36668,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "f9fa5f1fe57cc8f0a514783cb9949b5cfc29f0a89901e02805d6d9dd4aa83b0e"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 37184,
+                "bytes": 8,
+                "offset": 37184,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "ef160f84ac2aeadbdd99d3285914b8188e87f319b2f12d5a7833b4d2d1d078f4"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 37192,
+                "bytes": 1864,
+                "offset": 37192,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "4991cade4ebee5777311f9078be5559c41835318aa8e82b438986ff020c03186"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 39056,
+                "bytes": 4294,
+                "offset": 39056,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "4a6e4f53142ba35e931680b895cb496f0e5e41c2242484706a0bbdfdf3147c33"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 43350,
+                "bytes": 1062,
+                "offset": 43350,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "29787b9f8cba6ba5651c8e0a9ded8a556dcedb746797d70f345079ea2044e9ed"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 44412,
+                "bytes": 1256,
+                "offset": 44412,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "57a5c900a921a294dda031f2fe7514b9195913736d54db5c5a65ad7ebf6cba98"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 49152,
+                "bytes": 6112,
+                "offset": 49152,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "a8cc41f46452bd6b0ff8ae3814a0bd532617e8289b66519ea2f7ed2ca6e679af"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 55264,
+                "bytes": 472,
+                "offset": 55264,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "6eb65bebc2a5a6f65312b0ca7b987ee1f6e6685c52586a7c7dcd4051fa2d15a3"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 65536,
+                "bytes": 16,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 65552,
+                "bytes": 88,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 65640,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        },
+        "current": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libmars_ref.dylib",
+            "sha256": "8b26d47b80408ea7f8b6eada93764ccea8e81563ce78b53877c0cd454221287b",
+            "bytes": 294576,
+            "device": 16777230,
+            "inode": 53790983,
+            "mtimeNs": 1790844511086565950,
+            "ctimeNs": 1790850166573083383,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libmars_ref.dylib.signed-arm64",
+            "sha256": "19a102dc0972340691bc2553d0e85902561a3aa5254c78131652b914305fed17",
+            "bytes": 147120,
+            "device": 16777230,
+            "inode": 53802568,
+            "mtimeNs": 1790853233889296457,
+            "ctimeNs": 1790853233889359790,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libmars_ref.dylib.unsigned-arm64",
+            "sha256": "6aa402ff949834ca76c9337f266350631078bdce7f2a982a08f0b83a49fea988",
+            "bytes": 128360,
+            "device": 16777230,
+            "inode": 53802570,
+            "mtimeNs": 1790853233899178634,
+            "ctimeNs": 1790853233899243426,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "1ed7a24ff22240f5c16936ee41d35629d2ad232ba89c5cff7911e06b8bd894d7"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "292b1fd52d741cf96e48b215bc14a942849ce6370da66d0b5aeccbe8799e7cd5"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "6b7749c4ed7fdb0d42009bce7e0c756b2a4ed66e1c24c34690b6eaddb8849018"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "275df0dbf763eb141bac3fcf7c41e9153d71715c34d2376508e356cbd073a776"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "856302560a93525d2bf54b0ca1ebd17f2ebebb35bc1fc0bbd364e1b05d175b36"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "d7059d86f9085c6db3a84641fdd9521f64ce9ed3e3116be3aef6b278c31c3b15"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "02fe8257cda4c7cdc3ff9faf259ce2790424d0f8b33dd1b42dc77bd0acdeff5e"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "68e7ab070646c6f0225af354c020d2659d755a76ddf3dae1f13d7c1800a82983"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "de2a94bdcc416666f59aa485aca56a468514c86ebaa23437a3f72b22734a3dbf"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "427a3ffca53ea7cb9e4abcd9f7bd41e622df62d8fc71f2daf4563420e79fa535"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "834a3fed0f12402afc36676de263c6593ab96891bea2d5005af23a1efe2292d1"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "47fec2023070148f0d0ac701a12e4a253d9e0cee13ef0a473d6d156a484cea0b"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 34932,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "89e334e47d20a112ebf53cc6cc393a0d428376e79ea0cc96a9a18758ba9a161f"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 36668,
+                "bytes": 516,
+                "offset": 36668,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "f9fa5f1fe57cc8f0a514783cb9949b5cfc29f0a89901e02805d6d9dd4aa83b0e"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 37184,
+                "bytes": 8,
+                "offset": 37184,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "ef160f84ac2aeadbdd99d3285914b8188e87f319b2f12d5a7833b4d2d1d078f4"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 37192,
+                "bytes": 1864,
+                "offset": 37192,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "4991cade4ebee5777311f9078be5559c41835318aa8e82b438986ff020c03186"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 39056,
+                "bytes": 4294,
+                "offset": 39056,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "4a6e4f53142ba35e931680b895cb496f0e5e41c2242484706a0bbdfdf3147c33"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 43350,
+                "bytes": 1062,
+                "offset": 43350,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "29787b9f8cba6ba5651c8e0a9ded8a556dcedb746797d70f345079ea2044e9ed"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 44412,
+                "bytes": 1256,
+                "offset": 44412,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "57a5c900a921a294dda031f2fe7514b9195913736d54db5c5a65ad7ebf6cba98"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 49152,
+                "bytes": 6112,
+                "offset": 49152,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "a8cc41f46452bd6b0ff8ae3814a0bd532617e8289b66519ea2f7ed2ca6e679af"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 55264,
+                "bytes": 472,
+                "offset": 55264,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "6eb65bebc2a5a6f65312b0ca7b987ee1f6e6685c52586a7c7dcd4051fa2d15a3"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 65536,
+                "bytes": 16,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 65552,
+                "bytes": 88,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 65640,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        }
+      },
+      "signedUniversalEqual": false,
+      "signedArm64Equal": false,
+      "unsignedArm64Equal": true,
+      "allUnsignedSectionsEqual": true,
+      "unsignedLoadCommandsEqual": true
+    },
+    {
+      "library": "libshacal2_ref.dylib",
+      "sides": {
+        "historical": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libshacal2_ref.dylib",
+            "sha256": "bab586fa2f15b898ff93aafc248e6b33fd7bf7f3290e5fb0306172d480a9e7f3",
+            "bytes": 294976,
+            "device": 16777230,
+            "inode": 53801271,
+            "mtimeNs": 1790676207326699963,
+            "ctimeNs": 1790852566095493952,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libshacal2_ref.dylib.signed-arm64",
+            "sha256": "d723a055515faaf99dfaa2eabc31575e240d4c896cb517d21fb59e88f1046253",
+            "bytes": 147520,
+            "device": 16777230,
+            "inode": 53802572,
+            "mtimeNs": 1790853233913273817,
+            "ctimeNs": 1790853233913354025,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libshacal2_ref.dylib.unsigned-arm64",
+            "sha256": "635f1785462ef208268923d5f0a3a142cb68de141647cf53b8e614ca766b467f",
+            "bytes": 128760,
+            "device": 16777230,
+            "inode": 53802574,
+            "mtimeNs": 1790853233923207453,
+            "ctimeNs": 1790853233923276078,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "2ff82b9488db31a7d0d7ae98190846fe84345b46b82177cdc4f0446307f730fb"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "3c2a2230dcbfeff44e6be661210e801a9af715947fb7a6ca4d3ab8259a8ed139"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "6b7749c4ed7fdb0d42009bce7e0c756b2a4ed66e1c24c34690b6eaddb8849018"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "de1a74fde1fab6f4334a174153756c3037f1655246227ce33ee27761510fec14"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "408005cc9c1a404ad814fd3be7d8c30507d0ed2854ffd2c6f2890cc4ce48858e"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "d7059d86f9085c6db3a84641fdd9521f64ce9ed3e3116be3aef6b278c31c3b15"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "02fe8257cda4c7cdc3ff9faf259ce2790424d0f8b33dd1b42dc77bd0acdeff5e"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "4344a101afb446971353ccee6341a24dea1ec2ecaf61a1b02b33b84b4344097e"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "d41f547792fc088050a3b6dc309ce883c02b95a5fd14b70b17619c73ca226a4a"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "ec200c44924c74f5e63e28a31281f4a062d998f52ca45ab5406f9fd911be3b19"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "922a10c795e45a81aa5c8ce26c13e9897a0386a55187bfbd999ff94f117f7cae"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "a698e43138bee8f6e0bfad9b3a6357a0f77efc4f534ceb0b8c37f54aaf22729f"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 34104,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "c0c7085330f4426b2bff0c9925c050b72d5ce08f4cda7bcc29f3e701533735fb"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 35840,
+                "bytes": 516,
+                "offset": 35840,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "6321a9ab5deeb7885bf879713503a8f3e7def95cb38151e7a294bae4943d90b8"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 36356,
+                "bytes": 8,
+                "offset": 36356,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "213c924c1ebcc0932f04f159a3bb11d439940b98f8bfe98c14a2a9a44ca234d1"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 36364,
+                "bytes": 1864,
+                "offset": 36364,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "78f5609a0a8af02eb7a3f820b51a2068da8a34faf7af844c669e9b5ab15c1208"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 38240,
+                "bytes": 2571,
+                "offset": 38240,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "be34b2774595c73a60f83887f9243b0da4cf7065c14e6e100a3690547899b432"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 40811,
+                "bytes": 1062,
+                "offset": 40811,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "29787b9f8cba6ba5651c8e0a9ded8a556dcedb746797d70f345079ea2044e9ed"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 41876,
+                "bytes": 1256,
+                "offset": 41876,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "ad3692470b192ac39e1c76bdbb6ce395f043267e1b58fd11c2dfc5df1d3ba0df"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 49152,
+                "bytes": 6128,
+                "offset": 49152,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "82a45f7f1ed5fc60402b9cffe1bce3fe105ae4f6579e0aa6824c0a4b21d088d3"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 55280,
+                "bytes": 472,
+                "offset": 55280,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "f9797b844bc0c099f8b2fa9c41439cf884330c905ced5eff64c6533b036c786c"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 65536,
+                "bytes": 16,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 65552,
+                "bytes": 88,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 65640,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        },
+        "current": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libshacal2_ref.dylib",
+            "sha256": "8de1b7cf4c69e75a1705cfa1148a4b8f9ddc97af27551b3f6c85e159db4ed9cf",
+            "bytes": 294976,
+            "device": 16777230,
+            "inode": 53791007,
+            "mtimeNs": 1790844507400945769,
+            "ctimeNs": 1790850166669239954,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libshacal2_ref.dylib.signed-arm64",
+            "sha256": "1288dfa7bef7d757b617b1323acb352b1299e48cf7af15f68cfb79370e4b9541",
+            "bytes": 147520,
+            "device": 16777230,
+            "inode": 53802576,
+            "mtimeNs": 1790853233936823468,
+            "ctimeNs": 1790853233936928801,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libshacal2_ref.dylib.unsigned-arm64",
+            "sha256": "635f1785462ef208268923d5f0a3a142cb68de141647cf53b8e614ca766b467f",
+            "bytes": 128760,
+            "device": 16777230,
+            "inode": 53802578,
+            "mtimeNs": 1790853233947145354,
+            "ctimeNs": 1790853233947212687,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "2ff82b9488db31a7d0d7ae98190846fe84345b46b82177cdc4f0446307f730fb"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "3c2a2230dcbfeff44e6be661210e801a9af715947fb7a6ca4d3ab8259a8ed139"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "6b7749c4ed7fdb0d42009bce7e0c756b2a4ed66e1c24c34690b6eaddb8849018"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "de1a74fde1fab6f4334a174153756c3037f1655246227ce33ee27761510fec14"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "408005cc9c1a404ad814fd3be7d8c30507d0ed2854ffd2c6f2890cc4ce48858e"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "d7059d86f9085c6db3a84641fdd9521f64ce9ed3e3116be3aef6b278c31c3b15"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "02fe8257cda4c7cdc3ff9faf259ce2790424d0f8b33dd1b42dc77bd0acdeff5e"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "4344a101afb446971353ccee6341a24dea1ec2ecaf61a1b02b33b84b4344097e"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "d41f547792fc088050a3b6dc309ce883c02b95a5fd14b70b17619c73ca226a4a"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "ec200c44924c74f5e63e28a31281f4a062d998f52ca45ab5406f9fd911be3b19"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "922a10c795e45a81aa5c8ce26c13e9897a0386a55187bfbd999ff94f117f7cae"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "a698e43138bee8f6e0bfad9b3a6357a0f77efc4f534ceb0b8c37f54aaf22729f"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 34104,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "c0c7085330f4426b2bff0c9925c050b72d5ce08f4cda7bcc29f3e701533735fb"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 35840,
+                "bytes": 516,
+                "offset": 35840,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "6321a9ab5deeb7885bf879713503a8f3e7def95cb38151e7a294bae4943d90b8"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 36356,
+                "bytes": 8,
+                "offset": 36356,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "213c924c1ebcc0932f04f159a3bb11d439940b98f8bfe98c14a2a9a44ca234d1"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 36364,
+                "bytes": 1864,
+                "offset": 36364,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "78f5609a0a8af02eb7a3f820b51a2068da8a34faf7af844c669e9b5ab15c1208"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 38240,
+                "bytes": 2571,
+                "offset": 38240,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "be34b2774595c73a60f83887f9243b0da4cf7065c14e6e100a3690547899b432"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 40811,
+                "bytes": 1062,
+                "offset": 40811,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "29787b9f8cba6ba5651c8e0a9ded8a556dcedb746797d70f345079ea2044e9ed"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 41876,
+                "bytes": 1256,
+                "offset": 41876,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "ad3692470b192ac39e1c76bdbb6ce395f043267e1b58fd11c2dfc5df1d3ba0df"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 49152,
+                "bytes": 6128,
+                "offset": 49152,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "82a45f7f1ed5fc60402b9cffe1bce3fe105ae4f6579e0aa6824c0a4b21d088d3"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 55280,
+                "bytes": 472,
+                "offset": 55280,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "f9797b844bc0c099f8b2fa9c41439cf884330c905ced5eff64c6533b036c786c"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 65536,
+                "bytes": 16,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 65552,
+                "bytes": 88,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 65640,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        }
+      },
+      "signedUniversalEqual": false,
+      "signedArm64Equal": false,
+      "unsignedArm64Equal": true,
+      "allUnsignedSectionsEqual": true,
+      "unsignedLoadCommandsEqual": true
+    },
+    {
+      "library": "libcamellia_v13.dylib",
+      "sides": {
+        "historical": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libcamellia_v13.dylib",
+            "sha256": "015534be3d76ff56a824523aa99be29d047dd962f1dcc11ec8e356f9cd995444",
+            "bytes": 328944,
+            "device": 16777230,
+            "inode": 53801245,
+            "mtimeNs": 1790676210315108159,
+            "ctimeNs": 1790852566091142489,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libcamellia_v13.dylib.signed-arm64",
+            "sha256": "3d077da30b73b5ee7d94b2af505fe1af8adedcbf4bec3a6784e701002695cefe",
+            "bytes": 165104,
+            "device": 16777230,
+            "inode": 53802580,
+            "mtimeNs": 1790853233961788037,
+            "ctimeNs": 1790853233961857912,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libcamellia_v13.dylib.unsigned-arm64",
+            "sha256": "7a19bb1b6220ecc1869b4db04f09ea61306a37bdae9840660843f9aa2775c35f",
+            "bytes": 146320,
+            "device": 16777230,
+            "inode": 53802582,
+            "mtimeNs": 1790853233975481760,
+            "ctimeNs": 1790853233975550052,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "6bf3ff4098185aea5b3a16fb531851199de14b29420d0e87267cae05b4c29128"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "1020357281feca0cec9cd02de36b8af1c39acc15c06b9244dd52ef25f673b756"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "95181d476c848508c4fba6dc438d120c5b4d534392b4bd71af34c4abe569a681"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "8272c80676259754b3c916e5a54efce661ca733ea421041d8a925b48fe0ce6c6"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "810a5ae54a968c8ecc8c02c0e9c156d8961a666e63d885ce2ea492ecc0e8f540"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "a0539f5b1803d28b7c660af36d336e813fa55241ab6623b3c9b6247f524990f9"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "810454d79f217891c5646a4be32e2aed5bf2153beb2f1a464ddd1feb350739ab"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "b3763b14c141c2185c615aad34a2a13fcd38050833ef1ed8762ffda8b7b643e3"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "ca2ad49772a64db63db3e5f141329d4c40264811ad72ca14e726201c88563307"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "51cdfda1eb2d665ed5c64dc0e7708afaf94e7e22655a15bc22f6a690a7e72fbf"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "56160362b1c94ead910d01a27c5cf8068200e5c47a46a5f44afa54333239c282"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "87a85a520d6a28e55dc41997037dd447a5525f8f8aec80c6da7a2ac0c2e596a7"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 48572,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "1af724eb766150c30dc2b152c35c76a180d59f98c7b4e93368a8d1dfebff4c9e"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 50308,
+                "bytes": 516,
+                "offset": 50308,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "ea22655066d44ec7fd224f7ff96e7492d03f6751fd8fb8d615a9283fb9f5ac29"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 50824,
+                "bytes": 8,
+                "offset": 50824,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "47c987b9300282d549cc9202c0525914524482482d1e2d31ef59dd976a4adcf9"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 50832,
+                "bytes": 2156,
+                "offset": 50832,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "550f1a48d3df795e638f12b704174ca766cad7efb57620b066558d49cd986aa4"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 52992,
+                "bytes": 6742,
+                "offset": 52992,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "de337324732c96ba640e542468ab43fdfba393d3fd12ef78f79a1657934f62df"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 59734,
+                "bytes": 1121,
+                "offset": 59734,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "840d71524be172d6d05d3bb2765d41da2d8827ce2d1840a06ba2ad734a25cf1d"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 60856,
+                "bytes": 1448,
+                "offset": 60856,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "e580f6efb49ae963b3989bfffbff7fd299917bdf62d69e3cc967fbcab88d6318"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 65536,
+                "bytes": 6416,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "dd48bb3e945cf07ef6dd68e29a8580fa2cfd6a47f056b48054caff5dd49e76e9"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 71952,
+                "bytes": 472,
+                "offset": 71952,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "f1ccf2da6f35aa551e2ffdb918e29af593bff6f074ae069d0b9ecde9a15ebcf4"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 81920,
+                "bytes": 16,
+                "offset": 81920,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 81936,
+                "bytes": 104,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 82040,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        },
+        "current": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libcamellia_v13.dylib",
+            "sha256": "4cd3eefbba4c1491d53e17811e1e084146f543581d61dab8cfbed256a35201ab",
+            "bytes": 328944,
+            "device": 16777230,
+            "inode": 53790991,
+            "mtimeNs": 1790844510615446182,
+            "ctimeNs": 1790850166604658611,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libcamellia_v13.dylib.signed-arm64",
+            "sha256": "99fbf16f3eb5e4322d7b5c1ac991c8d0da21d4187c654c630d77bfe03dde5484",
+            "bytes": 165104,
+            "device": 16777230,
+            "inode": 53802584,
+            "mtimeNs": 1790853233989921026,
+            "ctimeNs": 1790853233989987652,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libcamellia_v13.dylib.unsigned-arm64",
+            "sha256": "7a19bb1b6220ecc1869b4db04f09ea61306a37bdae9840660843f9aa2775c35f",
+            "bytes": 146320,
+            "device": 16777230,
+            "inode": 53802586,
+            "mtimeNs": 1790853234000112788,
+            "ctimeNs": 1790853234000176829,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "6bf3ff4098185aea5b3a16fb531851199de14b29420d0e87267cae05b4c29128"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "1020357281feca0cec9cd02de36b8af1c39acc15c06b9244dd52ef25f673b756"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "95181d476c848508c4fba6dc438d120c5b4d534392b4bd71af34c4abe569a681"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "8272c80676259754b3c916e5a54efce661ca733ea421041d8a925b48fe0ce6c6"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "810a5ae54a968c8ecc8c02c0e9c156d8961a666e63d885ce2ea492ecc0e8f540"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "a0539f5b1803d28b7c660af36d336e813fa55241ab6623b3c9b6247f524990f9"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "810454d79f217891c5646a4be32e2aed5bf2153beb2f1a464ddd1feb350739ab"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "b3763b14c141c2185c615aad34a2a13fcd38050833ef1ed8762ffda8b7b643e3"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "ca2ad49772a64db63db3e5f141329d4c40264811ad72ca14e726201c88563307"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "51cdfda1eb2d665ed5c64dc0e7708afaf94e7e22655a15bc22f6a690a7e72fbf"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "56160362b1c94ead910d01a27c5cf8068200e5c47a46a5f44afa54333239c282"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "87a85a520d6a28e55dc41997037dd447a5525f8f8aec80c6da7a2ac0c2e596a7"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 48572,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "1af724eb766150c30dc2b152c35c76a180d59f98c7b4e93368a8d1dfebff4c9e"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 50308,
+                "bytes": 516,
+                "offset": 50308,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "ea22655066d44ec7fd224f7ff96e7492d03f6751fd8fb8d615a9283fb9f5ac29"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 50824,
+                "bytes": 8,
+                "offset": 50824,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "47c987b9300282d549cc9202c0525914524482482d1e2d31ef59dd976a4adcf9"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 50832,
+                "bytes": 2156,
+                "offset": 50832,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "550f1a48d3df795e638f12b704174ca766cad7efb57620b066558d49cd986aa4"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 52992,
+                "bytes": 6742,
+                "offset": 52992,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "de337324732c96ba640e542468ab43fdfba393d3fd12ef78f79a1657934f62df"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 59734,
+                "bytes": 1121,
+                "offset": 59734,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "840d71524be172d6d05d3bb2765d41da2d8827ce2d1840a06ba2ad734a25cf1d"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 60856,
+                "bytes": 1448,
+                "offset": 60856,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "e580f6efb49ae963b3989bfffbff7fd299917bdf62d69e3cc967fbcab88d6318"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 65536,
+                "bytes": 6416,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "dd48bb3e945cf07ef6dd68e29a8580fa2cfd6a47f056b48054caff5dd49e76e9"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 71952,
+                "bytes": 472,
+                "offset": 71952,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "f1ccf2da6f35aa551e2ffdb918e29af593bff6f074ae069d0b9ecde9a15ebcf4"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 81920,
+                "bytes": 16,
+                "offset": 81920,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 81936,
+                "bytes": 104,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 82040,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        }
+      },
+      "signedUniversalEqual": false,
+      "signedArm64Equal": false,
+      "unsignedArm64Equal": true,
+      "allUnsignedSectionsEqual": true,
+      "unsignedLoadCommandsEqual": true
+    },
+    {
+      "library": "libserpent_v13.dylib",
+      "sides": {
+        "historical": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2/harness/Native/libserpent_v13.dylib",
+            "sha256": "ed431d701bbebb31344b04615009a5015e4fb04288491ef010d4df93ab5b5cdf",
+            "bytes": 295440,
+            "device": 16777230,
+            "inode": 53801264,
+            "mtimeNs": 1790676207951746943,
+            "ctimeNs": 1790852566094424784,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libserpent_v13.dylib.signed-arm64",
+            "sha256": "79e4597bd3cec0fbd19fdcfe68de36a7b1a2b99d946b9c784b196f8706d5d32d",
+            "bytes": 147984,
+            "device": 16777230,
+            "inode": 53802588,
+            "mtimeNs": 1790853234014236220,
+            "ctimeNs": 1790853234014304178,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/historical/libserpent_v13.dylib.unsigned-arm64",
+            "sha256": "00eee82914e86a006ebbcb4b784f8d15396d46be25deea7c85bd4ce914d6c76e",
+            "bytes": 129224,
+            "device": 16777230,
+            "inode": 53802590,
+            "mtimeNs": 1790853234023800231,
+            "ctimeNs": 1790853234023860689,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "9aad93b1862aa31a0d70ff4dada40ead6bf57f29075ac640716fef4afcfa4f03"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "731c57701d27ad34dcbeab344a9d189f1b880f0fc0009ac4c97cf17442317416"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "df5c254be3581d84acc85310f37ffbf14b0013c6106063a9fd6e0a39a7443f25"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "1fad8910016421c00075d0495d823752075b153fcc1a267c93911fa7b6dcac93"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "44758e0996d0d14e969761c7d3a9ada3610fad84ca6000bede2302490e3afe2f"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "d7059d86f9085c6db3a84641fdd9521f64ce9ed3e3116be3aef6b278c31c3b15"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "02fe8257cda4c7cdc3ff9faf259ce2790424d0f8b33dd1b42dc77bd0acdeff5e"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "bd3fa1188e57c0768afc45d81afbfcd0e8c96f11b9b6f69e232fbc3de4a094f3"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "2512b844166c48f8236fd0011f93b04b36d9c01c7199e2bb3923d42879b0e17f"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "8836a4863a77c0ee7a5cfa3df9cdb1f03b3e6598c51627d3d64fc37222a721fa"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "eecec5bdba2a69c31421220d921605ff97e1159189d61e5cb4a1f722f4c51602"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "88b8e98870aedbc2637cf56cc8b41338fb532b6667b0746d60362b0ed46ea753"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 38164,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "8943b47c195013d2c26cf7772e17fc480692b6426b85e01534642229c9204f1f"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 39900,
+                "bytes": 516,
+                "offset": 39900,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "dd80e79ea0956511f58ffcd0bd7439edac926122d7c7b54d17bebf57145d2432"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 40416,
+                "bytes": 8,
+                "offset": 40416,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "397f41216944d26d9086415ddc42b5d883f501d7fef45b5202d5d8033a40005b"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 40424,
+                "bytes": 1956,
+                "offset": 40424,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "9d7a5bd93c2143d96a67e2e62228e1c766b10e0c6382948cf227a5008cb02461"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 42384,
+                "bytes": 2406,
+                "offset": 42384,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "d99cc6e8ad792bc20b50c1c183e7a38dc0d9ed8520fb408f71205fe22aa7d1a5"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 44790,
+                "bytes": 1062,
+                "offset": 44790,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "29787b9f8cba6ba5651c8e0a9ded8a556dcedb746797d70f345079ea2044e9ed"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 45852,
+                "bytes": 1296,
+                "offset": 45852,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "26f8730b979295005f49afeacf20f2ac701948e857e2814073d84a2c7340b29f"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 49152,
+                "bytes": 6144,
+                "offset": 49152,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "a6d878fb8b91ed6ebcbeffa005956054c7969affa27b2e5ddad36461c8534c90"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 55296,
+                "bytes": 472,
+                "offset": 55296,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "6eb65bebc2a5a6f65312b0ca7b987ee1f6e6685c52586a7c7dcd4051fa2d15a3"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 65536,
+                "bytes": 16,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 65552,
+                "bytes": 104,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 65656,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        },
+        "current": {
+          "original": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/libserpent_v13.dylib",
+            "sha256": "1aae78dfc55df08df61ae81ca2b2a55f011bfb3a616bf205a94a48bf56846c0b",
+            "bytes": 295440,
+            "device": 16777230,
+            "inode": 53790999,
+            "mtimeNs": 1790844508061284382,
+            "ctimeNs": 1790850166637440849,
+            "mode": "0o755"
+          },
+          "manifestBound": true,
+          "signedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libserpent_v13.dylib.signed-arm64",
+            "sha256": "c33051e64bccce0b5d3651b6ec1946c2cbd8e62972a954bb65343b3f2d843064",
+            "bytes": 147984,
+            "device": 16777230,
+            "inode": 53802592,
+            "mtimeNs": 1790853234037482954,
+            "ctimeNs": 1790853234037544454,
+            "mode": "0o600"
+          },
+          "unsignedArm64": {
+            "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/native-arm64-code-comparison/scratch/current/libserpent_v13.dylib.unsigned-arm64",
+            "sha256": "00eee82914e86a006ebbcb4b784f8d15396d46be25deea7c85bd4ce914d6c76e",
+            "bytes": 129224,
+            "device": 16777230,
+            "inode": 53802594,
+            "mtimeNs": 1790853234052331637,
+            "ctimeNs": 1790853234052396971,
+            "mode": "0o600"
+          },
+          "machoUnsigned": {
+            "cpuType": 16777228,
+            "cpuSubtype": 0,
+            "fileType": 6,
+            "commands": [
+              {
+                "command": "0x19",
+                "bytes": 632,
+                "sha256": "9aad93b1862aa31a0d70ff4dada40ead6bf57f29075ac640716fef4afcfa4f03"
+              },
+              {
+                "command": "0x19",
+                "bytes": 232,
+                "sha256": "731c57701d27ad34dcbeab344a9d189f1b880f0fc0009ac4c97cf17442317416"
+              },
+              {
+                "command": "0x19",
+                "bytes": 312,
+                "sha256": "df5c254be3581d84acc85310f37ffbf14b0013c6106063a9fd6e0a39a7443f25"
+              },
+              {
+                "command": "0x19",
+                "bytes": 72,
+                "sha256": "1fad8910016421c00075d0495d823752075b153fcc1a267c93911fa7b6dcac93"
+              },
+              {
+                "command": "0xd",
+                "bytes": 56,
+                "sha256": "44758e0996d0d14e969761c7d3a9ada3610fad84ca6000bede2302490e3afe2f"
+              },
+              {
+                "command": "0x80000034",
+                "bytes": 16,
+                "sha256": "d7059d86f9085c6db3a84641fdd9521f64ce9ed3e3116be3aef6b278c31c3b15"
+              },
+              {
+                "command": "0x80000033",
+                "bytes": 16,
+                "sha256": "02fe8257cda4c7cdc3ff9faf259ce2790424d0f8b33dd1b42dc77bd0acdeff5e"
+              },
+              {
+                "command": "0x2",
+                "bytes": 24,
+                "sha256": "bd3fa1188e57c0768afc45d81afbfcd0e8c96f11b9b6f69e232fbc3de4a094f3"
+              },
+              {
+                "command": "0xb",
+                "bytes": 80,
+                "sha256": "2512b844166c48f8236fd0011f93b04b36d9c01c7199e2bb3923d42879b0e17f"
+              },
+              {
+                "command": "0x1b",
+                "bytes": 24,
+                "sha256": "8836a4863a77c0ee7a5cfa3df9cdb1f03b3e6598c51627d3d64fc37222a721fa"
+              },
+              {
+                "command": "0x32",
+                "bytes": 32,
+                "sha256": "00b09ab00380349699152af0bc8ee31df6ca38b1b99a522944dc1db54e4153d2"
+              },
+              {
+                "command": "0x2a",
+                "bytes": 16,
+                "sha256": "01a60f1db7db041298aa3e269ff5ebea951aa6977963e4ab563905da906d2b82"
+              },
+              {
+                "command": "0xc",
+                "bytes": 48,
+                "sha256": "2df1a370d7486ec4fda06972616b41b5d2fce87aa05d56f979fa4da15dd357c3"
+              },
+              {
+                "command": "0xc",
+                "bytes": 56,
+                "sha256": "25ca93fa7fca237e15780ab3e0865fdbbfdceafab21b13efb07f14b5e7b549ed"
+              },
+              {
+                "command": "0x26",
+                "bytes": 16,
+                "sha256": "eecec5bdba2a69c31421220d921605ff97e1159189d61e5cb4a1f722f4c51602"
+              },
+              {
+                "command": "0x29",
+                "bytes": 16,
+                "sha256": "88b8e98870aedbc2637cf56cc8b41338fb532b6667b0746d60362b0ed46ea753"
+              }
+            ],
+            "sections": [
+              {
+                "segment": "__TEXT",
+                "section": "__text",
+                "address": 1736,
+                "bytes": 38164,
+                "offset": 1736,
+                "flags": 2147484672,
+                "zeroFill": false,
+                "sha256": "8943b47c195013d2c26cf7772e17fc480692b6426b85e01534642229c9204f1f"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__stubs",
+                "address": 39900,
+                "bytes": 516,
+                "offset": 39900,
+                "flags": 2147484680,
+                "zeroFill": false,
+                "sha256": "dd80e79ea0956511f58ffcd0bd7439edac926122d7c7b54d17bebf57145d2432"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__init_offsets",
+                "address": 40416,
+                "bytes": 8,
+                "offset": 40416,
+                "flags": 22,
+                "zeroFill": false,
+                "sha256": "397f41216944d26d9086415ddc42b5d883f501d7fef45b5202d5d8033a40005b"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__gcc_except_tab",
+                "address": 40424,
+                "bytes": 1956,
+                "offset": 40424,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "9d7a5bd93c2143d96a67e2e62228e1c766b10e0c6382948cf227a5008cb02461"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__const",
+                "address": 42384,
+                "bytes": 2406,
+                "offset": 42384,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "d99cc6e8ad792bc20b50c1c183e7a38dc0d9ed8520fb408f71205fe22aa7d1a5"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__cstring",
+                "address": 44790,
+                "bytes": 1062,
+                "offset": 44790,
+                "flags": 2,
+                "zeroFill": false,
+                "sha256": "29787b9f8cba6ba5651c8e0a9ded8a556dcedb746797d70f345079ea2044e9ed"
+              },
+              {
+                "segment": "__TEXT",
+                "section": "__unwind_info",
+                "address": 45852,
+                "bytes": 1296,
+                "offset": 45852,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "26f8730b979295005f49afeacf20f2ac701948e857e2814073d84a2c7340b29f"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__const",
+                "address": 49152,
+                "bytes": 6144,
+                "offset": 49152,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "a6d878fb8b91ed6ebcbeffa005956054c7969affa27b2e5ddad36461c8534c90"
+              },
+              {
+                "segment": "__DATA_CONST",
+                "section": "__got",
+                "address": 55296,
+                "bytes": 472,
+                "offset": 55296,
+                "flags": 6,
+                "zeroFill": false,
+                "sha256": "6eb65bebc2a5a6f65312b0ca7b987ee1f6e6685c52586a7c7dcd4051fa2d15a3"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__data",
+                "address": 65536,
+                "bytes": 16,
+                "offset": 65536,
+                "flags": 0,
+                "zeroFill": false,
+                "sha256": "2cf0b87ee8de64c425cb6f62f0949a1b1a16b9e81922adaa968617433dedc9c7"
+              },
+              {
+                "segment": "__DATA",
+                "section": "__bss",
+                "address": 65552,
+                "bytes": 104,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              },
+              {
+                "segment": "__DATA",
+                "section": "__common",
+                "address": 65656,
+                "bytes": 60,
+                "offset": 0,
+                "flags": 1,
+                "zeroFill": true,
+                "sha256": null
+              }
+            ]
+          }
+        }
+      },
+      "signedUniversalEqual": false,
+      "signedArm64Equal": false,
+      "unsignedArm64Equal": true,
+      "allUnsignedSectionsEqual": true,
+      "unsignedLoadCommandsEqual": true
+    }
+  ],
+  "complete": true,
+  "allUnsignedArm64Identical": true
+}

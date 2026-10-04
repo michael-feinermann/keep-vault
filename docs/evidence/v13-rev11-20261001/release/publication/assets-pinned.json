@@ -1,0 +1,38 @@
+{
+  "sourceCommit": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "version": "5.0.3",
+  "build": "15",
+  "candidate": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W",
+  "files": [
+    {
+      "name": "Keep Vault-macOS-universal.zip",
+      "bytes": 44441313,
+      "sha256": "4c3dea3833bcd20a8d5afc030fea2d3c316d52d568282eea37155fa176c1540c"
+    },
+    {
+      "name": "Keep Vault-macOS-universal.zip.sha3",
+      "bytes": 129,
+      "sha256": "ac1fa178931f397355e2834d8e29af75c06bb0b1f555db40034889a4f59f6a25"
+    },
+    {
+      "name": "Keep Vault-macOS-universal.zip.skein",
+      "bytes": 257,
+      "sha256": "50b066f8dbc5ae4c2e79bb9fa831a87b8b2df485ce3573392b089a15aa17b16d"
+    },
+    {
+      "name": "Keep Vault-macOS-universal.zip.khsig",
+      "bytes": 6547,
+      "sha256": "6158f3ad6403b49b8b8ff63d7202e1b2d6c6a19b8384008b16535bffc1e318b5"
+    },
+    {
+      "name": "Keep Vault-macOS-universal.zip.sha3.khsig",
+      "bytes": 6547,
+      "sha256": "f0a68bb43dbbdd30ac7cc4b8a21532363a7bfc9548b8d14d4ecd2eb633c0a22f"
+    },
+    {
+      "name": "Keep Vault-macOS-universal.zip.skein.khsig",
+      "bytes": 6547,
+      "sha256": "24ecb562baaba17d1db8706c5ab0244dc55269a8dc99f2ab5e0f18d2d62368a1"
+    }
+  ]
+}

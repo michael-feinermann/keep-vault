@@ -1,0 +1,12 @@
+{
+  "oldBuild": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T164715Z",
+  "correctedBuild": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z",
+  "changedSourcePaths": [
+    "KeepVaultMac.Tests/MacComprehensiveTests.cs"
+  ],
+  "oldProductionAssemblySha256": "71709145c0a57de1631ac7e5ff3db1499ef94fbc42a239201c773e3c7ef29655",
+  "correctedProductionAssemblySha256": "71709145c0a57de1631ac7e5ff3db1499ef94fbc42a239201c773e3c7ef29655",
+  "productionAssemblyIdentical": true,
+  "correctedSourceInputsSha256": "8d52fc5413ba8b38bb6db6fc56b2555416e91780550470b641b40f7bd9ce5dab",
+  "scope": "Product assembly unchanged byte-for-byte; corrected 12 test oracles require fresh execution. Old 301-outcome full FAIL retained, never rewritten."
+}

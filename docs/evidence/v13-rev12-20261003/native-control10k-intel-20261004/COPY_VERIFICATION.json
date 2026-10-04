@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "copiedUtc": "2026-10-04T07:08:12.416004+00:00",
+  "scope": "Publication copy verification only; no runner/reporter import, build/test execution or current SDK inventory. Original actual reports and historical ARM package preserved.",
+  "originalCopies": {
+    "x86_64-rosetta/report.json": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-intel-rosetta-20261004T0702/report.json",
+      "sha256": "cc3c52dbc7376ff4ef017b202f1db8c6648657fedd31ad34fc4d6c6b5d822422",
+      "bytes": 937243,
+      "byteEqual": true
+    },
+    "x86_64-rosetta/corpus.ndjson": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-intel-rosetta-20261004T0702/corpus.ndjson",
+      "sha256": "62fc5b7738245e7537ef320f73ee0d3ced2f30680111baa899247d0fa4f9b7d2",
+      "bytes": 2343258,
+      "byteEqual": true
+    },
+    "x86_64-rosetta/build.stdout.txt": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-intel-rosetta-20261004T0702/build.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "byteEqual": true
+    },
+    "x86_64-rosetta/build.stderr.txt": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-intel-rosetta-20261004T0702/build.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "byteEqual": true
+    },
+    "x86_64-rosetta/run.stderr.txt": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-intel-rosetta-20261004T0702/run.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "byteEqual": true
+    },
+    "comparison/README.de.md": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-architecture-comparison-20261004T0703/README.de.md",
+      "sha256": "bcfb79fb03bd9df45791dbe9da7e6d27438445e226c48747fd8bc582c0ed4657",
+      "bytes": 1389,
+      "byteEqual": true
+    },
+    "comparison/comparison.json": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-architecture-comparison-20261004T0703/comparison.json",
+      "sha256": "dc32a5e278a9ed8a7d16b3285742b151cc5aba493fc4484b8a9b86f2b7ffdccc",
+      "bytes": 4084,
+      "byteEqual": true
+    },
+    "comparison/SHA256SUMS.txt": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/control10k-actual-architecture-comparison-20261004T0703/SHA256SUMS.txt",
+      "sha256": "ca0c4a4144761b8536b42c97aa5b439c024c21220de61d7386230ea35caf24d2",
+      "bytes": 161,
+      "byteEqual": true
+    },
+    "reproduction/control_framing_fuzz.cpp": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/intel-control10k-proposal-20261004/control_framing_fuzz.cpp",
+      "sha256": "b7c7fdde2bc8fee7dfe4c5b3c9af41327145c0d22b9575f99ad6ca4005c31493",
+      "bytes": 5628,
+      "byteEqual": true
+    },
+    "reproduction/run_control_framing_fuzz_intel_macos.py": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/intel-control10k-proposal-20261004/run_control_framing_fuzz_intel_macos.py",
+      "sha256": "919ef129e00275fcadbf1a8b5ded775280edc9b4e4c8bbe79a25bb06334e4835",
+      "bytes": 21962,
+      "byteEqual": true
+    },
+    "reproduction/compare_control10k_architectures.py": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/intel-control10k-proposal-20261004/compare_control10k_architectures.py",
+      "sha256": "a7f5225351f491872eb5db7db25f29dfa55000809656df19034087b60f44ddaf",
+      "bytes": 12293,
+      "byteEqual": true
+    },
+    "reproduction/native/zpaq_control.hpp": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/native/zpaq_control.hpp",
+      "sha256": "49e451e0713658ad75d44c96d2805cadf22cee9a2f3022153cbe97ef14df147c",
+      "bytes": 11529,
+      "byteEqual": true
+    },
+    "native-evidence-reuse-readonly-20261003/proposal/control_framing_fuzz.cpp": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/native-evidence-reuse-readonly-20261003/proposal/control_framing_fuzz.cpp",
+      "sha256": "b7c7fdde2bc8fee7dfe4c5b3c9af41327145c0d22b9575f99ad6ca4005c31493",
+      "bytes": 5628,
+      "byteEqual": true
+    },
+    "native-evidence-reuse-readonly-20261003/proposal/run_control_framing_fuzz_macos.py": {
+      "originalPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/native-evidence-reuse-readonly-20261003/proposal/run_control_framing_fuzz_macos.py",
+      "sha256": "0eef36ecf3d6edfa379f69dd63a5f0ace497ecbc3d1b78fc09327ac4a2f12fda",
+      "bytes": 18134,
+      "byteEqual": true
+    }
+  },
+  "copiedOriginalFileCount": 14,
+  "originalIntelReportSha256": "cc3c52dbc7376ff4ef017b202f1db8c6648657fedd31ad34fc4d6c6b5d822422",
+  "originalComparisonSha256": "dc32a5e278a9ed8a7d16b3285742b151cc5aba493fc4484b8a9b86f2b7ffdccc",
+  "comparisonOriginalManifestVerified": true,
+  "sourceAndCorpusCopiesMatchActualReportHashes": true,
+  "reproductionReporterMatchesActualComparisonHash": true,
+  "peerReview": {
+    "reviewer": "/root/rev12_console_resume",
+    "recordedUtc": "2026-10-04T07:15:12.086129+00:00",
+    "scope": "Read-only publication package/hash/receipt/source-pin/claim check; no runner/reporter import, test, edits, current SDK or binary inventory",
+    "status": "PUBLICATION PACKAGE REVIEW PASS",
+    "reviewedOriginalManifestSha256": "38b12dcc87fe4467a4f13cf35b6581083d8fc295aa01d76327b9bbfc6734f34f",
+    "reviewedOriginalManifestPayloadFiles": 16,
+    "necessaryFindings": [],
+    "report": "READ_ONLY_REVIEW.md"
+  }
+}

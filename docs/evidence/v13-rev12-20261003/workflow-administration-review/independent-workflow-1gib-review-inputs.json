@@ -1,0 +1,84 @@
+{
+  "capturedUtc": "2026-10-03T16:33:08.534014+00:00",
+  "scope": "Read-only source review input snapshot. GUI sources may advance after the retained old Standard case; matchesCompiled154322 is not a release approval or full runtime-input claim.",
+  "inputs": {
+    "KeepVaultMac.Tests/Rev12ArchiveWorkflowPerformanceTests.cs": {
+      "sha256": "5dba2d2b1c3cbcd9d5b72de89a0a295eecf9ee7169b319fd110e094a1bbdb1d0",
+      "bytes": 27595,
+      "compiled154322SourceSha256": "5dba2d2b1c3cbcd9d5b72de89a0a295eecf9ee7169b319fd110e094a1bbdb1d0",
+      "matchesCompiled154322": true
+    },
+    "KeepVaultMac.Tests/PublicNativeProfileEvidence.cs": {
+      "sha256": "b994c41987f41725aafccfcf4a9b838a28c840afae1c4621b617ceed93912228",
+      "bytes": 2224,
+      "compiled154322SourceSha256": "b994c41987f41725aafccfcf4a9b838a28c840afae1c4621b617ceed93912228",
+      "matchesCompiled154322": true
+    },
+    "KalynaArchiver/Services/NativeCipherExecutor.cs": {
+      "sha256": "82b3b050df1a7b31f2bd8c732badd5e9c9bce1805b3dd69c8a91bd72a3cc8ea2",
+      "bytes": 12774,
+      "compiled154322SourceSha256": "82b3b050df1a7b31f2bd8c732badd5e9c9bce1805b3dd69c8a91bd72a3cc8ea2",
+      "matchesCompiled154322": true
+    },
+    "KalynaArchiver/Services/OperationPhaseProfile.cs": {
+      "sha256": "4f8da3c534651f78a417020ec227d0fb2388f4add9324d78764fe40c56933b38",
+      "bytes": 9513,
+      "compiled154322SourceSha256": "4f8da3c534651f78a417020ec227d0fb2388f4add9324d78764fe40c56933b38",
+      "matchesCompiled154322": true
+    },
+    "KeepVaultMac/Services/MacZpaqRootAnchor.cs": {
+      "sha256": "5dbf75dcd988e82bdbca0bbecfabfa24d6603b1c0b54da65c1ea9f31120238fa",
+      "bytes": 7261,
+      "compiled154322SourceSha256": "5dbf75dcd988e82bdbca0bbecfabfa24d6603b1c0b54da65c1ea9f31120238fa",
+      "matchesCompiled154322": true
+    },
+    "KeepVaultMac/Gui/MainWindow.PathsAndDrop.cs": {
+      "sha256": "6c8192bf352d77a39a2473affceb1878e0cdd5d94e208819f2642c63b728837d",
+      "bytes": 17711,
+      "compiled154322SourceSha256": "fa0c3e66f273170652b71a8ec2f00819443af68c39c01c0c63d8542124c4b10e",
+      "matchesCompiled154322": false
+    },
+    "KeepVaultMac/Gui/MainWindow.StorageAccess.cs": {
+      "sha256": "d73a0e3e3dc70d65fa735002142303db6812e4ff5dcfa074f3dc414357b5aa14",
+      "bytes": 28374,
+      "compiled154322SourceSha256": "a5004f82f7ff13f1570d38cddb2a3df1e33a889b4133be71fd6536817872c929",
+      "matchesCompiled154322": false
+    },
+    "KeepVaultMac/Gui/MacSecurityScopedResourceLease.cs": {
+      "sha256": "1db2d91816069f2aa8be923c70d943771971ebff5a53bffbea942c43dfd1e3f6",
+      "bytes": 8261,
+      "compiled154322SourceSha256": "5c68989340705b0d27a39af291ec389bfbd030fe40054380b396426af061bc7b",
+      "matchesCompiled154322": false
+    },
+    "KeepVaultMac.Tests/WindowDisposeRev12Tests.cs": {
+      "sha256": "4b64a59c184d72f0f1bee865da22582358782ac39abce290972cd59a5a504b98",
+      "bytes": 79154,
+      "compiled154322SourceSha256": "1508857627e14dd54c7c0fadf9c9fa3792ea3d1d3534b13b3a5c3372406c0652",
+      "matchesCompiled154322": false
+    },
+    "work/v13-evidence/rev12-development-20261003/run-workflow-1gib-matrix.py": {
+      "sha256": "f70bc569f8b9eeb5145265b84aa84922f263b9a87e21c5bdffdd1586d797cb9a",
+      "bytes": 3512
+    },
+    "work/v13-evidence/rev12-development-20261003/run-development.py": {
+      "sha256": "d415c9e3316327099b89e0cc3bab8cde5020f0ad272d5d5e586ecc6d21f6407e",
+      "bytes": 8605
+    },
+    "work/v13-evidence/rev12-development-20261003/run-workflow-1gib-matrix.proposed.py": {
+      "sha256": "7c8a799284ccb1d3f81d100c217b55e39ceb4aa0efc07be73bee24fcdba2ebec",
+      "bytes": 27205
+    },
+    "work/v13-evidence/rev12-development-20261003/build-20261003T154322Z/build-result.json": {
+      "sha256": "5ea8c15ee184bcd9d0ef98c8c8b3438f9db2323260bf0ecac73e89fca487ca93",
+      "bytes": 178
+    },
+    "work/v13-evidence/rev12-development-20261003/build-20261003T154322Z/source-inputs-before.json": {
+      "sha256": "8b1c17f98180c0a9f9628962dc141cf274ea57a46bef02150948c3ed06ffce5a",
+      "bytes": 28272
+    },
+    "work/v13-evidence/rev12-development-20261003/build-20261003T154322Z/source-inputs-after.json": {
+      "sha256": "8b1c17f98180c0a9f9628962dc141cf274ea57a46bef02150948c3ed06ffce5a",
+      "bytes": 28272
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "createdUtc": "2026-10-03T17:22:29.523808+00:00",
+  "testIds": [
+    "performance.rev12-workflow-1gib-standard-auto",
+    "performance.rev12-workflow-1gib-xchacha-aes-auto",
+    "performance.rev12-workflow-1gib-mixed-auto",
+    "performance.rev12-workflow-1gib-paranoia-auto",
+    "performance.rev12-workflow-1gib-threefish1024-auto",
+    "performance.rev12-workflow-1gib-kalyna512-512-auto",
+    "performance.rev12-workflow-1gib-shacal2-512-auto",
+    "performance.rev12-workflow-1gib-mars448-auto",
+    "performance.rev12-workflow-1gib-aes256-auto",
+    "performance.rev12-workflow-1gib-camellia-auto",
+    "performance.rev12-workflow-1gib-serpent-auto",
+    "performance.rev12-workflow-1gib-xchacha20-poly1305-auto"
+  ],
+  "sourceBytesPerCase": 1073741824,
+  "measuredWorkflowsPerCase": 1,
+  "warmups": 0,
+  "requestedBuild": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z",
+  "scope": "One complete managed Release service/native workflow per suite, production KDF, compression 5, KPAR2 and actual original comparison. No installed AOT GUI approval. Prior Standard attempt is separate evidence, never silently imported."
+}

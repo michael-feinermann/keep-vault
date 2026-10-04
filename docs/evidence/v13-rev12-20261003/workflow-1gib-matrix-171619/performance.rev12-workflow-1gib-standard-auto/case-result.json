@@ -1,0 +1,125 @@
+{
+  "testId": "performance.rev12-workflow-1gib-standard-auto",
+  "attempted": true,
+  "status": "PASS",
+  "errors": [],
+  "startedUtc": "2026-10-03T17:22:29.668500+00:00",
+  "hostBefore": {
+    "os": {
+      "exitCode": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+    },
+    "battery": {
+      "exitCode": 0,
+      "output": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t60%; discharging; 11:40 remaining present: true\n"
+    },
+    "thermal": {
+      "exitCode": 0,
+      "output": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    }
+  },
+  "command": [
+    "/usr/bin/python3",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/run-development.py",
+    "test",
+    "--performance",
+    "--only",
+    "performance.rev12-workflow-1gib-standard-auto",
+    "--parallel",
+    "1"
+  ],
+  "ownedProcessGroupId": 98752,
+  "launcherExit": 0,
+  "reportedEvidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172229Z-d29dc974",
+  "remainingOwnedProcesses": [],
+  "newOwnedFixturesAfterCase": [],
+  "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172229Z-d29dc974",
+  "executionSha256": "5d750047dfa211fbe56701e3ffd3559544af70a71a9da283e2c05bd84a1c4fec",
+  "testResult": {
+    "id": "performance.rev12-workflow-1gib-standard-auto",
+    "name": "explicit public one-GiB production-KDF level-5 complete archive/KPAR2/original-compare workflow: standard/auto",
+    "status": "PASS",
+    "seconds": 1485.267,
+    "peakRssMiB": 1746,
+    "seed": "0x1F32FE66",
+    "failure": null
+  },
+  "testResultsSha256": "2370ff9d390355c3566e8ec2b56d021a23a2d32a88ff23e5de56b1a8a0b5bb7d",
+  "artifact": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-standard-auto-20261003T174715261-5cfd5f9019b549b1a3fa205db67f654c.json",
+    "sha256": "fd0d15f7b7f4a3260ec3a60abbbb40b91bda2b02d21fde145a47ef3ce981679c"
+  },
+  "summary": {
+    "suite": "StandardCascade",
+    "workflowWallSeconds": 1484.0608536,
+    "sourceMiBPerSecondCompleteWorkflow": 0.6899986597692439,
+    "sourceMiBPerSecondArchiveAndEncrypt": 1.4839866682510001,
+    "phaseWallSeconds": {
+      "originalCreationSnapshot": 0.0071889,
+      "archiveAndEncrypt": 690.0331532,
+      "supplementalContainerHash": 0.5215863,
+      "recoveryCreate": 26.450817,
+      "supplementalRecoveryHealthyVerification": 10.8213393,
+      "decryptAndExtractForOriginalComparison": 754.8943947,
+      "originalComparisonAndIndependentHashTopologyCheck": 1.266823,
+      "fixtureCleanup": 0.0528616
+    },
+    "receipt": {
+      "InputFiles": 3,
+      "InputDirectories": 5,
+      "InputBytes": 1073741824,
+      "CompressedPayloadBytesDuringCreation": 1073838386,
+      "ContainerBytes": 1073841425,
+      "RecoveryBytes": 163811328,
+      "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+      "ContainerSha256": "92F6BEE02ED3BFEB14B16F75A08F0279EB4985F0EABC745DC691F7FCE5E915FF",
+      "InitialCpuCeiling": 10,
+      "InitialThrottleReason": "minimum-work-window",
+      "OutputVolumeIdentity": "device:16777232"
+    },
+    "managedProcessCpuSecondsThroughOriginalComparison": 143.569215,
+    "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 1574.2027886,
+    "observedKdfBranchCalls": [
+      {
+        "Phase": "KdfRound1",
+        "Calls": 5
+      },
+      {
+        "Phase": "KdfRound2",
+        "Calls": 0
+      },
+      {
+        "Phase": "Argon2Sha3Round1",
+        "Calls": 5
+      },
+      {
+        "Phase": "Argon2SkeinRound1",
+        "Calls": 5
+      },
+      {
+        "Phase": "Argon2Sha3Round2",
+        "Calls": 0
+      },
+      {
+        "Phase": "Argon2SkeinRound2",
+        "Calls": 0
+      }
+    ]
+  },
+  "hostAfter": {
+    "os": {
+      "exitCode": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+    },
+    "battery": {
+      "exitCode": 0,
+      "output": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t53%; discharging; 6:50 remaining present: true\n"
+    },
+    "thermal": {
+      "exitCode": 0,
+      "output": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    }
+  },
+  "inputBindingVerified": true,
+  "completedUtc": "2026-10-03T17:47:15.563465+00:00"
+}

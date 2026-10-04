@@ -45,42 +45,7 @@ public sealed class PasswordKeyService
 
     public static string NormalizeGeneratedPassword(string generatedPassword)
     {
-        ArgumentNullException.ThrowIfNull(generatedPassword);
-        int count = 0;
-        for (int i = 0; i < generatedPassword.Length; i++)
-        {
-            char c = generatedPassword[i];
-            if (!char.IsWhiteSpace(c))
-            {
-                if (!IsAsciiHexDigit(c))
-                {
-                    throw new ArgumentOutOfRangeException(
-                        nameof(generatedPassword),
-                        $"Das generierte Passwort muss aus {GeneratedPasswordLength} Hexadezimalzeichen bestehen.");
-                }
-                count++;
-            }
-        }
-
-        if (count != GeneratedPasswordLength)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(generatedPassword),
-                $"Das generierte Passwort muss aus {GeneratedPasswordLength} Hexadezimalzeichen bestehen.");
-        }
-
-        return string.Create(GeneratedPasswordLength, generatedPassword, static (span, src) =>
-        {
-            int destIdx = 0;
-            for (int i = 0; i < src.Length; i++)
-            {
-                char c = src[i];
-                if (!char.IsWhiteSpace(c))
-                {
-                    span[destIdx++] = char.ToUpperInvariant(c);
-                }
-            }
-        });
+        return FactorInput.Canonicalize(generatedPassword);
     }
 
     public static void ValidateUserPasswordForCreation(string userPassword, string firstGeneratedPassword, string secondGeneratedPassword)

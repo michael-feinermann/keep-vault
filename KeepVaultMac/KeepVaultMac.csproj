@@ -79,6 +79,7 @@
     <Compile Include="../KalynaArchiver/Services/ArchiveIntegrityService.cs" Link="Services/ArchiveIntegrityService.cs" />
     <Compile Include="../KalynaArchiver/Services/CryptographicEraseService.cs" Link="Services/CryptographicEraseService.cs" />
     <Compile Include="../KalynaArchiver/Services/EntropyMixer.cs" Link="Services/EntropyMixer.cs" />
+    <Compile Include="../KalynaArchiver/Services/ArchiveOperationLifetime.cs" Link="Services/ArchiveOperationLifetime.cs" />
     <Compile Include="../KalynaArchiver/Services/SensitiveMouseRecordStore.cs" Link="Services/SensitiveMouseRecordStore.cs" />
     <Compile Include="../KalynaArchiver/Services/PoolShuffleRandomSource.cs" Link="Services/PoolShuffleRandomSource.cs" />
     <Compile Include="../KalynaArchiver/Services/ConsumedEntropySnapshot.cs" Link="Services/ConsumedEntropySnapshot.cs" />
@@ -92,6 +93,7 @@
     <Compile Include="../KalynaArchiver/Services/MacCpuWorkerQos.cs" Link="Services/MacCpuWorkerQos.cs" />
     <Compile Include="../KalynaArchiver/Services/NativeArgon2id.cs" Link="Services/NativeArgon2id.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordKeyService.cs" Link="Services/PasswordKeyService.cs" />
+    <Compile Include="../KalynaArchiver/Services/FactorInput.cs" Link="Services/FactorInput.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordGuessabilityService.cs" Link="Services/PasswordGuessabilityService.cs" />
     <Compile Include="../KalynaArchiver/Services/PasswordModelData.cs" Link="Services/PasswordModelData.cs" />
     <Compile Include="../KalynaArchiver/Services/PrivateSnapshotRandomAccess.cs" Link="Services/PrivateSnapshotRandomAccess.cs" />
@@ -107,6 +109,7 @@
     <Compile Include="../KalynaArchiver/Services/OperationMemoryBudget.cs" Link="Services/OperationMemoryBudget.cs" />
     <Compile Include="../KalynaArchiver/Services/OperationExecutionBudget.cs" Link="Services/OperationExecutionBudget.cs" />
     <Compile Include="../KalynaArchiver/Services/OperationProgressTracker.cs" Link="Services/OperationProgressTracker.cs" />
+    <Compile Include="../KalynaArchiver/Services/OperationPhaseProfile.cs" Link="Services/OperationPhaseProfile.cs" />
     <Compile Include="../KalynaArchiver/Services/ZpaqControlSession.cs" Link="Services/ZpaqControlSession.cs" />
     <Compile Include="../KalynaArchiver/Services/ZpaqBoundSources.cs" Link="Services/ZpaqBoundSources.cs" />
     <Compile Include="../KalynaArchiver/Services/AuthenticatedRangeIndex.cs" Link="Services/AuthenticatedRangeIndex.cs" />

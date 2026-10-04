@@ -977,6 +977,7 @@ public enum EntropyPurpose
 
 internal sealed class GeneratedArchiveEntropy : IDisposable
 {
+    internal static Action? TestHookAfterConsumption { get; set; }
     private readonly object _gate = new();
     private LockedSensitiveBuffer? _salt;
     private LockedSensitiveBuffer? _fullNonce;
@@ -984,6 +985,8 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
     private LockedSensitiveBuffer? _secondFullNonce;
     private LockedSensitiveBuffer? _firstFactor;
     private LockedSensitiveBuffer? _secondFactor;
+    private bool _consumptionStarted;
+    private bool _disposed;
 
     /// <remarks>
     /// Both rounds are prepared here, from one consumption of the pools, because
@@ -1054,7 +1057,8 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
     internal TwoRoundEncryptionParameters ConsumeTwoRoundEncryptionParameters(
         EncryptionSuite suite,
         string firstPassword,
-        string secondPassword)
+        string secondPassword,
+        ArchiveOperationLifetime? lifetime = null)
     {
         ArgumentNullException.ThrowIfNull(firstPassword);
         ArgumentNullException.ThrowIfNull(secondPassword);
@@ -1070,6 +1074,8 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
         LockedSensitiveBuffer? secondFullNonce;
         lock (_gate)
         {
+            if (_consumptionStarted || _disposed)
+                throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed or disposed.");
             if (_firstFactor is null || _secondFactor is null)
             {
                 throw new ObjectDisposedException(nameof(GeneratedArchiveEntropy));
@@ -1081,6 +1087,8 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
             fullNonce = _fullNonce ?? throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed.");
             secondSalt = _secondSalt ?? throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed.");
             secondFullNonce = _secondFullNonce ?? throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed.");
+            _consumptionStarted = true;
+            lifetime?.BeginConsumption();
             _salt = null;
             _fullNonce = null;
             _secondSalt = null;
@@ -1092,6 +1100,7 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
         Exception? operationFailure = null;
         try
         {
+            TestHookAfterConsumption?.Invoke();
             firstNonce = TakeNonce(fullNonce, parameters.ArchiveNonceBytes);
             fullNonce = null;
             secondNonce = TakeNonce(secondFullNonce, parameters.ArchiveNonceBytes);
@@ -1169,16 +1178,33 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
         {
             lock (_gate)
             {
-                return _salt is not null && _fullNonce is not null
-                    && _secondSalt is not null && _secondFullNonce is not null;
+                return !_consumptionStarted && !_disposed && _salt is not null && _fullNonce is not null;
             }
+        }
+    }
+
+    internal bool ConsumptionStarted { get { lock (_gate) return _consumptionStarted; } }
+
+    /// <summary>Checks ownership without transferring or regenerating any entropy.</summary>
+    internal void ValidateForEncryption(EncryptionSuite suite, string firstFactor, string secondFactor)
+    {
+        EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.Get(suite);
+        lock (_gate)
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(GeneratedArchiveEntropy));
+            if (_consumptionStarted || _salt is null || _fullNonce is null)
+                throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed.");
+            if (parameters.UsesTwoKdfRounds && (_secondSalt is null || _secondFullNonce is null))
+                throw new InvalidOperationException("This suite requires a newly prepared dual-round entropy set.");
+            ValidateSuppliedFactorsLocked(firstFactor, secondFactor);
         }
     }
 
     internal (LockedSensitiveBuffer Salt, LockedSensitiveBuffer Nonce) ConsumeEncryptionParameters(
         EncryptionSuite suite,
         string firstPassword,
-        string secondPassword)
+        string secondPassword,
+        ArchiveOperationLifetime? lifetime = null)
     {
         if (!EncryptionSuiteCatalog.IsKnown(suite))
         {
@@ -1192,12 +1218,19 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
         LockedSensitiveBuffer fullNonce;
         lock (_gate)
         {
+            if (_consumptionStarted || _disposed)
+                throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed or disposed.");
             if (_firstFactor is null || _secondFactor is null)
             {
                 throw new ObjectDisposedException(nameof(GeneratedArchiveEntropy));
             }
 
             ValidateSuppliedFactorsLocked(firstPassword, secondPassword);
+
+            salt = _salt ?? throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed.");
+            fullNonce = _fullNonce ?? throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed.");
+            _consumptionStarted = true;
+            lifetime?.BeginConsumption();
 
             // A one-round suite never asks for the prepared second round, so it
             // is wiped here rather than left sitting in locked memory. Keep the
@@ -1208,22 +1241,16 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
             _secondSalt = null;
             _secondFullNonce = null;
 
-            salt = _salt ?? throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed.");
-            fullNonce = _fullNonce ?? throw new InvalidOperationException("Prepared salt and nonce parameters were already consumed.");
             _salt = null;
             _fullNonce = null;
         }
 
         int nonceBytes = EncryptionSuiteCatalog.Get(suite).ArchiveNonceBytes;
-        if (nonceBytes == fullNonce.Bytes.Length)
-        {
-            return (salt, fullNonce);
-        }
-
         LockedSensitiveBuffer? selectedNonce = null;
         Exception? operationFailure = null;
         try
         {
+            TestHookAfterConsumption?.Invoke();
             selectedNonce = TakeNonce(fullNonce, nonceBytes);
             LockedSensitiveBuffer completedNonce = selectedNonce;
             selectedNonce = null;
@@ -1280,6 +1307,7 @@ internal sealed class GeneratedArchiveEntropy : IDisposable
     {
         lock (_gate)
         {
+            _disposed = true;
             SecureMemory.ZeroAndDisposeAll(
                 _secondFullNonce,
                 _secondSalt,

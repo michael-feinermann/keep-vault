@@ -460,7 +460,7 @@ core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
 marketing_version='5.0.3'
-build_version='15'
+build_version='16'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
@@ -2132,6 +2132,8 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     resources.operation-storage-plan
     resources.rev11-auto-planner
     resources.rev11-chunk-window
+    resources.rev12-adaptive-window
+    resources.rev12-kdf-minimum-admission
     io.rev11-input-fused
     io.rev11-index-ram-small
     io.rev11-index-spill
@@ -2141,6 +2143,36 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     gui.rev11-preference-restart
     gui.rev11-progress
     gui.rev11-observer-isolation
+    gui.rev12-console-text
+    gui.rev12-console-horizontal
+    factor.rev12-whitespace
+    factor.rev12-boundaries
+    factor.rev12-invalid
+    factor.rev12-password-pin
+    factor.rev12-allpaths
+    gui.factor-rev12-paste
+    gui.factor-rev12-atomic
+    gui.factor-rev12-edit-undo
+    gui.factor-rev12-clear-undo
+    gui.factor-rev12-clear-pending-paste
+    gui.factor-rev12-editor-drop
+    gui.factor-rev12-layout-spaces
+    gui.rev12-preflight-state
+    gui.rev12-extract-preflight
+    gui.rev12-kdf-minimum-preflight
+    gui.rev12-verification-cleanup
+    gui.rev12-dispose-failure
+    gui.rev12-dispose-storage-ownership
+    gui.rev12-storage-transitions
+    gui.rev12-file-activation-ownership
+    gui.rev12-drop-storage-ownership
+    gui.rev12-storage-path-callbacks
+    gui.rev12-storage-path-events
+    container.rev12-kdf-minimum-preflight
+    entropy.rev12-consume-boundary
+    container.rev12-preflight-race
+    diagnostics.rev12-phase-bounds
+    diagnostics.rev12-phase-equivalence
     v13-golden-readonly
     v13-progress-native-ipc
     v13-zpaq-bound-source
@@ -2181,6 +2213,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     zpaq.fail-fast-error-preservation
     zpaq.sync-consumer-fail-fast
     performance.cipher-suites
+    performance.rev12-stage-profile
     performance.entropy-rev9-phases
     performance.mac-root-phases
     performance.paranoia-256mib-e2e
@@ -2234,11 +2267,27 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     recovery.streaming-metadata-large-logical
     resources.shared-memory-budget
     resources.shared-runtime-budget
+    resources.operation-storage-plan
+    zpaq.small-volume-capacity
     recovery.record-table-layout
     recovery.record-table-tamper
     recovery.record-table-cleanup
     recovery.record-table-budget
   )
+  rev12_workflow_test_ids=()
+  for workflow_suite in standard paranoia camellia serpent; do
+    for workflow_size in 4kib 256mib; do
+      for workflow_mode in auto manual1 manual4; do
+        rev12_workflow_test_ids+=("performance.rev12-workflow-${workflow_size}-${workflow_suite}-${workflow_mode}")
+      done
+    done
+  done
+  # Explicit additional user scope: one productive one-GiB workflow per suite.
+  # The original 24 small/256-MiB cases above retain their own identifiers.
+  for workflow_suite in standard xchacha-aes mixed paranoia threefish1024 kalyna512-512 shacal2-512 mars448 aes256 camellia serpent xchacha20-poly1305; do
+    rev12_workflow_test_ids+=("performance.rev12-workflow-1gib-${workflow_suite}-auto")
+  done
+  required_test_ids+=(${rev12_workflow_test_ids[@]})
   for required_test_id in ${required_test_ids[@]}; do
     if ! print -r -- ${test_inventory} | grep -Fq -- ${required_test_id}; then
       print -u2 "RELEASE GATE: required v13 test is absent: ${required_test_id}"
@@ -2431,6 +2480,36 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         --only performance.cipher-suites \
         --parallel 1
 
+    print 'RELEASE GATE: measuring REV12 individual stages, cascades and actual GCD team grants...'
+    KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+      run_release_tests run \
+        --project ${test_project} \
+        --artifacts-path ${private_tests_artifacts} \
+        -c Release \
+        --no-build \
+        --no-restore \
+        --disable-build-servers \
+        -- \
+        --performance \
+        --only performance.rev12-stage-profile \
+        --parallel 1
+
+    for workflow_test_id in ${rev12_workflow_test_ids[@]}; do
+      print "RELEASE GATE: measuring the complete REV12 production workflow ${workflow_test_id}..."
+      KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
+        run_release_tests run \
+          --project ${test_project} \
+          --artifacts-path ${private_tests_artifacts} \
+          -c Release \
+          --no-build \
+          --no-restore \
+          --disable-build-servers \
+          -- \
+          --performance \
+          --only ${workflow_test_id} \
+          --parallel 1
+    done
+
     print 'RELEASE GATE: measuring the REV9 entropy phases on one test worker...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
       run_release_tests run \
@@ -2475,7 +2554,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
 
     # This must remain the last functional execution. The installed candidate,
     # notarized bundle, ZIP and hybrid manifests already have their final bytes.
-    print 'RELEASE GATE: running the final complex-tree Paranoia end-to-end gate...'
+    print 'RELEASE GATE: running the final 512-MiB structural Paranoia repair end-to-end gate...'
     KEEPVAULT_TEST_RELEASE_ROOT=${dist_stage} \
       run_release_tests run \
         --project ${test_project} \
@@ -2485,8 +2564,9 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
         --no-restore \
         --disable-build-servers \
         -- \
-        --performance \
-        --only performance.paranoia-complex-tree-e2e \
+        --full \
+        --no-smoke \
+        --only release.v13-paranoia-structure512 \
         --parallel 1
   fi
 )

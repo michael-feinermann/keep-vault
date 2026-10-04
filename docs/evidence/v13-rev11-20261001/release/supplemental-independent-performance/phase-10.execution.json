@@ -1,0 +1,23 @@
+{
+  "phase": 10,
+  "testId": "performance.mac-root-phases",
+  "startedUtc": "2026-10-01T10:27:47.568017+00:00",
+  "completedUtc": "2026-10-01T10:27:50.039565+00:00",
+  "exitCode": 0,
+  "command": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/sdk/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+    "--performance",
+    "--only",
+    "performance.mac-root-phases",
+    "--parallel",
+    "1"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/KeepVaultMac",
+  "files": {
+    "phase-10.test-results.json": "c0eecd81ede52bc296ae000b81cc63d5ad0b9aa4b20796689a8cfe147b569fd5",
+    "phase-10.test-timings.json": "bfedc962142c8289223312492d579f6fad82fcebfc686f45b07d4d4bd13a3066"
+  },
+  "logSha256": "a8b531930b3a9f2de828815aa3d7ec059635784d72dfb0c9eed5717a1f013632",
+  "artifacts": []
+}

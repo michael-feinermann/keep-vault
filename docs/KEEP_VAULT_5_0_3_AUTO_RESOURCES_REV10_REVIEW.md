@@ -1,8 +1,12 @@
-# Keep Vault 5.0.3: REV11 resource implementation review
+# Keep Vault 5.0.3: REV12 resource implementation review
 
-This report covers the shared resource policy and its deterministic tests. The
-filename retains the REV10 resource-gate name requested by REV11. It does not
-claim completion of the original-reader, native IPC, GUI or signed-release gates.
+Current source contract: 3 October 2026, REV12. This report covers the shared
+resource policy and distinguishes its current implementation from the dated
+REV11 development evidence below. The filename retains the REV10 artifact name
+required by REV12 section 11. It does not claim completion of the current full
+regression, production workflows, native/AOT build, installed GUI or signed
+release gates. The [REV12 acceptance matrix](KEEP_VAULT_5_0_3_REV12_GATE_STATUS.md)
+records those separate gates.
 
 ## Contracts
 
@@ -61,13 +65,39 @@ allocation/lock succeeded; those failures still fail closed.
 
 ## Parallel work
 
-The pure planner starts with one slot and one I/O request. A known stream larger
-than one 16-MiB product chunk can begin with two slots. At joined safe boundaries,
-further growth requires independent ready work, three healthy samples and a
-measured throughput improvement; pressure returns the proposal to one slot.
-Manual values are ceilings, not commands to create idle workers. CPU ceilings
-remain topology-dependent with no global 64/1024-core cut-off, and manual 1 is
-valid. Native producer/consumer permit coordination is a separate required gate.
+Container Auto executes its first actual batch with one slot under fresh
+admission. That cold batch supplies no accepted throughput baseline. After a
+complete joined batch, a seekable source with more than one 16-MiB chunk of
+concretely known remaining input may request the initial two-slot window. The
+request still passes fresh CPU, RAM, queue, pressure and remaining-work limits.
+An unknown nonseekable pipe does not imply two ready chunks: without a verified
+read-ahead interface it retains one outer slot and the unchanged native block
+parallelism within the actual chunk.
+
+The shared bounded `AdaptiveChunkWindow` retains the accepted window and its
+comparison rate during an adjacent larger probe. Three complete healthy batches
+may request a one-slot increase, subject to the same fresh limits. A probe rate
+at least 10 percent below the accepted rate causes immediate rollback. Otherwise
+exactly three complete probe batches must show at least 5 percent median benefit
+to accept the larger window; insufficient benefit returns to the accepted window.
+A rejected neighbor is not retried because of ordinary noise while the accepted
+resource window remains unchanged. A real admission change can invalidate that
+earlier rejection. Partial tail batches supply no scaling evidence; nonpositive
+and nonfinite rates cannot authorize growth.
+
+Both Auto and fixed diagnostic requests run the same fresh OS observation and
+pure planning at initial and fully joined boundaries. A fixed test value is only
+a requested window within current admission, never an exemption. Manual values
+are ceilings, not commands to create idle workers. CPU ceilings remain
+topology-dependent with no global 64/1024-core cut-off, and manual 1 is valid.
+Actual locked-memory and CPU leases remain authoritative. Native
+producer/consumer permit coordination is a separate required gate.
+
+The [adaptive review](KEEP_VAULT_5_0_3_RESOURCE_ADAPTATION_REV12_REVIEW.md) binds the
+new regression and the separate schema-3 focused pipeline comparison. The old
+schema-2 failure remains preserved. Focused pipeline rates use the explicitly
+isolated test KDF and do not establish production end-to-end or installed AOT
+performance. New complete release results remain separate.
 
 ## Disk accounting
 
@@ -85,7 +115,7 @@ headroom. Zero pending work requires zero bytes. This replaces the unconditional
 short writes, ENOSPC and flush/rename failures must still be handled by bound
 transactions. Unknown extraction sizes are not fabricated from authorizations.
 
-## Targeted evidence
+## Historical REV11 targeted evidence
 
 On 2026-10-01 the following macOS test groups passed in the development harness:
 
@@ -149,7 +179,7 @@ header-only scanning, 32 allocation failure sites for method 2, 160 for method 5
 and 18 for decompression all pass with released owners and buffers. Evidence:
 `work/v13-evidence/rev11-resources/native-model-budget.log`.
 
-## Final resource checks and source comparison
+## Historical REV11 final resource checks and source comparison
 
 The final managed resource run uses the separately provisioned, verified SDK
 and locked package restore through

@@ -1,0 +1,17 @@
+{
+  "scope": "Managed Release development pipeline fixture with exact trusted build-15 natives, 256 MiB public payload, isolated test KDF. Current relevant service/performance sources and every binary input were unchanged. No installed AOT or production-KDF speed approval.",
+  "startedUtc": "2026-10-03T11:37:51.050014+00:00",
+  "completedUtc": "2026-10-03T11:40:21.604644+00:00",
+  "exitCode": 0,
+  "sourceInputsSha256": "3dae078f34d0b6f758d8ae830c4aec496328ec3f6d8aa1eeadf9b70591850555",
+  "binaryInputsSha256": "6002ebb2bcaa2f93b8955955dc96368fead669dafc019c28595bb3455145c8b4",
+  "logSha256": "a5580705d1f540ec9a0ea00a70f45ebf60d7220ae4cea54b1c465e24fb823352",
+  "files": {
+    "test-results.json": "5cbabb08db685611254a17e176564046e64362934dba1645504894ef957019bd",
+    "test-timings.json": "0b9d38db35139bfe977698845c4a45e5828daf021b971d48c756e9cea44f4a7d"
+  },
+  "derivedPublicReceipt": true,
+  "originalExecutionSha256": "848db00ef6f0745d1289b96fd5901dde249f466c5ae73e1ea1fedb118dfed3fd",
+  "sourceBuildIdentity": "build-20261003T113438Z",
+  "runIdentity": "frozen-performance-20261003T113751Z-2158a5cf"
+}

@@ -1,0 +1,7 @@
+# Preliminary Standard1GiB, frozen154322
+
+Actual complete one-run workflow PASS: exactly 1,073,741,824 synthetic source bytes, level5 compression, production KDF, authenticated KPAR2 creation/healthy verification, decrypt/extract, production original comparison plus full independent structure/hash match and cleanup. Workflow1485.394170s; creation696.279903s (1.470673MiB/s); complete0.689379MiB/s. Testgroup1486.618s. Three files and five directories include empty/hidden/nested/Unicode paths. No original deletion or damaged recovery test in this performance case.
+
+The source/native guards passed. Managed inputs were inventoried during the run; this is explicitly not a retrospectively created pre/post binary proof. After the child completed, the held parent was stopped before case2 to close new GUI Drop/Path-callback findings and strengthen future matrix provenance. Remaining11 original-plan cases were not started. This preliminary extra result is retained separately from the upcoming unified12-case fixed-build comparison. Earlier negative attempts are unchanged.
+
+Each suite benchmark is one workflow with no warmup and no median claim. Inner phases can overlap, outer eight intervals partition workflow walltime. Fixture setup1.069402s and preparation0.084770s are separately measured. CPU counters do not equal walltime; sampled ZPAQ child counters can omit their final unsampled interval. This is managed Release with unchanged signed build15 natives, not final installed AOT GUI/release approval.

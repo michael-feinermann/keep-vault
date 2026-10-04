@@ -11,6 +11,27 @@ internal sealed partial class MacSecurityScopedResourceLease : IDisposable
     private static readonly nint StopAccessSelector = SelRegisterName("stopAccessingSecurityScopedResource");
 
     private nint _url;
+    [ThreadStatic] private static DisposeObservationScope? _disposeObservationForTests;
+
+    // Passive scalar observation exists only while a test scope is active.
+    // It does not replace native acquisition/release or accept callbacks/data.
+    internal static DisposeObservationScope ObserveDisposeInvocationsForTests() => new();
+
+    internal sealed class DisposeObservationScope : IDisposable
+    {
+        private readonly DisposeObservationScope? _previous;
+        internal long Count { get; private set; }
+        internal DisposeObservationScope()
+        {
+            _previous = _disposeObservationForTests;
+            _disposeObservationForTests = this;
+        }
+        internal void Record() { unchecked { ++Count; } }
+        public void Dispose()
+        {
+            if (ReferenceEquals(_disposeObservationForTests, this)) _disposeObservationForTests = _previous;
+        }
+    }
 
     private MacSecurityScopedResourceLease(nint url)
     {
@@ -96,6 +117,7 @@ internal sealed partial class MacSecurityScopedResourceLease : IDisposable
 
     public void Dispose()
     {
+        _disposeObservationForTests?.Record();
         GC.SuppressFinalize(this);
         nint url = Interlocked.Exchange(ref _url, 0);
 
@@ -142,8 +164,12 @@ internal sealed partial class MacSecurityScopedResourceLease : IDisposable
 
 internal sealed class MacStorageAccessLease : IDisposable
 {
+    private readonly object _gate = new();
     private readonly MacSecurityScopedResourceLease _nativeLease;
     private IStorageItem? _item;
+    private bool _disposed;
+    private bool _nativeDisposed;
+    private bool _disposing;
 
     private MacStorageAccessLease(IStorageItem item, MacSecurityScopedResourceLease nativeLease)
     {
@@ -151,8 +177,22 @@ internal sealed class MacStorageAccessLease : IDisposable
         _nativeLease = nativeLease;
     }
 
-    internal IStorageItem Item => _item
-        ?? throw new ObjectDisposedException(nameof(MacStorageAccessLease));
+    internal IStorageItem Item
+    {
+        get
+        {
+            lock (_gate)
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                return _item!;
+            }
+        }
+    }
+
+    internal bool OwnsItem(IStorageItem item)
+    {
+        lock (_gate) return ReferenceEquals(_item, item);
+    }
 
     internal static MacStorageAccessLease Acquire(IStorageItem item)
     {
@@ -162,13 +202,31 @@ internal sealed class MacStorageAccessLease : IDisposable
 
     public void Dispose()
     {
-        IStorageItem? item = Interlocked.Exchange(ref _item, null);
-        if (item is null)
+        lock (_gate)
         {
-            return;
+            _disposed = true;
+            if (_disposing) return;
+            _disposing = true;
+            try
+            {
+                List<Exception>? failures = null;
+                if (!_nativeDisposed)
+                {
+                    try { _nativeLease.Dispose(); _nativeDisposed = true; }
+                    catch (Exception failure) { (failures ??= []).Add(failure); }
+                }
+                if (_item is { } item)
+                {
+                    try { item.Dispose(); _item = null; }
+                    catch (Exception failure) { (failures ??= []).Add(failure); }
+                }
+                if (failures is not null)
+                {
+                    // Keep only unsuccessful cleanup owners for an explicit retry.
+                    throw new AggregateException("Storage access cleanup failed.", failures);
+                }
+            }
+            finally { _disposing = false; }
         }
-
-        _nativeLease.Dispose();
-        item.Dispose();
     }
 }

@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "observed_at": "2026-10-01T12:15:55.904388+02:00",
+  "app": "/Applications/Keep Vault.app",
+  "product": "5.0.3",
+  "build": "15",
+  "method": "Actual installed application, native UI via CUA accessibility and screenshot observations, synthetic data only. No handler injection.",
+  "observations": [
+    {
+      "check": "Startup trust",
+      "status": "PASS",
+      "detail": "Integrity check passed shown in actual installed app."
+    },
+    {
+      "check": "English PIN help",
+      "status": "PASS",
+      "text": "6 to 16 digits. The PIN is a credential of its own and is required together with the password and both factors."
+    },
+    {
+      "check": "DE/EN Resources",
+      "status": "PASS",
+      "detail": "Auto modes and distinction between ceilings and reservations visible in both languages; extraction allowance256MiB."
+    },
+    {
+      "check": "Advanced defaults",
+      "status": "PASS",
+      "detail": "CPU/RAM/I/O/buffers empty Automatic, metadata/recovery/container operation-specific; no time limit fields."
+    },
+    {
+      "check": "12 suites",
+      "status": "PASS",
+      "detail": "Native displayed popup lists Standard, Fast, Mixed, Paranoia, Threefish, Kalyna, SHACAL2, MARS, AES, Camellia, Serpent, XChaCha20-Poly1305."
+    },
+    {
+      "check": "Small Auto plain create and extract",
+      "status": "PASS",
+      "evidence": "small-auto-roundtrip-result.json"
+    },
+    {
+      "check": "Manual CPU1 extraction and lazy working directory",
+      "status": "PASS",
+      "evidence": "small-cpu1-roundtrip-result.json"
+    },
+    {
+      "check": "Keyboard navigation",
+      "status": "PASS_PARTIAL",
+      "detail": "Tab moved through resource fields to Apply, typed CPU1 and optional missing workspace, Return applied; native select Home/Return changed suite. Full screenreader/minimum-size pass not inferred."
+    },
+    {
+      "check": "Encrypted real GUI roundtrips",
+      "status": "PENDING",
+      "detail": "Public test password/PIN accepted; all11 pools require authentic normal pointer samples before Generate can proceed."
+    }
+  ],
+  "limitations": [
+    "These observations do not claim all GUI release gates passed.",
+    "No new camera scan or physical print.",
+    "No current performance test result inferred."
+  ]
+}

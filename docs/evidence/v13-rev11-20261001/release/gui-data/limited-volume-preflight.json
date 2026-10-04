@@ -1,0 +1,11 @@
+{
+  "observedUtc": "2026-10-01T11:04:29.545520+00:00",
+  "volume": "/Volumes/KEEPVAULT GUI CAPACITY TEST 256MiB",
+  "filesystem": "apfs",
+  "ownersEnabled": true,
+  "containerBytes": 268435456,
+  "availableBytes": 266883072,
+  "priorGuiRejection": "Keep Vault operation files require a writable local APFS/HFS+ volume with ownership enabled.",
+  "correction": "Detached only disposable test image and reattached same image with hdiutil -owners on. No administrator authentication or application protection changes.",
+  "outputExistsBeforeRetry": false
+}
