@@ -1,0 +1,7 @@
+# Hover-Invariantendiagnose nach dem zweiten echten Lauf
+
+Root meldet: Build080723 PASS; gui.rev12-drop-storage-ownership im ursprünglichen run080907-3f21f568 FAIL an der Sammelassertion, gui.rev12-storage-transitions im getrennten run081006-5e8f2beb PASS. Die Originale bleiben unverändert. Der Reviewer hat keine Ausführung vorgenommen.
+
+Alle Hovergates sind jetzt einzeln als Bedingungen erhalten. Bei Fehler nennt die Assertion ausschließlich öffentliche Labelnamen für Dialogzählung, Native-Dispose, Fehlerlog, Borrowed-/Retained-Dispose, Textfeld, Ownerfeld, Tab, Entropiereferenz, Paarbereitschaft, Schlüsselzettelbindung und Pending-/Inputowner. Weder Credential-, Faktor-, Pfad- noch Fingerprintwerte werden ausgegeben. Test-SHA: `273784ca94ce905d5f9a8949429c922f7667fcae724e97baebcb48b247b69c8e`; Owned diffcheck Exit 0. Beide Produktdateien sind unverändert.
+
+Ein konkreter Sourcekandidat ist GeneratedFactor_TextChanged → RefreshKeySheetBinding (MainWindow.axaml.cs:1832–1857): ein nicht zum aktuellen Entwurf passender Fingerprint wird korrekt zurückgesetzt. Die Fixture setzt bislang einen Dummystring nach den Textzuweisungen. Ein noch ausstehendes TextChanged könnte diesen bei Dispatcher.RunJobs zurücksetzen. Dieser Kandidat ist keine behauptete Laufzeitursache; dafür muss der neue gebundene Diagnoselauf zunächst die falschen Flags liefern. Queue-Drain oder Fingerprintfixture wurden in diesem Diagnosedelta noch nicht verändert.

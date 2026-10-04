@@ -15,6 +15,7 @@ public sealed partial class MainWindow
     private MacStorageAccessLease? _eraseArchiveParentAccess;
     private readonly List<MacStorageAccessLease> _pendingStorageDisposals = [];
     private readonly List<IStorageItem> _pendingStorageItemDisposals = [];
+    private readonly HashSet<IStorageItem> _acquiringStorageItems = new(ReferenceEqualityComparer.Instance);
     private readonly HashSet<IStorageItem> _disposingStorageItems = new(ReferenceEqualityComparer.Instance);
     private readonly HashSet<MacStorageAccessLease> _disposingStorageLeases = new(ReferenceEqualityComparer.Instance);
 
@@ -66,11 +67,12 @@ public sealed partial class MainWindow
 
     internal bool HasActivationStorageOwnership => RetainedStorageAccess().Any()
         || _pendingStorageDisposals.Count != 0 || _pendingStorageItemDisposals.Count != 0
-        || _disposingStorageItems.Count != 0 || _disposingStorageLeases.Count != 0;
+        || _acquiringStorageItems.Count != 0 || _disposingStorageItems.Count != 0 || _disposingStorageLeases.Count != 0;
 
     internal bool OwnsActivationStorageItem(IStorageItem item) => IsStorageAccessRetained(item)
         || _pendingStorageDisposals.Any(owner => owner.OwnsItem(item))
-        || _pendingStorageItemDisposals.Any(owner => ReferenceEquals(owner, item)) || _disposingStorageItems.Contains(item)
+        || _pendingStorageItemDisposals.Any(owner => ReferenceEquals(owner, item)) || _acquiringStorageItems.Contains(item)
+        || _disposingStorageItems.Contains(item)
         || _disposingStorageLeases.Any(owner => owner.OwnsItem(item));
 
     internal void DisposeUnacceptedActivationItem(IStorageItem item)
@@ -185,6 +187,8 @@ public sealed partial class MainWindow
     private bool TryAcquireStorageAccess(IStorageItem item, out MacStorageAccessLease lease)
     {
         lease = null!;
+        if (_acquiringStorageItems.Contains(item))
+            throw new InvalidOperationException("Storage item acquisition is already in progress.");
         if (_disposingStorageItems.Contains(item) || _disposingStorageLeases.Any(owner => owner.OwnsItem(item))
             || _pendingStorageDisposals.Any(owner => owner.OwnsItem(item))
             || _pendingStorageItemDisposals.Any(owner => ReferenceEquals(owner, item)))
@@ -207,7 +211,11 @@ public sealed partial class MainWindow
                 lease = existing;
                 return true;
             }
-            acquired = MacStorageAccessLease.Acquire(item);
+            // Native acquisition calls the provider Path getter. A reentrant
+            // handoff must not create a second lease for this same raw item.
+            _acquiringStorageItems.Add(item);
+            try { acquired = MacStorageAccessLease.Acquire(item); }
+            finally { _acquiringStorageItems.Remove(item); }
         }
         catch (Exception exception)
         {
@@ -637,7 +645,7 @@ public sealed partial class MainWindow
 
     private void DisposeOwnedStorageItem(IStorageItem item)
     {
-        if (IsStorageAccessRetained(item) || _pendingStorageDisposals.Any(owner => owner.OwnsItem(item))
+        if (_acquiringStorageItems.Contains(item) || IsStorageAccessRetained(item) || _pendingStorageDisposals.Any(owner => owner.OwnsItem(item))
             || _disposingStorageLeases.Any(owner => owner.OwnsItem(item))) return;
         if (!_disposingStorageItems.Add(item)) return;
         try

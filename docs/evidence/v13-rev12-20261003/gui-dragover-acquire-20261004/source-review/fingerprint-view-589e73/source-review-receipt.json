@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "capturedUtc": "2026-10-04T08:15:52.099641+00:00",
+  "reviewStatus": "SOURCE_REVIEWED",
+  "runtimeStatus": "FRESH_TESTS_NOT_RUN_BY_REVIEWER",
+  "files": [
+    {
+      "path": "KeepVaultMac/Gui/MainWindow.PathsAndDrop.cs",
+      "sha256": "22457e8b45d4edd1bf9512cce54ebb3bf57e2e857043e9ee8684e785474a459e"
+    },
+    {
+      "path": "KeepVaultMac/Gui/MainWindow.StorageAccess.cs",
+      "sha256": "62517b3d5072db57d19591102692a3502ea8b92417227b710f05436d996cf655"
+    },
+    {
+      "path": "KeepVaultMac.Tests/WindowDisposeRev12Tests.cs",
+      "sha256": "589e730b43a13da8c7ff8c4fbae7922d820f8b1ee584014e8efb62583d73f36e"
+    }
+  ],
+  "fixDiffSha256": "75abc32f1e8f09bd556a8270155c1496fca477985339622d0da3f0c295c5d096",
+  "diffCheckExitCode": 0,
+  "historicalDiagnostics": {
+    "rootReportedBuild": "081246",
+    "rootReportedRun": "081321-5c3bc990",
+    "testId": "gui.rev12-drop-storage-ownership",
+    "status": "FAIL",
+    "exactFalseInvariant": "key-sheet-binding",
+    "allOtherStrictInvariantLabelsPassed": true
+  },
+  "correctionScope": "Test fixture only: real target/suite/factor fingerprint and completed TextChanged setup before establishing prepared state; unchanged strict before/after binding and every other gate.",
+  "reviewerExecutedBuildOrTest": false,
+  "nativeScope": "No installed/AOT GUI or native security-scoped YES-grant proof."
+}

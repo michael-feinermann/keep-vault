@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "capturedUtc": "2026-10-04T08:08:33.985970+00:00",
+  "reviewStatus": "SOURCE_REVIEW_PASS",
+  "runtimeStatus": "FRESH_REBUILD_IN_PROGRESS_REPORTED_BY_ROOT",
+  "reviewerExecutedBuildOrTest": false,
+  "files": [
+    {
+      "path": "KeepVaultMac/Gui/MainWindow.PathsAndDrop.cs",
+      "sha256": "22457e8b45d4edd1bf9512cce54ebb3bf57e2e857043e9ee8684e785474a459e"
+    },
+    {
+      "path": "KeepVaultMac/Gui/MainWindow.StorageAccess.cs",
+      "sha256": "62517b3d5072db57d19591102692a3502ea8b92417227b710f05436d996cf655"
+    },
+    {
+      "path": "KeepVaultMac.Tests/WindowDisposeRev12Tests.cs",
+      "sha256": "210829407ea2e9c5b90004a220e3c1734e74f911254b6d53da42f6950689ccc3"
+    }
+  ],
+  "historicalSourceReceipt": "../source-review-receipt.json",
+  "historicalRuntimeFailure": {
+    "build": "080346",
+    "run": "080436-45dae70f",
+    "testId": "gui.rev12-drop-storage-ownership",
+    "result": "FAIL",
+    "reason": "WaitForIntegrity on a newly constructed window before Show/Open event"
+  },
+  "historicalSeparateRuntimePassReportedByRoot": {
+    "build": "080346",
+    "run": "080555-a7bef7d0",
+    "testId": "gui.rev12-storage-transitions",
+    "result": "PASS",
+    "exitCode": 0
+  },
+  "correction": "Only own fixture Show before unchanged WaitForIntegrity, Close then Dispose after assertions; product files unchanged.",
+  "fixDiffSha256": "27697b542fd83ba37d13a3c2ad842576e996b38e31097e1313de367726053b3e",
+  "diffCheckReportedExitCode": 0,
+  "nativeLimitation": "PlainURL Dispose invocation only; no security-scoped YES grant or installed/AOT GUI proof."
+}

@@ -1,6 +1,14 @@
 # Keep Vault 5.0.3: macOS-Testnachweis
 
-## Aktueller REV12-Stand, 4. Oktober 2026, Build `070335`
+## Gezielter GUI-Abschluss, 4. Oktober 2026, Build `082228`
+
+Der frische fokussierte Managed Build082228 ist quellenstabil PASS, Exit 0. Beide gezielt erweiterten GUI-Gruppen sind tatsächlich frisch PASS: gui.rev12-drop-storage-ownership (5,023 s, 372 MiB Spitzen-RSS); gui.rev12-storage-transitions (0,747 s, 137 MiB Spitzen-RSS). Das [vollständige öffentliche Paket](evidence/v13-rev12-20261003/gui-dragover-acquire-20261004/README.md) bewahrt sechs Buildmetadaten mit Logs und alle neun Originalruns: fünf historische Hover-/Fixture-FAILs, zwei frühere Storage-PASSs und zwei finale PASSs. Alle 97 Originalkopien sind bytegleich geprüft; das vollständige SHA-256-Manifest bindet 100 Nutzdateien. Finale vollständige Sourcekarte: `57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f`, Basis-HEAD `6bfd2e4d31c3493987083379e898a0b84338a102` mit drei außerhalb dieses Basiscommits gebundenen Code-/Teständerungen.
+
+Die bestätigte offene DragOver-Providerfehlergrenze ist geschlossen: synchrones None/Handled und begrenztes Fehlerlog, ohne Hoverdialoge oder Übernahme/Dispose geliehener Items; alle neun tatsächlichen Handler, vollständiger Entwurferhalt und Hover→Drop-Routing werden geprüft. Die native Same-Ref-Acquire-Reentry ist durch einen InFlight-Ownerguard geschlossen, mit echten Datei-/Ordner-Retain-Callbacks, Owns/Has, Rawcleanup, Alias, Failure und Close. Die strikten Fixture-Oracles wurden anhand erhaltener echter Diagnose-FAILs berichtigt: tatsächliches Show/Opened, reale Druckbindung nach Setup-TextChanged und kanonischer direkter Childparent mit besetztem extract(1)/neuem extract(2). Keine Produktintegritäts- oder Cipher-/KDF-Gates abgeschwächt.
+
+Nachweisumfang: Managed ARM64/Avalonia-Headless mit unveränderten signierten Build15-Natives. PlainURL-Dispose ist keine native YES-Grant-Abnahme. Kein neuer vollständiger Funktions-PASS und keine finale Build16 Universal-/AOT-/installierte GUI-/Signatur-/Notarisierungs-/Releasefreigabe; diese finalen Gates bleiben offen. Die älteren Leistungs- und Fullbelege bleiben an ihre getrennten Quellen gebunden.
+
+## Getrennte Leistungs-/Funktionsbelege bis Build `070335`
 
 Externe Vorbereitung am 4. Oktober 2026: Der bestehende VeraCrypt-Schlüsselspeicher ist wieder als geschütztes APFS-Volume mit Eigentümerverwaltung erreichbar; Volume und Keys-Verzeichnis haben 0700, die fünf bekannten privaten Dateien 0600. Die Metadaten wurden geprüft, private Inhalte nicht gelesen. Developer ID E8C06D4E89287BEC082E0EAD8DB01DD810A302AD für Team 2T6K9PGS55 ist im Apple-Schlüsselbund gültig gelistet; der read-only Historyaufruf für Keep Vault v13 ist aktuell mit Exit0 erfolgreich. Rosetta 2 ist inzwischen mit ausdrücklicher Benutzergenehmigung und akzeptierter Apple-Lizenz tatsächlich installiert, Exitcode 0. Das sind Vorbereitungsschritte, keine Produkt-Signatur-, Notarisierungs-, Installations- oder Releasefreigabe.
 

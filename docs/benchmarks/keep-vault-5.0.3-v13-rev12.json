@@ -62191,7 +62191,7 @@
       "publicEvidence": "docs/evidence/v13-rev12-20261003/canonical-after-window-fix/README.md"
     }
   ],
-  "currentRev12CodeTests": "Historical targeted console/App/Drop/Path/storage/resource/phase development gates PASS (16/16 at164715). Original Full164715 remains FAIL (288/301 PASS,13 FAIL);12 strictly corrected container cases at171619 are separate fresh PASS. Original12 oneGiB level5 workflows and strict independent v3a evaluation PASS. Canonical114541 is a separate development PASS, Auto95.3747% in isolated pipeline testKDF subgate. Fresh level3 build070335 is source-stable PASS; Skein workspace wipe freshly PASS on arm64/x86_64 after actual Rosetta installation. New24 level3 controls actual PASS with original receipts and byte-identical public copies; historical24 administrative NOT RUN had zero product starts. No fresh301-group Full or final Native/Universal/AOT/installed GUI/signature/notarization/release approval yet.",
+  "currentRev12CodeTests": "Historical targeted console/App/Drop/Path/storage/resource/phase development gates PASS (16/16 at164715). Original Full164715 remains FAIL (288/301 PASS,13 FAIL);12 strictly corrected container cases at171619 are separate fresh PASS. Original12 oneGiB level5 workflows and strict independent v3a evaluation PASS. Canonical114541 is a separate development PASS, Auto95.3747% in isolated pipeline testKDF subgate. Fresh level3 build070335 is source-stable PASS; Skein workspace wipe freshly PASS on arm64/x86_64 after actual Rosetta installation. New24 level3 controls actual PASS with original receipts and byte-identical public copies; historical24 administrative NOT RUN had zero product starts. No fresh301-group Full or final Native/Universal/AOT/installed GUI/signature/notarization/release approval yet. Final headless ownership development at082228:2/2 actual PASS for protected nine-handler DragOver and native acquisition reentry, with five historical fixture FAILs preserved separately.",
   "installedFinalBuildMeasurements": "NOT RUN",
   "limits": "Thresholds unchanged; all previous failures retained. Independent historical primitive-only same-host reference is bound to its original overall FAIL. Current stage profile passed; final installed AOT measurements and release approval are separate and NOT RUN.",
   "additionalUserRequest": {
@@ -101624,5 +101624,38 @@
       "statuses": "24 NOT RUN",
       "actualProductStarts": 0
     }
+  },
+  "rev12FinalGuiOwnershipDevelopment20261004": {
+    "status": "2 ACTUAL PASS",
+    "build": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z",
+    "sourcesStable": true,
+    "sourceMapSha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+    "productAssemblySha256": "7e18e90da049c1155a8fe8636f4271b7eeeadf91101b706e84dfa68b3439053d",
+    "testAssemblySha256": "d674ef9cf5e03cb4544d2d4f477b427ce4a5c17703d737340ddd6ec18133abd3",
+    "cases": [
+      {
+        "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/run-20261004T082348Z-632a4f21",
+        "id": "gui.rev12-drop-storage-ownership",
+        "name": "REV12 actual DragOver/Drop events report provider Path faults, borrow before Drop, preserve drafts and independently retire consumed owners and aliases",
+        "status": "PASS",
+        "seconds": 5.023,
+        "peakRssMiB": 372,
+        "seed": "0x58550FAF",
+        "failure": null
+      },
+      {
+        "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/run-20261004T082404Z-b0ff6e4a",
+        "id": "gui.rev12-storage-transitions",
+        "name": "REV12 actual storage replacement, batch input, mismatch, native acquisition reentry and rejected acquisition preserve every owned item and retry failure",
+        "status": "PASS",
+        "seconds": 0.747,
+        "peakRssMiB": 137,
+        "seed": "0x22301413",
+        "failure": null
+      }
+    ],
+    "publicEvidence": "docs/evidence/v13-rev12-20261003/gui-dragover-acquire-20261004",
+    "historicalHoverFixtureFailures": 5,
+    "scope": "Fresh managed development using installed build15 natives; headless real handler/provider callbacks, no native AOT GUI/release approval. Base HEAD6bfd plus three captured source changes."
   }
 }

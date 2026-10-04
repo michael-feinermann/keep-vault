@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "capturedUtc": "2026-10-04T08:23:32.495463+00:00",
+  "status": "FINAL_SOURCE_REVIEWED",
+  "runtimeStatus": "FRESH_FINAL_TARGETED_TESTS_NOT_RUN_BY_REVIEWER",
+  "files": [
+    {
+      "path": "KeepVaultMac/Gui/MainWindow.PathsAndDrop.cs",
+      "sha256": "22457e8b45d4edd1bf9512cce54ebb3bf57e2e857043e9ee8684e785474a459e"
+    },
+    {
+      "path": "KeepVaultMac/Gui/MainWindow.StorageAccess.cs",
+      "sha256": "62517b3d5072db57d19591102692a3502ea8b92417227b710f05436d996cf655"
+    },
+    {
+      "path": "KeepVaultMac.Tests/WindowDisposeRev12Tests.cs",
+      "sha256": "7790425d7b357a045421c01999d91c874a9d98bc046b6d20d128045345cf79a9"
+    }
+  ],
+  "fixDiffSha256": "f7631aaa75d9ecc5062232f02ad18c743d92da8fff8a2e3c63d4085bdd5059c6",
+  "diffCheckExitCode": 0,
+  "historicalFailuresReportedByRoot": [
+    {
+      "build": "080346",
+      "run": "080436-45dae70f",
+      "false": "WaitForIntegrity before own fixture Show"
+    },
+    {
+      "build": "080723",
+      "run": "080907-3f21f568",
+      "false": "opaque hover compound assertion"
+    },
+    {
+      "build": "081246",
+      "run": "081321-5c3bc990",
+      "false": "exact key-sheet-binding only"
+    },
+    {
+      "build": "081534",
+      "run": "081607-463ed09f",
+      "false": "opaque output Drop compound assertion"
+    },
+    {
+      "build": "081957",
+      "run": "082046-da972faf",
+      "false": "exact original-prefix-child-oracle only; provider ending separator true; independent canonical immediate child true"
+    }
+  ],
+  "historicalOriginalsUnchanged": true,
+  "productFilesUnchangedSinceInitialProductFix": true,
+  "testIds": [
+    "gui.rev12-drop-storage-ownership",
+    "gui.rev12-storage-transitions"
+  ],
+  "reviewerExecutedBuildOrTest": false,
+  "nativeScope": "PlainURL Dispose invocation only; no installed/AOT GUI or security-scoped YES-grant proof."
+}

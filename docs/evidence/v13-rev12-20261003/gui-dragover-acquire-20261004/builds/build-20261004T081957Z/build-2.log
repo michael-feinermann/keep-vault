@@ -1,0 +1,11 @@
+/Applications/Keep Vault.app/Contents/MacOS/Native/zpaq: valid on disk
+/Applications/Keep Vault.app/Contents/MacOS/Native/zpaq: satisfies its Designated Requirement
+/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T081957Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/zpaq: valid on disk
+/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T081957Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/zpaq: satisfies its Designated Requirement
+/Applications/Keep Vault.app/Contents/MacOS/Native/argon2: valid on disk
+/Applications/Keep Vault.app/Contents/MacOS/Native/argon2: satisfies its Designated Requirement
+/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T081957Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/argon2: valid on disk
+/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T081957Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native/argon2: satisfies its Designated Requirement
+release_native_bytes=unchanged
+release_helper_entitlements=verified-empty-of-sandbox-and-inherit
+test_natives=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T081957Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native
