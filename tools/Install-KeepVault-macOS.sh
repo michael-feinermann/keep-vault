@@ -1544,6 +1544,10 @@ if (( package_mode )); then
 fi
 
 # 5. BEGIN MUTATION TRANSACTION
+if (( ! test_mode )); then
+  print -u2 'Compatibility: Keep Vault 5.0.3/v13 cannot open existing v12 archives. Keep your v12 archives, KPAR2 files and key sheets unchanged. No automatic conversion is performed.'
+  print -u2 'Kompatibilität: Keep Vault 5.0.3/v13 öffnet vorhandene v12-Archive nicht. Bewahre deine v12-Archive, KPAR2-Dateien und Schlüsselzettel unverändert auf. Es findet keine automatische Konvertierung statt.'
+fi
 transaction_active=1
 
 # Install the only ZPAQ pathname that the v13 application will execute. The

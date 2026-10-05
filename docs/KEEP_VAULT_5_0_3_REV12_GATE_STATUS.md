@@ -1,5 +1,13 @@
 # Keep Vault 5.0.3 / v13: REV12-Abnahmematrix
 
+## Installerhinweis und erneuter Abschlusslauf, 5. Oktober 2026
+
+Der ergänzende Abgleich mit REV12 Abschnitt 0 hat einen fehlenden Installationshinweis gefunden: Der native macOS-Installer und die Installationsanleitung erwähnten die absichtliche v12-Inkompatibilität nicht vor dem Installationsabschluss. Der anfängliche Bestätigungsdialog zeigt diesen Hinweis jetzt auf Deutsch und Englisch vor „Installieren“. Auch die Anleitung und der reguläre CLI-Installer nennen ihn; der CLI-Hinweis steht vor dem Beginn der Mutationstransaktion. Vorhandene v12-Archive, KPAR2-Dateien und Schlüsselzettel bleiben unverändert, eine automatische Konvertierung findet nicht statt. Die Änderung betrifft ausschließlich Hinweistexte, keine Kryptografie oder Installationsschutzprüfung.
+
+Der fünfte ursprüngliche Abschlussbuilder wurde dafür vor der Installation und den Langtests kontrolliert beendet. Sein echter Terminalbeleg meldet Exit 143 am 05:15:05 UTC, Quellen stabil und Git vor der Hinweiskorrektur sauber bei `1907bb39121cab482f2239303086d6870a8cf408`. Das ist kein erfolgreicher Kandidat und kein neuer Funktions-, Leistungs- oder GUI-Nachweis. Beim vierten Versuch fehlen terminale Prozessbelege; sein erhaltenes Log meldet einen fehlgeschlagenen ZPAQ-Ankerschritt und begonnenen Rollback. Aus diesem Versuch wird kein numerischer Exit oder Erfolg abgeleitet.
+
+`zsh -n tools/Install-KeepVault-macOS.sh` und `git diff --check` sind für die Hinweiskorrektur tatsächlich erfolgreich. Die native Kompilierung, die sichtbare Installerprüfung und sämtliche finalen Abnahmen des neuen Kandidaten bleiben bis zu ihrer tatsächlichen Ausführung offen. Die ursprünglichen Fehlbelege werden erhalten. Ein blockierter Kandidat wird nicht veröffentlicht.
+
 ## Vollständiger funktionaler Entwicklungslauf, 4. Oktober 2026, 10:37 UTC
 
 Die tatsächliche vollständige Managed-Funktionssuite am Build082228 besteht mit 301 eindeutigen Gruppen: 301 PASS, 0 FAIL, 0 BLOCKED, originaler Produkt-/Helperexit 0. Das [vollständige öffentliche Paket](evidence/v13-rev12-20261003/full-functional-082228-20261004/README.md) bewahrt alle Originale und trennt die [abgeleitete Klassifikation](evidence/v13-rev12-20261003/full-functional-082228-20261004/DERIVED_CLASSIFICATION.json). Das originale Log meldet 1.258,1 s gemessene Runner-Walltime; der getrennte UTC-Ausführungsrahmen von 10:16:11,308104 bis 10:37:09,656685 beträgt 1.258,348581 s. Tatsächlich 284 gebundene Sourceeingaben, SHA-256 `57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f`; Ausführungs-HEAD `6efc276afdb1469e64c7d47dffdd40b25c76a335`.
