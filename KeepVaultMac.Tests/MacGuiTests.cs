@@ -2,6 +2,7 @@ using KeepVaultMac.Controls;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
+using System.Security.Cryptography;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -68,6 +69,7 @@ internal static class MacGuiTests
         new("keysheet.cleanup-failure-visible", "key-sheet cleanup failures remain visible with the export failure", () => RunOnUiThread(TestKeySheetCleanupFailureVisible), TestResource.Gui, "GUI"),
         new("keysheet.pair-atomic-commit", "key-sheet pair final gate rolls both outputs back safely", () => RunOnUiThread(TestKeySheetPairAtomicCommit), TestResource.Gui, "GUI"),
         new("gui.entropy-rev9-phases-cancel", "GUI REV9 single/dual phases, eleven counters and joined cancellation", () => RunOnUiThread(TestRev9EntropyPhasesAndCancel), TestResource.Gui, "GUI"),
+        new("gui.rev12-live-capture-during-preparation", "GUI pointer events fill the independent live epoch during dual preparation and retain capture guards", () => RunOnUiThread(TestLiveCaptureDuringDualPreparation), TestResource.Gui, "GUI"),
         new("gui.operation-cancel-lifetime", "GUI operation cancellation stays separate from disposed window lifetime", () => RunOnUiThread(TestOperationCancelLifetime), TestResource.Gui, "GUI"),
         new("gui.full-creation-flow", "GUI full creation flow with mouse sampling and factor generation", () => RunOnUiThread(TestFullCreationFlowViaGui), TestResource.Gui, "GUI"),
     ];
@@ -1659,6 +1661,157 @@ internal static class MacGuiTests
             }
         }
         finally { EntropyMixer.PreparationPhaseForTests = null; }
+    }
+
+    private static void TestLiveCaptureDuringDualPreparation(MainWindow window)
+    {
+        const BindingFlags instanceFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+        FieldInfo poolsField = typeof(EntropyMixer).GetField("MousePools", BindingFlags.Static | BindingFlags.NonPublic)!;
+        FieldInfo captureFaultField = typeof(MainWindow).GetField("_entropyCaptureFaulted", instanceFlags)!;
+        Action<string>? previousPhase = EntropyMixer.PreparationPhaseForTests;
+        Action<byte[], EntropyRandomRole>? previousRandom = EntropyMixer.RandomFillForTests;
+        using var entered = new ManualResetEventSlim();
+        using var resume = new ManualResetEventSlim();
+        var phases = new ConcurrentBag<string>();
+        Task? generation = null;
+        int boundaryPointer = 0;
+
+        void MoveBoundaryPointer()
+        {
+            // Each guard check receives a distinct position, including after
+            // Dispose, rather than depending on repeated same-point delivery.
+            window.MouseMove(new Point(11 + ++boundaryPointer, 13));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        void Join(Task task)
+        {
+            var time = System.Diagnostics.Stopwatch.StartNew();
+            while (!task.IsCompleted)
+            {
+                Dispatcher.UIThread.RunJobs();
+                if (time.Elapsed > TimeSpan.FromSeconds(30)) throw new TimeoutException("GUI live-capture preparation did not join.");
+                Thread.Sleep(1);
+            }
+            task.GetAwaiter().GetResult();
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        static byte[] Fingerprint(SensitiveMouseRecordStore[] pools)
+        {
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            using LockedSensitiveBuffer record = LockedSensitiveBuffer.Create(SensitiveMouseRecordStore.RecordBytes);
+            foreach (SensitiveMouseRecordStore pool in pools)
+                for (long index = 0; index < pool.Count; ++index)
+                {
+                    pool.CopyRecord(index, record.Bytes);
+                    hash.AppendData(record.Bytes);
+                }
+            return hash.GetHashAndReset();
+        }
+
+        bool ShowsTotal(long total) => (Control<TextBlock>(window, "EntropyStatusText").Text ?? "").Contains(
+            "gesamt " + total.ToString(CultureInfo.CurrentCulture) + ";", StringComparison.Ordinal)
+            || (Control<TextBlock>(window, "EntropyStatusText").Text ?? "").Contains(
+                "total " + total.ToString(CultureInfo.CurrentCulture) + ";", StringComparison.Ordinal);
+
+        try
+        {
+            EntropyMixer.Reset();
+            ComboBox suite = Control<ComboBox>(window, "CipherSuiteBox");
+            suite.SelectedItem = suite.Items.OfType<ComboBoxItem>().Single(item =>
+                string.Equals(item.Tag as string, EncryptionSuite.ParanoiaCascade.ToString(), StringComparison.Ordinal));
+            int fills = 0;
+            while (!EntropyMixer.GetPoolStatus().IsReady)
+            {
+                MoveMouse(window, 512);
+                if (++fills > 200) throw new InvalidOperationException("Live-capture fixture did not fill eleven pools.");
+            }
+            SensitiveMouseRecordStore[] originalPools = (SensitiveMouseRecordStore[])poolsField.GetValue(null)!;
+            long[] originalCounts = originalPools.Select(pool => pool.Count).ToArray();
+            EntropyMixer.PreparationPhaseForTests = phase =>
+            {
+                phases.Add(phase);
+                // Hold every pool before its first replay, so no original store
+                // can be cleaned while its immutable records are compared.
+                if (phase == "sha3")
+                {
+                    entered.Set();
+                    if (!resume.Wait(TimeSpan.FromSeconds(20))) throw new TimeoutException("GUI live-capture barrier timed out.");
+                }
+            };
+            EnableProtectedOperationsForFailureTest(window);
+            generation = window.GenerateArchiveEntropyAsync();
+            MacComprehensiveTests.Require(entered.Wait(TimeSpan.FromSeconds(20)), "Dual GUI preparation never detached its records.");
+            Dispatcher.UIThread.RunJobs();
+            MacComprehensiveTests.Require(!generation.IsCompleted && EntropyMixer.GetPoolStatus().Total == 0
+                && ShowsTotal(0) && Control<ProgressBar>(window, "EntropyProgress").Value == 0,
+                "The running GUI preparation did not display its new empty live epoch.");
+            MacComprehensiveTests.Require(!ReferenceEquals(originalPools, poolsField.GetValue(null))
+                && originalPools.Select(pool => pool.Count).SequenceEqual(originalCounts),
+                "Detach did not preserve a separately owned original snapshot.");
+            byte[] originalFingerprint = Fingerprint(originalPools);
+
+            // Use the real window's routed pointer events, not a direct mixer
+            // injection: the production busy guard is the regression boundary.
+            MoveMouse(window, 37);
+            EntropyPoolStatus newLive = EntropyMixer.GetPoolStatus();
+            MacComprehensiveTests.Require(newLive.Total == 37 && ShowsTotal(37)
+                && originalPools.Select(pool => pool.Count).SequenceEqual(originalCounts)
+                && Fingerprint(originalPools).AsSpan().SequenceEqual(originalFingerprint),
+                "Pointer events changed the detached snapshot or failed to fill the separate live epoch.");
+            Task duplicate = window.GenerateArchiveEntropyAsync();
+            MacComprehensiveTests.Require(duplicate.IsCompleted && !generation.IsCompleted
+                && EntropyMixer.GetPoolStatus() == newLive
+                && !Control<Button>(window, "GeneratePasswordButton").IsEnabled
+                && Control<Button>(window, "CancelOperationButton").IsEnabled
+                && string.IsNullOrEmpty(Control<TextBox>(window, "GeneratedPasswordFirstBox").Text),
+                "Live capture allowed a duplicate Generate or premature factor publication.");
+
+            resume.Set();
+            Join(generation);
+            MacComprehensiveTests.Require(EntropyMixer.GetPoolStatus() == newLive
+                && originalPools.All(pool => pool.Count == 0)
+                && phases.Contains("shuffle2") && phases.Contains("sha512") && phases.Contains("cleanup")
+                && Control<TextBox>(window, "GeneratedPasswordFirstBox").Text?.Length == 256,
+                "Dual cleanup lost new live records or did not finish the original snapshot.");
+
+            EntropyMixer.RandomFillForTests = (_, role) =>
+            {
+                if (role == EntropyRandomRole.PoolRouting) throw new CryptographicException("public injected capture RNG failure");
+            };
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require((bool)captureFaultField.GetValue(window)! && !EntropyMixer.GetPoolStatus().Healthy
+                && EntropyMixer.GetPoolStatus().Total == newLive.Total, "A capture failure did not stop the live collection safely.");
+            EntropyMixer.RandomFillForTests = previousRandom;
+            captureFaultField.SetValue(window, false);
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require(!(bool)captureFaultField.GetValue(window)! && EntropyMixer.GetPoolStatus().Total == newLive.Total,
+                "An unhealthy collection reached the pointer capture path.");
+            captureFaultField.SetValue(window, true);
+            EntropyMixer.Reset();
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require(EntropyMixer.GetPoolStatus().Healthy && EntropyMixer.GetPoolStatus().Total == 0,
+                "The window capture-fault guard accepted an event after the mixer reset.");
+            captureFaultField.SetValue(window, false);
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require(EntropyMixer.GetPoolStatus().Total == 1, "The pointer fixture stopped reaching the live collection.");
+            window.Dispose();
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require(EntropyMixer.GetPoolStatus().Healthy && EntropyMixer.GetPoolStatus().Total == 0
+                && !(bool)captureFaultField.GetValue(window)!, "A disposed window accepted a new pointer record.");
+        }
+        finally
+        {
+            resume.Set();
+            try { if (generation is not null) Join(generation); }
+            finally
+            {
+                EntropyMixer.PreparationPhaseForTests = previousPhase;
+                EntropyMixer.RandomFillForTests = previousRandom;
+                EntropyMixer.Reset();
+            }
+        }
     }
 
     private static void TestFullCreationFlowViaGui(MainWindow window)

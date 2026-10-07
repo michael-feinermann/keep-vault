@@ -460,7 +460,7 @@ core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
 marketing_version='5.0.3'
-build_version='16'
+build_version='17'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
@@ -2205,6 +2205,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     entropy.rev9-faults
     entropy.rev9-lifecycle
     gui.entropy-rev9-phases-cancel
+    gui.rev12-live-capture-during-preparation
     gui.operation-cancel-lifetime
     containers.suite.camellia256
     containers.suite.serpent256

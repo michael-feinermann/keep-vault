@@ -344,7 +344,9 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private void Window_PointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_disposed || Volatile.Read(ref _operationActive) != 0 || _entropyCaptureFaulted
+        // The live collection has a separate owner from any detached snapshot
+        // and remains available during preparation, KDF and archive work.
+        if (_disposed || _entropyCaptureFaulted
             || !EntropyMixer.GetPoolStatus().Healthy) return;
         try
         {
@@ -1031,7 +1033,10 @@ public sealed partial class MainWindow : Window, IDisposable
             var progress = new Progress<string>(phase =>
             {
                 if (!_disposed && Volatile.Read(ref _operationActive) != 0 && OperationToken == token)
+                {
                     OperationStatusText.Text = T("entropyPhase." + phase);
+                    UpdateEntropyStatus(force: true);
+                }
             });
             using OperationProgressSource? entropyProgress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.Entropy, ProgressUnit.Steps);
             next = await Task.Run(() => EntropyMixer.CreateArchiveEntropy(kind, token, progress), token);

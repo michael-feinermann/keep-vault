@@ -561,7 +561,7 @@ internal static class HybridKeyProtectionTests
                     && protectionScript.Contains("hybrid_protection_tool_paths=verified", StringComparison.Ordinal),
                 "The provisioning script no longer enforces distinct services and accounts.");
             Require(
-                keepVaultBuildScript.Contains("build_version='16'", StringComparison.Ordinal)
+                keepVaultBuildScript.Contains("build_version='17'", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("marketing_version='5.0.3'", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("require_root_system_tool", StringComparison.Ordinal)
                     && HasIsolatedDotnetBuildPath(keepVaultBuildScript)
