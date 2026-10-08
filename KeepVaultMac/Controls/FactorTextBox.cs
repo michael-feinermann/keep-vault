@@ -35,11 +35,14 @@ public sealed class FactorTextBox : UserControl
         AvaloniaProperty.RegisterDirect<FactorTextBox, string>(nameof(ValidationMessage), x => x.ValidationMessage);
     public static readonly DirectProperty<FactorTextBox, int> HexCharacterCountProperty =
         AvaloniaProperty.RegisterDirect<FactorTextBox, int>(nameof(HexCharacterCount), x => x.HexCharacterCount);
+    public static readonly DirectProperty<FactorTextBox, bool> IsFormatCompleteProperty =
+        AvaloniaProperty.RegisterDirect<FactorTextBox, bool>(nameof(IsFormatComplete), x => x.IsFormatComplete);
 
     private readonly FactorEditor _editor;
     private AtomicInputMethodClient? _inputMethodClient;
     private string _validationMessage = string.Empty;
     private int _hexCharacterCount;
+    private bool _isFormatComplete;
     private FactorInput.Error _inputError;
     private long _editRevision;
 
@@ -70,6 +73,7 @@ public sealed class FactorTextBox : UserControl
     public int MaxLength => 0;
     public string ValidationMessage => _validationMessage;
     public int HexCharacterCount => _hexCharacterCount;
+    public bool IsFormatComplete => _isFormatComplete;
     public int SelectionStart { get => _editor.SelectionStart; set => _editor.SelectionStart = value; }
     public int SelectionEnd { get => _editor.SelectionEnd; set => _editor.SelectionEnd = value; }
     public int CaretIndex { get => _editor.CaretIndex; set => _editor.CaretIndex = value; }
@@ -213,6 +217,8 @@ public sealed class FactorTextBox : UserControl
     private void ShowError(FactorInput.Error error) { _inputError = error; RefreshMessage(); }
     private void RefreshMessage()
     {
+        SetAndRaise(IsFormatCompleteProperty, ref _isFormatComplete,
+            _inputError == FactorInput.Error.None && _hexCharacterCount == FactorInput.HexLength);
         string message = _inputError == FactorInput.Error.None
             ? LanguageCode == "en" ? $"{_hexCharacterCount} / 256 hexadecimal characters" : $"{_hexCharacterCount} / 256 Hexadezimalzeichen"
             : FactorInput.Message(_inputError, LanguageCode);

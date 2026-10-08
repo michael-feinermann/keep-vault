@@ -29,6 +29,12 @@
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Margin" Value="0,0,0,7" />
     </Style>
+    <Style Selector="TextBlock.factorStatus">
+      <Setter Property="Foreground" Value="#F29AA6" />
+    </Style>
+    <Style Selector="TextBlock.factorStatus.formatComplete">
+      <Setter Property="Foreground" Value="#7EE2B8" />
+    </Style>
     <Style Selector="TextBlock.sectionTitle">
       <Setter Property="FontSize" Value="20" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -365,10 +371,10 @@
                   <TextBlock x:Name="FactorImportHelpText" Text="Jeweils 256 Hexadezimalzeichen. Leerzeichen und Zeilenumbrüche werden ignoriert." Classes="muted" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock x:Name="ExtractGeneratedPasswordFirstLabel" Text="Faktor A vom Schlüsselzettel" Classes="label" Margin="0" />
                   <controls:FactorTextBox x:Name="ExtractGeneratedPasswordFirstBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Menlo" MinHeight="62" />
-                  <TextBlock x:Name="ExtractFactorFirstStatus" x:CompileBindings="False" Text="{Binding ValidationMessage, ElementName=ExtractGeneratedPasswordFirstBox, Mode=OneWay}" TextWrapping="Wrap" Foreground="#F29AA6" FontSize="12" />
+                  <TextBlock x:Name="ExtractFactorFirstStatus" x:CompileBindings="False" Text="{Binding ValidationMessage, ElementName=ExtractGeneratedPasswordFirstBox, Mode=OneWay}" Classes="factorStatus" Classes.formatComplete="{Binding IsFormatComplete, ElementName=ExtractGeneratedPasswordFirstBox, Mode=OneWay}" TextWrapping="Wrap" FontSize="12" />
                   <TextBlock x:Name="ExtractGeneratedPasswordSecondLabel" Text="Faktor B vom Schlüsselzettel" Classes="label" Margin="0" />
                   <controls:FactorTextBox x:Name="ExtractGeneratedPasswordSecondBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Menlo" MinHeight="62" />
-                  <TextBlock x:Name="ExtractFactorSecondStatus" x:CompileBindings="False" Text="{Binding ValidationMessage, ElementName=ExtractGeneratedPasswordSecondBox, Mode=OneWay}" TextWrapping="Wrap" Foreground="#F29AA6" FontSize="12" />
+                  <TextBlock x:Name="ExtractFactorSecondStatus" x:CompileBindings="False" Text="{Binding ValidationMessage, ElementName=ExtractGeneratedPasswordSecondBox, Mode=OneWay}" Classes="factorStatus" Classes.formatComplete="{Binding IsFormatComplete, ElementName=ExtractGeneratedPasswordSecondBox, Mode=OneWay}" TextWrapping="Wrap" FontSize="12" />
                 </StackPanel>
               </Border>
             </Grid>

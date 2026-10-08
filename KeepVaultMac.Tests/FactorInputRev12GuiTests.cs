@@ -6,6 +6,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Input.TextInput;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using KalynaArchiver;
@@ -54,8 +55,55 @@ internal static class FactorInputRev12GuiTests
                 field.Paste();
                 PumpUntil(() => field.Text == formatted);
                 Require(FactorInput.Canonicalize(field.Text!) == hex && field.HexCharacterCount == 256, "Clipboard paste changed the complete factor payload.");
+                RequireFormatStatus(window, field, complete: true);
                 Require(field.CaretIndex == formatted.Length && field.SelectionStart == field.SelectionEnd, "Accepted paste left a stale selection or caret.");
             }
+
+            FactorTextBox[] fields = Fields(window);
+            FactorTextBox first = fields[0], second = fields[1];
+            first.TrySetText(hex[..255]);
+            second.TrySetText(FactorInputRev12Tests.Format(FactorInputRev12Tests.FactorB));
+            RequireFormatStatus(window, first, complete: false);
+            RequireFormatStatus(window, second, complete: true);
+            first.TrySetText(hex);
+            RequireFormatStatus(window, first, complete: true);
+
+            first.Focus(); first.SelectAll();
+            Complete(clipboard.SetTextAsync(hex + "\u200B"));
+            first.Paste();
+            PumpUntil(() => first.ValidationMessage == FactorInput.Message(FactorInput.Error.ForbiddenCharacter, first.LanguageCode));
+            Require(first.Text == hex && first.HexCharacterCount == 256, "Rejected clipboard input changed the previously complete factor.");
+            RequireFormatStatus(window, first, complete: false);
+            RequireFormatStatus(window, second, complete: true);
+
+            Require(first.TrySetText(" " + hex), "Valid formatted input did not reset the rejected-paste error.");
+            RequireFormatStatus(window, first, complete: true);
+            second.TrySetText(FactorInputRev12Tests.FactorB[..255]);
+            RequireFormatStatus(window, second, complete: false);
+            RequireFormatStatus(window, first, complete: true);
+
+            var pending = new DeferredPublicClipboardTransfer();
+            Complete(clipboard.SetDataAsync(pending));
+            first.Focus(); first.SelectAll(); first.Paste();
+            PumpUntil(() => pending.Requested);
+            first.TrySetText(hex);
+            pending.Complete(FactorInputRev12Tests.FactorB);
+            PumpUntil(() => first.ValidationMessage == FactorInput.Message(FactorInput.Error.StaleTransfer, first.LanguageCode));
+            Require(first.Text == hex && first.HexCharacterCount == 256, "A stale clipboard transfer changed the newer complete factor.");
+            RequireFormatStatus(window, first, complete: false);
+            first.TrySetText(" " + hex);
+            RequireFormatStatus(window, first, complete: true);
+
+            var failed = new DeferredPublicClipboardTransfer();
+            Complete(clipboard.SetDataAsync(failed));
+            first.SelectAll(); first.Paste();
+            PumpUntil(() => failed.Requested);
+            failed.Fail();
+            PumpUntil(() => first.ValidationMessage == FactorInput.Message(FactorInput.Error.TransferFailed, first.LanguageCode));
+            Require(first.Text == " " + hex && first.HexCharacterCount == 256, "A failed clipboard transfer changed the complete factor.");
+            RequireFormatStatus(window, first, complete: false);
+            first.TrySetText(hex);
+            RequireFormatStatus(window, first, complete: true);
         }
         finally { Complete(clipboard.SetTextAsync(string.Empty)); }
     }
@@ -83,6 +131,7 @@ internal static class FactorInputRev12GuiTests
                 field.Text = invalid; // Public Text/binding assignments share the raw coercion guard.
                 Dispatcher.UIThread.RunJobs();
                 Require(field.Text == raw && !string.IsNullOrEmpty(field.ValidationMessage), "Direct text assignment bypassed the import guard.");
+                RequireFormatStatus(window, field, complete: false);
                 TextPresenter? presenter = field.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault();
                 Require(presenter is null || presenter.Text == raw, "The visual text presenter diverged from retained factor text.");
             }
@@ -326,6 +375,7 @@ internal static class FactorInputRev12GuiTests
                 clear.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 pending.Complete(FactorInputRev12Tests.FactorA);
                 PumpUntil(() => field.ValidationMessage == FactorInput.Message(FactorInput.Error.StaleTransfer, field.LanguageCode));
+                RequireFormatStatus(window, field, complete: false);
                 Require(string.IsNullOrEmpty(field.Text) && field.CaretIndex == 0
                     && field.SelectionStart == 0 && field.SelectionEnd == 0,
                     "An outstanding clipboard transfer repopulated an explicitly cleared empty factor field.");
@@ -353,7 +403,19 @@ internal static class FactorInputRev12GuiTests
             return _completion.Task;
         }
         internal void Complete(string text) => _completion.TrySetResult(text);
+        internal void Fail() => _completion.TrySetException(new InvalidOperationException("Public synthetic clipboard transfer failure."));
         public void Dispose() => _completion.TrySetResult(null);
+    }
+
+    private static void RequireFormatStatus(MainWindow window, FactorTextBox field, bool complete)
+    {
+        Dispatcher.UIThread.RunJobs();
+        string name = ReferenceEquals(field, window.FindControl<FactorTextBox>("ExtractGeneratedPasswordFirstBox"))
+            ? "ExtractFactorFirstStatus" : "ExtractFactorSecondStatus";
+        var status = window.FindControl<TextBlock>(name)!;
+        Require(field.IsFormatComplete == complete, "The factor format status does not match the accepted input and latest error.");
+        Require(status.Foreground is ISolidColorBrush brush && brush.Color == Color.Parse(complete ? "#7EE2B8" : "#F29AA6"),
+            "The factor status color does not match this field's format status.");
     }
 
     private static void Complete(Task task) { PumpUntil(() => task.IsCompleted); task.GetAwaiter().GetResult(); }

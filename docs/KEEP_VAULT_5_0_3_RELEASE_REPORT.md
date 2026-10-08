@@ -1,6 +1,16 @@
 # Keep Vault 5.0.3: Release und Installation
 
-## Aktueller REV12-Stand, 4. Oktober 2026, Build `070335`
+## Farbkorrektur vom 8. Oktober 2026, Quellziel Build 18
+
+Die Faktorstatusanzeigen werden pro Feld grün, wenn dessen angenommene Eingabe genau 256 ASCII-Hexzeichen enthält und keine aktuelle Eingabefehlermeldung besteht. Zulässiger Formatierungsleerraum bleibt ungezählt. Unvollständige Eingaben sowie abgelehnte, veraltete oder fehlgeschlagene Transfers zeigen Rot. Das bestätigt ausschließlich das Eingabeformat, nicht die Zugehörigkeit zu einem Archiv. Parser, Faktorbytes und Kryptografie bleiben unverändert.
+
+Die acht vorhandenen Faktor-GUI-Regressionen einschließlich tatsächlicher Farbwerte und die Versionsprüfung sind mit echtem Worker-Exit 0 bestanden. Der gezielte Managed Build hatte null Warnungen und Fehler. Die unveränderten verwendeten Nativebytes stammen aus dem bereits installierten Build 17; diese gezielte Frameworkprüfung ist keine Abnahme einer installierten Build-18-App. Originalbelege: `work/v13-evidence/rev12-factor-status-color-attempt2-20261008T044346060900Z/`, `focused-result.json` SHA-256 `834b179c658783c61d521d7960a76c392130ef8926e4da9e716bc7cb63876e45`, tatsächliches `outer-terminal.json` SHA-256 `beef509ecb3b16367e98d376f74c8141dc73e02159a60a77fcb84d3011009d60`. Die erste SDK-Vorbereitung endete tatsächlich mit Exit 2 vor dem Teststart, weil ihr Ziel innerhalb des Repositorys lag; der zweite Versuch verwendete den vorgeschriebenen externen privaten SDK-Pfad.
+
+Der vorausgehende reguläre Build 17 aus Commit `1305d045a2590738834ab9e2cd83270234fbadf4` erreichte Accepted für Scanner und Gesamtpaket, Stapling, Installation und 302/302 funktionale Gruppen. Nach der ausdrücklichen Benutzeranweisung zur Farbkorrektur wurde er am 8. Oktober um 04:37 UTC kontrolliert beendet. Builder und Originalparent haben tatsächlichen Exit 143 bei unverändertem, sauberem Quellstand; die späteren Freigabephasen wurden nicht abgeschlossen. Diese Ergebnisse bleiben historische Einzelbelege und keine Gesamtfreigabe. Originalbelege: `work/v13-evidence/rev12-final-build17-attempt2-20261008T035449717667Z/`.
+
+Build 18 benötigt eigene Universal-/AOT-, Signatur-, Notarisierungs-, Installations-, Funktions-, Mess- und reale GUI-Belege. Dieser dokumentierte Zwischenstand erteilt keine Releasefreigabe; Windows und reale Mehr-TB-Läufe bleiben außerhalb des vom Benutzer genehmigten macOS-Testumfangs.
+
+## Historischer REV12-Stand, 4. Oktober 2026, Build `070335`
 
 Externe Vorbereitung am 4. Oktober 2026: Der bestehende VeraCrypt-Schlüsselspeicher ist wieder als geschütztes APFS-Volume mit Eigentümerverwaltung erreichbar; Volume und Keys-Verzeichnis haben 0700, die fünf bekannten privaten Dateien 0600. Die Metadaten wurden geprüft, private Inhalte nicht gelesen. Developer ID E8C06D4E89287BEC082E0EAD8DB01DD810A302AD für Team 2T6K9PGS55 ist im Apple-Schlüsselbund gültig gelistet; der read-only Historyaufruf für Keep Vault v13 ist aktuell mit Exit0 erfolgreich. Rosetta 2 ist inzwischen mit ausdrücklicher Benutzergenehmigung und akzeptierter Apple-Lizenz tatsächlich installiert, Exitcode 0. Das sind Vorbereitungsschritte, keine Produkt-Signatur-, Notarisierungs-, Installations- oder Releasefreigabe.
 
