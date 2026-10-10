@@ -44,7 +44,7 @@ the Argon2 command-line tool receive no additional sandbox or inherit entitlemen
 ZPAQ is additionally subject to restrictive operation-specific Seatbelt profiles
 and the root-owned v13 execution anchor.
 
-The current REV12 source targets Keep Vault 5.0.3, build 19, container v13. The installed ZPAQ anchor is `/Library/Application Support/Keep Vault/v13`. The separate release-key envelope format and its `.v12.enc` filenames remain unchanged; they are not container-format identifiers. Final Universal/AOT binaries, signing, notarization, package verification, installation and real GUI acceptance require their own evidence. Historical build-15 and build-16 checks do not approve the new bytes. The [5.0.3 release report](../../docs/KEEP_VAULT_5_0_3_RELEASE_REPORT.md) records the actual status.
+The current REV12 source targets Keep Vault 5.0.3, build 20, container v13. The installed ZPAQ anchor is `/Library/Application Support/Keep Vault/v13`. The separate release-key envelope format and its `.v12.enc` filenames remain unchanged; they are not container-format identifiers. Final Universal/AOT binaries, signing, notarization, package verification, installation and real GUI acceptance require their own evidence. Historical checks do not approve the new bytes. The [5.0.3 release report](../../docs/KEEP_VAULT_5_0_3_RELEASE_REPORT.md) records the actual status.
 
 ## Private release keys
 

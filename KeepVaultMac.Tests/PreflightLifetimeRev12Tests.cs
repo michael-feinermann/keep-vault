@@ -24,7 +24,9 @@ internal static class PreflightLifetimeRev12Tests
         new("gui.rev12-kdf-minimum-preflight", "V13-UI-PREFLIGHT-RESOURCES: known 64-MiB KDF refusal retains the prepared draft", () => MacGuiTests.RunOnUiThread(KdfMinimumPreflight), TestResource.Gui, "GUI"),
         new("container.rev12-kdf-minimum-preflight", "V13-UI-PREFLIGHT-RESOURCES: shared core refuses the public KDF minimum before output or entropy", CoreKdfMinimumPreflightAsync, TestResource.ProcessGlobal, "Security"),
         new("entropy.rev12-consume-boundary", "V13-UI-CONSUME-BOUNDARY: owner records irreversible single/dual transfer before failures", ConsumeBoundaryAsync, TestResource.ProcessGlobal, "Security"),
-        new("container.rev12-preflight-race", "V13-UI-PREFLIGHT-RACE: exclusive output, early collision preservation, late collision consumption", OutputRaceAsync, TestResource.ProcessGlobal, "Security"),
+        // The late collision follows the full production KDF; fault hooks still require process isolation.
+        new("container.rev12-preflight-race", "V13-UI-PREFLIGHT-RACE: exclusive output, early collision preservation, late collision consumption", OutputRaceAsync, TestResource.ProcessGlobal, "Security")
+        { Cost = new TestCost(4, 2560, true, TestConstraint.ProcessExclusive) },
     ];
 
     private const string Password = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";

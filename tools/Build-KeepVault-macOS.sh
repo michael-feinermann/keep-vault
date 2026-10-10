@@ -460,7 +460,7 @@ core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
 marketing_version='5.0.3'
-build_version='19'
+build_version='20'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
@@ -2302,6 +2302,13 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     exit 2
   fi
   parallel_test_workers=$(( logical_processors > 8 ? 8 : logical_processors ))
+  if (( release_mode )); then
+    # Isolated test hosts do not share the product's live memory reservations.
+    # Run release cases sequentially so concurrent full-cost KDFs cannot
+    # prevent a negative case from reaching its intended authentication gate.
+    # Each case retains its production Auto, native-worker and KDF settings.
+    parallel_test_workers=1
+  fi
 
   # The suite exercises the real ZPAQ path, and v13 executes ZPAQ only from the
   # root-owned anchor the installer provisions. A second build cannot recreate

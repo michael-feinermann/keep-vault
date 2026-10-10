@@ -216,7 +216,8 @@ internal static partial class MacComprehensiveTests
         new("crypto.cascade-layering", "cascade layering: the outer layer alone reveals nothing", TestCascadeLayeringAsync, TestResource.Light, "Crypto"),
         new("crypto.two-round-derivation", "two-round key derivation from one pool consumption", TestTwoRoundDerivationAsync, TestResource.EntropyGlobal, "Crypto"),
         new("crypto.unprepared-parameters", "salt and nonce for every single-round suite without prepared entropy", TestUnpreparedEncryptionParametersAsync, TestResource.EntropyGlobal, "Crypto"),
-        new("crypto.per-chunk-nonces", "per-chunk nonces across a multi-chunk archive", TestPerChunkNoncesAsync, TestResource.CpuHeavy, "Crypto"),
+        // Uses the full production KDF and process-wide entropy state.
+        new("crypto.per-chunk-nonces", "per-chunk nonces across a multi-chunk archive", TestPerChunkNoncesAsync, TestResource.EntropyGlobal, "Crypto"),
         new("crypto.mars-shacal-vectors", "AES, MARS, SHACAL-2 and Threefish vectors plus independent CTR behaviour", TestCascadeCipherVectorsAsync, TestResource.CpuHeavy, "Crypto"),
         new("deletion.secure-file-object-binding", "secure deletion destroys and deletes the same object", TestSecureFileObjectBoundDeletionAsync, TestResource.Light, "Deletion"),
         new("recovery.sidecar-transaction", "KPAR2 sidecar replacement survives a failure at every step", TestRecoverySidecarTransactionAsync, TestResource.Light, "Recovery"),
