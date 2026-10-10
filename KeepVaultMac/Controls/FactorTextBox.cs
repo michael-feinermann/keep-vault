@@ -119,7 +119,19 @@ public sealed class FactorTextBox : UserControl
         string raw = insertion ?? string.Empty;
         if (!CanReplaceSelection(raw)) return false;
         _editor.SelectedText = raw;
+        CompleteAcceptedInput();
         return true;
+    }
+
+    // Explicitly accepted input can replace a factor with identical text, so
+    // no Text change/coercion need occur to clear an earlier import error.
+    private void CompleteAcceptedInput()
+    {
+        if (_inputError != FactorInput.Error.None)
+        {
+            _inputError = FactorInput.Error.None;
+            RefreshMessage();
+        }
     }
 
     private bool CanReplaceSelection(string raw)
@@ -285,9 +297,15 @@ public sealed class FactorTextBox : UserControl
         }
         protected override void OnTextInput(TextInputEventArgs e)
         {
-            if (!e.Handled && !IsReadOnly && !owner.CanReplaceSelection(e.Text ?? string.Empty))
+            if (e.Handled) { base.OnTextInput(e); return; }
+            if (IsReadOnly || !owner.IsEffectivelyEnabled) { e.Handled = true; return; }
+            string raw = e.Text ?? string.Empty;
+            if (!owner.CanReplaceSelection(raw))
             { e.Handled = true; return; }
             base.OnTextInput(e);
+            // Preserve the base editor's caret, selection and undo processing.
+            // An empty TextInput is ignored by the base and is no new import.
+            if (raw.Length > 0 && e.Handled) owner.CompleteAcceptedInput();
         }
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {

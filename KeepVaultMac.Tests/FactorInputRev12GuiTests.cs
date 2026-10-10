@@ -60,6 +60,31 @@ internal static class FactorInputRev12GuiTests
             }
 
             FactorTextBox[] fields = Fields(window);
+            foreach (string language in new[] { "de", "en" })
+            foreach ((FactorTextBox field, string accepted) in new[]
+            {
+                (fields[0], FactorInputRev12Tests.FactorA),
+                (fields[1], FactorInputRev12Tests.FactorB),
+            })
+            {
+                field.LanguageCode = language;
+                Require(field.TrySetText(accepted), "The complete public factor fixture was rejected.");
+                field.Focus(); field.SelectAll();
+                Complete(clipboard.SetTextAsync(accepted + "\u200B"));
+                field.Paste();
+                PumpUntil(() => field.ValidationMessage == FactorInput.Message(FactorInput.Error.ForbiddenCharacter, language));
+                Require(field.Text == accepted && field.HexCharacterCount == 256,
+                    "Rejected transfer changed the existing complete factor.");
+                RequireFormatStatus(window, field, complete: false);
+
+                field.SelectAll();
+                Complete(clipboard.SetTextAsync(accepted));
+                field.Paste();
+                PumpUntil(() => field.IsFormatComplete);
+                Require(field.Text == accepted && field.HexCharacterCount == 256,
+                    "An identical accepted transfer changed the factor payload.");
+                RequireFormatStatus(window, field, complete: true);
+            }
             FactorTextBox first = fields[0], second = fields[1];
             first.TrySetText(hex[..255]);
             second.TrySetText(FactorInputRev12Tests.Format(FactorInputRev12Tests.FactorB));
@@ -304,6 +329,38 @@ internal static class FactorInputRev12GuiTests
             // preedit lifecycle must additionally be exercised on the real GUI.
             window.KeyTextInput("\uFF21"); Dispatcher.UIThread.RunJobs();
             Require(field.Text == retained, "Committed full-width IME text was normalized into ASCII hex.");
+
+            string completeFactor = ReferenceEquals(field, Fields(window)[0])
+                ? FactorInputRev12Tests.FactorA : FactorInputRev12Tests.FactorB;
+            Require(field.TrySetText(completeFactor), "The complete public factor fixture was rejected.");
+            field.Focus(); field.SelectAll();
+            window.KeyTextInput(completeFactor + "\u200B");
+            Dispatcher.UIThread.RunJobs();
+            Require(field.Text == completeFactor && field.HexCharacterCount == 256,
+                "Rejected committed input changed the existing complete factor.");
+            RequireFormatStatus(window, field, complete: false);
+
+            editor.RaiseEvent(new TextInputEventArgs
+            {
+                RoutedEvent = InputElement.TextInputEvent, Text = completeFactor, Handled = true,
+            });
+            Require(field.Text == completeFactor, "Already handled input changed the factor.");
+            RequireFormatStatus(window, field, complete: false);
+            field.IsReadOnly = true;
+            try
+            {
+                window.KeyTextInput(completeFactor);
+                Require(field.Text == completeFactor, "Read-only committed input changed the factor.");
+                RequireFormatStatus(window, field, complete: false);
+            }
+            finally { field.IsReadOnly = false; }
+
+            field.Focus(); field.SelectAll();
+            window.KeyTextInput(completeFactor);
+            Dispatcher.UIThread.RunJobs();
+            Require(field.Text == completeFactor && field.HexCharacterCount == 256,
+                "An identical accepted committed input changed the factor payload.");
+            RequireFormatStatus(window, field, complete: true);
         }
     }
 
