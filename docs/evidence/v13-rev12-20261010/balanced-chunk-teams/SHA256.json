@@ -5,11 +5,6 @@
     "sha256": "375ef2d6c69da0fd319a998b85e57ed598b9ca00f557379db27a2c081fa436da"
   },
   {
-    "file": "source.diff",
-    "bytes": 10022,
-    "sha256": "bd7f837496f0e281947b9682062e358aba50ea18293fc6610394ed4be1605ccf"
-  },
-  {
     "file": "sources-before.json",
     "bytes": 244,
     "sha256": "c024ee647701770f0405f5385ce7604f27958b9810d9b7d8b0c3844ac61c4ee8"
@@ -108,5 +103,10 @@
     "file": "failed-original18-root-tracked-source-postcheck.json",
     "bytes": 479,
     "sha256": "5327d76757faecf59ee4c9c6499fe7506ee60331ce9cc1a0a09809119800a365"
+  },
+  {
+    "file": "source-diff.json",
+    "bytes": 10404,
+    "sha256": "83bf2b1a30aafd13828382ed9c25017d0916cf6ab75ab4e02cb94a3df65efeb3"
   }
 ]
