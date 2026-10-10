@@ -133,6 +133,41 @@ internal static class SecurityHardeningTests
                     "The chunk policy rounded up past its memory budget.");
             }
         }
+        (int Ceiling, int Chunks, int[] Expected)[] partitions =
+        [
+            (1, 1, [1]), (1, 3, [1, 1, 1]), (3, 2, [2, 1]),
+            (10, 3, [4, 3, 3]), (10, 4, [3, 3, 2, 2]),
+            (10, 6, [2, 2, 2, 2, 1, 1]), (10, 8, [2, 2, 1, 1, 1, 1, 1, 1]),
+            (int.MaxValue, 1, [int.MaxValue]),
+            (int.MaxValue, 2, [1073741824, 1073741823]),
+            (int.MaxValue, 3, [715827883, 715827882, 715827882]),
+        ];
+        foreach ((int ceiling, int chunks, int[] expected) in partitions)
+        {
+            int[] actual = Enumerable.Range(0, chunks)
+                .Select(index => KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, chunks, index)).ToArray();
+            Require(actual.SequenceEqual(expected), "Equal chunks did not receive a balanced, overflow-safe native-team preference.");
+            Require(actual.All(grant => grant >= 1) && actual.Max() - actual.Min() <= 1
+                && actual.Sum(grant => (long)grant) == Math.Max(ceiling, chunks),
+                "Chunk-team preferences lost capacity, multiplied it, or granted no worker.");
+        }
+        foreach (int ceiling in new[] { 65, 1025, 4096, int.MaxValue })
+        {
+            Require(KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, ceiling, ceiling - 1) == 1,
+                "A large equal-width partition introduced a fixed cap or overflow.");
+            Require(KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, int.MaxValue, int.MaxValue - 1) == 1,
+                "Queued chunks beyond available CPUs requested an oversized or zero team.");
+            Require(KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, ceiling - 1, 0) == 2
+                && KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, ceiling - 1, ceiling - 2) == 1,
+                "The single remainder permit was lost or duplicated on a large topology.");
+        }
+        foreach ((int ceiling, int chunks, int index) in new[]
+        {
+            (0, 1, 0), (-1, 1, 0), (1, 0, 0), (1, -1, 0), (1, 1, -1), (1, 1, 1),
+        })
+            Require(CaptureThrows<ArgumentOutOfRangeException>(() =>
+                KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, chunks, index)) is not null,
+                "An invalid chunk partition was accepted.");
         return Task.CompletedTask;
     }
 
@@ -182,6 +217,67 @@ internal static class SecurityHardeningTests
         await KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(
             64, _ => Interlocked.Increment(ref subsequent), CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
         Require(subsequent == 64, "Native-team permits leaked after cancellation.");
+        await TestBalancedNativeChunkTeamsAsync();
+    }
+
+    private static async Task TestBalancedNativeChunkTeamsAsync()
+    {
+        Func<int>? previousAvailability = CpuTopology.AvailabilityForTests;
+        CpuTopology.AvailabilityForTests = () => 10;
+        try
+        {
+            ArchiveOperationPolicy current = ArchiveOperationPolicy.Current;
+            var policy = new ArchiveOperationPolicy(current.WorkingDirectory, current.OutputDirectory, maxCpuWorkers: 10);
+            using IDisposable policyScope = policy.EnterScope();
+            foreach ((int available, int[] expected) in new (int, int[])[]
+            {
+                (10, [4, 3, 3]), (10, [3, 3, 2, 2]),
+                (10, [2, 2, 2, 2, 1, 1]), (10, [2, 2, 1, 1, 1, 1, 1, 1]),
+                (4, [2, 1, 1]),
+            })
+            {
+                // Counts and native grants are simulated, but callbacks, their
+                // blocked lifetime, queued reservations and joins are real.
+                CpuTopology.AvailabilityForTests = () => available;
+                using var release = new ManualResetEventSlim();
+                var occupied = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var grants = new int[expected.Length];
+                int entered = 0, finished = 0;
+                Task operation = KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(expected.Length, index =>
+                {
+                    grants[index] = NativeCipherWorkerBudget.Current;
+                    try
+                    {
+                        Require(CpuWorkBudget.IsOwnedByCurrentContext, "A balanced native team lost its CPU lease context.");
+                        if (Interlocked.Increment(ref entered) == expected.Length) occupied.TrySetResult();
+                        Require(release.Wait(TimeSpan.FromSeconds(15)), "Balanced native-team regression timed out.");
+                    }
+                    finally { Interlocked.Increment(ref finished); }
+                }, CancellationToken.None);
+                try
+                {
+                    await occupied.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                    Require(grants.SequenceEqual(expected) && CpuWorkBudget.ActiveWorkersForTests == available,
+                        "Earlier chunk teams consumed the remainder permits needed by an equally sized sibling.");
+                    using var cancellation = new CancellationTokenSource();
+                    Task<CpuWorkBudget.Lease> queued = CpuWorkBudget.AcquireAsync(10, 1, cancellation.Token).AsTask();
+                    bool escaped = queued.IsCompleted;
+                    cancellation.Cancel();
+                    try { using CpuWorkBudget.Lease unexpected = await queued; throw new InvalidOperationException("A cancelled queued team acquired a permit."); }
+                    catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+                    Require(!escaped, "A queued team exceeded the fully occupied balanced batch.");
+                    Require(!operation.IsCompleted, "A batch returned while its native callbacks remained blocked.");
+                }
+                finally
+                {
+                    release.Set();
+                    await operation;
+                }
+                Require(entered == expected.Length && finished == expected.Length && CpuWorkBudget.ActiveWorkersForTests == 0,
+                    "Balanced chunk teams failed to join exactly once or leaked aggregate CPU permits.");
+            }
+        }
+        finally { CpuTopology.AvailabilityForTests = previousAvailability; }
     }
 
     private static Task TestSecureMemoryUnlockFailureAsync()

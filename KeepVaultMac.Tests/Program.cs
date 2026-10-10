@@ -129,9 +129,9 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
     string installationManifestVerifierSource = await File.ReadAllTextAsync(
         Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier", "InstallationManifestVerifier.cs")).ConfigureAwait(false);
-    Require(keepVaultBuilderSource.Contains("build_version='18'", StringComparison.Ordinal)
-        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"18\"", StringComparison.Ordinal)
-        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"18\")", StringComparison.Ordinal),
+    Require(keepVaultBuilderSource.Contains("build_version='19'", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"19\"", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"19\")", StringComparison.Ordinal),
         "The release builder and strict installation manifest/bundle build pins differ.");
     string portableBuilderSource = await File.ReadAllTextAsync(portableBuilder).ConfigureAwait(false);
     string releasePublishRenameSource = await File.ReadAllTextAsync(releasePublishRename).ConfigureAwait(false);

@@ -1582,11 +1582,19 @@ public sealed partial class KalynaContainerService
         int started = 0;
         try
         {
+            // Partition this batch's freshly observed capacity before any team
+            // acquires it. Rounding every request up independently can leave
+            // the last equally sized chunk with a much smaller residual grant.
+            int nativeWorkerCeiling = limitNativeConcurrency
+                ? Math.Min(ArchiveOperationPolicy.Current.MaxCpuWorkers, CpuTopology.AvailableWorkers)
+                : 1;
             for (; started < workerCount; started++)
             {
                 int workerIndex = started;
                 tasks[started] = limitNativeConcurrency
-                    ? RunNativeChunkWorkerAsync(worker, workerIndex, workerCount, cancellationToken)
+                    ? RunNativeChunkWorkerAsync(worker, workerIndex,
+                        CalculateNativeChunkWorkerPreference(nativeWorkerCeiling, workerCount, workerIndex),
+                        cancellationToken)
                     : Task.Run(() => worker(workerIndex), cancellationToken);
             }
         }
@@ -1643,11 +1651,23 @@ public sealed partial class KalynaContainerService
         Action<int> worker) =>
         RunChunkWorkersAsync(workerCount, worker, CancellationToken.None);
 
+    // Preferences divide independent, equally sized chunks fairly. Actual
+    // leases still re-read topology, honor all active aggregate ceilings and
+    // may grant less or wait. More chunks than CPUs request one permit each.
+    internal static int CalculateNativeChunkWorkerPreference(int maximumWorkers, int readyChunks, int index)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(maximumWorkers, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(readyChunks, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(index);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, readyChunks);
+        if (readyChunks >= maximumWorkers) return 1;
+        return maximumWorkers / readyChunks + (index < maximumWorkers % readyChunks ? 1 : 0);
+    }
+
     private static async Task RunNativeChunkWorkerAsync(
-        Action<int> worker, int index, int readyChunks, CancellationToken cancellationToken)
+        Action<int> worker, int index, int preferredWorkers, CancellationToken cancellationToken)
     {
         ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
-        int preferredWorkers = 1 + (policy.MaxCpuWorkers - 1) / readyChunks;
         CpuWorkBudget.Lease acquiredCpu;
         using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.CpuPermitWait))
             acquiredCpu = await CpuWorkBudget.AcquireAsync(policy.MaxCpuWorkers,

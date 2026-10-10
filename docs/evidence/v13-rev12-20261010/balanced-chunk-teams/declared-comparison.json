@@ -1,0 +1,17 @@
+{
+  "observedUtc": "2026-10-10T06:38:08.369856+00:00",
+  "order": [
+    "originalBuild18",
+    "balancedDevelopment"
+  ],
+  "runsPerCandidate": 5,
+  "warmupsPerCandidate": 1,
+  "orderSeed": "0x534C4F54",
+  "testId": "performance.pipeline-slot-scaling",
+  "payloadBytes": 268435456,
+  "scope": "Paired diagnostic; same existing release gate unchanged at90percent, old andnew complete benchmark once each. Currentpower observed separately; not final signedcandidate release evidence.",
+  "diffSha256": "bd7f837496f0e281947b9682062e358aba50ea18293fc6610394ed4be1605ccf",
+  "actualRunnerPid": 37461,
+  "oldHarnessSha256": "6df20e0bf64d575e70a4107cf57e8c5014b5e4736ea4d397ff59b98bcab7def6",
+  "newHarnessSha256": "ed9e0456c464dc055d5c3f6b8b319582df4902f7cfc5c78795e48de634086ccf"
+}

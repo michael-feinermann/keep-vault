@@ -1,0 +1,11 @@
+{
+  "observedUtc": "2026-10-08T10:35:44.430872+00:00",
+  "actualRunnerExitCode": 1,
+  "trackedInputCountBefore": 3163,
+  "trackedInputCountAfter": 3163,
+  "trackedNamespaceAndBytesStable": true,
+  "trackedBeforeSha256": "f77101853cbd2f332689de69fbc612d3cdc71f6f21947c9c55fce7a79a7b3c39",
+  "trackedAfterSha256": "f77101853cbd2f332689de69fbc612d3cdc71f6f21947c9c55fce7a79a7b3c39",
+  "status": "PASS",
+  "scope": "Actual post-observation only; no GUI/final512/release approval."
+}

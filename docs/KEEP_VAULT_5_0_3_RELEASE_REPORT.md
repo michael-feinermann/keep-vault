@@ -1,5 +1,15 @@
 # Keep Vault 5.0.3: Release und Installation
 
+## Abschlussfortsetzung vom 10. Oktober 2026, Quellziel Build 19
+
+Der reguläre Build 18 aus Commit `7f174f85e5886a9f379d51e9ebd5ece43bf7f369` ist signiert, notarisiert und installiert. Full302 und sechs zusätzliche funktionale Phasen sind PASS. Der Builder endete jedoch tatsächlich mit Exit 1: Die Auto-Pipeline erreichte 345,034 gegenüber 386,667 MiB/s, also 89,234 % bei unveränderter 90-%-Schwelle. Die nachfolgenden 41 Phasen einschließlich der aktuellen 1-GiB-Matrix und des letzten strukturellen Tests wurden nicht ausgeführt. Die Quellen blieben unverändert. Reale GUI- und vollständige Releasefreigabe sind weiterhin offen.
+
+Die anschließend gefundene ungleiche CPU-Verteilung ist korrigiert: Zehn freigegebene CPUs werden bei drei gleich großen Chunks als 4+3+3 statt 4+4+2 angefragt. Frische Verfügbarkeit und globale CPU-Leases bleiben verbindlich. Vier Ressourcen-/Abbruchregressionen und zwei zusätzliche Prüfungen einschließlich bitgleicher Container aller zwölf Suites sind tatsächlich PASS. Der unabhängige Quellreview fand keine neue Besitz- oder Abbruchregression.
+
+Der vorab deklarierte heutige Vergleich auf Akku führte beide vollständigen Pipelinebenchmarks einmal aus. Der ursprüngliche Stand erreichte Auto 399,527 MiB/s, 95,126 % des besten festen Fensters. Die Korrektur erreichte Auto 381,592 MiB/s, 92,214 %; beide Worker haben tatsächlichen Exit 0. Mehrere feste Fenster verbessern sich, eine allgemeine Auto-Beschleunigung ist jedoch nicht belegt. Messumfang, alle Rohproben, Original-FAIL und tatsächliche Terminalbelege stehen im [öffentlichen Diagnosepaket](evidence/v13-rev12-20261010/balanced-chunk-teams/README.md). Die 90-%-Schwelle ist unverändert.
+
+Build 19 übernimmt die unabhängige Faktorfarbkorrektur und die ausgeglichenen CPU-Freigaben. Der neue signierte Universal-/AOT-Kandidat, dessen vollständiger regulärer Lauf, reale installierte GUI-Prüfungen und der abschließende Struktur-/Recoverylauf benötigen eigene Nachweise. Es besteht noch keine Releasefreigabe. Apple-Signierung bleibt im Schlüsselbund; die privaten RSA-/ML-DSA-Dateien bleiben ausschließlich im geschützten VeraCrypt-Schlüsselspeicher. Die vom Benutzer auf 600 Minuten gesetzte automatische Abmeldung wird nicht verändert.
+
 ## Farbkorrektur vom 8. Oktober 2026, Quellziel Build 18
 
 Die Faktorstatusanzeigen werden pro Feld grün, wenn dessen angenommene Eingabe genau 256 ASCII-Hexzeichen enthält und keine aktuelle Eingabefehlermeldung besteht. Zulässiger Formatierungsleerraum bleibt ungezählt. Unvollständige Eingaben sowie abgelehnte, veraltete oder fehlgeschlagene Transfers zeigen Rot. Das bestätigt ausschließlich das Eingabeformat, nicht die Zugehörigkeit zu einem Archiv. Parser, Faktorbytes und Kryptografie bleiben unverändert.
