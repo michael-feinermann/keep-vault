@@ -6,7 +6,7 @@ Stand: 11. Oktober 2026. Status: unveröffentlichter macOS-Kandidat `v5.0.3-rc.b
 
 Der kompilierte Produktquellstand ist `ea0eeecface1a8d16760676c1d6a428baef350c0`. Build 20 bleibt bytegleich. Die unveränderte verwaltete Product-Runtime-DLL für die Produktionsdiensttests hat SHA-256 `86f7e82f53e4754061e5e4f2bd4efeaecc921b189f2a7c70e2448ae29d839501`; die passende Referenz-DLL `70faad170681ba195319a260b346eb310b8a5628a3750ef27c8d33f33b6ab29a`. Diese DLL-Bindung ist kein Ersatz für die eigenständig geprüften nativen AOT-Appinventare.
 
-Der abschließende Quellcommit enthält ausschließlich `KeepVaultMac.Tests/TestScheduler.cs`, `docs/releases/v5.0.3.md`, diesen neuen Bericht und die im [Belegmanifest](evidence/v13-build20-final-20261011/public-evidence-copy-manifest.json) einzeln aufgeführten öffentlichen Quittungskopien unter `docs/evidence/v13-build20-final-20261011` als Ergänzung oder Änderung. Der TestScheduler hat SHA-256 `68dc270f22a649bcf53bbe61f7c6b6344b78c20fe0b962417bb131f73f4a3d0d` haben. Es handelt sich um eine Diagnosekorrektur im Test-Harness. Dieser Commit baut das Produkt nicht neu. Der Kandidatentag und der tatsächliche Quellcommit binden diesen Bericht in Git. Der kompilierte ProductHEAD bleibt separat angegeben; Push und Entwurfsdownload erhalten eigene Distributionsquittungen.
+Der erste Abschlusscommit `0cd37e442dece9d09ef3e5cb56ae9d566ebe88fd` enthält ausschließlich `KeepVaultMac.Tests/TestScheduler.cs`, `docs/releases/v5.0.3.md`, diesen neuen Bericht und die im [Belegmanifest](evidence/v13-build20-final-20261011/public-evidence-copy-manifest.json) einzeln aufgeführten öffentlichen Quittungskopien unter `docs/evidence/v13-build20-final-20261011` als Ergänzung oder Änderung. Der TestScheduler hat SHA-256 `68dc270f22a649bcf53bbe61f7c6b6344b78c20fe0b962417bb131f73f4a3d0d` haben. Es handelt sich um eine Diagnosekorrektur im Test-Harness. Dieser Commit baut das Produkt nicht neu. Der Kandidatentag bindet diesen ersten Abschlusscommit. Nachgelagerte reine Dokumentationscommits ergänzen den tatsächlichen GitHub-Übertragungsnachweis. Der kompilierte ProductHEAD bleibt separat angegeben; Push und Entwurfsdownload erhalten eigene Distributionsquittungen.
 
 v13 ist absichtlich inkompatibel mit v12. Ressourcensteuerung, beide globalen MACs, vollständige Produktionsschlüsselableitung, native Integritätsprüfung und hybride RSA-4096-/ML-DSA-87-Prüfungen behalten ihre Anforderungen. Dieser Bericht genehmigt keine abgeschwächte Sicherheitsprüfung.
 
@@ -22,7 +22,7 @@ v13 ist absichtlich inkompatibel mit v12. Ressourcensteuerung, beide globalen MA
 | Infrastrukturtest des neuen Harness | PASS, tatsächlicher Exit 0 | `infra.runner-invariants`, genau ein echter Fall mit passender Inventarbindung. |
 | Wiederholung Paranoia, 512 MiB Quelldaten | PASS, tatsächlicher Exit 0 | 149 Dateien, 32 Verzeichnisse, ein reparierter Shard, vollständiger Hash-/Strukturvergleich. Funktional; keine kanonische Phase-49- oder Native-GUI-Freigabe. |
 | Vollständige formale 49-Phasen-Abschlussfreigabe | BLOCKED | Keine komplette aktuelle Freigabe aus kontrollierten Leistungs- und nativen Pflichtnachweisen. |
-| Öffentlicher Download des Kandidaten | NOT RUN | Der Kandidat ist nicht veröffentlicht. Ein authentifizierter Entwurfsdownload wäre ein eigener Nachweis. |
+| Öffentlicher Download des Kandidaten | NOT RUN | Der Kandidat ist nicht veröffentlicht. Der authentifizierte Entwurfsdownload besteht separat mit sechs bytegleichen Dateien und beiden Hybrid-Verifierarchitekturen. |
 
 Der erste neue Diagnosetest-Harness-Bauversuch scheiterte real an fehlenden unveränderten Produktdateien. Der korrigierte zweite Bau übernahm diese vorhandenen Eingaben, ohne das Produkt neu zu bauen. Auch der erste Infrastruktur-Aufruf mit `--no-smoke` bleibt als Fehlversuch erhalten: Der Zieltest ist ein Smoke-Test, daher lief kein passender Fall. Der korrigierte Aufruf führte den echten Zieltest aus. Keiner dieser Befunde wird umetikettiert oder als frühere Ausführung angerechnet.
 
@@ -122,7 +122,7 @@ Der bestehende Build-20-Paketsatz enthält Keep Vault, QR-Scanner und Installer.
 
 Der Paketpayload hat SHA-256 `84cc050b2ef5588d882b59e154063e6f62e473763d4dfd484c2e4a5f5536a32e`. Ein unveröffentlichter GitHub-Entwurf darf genau die sechs vorhandenen, signierten Dateien mit folgenden Namen enthalten: `Keep.Vault-macOS-universal.zip`, `.sha3`, `.skein`, `.khsig`, `.sha3.khsig` und `.skein.khsig`, jeweils an denselben Basisnamen angehängt. Die Namensanpassung der lokalen Uploadkopien ändert die Payloadbytes nicht.
 
-Der Kandidatentag ist `v5.0.3-rc.build20`. Der Entwurf bleibt unveröffentlicht, der bestehende Latest-Release und v5.0.2 mit seinen Dateien bleiben unverändert. Eine Entwurfsanlage oder ein Quellenpush ist keine öffentliche Releasefreigabe. Der erneute Download aller sechs Entwurfsdateien wird separat geprüft; der anonyme öffentliche Download bleibt NOT RUN, solange der Entwurf unveröffentlicht ist. `publicReleaseApproved` bleibt false.
+Der Kandidatentag ist `v5.0.3-rc.build20`. Der Entwurf bleibt unveröffentlicht, der bestehende Latest-Release und v5.0.2 mit seinen Dateien bleiben unverändert. Eine Entwurfsanlage oder ein Quellenpush ist keine öffentliche Releasefreigabe. Der erneute authentifizierte Download aller sechs Entwurfsdateien ist separat PASS; der anonyme öffentliche Download bleibt NOT RUN, solange der Entwurf unveröffentlicht ist. `publicReleaseApproved` bleibt false.
 
 ## Öffentliche Nachweisfingerprints
 
@@ -146,3 +146,9 @@ Die ausgewählten nicht geheimen strukturierten Quittungen sind als bytegleiche 
 | Composite-V3-Quellenmanifest, nur Quellenvorbereitung | `dea0f5bcefea59c1fa23b6dc488ca3838323d6b55ec08b39e4f6a2911776abcf` |
 
 Der abschließende Quellencommit und die tatsächlichen GitHub-Entwurfs-/Downloadquittungen werden aus dem separaten Distributionsabschluss übernommen. Dieser Bericht behauptet keinen durch seinen eigenen Inhalt nachgewiesenen Quellenpush oder GitHub-Entwurf. Die abgeschlossenen Informations- und Funktionstests bleiben davon unabhängig belegt.
+
+## Tatsächlicher GitHub-Abschluss
+
+Der Quellenpush, [Draft-PR #3](https://github.com/michael-feinermann/keep-vault/pull/3) und der [unveröffentlichte Build-20-Entwurf](https://github.com/michael-feinermann/keep-vault/releases/tag/untagged-bf09272d4db673097c18) sind angelegt und geprüft. Der Kandidatentag `v5.0.3-rc.build20` zeigt auf den ersten Abschlusscommit. Alle sechs Paketdateien wurden erneut authentifiziert heruntergeladen, mit den lokalen Originalen byteweise und per SHA-256 verglichen und auf ARM64 sowie x86_64 mit beiden Hybrid-Signaturalgorithmen geprüft. [Originalquittung](evidence/v13-build20-github-20261011/github-draft-download-completion.json).
+
+Die bestehende v5.0.2-Release einschließlich aller sechs Assetidentitäten bleibt unverändert; Latest ist weiterhin v5.0.2. Der Mac war für die zusätzliche native Bedienprüfung weiterhin gesperrt. Öffentliche Releasefreigabe bleibt BLOCKED, anonym öffentlich heruntergeladene 5.0.3-Dateien werden nicht behauptet.
