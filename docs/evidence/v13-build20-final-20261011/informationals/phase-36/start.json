@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-11T11:02:48.506695+00:00",
+  "pid": 24751,
+  "arguments": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-preserved-harness-sdk-20261010T082542165260Z/sdk/dotnet",
+    "exec",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/harness/KeepVaultMac.Tests.dll",
+    "--performance",
+    "--only",
+    "performance.rev12-workflow-1gib-mixed-auto",
+    "--parallel",
+    "1",
+    "--timings",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-36/test-timings.json"
+  ],
+  "sourceHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "power": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t80%; AC attached; not charging present: true\n",
+  "harnessDllSha256": "55b4409de56f8ac21ff85172adb6db6276e58b83ffeaf252d46d9e3e07348856"
+}

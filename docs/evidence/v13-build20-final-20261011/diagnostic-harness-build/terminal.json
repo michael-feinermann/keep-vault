@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-11T12:48:33.972819+00:00",
+  "actualWrapperPid": 29751,
+  "actualExitCode": 0,
+  "manifestSha256": "d4a97c33f21682edfc7dfc0f9f320997056d309ba2c723d0ce17f3b4b7b0e18d",
+  "status": "ACTUAL_DIAGNOSTIC_TEST_HARNESS_BUILD_PASS",
+  "testsRun": false,
+  "productBuilt": false,
+  "scope": "Inner body closure; real supervisor wait(0) and diagnostic regression remain required separately."
+}

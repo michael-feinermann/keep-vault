@@ -1,0 +1,116 @@
+{
+  "originalPhase": 37,
+  "testId": "performance.rev12-workflow-1gib-paranoia-auto",
+  "suite": "ParanoiaCascade",
+  "status": "PASS",
+  "actualPid": 25086,
+  "startedUtc": "2026-10-11T11:12:13.886118+00:00",
+  "completedUtc": "2026-10-11T11:22:01.848122+00:00",
+  "actualExitCode": 0,
+  "processWallSeconds": 587.9640377080068,
+  "testCaseSeconds": 587.742,
+  "testTimingSeconds": 587.7417084,
+  "setupSeconds": 1.0617979,
+  "entropyPreparationSeconds": 0.0966377,
+  "workflowWallSeconds": 586.5121845,
+  "archiveAndEncryptSeconds": 280.6637448,
+  "sourceMiBPerSecondCompleteWorkflow": 1.745914282877102,
+  "sourceMiBPerSecondArchiveAndEncrypt": 3.6484940394766654,
+  "outerWorkflowTimeline": [
+    {
+      "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+      "StartSeconds": 0,
+      "EndSeconds": 0.0088312,
+      "DurationSeconds": 0.0088312,
+      "workflowWallPercent": 0.001505714669428151
+    },
+    {
+      "Phase": "archiveAndEncrypt",
+      "StartSeconds": 0.0088312,
+      "EndSeconds": 280.6754855,
+      "DurationSeconds": 280.6666543,
+      "workflowWallPercent": 47.85350785836914
+    },
+    {
+      "Phase": "supplementalContainerHash",
+      "StartSeconds": 280.6754855,
+      "EndSeconds": 281.1990242,
+      "DurationSeconds": 0.5235387000000173,
+      "workflowWallPercent": 0.08926305605165434
+    },
+    {
+      "Phase": "recoveryCreate",
+      "StartSeconds": 281.1990242,
+      "EndSeconds": 311.7797226,
+      "DurationSeconds": 30.580698400000017,
+      "workflowWallPercent": 5.213992003605173
+    },
+    {
+      "Phase": "supplementalRecoveryHealthyVerification",
+      "StartSeconds": 311.7797226,
+      "EndSeconds": 324.880403,
+      "DurationSeconds": 13.100680399999987,
+      "workflowWallPercent": 2.2336586939226644
+    },
+    {
+      "Phase": "decryptAndExtractForOriginalComparison",
+      "StartSeconds": 324.880403,
+      "EndSeconds": 585.0660417,
+      "DurationSeconds": 260.1856387,
+      "workflowWallPercent": 44.36150613338196
+    },
+    {
+      "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+      "StartSeconds": 585.0660417,
+      "EndSeconds": 586.4167452,
+      "DurationSeconds": 1.3507035000000087,
+      "workflowWallPercent": 0.2302941926349714
+    },
+    {
+      "Phase": "ownedResourcesAndFixtureCleanup",
+      "StartSeconds": 586.4167452,
+      "EndSeconds": 586.5121845,
+      "DurationSeconds": 0.09543929999995271,
+      "workflowWallPercent": 0.016272347365010747
+    }
+  ],
+  "servicePhaseWallSeconds": {
+    "originalCreationSnapshot": 0.0078779,
+    "archiveAndEncrypt": 280.6637448,
+    "supplementalContainerHash": 0.523533,
+    "recoveryCreate": 30.5806379,
+    "supplementalRecoveryHealthyVerification": 13.1006529,
+    "decryptAndExtractForOriginalComparison": 260.185598,
+    "originalComparisonAndIndependentHashTopologyCheck": 1.3506886,
+    "fixtureCleanup": 0.0797367
+  },
+  "managedProcessCpuSecondsThroughOriginalComparison": 270.855697,
+  "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 780.4533568,
+  "receipt": {
+    "InputFiles": 3,
+    "InputDirectories": 5,
+    "InputBytes": 1073741824,
+    "CompressedPayloadBytesDuringCreation": 1074377316,
+    "ContainerBytes": 1074381038,
+    "RecoveryBytes": 163811328,
+    "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+    "ContainerSha256": "9F328F07DEEC3AE5B739DD9C081A365B58355D697E4405B0C14DB6D2D1779459",
+    "InitialCpuCeiling": 10,
+    "InitialThrottleReason": "minimum-work-window",
+    "OutputVolumeIdentity": "device:16777232"
+  },
+  "actualProfileArtifact": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-paranoia-auto-20261011T112201761-f45b2ed9d9b1411dbb9f10328273b61d.json",
+    "sha256": "6914ecefd754f4c86b0f1c9dc0ad2a851e28610e39469f7f6d05dc7685a8bd85",
+    "bytes": 683429
+  },
+  "profileCopySha256": "6914ecefd754f4c86b0f1c9dc0ad2a851e28610e39469f7f6d05dc7685a8bd85",
+  "phaseReceiptPins": {
+    "start.json": "d8dc886d4119884e49f53df58550a081d831b72a62988594e03d83c20de97c59",
+    "terminal.json": "ef4c5d1cec2b3a6e7b617fc9f7ca3c4df775a9558148b1d8ce94f4673e3120b6",
+    "run.log": "7b2726c14857e0378456b547bc45cb0753cb876b7a9ddb36890209c9005d4e97",
+    "test-results.json": "6aac7e2bb5344148bb04cbf971b355d2cda9190bec3f0c896fc6356d27c6b7e0",
+    "test-timings.json": "c8502107555e32851fb19393c57df64851ea8f21c534611af56e901e90325d08",
+    "validated.json": "f01ade4babfbfad1368cc0467afa6a68529c53dd4eb5452c99a111bbc361ee68"
+  }
+}

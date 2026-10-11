@@ -1,0 +1,1421 @@
+{
+  "schemaVersion": 1,
+  "completedUtc": "2026-10-11T12:39:21.895878+00:00",
+  "status": "INFORMATIONAL_TWELVE_ONE_GIB_FUNCTIONAL_WORKFLOWS_PASS",
+  "actualWrapperPid": 24097,
+  "wrapperSha256": "3507f77d62387126e7980db21a586a7c155706cf3a0e6a1914e79d8d96683253",
+  "originalRunnerSha256": "4985710142f8f419d7622992a91a233dab0de7e26e66c0ca1b0c7a662fcbefe1",
+  "sourceHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "productBuild": 20,
+  "compressionLevel": 3,
+  "scope": "Informational one-run 1-GiB complete production-service/native workflows with recorded boundary host load, level 3, functional original hash/topology comparison and authenticated healthy KPAR2 verification. No quiet-host comparison, causal suite/CPU-scaling result, original deletion, installed AOT GUI phase observation, release phase satisfaction or Release49 PASS.",
+  "passingActualWorkflowCount": 12,
+  "plannedWorkflowCount": 12,
+  "passingActualWorkflows": [
+    {
+      "originalPhase": 34,
+      "testId": "performance.rev12-workflow-1gib-standard-auto",
+      "suite": "StandardCascade",
+      "status": "PASS",
+      "actualPid": 24176,
+      "startedUtc": "2026-10-11T10:44:04.972033+00:00",
+      "completedUtc": "2026-10-11T10:53:23.853133+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 558.8923678750289,
+      "testCaseSeconds": 558.631,
+      "testTimingSeconds": 558.6312907,
+      "setupSeconds": 1.1958862,
+      "entropyPreparationSeconds": 0.0827768,
+      "workflowWallSeconds": 557.2699133,
+      "archiveAndEncryptSeconds": 267.5551399,
+      "sourceMiBPerSecondCompleteWorkflow": 1.8375296702026351,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.8272484706618792,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0081038,
+          "DurationSeconds": 0.0081038,
+          "workflowWallPercent": 0.001454196576307433
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0081038,
+          "EndSeconds": 267.5665565,
+          "DurationSeconds": 267.5584527,
+          "workflowWallPercent": 48.01236282712483
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 267.5665565,
+          "EndSeconds": 268.0903149,
+          "DurationSeconds": 0.5237584000000197,
+          "workflowWallPercent": 0.09398648437674766
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 268.0903149,
+          "EndSeconds": 293.6934861,
+          "DurationSeconds": 25.603171199999963,
+          "workflowWallPercent": 4.594393235476321
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 293.6934861,
+          "EndSeconds": 304.3471546,
+          "DurationSeconds": 10.653668500000038,
+          "workflowWallPercent": 1.9117609341067647
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 304.3471546,
+          "EndSeconds": 555.852729,
+          "DurationSeconds": 251.50557439999994,
+          "workflowWallPercent": 45.13173390442931
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 555.852729,
+          "EndSeconds": 557.1810178,
+          "DurationSeconds": 1.3282887999999957,
+          "workflowWallPercent": 0.2383564531833834
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 557.1810178,
+          "EndSeconds": 557.2699133,
+          "DurationSeconds": 0.0888955000000351,
+          "workflowWallPercent": 0.015951964726324496
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0072028,
+        "archiveAndEncrypt": 267.5551399,
+        "supplementalContainerHash": 0.5237528,
+        "recoveryCreate": 25.6031252,
+        "supplementalRecoveryHealthyVerification": 10.6536445,
+        "decryptAndExtractForOriginalComparison": 251.5055432,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.328272,
+        "fixtureCleanup": 0.0727703
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 139.887599,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 643.8299701,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074380330,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "34B61EE3C47C725D745F08724007399B34E067828E56F7A15382291B80A58CC8",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-standard-auto-20261011T105323780-2531a6aaa67b4247bea91bbd89290fdd.json",
+        "sha256": "5e7322a80e9a77ad2643eb8422bf97db042dcf19d2d980a41223b304d2a1d4b7",
+        "bytes": 682263
+      },
+      "profileCopySha256": "5e7322a80e9a77ad2643eb8422bf97db042dcf19d2d980a41223b304d2a1d4b7",
+      "phaseReceiptPins": {
+        "start.json": "9ceac4556e16f00c9bf9adbd2d4d001afebea919404ff86a5e622214e0fd315b",
+        "terminal.json": "75be210e85f93b160e046762e67ff43059e4aa385f24517fd64648cc119c2896",
+        "run.log": "70edd5dc0dc3a1c3ee7ec6e9744765a7fd0bff882227a8bf9ec08c47c570f3bb",
+        "test-results.json": "5677354c2d856a65edb1a58819db68824545b178d80f86f9e82c5f0de359c2d1",
+        "test-timings.json": "5fc674bdde50a86c40dd5424d99cbb5cc2b67398b35344772b831972765e0c24",
+        "validated.json": "a11a4ed24a91f52f96e2a331a34be673091795bcd92c4b1b85834847174add18"
+      }
+    },
+    {
+      "originalPhase": 35,
+      "testId": "performance.rev12-workflow-1gib-xchacha-aes-auto",
+      "suite": "XChaChaOverAes",
+      "status": "PASS",
+      "actualPid": 24491,
+      "startedUtc": "2026-10-11T10:53:26.061481+00:00",
+      "completedUtc": "2026-10-11T11:02:46.253001+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 560.1937160000089,
+      "testCaseSeconds": 559.973,
+      "testTimingSeconds": 559.9729182,
+      "setupSeconds": 0.9958807,
+      "entropyPreparationSeconds": 0.0833941,
+      "workflowWallSeconds": 558.822012,
+      "archiveAndEncryptSeconds": 268.7986397,
+      "sourceMiBPerSecondCompleteWorkflow": 1.8324260283433502,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.8095430882494896,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0085481,
+          "DurationSeconds": 0.0085481,
+          "workflowWallPercent": 0.0015296641536017375
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0085481,
+          "EndSeconds": 268.8116747,
+          "DurationSeconds": 268.80312660000004,
+          "workflowWallPercent": 48.1017427423743
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 268.8116747,
+          "EndSeconds": 269.3326496,
+          "DurationSeconds": 0.5209748999999988,
+          "workflowWallPercent": 0.09322734051499726
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 269.3326496,
+          "EndSeconds": 295.9541566,
+          "DurationSeconds": 26.62150699999995,
+          "workflowWallPercent": 4.7638615566918565
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 295.9541566,
+          "EndSeconds": 307.1203002,
+          "DurationSeconds": 11.166143599999998,
+          "workflowWallPercent": 1.9981574383651872
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 307.1203002,
+          "EndSeconds": 557.4004435,
+          "DurationSeconds": 250.28014330000008,
+          "workflowWallPercent": 44.787094625041384
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 557.4004435,
+          "EndSeconds": 558.7201867,
+          "DurationSeconds": 1.319743199999948,
+          "workflowWallPercent": 0.23616521390713366
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 558.7201867,
+          "EndSeconds": 558.822012,
+          "DurationSeconds": 0.10182529999997314,
+          "workflowWallPercent": 0.018221418951545013
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0076184,
+        "archiveAndEncrypt": 268.7986397,
+        "supplementalContainerHash": 0.5209665,
+        "recoveryCreate": 26.6214593,
+        "supplementalRecoveryHealthyVerification": 11.1661159,
+        "decryptAndExtractForOriginalComparison": 250.280119,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3197388,
+        "fixtureCleanup": 0.0854989
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 130.193838,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 635.3440056,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074380242,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "CFCDAED50AE2D6E1386F172A201014B2C95A592ECA2A0C18D3E01A98FA53D94A",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-xchacha-aes-auto-20261011T110246177-6ac22d6c6ce6434596dff0ac4dbf701f.json",
+        "sha256": "b6e9d7bb341efbfaa3d42f2c5d0ea4a307656bfbcdfb20c671dfe54ff816c192",
+        "bytes": 681948
+      },
+      "profileCopySha256": "b6e9d7bb341efbfaa3d42f2c5d0ea4a307656bfbcdfb20c671dfe54ff816c192",
+      "phaseReceiptPins": {
+        "start.json": "8e8f4c217794fc83bbeb3a93f4a80a9b060d7bdbf68e9e89db46a847333e8e21",
+        "terminal.json": "02564ab46ae293beaf572ba8e5530510248abca252b139abbb4512093ff7c450",
+        "run.log": "489cc9eab66142df4116c4340ed4f133594e0602ef6527446b57945394e18d96",
+        "test-results.json": "5c214805b0a8036f1d3d6f7775df5c3da667ad3dad23be54a0877d1311b912a1",
+        "test-timings.json": "084d8e9c83f8f87cd328d30e5cd0bd62998f7e3990ba97fc3122c69c03823b38",
+        "validated.json": "d1b64155edd9cfd5b5e51e42f478035fa50c6c595f7fa41d041c6d901581428c"
+      }
+    },
+    {
+      "originalPhase": 36,
+      "testId": "performance.rev12-workflow-1gib-mixed-auto",
+      "suite": "MixedCascade",
+      "status": "PASS",
+      "actualPid": 24751,
+      "startedUtc": "2026-10-11T11:02:48.506695+00:00",
+      "completedUtc": "2026-10-11T11:12:11.663310+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 563.1587699580123,
+      "testCaseSeconds": 562.939,
+      "testTimingSeconds": 562.9386176,
+      "setupSeconds": 1.0432954,
+      "entropyPreparationSeconds": 0.0817551,
+      "workflowWallSeconds": 561.7461758,
+      "archiveAndEncryptSeconds": 270.1714664,
+      "sourceMiBPerSecondCompleteWorkflow": 1.8228873539578445,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.7901855945213914,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0084488,
+          "DurationSeconds": 0.0084488,
+          "workflowWallPercent": 0.0015040244800897495
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0084488,
+          "EndSeconds": 270.1827869,
+          "DurationSeconds": 270.1743381,
+          "workflowWallPercent": 48.0954476842208
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 270.1827869,
+          "EndSeconds": 270.6893118,
+          "DurationSeconds": 0.5065248999999881,
+          "workflowWallPercent": 0.09016971041745507
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 270.6893118,
+          "EndSeconds": 298.0408716,
+          "DurationSeconds": 27.351559800000018,
+          "workflowWallPercent": 4.86902465531658
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 298.0408716,
+          "EndSeconds": 309.5072526,
+          "DurationSeconds": 11.466381000000013,
+          "workflowWallPercent": 2.041203214898684
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 309.5072526,
+          "EndSeconds": 560.3405007,
+          "DurationSeconds": 250.8332481,
+          "workflowWallPercent": 44.652417569693405
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 560.3405007,
+          "EndSeconds": 561.6619427,
+          "DurationSeconds": 1.3214420000000473,
+          "workflowWallPercent": 0.23523827253797344
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 561.6619427,
+          "EndSeconds": 561.7461758,
+          "DurationSeconds": 0.08423309999989215,
+          "workflowWallPercent": 0.014994868435006825
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0075148,
+        "archiveAndEncrypt": 270.1714664,
+        "supplementalContainerHash": 0.5065163,
+        "recoveryCreate": 27.351493,
+        "supplementalRecoveryHealthyVerification": 11.4663403,
+        "decryptAndExtractForOriginalComparison": 250.8332242,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3214379,
+        "fixtureCleanup": 0.0722534
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 140.012729,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 645.6439593,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074380330,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "1FEA72B59E1BCE45D6F23E18DDFA04E64F453AD5B4B27A0EC22838508C203BE1",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-mixed-auto-20261011T111211592-f1094a1af8bc412695432b4b2b3d4295.json",
+        "sha256": "ee54c27ab98cd5f6b4fc86ea0abf45afab69bb7682063e45fb5de08d3c969557",
+        "bytes": 682048
+      },
+      "profileCopySha256": "ee54c27ab98cd5f6b4fc86ea0abf45afab69bb7682063e45fb5de08d3c969557",
+      "phaseReceiptPins": {
+        "start.json": "4a1122152388a3bf5c444a99f19da0e3abcad997c6dce7ca78753100fec08dc8",
+        "terminal.json": "c40927856e0e0902c697558760ea8d08af0ab2567422eeafeefef76aeb9fc903",
+        "run.log": "e82051a3f8b82d38cc24f82d4adb58a9abc8213055f41c55264a30c918063bd9",
+        "test-results.json": "76a2eea1d294041008124e7f12f4b3d3be50cbb0e6ca6e1b3a304decf5c46c65",
+        "test-timings.json": "d978fa8a200e2953548330db1a4c282c986c9a69d146545025543e2e29a0f6d7",
+        "validated.json": "ff9cd77b18340147d1fb9ff8b6ac2b5a38a465163e9c447e2f48219c0125294c"
+      }
+    },
+    {
+      "originalPhase": 37,
+      "testId": "performance.rev12-workflow-1gib-paranoia-auto",
+      "suite": "ParanoiaCascade",
+      "status": "PASS",
+      "actualPid": 25086,
+      "startedUtc": "2026-10-11T11:12:13.886118+00:00",
+      "completedUtc": "2026-10-11T11:22:01.848122+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 587.9640377080068,
+      "testCaseSeconds": 587.742,
+      "testTimingSeconds": 587.7417084,
+      "setupSeconds": 1.0617979,
+      "entropyPreparationSeconds": 0.0966377,
+      "workflowWallSeconds": 586.5121845,
+      "archiveAndEncryptSeconds": 280.6637448,
+      "sourceMiBPerSecondCompleteWorkflow": 1.745914282877102,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.6484940394766654,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0088312,
+          "DurationSeconds": 0.0088312,
+          "workflowWallPercent": 0.001505714669428151
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0088312,
+          "EndSeconds": 280.6754855,
+          "DurationSeconds": 280.6666543,
+          "workflowWallPercent": 47.85350785836914
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 280.6754855,
+          "EndSeconds": 281.1990242,
+          "DurationSeconds": 0.5235387000000173,
+          "workflowWallPercent": 0.08926305605165434
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 281.1990242,
+          "EndSeconds": 311.7797226,
+          "DurationSeconds": 30.580698400000017,
+          "workflowWallPercent": 5.213992003605173
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 311.7797226,
+          "EndSeconds": 324.880403,
+          "DurationSeconds": 13.100680399999987,
+          "workflowWallPercent": 2.2336586939226644
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 324.880403,
+          "EndSeconds": 585.0660417,
+          "DurationSeconds": 260.1856387,
+          "workflowWallPercent": 44.36150613338196
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 585.0660417,
+          "EndSeconds": 586.4167452,
+          "DurationSeconds": 1.3507035000000087,
+          "workflowWallPercent": 0.2302941926349714
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 586.4167452,
+          "EndSeconds": 586.5121845,
+          "DurationSeconds": 0.09543929999995271,
+          "workflowWallPercent": 0.016272347365010747
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0078779,
+        "archiveAndEncrypt": 280.6637448,
+        "supplementalContainerHash": 0.523533,
+        "recoveryCreate": 30.5806379,
+        "supplementalRecoveryHealthyVerification": 13.1006529,
+        "decryptAndExtractForOriginalComparison": 260.185598,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3506886,
+        "fixtureCleanup": 0.0797367
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 270.855697,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 780.4533568,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074381038,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "9F328F07DEEC3AE5B739DD9C081A365B58355D697E4405B0C14DB6D2D1779459",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-paranoia-auto-20261011T112201761-f45b2ed9d9b1411dbb9f10328273b61d.json",
+        "sha256": "6914ecefd754f4c86b0f1c9dc0ad2a851e28610e39469f7f6d05dc7685a8bd85",
+        "bytes": 683429
+      },
+      "profileCopySha256": "6914ecefd754f4c86b0f1c9dc0ad2a851e28610e39469f7f6d05dc7685a8bd85",
+      "phaseReceiptPins": {
+        "start.json": "d8dc886d4119884e49f53df58550a081d831b72a62988594e03d83c20de97c59",
+        "terminal.json": "ef4c5d1cec2b3a6e7b617fc9f7ca3c4df775a9558148b1d8ce94f4673e3120b6",
+        "run.log": "7b2726c14857e0378456b547bc45cb0753cb876b7a9ddb36890209c9005d4e97",
+        "test-results.json": "6aac7e2bb5344148bb04cbf971b355d2cda9190bec3f0c896fc6356d27c6b7e0",
+        "test-timings.json": "c8502107555e32851fb19393c57df64851ea8f21c534611af56e901e90325d08",
+        "validated.json": "f01ade4babfbfad1368cc0467afa6a68529c53dd4eb5452c99a111bbc361ee68"
+      }
+    },
+    {
+      "originalPhase": 38,
+      "testId": "performance.rev12-workflow-1gib-threefish1024-auto",
+      "suite": "Threefish1024",
+      "status": "PASS",
+      "actualPid": 25615,
+      "startedUtc": "2026-10-11T11:22:04.129615+00:00",
+      "completedUtc": "2026-10-11T11:31:25.429359+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 561.3017549579963,
+      "testCaseSeconds": 561.071,
+      "testTimingSeconds": 561.0707234,
+      "setupSeconds": 1.0509553,
+      "entropyPreparationSeconds": 0.0835093,
+      "workflowWallSeconds": 559.4323734,
+      "archiveAndEncryptSeconds": 270.9174902,
+      "sourceMiBPerSecondCompleteWorkflow": 1.8304267838068595,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.779748584131834,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0083801,
+          "DurationSeconds": 0.0083801,
+          "workflowWallPercent": 0.001497964794041002
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0083801,
+          "EndSeconds": 270.9294038,
+          "DurationSeconds": 270.9210237,
+          "workflowWallPercent": 48.42784160906766
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 270.9294038,
+          "EndSeconds": 271.478146,
+          "DurationSeconds": 0.5487421999999924,
+          "workflowWallPercent": 0.09808910354346548
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 271.478146,
+          "EndSeconds": 297.310527,
+          "DurationSeconds": 25.832380999999998,
+          "workflowWallPercent": 4.617605671084318
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 297.310527,
+          "EndSeconds": 308.0177062,
+          "DurationSeconds": 10.707179200000041,
+          "workflowWallPercent": 1.9139362877636503
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 308.0177062,
+          "EndSeconds": 558.0495554,
+          "DurationSeconds": 250.0318492,
+          "workflowWallPercent": 44.693847029339615
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 558.0495554,
+          "EndSeconds": 559.3654902,
+          "DurationSeconds": 1.3159347999999227,
+          "workflowWallPercent": 0.23522678746712708
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 559.3654902,
+          "EndSeconds": 559.4323734,
+          "DurationSeconds": 0.06688320000000658,
+          "workflowWallPercent": 0.011955546940109666
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0074593,
+        "archiveAndEncrypt": 270.9174902,
+        "supplementalContainerHash": 0.5487339,
+        "recoveryCreate": 25.8323322,
+        "supplementalRecoveryHealthyVerification": 10.7071553,
+        "decryptAndExtractForOriginalComparison": 250.0318271,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3159134,
+        "fixtureCleanup": 0.0508387
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 120.564438,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 628.6824038,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074379262,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "9344286CF0B875C408DA9B7D94F6BF774CDCCFF41D06760000B4386FFDD1E5D2",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-threefish1024-auto-20261011T113125320-a7321a92e1594829b8877bc4a998ba91.json",
+        "sha256": "0c8aee7748f6879d18719ba1612b3ddb526dc2530d454072c9326f28a34e6334",
+        "bytes": 681708
+      },
+      "profileCopySha256": "0c8aee7748f6879d18719ba1612b3ddb526dc2530d454072c9326f28a34e6334",
+      "phaseReceiptPins": {
+        "start.json": "215b5aee971df68595f8eb06dd0ceab6b5a8baef357a0910cd231064bc41433e",
+        "terminal.json": "1f398722a6738b3f24b8cf2efbb5556edf42f46983bdfde71789feef3b633074",
+        "run.log": "f1224222cb5f307eb913fd78d43546cc11541d0bc3bf27493ed4130c0baad10f",
+        "test-results.json": "f80e33da3e7acd0d888dc6fac452a42c881eb9755a19860ba7c61ceaa0f18e6b",
+        "test-timings.json": "92b2d5de3806874ea64bd90b1b17af14834485bec915afbfe996a584dc03b89d",
+        "validated.json": "28eedd2faee7919bc832a5bf1522c1a6bcebeea3bb3da2e13801a616aaef1478"
+      }
+    },
+    {
+      "originalPhase": 39,
+      "testId": "performance.rev12-workflow-1gib-kalyna512-512-auto",
+      "suite": "Kalyna512_512",
+      "status": "PASS",
+      "actualPid": 25913,
+      "startedUtc": "2026-10-11T11:31:27.681309+00:00",
+      "completedUtc": "2026-10-11T11:40:57.109983+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 569.4299819580046,
+      "testCaseSeconds": 569.22,
+      "testTimingSeconds": 569.2196729,
+      "setupSeconds": 1.1762699,
+      "entropyPreparationSeconds": 0.0892157,
+      "workflowWallSeconds": 567.5800377,
+      "archiveAndEncryptSeconds": 273.8530064,
+      "sourceMiBPerSecondCompleteWorkflow": 1.8041508368573829,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.739232274500967,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0085631,
+          "DurationSeconds": 0.0085631,
+          "workflowWallPercent": 0.0015087035186614702
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0085631,
+          "EndSeconds": 273.8651133,
+          "DurationSeconds": 273.8565502,
+          "workflowWallPercent": 48.249855881074794
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 273.8651133,
+          "EndSeconds": 274.3888382,
+          "DurationSeconds": 0.5237248999999906,
+          "workflowWallPercent": 0.09227331216972971
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 274.3888382,
+          "EndSeconds": 301.6718912,
+          "DurationSeconds": 27.283052999999995,
+          "workflowWallPercent": 4.80690848652093
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 301.6718912,
+          "EndSeconds": 313.0800372,
+          "DurationSeconds": 11.408145999999988,
+          "workflowWallPercent": 2.0099625149307796
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 313.0800372,
+          "EndSeconds": 566.1405913,
+          "DurationSeconds": 253.0605541,
+          "workflowWallPercent": 44.58587992725664
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 566.1405913,
+          "EndSeconds": 567.4873262,
+          "DurationSeconds": 1.3467349000000013,
+          "workflowWallPercent": 0.23727665008398888
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 567.4873262,
+          "EndSeconds": 567.5800377,
+          "DurationSeconds": 0.092711500000064,
+          "workflowWallPercent": 0.016334524444474485
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0076231,
+        "archiveAndEncrypt": 273.8530064,
+        "supplementalContainerHash": 0.5237146,
+        "recoveryCreate": 27.2829876,
+        "supplementalRecoveryHealthyVerification": 11.4081159,
+        "decryptAndExtractForOriginalComparison": 253.0605325,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3467141,
+        "fixtureCleanup": 0.0762568
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 137.058649,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 648.8279069,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074379174,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "58CA8CFE31FC09E06A0D4B3EE84546AB3839BB49309C7B7671DEE842C8CCE48F",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-kalyna512-512-auto-20261011T114057031-b62b723a14c646698499d6651470ad8c.json",
+        "sha256": "4e3fda7f286b77f19768091435a2541177bdde2a8971336378678e7bf1e1deb3",
+        "bytes": 682590
+      },
+      "profileCopySha256": "4e3fda7f286b77f19768091435a2541177bdde2a8971336378678e7bf1e1deb3",
+      "phaseReceiptPins": {
+        "start.json": "90e2be1741658cd2c1f77914def0e090a13705c08b91ef3ed7cf6db1bea94bc9",
+        "terminal.json": "01bb4ef0a73d72177b907adf8fae250dbbeddcbfdec0b7eff4d9741b4fd16338",
+        "run.log": "cfe3c2467dfb68c97a10429813b5568319763d427303d6afd406e820d6772273",
+        "test-results.json": "bbaec06fc7be4d4ef032fa1ed4c018712fe928d3d414d3c1cb840ee86fef3688",
+        "test-timings.json": "fc502b4f2491d82994fadeccc9cccd57075c726446a82bde2145aa98ce8c0616",
+        "validated.json": "57a30e6accead8fab254958ceab20e38ce10e7e7d4b43d9aa5d837b5744c179c"
+      }
+    },
+    {
+      "originalPhase": 40,
+      "testId": "performance.rev12-workflow-1gib-shacal2-512-auto",
+      "suite": "Shacal2_512",
+      "status": "PASS",
+      "actualPid": 26579,
+      "startedUtc": "2026-10-11T11:40:59.476462+00:00",
+      "completedUtc": "2026-10-11T11:50:32.122961+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 572.6490484590176,
+      "testCaseSeconds": 572.449,
+      "testTimingSeconds": 572.4485458,
+      "setupSeconds": 1.0842116,
+      "entropyPreparationSeconds": 0.0930793,
+      "workflowWallSeconds": 570.84841,
+      "archiveAndEncryptSeconds": 272.8996072,
+      "sourceMiBPerSecondCompleteWorkflow": 1.7938212353083371,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.7522956170821486,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0085296,
+          "DurationSeconds": 0.0085296,
+          "workflowWallPercent": 0.0014941970320982414
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0085296,
+          "EndSeconds": 272.9103647,
+          "DurationSeconds": 272.9018351,
+          "workflowWallPercent": 47.80635810126896
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 272.9103647,
+          "EndSeconds": 273.4346329,
+          "DurationSeconds": 0.5242681999999945,
+          "workflowWallPercent": 0.09184017872625669
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 273.4346329,
+          "EndSeconds": 299.7445462,
+          "DurationSeconds": 26.309913300000005,
+          "workflowWallPercent": 4.608914177408327
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 299.7445462,
+          "EndSeconds": 310.6540895,
+          "DurationSeconds": 10.909543299999996,
+          "workflowWallPercent": 1.9111103944390415
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 310.6540895,
+          "EndSeconds": 569.3668669,
+          "DurationSeconds": 258.7127774,
+          "workflowWallPercent": 45.3207494087616
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 569.3668669,
+          "EndSeconds": 570.7404486,
+          "DurationSeconds": 1.3735817000000452,
+          "workflowWallPercent": 0.24062109588779362
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 570.7404486,
+          "EndSeconds": 570.84841,
+          "DurationSeconds": 0.10796139999990828,
+          "workflowWallPercent": 0.018912446475923144
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0075866,
+        "archiveAndEncrypt": 272.8996072,
+        "supplementalContainerHash": 0.5242627,
+        "recoveryCreate": 26.3098652,
+        "supplementalRecoveryHealthyVerification": 10.9095197,
+        "decryptAndExtractForOriginalComparison": 258.7127596,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3735665,
+        "fixtureCleanup": 0.0929018
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 129.57737,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 644.6041078,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074379202,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "4D9CC88EFEF2B520DAF41C3A17B169DCBF3F18B4A518278FD4B645B86A48E689",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-shacal2-512-auto-20261011T115032045-5a3d70cf5d0d4bb782bab0f2d9ead26b.json",
+        "sha256": "f22a74f7768e805b0873fce0e28d515270cee4b84326b843e0778a7d08aaf795",
+        "bytes": 685418
+      },
+      "profileCopySha256": "f22a74f7768e805b0873fce0e28d515270cee4b84326b843e0778a7d08aaf795",
+      "phaseReceiptPins": {
+        "start.json": "19b390d6e612aa86847c6c3af7fc69e4fff256c93e9af4e64d7583cd489935e1",
+        "terminal.json": "76e7ab08f092f42e0d313fe63def60eb71866ffdf4011295a092ab1a23f36c14",
+        "run.log": "a87b6f4fd6a6c8d23c07935bac1e1b3499112c6b7732ca2b44f1959569cfe213",
+        "test-results.json": "27a014a66e055468e544dadfa03008ab91ce7ff1b2470dd60e7b4120d87b0546",
+        "test-timings.json": "f1cb5f4326be1290f5372b389ffc947974f7fc97faacda1f5d45410186b14743",
+        "validated.json": "38ef5deb5abe4c47bead4443daaa5b3838c7da1c990c05c964df2b752fe6accf"
+      }
+    },
+    {
+      "originalPhase": 41,
+      "testId": "performance.rev12-workflow-1gib-mars448-auto",
+      "suite": "Mars448",
+      "status": "PASS",
+      "actualPid": 27076,
+      "startedUtc": "2026-10-11T11:50:34.370423+00:00",
+      "completedUtc": "2026-10-11T12:00:30.052454+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 595.6838099579909,
+      "testCaseSeconds": 595.474,
+      "testTimingSeconds": 595.4741912,
+      "setupSeconds": 1.0710095,
+      "entropyPreparationSeconds": 0.09262,
+      "workflowWallSeconds": 593.8442779,
+      "archiveAndEncryptSeconds": 296.8684118,
+      "sourceMiBPerSecondCompleteWorkflow": 1.7243577788122357,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.44933970506053,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0086247,
+          "DurationSeconds": 0.0086247,
+          "workflowWallPercent": 0.001452350442863466
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0086247,
+          "EndSeconds": 296.8805449,
+          "DurationSeconds": 296.87192020000003,
+          "workflowWallPercent": 49.99154344802689
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 296.8805449,
+          "EndSeconds": 297.403495,
+          "DurationSeconds": 0.5229501000000027,
+          "workflowWallPercent": 0.08806182352203529
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 297.403495,
+          "EndSeconds": 324.6001872,
+          "DurationSeconds": 27.196692199999973,
+          "workflowWallPercent": 4.5797683352570315
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 324.6001872,
+          "EndSeconds": 336.7721493,
+          "DurationSeconds": 12.17196210000003,
+          "workflowWallPercent": 2.0496892119670673
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 336.7721493,
+          "EndSeconds": 592.4214087,
+          "DurationSeconds": 255.6492594,
+          "workflowWallPercent": 43.0498817474587
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 592.4214087,
+          "EndSeconds": 593.7524854,
+          "DurationSeconds": 1.331076699999926,
+          "workflowWallPercent": 0.22414574822662042
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 593.7524854,
+          "EndSeconds": 593.8442779,
+          "DurationSeconds": 0.09179249999999683,
+          "workflowWallPercent": 0.015457335098790694
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0076406,
+        "archiveAndEncrypt": 296.8684118,
+        "supplementalContainerHash": 0.5229427,
+        "recoveryCreate": 27.196623,
+        "supplementalRecoveryHealthyVerification": 12.1719311,
+        "decryptAndExtractForOriginalComparison": 255.6492155,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3310641,
+        "fixtureCleanup": 0.076061
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 140.130131,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 676.5885054,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074379153,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "C09E9305D912566F31FCF28517F8E9AC0A383E4ABEC563950B345C99A767D9AB",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-mars448-auto-20261011T120029969-09ef699922164b189165d75f73e76d7d.json",
+        "sha256": "c6954098790b6b8f9ab602bbb0b8af4a7c361cb412a7ee6e4d131c2a1e4f9769",
+        "bytes": 681554
+      },
+      "profileCopySha256": "c6954098790b6b8f9ab602bbb0b8af4a7c361cb412a7ee6e4d131c2a1e4f9769",
+      "phaseReceiptPins": {
+        "start.json": "8cd46e1e526d1e256d0a5d0c018e5cbbb73dd48a49b8c175dda1bb7e3a2c5d9f",
+        "terminal.json": "13f8095f7fb26678ae7c8f3d0e6608f3f73289c3be76f0126a3b1fd923c5fce9",
+        "run.log": "76682b6c09c35d8715695110f9cea1b4311824be17745a7d850b75d67b5d631a",
+        "test-results.json": "3895929fc5b2efd469d7ed3bf107eaa69cdec7391e9a824c7963f6b2487f0917",
+        "test-timings.json": "847efb7f6fd66c6738072cc1644204baafa6c678f64177c892b977723cdeb326",
+        "validated.json": "2de7857856f95efea64a7f46b5f9fb046ad9f35c8564531e38fcd6cb76cecbc6"
+      }
+    },
+    {
+      "originalPhase": 42,
+      "testId": "performance.rev12-workflow-1gib-aes256-auto",
+      "suite": "Aes256",
+      "status": "PASS",
+      "actualPid": 27608,
+      "startedUtc": "2026-10-11T12:00:32.375995+00:00",
+      "completedUtc": "2026-10-11T12:10:00.820134+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 568.4432821249939,
+      "testCaseSeconds": 568.207,
+      "testTimingSeconds": 568.20745,
+      "setupSeconds": 1.0551264,
+      "entropyPreparationSeconds": 0.086449,
+      "workflowWallSeconds": 566.9940154,
+      "archiveAndEncryptSeconds": 275.2547234,
+      "sourceMiBPerSecondCompleteWorkflow": 1.8060155348863671,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.7201904743045002,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.008539,
+          "DurationSeconds": 0.008539,
+          "workflowWallPercent": 0.0015060123683979189
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.008539,
+          "EndSeconds": 275.2668012,
+          "DurationSeconds": 275.2582622,
+          "workflowWallPercent": 48.54694312881102
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 275.2668012,
+          "EndSeconds": 275.7858917,
+          "DurationSeconds": 0.5190905000000043,
+          "workflowWallPercent": 0.09155131904413473
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 275.7858917,
+          "EndSeconds": 302.0013047,
+          "DurationSeconds": 26.215413000000012,
+          "workflowWallPercent": 4.62357843080684
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 302.0013047,
+          "EndSeconds": 312.9111456,
+          "DurationSeconds": 10.909840900000006,
+          "workflowWallPercent": 1.92415450669323
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 312.9111456,
+          "EndSeconds": 565.5314172,
+          "DurationSeconds": 252.62027159999997,
+          "workflowWallPercent": 44.554310052423176
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 565.5314172,
+          "EndSeconds": 566.9053731,
+          "DurationSeconds": 1.3739559000000554,
+          "workflowWallPercent": 0.24232282223133594
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 566.9053731,
+          "EndSeconds": 566.9940154,
+          "DurationSeconds": 0.08864229999994677,
+          "workflowWallPercent": 0.01563372762187126
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0075902,
+        "archiveAndEncrypt": 275.2547234,
+        "supplementalContainerHash": 0.5190831,
+        "recoveryCreate": 26.2153647,
+        "supplementalRecoveryHealthyVerification": 10.909815,
+        "decryptAndExtractForOriginalComparison": 252.6202214,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3739362,
+        "fixtureCleanup": 0.0720998
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 118.303713,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 633.56638,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074379147,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "125780899EC1A8B19596A2207D960E5E10A03A53B80399E7B7805F1803666962",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-aes256-auto-20261011T121000726-ff59710c7be34b5498a87a5265a52a1a.json",
+        "sha256": "dd36eeefdeabb2bce11abf567673ed5b06d3a6b99e4826c1fe810db351f4a838",
+        "bytes": 681678
+      },
+      "profileCopySha256": "dd36eeefdeabb2bce11abf567673ed5b06d3a6b99e4826c1fe810db351f4a838",
+      "phaseReceiptPins": {
+        "start.json": "092849240a3543e39838ea747600fcd88f75541968b7bc2cfe6c88d1e12bc76f",
+        "terminal.json": "da868b5c25909adadb677dfb9ae52274bc03895cb45f4e0063246a700edc2151",
+        "run.log": "78564f9335f89449321df0f4f69d38236baf6d0eca487c7592d101587c6399a5",
+        "test-results.json": "1a3541181908fd272a16a2b49e4d6ed32ee5ad6e95f8c1fcf06fb435a5b10c8c",
+        "test-timings.json": "0ad3e8106fdeee82e2468bd51decdb08ca4eb4779546371775d76d33e310a9ec",
+        "validated.json": "5ee64c779137045d17951fdfe50adc33531127be7d3817f004d9afcce4cbbfca"
+      }
+    },
+    {
+      "originalPhase": 43,
+      "testId": "performance.rev12-workflow-1gib-camellia-auto",
+      "suite": "Camellia256",
+      "status": "PASS",
+      "actualPid": 27939,
+      "startedUtc": "2026-10-11T12:10:03.121346+00:00",
+      "completedUtc": "2026-10-11T12:19:57.743446+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 594.6235620829975,
+      "testCaseSeconds": 594.405,
+      "testTimingSeconds": 594.4052037,
+      "setupSeconds": 1.0579361,
+      "entropyPreparationSeconds": 0.0879632,
+      "workflowWallSeconds": 592.7496148,
+      "archiveAndEncryptSeconds": 291.3426657,
+      "sourceMiBPerSecondCompleteWorkflow": 1.7275422445369424,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.5147615524820814,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0083781,
+          "DurationSeconds": 0.0083781,
+          "workflowWallPercent": 0.0014134298514604448
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0083781,
+          "EndSeconds": 291.3542168,
+          "DurationSeconds": 291.3458387,
+          "workflowWallPercent": 49.15158634026327
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 291.3542168,
+          "EndSeconds": 291.8710219,
+          "DurationSeconds": 0.5168050999999991,
+          "workflowWallPercent": 0.08718775805098998
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 291.8710219,
+          "EndSeconds": 320.2447767,
+          "DurationSeconds": 28.373754799999972,
+          "workflowWallPercent": 4.786802739563749
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 320.2447767,
+          "EndSeconds": 332.3496075,
+          "DurationSeconds": 12.104830800000002,
+          "workflowWallPercent": 2.0421490790988197
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 332.3496075,
+          "EndSeconds": 591.2491696,
+          "DurationSeconds": 258.89956209999997,
+          "workflowWallPercent": 43.67772759959623
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 591.2491696,
+          "EndSeconds": 592.647576,
+          "DurationSeconds": 1.398406399999999,
+          "workflowWallPercent": 0.23591856748347884
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 592.647576,
+          "EndSeconds": 592.7496148,
+          "DurationSeconds": 0.10203880000005938,
+          "workflowWallPercent": 0.017214486091988158
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.0074467,
+        "archiveAndEncrypt": 291.3426657,
+        "supplementalContainerHash": 0.5167954,
+        "recoveryCreate": 28.3736986,
+        "supplementalRecoveryHealthyVerification": 12.1047997,
+        "decryptAndExtractForOriginalComparison": 258.8995392,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3983928,
+        "fixtureCleanup": 0.0870868
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 179.82498,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 708.5850057,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074379142,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "52D9610C10C80C03C48A970877B91D91868A24B0AFDF0C0414D283B4E88AB484",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-camellia-auto-20261011T121957655-da31c643a996415fb74aaecdd88f24e1.json",
+        "sha256": "be0ade691be716a6c6ab6c91a27dda7be74e998e8e080a6745847934a6aa478b",
+        "bytes": 681633
+      },
+      "profileCopySha256": "be0ade691be716a6c6ab6c91a27dda7be74e998e8e080a6745847934a6aa478b",
+      "phaseReceiptPins": {
+        "start.json": "3b9943f082900194f54a0630c772a9107bdf4d23445854027eedce1dd66a1297",
+        "terminal.json": "0f5fe3b9a3c940d89a9e52f31d090fc4841e27819f802e236db0506a6658fc19",
+        "run.log": "77fdecaf8b49c86a390c8c648c1b63388c72a0561ffa6e8216d1e5a82887f6d7",
+        "test-results.json": "56f027eba7e5b69d11b22149e3bf50667d210d4240e53372caef74aebe87b79a",
+        "test-timings.json": "4edbc0c9bedbd45b51cf74bec76348f571af7a4de16f9df0d0eb95c2015655c1",
+        "validated.json": "6982708e0bf717cfde5e05653b54c11b2d6567082fb8b151be4ed369e5e32fdc"
+      }
+    },
+    {
+      "originalPhase": 44,
+      "testId": "performance.rev12-workflow-1gib-serpent-auto",
+      "suite": "Serpent256",
+      "status": "PASS",
+      "actualPid": 28564,
+      "startedUtc": "2026-10-11T12:19:59.998097+00:00",
+      "completedUtc": "2026-10-11T12:29:35.343104+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 575.34718087496,
+      "testCaseSeconds": 575.094,
+      "testTimingSeconds": 575.094323,
+      "setupSeconds": 1.075857,
+      "entropyPreparationSeconds": 0.0869025,
+      "workflowWallSeconds": 573.5082106,
+      "archiveAndEncryptSeconds": 276.0174745,
+      "sourceMiBPerSecondCompleteWorkflow": 1.7855019005372197,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.7099100404963674,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0084329,
+          "DurationSeconds": 0.0084329,
+          "workflowWallPercent": 0.0014704061501015938
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0084329,
+          "EndSeconds": 276.0281035,
+          "DurationSeconds": 276.0196706,
+          "workflowWallPercent": 48.128285785347394
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 276.0281035,
+          "EndSeconds": 276.5557545,
+          "DurationSeconds": 0.5276509999999917,
+          "workflowWallPercent": 0.09200408821487789
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 276.5557545,
+          "EndSeconds": 304.6491611,
+          "DurationSeconds": 28.093406600000037,
+          "workflowWallPercent": 4.898518640318841
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 304.6491611,
+          "EndSeconds": 316.5110855,
+          "DurationSeconds": 11.861924399999964,
+          "workflowWallPercent": 2.0683094297098394
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 316.5110855,
+          "EndSeconds": 572.0744806,
+          "DurationSeconds": 255.56339510000004,
+          "workflowWallPercent": 44.56141871667915
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 572.0744806,
+          "EndSeconds": 573.4583258,
+          "DurationSeconds": 1.3838451999999961,
+          "workflowWallPercent": 0.2412947494774709
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 573.4583258,
+          "EndSeconds": 573.5082106,
+          "DurationSeconds": 0.04988479999997253,
+          "workflowWallPercent": 0.00869818410233106
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.007492,
+        "archiveAndEncrypt": 276.0174745,
+        "supplementalContainerHash": 0.5276342,
+        "recoveryCreate": 28.0933485,
+        "supplementalRecoveryHealthyVerification": 11.8618936,
+        "decryptAndExtractForOriginalComparison": 255.5633596,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3838332,
+        "fixtureCleanup": 0.0334301
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 154.254133,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 668.5195754,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074379166,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "55B011C0FE599ECB750C988D45F6F185E390170931CFC25835FE58D44825F5C2",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-serpent-auto-20261011T122935237-4d5c73362cf44af6a83c018403545edd.json",
+        "sha256": "dcd02fd95f7957820946cc9750fdc100137be6a0212b740e10139fba8bd5e4e3",
+        "bytes": 681779
+      },
+      "profileCopySha256": "dcd02fd95f7957820946cc9750fdc100137be6a0212b740e10139fba8bd5e4e3",
+      "phaseReceiptPins": {
+        "start.json": "858d91f5c1f7009c45e15be8f0897f333e9a0e835ee180ced47732c885d4edb3",
+        "terminal.json": "3dc37bd2b04836d63f07b003c4e22939fae756a4382a853a6045dacf918a083d",
+        "run.log": "39cc9b8c372c843ba93510b47dae5ddac57c5cecf5e9aa99fc94f3e3696998db",
+        "test-results.json": "85079eabd69d948af77319de0009ada1a9e86d6a2533ef682d69263ceebd3433",
+        "test-timings.json": "4937057fda6930784d078b983ec4062e42a922effc25f829aa4c7b18f74b0c2b",
+        "validated.json": "39897afb37d53a7fa8932696adc9ee75c61f9703d4715fafeb6f8643d77b7cf0"
+      }
+    },
+    {
+      "originalPhase": 45,
+      "testId": "performance.rev12-workflow-1gib-xchacha20-poly1305-auto",
+      "suite": "XChaCha20Poly1305",
+      "status": "PASS",
+      "actualPid": 28965,
+      "startedUtc": "2026-10-11T12:29:37.628832+00:00",
+      "completedUtc": "2026-10-11T12:39:03.188043+00:00",
+      "actualExitCode": 0,
+      "processWallSeconds": 565.5583378750016,
+      "testCaseSeconds": 565.346,
+      "testTimingSeconds": 565.3463552,
+      "setupSeconds": 1.1598706,
+      "entropyPreparationSeconds": 0.0838763,
+      "workflowWallSeconds": 563.6929971,
+      "archiveAndEncryptSeconds": 274.4642556,
+      "sourceMiBPerSecondCompleteWorkflow": 1.8165916647326044,
+      "sourceMiBPerSecondArchiveAndEncrypt": 3.730904768496929,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0085325,
+          "DurationSeconds": 0.0085325,
+          "workflowWallPercent": 0.0015136785526690378
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0085325,
+          "EndSeconds": 274.4750625,
+          "DurationSeconds": 274.46653,
+          "workflowWallPercent": 48.69078228965637
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 274.4750625,
+          "EndSeconds": 274.998551,
+          "DurationSeconds": 0.5234885000000418,
+          "workflowWallPercent": 0.09286766071127439
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 274.998551,
+          "EndSeconds": 300.6200562,
+          "DurationSeconds": 25.6215052,
+          "workflowWallPercent": 4.545294217209285
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 300.6200562,
+          "EndSeconds": 311.2820431,
+          "DurationSeconds": 10.661986899999988,
+          "workflowWallPercent": 1.8914527863308785
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 311.2820431,
+          "EndSeconds": 562.2422572,
+          "DurationSeconds": 250.96021410000003,
+          "workflowWallPercent": 44.52072588999705
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 562.2422572,
+          "EndSeconds": 563.5974125,
+          "DurationSeconds": 1.3551552999999785,
+          "workflowWallPercent": 0.24040662328107157
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 563.5974125,
+          "EndSeconds": 563.6929971,
+          "DurationSeconds": 0.09558459999993829,
+          "workflowWallPercent": 0.016956854261395312
+        }
+      ],
+      "servicePhaseWallSeconds": {
+        "originalCreationSnapshot": 0.007593,
+        "archiveAndEncrypt": 274.4642556,
+        "supplementalContainerHash": 0.5234854,
+        "recoveryCreate": 25.6214541,
+        "supplementalRecoveryHealthyVerification": 10.6619559,
+        "decryptAndExtractForOriginalComparison": 250.9602078,
+        "originalComparisonAndIndependentHashTopologyCheck": 1.3551526,
+        "fixtureCleanup": 0.0845358
+      },
+      "managedProcessCpuSecondsThroughOriginalComparison": 122.164663,
+      "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 634.601806,
+      "receipt": {
+        "InputFiles": 3,
+        "InputDirectories": 5,
+        "InputBytes": 1073741824,
+        "CompressedPayloadBytesDuringCreation": 1074377316,
+        "ContainerBytes": 1074380229,
+        "RecoveryBytes": 163811328,
+        "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+        "ContainerSha256": "D68665569B625DBA5EFB3CF9792C82F24BE0C3D12A9B9379BBCCDECECE6D9DA9",
+        "InitialCpuCeiling": 10,
+        "InitialThrottleReason": "minimum-work-window",
+        "OutputVolumeIdentity": "device:16777232"
+      },
+      "actualProfileArtifact": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-xchacha20-poly1305-auto-20261011T123903105-034f1868ee2e408380f31da76e63254b.json",
+        "sha256": "ab9a3a2c3083de86ba5bb214b692e496f0f653c0c5009de4f898e0c8c7137039",
+        "bytes": 681775
+      },
+      "profileCopySha256": "ab9a3a2c3083de86ba5bb214b692e496f0f653c0c5009de4f898e0c8c7137039",
+      "phaseReceiptPins": {
+        "start.json": "85fdfd40064dc900aad6613572b054eb5d6f4a68015e9e27972fabcb4880924a",
+        "terminal.json": "bcbab2f193f86433969eb88bb41e80355cde0f392a49a0ffd15dfa6b2cf87bcb",
+        "run.log": "a50f2986344f6dfc2872061857be5788eb1e486e81b48d054e25109bfd7f750c",
+        "test-results.json": "5b672ac7486a588aa0621142f57234d49640fcf821c8798a9e42fbd9abb765a5",
+        "test-timings.json": "4741e3f17850999219e67309af7b039ae32b2b8c83b12eb2793058ca0602329e",
+        "validated.json": "a3255485e8d35a55f6c2f1a4d55ed14c4a3c01ebc46b988e14a407e78afd1b9e"
+      }
+    }
+  ],
+  "remainingWorkflows": [],
+  "failure": null,
+  "actualWrapperExitCode": 0,
+  "quietAdmissionEvaluated": false,
+  "quietBaselinePassClaimed": false,
+  "release49PassClaimed": false,
+  "canonicalReleasePhaseCreditClaimed": false,
+  "installedGuiPhaseProfileObserved": false,
+  "originalBuilderExitCode": 1,
+  "originalPhase8ExitCode": 1,
+  "loadBeforeReceiptSha256": "0675050b52955b0fe75fc2e743a476936b4fd724124b40ed593b5202da390e93",
+  "loadAfterReceiptSha256": "992942ee2ab7cbc6678f7fc670efe995058b25c0a61d2576734e5afa242e539d",
+  "rateInterpretation": "Source rates count exactly 1024 MiB once. Eight contiguous outer intervals partition workflow walltime; nested service/cipher observations must not be added to it. Fixture setup and entropy preparation are outside workflowWallSeconds. Fresh independent credentials vary KDF work; one run is no median or causal suite/CPU comparison."
+}

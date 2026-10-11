@@ -1,0 +1,116 @@
+{
+  "originalPhase": 42,
+  "testId": "performance.rev12-workflow-1gib-aes256-auto",
+  "suite": "Aes256",
+  "status": "PASS",
+  "actualPid": 27608,
+  "startedUtc": "2026-10-11T12:00:32.375995+00:00",
+  "completedUtc": "2026-10-11T12:10:00.820134+00:00",
+  "actualExitCode": 0,
+  "processWallSeconds": 568.4432821249939,
+  "testCaseSeconds": 568.207,
+  "testTimingSeconds": 568.20745,
+  "setupSeconds": 1.0551264,
+  "entropyPreparationSeconds": 0.086449,
+  "workflowWallSeconds": 566.9940154,
+  "archiveAndEncryptSeconds": 275.2547234,
+  "sourceMiBPerSecondCompleteWorkflow": 1.8060155348863671,
+  "sourceMiBPerSecondArchiveAndEncrypt": 3.7201904743045002,
+  "outerWorkflowTimeline": [
+    {
+      "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+      "StartSeconds": 0,
+      "EndSeconds": 0.008539,
+      "DurationSeconds": 0.008539,
+      "workflowWallPercent": 0.0015060123683979189
+    },
+    {
+      "Phase": "archiveAndEncrypt",
+      "StartSeconds": 0.008539,
+      "EndSeconds": 275.2668012,
+      "DurationSeconds": 275.2582622,
+      "workflowWallPercent": 48.54694312881102
+    },
+    {
+      "Phase": "supplementalContainerHash",
+      "StartSeconds": 275.2668012,
+      "EndSeconds": 275.7858917,
+      "DurationSeconds": 0.5190905000000043,
+      "workflowWallPercent": 0.09155131904413473
+    },
+    {
+      "Phase": "recoveryCreate",
+      "StartSeconds": 275.7858917,
+      "EndSeconds": 302.0013047,
+      "DurationSeconds": 26.215413000000012,
+      "workflowWallPercent": 4.62357843080684
+    },
+    {
+      "Phase": "supplementalRecoveryHealthyVerification",
+      "StartSeconds": 302.0013047,
+      "EndSeconds": 312.9111456,
+      "DurationSeconds": 10.909840900000006,
+      "workflowWallPercent": 1.92415450669323
+    },
+    {
+      "Phase": "decryptAndExtractForOriginalComparison",
+      "StartSeconds": 312.9111456,
+      "EndSeconds": 565.5314172,
+      "DurationSeconds": 252.62027159999997,
+      "workflowWallPercent": 44.554310052423176
+    },
+    {
+      "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+      "StartSeconds": 565.5314172,
+      "EndSeconds": 566.9053731,
+      "DurationSeconds": 1.3739559000000554,
+      "workflowWallPercent": 0.24232282223133594
+    },
+    {
+      "Phase": "ownedResourcesAndFixtureCleanup",
+      "StartSeconds": 566.9053731,
+      "EndSeconds": 566.9940154,
+      "DurationSeconds": 0.08864229999994677,
+      "workflowWallPercent": 0.01563372762187126
+    }
+  ],
+  "servicePhaseWallSeconds": {
+    "originalCreationSnapshot": 0.0075902,
+    "archiveAndEncrypt": 275.2547234,
+    "supplementalContainerHash": 0.5190831,
+    "recoveryCreate": 26.2153647,
+    "supplementalRecoveryHealthyVerification": 10.909815,
+    "decryptAndExtractForOriginalComparison": 252.6202214,
+    "originalComparisonAndIndependentHashTopologyCheck": 1.3739362,
+    "fixtureCleanup": 0.0720998
+  },
+  "managedProcessCpuSecondsThroughOriginalComparison": 118.303713,
+  "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 633.56638,
+  "receipt": {
+    "InputFiles": 3,
+    "InputDirectories": 5,
+    "InputBytes": 1073741824,
+    "CompressedPayloadBytesDuringCreation": 1074377316,
+    "ContainerBytes": 1074379147,
+    "RecoveryBytes": 163811328,
+    "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+    "ContainerSha256": "125780899EC1A8B19596A2207D960E5E10A03A53B80399E7B7805F1803666962",
+    "InitialCpuCeiling": 10,
+    "InitialThrottleReason": "minimum-work-window",
+    "OutputVolumeIdentity": "device:16777232"
+  },
+  "actualProfileArtifact": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-aes256-auto-20261011T121000726-ff59710c7be34b5498a87a5265a52a1a.json",
+    "sha256": "dd36eeefdeabb2bce11abf567673ed5b06d3a6b99e4826c1fe810db351f4a838",
+    "bytes": 681678
+  },
+  "profileCopySha256": "dd36eeefdeabb2bce11abf567673ed5b06d3a6b99e4826c1fe810db351f4a838",
+  "phaseReceiptPins": {
+    "start.json": "092849240a3543e39838ea747600fcd88f75541968b7bc2cfe6c88d1e12bc76f",
+    "terminal.json": "da868b5c25909adadb677dfb9ae52274bc03895cb45f4e0063246a700edc2151",
+    "run.log": "78564f9335f89449321df0f4f69d38236baf6d0eca487c7592d101587c6399a5",
+    "test-results.json": "1a3541181908fd272a16a2b49e4d6ed32ee5ad6e95f8c1fcf06fb435a5b10c8c",
+    "test-timings.json": "0ad3e8106fdeee82e2468bd51decdb08ca4eb4779546371775d76d33e310a9ec",
+    "validated.json": "5ee64c779137045d17951fdfe50adc33531127be7d3817f004d9afcce4cbbfca"
+  }
+}

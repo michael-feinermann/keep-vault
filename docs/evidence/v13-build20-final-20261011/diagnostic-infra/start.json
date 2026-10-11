@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-11T13:11:50.093369+00:00",
+  "actualPid": 30579,
+  "actualSupervisorPid": 30571,
+  "arguments": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-preserved-harness-sdk-20261010T082542165260Z/sdk/dotnet",
+    "exec",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase49-harness-build-20261011T124828960679Z/harness/KeepVaultMac.Tests.dll",
+    "--full",
+    "--only",
+    "infra.runner-invariants",
+    "--parallel",
+    "1",
+    "--timings",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/diagnostic-harness-regression-20261011T131150053341Z/test-timings.json"
+  ],
+  "workingDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac",
+  "environment": {
+    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+    "HOME": "/Users/michael",
+    "TMPDIR": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/diagnostic-harness-regression-20261011T131150053341Z/tmp",
+    "DOTNET_CLI_HOME": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/diagnostic-harness-regression-20261011T131150053341Z/cli-home",
+    "DOTNET_EnableDiagnostics": "0",
+    "COMPlus_EnableDiagnostics": "0",
+    "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+    "DOTNET_NOLOGO": "1",
+    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+    "DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE": "1",
+    "KEEPVAULT_TEST_REPOSITORY_ROOT": "/Users/michael/Developer/GPT-Codex/Kalyna",
+    "KEEPVAULT_TEST_RELEASE_ROOT": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-rest-completion-20261010T093534Z/Candidate"
+  },
+  "sourceProductHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "testDllSha256": "d306be46722ea2a7ca5301501f6a6c1ece1c6f22b08318ac32a61f814a49fea3",
+  "role": "DIAGNOSTIC_HARNESS_REGRESSION_ONLY"
+}

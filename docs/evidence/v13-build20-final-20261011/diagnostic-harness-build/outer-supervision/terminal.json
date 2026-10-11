@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-11T12:48:33.978180+00:00",
+  "actualPid": 29751,
+  "actualSupervisorPid": 29750,
+  "actualExitCode": 0,
+  "actualWallSeconds": 7.242754250008147,
+  "logSha256": "bc332c771a6c11565328276abe1d0b5d3483d457e48a17cad11ff4d596f27c57",
+  "buildHelperSourceSha256": "4ef898bef9d982722bad22012bbbe79c754a81fee6b3ca69d4d5cee96bea9bc8",
+  "role": "TEST_HARNESS_DIAGNOSTIC_CORRECTION_ONLY"
+}

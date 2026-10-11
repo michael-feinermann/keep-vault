@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-11T13:22:08.568484+00:00",
+  "actualVerificationPid": 31000,
+  "role": "READ_ONLY_EXISTING_BUILD20_ARTIFACT_VERIFICATION",
+  "helperApiSource": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/publication/publish-verify-build20-v3.py",
+  "helperApiSourceSha256": "2aad36a319f62764e5bd4e68c8d649e90aae5d03f4c1d92620d576bf7df46b31",
+  "extractedFunctionNames": [
+    "checked",
+    "command",
+    "hashes",
+    "installed",
+    "load",
+    "no_duplicate",
+    "physical",
+    "pin",
+    "require",
+    "save",
+    "tree",
+    "utc"
+  ],
+  "publisherMainInvoked": false,
+  "gitSourcecheckInvoked": false,
+  "keysAccessed": false,
+  "productMutationPerformed": false,
+  "correctedArgumentFormat": "codesign -R=<inline requirement>, as used by tools/Verify-KeepVault-macOS.sh",
+  "priorInvalidRequirementInvocation": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/candidate-readonly-verification-20261011T132039762934Z"
+}

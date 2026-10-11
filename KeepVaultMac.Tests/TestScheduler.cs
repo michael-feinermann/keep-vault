@@ -849,16 +849,20 @@ internal static class TestCoordinator
                 && !forwardedPerformanceOutput.Contains(WorkerResultMarker, StringComparison.Ordinal),
             "The coordinator discarded performance medians/JSON or exposed its private worker envelope.");
         const string publicEndToEndResult = "    E2E_RESULT_JSON={\"SchemaVersion\":1,\"Label\":\"v13-paranoia-structure512-production-kdf\",\"InputBytes\":536870912}";
+        const string publicEndToEndPhaseProfile = "    E2E_PHASE_PROFILE_JSON={\"schemaVersion\":1,\"label\":\"v13-paranoia-structure512-production-kdf\",\"sourceInputBytes\":536870912}";
         string mixedReleaseOutput = "private-unrelated-stdout\n"
             + publicEndToEndResult + "\r\n"
+            + publicEndToEndPhaseProfile + "\r\n"
             + "private-prefix E2E_RESULT_JSON={\"unrelated\":true}\n"
+            + "private-prefix E2E_PHASE_PROFILE_JSON={\"unrelated\":true}\n"
             + WorkerResultMarker + "{\"schemaVersion\":1,\"status\":\"PASS\"}\n";
         const string privateStandardError = "private-unrelated-stderr";
         TestCase structureRelease = light with { Id = "release.v13-paranoia-structure512" };
         (string releaseOutput, string releaseError) = SelectWorkerDiagnostics(
             structureRelease, mixedReleaseOutput, privateStandardError);
-        Require(releaseOutput == publicEndToEndResult && releaseError.Length == 0,
-            "The structure release gate lost its public E2E JSON or exposed unrelated/private worker diagnostics.");
+        Require(releaseOutput == publicEndToEndResult + Environment.NewLine + publicEndToEndPhaseProfile
+            && releaseError.Length == 0,
+            "The structure release gate lost its public E2E result/phase-profile JSON or exposed unrelated/private worker diagnostics.");
         foreach (TestCase otherTest in new[] { light, structureRelease with { Id = structureRelease.Id + "-other" } })
         {
             (string otherOutput, string otherError) = SelectWorkerDiagnostics(
@@ -1347,13 +1351,14 @@ internal static class TestCoordinator
         if (!string.Equals(test.Id, "release.v13-paranoia-structure512", StringComparison.Ordinal))
             return (string.Empty, string.Empty);
 
-        // This automatic gate emits the public EndToEndResult record: fixture
-        // sizes/counts, fixed crypto profile, host information and phase times.
-        // Forward only its explicit JSON line, never other stdout or stderr.
+        // This automatic gate emits public E2E result and phase-profile records:
+        // fixture sizes/counts, fixed crypto profile, host information and phase times.
+        // Forward only their explicit JSON lines, never other stdout or stderr.
         string result = string.Join(Environment.NewLine, standardOutput
             .Split('\n')
             .Select(line => line.TrimEnd('\r'))
-            .Where(line => line.TrimStart().StartsWith("E2E_RESULT_JSON=", StringComparison.Ordinal)));
+            .Where(line => line.TrimStart().StartsWith("E2E_RESULT_JSON=", StringComparison.Ordinal)
+                || line.TrimStart().StartsWith("E2E_PHASE_PROFILE_JSON=", StringComparison.Ordinal)));
         return (result, string.Empty);
     }
 

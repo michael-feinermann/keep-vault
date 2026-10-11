@@ -1,0 +1,828 @@
+{
+  "schemaVersion": 1,
+  "status": "BYTE_IDENTICAL_PUBLIC_STRUCTURED_EVIDENCE_COPIES_ONLY",
+  "packagedUtc": "2026-10-11T13:26:25.591446+00:00",
+  "actualPackagingPid": 31141,
+  "productSourceHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "targetRepositoryDirectory": "docs/evidence/v13-build20-final-20261011",
+  "copyIsNewTestRun": false,
+  "historicalExecutionCreditReassigned": false,
+  "canonical49CreditClaimed": false,
+  "publicReleaseApproved": false,
+  "privateKeysRead": false,
+  "logsIncluded": false,
+  "files": {
+    "README.md": {
+      "sha256": "24f416c28520a81bb20d013f858952fc70ae61733e1b256a6cbabf608cf118d3",
+      "bytes": 2665,
+      "role": "NEW_PACKAGING_EXPLANATION_NOT_EXECUTION_RECEIPT"
+    },
+    "diagnostic-harness-build/outer-supervision/terminal.json": {
+      "sha256": "640b0e45ad466c58b3db6984c1b808afa2290ea7e0e146f7680376109acc891d",
+      "bytes": 422,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase49-harness-build-supervision-20261011T124826735185Z/terminal.json",
+      "sourceMtimeNs": 1791722913978518120,
+      "role": "COPIED_ACTUAL_DIAGNOSTIC_HARNESS_BUILD_OUTER_REFERENCE_NOT_PRODUCT_BUILD"
+    },
+    "diagnostic-harness-build/public-harness125-manifest.json": {
+      "sha256": "d4a97c33f21682edfc7dfc0f9f320997056d309ba2c723d0ce17f3b4b7b0e18d",
+      "bytes": 25001,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase49-harness-build-20261011T124828960679Z/public-harness125-manifest.json",
+      "sourceMtimeNs": 1791722912629172298,
+      "role": "COPIED_ACTUAL_DIAGNOSTIC_HARNESS_BUILD_REFERENCE_NOT_PRODUCT_BUILD"
+    },
+    "diagnostic-harness-build/terminal.json": {
+      "sha256": "fcff6ed6a8c2edb17d2b8554194195d1ca044ef866ae6507571a28cf6078b50d",
+      "bytes": 403,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase49-harness-build-20261011T124828960679Z/terminal.json",
+      "sourceMtimeNs": 1791722913972973530,
+      "role": "COPIED_ACTUAL_DIAGNOSTIC_HARNESS_BUILD_REFERENCE_NOT_PRODUCT_BUILD"
+    },
+    "diagnostic-infra/start.json": {
+      "sha256": "70714f6ce41ebfd6131a7e0bf203641568cb3703d126ab7439999debdbaa8019",
+      "bytes": 1931,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/diagnostic-harness-regression-20261011T131150053341Z/start.json",
+      "sourceMtimeNs": 1791724310093498225,
+      "role": "COPIED_ACTUAL_DIAGNOSTIC_INFRA_REFERENCE_NOT_NEW_RUN"
+    },
+    "diagnostic-infra/terminal.json": {
+      "sha256": "9b42a815222e170cef58ddc3309efdf0f521879f029b9fb2cb93961f0879a998",
+      "bytes": 475,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/diagnostic-harness-regression-20261011T131150053341Z/terminal.json",
+      "sourceMtimeNs": 1791724310804022221,
+      "role": "COPIED_ACTUAL_DIAGNOSTIC_INFRA_REFERENCE_NOT_NEW_RUN"
+    },
+    "diagnostic-infra/test-results.json": {
+      "sha256": "ce32e1622d7755d314b00a66552e00755db4d3a6069340ff1bfa0c60bf46e22f",
+      "bytes": 714,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/diagnostic-harness-regression-20261011T131150053341Z/test-results.json",
+      "sourceMtimeNs": 1791724310804154471,
+      "role": "COPIED_ACTUAL_DIAGNOSTIC_INFRA_REFERENCE_NOT_NEW_RUN"
+    },
+    "diagnostic-infra/test-timings.json": {
+      "sha256": "5500a86409a6ac5e8640f88137407dd8ab698de135e88326e27245249aa577ba",
+      "bytes": 42,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/diagnostic-harness-regression-20261011T131150053341Z/test-timings.json",
+      "sourceMtimeNs": 1791724310801711802,
+      "role": "COPIED_ACTUAL_DIAGNOSTIC_INFRA_REFERENCE_NOT_NEW_RUN"
+    },
+    "diagnostic-infra/validation.json": {
+      "sha256": "e8e7ac53eac209f72b2cb44f633f9574f4779a1fdeb54b1ed818295369fefbe4",
+      "bytes": 844,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/diagnostic-harness-regression-20261011T131150053341Z/validation.json",
+      "sourceMtimeNs": 1791724310804526221,
+      "role": "COPIED_ACTUAL_DIAGNOSTIC_INFRA_REFERENCE_NOT_NEW_RUN"
+    },
+    "historical/phase-01/start.json": {
+      "sha256": "db2c529ab65b67a35c68b56e979762b48e6ac83ad0887ab3e112ae9567d3f517",
+      "bytes": 952,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase-01/start.json",
+      "sourceMtimeNs": 1791706100740550221,
+      "role": "COPIED_ORIGINAL_302_PASS_REFERENCE_NOT_NEW_RUN"
+    },
+    "historical/phase-01/terminal.json": {
+      "sha256": "984b49911f61a4316bb883abfc7b5ef12d0e4dd2eb739c5f41cefc28edd43b30",
+      "bytes": 207,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase-01/terminal.json",
+      "sourceMtimeNs": 1791707611502126904,
+      "role": "COPIED_ORIGINAL_302_PASS_REFERENCE_NOT_NEW_RUN"
+    },
+    "historical/phase-01/test-results.json": {
+      "sha256": "c6f1960b551478bc3ccb17d7e65b025e39a041228fc31dd40fbd9d7b056e58fa",
+      "bytes": 81114,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase-01/test-results.json",
+      "sourceMtimeNs": 1791707611502399612,
+      "role": "COPIED_ORIGINAL_302_PASS_REFERENCE_NOT_NEW_RUN"
+    },
+    "historical/phase-08/start.json": {
+      "sha256": "e37142e0771fb13bff089a866c94f4b05bba89235b98af22892ea65c717c89ac",
+      "bytes": 869,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase-08/start.json",
+      "sourceMtimeNs": 1791707701232836280,
+      "role": "COPIED_ORIGINAL_PHASE8_FAIL_REFERENCE_RETAINED"
+    },
+    "historical/phase-08/terminal.json": {
+      "sha256": "5f5b5db8ba3ae3a32b592a153906216c6404d84c49aea6d8d217017ff5c75bbf",
+      "bytes": 207,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase-08/terminal.json",
+      "sourceMtimeNs": 1791707738838674534,
+      "role": "COPIED_ORIGINAL_PHASE8_FAIL_REFERENCE_RETAINED"
+    },
+    "historical/phase-08/test-results.json": {
+      "sha256": "0d54c192177afd558884b58e5f0154586ba53b1f56d99ea387b0d61cfc986a70",
+      "bytes": 1467,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/phase-08/test-results.json",
+      "sourceMtimeNs": 1791707738838906574,
+      "role": "COPIED_ORIGINAL_PHASE8_FAIL_REFERENCE_RETAINED"
+    },
+    "informationals/auswertung/1-GiB-Informationsmessung.de.md": {
+      "sha256": "6a1ffb47a9b324d51cea63633ad41cbbd3b59648b4b87f2146aa08ff44e601ca",
+      "bytes": 5049,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/auswertung-20261011T124046617486Z/1-GiB-Informationsmessung.de.md",
+      "sourceMtimeNs": 1791722446617713747,
+      "role": "COPIED_ACTUAL_FORMATTED_INFORMATIONAL_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/auswertung/auswertung-nachweis.json": {
+      "sha256": "b9796e7d411ba5972611d90c4266baee2fee9769c5ba5b03cdc99fff5394b4d7",
+      "bytes": 65152,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/auswertung-20261011T124046617486Z/auswertung-nachweis.json",
+      "sourceMtimeNs": 1791722446618410790,
+      "role": "COPIED_ACTUAL_FORMATTED_INFORMATIONAL_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/informational-summary.json": {
+      "sha256": "908c49b2f27463fac614b8c5b6043098829674072a5c9a6174b5d6306b8743d9",
+      "bytes": 61766,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/informational-summary.json",
+      "sourceMtimeNs": 1791722361897016782,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/outer-supervision/start.json": {
+      "sha256": "fd20b02ff607af18ec13f7ed72f78cf494fbb250e99b8d280b5558ea677410ea",
+      "bytes": 497,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-supervision-20261011T104345472418Z/start.json",
+      "sourceMtimeNs": 1791715425474253108,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_OUTER_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/outer-supervision/terminal.json": {
+      "sha256": "1a830c1b325139df5d1ff37487b3e0159fb8bb1ce1502660de7e5c346a2aaa8c",
+      "bytes": 338,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-supervision-20261011T104345472418Z/terminal.json",
+      "sourceMtimeNs": 1791722361901421790,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_OUTER_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-34/actual-workflow-profile.json": {
+      "sha256": "5e7322a80e9a77ad2643eb8422bf97db042dcf19d2d980a41223b304d2a1d4b7",
+      "bytes": 682263,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-34/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791716005322374939,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-34/informational-summary.json": {
+      "sha256": "d11cebb00890da27a2e1b17dde9bfb25d1b454f9751a94f23e2e9df6814dd7da",
+      "bytes": 4532,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-34/informational-summary.json",
+      "sourceMtimeNs": 1791716005323478562,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-34/start.json": {
+      "sha256": "9ceac4556e16f00c9bf9adbd2d4d001afebea919404ff86a5e622214e0fd315b",
+      "bytes": 934,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-34/start.json",
+      "sourceMtimeNs": 1791715444972225929,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-34/terminal.json": {
+      "sha256": "75be210e85f93b160e046762e67ff43059e4aa385f24517fd64648cc119c2896",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-34/terminal.json",
+      "sourceMtimeNs": 1791716003855216344,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-34/test-results.json": {
+      "sha256": "5677354c2d856a65edb1a58819db68824545b178d80f86f9e82c5f0de359c2d1",
+      "bytes": 778,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-34/test-results.json",
+      "sourceMtimeNs": 1791716003855837468,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-34/test-timings.json": {
+      "sha256": "5fc674bdde50a86c40dd5424d99cbb5cc2b67398b35344772b831972765e0c24",
+      "bytes": 66,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-34/test-timings.json",
+      "sourceMtimeNs": 1791716003851163476,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-34/validated.json": {
+      "sha256": "a11a4ed24a91f52f96e2a331a34be673091795bcd92c4b1b85834847174add18",
+      "bytes": 554,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-34/validated.json",
+      "sourceMtimeNs": 1791716005319893193,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-35/actual-workflow-profile.json": {
+      "sha256": "b6e9d7bb341efbfaa3d42f2c5d0ea4a307656bfbcdfb20c671dfe54ff816c192",
+      "bytes": 681948,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-35/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791716567753520129,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-35/informational-summary.json": {
+      "sha256": "b265553f451d1fcec373264c458c0ff54e6712a285aa50b895b7eb1c26df7a2a",
+      "bytes": 4546,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-35/informational-summary.json",
+      "sourceMtimeNs": 1791716567754563752,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-35/start.json": {
+      "sha256": "8e8f4c217794fc83bbeb3a93f4a80a9b060d7bdbf68e9e89db46a847333e8e21",
+      "bytes": 937,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-35/start.json",
+      "sourceMtimeNs": 1791716006061643290,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-35/terminal.json": {
+      "sha256": "02564ab46ae293beaf572ba8e5530510248abca252b139abbb4512093ff7c450",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-35/terminal.json",
+      "sourceMtimeNs": 1791716566255097876,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-35/test-results.json": {
+      "sha256": "5c214805b0a8036f1d3d6f7775df5c3da667ad3dad23be54a0877d1311b912a1",
+      "bytes": 784,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-35/test-results.json",
+      "sourceMtimeNs": 1791716566255709125,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-35/test-timings.json": {
+      "sha256": "084d8e9c83f8f87cd328d30e5cd0bd62998f7e3990ba97fc3122c69c03823b38",
+      "bytes": 69,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-35/test-timings.json",
+      "sourceMtimeNs": 1791716566250818883,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-35/validated.json": {
+      "sha256": "d1b64155edd9cfd5b5e51e42f478035fa50c6c595f7fa41d041c6d901581428c",
+      "bytes": 557,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-35/validated.json",
+      "sourceMtimeNs": 1791716567751317882,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-36/actual-workflow-profile.json": {
+      "sha256": "ee54c27ab98cd5f6b4fc86ea0abf45afab69bb7682063e45fb5de08d3c969557",
+      "bytes": 682048,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-36/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791717133132812905,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-36/informational-summary.json": {
+      "sha256": "311d56058beed5dee0c62a48d13af0c0a9db64efb42bdacdc4cc4f30ff803e51",
+      "bytes": 4519,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-36/informational-summary.json",
+      "sourceMtimeNs": 1791717133133883320,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-36/start.json": {
+      "sha256": "4a1122152388a3bf5c444a99f19da0e3abcad997c6dce7ca78753100fec08dc8",
+      "bytes": 931,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-36/start.json",
+      "sourceMtimeNs": 1791716568506854915,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-36/terminal.json": {
+      "sha256": "c40927856e0e0902c697558760ea8d08af0ab2567422eeafeefef76aeb9fc903",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-36/terminal.json",
+      "sourceMtimeNs": 1791717131663977771,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-36/test-results.json": {
+      "sha256": "76a2eea1d294041008124e7f12f4b3d3be50cbb0e6ca6e1b3a304decf5c46c65",
+      "bytes": 772,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-36/test-results.json",
+      "sourceMtimeNs": 1791717131664361062,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-36/test-timings.json": {
+      "sha256": "d978fa8a200e2953548330db1a4c282c986c9a69d146545025543e2e29a0f6d7",
+      "bytes": 63,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-36/test-timings.json",
+      "sourceMtimeNs": 1791717131661310150,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-36/validated.json": {
+      "sha256": "ff9cd77b18340147d1fb9ff8b6ac2b5a38a465163e9c447e2f48219c0125294c",
+      "bytes": 551,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-36/validated.json",
+      "sourceMtimeNs": 1791717133130417367,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-37/actual-workflow-profile.json": {
+      "sha256": "6914ecefd754f4c86b0f1c9dc0ad2a851e28610e39469f7f6d05dc7685a8bd85",
+      "bytes": 683429,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-37/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791717723369136207,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-37/informational-summary.json": {
+      "sha256": "c3ae7ddd6fb67c05b42d320e7f49ba5a1c0dd965e3ce17b560c11c3a1affdb54",
+      "bytes": 4524,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-37/informational-summary.json",
+      "sourceMtimeNs": 1791717723370202956,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-37/start.json": {
+      "sha256": "d8dc886d4119884e49f53df58550a081d831b72a62988594e03d83c20de97c59",
+      "bytes": 934,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-37/start.json",
+      "sourceMtimeNs": 1791717133886315316,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-37/terminal.json": {
+      "sha256": "ef4c5d1cec2b3a6e7b617fc9f7ca3c4df775a9558148b1d8ce94f4673e3120b6",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-37/terminal.json",
+      "sourceMtimeNs": 1791717721853095175,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-37/test-results.json": {
+      "sha256": "6aac7e2bb5344148bb04cbf971b355d2cda9190bec3f0c896fc6356d27c6b7e0",
+      "bytes": 778,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-37/test-results.json",
+      "sourceMtimeNs": 1791717721853771758,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-37/test-timings.json": {
+      "sha256": "c8502107555e32851fb19393c57df64851ea8f21c534611af56e901e90325d08",
+      "bytes": 66,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-37/test-timings.json",
+      "sourceMtimeNs": 1791717721842693730,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-37/validated.json": {
+      "sha256": "f01ade4babfbfad1368cc0467afa6a68529c53dd4eb5452c99a111bbc361ee68",
+      "bytes": 554,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-37/validated.json",
+      "sourceMtimeNs": 1791717723366263294,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-38/actual-workflow-profile.json": {
+      "sha256": "0c8aee7748f6879d18719ba1612b3ddb526dc2530d454072c9326f28a34e6334",
+      "bytes": 681708,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-38/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791718286923167113,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-38/informational-summary.json": {
+      "sha256": "b2702d2dc8e0542130e1c96c42715e0a3ecec93cfada204895726eb4e345cd09",
+      "bytes": 4534,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-38/informational-summary.json",
+      "sourceMtimeNs": 1791718286924206737,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-38/start.json": {
+      "sha256": "215b5aee971df68595f8eb06dd0ceab6b5a8baef357a0910cd231064bc41433e",
+      "bytes": 939,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-38/start.json",
+      "sourceMtimeNs": 1791717724129778741,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-38/terminal.json": {
+      "sha256": "1f398722a6738b3f24b8cf2efbb5556edf42f46983bdfde71789feef3b633074",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-38/terminal.json",
+      "sourceMtimeNs": 1791718285430309383,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-38/test-results.json": {
+      "sha256": "f80e33da3e7acd0d888dc6fac452a42c881eb9755a19860ba7c61ceaa0f18e6b",
+      "bytes": 788,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-38/test-results.json",
+      "sourceMtimeNs": 1791718285430789425,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-38/test-timings.json": {
+      "sha256": "92b2d5de3806874ea64bd90b1b17af14834485bec915afbfe996a584dc03b89d",
+      "bytes": 71,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-38/test-timings.json",
+      "sourceMtimeNs": 1791718285427381012,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-38/validated.json": {
+      "sha256": "28eedd2faee7919bc832a5bf1522c1a6bcebeea3bb3da2e13801a616aaef1478",
+      "bytes": 559,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-38/validated.json",
+      "sourceMtimeNs": 1791718286920820283,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-39/actual-workflow-profile.json": {
+      "sha256": "4e3fda7f286b77f19768091435a2541177bdde2a8971336378678e7bf1e1deb3",
+      "bytes": 682590,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-39/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791718858708782640,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-39/informational-summary.json": {
+      "sha256": "2fddcf744420e71ac262bd3555baa37710cc3e6d99091fe2020f720996297e6f",
+      "bytes": 4535,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-39/informational-summary.json",
+      "sourceMtimeNs": 1791718858709960588,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-39/start.json": {
+      "sha256": "90e2be1741658cd2c1f77914def0e090a13705c08b91ef3ed7cf6db1bea94bc9",
+      "bytes": 939,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-39/start.json",
+      "sourceMtimeNs": 1791718287681497358,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-39/terminal.json": {
+      "sha256": "01bb4ef0a73d72177b907adf8fae250dbbeddcbfdec0b7eff4d9741b4fd16338",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-39/terminal.json",
+      "sourceMtimeNs": 1791718857114947681,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-39/test-results.json": {
+      "sha256": "bbaec06fc7be4d4ef032fa1ed4c018712fe928d3d414d3c1cb840ee86fef3688",
+      "bytes": 787,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-39/test-results.json",
+      "sourceMtimeNs": 1791718857115798124,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-39/test-timings.json": {
+      "sha256": "fc502b4f2491d82994fadeccc9cccd57075c726446a82bde2145aa98ce8c0616",
+      "bytes": 71,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-39/test-timings.json",
+      "sourceMtimeNs": 1791718857104354815,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-39/validated.json": {
+      "sha256": "57a30e6accead8fab254958ceab20e38ce10e7e7d4b43d9aa5d837b5744c179c",
+      "bytes": 559,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-39/validated.json",
+      "sourceMtimeNs": 1791718858705949272,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-40/actual-workflow-profile.json": {
+      "sha256": "f22a74f7768e805b0873fce0e28d515270cee4b84326b843e0778a7d08aaf795",
+      "bytes": 685418,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-40/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791719433604719141,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-40/informational-summary.json": {
+      "sha256": "02f5d0560f8896e36ee837bfa581bb626bce606e02cef95784021f9dc34c95b1",
+      "bytes": 4527,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-40/informational-summary.json",
+      "sourceMtimeNs": 1791719433605767557,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-40/start.json": {
+      "sha256": "19b390d6e612aa86847c6c3af7fc69e4fff256c93e9af4e64d7583cd489935e1",
+      "bytes": 937,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-40/start.json",
+      "sourceMtimeNs": 1791718859476690517,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-40/terminal.json": {
+      "sha256": "76e7ab08f092f42e0d313fe63def60eb71866ffdf4011295a092ab1a23f36c14",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-40/terminal.json",
+      "sourceMtimeNs": 1791719432127824229,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-40/test-results.json": {
+      "sha256": "27a014a66e055468e544dadfa03008ab91ce7ff1b2470dd60e7b4120d87b0546",
+      "bytes": 784,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-40/test-results.json",
+      "sourceMtimeNs": 1791719432128826687,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-40/test-timings.json": {
+      "sha256": "f1cb5f4326be1290f5372b389ffc947974f7fc97faacda1f5d45410186b14743",
+      "bytes": 69,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-40/test-timings.json",
+      "sourceMtimeNs": 1791719432117734236,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-40/validated.json": {
+      "sha256": "38ef5deb5abe4c47bead4443daaa5b3838c7da1c990c05c964df2b752fe6accf",
+      "bytes": 557,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-40/validated.json",
+      "sourceMtimeNs": 1791719433602165226,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-41/actual-workflow-profile.json": {
+      "sha256": "c6954098790b6b8f9ab602bbb0b8af4a7c361cb412a7ee6e4d131c2a1e4f9769",
+      "bytes": 681554,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-41/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791720031594836734,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-41/informational-summary.json": {
+      "sha256": "eb6e388eec23f34019ad72124cdc3e44a0617217140a3496baa6f3ce6f9789fd",
+      "bytes": 4517,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-41/informational-summary.json",
+      "sourceMtimeNs": 1791720031595898525,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-41/start.json": {
+      "sha256": "8cd46e1e526d1e256d0a5d0c018e5cbbb73dd48a49b8c175dda1bb7e3a2c5d9f",
+      "bytes": 933,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-41/start.json",
+      "sourceMtimeNs": 1791719434370629350,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-41/terminal.json": {
+      "sha256": "13f8095f7fb26678ae7c8f3d0e6608f3f73289c3be76f0126a3b1fd923c5fce9",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-41/terminal.json",
+      "sourceMtimeNs": 1791720030054616780,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-41/test-results.json": {
+      "sha256": "3895929fc5b2efd469d7ed3bf107eaa69cdec7391e9a824c7963f6b2487f0917",
+      "bytes": 776,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-41/test-results.json",
+      "sourceMtimeNs": 1791720030054936322,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-41/test-timings.json": {
+      "sha256": "847efb7f6fd66c6738072cc1644204baafa6c678f64177c892b977723cdeb326",
+      "bytes": 65,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-41/test-timings.json",
+      "sourceMtimeNs": 1791720030050455783,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-41/validated.json": {
+      "sha256": "2de7857856f95efea64a7f46b5f9fb046ad9f35c8564531e38fcd6cb76cecbc6",
+      "bytes": 553,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-41/validated.json",
+      "sourceMtimeNs": 1791720031592585152,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-42/actual-workflow-profile.json": {
+      "sha256": "dd36eeefdeabb2bce11abf567673ed5b06d3a6b99e4826c1fe810db351f4a838",
+      "bytes": 681678,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-42/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791720602362834983,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-42/informational-summary.json": {
+      "sha256": "1356acd20226ffcc8b5c0bdd32c8292ac71206cc9aa515e1607c87bd5d751302",
+      "bytes": 4513,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-42/informational-summary.json",
+      "sourceMtimeNs": 1791720602363865609,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-42/start.json": {
+      "sha256": "092849240a3543e39838ea747600fcd88f75541968b7bc2cfe6c88d1e12bc76f",
+      "bytes": 932,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-42/start.json",
+      "sourceMtimeNs": 1791720032376204307,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-42/terminal.json": {
+      "sha256": "da868b5c25909adadb677dfb9ae52274bc03895cb45f4e0063246a700edc2151",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-42/terminal.json",
+      "sourceMtimeNs": 1791720600822045172,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-42/test-results.json": {
+      "sha256": "1a3541181908fd272a16a2b49e4d6ed32ee5ad6e95f8c1fcf06fb435a5b10c8c",
+      "bytes": 774,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-42/test-results.json",
+      "sourceMtimeNs": 1791720600822349255,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-42/test-timings.json": {
+      "sha256": "0ad3e8106fdeee82e2468bd51decdb08ca4eb4779546371775d76d33e310a9ec",
+      "bytes": 62,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-42/test-timings.json",
+      "sourceMtimeNs": 1791720600817335712,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-42/validated.json": {
+      "sha256": "5ee64c779137045d17951fdfe50adc33531127be7d3817f004d9afcce4cbbfca",
+      "bytes": 552,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-42/validated.json",
+      "sourceMtimeNs": 1791720602360409191,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-43/actual-workflow-profile.json": {
+      "sha256": "be0ade691be716a6c6ab6c91a27dda7be74e998e8e080a6745847934a6aa478b",
+      "bytes": 681633,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-43/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791721199220256707,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-43/informational-summary.json": {
+      "sha256": "f2ce25e73b119eab2d74d49a7bcc22e7fb76c6980c504737651c25442b3dc2e0",
+      "bytes": 4530,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-43/informational-summary.json",
+      "sourceMtimeNs": 1791721199221350540,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-43/start.json": {
+      "sha256": "3b9943f082900194f54a0630c772a9107bdf4d23445854027eedce1dd66a1297",
+      "bytes": 934,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-43/start.json",
+      "sourceMtimeNs": 1791720603121589898,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-43/terminal.json": {
+      "sha256": "0f5fe3b9a3c940d89a9e52f31d090fc4841e27819f802e236db0506a6658fc19",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-43/terminal.json",
+      "sourceMtimeNs": 1791721197744174356,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-43/test-results.json": {
+      "sha256": "56f027eba7e5b69d11b22149e3bf50667d210d4240e53372caef74aebe87b79a",
+      "bytes": 778,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-43/test-results.json",
+      "sourceMtimeNs": 1791721197744573398,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-43/test-timings.json": {
+      "sha256": "4edbc0c9bedbd45b51cf74bec76348f571af7a4de16f9df0d0eb95c2015655c1",
+      "bytes": 66,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-43/test-timings.json",
+      "sourceMtimeNs": 1791721197741613897,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-43/validated.json": {
+      "sha256": "6982708e0bf717cfde5e05653b54c11b2d6567082fb8b151be4ed369e5e32fdc",
+      "bytes": 554,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-43/validated.json",
+      "sourceMtimeNs": 1791721199217561415,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-44/actual-workflow-profile.json": {
+      "sha256": "dcd02fd95f7957820946cc9750fdc100137be6a0212b740e10139fba8bd5e4e3",
+      "bytes": 681779,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-44/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791721776870160372,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-44/informational-summary.json": {
+      "sha256": "2675b4f18960c929598917870d1d7a60b24ae9c5909d164e05f4ffd64207799e",
+      "bytes": 4525,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-44/informational-summary.json",
+      "sourceMtimeNs": 1791721776871211456,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-44/start.json": {
+      "sha256": "858d91f5c1f7009c45e15be8f0897f333e9a0e835ee180ced47732c885d4edb3",
+      "bytes": 933,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-44/start.json",
+      "sourceMtimeNs": 1791721199998282780,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-44/terminal.json": {
+      "sha256": "3dc37bd2b04836d63f07b003c4e22939fae756a4382a853a6045dacf918a083d",
+      "bytes": 204,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-44/terminal.json",
+      "sourceMtimeNs": 1791721775347947268,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-44/test-results.json": {
+      "sha256": "85079eabd69d948af77319de0009ada1a9e86d6a2533ef682d69263ceebd3433",
+      "bytes": 776,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-44/test-results.json",
+      "sourceMtimeNs": 1791721775348669643,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-44/test-timings.json": {
+      "sha256": "4937057fda6930784d078b983ec4062e42a922effc25f829aa4c7b18f74b0c2b",
+      "bytes": 64,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-44/test-timings.json",
+      "sourceMtimeNs": 1791721775337915226,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-44/validated.json": {
+      "sha256": "39897afb37d53a7fa8932696adc9ee75c61f9703d4715fafeb6f8643d77b7cf0",
+      "bytes": 553,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-44/validated.json",
+      "sourceMtimeNs": 1791721776867358039,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-45/actual-workflow-profile.json": {
+      "sha256": "ab9a3a2c3083de86ba5bb214b692e496f0f653c0c5009de4f898e0c8c7137039",
+      "bytes": 681775,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-45/actual-workflow-profile.json",
+      "sourceMtimeNs": 1791722344717938026,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-45/informational-summary.json": {
+      "sha256": "907910cb0430617cc4157657d6167de738a377b500686e166203ca03d18df8e1",
+      "bytes": 4545,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-45/informational-summary.json",
+      "sourceMtimeNs": 1791722344719047196,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-45/start.json": {
+      "sha256": "85fdfd40064dc900aad6613572b054eb5d6f4a68015e9e27972fabcb4880924a",
+      "bytes": 944,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-45/start.json",
+      "sourceMtimeNs": 1791721777629009736,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-45/terminal.json": {
+      "sha256": "bcbab2f193f86433969eb88bb41e80355cde0f392a49a0ffd15dfa6b2cf87bcb",
+      "bytes": 206,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-45/terminal.json",
+      "sourceMtimeNs": 1791722343193083336,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-45/test-results.json": {
+      "sha256": "5b672ac7486a588aa0621142f57234d49640fcf821c8798a9e42fbd9abb765a5",
+      "bytes": 798,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-45/test-results.json",
+      "sourceMtimeNs": 1791722343193934298,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-45/test-timings.json": {
+      "sha256": "4741e3f17850999219e67309af7b039ae32b2b8c83b12eb2793058ca0602329e",
+      "bytes": 76,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-45/test-timings.json",
+      "sourceMtimeNs": 1791722343182497460,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/phase-45/validated.json": {
+      "sha256": "a3255485e8d35a55f6c2f1a4d55ed14c4a3c01ebc46b988e14a407e78afd1b9e",
+      "bytes": 564,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/phase-45/validated.json",
+      "sourceMtimeNs": 1791722344715251057,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_CASE_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/start.json": {
+      "sha256": "97ec300dd1259a7930f5e5c6b8b9328dc93c2d5a202a622ba467100a299df46f",
+      "bytes": 887,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/start.json",
+      "sourceMtimeNs": 1791715425496992961,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_REFERENCE_NOT_NEW_RUN"
+    },
+    "informationals/terminal.json": {
+      "sha256": "5583341e7fb3929a055a7a24043b0fdc86a9db88167e240f5428a81e27aa1fbe",
+      "bytes": 376,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/informational-one-gib-20261011T104345496754Z/terminal.json",
+      "sourceMtimeNs": 1791722361897196407,
+      "role": "COPIED_ACTUAL_INFORMATIONAL_REFERENCE_NOT_NEW_RUN"
+    },
+    "local-candidate-verification/start.json": {
+      "sha256": "bebefde13d83f441a6096d82e9959447e6e52389ac8c04ad4ae99a8a502b61e8",
+      "bytes": 1041,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/candidate-readonly-verification-20261011T132208568311Z/start.json",
+      "sourceMtimeNs": 1791724928568630835,
+      "role": "COPIED_ACTUAL_LOCAL_ARTIFACT_VERIFICATION_REFERENCE_NOT_PUBLIC_DOWNLOAD_OR_APPROVAL"
+    },
+    "local-candidate-verification/terminal.json": {
+      "sha256": "2d261928294cb3197faf06b96367553e060d43a48f3a760f994dda7555349bb2",
+      "bytes": 279,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/candidate-readonly-verification-20261011T132208568311Z/terminal.json",
+      "sourceMtimeNs": 1791724934030690380,
+      "role": "COPIED_ACTUAL_LOCAL_ARTIFACT_VERIFICATION_REFERENCE_NOT_PUBLIC_DOWNLOAD_OR_APPROVAL"
+    },
+    "local-candidate-verification/verification.json": {
+      "sha256": "5dca8d3744daa9b1fba94b7271ba667feab3c66e2b292b2300529e45d0fb28c0",
+      "bytes": 4613,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/candidate-readonly-verification-20261011T132208568311Z/verification.json",
+      "sourceMtimeNs": 1791724934030439088,
+      "role": "COPIED_ACTUAL_LOCAL_ARTIFACT_VERIFICATION_REFERENCE_NOT_PUBLIC_DOWNLOAD_OR_APPROVAL"
+    },
+    "paranoia-functional/start.json": {
+      "sha256": "7be8ff1acf096e97fa30df3796a57e8567814f8f8c3d4b3b16db409c7790ed51",
+      "bytes": 2257,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/paranoia-repeat-functional-20261011T131354354407Z/start.json",
+      "sourceMtimeNs": 1791724434401299634,
+      "role": "COPIED_ACTUAL_FUNCTIONAL_REFERENCE_NOT_CANONICAL49_OR_NATIVE_GUI"
+    },
+    "paranoia-functional/terminal.json": {
+      "sha256": "6cebd9bfaec0760f339d565fa7afbeceef3705d80b514b59a62a2462464a71d0",
+      "bytes": 615,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/paranoia-repeat-functional-20261011T131354354407Z/terminal.json",
+      "sourceMtimeNs": 1791724670971593228,
+      "role": "COPIED_ACTUAL_FUNCTIONAL_REFERENCE_NOT_CANONICAL49_OR_NATIVE_GUI"
+    },
+    "paranoia-functional/test-results.json": {
+      "sha256": "b58e8c7fd9c1142e2be07a06be206b92e692c8044b09172e8b4470d744deb0c1",
+      "bytes": 760,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/paranoia-repeat-functional-20261011T131354354407Z/test-results.json",
+      "sourceMtimeNs": 1791724670971836478,
+      "role": "COPIED_ACTUAL_FUNCTIONAL_REFERENCE_NOT_CANONICAL49_OR_NATIVE_GUI"
+    },
+    "paranoia-functional/test-timings.json": {
+      "sha256": "e30dfd6c78b23db1eb49f1deceeaf830470b9cf61ff1eb9c8addf3c52da30d9e",
+      "bytes": 54,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/paranoia-repeat-functional-20261011T131354354407Z/test-timings.json",
+      "sourceMtimeNs": 1791724670951372379,
+      "role": "COPIED_ACTUAL_FUNCTIONAL_REFERENCE_NOT_CANONICAL49_OR_NATIVE_GUI"
+    },
+    "paranoia-functional/validation.json": {
+      "sha256": "de2ecdc70656e529d45f9aa2fda472bf537a25ffbfc2481d3c443819e9832c3b",
+      "bytes": 701013,
+      "sourceEvidencePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/paranoia-repeat-functional-20261011T131354354407Z/validation.json",
+      "sourceMtimeNs": 1791724672454373639,
+      "role": "COPIED_ACTUAL_FUNCTIONAL_REFERENCE_NOT_CANONICAL49_OR_NATIVE_GUI"
+    }
+  },
+  "totalReferencedBytes": 9234725,
+  "privacyReview": {
+    "structuredFieldsReviewed": true,
+    "environmentOnlyPublicWorkspaceAndDotnetOptions": true,
+    "credentialSecretValueFieldsFound": false,
+    "privateKeyEnvelopeMarkersFound": false,
+    "privateKeychainPathsFound": false,
+    "publicBudgetCpuTokensAndReceiptPinsAreNotCredentials": true
+  },
+  "counts": {
+    "informationalActualCases": 12,
+    "standaloneParanoiaFunctionalActualCases": 1,
+    "diagnosticInfrastructureActualCases": 1,
+    "historicalOriginalMatrixActualCases": 302,
+    "historicalOriginalPhase8ActualFailures": 1
+  }
+}

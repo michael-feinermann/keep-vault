@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-11T11:22:03.366118+00:00",
+  "status": "PASS",
+  "testCount": 1,
+  "sourceStable": true,
+  "staticInputsStable": true,
+  "resultsSha256": "6aac7e2bb5344148bb04cbf971b355d2cda9190bec3f0c896fc6356d27c6b7e0",
+  "profileArtifacts": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-paranoia-auto-20261011T112201761-f45b2ed9d9b1411dbb9f10328273b61d.json",
+      "sha256": "6914ecefd754f4c86b0f1c9dc0ad2a851e28610e39469f7f6d05dc7685a8bd85",
+      "bytes": 683429
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-11T13:22:14.030017+00:00",
+  "status": "ACTUAL_LOCAL_ARTIFACT_HYBRID_APPLE_AND_INSTALLED_BYTES_VERIFIED",
+  "actualVerificationPid": 31000,
+  "candidateRoot": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-rest-completion-20261010T093534Z/Candidate",
+  "version": "5.0.3",
+  "build": 20,
+  "assets": {
+    "Keep Vault-macOS-universal.zip": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-rest-completion-20261010T093534Z/Candidate/Keep Vault-macOS-universal.zip",
+      "sha256": "84cc050b2ef5588d882b59e154063e6f62e473763d4dfd484c2e4a5f5536a32e",
+      "bytes": 45992923,
+      "mode": 384,
+      "uid": 501,
+      "device": 16777232,
+      "inode": 56793876
+    },
+    "Keep Vault-macOS-universal.zip.sha3": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-rest-completion-20261010T093534Z/Candidate/Keep Vault-macOS-universal.zip.sha3",
+      "sha256": "f795af02e4ea4ebef8ac23a24b4d816e4282f97e9a5ad356327e48645e2fdf94",
+      "bytes": 129,
+      "mode": 384,
+      "uid": 501,
+      "device": 16777232,
+      "inode": 56794084
+    },
+    "Keep Vault-macOS-universal.zip.skein": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-rest-completion-20261010T093534Z/Candidate/Keep Vault-macOS-universal.zip.skein",
+      "sha256": "8f0951608b2428ab71e8d2a778cd6d0cd726f8bd6e12ccaa1ae7994258c1ff26",
+      "bytes": 257,
+      "mode": 384,
+      "uid": 501,
+      "device": 16777232,
+      "inode": 56794085
+    },
+    "Keep Vault-macOS-universal.zip.khsig": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-rest-completion-20261010T093534Z/Candidate/Keep Vault-macOS-universal.zip.khsig",
+      "sha256": "63b8452e8f52f7dbc08d90958ad1c777be7ac91850ec366a99f8d71a37ae3692",
+      "bytes": 6547,
+      "mode": 384,
+      "uid": 501,
+      "device": 16777232,
+      "inode": 56794086
+    },
+    "Keep Vault-macOS-universal.zip.sha3.khsig": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-rest-completion-20261010T093534Z/Candidate/Keep Vault-macOS-universal.zip.sha3.khsig",
+      "sha256": "d278774990c1eab5dfb018d286d3075d3fb871595e79238c19983dbaaa5816ae",
+      "bytes": 6547,
+      "mode": 384,
+      "uid": 501,
+      "device": 16777232,
+      "inode": 56794087
+    },
+    "Keep Vault-macOS-universal.zip.skein.khsig": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build20-rest-completion-20261010T093534Z/Candidate/Keep Vault-macOS-universal.zip.skein.khsig",
+      "sha256": "ff00ac94463db1ee51d2288ef55158841d070d53cb178583d6947ba79fea618a",
+      "bytes": 6547,
+      "mode": 384,
+      "uid": 501,
+      "device": 16777232,
+      "inode": 56794088
+    }
+  },
+  "hybridArchitectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "zipHybridAlgorithms": [
+    "RSA-4096-PSS/SHA-512",
+    "ML-DSA-87"
+  ],
+  "signedSha3AndSkeinManifestsVerified": true,
+  "signedZipFileEntryCount": 147,
+  "signedInstallationInventoryArchitectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "candidateApps": {
+    "Keep Vault.app": {
+      "fileCount": 103,
+      "allFileSha256sMatchPinnedCandidate": true
+    },
+    "QR-Scanner.app": {
+      "fileCount": 6,
+      "allFileSha256sMatchPinnedCandidate": true
+    },
+    "Keep Vault Installer.app": {
+      "fileCount": 21,
+      "allFileSha256sMatchPinnedCandidate": true
+    }
+  },
+  "installedApps": {
+    "Keep Vault.app": {
+      "version": "5.0.3",
+      "build": "20",
+      "allFileSha256sMatchPinnedCandidate": true
+    },
+    "QR-Scanner.app": {
+      "version": "5.0.3",
+      "build": "20",
+      "allFileSha256sMatchPinnedCandidate": true
+    }
+  },
+  "installedProtectedZpaqAndRollbackAnchorsVerified": true,
+  "candidateInputsSha256": "8878390562fd67fa72ec7fc9696052749c57a19f92a0ab78ab70547aaacb0154",
+  "installedBindingSha256": "7e302742ab968042d9d1536dbf9badad23dee45af63233a65fc60e516e26d9b1",
+  "helperApiSourceSha256": "2aad36a319f62764e5bd4e68c8d649e90aae5d03f4c1d92620d576bf7df46b31",
+  "codesignInlineRequirementArgument": "-R=<exact original requirement>",
+  "commandsWithActualPidExitUtc": 19,
+  "functionalReleaseGatesClaimed": false,
+  "publicDownloadVerificationClaimed": false,
+  "publicReleaseApproved": false,
+  "scope": "Read-only actual existing local signed/notarized candidate assets and installed20. No build/sign/install/Git/publisher/GUI/test/key action. Formal functional gates and actual publicpublication/download remain separate."
+}

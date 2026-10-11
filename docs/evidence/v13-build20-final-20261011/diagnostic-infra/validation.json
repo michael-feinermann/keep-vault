@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "status": "DIAGNOSTIC_HARNESS_INFRA_REGRESSION_PASS",
+  "actualPid": 30579,
+  "actualTestsRun": 1,
+  "testId": "infra.runner-invariants",
+  "testInventoryHash": "2b275841e29601cb690e68c2741203b9470ac037a47641946066d9828579c3cd",
+  "testDllSha256": "d306be46722ea2a7ca5301501f6a6c1ece1c6f22b08318ac32a61f814a49fea3",
+  "sourceProductHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "resultSha256": "ce32e1622d7755d314b00a66552e00755db4d3a6069340ff1bfa0c60bf46e22f",
+  "timingsSha256": "5500a86409a6ac5e8640f88137407dd8ab698de135e88326e27245249aa577ba",
+  "logSha256": "f073a8b74746209896df0291a43b205e4c5ecfb22155abb979f3302c484472df",
+  "terminalSha256": "9b42a815222e170cef58ddc3309efdf0f521879f029b9fb2cb93961f0879a998",
+  "historicalCreditClaimed": false,
+  "validatedUtc": "2026-10-11T13:11:50.804459+00:00"
+}
