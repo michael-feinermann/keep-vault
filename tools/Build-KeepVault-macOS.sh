@@ -460,7 +460,7 @@ core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
 marketing_version='5.0.3'
-build_version='21'
+build_version='22'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
@@ -607,6 +607,10 @@ if [[ ${architecture} != universal && ${architecture} != arm64 ]]; then
 fi
 if [[ ! ${marketing_version} =~ '^[0-9]+([.][0-9]+){1,2}$' || ! ${build_version} =~ '^[1-9][0-9]*$' ]]; then
   print -u2 'Version values must be numeric (for example 1.0.0 and build 1).'
+  exit 64
+fi
+if [[ ${marketing_version} != '5.0.3' || ${build_version} != '22' ]]; then
+  print -u2 'RELEASE GATE: this source pins Keep Vault 5.0.3 build 22; other version/build pairs require a matching reviewed installation verifier.'
   exit 64
 fi
 if [[ -L ${repo_root} || -L ${mac_project} || -L ${packaging_dir} ]]; then

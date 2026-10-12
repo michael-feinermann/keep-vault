@@ -1,0 +1,125 @@
+{
+  "scope": "Original failed Build22 attempt and four subsequent actual CLI rejection cases; no positive full release or installer approval",
+  "files": [
+    {
+      "path": "invocation.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/invocation.json",
+      "sha256": "55b73303d8141667e59fab59b38ea3ab785885207433a8666cdec0480f1af2d1",
+      "bytes": 859
+    },
+    {
+      "path": "builder-start.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/builder-start.json",
+      "sha256": "f0c8f172edda29103a70786305fc6dee69778da876ddb856161b22b2f9f0d054",
+      "bytes": 1040
+    },
+    {
+      "path": "builder-terminal.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/builder-terminal.json",
+      "sha256": "4978869f81ba9ea15190446432f3b1248f0722d397d0b7b449b99ef08cacbc4a",
+      "bytes": 314
+    },
+    {
+      "path": "full-release-build-result.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/full-release-build-result.json",
+      "sha256": "839a885804830b11baf78b7009c8d1aa033e65e0648e6d8a5b0353881a7822a3",
+      "bytes": 1204
+    },
+    {
+      "path": "full-release-phase-analysis.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/full-release-phase-analysis.json",
+      "sha256": "e9f12c20942953bd5e509377983e1a686a6dccb354e1f9b79649a0a02eba4605",
+      "bytes": 4209
+    },
+    {
+      "path": "source-inputs-before.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/source-inputs-before.json",
+      "sha256": "51474d237dcc8c5071b3fa319c39404c55b9f08163ce9d469974004d80721d26",
+      "bytes": 88652
+    },
+    {
+      "path": "source-inputs-after.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/source-inputs-after.json",
+      "sha256": "51474d237dcc8c5071b3fa319c39404c55b9f08163ce9d469974004d80721d26",
+      "bytes": 88652
+    },
+    {
+      "path": "builder.stdout.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/builder.stdout.log",
+      "sha256": "c58e3113e054fc3dee189b8aa8549a7fbe2668ee44e4e43cb00c1268e5ee555d",
+      "bytes": 34715
+    },
+    {
+      "path": "builder.stderr.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/builder.stderr.log",
+      "sha256": "b4bc43dc5a35ba9d7113e98d56ac45abe79d5d50331c7bfe54c36b8a5bd56882",
+      "bytes": 21162
+    },
+    {
+      "path": "root-outer-start-observation.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/root-outer-start-observation.json",
+      "sha256": "b017524ea2b9867d48bcf898a239eaf34b66e8c9e769c09bfc7353ea2fc92c28",
+      "bytes": 495
+    },
+    {
+      "path": "root-outer-terminal-attempt1.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/root-outer-terminal-attempt1.json",
+      "sha256": "4632e13604005ac51b53b0e43dde00cc78d9a40a608e76a0705c3246b39fcad5",
+      "bytes": 363
+    },
+    {
+      "path": "metadata-cli-rejection-results.json",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-cli-rejection-results.json",
+      "sha256": "e8efed53a371ef0687fc9a88f61bfc3e2e3eff4fc2bbdda4ef01e2906e0fe9f2",
+      "bytes": 2504
+    },
+    {
+      "path": "metadata-rejection-0.stderr.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-rejection-0.stderr.txt",
+      "sha256": "91db2dddc820c8c2621e415785b2fbceb207115d64397e846ca17539e158cb51",
+      "bytes": 135
+    },
+    {
+      "path": "metadata-rejection-0.stdout.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-rejection-0.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "metadata-rejection-1.stderr.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-rejection-1.stderr.txt",
+      "sha256": "91db2dddc820c8c2621e415785b2fbceb207115d64397e846ca17539e158cb51",
+      "bytes": 135
+    },
+    {
+      "path": "metadata-rejection-1.stdout.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-rejection-1.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "metadata-rejection-2.stderr.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-rejection-2.stderr.txt",
+      "sha256": "91db2dddc820c8c2621e415785b2fbceb207115d64397e846ca17539e158cb51",
+      "bytes": 135
+    },
+    {
+      "path": "metadata-rejection-2.stdout.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-rejection-2.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "metadata-rejection-3.stderr.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-rejection-3.stderr.txt",
+      "sha256": "2c58cf479434c9216072b2ea897cfa0146a79cc2658c1ca6909f2e2307977d63",
+      "bytes": 64
+    },
+    {
+      "path": "metadata-rejection-3.stdout.txt",
+      "original": "work/v13-evidence/full-release-build22-20261012T212447Z/metadata-rejection-3.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}

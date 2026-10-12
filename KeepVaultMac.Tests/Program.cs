@@ -136,10 +136,18 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
     string installationManifestVerifierSource = await File.ReadAllTextAsync(
         Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier", "InstallationManifestVerifier.cs")).ConfigureAwait(false);
-    Require(keepVaultBuilderSource.Contains("build_version='21'", StringComparison.Ordinal)
-        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"21\"", StringComparison.Ordinal)
-        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"21\")", StringComparison.Ordinal),
+    Require(keepVaultBuilderSource.Contains("build_version='22'", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"22\"", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"22\")", StringComparison.Ordinal),
         "The release builder and strict installation manifest/bundle build pins differ.");
+    foreach ((string version, string build) in new[]
+        { ("5.0.3", "21"), ("5.0.3", "23"), ("5.0.2", "22"), ("5.0.3", "invalid") })
+    {
+        (int mismatchedIdentityExit, _, _) = await RunProcessAsync(
+            keepVaultBuilder, "--version", version, "--build-number", build, "--preflight").ConfigureAwait(false);
+        Require(mismatchedIdentityExit == 64,
+            "The builder accepted metadata that cannot match its compiled installation verifier.");
+    }
     (int conflictingModeExit, _, _) = await RunProcessAsync(
         keepVaultBuilder, "--prerelease", "--release", "--preflight").ConfigureAwait(false);
     Require(conflictingModeExit == 64,

@@ -1,0 +1,10 @@
+{
+  "observedUtc": "2026-10-12T21:39:58.488092+00:00",
+  "execSessionId": 11433,
+  "actualWrapperPid": 37656,
+  "pidProvenance": "Actual os.getpid recorded by runner invocation; original invocation file retained unchanged",
+  "originalInvocationStartedUtc": "2026-10-12T21:35:29.565517+00:00",
+  "invocationSource": "work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261012T213527235530Z-37656/invocation.json",
+  "status": "RUNNING",
+  "overallReleaseApproval": false
+}

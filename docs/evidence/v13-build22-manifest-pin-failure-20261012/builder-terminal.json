@@ -1,0 +1,7 @@
+{
+  "actualBuilderExitCode": 3,
+  "actualBuilderPid": 64988,
+  "completedUtc": "2026-10-12T21:43:16.359562+00:00",
+  "fullReleaseGate": "BUILDER_EXIT_OBSERVED",
+  "scope": "Actual official-release builder process exit only; overall approval still requires bound evidence and separate GUI/public-download proof."
+}

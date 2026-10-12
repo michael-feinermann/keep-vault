@@ -1,0 +1,1 @@
+RELEASE GATE: this source pins Keep Vault 5.0.3 build 22; other version/build pairs require a matching reviewed installation verifier.
