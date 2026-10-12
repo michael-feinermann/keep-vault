@@ -1,0 +1,87 @@
+{
+  "status": "PASS",
+  "releaseId": 410709242,
+  "tag": "v5.0.3",
+  "scope": "Fresh anonymous regular-release downloads byte-identical to already verified Build21; no new functional/performance/GUI or overall approval",
+  "assets": [
+    {
+      "name": "Keep.Vault-macOS-universal.zip",
+      "assetId": 634064361,
+      "url": "https://github.com/michael-feinermann/keep-vault/releases/download/v5.0.3/Keep.Vault-macOS-universal.zip",
+      "pid": 33429,
+      "startedUtc": "2026-10-12T14:48:31.632598+00:00",
+      "endedUtc": "2026-10-12T14:48:34.820114+00:00",
+      "exitCode": 0,
+      "httpCode": 200,
+      "sha256": "8c2864a4d156a821e07a6c4328401aed0c47137d31f3202ce9adb4125ff990ac",
+      "sizeBytes": 46565158,
+      "credentialEnvironmentExcluded": true
+    },
+    {
+      "name": "Keep.Vault-macOS-universal.zip.sha3",
+      "assetId": 634064352,
+      "url": "https://github.com/michael-feinermann/keep-vault/releases/download/v5.0.3/Keep.Vault-macOS-universal.zip.sha3",
+      "pid": 33431,
+      "startedUtc": "2026-10-12T14:48:31.633868+00:00",
+      "endedUtc": "2026-10-12T14:48:31.954586+00:00",
+      "exitCode": 0,
+      "httpCode": 200,
+      "sha256": "635123eca1e6b98634ef21188a83e10af10296486928ef45f17523eea2274a52",
+      "sizeBytes": 129,
+      "credentialEnvironmentExcluded": true
+    },
+    {
+      "name": "Keep.Vault-macOS-universal.zip.skein",
+      "assetId": 634064349,
+      "url": "https://github.com/michael-feinermann/keep-vault/releases/download/v5.0.3/Keep.Vault-macOS-universal.zip.skein",
+      "pid": 33430,
+      "startedUtc": "2026-10-12T14:48:31.634064+00:00",
+      "endedUtc": "2026-10-12T14:48:31.985369+00:00",
+      "exitCode": 0,
+      "httpCode": 200,
+      "sha256": "7d9a71a42b56bfdd2d9355d7806cb866ae404b4104f53de57c89406d00eb94f8",
+      "sizeBytes": 257,
+      "credentialEnvironmentExcluded": true
+    },
+    {
+      "name": "Keep.Vault-macOS-universal.zip.khsig",
+      "assetId": 634064363,
+      "url": "https://github.com/michael-feinermann/keep-vault/releases/download/v5.0.3/Keep.Vault-macOS-universal.zip.khsig",
+      "pid": 33432,
+      "startedUtc": "2026-10-12T14:48:31.954725+00:00",
+      "endedUtc": "2026-10-12T14:48:32.354896+00:00",
+      "exitCode": 0,
+      "httpCode": 200,
+      "sha256": "4a48e1012d8274de5c7cb91ce966c8deeba8c224527e7cabb1f1202e766ce54e",
+      "sizeBytes": 6547,
+      "credentialEnvironmentExcluded": true
+    },
+    {
+      "name": "Keep.Vault-macOS-universal.zip.sha3.khsig",
+      "assetId": 634064353,
+      "url": "https://github.com/michael-feinermann/keep-vault/releases/download/v5.0.3/Keep.Vault-macOS-universal.zip.sha3.khsig",
+      "pid": 33433,
+      "startedUtc": "2026-10-12T14:48:31.985463+00:00",
+      "endedUtc": "2026-10-12T14:48:32.396628+00:00",
+      "exitCode": 0,
+      "httpCode": 200,
+      "sha256": "6e9515816d8b60ea4ef86657ea3059c64bf5ff014e0196829f8631621c00e903",
+      "sizeBytes": 6547,
+      "credentialEnvironmentExcluded": true
+    },
+    {
+      "name": "Keep.Vault-macOS-universal.zip.skein.khsig",
+      "assetId": 634064393,
+      "url": "https://github.com/michael-feinermann/keep-vault/releases/download/v5.0.3/Keep.Vault-macOS-universal.zip.skein.khsig",
+      "pid": 33434,
+      "startedUtc": "2026-10-12T14:48:32.355061+00:00",
+      "endedUtc": "2026-10-12T14:48:32.890594+00:00",
+      "exitCode": 0,
+      "httpCode": 200,
+      "sha256": "41d71ab500995b1cc797771395294f8864dd807f7d2d1828bf48895cfe9453b4",
+      "sizeBytes": 6547,
+      "credentialEnvironmentExcluded": true
+    }
+  ],
+  "overallReleaseApproval": false
+}

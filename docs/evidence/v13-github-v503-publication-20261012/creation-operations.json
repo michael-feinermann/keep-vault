@@ -1,0 +1,122 @@
+[
+  {
+    "name": "local-tag-absence",
+    "pid": 33310,
+    "argv": [
+      "git",
+      "show-ref",
+      "--verify",
+      "--quiet",
+      "refs/tags/v5.0.3"
+    ],
+    "startedUtc": "2026-10-12T14:45:49.943447+00:00",
+    "endedUtc": "2026-10-12T14:45:49.957510+00:00",
+    "exitCode": 1,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "remote-tag-absence",
+    "pid": 33311,
+    "argv": [
+      "git",
+      "ls-remote",
+      "origin",
+      "refs/tags/v5.0.3",
+      "refs/tags/v5.0.3^{}"
+    ],
+    "startedUtc": "2026-10-12T14:45:49.957687+00:00",
+    "endedUtc": "2026-10-12T14:45:50.363686+00:00",
+    "exitCode": 0,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "tag-create",
+    "pid": 33314,
+    "argv": [
+      "git",
+      "tag",
+      "-a",
+      "v5.0.3",
+      "8c68571695ae9072555ffb462b3c0b9c500811ea",
+      "-m",
+      "Keep Vault 5.0.3 macOS Build 21; remaining release tests deferred by explicit user instruction"
+    ],
+    "startedUtc": "2026-10-12T14:45:50.364241+00:00",
+    "endedUtc": "2026-10-12T14:45:50.390094+00:00",
+    "exitCode": 0,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "tag-push",
+    "pid": 33315,
+    "argv": [
+      "git",
+      "push",
+      "origin",
+      "refs/tags/v5.0.3"
+    ],
+    "startedUtc": "2026-10-12T14:45:50.390358+00:00",
+    "endedUtc": "2026-10-12T14:45:52.092355+00:00",
+    "exitCode": 0,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrSha256": "15f6f9bcf300257aabf37b53efdc020a2ba64ce245bf00ac9ca915809af76978"
+  },
+  {
+    "name": "draft-create",
+    "pid": 33329,
+    "argv": [
+      "gh",
+      "api",
+      "--method",
+      "POST",
+      "repos/michael-feinermann/keep-vault/releases",
+      "--input",
+      "work/v13-evidence/github-v503-publication-20261012/create-draft.json"
+    ],
+    "startedUtc": "2026-10-12T14:45:52.092736+00:00",
+    "endedUtc": "2026-10-12T14:45:52.946006+00:00",
+    "exitCode": 0,
+    "stdoutSha256": "172a48a26c1d6030cc5c785f7b3510ffb6bafd05b7e78a44233495b7b457e4f7",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "upload-six-assets",
+    "pid": 33333,
+    "argv": [
+      "gh",
+      "release",
+      "upload",
+      "v5.0.3",
+      "work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip",
+      "work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.sha3",
+      "work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.skein",
+      "work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.khsig",
+      "work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.sha3.khsig",
+      "work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.skein.khsig",
+      "--repo",
+      "michael-feinermann/keep-vault"
+    ],
+    "startedUtc": "2026-10-12T14:45:52.947185+00:00",
+    "endedUtc": "2026-10-12T14:45:58.703009+00:00",
+    "exitCode": 0,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "draft-six-assets",
+    "pid": 33346,
+    "argv": [
+      "gh",
+      "api",
+      "repos/michael-feinermann/keep-vault/releases/410709242"
+    ],
+    "startedUtc": "2026-10-12T14:45:58.703648+00:00",
+    "endedUtc": "2026-10-12T14:45:59.082266+00:00",
+    "exitCode": 0,
+    "stdoutSha256": "ca47a76f6c5c44faf9c77dc173918d85249ea2e3605e89d06fb00dd45d4ecb11",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

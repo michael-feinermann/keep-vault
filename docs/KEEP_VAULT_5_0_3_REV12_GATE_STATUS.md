@@ -1,6 +1,10 @@
 # Keep Vault 5.0.3 / v13: REV12-Abnahmematrix
 
-## Aktueller Auftrag: veröffentlichte Vorabversion Build 21, 12. Oktober 2026
+## Veröffentlichungsupdate, 12. Oktober 2026, 16:47 MESZ
+
+[v5.0.3 ist jetzt regulär veröffentlicht und Latest](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3), auf ausdrücklichen Wunsch vor den verschobenen restlichen Tests. Verwendet werden exakt dieselben sechs geprüften Build-21-Dateien; der kompilierte Quellstand und beide Tags bleiben an `8c68571695ae9072555ffb462b3c0b9c500811ea` gebunden. Die technische Gesamtfreigabe bleibt ausstehend. Der [aktuelle Veröffentlichungsstand](KEEP_VAULT_5_0_3_PUBLICATION_STATUS.md) und die neuen Veröffentlichungsbelege trennen diese Entscheidung von den nachfolgenden historischen Vorabversionsnachweisen. Aussagen zur damaligen Latest-Auswahl beziehen sich auf die frühere Build-21-Veröffentlichung. Neue Funktions-, Leistungs- oder reale GUI-Prüfungen werden nicht behauptet.
+
+## Historischer Vorabversionsnachweis Build 21, 12. Oktober 2026
 
 [Build 21 ist als macOS-Vorabversion veröffentlicht](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3-rc.build21). Der kompilierte Quellstand ist `8c68571695ae9072555ffb462b3c0b9c500811ea`. Der Benutzer hat die abschließenden Langläufe und vergleichbaren Geschwindigkeitsmessungen verschoben. Gesamtstatus: `NICHT GESAMTFREIGEGEBEN`. Version 5.0.2 bleibt Latest, der ältere Build-20-Draft und PR 3 als Draft bleiben erhalten.
 
