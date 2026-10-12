@@ -1,0 +1,29 @@
+{
+  "utc": "2026-10-12T02:35:02.594475+00:00",
+  "actualVerifierPid": 41997,
+  "status": "PUBLIC_V13_PARANOIA_CONTAINER_LAYOUT_PASS",
+  "archiveBytes": 134308409,
+  "archiveSha256": "92f660542fb3e0ce76d1bcaeaccb6a3bdf4f224cda2ac7f23c537c6106b8a5f9",
+  "publicHeaderFields": {
+    "Version": 13,
+    "Algorithm": "XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024",
+    "Argon2MemoryKiB": 0,
+    "Argon2Iterations": 4,
+    "Argon2Parallelism": 4,
+    "KdfExecutionMode": "Sequential",
+    "KdfMemoryMode": "PMI16",
+    "GeneratedPasswordBits": 1024,
+    "GeneratedPasswordFactorCount": 2
+  },
+  "headerBytes": 2490,
+  "globalMacBytes": 192,
+  "ciphertextBytes": 134305716,
+  "outerAeadTagBytes": 16,
+  "frameBytes": 16777232,
+  "fullFrames": 8,
+  "tailFrameBytes": 87860,
+  "actualEncryptedChunkCount": 9,
+  "algorithmSource": "KalynaArchiver/Services/CryptoUsageBudget.cs:36",
+  "headerProfileSource": "KalynaArchiver/Services/KalynaContainerService.cs:2354",
+  "independentCryptographicAuthenticationClaimed": false
+}

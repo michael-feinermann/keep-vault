@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-12T02:35:02.774957+00:00",
+  "actualVerifierPid": 41997,
+  "actualNativeAppPid": 19939,
+  "nativeExecutable": "/Applications/Keep Vault.app/Contents/MacOS/Keep Vault",
+  "nativeExecutableBytes": 59136832,
+  "nativeExecutableSha256": "da7b207eee9f0a9cc54812ac1bbafc65500e558f963a0815b66bc33941213a90",
+  "byteEqualToExistingSignedBuild20Candidate": true,
+  "codesignActualPid": 41998,
+  "codesignExitCode": 0,
+  "appleTeam": "2T6K9PGS55",
+  "productSourceHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "documentationSourceHead": "2273d4d20b754b68b1daf1b46c03ce0629d075fc"
+}

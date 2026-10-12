@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-12T02:32:02.138221+00:00",
+  "actualPid": 41827,
+  "args": [
+    "/usr/bin/python3",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/compare-public-paranoia-multichunk-current-head.py",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/native-gui-public/paranoia-multichunk-extracted-20261012",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261011/native-gui-public/paranoia-multichunk.kzpaq"
+  ]
+}

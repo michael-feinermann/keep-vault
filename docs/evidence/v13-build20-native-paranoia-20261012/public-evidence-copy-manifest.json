@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-12T02:43:48.827784+00:00",
+  "actualCopyPid": 42622,
+  "status": "EXACT_STRUCTURED_PUBLIC_EVIDENCE_COPY",
+  "scope": "Synthetic public native test, metadata only. No PDFs, test credentials, private release keys, raw app logs or test containers. Copies are evidence preservation, not new test execution.",
+  "entries": [
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/native-paranoia-completion.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/native-paranoia-completion.json",
+      "bytes": 5913,
+      "sha256": "00dc6c8fcf943c28e1e330e48beb1a351af981f5e5d14d0490c5c4c7d1ce8dbe"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/filesystem-comparison-20261012T023202599747Z.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/filesystem-comparison-20261012T023202599747Z.json",
+      "bytes": 37346,
+      "sha256": "83ba808bcd67ad281c5f2f2a7a5704dc81f3f29dff595baf4c1358bbce7b66aa"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/comparison-start.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/comparison-start.json",
+      "bytes": 592,
+      "sha256": "43c1d9c171fd6f457597582604a3d23c408fde63300eff8785a176f31f25e562"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/comparison-terminal.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/comparison-terminal.json",
+      "bytes": 124,
+      "sha256": "c447b02d637f70d4a0095b6eb961566e5a9405cf2e98b163a599c01d3498d217"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/container-layout.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/container-layout.json",
+      "bytes": 1137,
+      "sha256": "1fb444d429a7765842e53dfd31da427b115a12b1350c737eae02d2fc8ca905e2"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/installed-native-binding.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/installed-native-binding.json",
+      "bytes": 599,
+      "sha256": "a5e670465bcfd820330dac731a20a27b8faa4518ca99d29d2787f7ab36e2a87e"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/installed-codesign-start.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/installed-codesign-start.json",
+      "bytes": 301,
+      "sha256": "f3a859a7f2c362cd7abbc4d04bbb1445aa2272b141ebf7c14984d8060b7fd02a"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/installed-codesign-terminal.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/installed-codesign-terminal.json",
+      "bytes": 125,
+      "sha256": "efdb152ce602c9958376d248ae2419bc0f6b1387d9a7d4c7d91e67565e154611"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/container-layout-precheck-diagnosis.json",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/container-layout-precheck-diagnosis.json",
+      "bytes": 657,
+      "sha256": "c9cb34c7f7f96bfbd980c4ad26385c42cf33e13a1c255062ea7d8f7d88e47798"
+    },
+    {
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/compare-public-paranoia-multichunk-current-head.py",
+      "destination": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/evidence/v13-build20-native-paranoia-20261012/compare-public-paranoia-multichunk-current-head.py",
+      "bytes": 11649,
+      "sha256": "b884cab221fe585972c718ed958da6069518e76c2fe9dd14db396837a8a02fa6"
+    }
+  ]
+}
