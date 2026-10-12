@@ -1,0 +1,12 @@
+{
+  "actualExitCode": 0,
+  "actualPid": 90687,
+  "completedUtc": "2026-10-12T12:16:41.583285+00:00",
+  "schemaVersion": 1,
+  "scope": "Read-only vendored-source hash check after native build; not a continuous monitor or extra native run.",
+  "sourceCommit": "8c68571695ae9072555ffb462b3c0b9c500811ea",
+  "startedUtc": "2026-10-12T12:16:34.203670+00:00",
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdoutSha256": "e3f9d1dee8fc1e6587bf7ccbbde4befeb7a67bc499a38848edf3c4003e6f3100",
+  "trackedWorktreeClean": true
+}

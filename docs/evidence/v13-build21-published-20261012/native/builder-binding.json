@@ -1,0 +1,14 @@
+{
+  "builderCompletedUtc": "2026-10-12T12:55:59.954337+00:00",
+  "builderPid": 59476,
+  "builderReceipt": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/prerelease-build-result.json",
+  "builderReceiptSha256": "190f5a594cbe2beee0d86d46f7749bfec6ecb925ebdb16370384cfa31e4c1470",
+  "builderStartedUtc": "2026-10-12T12:13:47.789038+00:00",
+  "builderStatus": "PASS",
+  "fullReleaseGate": "NOT_RUN",
+  "nativeLibrariesScope": "9 exact signed shipped product libraries, no signature modification",
+  "overallReleaseApproval": false,
+  "publishedNativeAotSha256": "bd5a5fbcc1c0b768386a63b7644368bff6cdaa87ddd61c7e504ded91569b078d",
+  "sha3ReferenceScope": "separate unshipped freshly built architecture-specific test reference",
+  "sourceCommit": "8c68571695ae9072555ffb462b3c0b9c500811ea"
+}

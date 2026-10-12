@@ -1,0 +1,18 @@
+{
+  "phase-1.test-results.json": {
+    "bytes": 85915,
+    "sha256": "9c9e59d1cf1e05ca223345846ee1a6d300fd6831549e10aeec6978db96ad8750"
+  },
+  "phase-1.test-timings.json": {
+    "bytes": 14223,
+    "sha256": "6a4bf3e146868cd1df0a0ed4af8692a11bfe596435d547c3a65e037152de7cb7"
+  },
+  "phases.txt": {
+    "bytes": 344,
+    "sha256": "2f14b1f78fd83ad74be6eab50f43fb6b814d22936d121579c478e5b98610f635"
+  },
+  "test-input-sha256.txt": {
+    "bytes": 21924,
+    "sha256": "6a2101d31ba85c8c06925fa56c9d69365fb0a725603405491206d9dee5c8b54c"
+  }
+}

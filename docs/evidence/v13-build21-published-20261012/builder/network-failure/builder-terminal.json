@@ -1,0 +1,7 @@
+{
+  "actualBuilderExitCode": 1,
+  "actualBuilderPid": 86508,
+  "completedUtc": "2026-10-12T11:02:38.055715+00:00",
+  "fullReleaseGate": "NOT_RUN",
+  "scope": "Actual prerelease builder process exit only; no overall release approval."
+}

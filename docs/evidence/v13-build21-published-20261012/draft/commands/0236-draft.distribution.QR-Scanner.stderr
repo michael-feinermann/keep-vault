@@ -1,0 +1,17 @@
+Checking distribution readiness on /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/draft-verification-build21-20261012T1306/draft/kit/QR-Scanner.app
+Checking certificate type for /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/draft-verification-build21-20261012T1306/draft/kit/QR-Scanner.app
+Passed developer ID certificate check
+Passed certificate-profile match check
+Passed codesign --verify -R="notarized" --check-notarization
+Passed codesign check
+Passed xptool
+  Progress: 531114 / 1593344 = 0.333333
+  Progress: 1062229 / 1593344 = 0.666666
+  Progress: 1593344 / 1593344 = 1.000000
+
+  Top level policy match: notarized
+  Deep policy match: notarized
+Passed Gatekeeper scan
+Only one signature found in file:///Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/draft-verification-build21-20261012T1306/draft/kit/QR-Scanner.app, skipping dual signature check
+Passed dual signature check
+App passed all pre-distribution checks and is ready for distribution.

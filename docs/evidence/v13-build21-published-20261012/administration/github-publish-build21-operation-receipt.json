@@ -1,0 +1,19 @@
+{
+  "actualPid": 28668,
+  "startedUtc": "2026-10-12T13:09:12.890359+00:00",
+  "completedUtc": "2026-10-12T13:09:13.814628+00:00",
+  "exitCode": 0,
+  "argv": [
+    "gh",
+    "api",
+    "--method",
+    "PATCH",
+    "repos/michael-feinermann/keep-vault/releases/410608510",
+    "--input",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-publish-build21.json"
+  ],
+  "stdoutSha256": "b057dd167e0d0394a27b7110f15393d520d2b2e64451026fb862c370dcfd4ea8",
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "makeLatest": false,
+  "overallReleaseApproval": false
+}

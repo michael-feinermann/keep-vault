@@ -1,0 +1,37 @@
+Checking distribution readiness on /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/public-verification-build21-20261012T1309/anon/kit/Keep Vault Installer.app
+Checking certificate type for /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/public-verification-build21-20261012T1309/anon/kit/Keep Vault Installer.app
+Passed developer ID certificate check
+Passed certificate-profile match check
+Passed codesign --verify -R="notarized" --check-notarization
+Passed codesign check
+Passed xptool
+  Progress: 876328 / 16650240 = 0.052632
+  Progress: 1752656 / 16650240 = 0.105263
+  Progress: 2628985 / 16650240 = 0.157895
+  Progress: 3505313 / 16650240 = 0.210526
+  Progress: 4381642 / 16650240 = 0.263158
+  Progress: 5257970 / 16650240 = 0.315789
+  Progress: 6134299 / 16650240 = 0.368421
+  Progress: 7010627 / 16650240 = 0.421053
+  Progress: 7886956 / 16650240 = 0.473684
+  Progress: 8763285 / 16650240 = 0.526316
+  Progress: 9639613 / 16650240 = 0.578947
+  Progress: 10515941 / 16650240 = 0.631579
+  Progress: 11392270 / 16650240 = 0.684211
+  Progress: 12268598 / 16650240 = 0.736842
+  Progress: 13144927 / 16650240 = 0.789474
+  Progress: 14021255 / 16650240 = 0.842105
+  Progress: 14072367 / 16752464 = 0.840018
+  Progress: 14123479 / 16752464 = 0.843069
+  Progress: 14999807 / 16752464 = 0.895379
+  Progress: 22962823 / 32678496 = 0.702689
+  Progress: 30925839 / 32678496 = 0.946367
+  Progress: 31802168 / 32678496 = 0.973183
+  Progress: 32678496 / 32678496 = 1.000000
+
+  Top level policy match: notarized
+  Deep policy match: notarized
+Passed Gatekeeper scan
+Only one signature found in file:///Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/public-verification-build21-20261012T1309/anon/kit/Keep%20Vault%20Installer.app, skipping dual signature check
+Passed dual signature check
+App passed all pre-distribution checks and is ready for distribution.

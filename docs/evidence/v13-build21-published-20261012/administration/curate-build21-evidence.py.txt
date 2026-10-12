@@ -1,0 +1,679 @@
+#!/usr/bin/env python3
+"""PLAN ONLY by default. Curate an actual successful Build 21 prerelease.
+
+No builder, product test, public download or release approval is performed here.
+--validate checks existing receipts without writing. --execute is an explicit
+request to create a NEW destination, only after all input checks succeed.
+Private keys and credentials are never opened. The full builder logs are hashed
+but never copied; only fixed public metadata lines are selected byte-for-byte.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import hashlib
+import json
+import math
+import os
+from pathlib import Path, PurePosixPath
+import re
+import stat
+import subprocess
+import sys
+
+REPO = Path('/Users/michael/Developer/GPT-Codex/Kalyna')
+BASE = REPO / 'work/v13-evidence/kdf-handoff-release-20261012T053059Z'
+CURRENT = BASE / 'build21-prerelease-20261012T121300327577Z-31963'
+NETWORK = BASE / 'build21-prerelease-20261012T102512495054Z-59052'
+SOURCE = '8c68571695ae9072555ffb462b3c0b9c500811ea'
+PUBLIC_PIN = 'KeepVaultMac/Packaging/Keys/mldsa87-public.key'
+SOURCE_ROOTS = {'KalynaArchiver', 'KalynaArchiver.Tests', 'KeepVaultMac',
+                'KeepVaultMac.Tests', 'KeepVaultMac.ReleaseVerifier',
+                'KalynaArchiver.Signing', 'native', 'tools'}
+ROOT_INPUTS = {'global.json', 'Directory.Build.props', 'Directory.Build.targets',
+               'Directory.Packages.props', 'NuGet.Config', 'AGENTS.md'}
+IGNORED_PARTS = {'bin', 'obj', 'build-bin', 'build-obj', 'work', 'build', 'dist', '.git'}
+REQUIRED_TESTS = {
+    'security.kdf-handoff-fault-matrix', 'security.kdf-null-width-round-contracts',
+    'security.kdf-key-owner-contracts', 'security.kdf-handoff-destination-cleanup',
+    'security.native-managed-null-contracts', 'security.native-managed-width-contracts',
+    'crypto.native-constant-key-oracles', 'kdf.native-constant-argon-inputs',
+    'security.downstream-suite-handoff-faults', 'security.downstream-mac-handoff-faults',
+    'security.downstream-recovery-handoff-faults', 'security.downstream-disposed-owner-faults',
+    'security.downstream-null-width-contracts', 'audit.fixed-cli-isolation',
+    'audit.passive-cpu-observer', 'audit.metadata-allowlist', 'audit.initialization-close-join',
+    'release.v13-paranoia-structure512', 'spec.lockfile-runtimes',
+    'packaging.hybrid-key-separation',
+}
+COPY_FILES = (
+    'builder-start.json', 'builder-terminal.json', 'prerelease-build-result.json',
+    'invocation.json', 'source-inputs-before.json', 'source-inputs-after.json',
+    'builder-observations.json', 'public-preservation.json',
+    'public-harness-inputs.json', 'sdk-inputs.json', 'public-test-results-inputs.json',
+    'public-test-results/phase-1.test-results.json',
+    'public-test-results/phase-1.test-timings.json',
+    'public-test-results/phases.txt', 'public-test-results/test-input-sha256.txt',
+)
+NETWORK_FILES = (
+    'builder-start.json', 'builder-terminal.json', 'prerelease-build-result.json',
+    'invocation.json', 'source-inputs-before.json', 'source-inputs-after.json',
+    'builder-observations.json',
+)
+SHA = re.compile(r'[0-9a-f]{64}')
+COMMIT = re.compile(r'[0-9a-f]{40}')
+PINNED_SDK_SHA512 = b'e440e9a58d4ff7741c8342ac3e086fa9ee2dadc25e01c0449a88317a74cfbd63625b8092c3b2a131ae14b16ab3401e9cc470e578e4c65a72a0b5786bd2308cde'
+DIR_FLAGS = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+FILE_FLAGS = os.O_RDONLY | os.O_NOFOLLOW
+
+
+def require(value, message):
+    if not value:
+        raise RuntimeError(message)
+
+
+def digest(payload):
+    return hashlib.sha256(payload).hexdigest()
+
+
+def encoded(value):
+    return (json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + '\n').encode()
+
+
+def stamp():
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def parts(relative):
+    p = PurePosixPath(relative)
+    require(not p.is_absolute() and bool(p.parts) and
+            all(s not in {'', '.', '..'} for s in p.parts), 'Unsafe relative path.')
+    require(str(p) == relative, 'Noncanonical relative path.')
+    return p.parts
+
+
+def binding(s):
+    return (s.st_dev, s.st_ino, s.st_uid, s.st_mode, s.st_nlink,
+            s.st_size, s.st_mtime_ns, s.st_ctime_ns)
+
+
+class PhysicalDirectory:
+    """Reject symbolic components and retain descriptor/name bindings."""
+    def __init__(self, path):
+        self.path = Path(path)
+        require(self.path.is_absolute() and '..' not in self.path.parts,
+                'Input directory must be absolute without traversal.')
+        self.chain = []
+        self.fd = os.open('/', DIR_FLAGS)
+        self.chain.append((None, '/', self.fd, os.fstat(self.fd)))
+        try:
+            for name in self.path.parts[1:]:
+                parent = self.fd
+                self.fd = os.open(name, DIR_FLAGS, dir_fd=parent)
+                self.chain.append((parent, name, self.fd, os.fstat(self.fd)))
+            self.validate()
+        except BaseException:
+            self.close()
+            raise
+
+    def validate(self):
+        for parent, name, fd, before in self.chain:
+            named = os.stat('/', follow_symlinks=False) if parent is None else os.stat(
+                name, dir_fd=parent, follow_symlinks=False)
+            opened = os.fstat(fd)
+            require(stat.S_ISDIR(named.st_mode) and
+                    (named.st_dev, named.st_ino) == (before.st_dev, before.st_ino) ==
+                    (opened.st_dev, opened.st_ino), 'Directory path changed.')
+
+    def close(self):
+        for _, _, fd, _ in reversed(self.chain):
+            os.close(fd)
+        self.chain = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.close()
+
+    def read(self, relative, maximum=64 * 1024 * 1024):
+        self.validate()
+        names = parts(relative)
+        opened = []
+        parent = self.fd
+        try:
+            for name in names[:-1]:
+                fd = os.open(name, DIR_FLAGS, dir_fd=parent)
+                opened.append((parent, name, fd, os.fstat(fd)))
+                parent = fd
+            fd = os.open(names[-1], FILE_FLAGS, dir_fd=parent)
+            s = os.fstat(fd)
+            opened.append((parent, names[-1], fd, s))
+            require(stat.S_ISREG(s.st_mode) and s.st_nlink == 1 and
+                    s.st_uid in {0, os.getuid()} and s.st_size <= maximum,
+                    'Input must be a bounded physical single-link public file.')
+            named = os.stat(names[-1], dir_fd=parent, follow_symlinks=False)
+            require(binding(named) == binding(s), 'Input changed before reading.')
+            chunks = []
+            while chunk := os.read(fd, 1024 * 1024):
+                chunks.append(chunk)
+            require(binding(os.fstat(fd)) == binding(s), 'Input changed while reading.')
+            for par, name, handle, before in opened:
+                now = os.stat(name, dir_fd=par, follow_symlinks=False)
+                current = os.fstat(handle)
+                if stat.S_ISREG(before.st_mode):
+                    require(binding(now) == binding(before) == binding(current),
+                            'Input name changed while reading.')
+                else:
+                    require((now.st_dev, now.st_ino) == (before.st_dev, before.st_ino) ==
+                            (current.st_dev, current.st_ino), 'Input parent changed.')
+            self.validate()
+            payload = b''.join(chunks)
+            require(len(payload) == s.st_size, 'Input length changed.')
+            return payload
+        finally:
+            for _, _, fd, _ in reversed(opened):
+                os.close(fd)
+
+    def inventory(self):
+        result = set()
+        def visit(fd, prefix):
+            for name in sorted(os.listdir(fd)):
+                current = os.stat(name, dir_fd=fd, follow_symlinks=False)
+                relative = '/'.join((*prefix,name))
+                if stat.S_ISDIR(current.st_mode):
+                    child = os.open(name,DIR_FLAGS,dir_fd=fd)
+                    try:
+                        require((os.fstat(child).st_dev,os.fstat(child).st_ino) ==
+                                (current.st_dev,current.st_ino), 'Input directory changed during inventory.')
+                        visit(child,(*prefix,name))
+                        after = os.stat(name,dir_fd=fd,follow_symlinks=False)
+                        require((after.st_dev,after.st_ino) == (current.st_dev,current.st_ino),
+                                'Input directory name changed during inventory.')
+                    finally: os.close(child)
+                else:
+                    require(stat.S_ISREG(current.st_mode) and current.st_nlink == 1,
+                            'Input tree contains a link or special object.')
+                    result.add(relative)
+        self.validate();visit(self.fd,());self.validate()
+        return result
+
+
+def parse(payload):
+    def reject_duplicate(items):
+        value = {}
+        for key, item in items:
+            require(key not in value, 'Duplicate JSON property.')
+            value[key] = item
+        return value
+    return json.loads(payload, object_pairs_hook=reject_duplicate,
+                      parse_constant=lambda _: (_ for _ in ()).throw(RuntimeError('Nonfinite JSON.')))
+
+
+def safe_metadata(payload, allow_pinned_sha512=False):
+    require(b'PRIVATE KEY-----' not in payload and b'BEGIN ENCRYPTED PRIVATE' not in payload,
+            'Private material marker in public metadata.')
+    for match in re.finditer(rb'(?<![0-9a-fA-F])[0-9a-fA-F]{128,}(?![0-9a-fA-F])', payload):
+        require(allow_pinned_sha512 and match.group().lower() == PINNED_SDK_SHA512,
+                'Potential factor/key-sheet contents in selected public metadata.')
+    require(not re.search(rb'0x[0-9a-fA-F]{12,}', payload),
+            'Potential native address in selected public metadata.')
+
+
+def check_map(mapping):
+    require(isinstance(mapping, dict) and bool(mapping), 'Missing public input map.')
+    for name, value in mapping.items():
+        parts(name)
+        require(isinstance(value, dict) and set(value) == {'bytes', 'sha256'} and
+                isinstance(value['bytes'], int) and value['bytes'] >= 0 and
+                isinstance(value['sha256'], str) and SHA.fullmatch(value['sha256']),
+                'Invalid public input-map row.')
+        low = name.lower()
+        require(not any(x in low for x in ('wrapping-key', '-private.', '.password.')) and
+                PurePosixPath(low).suffix not in {'.pfx', '.p12', '.enc', '.b64'},
+                'Private-material filename in a public map.')
+
+
+def selected_source(name):
+    p = PurePosixPath(name)
+    if any(x in IGNORED_PARTS for x in p.parts):
+        return False
+    low = p.name.lower()
+    if (p.suffix.lower() in {'.pfx', '.p12', '.enc'} or
+            any(x in low for x in ('wrapping-key', '-private.', '.password.')) or
+            (p.suffix.lower() == '.key' and name != PUBLIC_PIN)):
+        return False
+    return name in ROOT_INPUTS or (p.parts and p.parts[0] in SOURCE_ROOTS)
+
+
+def verify_git_sources(source_commit, before):
+    tree = subprocess.check_output(['/usr/bin/git', 'ls-tree', '-r', '-z', source_commit], cwd=REPO)
+    objects = {}
+    for row in tree.split(b'\0'):
+        if not row:
+            continue
+        header, raw_name = row.split(b'\t', 1)
+        mode, kind, oid = header.decode().split(' ')
+        name = os.fsdecode(raw_name)
+        if selected_source(name):
+            require(kind == 'blob' and mode in {'100644', '100755'},
+                    'A selected Git input is a link or special object.')
+            objects[name] = oid
+    require(set(objects) == set(before), 'Public Source map does not match compiled Git tree.')
+    attributes = subprocess.check_output(['/usr/bin/git','show',source_commit+':.gitattributes'],cwd=REPO)
+    conversions = []
+    proc = subprocess.Popen(['/usr/bin/git', 'cat-file', '--batch'], cwd=REPO,
+                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        for name, oid in sorted(objects.items()):
+            proc.stdin.write((oid + '\n').encode()); proc.stdin.flush()
+            header = proc.stdout.readline().decode().strip().split(' ')
+            require(len(header) == 3 and header[0] == oid and header[1] == 'blob',
+                    'Unexpected Git blob response.')
+            size = int(header[2])
+            payload = proc.stdout.read(size)
+            require(len(payload) == size and proc.stdout.read(1) == b'\n', 'Git blob response length mismatch.')
+            if size == before[name]['bytes'] and digest(payload) == before[name]['sha256']:
+                continue
+            # This one known Windows source has an explicit deterministic
+            # checkout transformation. Do not label it byte-identical to Git.
+            require(name == 'native/threefish_ref_export.c' and
+                    b'native/threefish_ref_export.c text eol=crlf ' in attributes and b'\r' not in payload,
+                    'Compiled Git blob differs without a known checkout transformation.')
+            attr = subprocess.check_output(['/usr/bin/git','check-attr','--source='+source_commit,
+                'text','eol','filter','working-tree-encoding','--',name],cwd=REPO).decode().splitlines()
+            require(attr == [name+': text: set',name+': eol: crlf',name+': filter: unspecified',
+                name+': working-tree-encoding: unspecified'], 'Unexpected compiled Source attributes.')
+            checkout = payload.replace(b'\n',b'\r\n')
+            require(len(checkout) == before[name]['bytes'] and digest(checkout) == before[name]['sha256'],
+                    'Declared CRLF checkout transformation does not explain Source bytes.')
+            conversions.append({'path':name,'gitBlob':{'bytes':size,'sha256':digest(payload)},
+                'builderCheckout':before[name],'transformation':'LF to CRLF as text eol=crlf at compiled commit',
+                'effectiveAttributes':attr})
+        proc.stdin.close()
+        require(proc.wait() == 0, 'Git Source validation failed.')
+    finally:
+        if proc.poll() is None:
+            proc.kill(); proc.wait()
+    return {'sourceCommit':source_commit,'inputCount':len(before),
+        'identicalGitBlobBytes':len(before)-len(conversions),'declaredCheckoutTransformations':conversions,
+        'gitAttributes':{'bytes':len(attributes),'sha256':digest(attributes)},
+        'scope':'Fresh read-only Git object validation of original builder Source maps; checkout transformations are explicit, never called byte identity.'}
+
+
+def verify_tree(path, mapping):
+    with PhysicalDirectory(path) as tree:
+        require(tree.inventory() == set(mapping), 'Retained public file inventory changed.')
+        for name, expected in sorted(mapping.items()):
+            payload = tree.read(name, maximum=max(expected['bytes'], 1))
+            require(len(payload) == expected['bytes'] and digest(payload) == expected['sha256'],
+                    'Retained public SDK/harness file differs from its original map.')
+        tree.validate()
+
+
+def validate_builder(data, source_commit, success):
+    start, terminal, result, invocation = (parse(data[n]) for n in
+        ('builder-start.json', 'builder-terminal.json', 'prerelease-build-result.json', 'invocation.json'))
+    before, after = (parse(data[n]) for n in ('source-inputs-before.json', 'source-inputs-after.json'))
+    check_map(before); check_map(after)
+    require(before == after, 'Actual source inputs changed during the builder.')
+    require(start['actualBuilderPid'] == terminal['actualBuilderPid'] and
+            isinstance(start['actualBuilderPid'], int) and start['actualBuilderPid'] > 0 and
+            start['launcherPid'] == invocation['launcherPid'], 'Actual process identity mismatch.')
+    require(start['requestedBuild'] == invocation['requestedBuild'] == 21 and
+            start['mode'] == invocation['publishMode'] == result['publishMode'] == 'prerelease' and
+            start['performanceBaselineSupplied'] is False, 'Wrong builder mode/build.')
+    keys = '/Volumes/Keep Vault Keys 5.0.3 Secure/Keys/'
+    expected_argv = ['/bin/zsh','-f',str(REPO/'tools/Build-KeepVault-macOS.sh'),
+        '--architecture','universal','--version','5.0.3','--build-number','21',
+        '--identity','E8C06D4E89287BEC082E0EAD8DB01DD810A302AD',
+        '--mldsa-public-key',str(REPO/PUBLIC_PIN),'--pfx',keys+'hybrid-rsa4096.pfx',
+        '--mldsa-private-key-encrypted',keys+'mldsa87-private.key.v12.enc',
+        '--pfx-password-encrypted',keys+'hybrid-rsa4096.pfx.password.v12.enc',
+        '--notary-profile','Keep Vault v13','--prerelease','--install-for-tests']
+    require(start['argv'] == expected_argv, 'Unexpected builder argv; no values are copied.')
+    require(invocation['sourceHead'] == result['sourceHeadBefore'] == result['sourceHeadAfter'] == source_commit
+            and result['gitCleanAfter'] is True and result['sourceInputsAndBuilderStable'] is True,
+            'Compiled Source identity or stability is not proven.')
+    require(invocation['sourceMapSha256'] == digest(data['source-inputs-before.json']) and
+            invocation['sourceFileCount'] == len(before) and
+            invocation['builderSha256'] == before['tools/Build-KeepVault-macOS.sh']['sha256'],
+            'Original source map/builder binding mismatch.')
+    require(all(x['fullReleaseGate'] == 'NOT_RUN' for x in (start, terminal, result, invocation)) and
+            result['overallReleaseApproval'] is False and result['managedHarnessIsAotProduct'] is False and
+            invocation['privateContentReadCopiedOrHashed'] is False,
+            'Prerelease/deferred-gate scope is not preserved.')
+    require(dt.datetime.fromisoformat(start['startedUtc']) <=
+            dt.datetime.fromisoformat(terminal['completedUtc']) <=
+            dt.datetime.fromisoformat(result['completedUtc']), 'Invalid actual process chronology.')
+    exit_code = 0 if success else 1
+    require(terminal['actualBuilderExitCode'] == result['actualBuilderExitCode'] == exit_code and
+            result['status'] == ('PASS' if success else 'FAIL'), 'Wrong actual terminal verdict.')
+    if success:
+        require(result['publishedAotMatchesFinalStagedProduct'] is True and
+                result['retainedNativeComponentsAndSidecarsMatchPublishedProduct'] is True and
+                SHA.fullmatch(result['publishedProductSha256']), 'Published product binding is absent.')
+    require(digest(data['builder.stdout.log']) == result['stdoutSha256'] and
+            digest(data['builder.stderr.log']) == result['stderrSha256'], 'Original builder log changed.')
+    git_binding = verify_git_sources(source_commit, before)
+    return start, terminal, result, before, git_binding
+
+
+def line_records(payload):
+    offset = 0
+    for number, line in enumerate(payload.splitlines(keepends=True), 1):
+        yield {'lineNumber': number, 'byteOffset': offset, 'bytes': len(line),
+               'sha256': digest(line)}, line, line.strip().decode('utf-8')
+        offset += len(line)
+
+
+def public_excerpt(stdout, tests, harness):
+    selected = []; records = []; json_rows = {}; pass_names = set()
+    summary = None; wall = None; profile = None; profile_origin = None
+    names = {t['name']: t['id'] for t in tests if t['id'] in REQUIRED_TESTS}
+    for record, raw, line in line_records(stdout):
+        keep = False
+        if line.startswith('KDF_HANDOFF_MATRIX '):
+            d = parse(line[len('KDF_HANDOFF_MATRIX '):].encode())
+            require('kdf' not in json_rows, 'Repeated KDF matrix.')
+            require(d['status'] == 'PASS' and d['profile'] == 'internal-8-MiB-fault-injection-only' and
+                    d['suiteCount'] == 12 and d['boundaryCount'] == 626 and d['caseCount'] == 2504 and
+                    len(d['rows']) == len({r['suite'] for r in d['rows']}) == 12 and
+                    sum(r['boundaryCount'] for r in d['rows']) == 626 and
+                    sum(r['caseCount'] for r in d['rows']) == 2504 and
+                    all(r['status'] == 'PASS' and
+                        len(r['boundaries']) == len(set(r['boundaries'])) == r['boundaryCount'] and
+                        r['caseCount'] == 4*r['boundaryCount'] and
+                        len(r['faults']) == 4 and
+                        set(r['faults']) == {'00', '01', 'FF', 'missing-output'} for r in d['rows']),
+                    'KDF matrix is incomplete or failed.')
+            json_rows['kdf'] = d; keep = True
+        elif line.startswith('handoff_fault_matrix='):
+            d = parse(line.partition('=')[2].encode()); test_id = d['TestId']
+            expected = {'security.downstream-suite-handoff-faults':336,
+                        'security.downstream-mac-handoff-faults':80,
+                        'security.downstream-recovery-handoff-faults':24}
+            require(test_id in expected and test_id not in json_rows and
+                    len(d['Cases']) == expected[test_id], 'Unexpected downstream matrix.')
+            tuples = {(c['Boundary'],c['Context'],c['Fault']) for c in d['Cases']}
+            require(len(tuples) == len(d['Cases']), 'Duplicate downstream rejection case.')
+            groups = {}
+            for c in d['Cases']:
+                require(c['Fault'] in {'Missing', 'Zero', 'ByteOne', 'AllBitsOne'} and
+                        c['InjectionHits'] >= 1 and c['NoCompletedResult'] is True and
+                        c['CallerOwnedAliasesErased'] is True and c['LockAllocationBaselineRestored'] is True,
+                        'A downstream rejection/erasure/baseline case did not pass.')
+                groups.setdefault((c['Boundary'],c['Context']),set()).add(c['Fault'])
+            require(all(faults == {'Missing','Zero','ByteOne','AllBitsOne'} for faults in groups.values()),
+                    'A downstream boundary lacks one of the four rejection cases.')
+            json_rows[test_id] = d; keep = True
+        elif line.startswith('handoff_owner_lifecycle='):
+            d = parse(line.partition('=')[2].encode())
+            require('owners' not in json_rows and set(d['OwnerTypes']) ==
+                    {'LockedSensitiveBuffer','SuiteKeyMaterial','RecoveryKeys'} and
+                    d['SuccessAndFailedUnlockCases'] == 6 and d['GettersClosed'] is True and
+                    d['ActualAliasesErased'] is True and d['LockAllocationBaselineRestored'] is True,
+                    'Owner lifetime evidence is incomplete.')
+            json_rows['owners'] = d; keep = True
+        elif line.startswith('E2E_RESULT_JSON='):
+            d = parse(line.partition('=')[2].encode())
+            require('paranoia' not in json_rows and d['SchemaVersion'] == 1 and
+                    d['Label'] == 'v13-paranoia-structure512-production-kdf' and
+                    d['Suite'] == 'ParanoiaCascade' and d['InputBytes'] == 536870912 and
+                    d['InputFiles'] == 149 and d['InputDirectories'] == 32 and
+                    d['CompressionLevel'] == 3 and d['Argon2Iterations'] == 4 and
+                    d['Argon2Parallelism'] == 4 and d['RepairedShards'] >= 1 and
+                    all(isinstance(v, (int,float)) and math.isfinite(v) and v >= 0
+                        for k,v in d.items() if k.endswith('Seconds')), 'Wrong Paranoia workflow evidence.')
+            json_rows['paranoia'] = d; keep = True
+        elif line.startswith('E2E_PHASE_PROFILE_JSON='):
+            require(profile is None, 'Repeated Paranoia phase profile.')
+            d = parse(line.partition('=')[2].encode())
+            require(d['schemaVersion'] == 1 and
+                    d['label'] == 'v13-paranoia-structure512-production-kdf' and
+                    'installed AOT GUI phase profile remains NOT RUN' in d['actualRunKind'] and
+                    d['assemblySha256'].lower() == harness['Keep Vault.dll']['sha256'] and
+                    d['sourceInputBytes'] == 536870912 and
+                    set(d['nativeTrustedInputSha256']) == {'zpaq','libkalyna_v13.dylib',
+                        'libthreefish_ref.dylib','libmars_ref.dylib','libcamellia_v13.dylib',
+                        'libserpent_v13.dylib','libshacal2_ref.dylib','libaes_ref.dylib',
+                        'libxchachapoly_v13.dylib','libargon2_ref.dylib'} and
+                    all(harness['Native/'+name]['sha256'] == sha.lower()
+                        for name,sha in d['nativeTrustedInputSha256'].items()),
+                    'Paranoia phase profile is not bound to the retained managed/native inputs.')
+            profile = {k:v for k,v in d.items() if k != 'phaseProfile'}
+            profile['phaseProfile'] = {k:v for k,v in d['phaseProfile'].items()
+                                       if k not in {'Timeline','WindowDecisions'}}
+            require(set(profile['phaseProfile']) <=
+                    {'SchemaVersion','ObservationAvailable','TimelineCapacity','OmittedTimelineEntries',
+                     'Aggregates','OmittedWindowDecisions','Interpretation'},
+                    'Unexpected nonaggregate phase profile data.')
+            profile_origin = record
+        elif line.startswith('FULL PASS '):
+            for name, test_id in names.items():
+                if line.startswith('FULL PASS '+name+' ('):
+                    require(test_id not in pass_names, 'Repeated required test PASS line.')
+                    pass_names.add(test_id); keep = True; break
+        elif re.fullmatch(r'\d+ macOS groups: \d+ passed, \d+ failed, \d+ blocked\.', line):
+            require(summary is None, 'Repeated full-suite summary.')
+            summary = line; keep = True
+        elif line.startswith('wall clock ') and '; sum of test times ' in line:
+            require(wall is None, 'Repeated full-suite walltime.')
+            wall = line; keep = True
+        if keep:
+            safe_metadata(raw)
+            selected.append(raw); records.append(record)
+    require(pass_names == REQUIRED_TESTS, 'Required test PASS lines are missing.')
+    require(set(json_rows) == {'kdf','owners','paranoia',
+        'security.downstream-suite-handoff-faults','security.downstream-mac-handoff-faults',
+        'security.downstream-recovery-handoff-faults'}, 'Required actual JSON metadata is missing.')
+    require(summary == f'{len(tests)} macOS groups: {len(tests)} passed, 0 failed, 0 blocked.'
+            and wall is not None and profile is not None, 'Actual full-suite completion not proven.')
+    safe_metadata(encoded(profile))
+    return b''.join(selected), records, json_rows, profile, profile_origin, summary, wall
+
+
+def load_run(path, names):
+    with PhysicalDirectory(path) as root:
+        require(os.fstat(root.fd).st_uid == os.getuid() and
+                stat.S_IMODE(os.fstat(root.fd).st_mode) == 0o700, 'Run is not caller-owned/private.')
+        return {name:root.read(name) for name in (*names,'builder.stdout.log','builder.stderr.log')}
+
+
+def prepare(options):
+    current = load_run(options.run, COPY_FILES)
+    start, terminal, result, before, git_binding = validate_builder(current, options.source_commit, True)
+    observation = parse(current['builder-observations.json'])
+    require(observation['error'] is None and observation['prereleasePublishedMarker'] is True and
+            observation['fullReleaseNotRunMarker'] is True, 'Actual publishing/gate markers absent.')
+    preservation = parse(current['public-preservation.json'])
+    require(preservation == observation['preservation'] and
+            preservation['actualBuilderPid'] == start['actualBuilderPid'] and
+            preservation['builderWasStoppedBeforeCleanup'] is True and
+            preservation['privateBuildRootCopied'] is False and preservation['managedHarnessIsAotProduct'] is False and
+            preservation['stagedAotProduct']['sha256'] == result['publishedProductSha256'],
+            'Original public-preservation/product binding mismatch.')
+    harness, sdk = (parse(current[n]) for n in ('public-harness-inputs.json','sdk-inputs.json'))
+    check_map(harness); check_map(sdk)
+    require(len(harness) == preservation['harnessFileCount'] and len(sdk) == preservation['sdkFileCount'] and
+            digest(current['public-harness-inputs.json']) == preservation['harnessManifestSha256'] and
+            digest(current['sdk-inputs.json']) == preservation['sdkManifestSha256'],
+            'SDK/harness preservation maps changed.')
+    require(Path(preservation['harnessPath']) == options.run / 'public-harness' and
+            Path(preservation['boundSdkPath']).is_relative_to(BASE), 'Retained public input path is unexpected.')
+    verify_tree(Path(preservation['harnessPath']), harness)
+    verify_tree(Path(preservation['boundSdkPath']), sdk)
+    results_map = parse(current['public-test-results-inputs.json']); check_map(results_map)
+    require(set(results_map) == {'phase-1.test-results.json','phase-1.test-timings.json','phases.txt','test-input-sha256.txt'},
+            'Unexpected full-suite phase/result inventory.')
+    for name, expected in results_map.items():
+        b = current['public-test-results/'+name]
+        require(len(b) == expected['bytes'] and digest(b) == expected['sha256'], 'Original full-suite result changed.')
+    full = parse(current['public-test-results/phase-1.test-results.json'])
+    timings = parse(current['public-test-results/phase-1.test-timings.json'])
+    tests = full['tests']; ids = {t['id'] for t in tests}
+    require(full['schemaVersion'] == 3 and full['head'] == options.source_commit and
+            full['platform'] == 'macos' and full['osArchitecture'] == full['processArchitecture'] == 'arm64' and
+            len(tests) == len(ids) == options.expected_groups and REQUIRED_TESTS <= ids and
+            all(t['status'] == 'PASS' and t['failure'] is None for t in tests) and set(timings) == ids,
+            'Actual full-suite results are incomplete or failed.')
+    require(all(isinstance(timings[t['id']], (int,float)) and math.isfinite(timings[t['id']]) and
+                timings[t['id']] >= 0 and abs(t['seconds']-timings[t['id']]) <= .001 for t in tests),
+            'Original test timing map is inconsistent.')
+    phase = current['public-test-results/phases.txt'].decode()
+    require(re.match(r'^1 exit=0 run --project ', phase) and '--full --parallel 1 ' in phase and
+            phase.count('\n') == 1, 'Actual full-suite phase did not finish successfully.')
+    excerpt, records, rows, profile, profile_origin, summary, wall = public_excerpt(
+        current['builder.stdout.log'], tests, harness)
+    network = load_run(options.network_run, NETWORK_FILES)
+    ns, nt, nr, nb, network_git_binding = validate_builder(network, options.source_commit, False)
+    require(git_binding == network_git_binding,'Second and third builder Source/Git bindings differ.')
+    with PhysicalDirectory(BASE) as root:
+        wrapper_bytes = root.read('run-prerelease-build21.py')
+    require(all(parse(run['invocation.json'])['wrapperSha256'] == digest(wrapper_bytes)
+                for run in (current, network)), 'Actual wrapper source binding mismatch.')
+    with PhysicalDirectory(options.network_classification.parent) as root:
+        classification_bytes = root.read(options.network_classification.name)
+    classification = parse(classification_bytes)
+    require(classification['schemaVersion'] == 1 and classification['status'] == 'FAIL' and
+            classification['actualBuilderExitCode'] == 1 and classification['actualBuilderPid'] == ns['actualBuilderPid'] and
+            classification['sourceCommit'] == options.source_commit and classification['sourceAndBuilderStable'] is True and
+            classification['fullSuiteStarted'] is False and classification['overallReleaseApproval'] is False and
+            classification['originalStdoutSha256'] == nr['stdoutSha256'] and
+            classification['originalStderrSha256'] == nr['stderrSha256'] and
+            classification['originalTerminalSha256'] == digest(network['builder-terminal.json']) and
+            b'RELEASE GATE: running the complete suite with ' not in network['builder.stdout.log'],
+            'Original network failure classification/process/log binding mismatch.')
+    failure_lines = classification['exactPublicFailureLines']
+    require(len(failure_lines) == 3 and all('error NU1301:' in l and
+            ('api.nuget.org' in l or 'nodename nor servname provided, or not known' in l)
+            for l in failure_lines), 'Unexpected network failure allowlist.')
+    net_excerpt = []; net_records = []; observed = set()
+    for stream in ('stdout','stderr'):
+        for record, raw, line in line_records(network[f'builder.{stream}.log']):
+            if line in failure_lines:
+                safe_metadata(raw); net_excerpt.append(raw)
+                net_records.append({'stream':stream, **record}); observed.add(line)
+    require(observed == set(failure_lines), 'NU1301 classification lines not found in actual logs.')
+    output = {name:current[name] for name in COPY_FILES}
+    output['builder-wrapper.py.txt'] = wrapper_bytes
+    output['compiled-git-source-binding.json'] = encoded(git_binding)
+    output['builder-public-excerpt.txt'] = excerpt
+    output['paranoia-phase-aggregate-projection.json'] = encoded({
+        'schemaVersion':1,'scope':'Derived public aggregate projection, not an original complete log line; timeline and individual window decisions are not copied.',
+        'originBuilderStdoutSha256':result['stdoutSha256'],'originalLine':profile_origin,'projection':profile})
+    for name in NETWORK_FILES:
+        output['network-failure/'+name] = network[name]
+    output['network-failure/classification.json'] = classification_bytes
+    output['network-failure/public-excerpt.txt'] = b''.join(net_excerpt)
+    receipt = {'schemaVersion':1,'observedUtc':stamp(),'status':'ACTUAL_PRERELEASE_PASS_INPUTS_VERIFIED',
+        'sourceCommit':options.source_commit,'actualBuilderPid':start['actualBuilderPid'],
+        'originalBuilderStdoutSha256':result['stdoutSha256'],'originalBuilderStderrSha256':result['stderrSha256'],
+        'sourceInputsBoundToCompiledGitTree':len(before),
+        'sourceInputsIdenticalToGitBlobBytes':git_binding['identicalGitBlobBytes'],
+        'fullSuite':{'groups':len(tests),'passed':len(tests),
+        'failed':0,'blocked':0,'summaryOriginalLine':summary,'walltimeOriginalLine':wall},
+        'publicExcerptOriginalLines':records,'kdfMatrix':{k:rows['kdf'][k] for k in ('profile','suiteCount','boundaryCount','caseCount')},
+        'downstreamCases':{k:len(v['Cases']) for k,v in rows.items() if 'Cases' in v},
+        'paranoiaWorkflowOriginalResult':rows['paranoia'],'managedHarnessIsAotProduct':False,
+        'retainedPublicHarnessFilesRehashed':len(harness),'retainedPublicSdkFilesRehashed':len(sdk),
+        'networkFailure':{'actualBuilderPid':ns['actualBuilderPid'],'actualExitCode':1,'fullSuiteStarted':False,
+            'originalStdoutSha256':nr['stdoutSha256'],'originalStderrSha256':nr['stderrSha256'],
+            'originalTerminalSha256':digest(network['builder-terminal.json']),'excerptOriginalLines':net_records},
+        'publicDownloadAndFreshNativeAbiProof':'SEPARATE_PACKAGES','fullReleaseGate':'NOT_RUN',
+        'overallReleaseApproval':False,'privateKeyOrPasswordFilesOpened':False,
+        'scope':'Original actual third-builder prerelease evidence and separate actual second-builder NU1301 failure; no stable release, final GUI, final performance or external audit approval.',
+        'curatorToolSha256':digest(Path(__file__).read_bytes())}
+    output['collection.json'] = encoded(receipt)
+    output['README.md'] = (
+        '# Keep Vault 5.0.3 / Build 21: actual prerelease build evidence\n\n'
+        'The original builder, source-map, preservation and full-suite result files are copied byte-for-byte. '
+        'The complete stdout/stderr logs and public binaries stay in the ignored local run. '
+        'The selected public excerpt has exact byte offsets, lengths and SHA-256 hashes bound to the original complete stdout hash. '
+        'The phase aggregate projection is explicitly derived and omits its timeline.\n\n'
+        'The Source maps retain actual checkout-byte hashes. The additional Git binding records both Git '
+        'blob and checkout hashes for the one file with an explicit LF-to-CRLF rule in .gitattributes; '
+        'this declared transformation is not called byte identity.\n\n'
+        'The DLL harness is not the installed AOT product. Its native input bytes/sidecars are bound by the original '
+        'preservation and successful builder receipts; the AOT product has its own digest. '
+        'NULL producer faults, managed null references and native ABI NULL tests are distinct. '
+        'Legitimate uniform primitive keys are tested with independent oracles; the application rejects uniform derived handoffs.\n\n'
+        'The network-failure subdirectory preserves the separate second builder failure unchanged. '
+        'NU1301 stopped that builder before the complete suite and is not a product test verdict. '
+        'A later connectivity check does not replace its actual failure.\n\n'
+        'The long final performance campaign and remaining installed GUI gates are deferred. '
+        'This package grants no overall/stable release approval. Public download and fresh native ABI verification are separate packages.\n'
+    ).encode()
+    for name, payload in output.items():
+        safe_metadata(payload, allow_pinned_sha512=name in {
+            'public-preservation.json','builder-observations.json','builder-wrapper.py.txt'})
+    output['SHA256SUMS'] = ''.join(f'{digest(value)}  {name}\n' for name,value in sorted(output.items())).encode()
+    return output, receipt
+
+
+def write_new(destination, output):
+    require(destination.is_absolute() and '..' not in destination.parts and
+            (destination.is_relative_to(REPO/'work') or destination.is_relative_to(REPO/'docs/evidence')),
+            'Destination must be a new repository work/evidence directory.')
+    with PhysicalDirectory(destination.parent) as parent:
+        require(os.fstat(parent.fd).st_uid == os.getuid(), 'Destination parent is not caller-owned.')
+        os.mkdir(destination.name, 0o700, dir_fd=parent.fd)
+        created = os.stat(destination.name,dir_fd=parent.fd,follow_symlinks=False)
+        with PhysicalDirectory(destination) as dest:
+            require((os.fstat(dest.fd).st_dev,os.fstat(dest.fd).st_ino) == (created.st_dev,created.st_ino),
+                    'Fresh destination name changed.')
+            for name, payload in output.items():
+                names = parts(name); opened = []; current = dest.fd
+                try:
+                    for component in names[:-1]:
+                        try: os.mkdir(component,0o700,dir_fd=current)
+                        except FileExistsError: pass
+                        fd=os.open(component,DIR_FLAGS,dir_fd=current);opened.append(fd);current=fd
+                    fd=os.open(names[-1],os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600,dir_fd=current)
+                    try:
+                        view=memoryview(payload)
+                        while view: view=view[os.write(fd,view):]
+                        os.fsync(fd)
+                    finally: os.close(fd)
+                    require(dest.read(name,maximum=max(len(payload),1)) == payload,'Destination byte identity failed.')
+                finally:
+                    for fd in reversed(opened):os.close(fd)
+            require(dest.inventory() == set(output),'Fresh destination inventory mismatch.')
+            dest.validate();parent.validate()
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument('--validate',action='store_true',help='Validate actual completed inputs; write nothing.')
+    mode.add_argument('--execute',action='store_true',help='Validate and write a fresh explicit destination.')
+    parser.add_argument('--run',type=Path,default=CURRENT)
+    parser.add_argument('--network-run',type=Path,default=NETWORK)
+    parser.add_argument('--network-classification',type=Path,default=BASE/'nuget-network-failure-20261012.json')
+    parser.add_argument('--source-commit',default=SOURCE)
+    parser.add_argument('--expected-groups',type=int,default=319)
+    parser.add_argument('--destination',type=Path)
+    options=parser.parse_args()
+    require(COMMIT.fullmatch(options.source_commit) and options.expected_groups > 0,'Invalid Source/count.')
+    require(options.execute == (options.destination is not None),'Destination is required only with --execute.')
+    if not options.validate and not options.execute:
+        print(json.dumps({'mode':'PLAN_ONLY','actualInputValidation':'NOT_RUN','writes':'NONE',
+            'sourceCommitExpected':options.source_commit,'actualFullSuite':'NOT_CLAIMED',
+            'overallReleaseApproval':False,'deferredFullReleaseGate':'NOT_RUN',
+            'expectedRun':str(options.run),'executeRequires':'Actual PASS/Exit 0, unchanged Git-bound Source inputs, complete PASS results, original log hashes and retained SDK/harness matches.'},indent=2))
+        return 0
+    os.umask(0o077)
+    output,receipt=prepare(options)
+    if options.execute:
+        write_new(options.destination,output)
+    print(json.dumps({'mode':'EXECUTED' if options.execute else 'VALIDATED_NO_WRITES',
+        'files':len(output),'actualBuilderPid':receipt['actualBuilderPid'],
+        'groups':receipt['fullSuite']['groups'],'sourceCommit':options.source_commit,
+        'overallReleaseApproval':False},indent=2))
+    return 0
+
+
+if __name__=='__main__':
+    try: raise SystemExit(main())
+    except (RuntimeError,KeyError,TypeError,ValueError,FileNotFoundError,OSError) as exc:
+        print('curation_refused='+type(exc).__name__+': '+str(exc),file=sys.stderr)
+        raise SystemExit(2)

@@ -1,0 +1,102 @@
+{
+  "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Python3": {
+    "bytes": 5881904,
+    "sha256": "44ff033892426c3e077330968ee007b1b1aad433f8ebcda7970eb0d113532032"
+  },
+  "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9": {
+    "bytes": 102352,
+    "sha256": "dff595035109e19c43c4b3e73ee08b5f4651e719f25f8b4713f819d28964dc19"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Native/osx-arm64/libsha3_ref.dylib": {
+    "bytes": 34080,
+    "sha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Native/osx-x64/libsha3_ref.dylib": {
+    "bytes": 13176,
+    "sha256": "5d069ec3e137906c2cf6627a1ef7895fb7429aaa7a72ab9fbe4c9e5c8bb394ef"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/Info.plist": {
+    "bytes": 4426,
+    "sha256": "8b760b6a3a6dcf41d31ed7cf18e473d8215f678c88f889a07d5f5da6e938c0a4"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Keep Vault": {
+    "bytes": 60534192,
+    "sha256": "bd5a5fbcc1c0b768386a63b7644368bff6cdaa87ddd61c7e504ded91569b078d"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib": {
+    "bytes": 329312,
+    "sha256": "dd05706cc22a385301cc8e99e733c37374719c719633321f35391885efcd8024"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib": {
+    "bytes": 152880,
+    "sha256": "fc9b31d33e7cdc75b30d0d134f0d25622953f9c591b7d387127f7308bdc12e65"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib": {
+    "bytes": 328944,
+    "sha256": "a4811cf66d470035e6ae5b897972745b3165ccefaac9e669429d8dca01c2dda6"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib": {
+    "bytes": 301520,
+    "sha256": "0dccebcacea1ba812c165bfb062ef3b75068d7b0851fdacadff69382cc2a8429"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib": {
+    "bytes": 294576,
+    "sha256": "219dcbd4387879f0f0d6449c255599cef11b140f42f6ec9878c26681216159c7"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib": {
+    "bytes": 295440,
+    "sha256": "734fcd7d6f46934b42b49cbb8a9c3948697ae5458307855b1f57acb19b7d9f7c"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib": {
+    "bytes": 294976,
+    "sha256": "d49b4f4613e7e748ed05e6751f2ab583f4e85bb3c8ca23a85019efb0081ee7f0"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib": {
+    "bytes": 119472,
+    "sha256": "c7e05b6c7c71adc796ada0f8a783d1429ac43ebe9f031000bfbb152d2c916781"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib": {
+    "bytes": 600016,
+    "sha256": "2b366a08de18b8cadf4f152b8767fb0c2ba0c507981a51dba3fd28ff9a065394"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/native/tests/test_key_handoff_nulls.py": {
+    "bytes": 19069,
+    "sha256": "ee0e2495776f01427e4b0bb7a55d7bb8bde2f10a197aa7406d45f56cd1325474"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/builder-start.json": {
+    "bytes": 1047,
+    "sha256": "aafe92102d484e2b79c9a4f146b41bb9c7ec314b7ce116f687df58a405c3f75e"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/builder-terminal.json": {
+    "bytes": 236,
+    "sha256": "5cce9f73ee7c2208afcf372713677b6c82d258350256b07b5b3a92675d839d91"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/builder.stderr.log": {
+    "bytes": 80028,
+    "sha256": "af23e0f53c0e85a3c3acd0494c37620c16bab5e090aa37f8ec20356afb956f02"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/builder.stdout.log": {
+    "bytes": 765769,
+    "sha256": "912ee9471f7c3e5b1ae917ff0ea60de9e9b830d6c10c48300cbd6aec97cb7559"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/prerelease-build-result.json": {
+    "bytes": 1038,
+    "sha256": "190f5a594cbe2beee0d86d46f7749bfec6ecb925ebdb16370384cfa31e4c1470"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/source-inputs-after.json": {
+    "bytes": 88652,
+    "sha256": "51474d237dcc8c5071b3fa319c39404c55b9f08163ce9d469974004d80721d26"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/source-inputs-before.json": {
+    "bytes": 88652,
+    "sha256": "51474d237dcc8c5071b3fa319c39404c55b9f08163ce9d469974004d80721d26"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/run-final-native-build21.py": {
+    "bytes": 17892,
+    "sha256": "51c0aebe5d0978ef008d95538af05e3a3eba461ef5cbada8d83b83485a73805b"
+  },
+  "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/run-prerelease-build21.py": {
+    "bytes": 36086,
+    "sha256": "abd83dd90640116d4ab93dc89b45ca606463603985cb365988c5099879d17a9e"
+  }
+}

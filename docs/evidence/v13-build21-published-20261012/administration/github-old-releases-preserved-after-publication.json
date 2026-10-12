@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "observations": [
+    {
+      "scope": "latest-after-publication",
+      "actualPid": 29018,
+      "startedUtc": "2026-10-12T13:10:17.843346+00:00",
+      "completedUtc": "2026-10-12T13:10:18.338063+00:00",
+      "exitCode": 0,
+      "responseSha256": "54ef1389d877659b6c38aca981ffc0a6e61a5ad4dfa1e3981cfa438409b64d15",
+      "identityAndAssetDigestsPreserved": true,
+      "id": 385333020,
+      "tag": "v5.0.2",
+      "volatileDownloadCountersCompared": false
+    },
+    {
+      "scope": "old-draft-after-publication",
+      "actualPid": 29023,
+      "startedUtc": "2026-10-12T13:10:18.338172+00:00",
+      "completedUtc": "2026-10-12T13:10:18.734711+00:00",
+      "exitCode": 0,
+      "responseSha256": "0f2c8ba44018d760defc5f2c4df29be65acf85bc38b154cacb848b3950d2564f",
+      "identityAndAssetDigestsPreserved": true,
+      "id": 409690404,
+      "tag": "v5.0.3-rc.build20",
+      "volatileDownloadCountersCompared": false
+    }
+  ],
+  "scope": "Stable release identity/body/dates/mode and all asset IDs/names/size/digests; volatile download counters excluded."
+}

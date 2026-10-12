@@ -1,0 +1,293 @@
+#!/usr/bin/env python3
+"""Fresh native ABI evidence for the successful final Build 21 only.
+
+Default PLAN ONLY. No builds, signing, private-key reads, Git writes, or product
+mutations. --execute requires the actual successful unchanged-source builder
+receipt, and copies exact signed product bytes to private disposable test roots.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import plistlib
+import re
+import signal
+import stat
+import subprocess
+import sys
+import time
+
+RUN = Path(__file__).absolute().parent
+REPO = Path('/Users/michael/Developer/GPT-Codex/Kalyna')
+SOURCE = '8c68571695ae9072555ffb462b3c0b9c500811ea'
+BUILDER_HELPER = RUN / 'run-prerelease-build21.py'
+PRODUCT = REPO / 'dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents'
+HARNESS = REPO / 'native/tests/test_key_handoff_nulls.py'
+PYTHON = Path('/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9')
+PYTHON_FRAMEWORK = PYTHON.parent.parent / 'Python3'
+LIBS = ('libargon2_ref.dylib', 'libaes_ref.dylib', 'libmars_ref.dylib',
+        'libshacal2_ref.dylib', 'libkalyna_v13.dylib', 'libthreefish_ref.dylib',
+        'libcamellia_v13.dylib', 'libserpent_v13.dylib', 'libxchachapoly_v13.dylib')
+REFERENCE = 'libsha3_ref.dylib'
+ALGORITHMS = ('argon2', 'aes', 'mars', 'shacal2', 'kalyna', 'threefish',
+              'camellia', 'serpent', 'xchacha', 'sha3')
+ENV = {'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'LANG': 'en_US.UTF-8',
+       'PYTHONDONTWRITEBYTECODE': '1', 'PYTHONNOUSERSITE': '1'}
+
+
+def require(value, message):
+    if not value:
+        raise RuntimeError(message)
+
+
+def utc():
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def unique_json(pairs):
+    output = {}
+    for key, value in pairs:
+        require(key not in output, 'Duplicate JSON property.')
+        output[key] = value
+    return output
+
+
+def load_helpers():
+    spec = importlib.util.spec_from_file_location('final_native_bound_helpers', BUILDER_HELPER)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def read_public(h, path):
+    path = Path(path)
+    require(path.is_absolute() and '..' not in path.parts, 'Absolute physical input required.')
+    with h.Directory(path.parent) as root:
+        with h.open_file(root, path.name) as (fd, _):
+            chunks = []
+            while chunk := os.read(fd, 1024 * 1024):
+                chunks.append(chunk)
+            return b''.join(chunks)
+
+
+def file_map(h, paths):
+    result = {}
+    for path in paths:
+        with h.Directory(path.parent) as root:
+            result[str(path)] = h.digest_file(root, path.name)
+    return result
+
+
+def command(h, out, name, argv, timeout):
+    started = utc()
+    started_mono = time.monotonic()
+    process = subprocess.Popen(argv, cwd=REPO, env=ENV, stdin=subprocess.DEVNULL,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               start_new_session=True)
+    h.save(out, name + '-start.json', {'pid': process.pid, 'startedUtc': started,
+                                      'argv': argv, 'cwd': str(REPO)})
+    timed_out = False
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        os.killpg(process.pid, signal.SIGKILL)
+        stdout, stderr = process.communicate()
+    h.write_exact(out, name + '-stdout.txt', stdout)
+    h.write_exact(out, name + '-stderr.txt', stderr)
+    receipt = {'pid': process.pid, 'startedUtc': started, 'finishedUtc': utc(),
+               'exitCode': process.returncode, 'timedOut': timed_out,
+               'elapsedSeconds': time.monotonic() - started_mono,
+               'stdoutSha256': hashlib.sha256(stdout).hexdigest(),
+               'stderrSha256': hashlib.sha256(stderr).hexdigest(), 'argv': argv}
+    h.save(out, name + '-terminal.json', receipt)
+    require(not timed_out and process.returncode == 0, name + ' failed or timed out.')
+    return receipt, stdout
+
+
+def execute(args):
+    h = load_helpers()
+    receipt_path = Path(args.builder_receipt)
+    destination = Path(args.destination)
+    require(receipt_path.is_absolute() and receipt_path.is_relative_to(RUN),
+            'Actual builder receipt must be inside the fixed ignored run root.')
+    require(destination.is_absolute() and destination.parent == RUN,
+            'New private destination must be an immediate child of the ignored run root.')
+    require(not destination.exists() and not destination.is_symlink(), 'Refusing prior destination.')
+    require(sys.platform == 'darwin', 'macOS only.')
+    builder_data = read_public(h, receipt_path)
+    builder = json.loads(builder_data, object_pairs_hook=unique_json)
+    expected = {'status': 'PASS', 'actualBuilderExitCode': 0,
+                'sourceHeadBefore': SOURCE, 'sourceHeadAfter': SOURCE,
+                'gitCleanAfter': True, 'sourceInputsAndBuilderStable': True,
+                'publishedAotMatchesFinalStagedProduct': True,
+                'retainedNativeComponentsAndSidecarsMatchPublishedProduct': True,
+                'publishMode': 'prerelease', 'fullReleaseGate': 'NOT_RUN',
+                'overallReleaseApproval': False}
+    for key, value in expected.items():
+        require(type(builder.get(key)) is type(value) and builder[key] == value,
+                'Actual final builder contract rejected: ' + key)
+    require(re.fullmatch('[0-9a-f]{64}', builder.get('publishedProductSha256', '')) is not None,
+            'Missing actual published product hash.')
+    builder_run = receipt_path.parent
+    bound_paths = [receipt_path, builder_run / 'builder-start.json',
+                   builder_run / 'builder-terminal.json', builder_run / 'source-inputs-before.json',
+                   builder_run / 'source-inputs-after.json', builder_run / 'builder.stdout.log',
+                   builder_run / 'builder.stderr.log', BUILDER_HELPER, Path(__file__).absolute(),
+                   PYTHON, PYTHON_FRAMEWORK, HARNESS, PRODUCT / 'MacOS/Keep Vault',
+                   PRODUCT / 'Info.plist']
+    for architecture, subdir in [('arm64', 'osx-arm64'), ('x86_64', 'osx-x64')]:
+        bound_paths.append(REPO / 'KeepVaultMac/Native' / subdir / REFERENCE)
+    bound_paths.extend(PRODUCT / 'MacOS/Native' / name for name in LIBS)
+    input_before = file_map(h, bound_paths)
+    require(input_before[str(builder_run / 'builder.stdout.log')]['sha256'] == builder['stdoutSha256']
+            and input_before[str(builder_run / 'builder.stderr.log')]['sha256'] == builder['stderrSha256'],
+            'Actual builder log hash mismatch.')
+    start = json.loads(read_public(h, builder_run / 'builder-start.json'), object_pairs_hook=unique_json)
+    terminal = json.loads(read_public(h, builder_run / 'builder-terminal.json'), object_pairs_hook=unique_json)
+    require(start['requestedBuild'] == 21 and start['mode'] == 'prerelease'
+            and start['actualBuilderPid'] == terminal['actualBuilderPid']
+            and terminal['actualBuilderExitCode'] == 0, 'Actual builder PID/exit binding rejected.')
+    build_started = dt.datetime.fromisoformat(start['startedUtc']).timestamp()
+    build_completed = dt.datetime.fromisoformat(terminal['completedUtc']).timestamp()
+    reference_metadata = {}
+    for architecture, subdir in [('arm64', 'osx-arm64'), ('x86_64', 'osx-x64')]:
+        reference = REPO / 'KeepVaultMac/Native' / subdir / REFERENCE
+        value = reference.lstat()
+        require(build_started <= value.st_mtime <= build_completed,
+                'Reference modification time is outside the actual successful native build: ' + architecture)
+        reference_metadata[architecture] = {'path': str(reference), 'device': value.st_dev,
+            'inode': value.st_ino, 'owner': value.st_uid, 'links': value.st_nlink,
+            'mtimeNs': value.st_mtime_ns, 'ctimeNs': value.st_ctime_ns,
+            'modifiedWithinActualBuilderInterval': True}
+    stdout = read_public(h, builder_run / 'builder.stdout.log')
+    require(b'macOS native builds complete: osx-arm64, osx-x64, and osx-universal' in stdout,
+            'Actual native build completion marker missing.')
+    before = h.source_map()
+    captured_before = json.loads(read_public(h, builder_run / 'source-inputs-before.json'), object_pairs_hook=unique_json)
+    captured_after = json.loads(read_public(h, builder_run / 'source-inputs-after.json'), object_pairs_hook=unique_json)
+    require(before == captured_before == captured_after, 'Source inputs differ from successful builder.')
+    require(h.git('rev-parse', 'HEAD').decode().strip() == SOURCE
+            and h.git('status', '--porcelain', '-z') == b'', 'Source must be the exact clean compiled commit.')
+    require(input_before[str(PRODUCT / 'MacOS/Keep Vault')]['sha256'] == builder['publishedProductSha256'],
+            'Final published NativeAOT product hash mismatch.')
+    info = plistlib.loads(read_public(h, PRODUCT / 'Info.plist'))
+    require(info['CFBundleVersion'] == '21' and info['CFBundleShortVersionString'] == '5.0.3',
+            'Published bundle version differs.')
+    retained = builder_run / 'public-harness/Native'
+    for name in LIBS:
+        with h.Directory(retained) as root:
+            require(h.digest_file(root, name) == input_before[str(PRODUCT / 'MacOS/Native' / name)],
+                    'Published library differs from successful staged product: ' + name)
+    with h.Directory(RUN, private=True) as parent:
+        with h.child_directory(parent, destination.name) as out:
+            h.save(out, 'inputs-before.json', input_before)
+            h.save(out, 'source-before.json', before)
+            h.save(out, 'sha3-reference-input-metadata.json', reference_metadata)
+            h.save(out, 'builder-binding.json', {'builderReceipt': str(receipt_path),
+                   'builderReceiptSha256': hashlib.sha256(builder_data).hexdigest(),
+                   'builderPid': terminal['actualBuilderPid'], 'builderStartedUtc': start['startedUtc'],
+                   'builderCompletedUtc': terminal['completedUtc'], 'builderStatus': 'PASS',
+                   'sourceCommit': SOURCE, 'publishedNativeAotSha256': builder['publishedProductSha256'],
+                   'nativeLibrariesScope': '9 exact signed shipped product libraries, no signature modification',
+                   'sha3ReferenceScope': 'separate unshipped freshly built architecture-specific test reference',
+                   'overallReleaseApproval': False, 'fullReleaseGate': 'NOT_RUN'})
+            results = []
+            try:
+                for architecture, subdir in [('arm64', 'osx-arm64'), ('x86_64', 'osx-x64')]:
+                    with h.child_directory(out, architecture + '-native') as native:
+                        copies = []
+                        for name in LIBS + (REFERENCE,):
+                            source = (REPO / 'KeepVaultMac/Native' / subdir / name) if name == REFERENCE else PRODUCT / 'MacOS/Native' / name
+                            payload = read_public(h, source)
+                            h.write_exact(native, name, payload)
+                            binding = h.digest_file(native, name)
+                            require(binding == input_before[str(source)], 'Copy byte binding rejected: ' + name)
+                            copies.append({'name': name, 'source': str(source), **binding,
+                                           'scope': 'unshipped SHA3 reference' if name == REFERENCE else 'exact signed product bytes'})
+                        h.save(out, architecture + '-copy-binding.json', {'architecture': architecture, 'libraries': copies})
+                        probe_code = 'import json,os,platform,sys; print(json.dumps({"pid":os.getpid(),"architecture":platform.machine(),"executable":sys.executable,"version":sys.version}))'
+                        probe_terminal, probe_stdout = command(h, out, architecture + '-python-probe',
+                            ['/usr/bin/arch', '-' + architecture, str(PYTHON), '-I', '-c', probe_code], 60)
+                        probe = json.loads(probe_stdout, object_pairs_hook=unique_json)
+                        require(probe['pid'] == probe_terminal['pid'] and probe['architecture'] == architecture,
+                                'Actual Python architecture/PID binding rejected.')
+                        report_path = out.path / ('native-null-' + architecture + '.json')
+                        receipt, _ = command(h, out, architecture + '-abi',
+                            ['/usr/bin/arch', '-' + architecture, str(PYTHON), '-I', str(HARNESS),
+                             '--native-dir', str(native.path), '--arch', architecture,
+                             '--python', str(PYTHON), '--output', str(report_path)], 660)
+                        report = json.loads(read_public(h, report_path), object_pairs_hook=unique_json)
+                        require(report['pid'] == receipt['pid'] and report['status'] == 'PASS'
+                                and report['checks'] == 161 and report['requested_architecture'] == architecture
+                                and report['source_head'] == SOURCE and report['tracked_worktree_dirty'] is False
+                                and report['harness_sha256'] == input_before[str(HARNESS)]['sha256']
+                                and len(report['children']) == 10,
+                                'Actual ABI report contract rejected.')
+                        expected_libraries = {entry['name']: entry['sha256'] for entry in copies}
+                        require([child['library'] for child in report['children']] == list(ALGORITHMS),
+                                'Actual child library set/order differs from the bound harness.')
+                        for algorithm, name, child in zip(ALGORITHMS, LIBS + (REFERENCE,), report['children']):
+                            nested = child['receipt']
+                            require(child['exit_code'] == 0 and child['binding_valid'] is True
+                                    and nested['status'] == 'PASS' and nested['architecture'] == architecture
+                                    and child['library_sha256'] == expected_libraries[name]
+                                    and nested['library'] == algorithm
+                                    and nested['library_sha256'] == expected_libraries[name]
+                                    and nested['pid'] == child['child_pid']
+                                    and all(case['status'] == 'PASS' for case in nested['cases'])
+                                    and h.digest_file(native, name)['sha256'] == expected_libraries[name],
+                                    'Child library/PID/architecture/result binding rejected.')
+                        results.append({'architecture': architecture, 'pid': receipt['pid'], 'checks': 161,
+                            'status': 'PASS', 'receipt': report_path.name,
+                            'receiptSha256': hashlib.sha256(read_public(h, report_path)).hexdigest(),
+                            'elapsedSeconds': receipt['elapsedSeconds'], 'exactProductLibraries': 9,
+                            'unshippedReferenceLibraries': 1})
+                after = h.source_map()
+                inputs_after = file_map(h, bound_paths)
+                h.save(out, 'source-after.json', after)
+                h.save(out, 'inputs-after.json', inputs_after)
+                require(before == after and input_before == inputs_after
+                        and h.git('rev-parse', 'HEAD').decode().strip() == SOURCE
+                        and h.git('status', '--porcelain', '-z') == b'',
+                        'Source or original product/tool/reference bytes changed during the actual ABI run.')
+                h.save(out, 'final-native-result.json', {'schema': 'keepvault.final-build21-native-abi.v1',
+                    'status': 'PASS', 'wrapperPid': os.getpid(), 'completedUtc': utc(),
+                    'sourceCommit': SOURCE, 'sourceAndOriginalInputsStable': True,
+                    'architectures': results, 'totalChecks': 322, 'fullReleaseGate': 'NOT_RUN',
+                    'overallReleaseApproval': False,
+                    'scope': 'True NULL and ABI widths on exact final signed native product bytes; application-derived constant sequences and independent constant-key oracles are separate managed evidence.'})
+            except BaseException as error:
+                h.save(out, 'final-native-failure.json', {'status': 'FAIL', 'wrapperPid': os.getpid(),
+                    'completedUtc': utc(), 'errorType': type(error).__name__, 'error': str(error),
+                    'completedArchitectures': results, 'overallReleaseApproval': False})
+                raise
+    print(json.dumps({'status': 'PASS', 'architectures': ['arm64', 'x86_64'],
+                      'checksPerArchitecture': 161, 'destination': str(destination)}, sort_keys=True))
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--execute', action='store_true')
+    parser.add_argument('--builder-receipt')
+    parser.add_argument('--destination')
+    args = parser.parse_args()
+    if not args.execute:
+        print(json.dumps({'mode': 'PLAN_ONLY', 'noAbiTestsExecuted': True, 'sourceCommit': SOURCE,
+            'requiredBuilderStatus': 'PASS', 'checksPerArchitecture': 161,
+            'architectures': ['arm64', 'x86_64'], 'shippedLibraries': list(LIBS),
+            'unshippedReference': REFERENCE, 'python': str(PYTHON)}, indent=2, sort_keys=True))
+        return 0
+    if not args.builder_receipt or not args.destination:
+        parser.error('--execute requires --builder-receipt and a new --destination')
+    return execute(args)
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

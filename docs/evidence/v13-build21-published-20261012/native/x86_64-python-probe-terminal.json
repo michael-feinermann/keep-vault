@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "/usr/bin/arch",
+    "-x86_64",
+    "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+    "-I",
+    "-c",
+    "import json,os,platform,sys; print(json.dumps({\"pid\":os.getpid(),\"architecture\":platform.machine(),\"executable\":sys.executable,\"version\":sys.version}))"
+  ],
+  "elapsedSeconds": 0.6931347500067204,
+  "exitCode": 0,
+  "finishedUtc": "2026-10-12T13:02:15.274738+00:00",
+  "pid": 28138,
+  "startedUtc": "2026-10-12T13:02:14.581618+00:00",
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdoutSha256": "3de76100a6e49fba8653fa0b06e29c74d16b7359b6098aafb5c9dde6a17b2aa2",
+  "timedOut": false
+}

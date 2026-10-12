@@ -1,0 +1,72 @@
+{
+  "sourceCommit": "8c68571695ae9072555ffb462b3c0b9c500811ea",
+  "tag": "v5.0.3-rc.build21",
+  "operations": [
+    {
+      "name": "tag21-remote-absence",
+      "pid": 28209,
+      "argv": [
+        "git",
+        "ls-remote",
+        "--exit-code",
+        "origin",
+        "refs/tags/v5.0.3-rc.build21"
+      ],
+      "startedUtc": "2026-10-12T13:03:56.194803+00:00",
+      "completedUtc": "2026-10-12T13:03:56.715395+00:00",
+      "exitCode": 2,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "tag21-local-absence",
+      "pid": 28212,
+      "argv": [
+        "git",
+        "show-ref",
+        "--verify",
+        "--quiet",
+        "refs/tags/v5.0.3-rc.build21"
+      ],
+      "startedUtc": "2026-10-12T13:03:56.716184+00:00",
+      "completedUtc": "2026-10-12T13:03:56.733804+00:00",
+      "exitCode": 1,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "tag21-create",
+      "pid": 28213,
+      "argv": [
+        "git",
+        "tag",
+        "-a",
+        "v5.0.3-rc.build21",
+        "8c68571695ae9072555ffb462b3c0b9c500811ea",
+        "-m",
+        "Keep Vault 5.0.3 Build 21 macOS prerelease; functional suite 319 PASS; full release gates deferred."
+      ],
+      "startedUtc": "2026-10-12T13:03:56.734255+00:00",
+      "completedUtc": "2026-10-12T13:03:56.748638+00:00",
+      "exitCode": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "tag21-push",
+      "pid": 28214,
+      "argv": [
+        "git",
+        "push",
+        "origin",
+        "refs/tags/v5.0.3-rc.build21"
+      ],
+      "startedUtc": "2026-10-12T13:03:56.748863+00:00",
+      "completedUtc": "2026-10-12T13:03:58.503691+00:00",
+      "exitCode": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "5a19b5fac270ebab8b2e47c2ba9701465c94cef18aa627b44a93856108daeb6f"
+    }
+  ],
+  "overallReleaseApproval": false
+}

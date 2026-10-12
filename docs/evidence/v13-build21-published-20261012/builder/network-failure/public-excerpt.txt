@@ -1,0 +1,3 @@
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj : error NU1301: Der Dienstindex für die Quelle "https://api.nuget.org/v3/index.json" konnte nicht geladen werden.
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj : error NU1301:   nodename nor servname provided, or not known (api.nuget.org:443)
+/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj : error NU1301:   nodename nor servname provided, or not known

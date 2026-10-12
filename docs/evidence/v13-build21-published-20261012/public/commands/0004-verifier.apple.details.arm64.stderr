@@ -1,0 +1,30 @@
+Executable=/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault Installer.app/Contents/MacOS/Keep Vault Release Verifier
+Identifier=de.michael-feinermann.keep-vault.releaseverifier
+Format=Mach-O thin (arm64)
+CodeDirectory v=20500 size=15388 flags=0x10000(runtime) hashes=474+2 location=embedded
+VersionPlatform=1
+VersionMin=786432
+VersionSDK=1769472
+Hash type=sha256 size=32
+CandidateCDHash sha256=7e0a9b1b06291e5eac4fa9fd84a4137ceb2e5ba0
+CandidateCDHashFull sha256=7e0a9b1b06291e5eac4fa9fd84a4137ceb2e5ba0c1538315adfed4a6296b3f00
+Hash choices=sha256
+CMSDigest=7e0a9b1b06291e5eac4fa9fd84a4137ceb2e5ba0c1538315adfed4a6296b3f00
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=7094272
+Executable Segment flags=0x1
+Page size=16384
+CDHash=7e0a9b1b06291e5eac4fa9fd84a4137ceb2e5ba0
+Signature size=8986
+Authority=Developer ID Application: Michael Feinermann (2T6K9PGS55)
+Authority=Developer ID Certification Authority
+Authority=Apple Root CA
+Timestamp=12. Oct 2026 at 14:21:59
+Info.plist=not bound
+TeamIdentifier=2T6K9PGS55
+Runtime Version=27.0.0
+Sealed Resources=none
+Internal requirements count=1 size=208
+Total signatures=1
+Chosen signature=1

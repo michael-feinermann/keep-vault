@@ -1,0 +1,498 @@
+{
+  "Avalonia.Base.dll": {
+    "bytes": 2344448,
+    "sha256": "19596afa3c31f1643812b6bacf7dead04889e61c3b465714eb3e818b9ecb1bb3"
+  },
+  "Avalonia.Controls.dll": {
+    "bytes": 1341952,
+    "sha256": "5a2540f4e27a59a7390b13be11bfbac484773ee98843a08ef00ae442e4aafb0c"
+  },
+  "Avalonia.DesignerSupport.dll": {
+    "bytes": 214528,
+    "sha256": "a2bcc2ad2236015ee69d7fd7d47ea3448596620cc83b0562318688c39746cd59"
+  },
+  "Avalonia.Desktop.dll": {
+    "bytes": 15360,
+    "sha256": "12d0af0c34912242b4b66fe561dc6aa6b073dcd67427488573deedd721993b70"
+  },
+  "Avalonia.Dialogs.dll": {
+    "bytes": 242688,
+    "sha256": "b90af0559fa3eae9664e13649300da2e054636aef959b24df897f1a324d56824"
+  },
+  "Avalonia.Fonts.Inter.dll": {
+    "bytes": 1892864,
+    "sha256": "85a3a9f15fe255c60c0fb71f646fd8feebbee53cc80dad180c8bef6c35e540d6"
+  },
+  "Avalonia.FreeDesktop.AtSpi.dll": {
+    "bytes": 562688,
+    "sha256": "be8ef27f44ec61b0af1ea58d6a04c08c4ae05e3ecdcb0c852a0c536b80b981a3"
+  },
+  "Avalonia.FreeDesktop.dll": {
+    "bytes": 253952,
+    "sha256": "caf2505151490cc075f919613e78d6b962d35bf1f9965845b21659d2698ef57b"
+  },
+  "Avalonia.HarfBuzz.dll": {
+    "bytes": 22016,
+    "sha256": "7e896b33d3ba0c78347398d33112c6ca4dbd810a6f3b6caf22d3de3686332a40"
+  },
+  "Avalonia.Headless.dll": {
+    "bytes": 71680,
+    "sha256": "7a426851ca19375d02d976b626ac594e4d15ee8ad9bf74160526b73de6034117"
+  },
+  "Avalonia.Markup.Xaml.dll": {
+    "bytes": 74752,
+    "sha256": "3bc2fb3c368256a7ca328e82d6b1296779d459a19fe1ed8a306f0088748d2cc3"
+  },
+  "Avalonia.Markup.dll": {
+    "bytes": 45568,
+    "sha256": "061c8f2b9734f3befcf38f4b009b66190514c17c312ffd8db6fdbcbf45bffdc1"
+  },
+  "Avalonia.Metal.dll": {
+    "bytes": 15360,
+    "sha256": "79c7505aa2ac04564e4966d168d38ce60fc47982d8661a6ebcbf3eefc8061c22"
+  },
+  "Avalonia.MicroCom.dll": {
+    "bytes": 15360,
+    "sha256": "bd86aff78404bb8d09f38c3d7cc8f523df4b4a0af393291afd4e589512923689"
+  },
+  "Avalonia.Native.dll": {
+    "bytes": 350208,
+    "sha256": "1873d288024bda285b7d9b9d06ae69183fc421667e9bd44d8da0fe0fe54010f9"
+  },
+  "Avalonia.OpenGL.dll": {
+    "bytes": 128512,
+    "sha256": "60c753cc3f5d118deb82ff6131c99bb873153c081c05483f55406a7c3f60c3ad"
+  },
+  "Avalonia.Remote.Protocol.dll": {
+    "bytes": 75776,
+    "sha256": "e0f3ccd76a47210367e9b2d1127ef499fb82eb283612cbf388a590a5ddf7e71b"
+  },
+  "Avalonia.Skia.dll": {
+    "bytes": 125440,
+    "sha256": "9eb06b804efe57cacf6f60e8f451dabe2b5dd743d5b563ff51d6bab84476782e"
+  },
+  "Avalonia.Themes.Fluent.dll": {
+    "bytes": 733184,
+    "sha256": "43b9888e28f6f635a5926e3cc228b29282c825d7078a66dfc7dfa5a8041ec401"
+  },
+  "Avalonia.Vulkan.dll": {
+    "bytes": 190976,
+    "sha256": "790aad1467b5d6b48cabb5e6e68fb6e4960923998c9e67fba5758b44815da031"
+  },
+  "Avalonia.Win32.Automation.dll": {
+    "bytes": 123904,
+    "sha256": "b805d7fcaacff732fbc3951cfeeababc56a8cbe56b01ee6937daeeef5b4c4b42"
+  },
+  "Avalonia.Win32.dll": {
+    "bytes": 943104,
+    "sha256": "9d7fb93a2d0ed176341ff27396f1969933ca746f53595b55a9e39d411e190e09"
+  },
+  "Avalonia.X11.dll": {
+    "bytes": 407040,
+    "sha256": "a03ca44de21f07e286cc1a690fe12f40c6bfcc6d5c9dd1f71c5b433bb2b9aebd"
+  },
+  "Avalonia.dll": {
+    "bytes": 4096,
+    "sha256": "e373a92e9539efc989429b4cfd9ff8e898ca604ac1d283782168011f8978db6e"
+  },
+  "BouncyCastle.Cryptography.dll": {
+    "bytes": 4924576,
+    "sha256": "e5eeaf6d263c493619982fd3638e6135077311d08c961e1fe128f9107d29ebc6"
+  },
+  "Fixtures/V13Reference/pool_shuffle_rev9_public_vectors.json": {
+    "bytes": 10650,
+    "sha256": "531b54b99ac4e569583e96201ff47abf301a84dc34e2c6d8a5597d033c5ce863"
+  },
+  "HarfBuzzSharp.dll": {
+    "bytes": 122400,
+    "sha256": "55e72ac23263f8e12484f3435e02ec22fac9eff6e6d169bb0a8c246be6b99d29"
+  },
+  "Keep Vault.deps.json": {
+    "bytes": 19593,
+    "sha256": "ce588a9a25cc020c2ba29adc3d0d6171306e2fb43853452a556ef8a28c8a213a"
+  },
+  "Keep Vault.dll": {
+    "bytes": 3056640,
+    "sha256": "82ceb9863c15e7b2511b78e30e03268106d02ff87eb52e8823d8d404d900d029"
+  },
+  "Keep Vault.runtimeconfig.json": {
+    "bytes": 1942,
+    "sha256": "43b0e6a264d30596dc795e2315040fdfb8e1a8bc86dfd0e5c0642be20415eb66"
+  },
+  "KeepVaultMac.Tests.deps.json": {
+    "bytes": 20990,
+    "sha256": "cb251d4d991f105ce164fa7a1ef01cd4e2975c20cd72ab5ed28458a4da73b62b"
+  },
+  "KeepVaultMac.Tests.dll": {
+    "bytes": 1956352,
+    "sha256": "8c7b3c954ca7d5245b72126214c88a1f52a831aeb97554cf753e04a74f6fbeba"
+  },
+  "KeepVaultMac.Tests.runtimeconfig.json": {
+    "bytes": 330,
+    "sha256": "9950d4583cfc9a106857c0d5b8a75b53e8774852b57b80bc3823a74d44a4d87f"
+  },
+  "MarsKnownAnswers.txt": {
+    "bytes": 34633,
+    "sha256": "813090b80575207654463672af036c25bfc0a0def17dcc52934282000b328098"
+  },
+  "MicroCom.Runtime.dll": {
+    "bytes": 15360,
+    "sha256": "2538ec6f3c24e901a90e33c37788b9a4e4b6ae8158cab7328a00a00bb28eab9e"
+  },
+  "Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+    "bytes": 63768,
+    "sha256": "67fa4325000db017dc0c35829b416f024f042d24efb868bcf17a895ee6500a93"
+  },
+  "Microsoft.Extensions.Logging.Abstractions.dll": {
+    "bytes": 65288,
+    "sha256": "bb853130f5afaf335be7858d661f8212ec653835100f5a4e3aa2c66a4d4f685d"
+  },
+  "Microsoft.Win32.SystemEvents.dll": {
+    "bytes": 26224,
+    "sha256": "ca495bf6c86b7f092d624928101985a941532d149dcd8acfea170f8a53be8850"
+  },
+  "Native/argon2": {
+    "bytes": 170400,
+    "sha256": "cbf9a9b4abd6497d0fa0f98daca7b04053024cb5592377fada103c5a716abb59"
+  },
+  "Native/argon2.khsig": {
+    "bytes": 6547,
+    "sha256": "5657b9de9d465df328e16515bd80809e7545c462940354245e72d78d33dedbe9"
+  },
+  "Native/argon2.sha3": {
+    "bytes": 129,
+    "sha256": "49876f26af4e82168deb21e3e70423eb51b1205f7f366e11a7495c280f8dc67b"
+  },
+  "Native/argon2.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "38591d0ef262e599a2f46f04858edf6520aa39f8e7edcb4b930f6176736de829"
+  },
+  "Native/argon2.skein": {
+    "bytes": 257,
+    "sha256": "3687798bb084f3d12df775ff3293de1dc4f1f07890e6cfc4951f4e60a40b7059"
+  },
+  "Native/argon2.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "d008408fb69570006529a2fa8b54091d19fcd27631eb0f29c9192e261c8ff51e"
+  },
+  "Native/libaes_ref.dylib": {
+    "bytes": 329312,
+    "sha256": "dd05706cc22a385301cc8e99e733c37374719c719633321f35391885efcd8024"
+  },
+  "Native/libaes_ref.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "a1cbbd4d369478fc9aaf7a2eb66281b15708a0a9fd0677a462868d8d5e103562"
+  },
+  "Native/libaes_ref.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "ab04e981321816b65736414e32970b9cb3c0507eb080fee139bbd3457588e692"
+  },
+  "Native/libaes_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "a26f05e09793a21eec67f56f4b517c7d1079377735c4e2e3dd61b0d5ec47c5c3"
+  },
+  "Native/libaes_ref.dylib.skein": {
+    "bytes": 257,
+    "sha256": "f128ef18c6e753dcab146dbdb7163200d17cfa62639035ed888498d408d3a8ab"
+  },
+  "Native/libaes_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "ade721436534e1598253009a1d82c06917050839c87b0c93b5b7ed0d0b958f7e"
+  },
+  "Native/libargon2_ref.dylib": {
+    "bytes": 152880,
+    "sha256": "fc9b31d33e7cdc75b30d0d134f0d25622953f9c591b7d387127f7308bdc12e65"
+  },
+  "Native/libargon2_ref.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "835db81479cf6fe3f03497eabee75c40d72510593ea7727b881a4203fb665e1d"
+  },
+  "Native/libargon2_ref.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "037dae29e468e31b2f4356282ba6550907026bf2c9d24a851aa6f5d40a2bffc2"
+  },
+  "Native/libargon2_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "0562200ecf1f1dd56fcda199cb03b7631a63f9c6cf20ee3ec41258ec367f19c6"
+  },
+  "Native/libargon2_ref.dylib.skein": {
+    "bytes": 257,
+    "sha256": "3adff4f2e0919f5e6f41a8c3548c9ff22282fcccdefe7816f8f75d69028f7915"
+  },
+  "Native/libargon2_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "edba6f082d282f735edc5f71c30fa85d9f5f7b6ee95bc7081bc865a8df88d5db"
+  },
+  "Native/libcamellia_v13.dylib": {
+    "bytes": 328944,
+    "sha256": "a4811cf66d470035e6ae5b897972745b3165ccefaac9e669429d8dca01c2dda6"
+  },
+  "Native/libcamellia_v13.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "a9c0f20c2bcff96ef329ef50e286109972ebc666f17116542c337e0727b5cde8"
+  },
+  "Native/libcamellia_v13.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "fd773381488d7675b70894c84bcaf5e839bf9122947878b71d4603226ffd0412"
+  },
+  "Native/libcamellia_v13.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "8fc02f34a21b5815ad53fb5691c6941267d7800bfeed9f0fc5a99231acd657fe"
+  },
+  "Native/libcamellia_v13.dylib.skein": {
+    "bytes": 257,
+    "sha256": "1e9f322fc28842167355a1906eb15e91d6c6624622d70d122d06e19a20ae6319"
+  },
+  "Native/libcamellia_v13.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "fdd92782d86240ed143ab3479e046347d556564cfa47f32214d7bdedae3066b1"
+  },
+  "Native/libkalyna_v13.dylib": {
+    "bytes": 301520,
+    "sha256": "0dccebcacea1ba812c165bfb062ef3b75068d7b0851fdacadff69382cc2a8429"
+  },
+  "Native/libkalyna_v13.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "27ea473101fadc447c2631f57f3b44bbd514d91d04c4ad064914cb3924d433ff"
+  },
+  "Native/libkalyna_v13.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "d1b7546df05ecfc45f6e3573e6f40bce5f39478b14fa0de5764a2bcbdd93fefe"
+  },
+  "Native/libkalyna_v13.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "c8b78464b56f4ba8808ca98da440cb341319e65d5b393d824b9e6aad0b0ad7d0"
+  },
+  "Native/libkalyna_v13.dylib.skein": {
+    "bytes": 257,
+    "sha256": "ca4bde763e471ce36d116dfb1e0b525fcb13611af1e5479762e75e53742bc835"
+  },
+  "Native/libkalyna_v13.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "ca2c87edf7c74b5a932b01ee3f16e4f4c535191d2ef428d6944096d14e558468"
+  },
+  "Native/libmars_ref.dylib": {
+    "bytes": 294576,
+    "sha256": "219dcbd4387879f0f0d6449c255599cef11b140f42f6ec9878c26681216159c7"
+  },
+  "Native/libmars_ref.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "43115e5be7bf640a57d87d3406e32c266d158f61caa706bbb2d092fd264ae6fa"
+  },
+  "Native/libmars_ref.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "c0b9b9830a8eac05456c2c24191d494e05682f4103d97afc5f448fcdc031fe48"
+  },
+  "Native/libmars_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "1b64719f7814511539841fa87aa1a4403466f22a1d9ef1174a5240d79cfc43ef"
+  },
+  "Native/libmars_ref.dylib.skein": {
+    "bytes": 257,
+    "sha256": "cc640d3d863bc5ed8af6f37dbbfcdf43fbe9dcaedc7474f981173470db7e4d11"
+  },
+  "Native/libmars_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "ae52d026b5f4ca412ec8d165b27804b0fc5ccb79ec2738a2686ac3ef72d7744f"
+  },
+  "Native/libmldsa87_ref.dylib": {
+    "bytes": 55880,
+    "sha256": "14544e9dbc2ab6d1ad0d38d49eab95cc42ed80acc27a2cb615836362cd545382"
+  },
+  "Native/libserpent_v13.dylib": {
+    "bytes": 295440,
+    "sha256": "734fcd7d6f46934b42b49cbb8a9c3948697ae5458307855b1f57acb19b7d9f7c"
+  },
+  "Native/libserpent_v13.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "02d90568c2aad2860c72f56ec963c9164b4665dd69084b346a807da86161bef9"
+  },
+  "Native/libserpent_v13.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "c0074e32f165ab86e47f1e16d6b064afe260e74b6cc05f60410ff404c9ff2bfe"
+  },
+  "Native/libserpent_v13.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "5fc44f758c93cc0b992ebc42dde60e1c504c5459013d4bc33388af3da0a58c2a"
+  },
+  "Native/libserpent_v13.dylib.skein": {
+    "bytes": 257,
+    "sha256": "1f9f3820501b0857507e5046a3f99d03845be70e90dbd86e52de3fdd49038eb8"
+  },
+  "Native/libserpent_v13.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "1c6bb17f5ad8ce88b845cb7e88d588b23b60810b8a8a9cb54d754e212a3020c1"
+  },
+  "Native/libsha3_ref.dylib": {
+    "bytes": 34080,
+    "sha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45"
+  },
+  "Native/libshacal2_ref.dylib": {
+    "bytes": 294976,
+    "sha256": "d49b4f4613e7e748ed05e6751f2ab583f4e85bb3c8ca23a85019efb0081ee7f0"
+  },
+  "Native/libshacal2_ref.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "9f5671fa01ce8059fe3c75df970b0d94af414e256880419d776488322a770b48"
+  },
+  "Native/libshacal2_ref.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "f5ca6e96990239a0e123220a022613a59a7f58b593048b4a9906cc4cadd5356b"
+  },
+  "Native/libshacal2_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "22843961353ff88ad02cea33b8ff14f8ee9f6cf52a5119c03953f055c3a0f0e1"
+  },
+  "Native/libshacal2_ref.dylib.skein": {
+    "bytes": 257,
+    "sha256": "ca84aa0dce83a8d19e4d6a73b0e682e245023f1ed944bb135159ca703b3509f8"
+  },
+  "Native/libshacal2_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "33e2e45654e6afbac23473b5b358a707f9eae0b1800245bd44999aa2666520f7"
+  },
+  "Native/libthreefish_ref.dylib": {
+    "bytes": 119472,
+    "sha256": "c7e05b6c7c71adc796ada0f8a783d1429ac43ebe9f031000bfbb152d2c916781"
+  },
+  "Native/libthreefish_ref.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "4d287ec78ba9b62d32eb12aeb048a4241bf8583e4b66f91855bfd1ccac98dae4"
+  },
+  "Native/libthreefish_ref.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "e99b9ecc2d4cac43c440c0b591b015ba0a887199fa52aaa537110a2c3566298b"
+  },
+  "Native/libthreefish_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "35edab8e5c83f0f760a225a4f5195070bcac072769ed1cfb4bfd7799e9bed22a"
+  },
+  "Native/libthreefish_ref.dylib.skein": {
+    "bytes": 257,
+    "sha256": "fcb2d7f99de9cd78e51c2a1f56580255547ceb76eabc32fdd97b5750c2e94c7a"
+  },
+  "Native/libthreefish_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "270aedce1a0308ae0966e551e555540da162cb341280f278d020c49c93589389"
+  },
+  "Native/libxchachapoly_v13.dylib": {
+    "bytes": 600016,
+    "sha256": "2b366a08de18b8cadf4f152b8767fb0c2ba0c507981a51dba3fd28ff9a065394"
+  },
+  "Native/libxchachapoly_v13.dylib.khsig": {
+    "bytes": 6547,
+    "sha256": "a3149371a218b543619921494039f2f8a4a888e855626708fe4c8c0251a8eba6"
+  },
+  "Native/libxchachapoly_v13.dylib.sha3": {
+    "bytes": 129,
+    "sha256": "15681ed44fde2a0cce3e3df832eda8f7effdff585cdd43476ade65132ee26919"
+  },
+  "Native/libxchachapoly_v13.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "d0b48e33afb6cfa4d86abe217ad1a4c648fda1bc64342b5ba8582cf23fe165e1"
+  },
+  "Native/libxchachapoly_v13.dylib.skein": {
+    "bytes": 257,
+    "sha256": "d56c1de630b6a2f96fe3a7236a0fb76e847c8ebd7dd17f405fc8b2a31f545b99"
+  },
+  "Native/libxchachapoly_v13.dylib.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "ca4ab7e4a37230a352d1c87d4cbaef789e0a201f49414e2eefdfcbb6baedebff"
+  },
+  "Native/zpaq": {
+    "bytes": 1053568,
+    "sha256": "59a109e13d0b111abf8069dcfad719bb7ddd709d03bc6f137d1848666150ed20"
+  },
+  "Native/zpaq.khsig": {
+    "bytes": 6547,
+    "sha256": "f94cc782548b71e0e47e4d09355b67c0657cdd7917991bae5485cb96e579aa07"
+  },
+  "Native/zpaq.sha3": {
+    "bytes": 129,
+    "sha256": "11bdaefa84f9335aad2bf5e11c34277c93906f9ca316aff6da0cf845db61c76f"
+  },
+  "Native/zpaq.sha3.khsig": {
+    "bytes": 6547,
+    "sha256": "9d472131024e4690c89422b9469bcab47e9835da5366748bc5898a71a2a0826e"
+  },
+  "Native/zpaq.skein": {
+    "bytes": 257,
+    "sha256": "8dcf5ea4237263b1c6f45622d4d51a1cd44b754af0678ae9f7faebcc12b336fb"
+  },
+  "Native/zpaq.skein.khsig": {
+    "bytes": 6547,
+    "sha256": "674003b5ca01901c62981387f0dd58ba6454417555ff34a777e62a4fd3ad2cd5"
+  },
+  "PdfSharp.BarCodes.dll": {
+    "bytes": 35840,
+    "sha256": "bafc4175afaef8629c6122cab01e90c8f8cdf72e2b957d328c42229d12d02fdd"
+  },
+  "PdfSharp.Charting.dll": {
+    "bytes": 88064,
+    "sha256": "fce1973d6474160e736112b215410244310f47983853fd5afd776086a7392469"
+  },
+  "PdfSharp.Cryptography.dll": {
+    "bytes": 15360,
+    "sha256": "25fc17414785592ca4cdc5efd93f2a9c245812a97cb66b986a63112f61552944"
+  },
+  "PdfSharp.Quality.dll": {
+    "bytes": 40448,
+    "sha256": "3f88ec2601d13607ec81a8f7cbc14bd710ff10e2730626ffece48c86098df0d1"
+  },
+  "PdfSharp.Shared.dll": {
+    "bytes": 23040,
+    "sha256": "4b21196cf18cb3b971ec02d1f66f2da0d98d77aa5ed5767754f5de2cf36cb737"
+  },
+  "PdfSharp.Snippets.dll": {
+    "bytes": 154624,
+    "sha256": "b8191aac4339b25dd54be0bc61206b873c69a4d0150ea9f16fdcecfc0f1907a4"
+  },
+  "PdfSharp.System.dll": {
+    "bytes": 8192,
+    "sha256": "5e8dc5ed655d223be9f9b5b3dfecadb607b00e695c34c60aac4e037af9e557e6"
+  },
+  "PdfSharp.WPFonts.dll": {
+    "bytes": 421376,
+    "sha256": "35a3ae0d7ee749e77a6db7c938ac2c41684d50a792b069e3a3723e9fdd6aafd3"
+  },
+  "PdfSharp.dll": {
+    "bytes": 794624,
+    "sha256": "1a77754d9b06c077f339eb33c0cdef28927ae8ee46ecca84e7874b15dabc85a1"
+  },
+  "QRCoder.dll": {
+    "bytes": 204288,
+    "sha256": "5cacb8e071ef6b355615e8cae1d02d94b9d191ec33db12a05d82099cddb16e9a"
+  },
+  "SkiaSharp.dll": {
+    "bytes": 489824,
+    "sha256": "aaaaa18c68ba1f3a3408b00dff28b11d5705198e17ba9d3aa59222bfd35407c8"
+  },
+  "System.Drawing.Common.dll": {
+    "bytes": 427112,
+    "sha256": "89ea595ccb1fd1384480c1e30bd487c92af5d06d3b06f295323eff601acd9019"
+  },
+  "System.Security.Cryptography.Pkcs.dll": {
+    "bytes": 264864,
+    "sha256": "e2352938ed4f664f770a5c98ef067cb145304456d014d2c311d725c95c8a21a9"
+  },
+  "Tmds.DBus.Protocol.dll": {
+    "bytes": 232960,
+    "sha256": "60a1c5255731d8ac843cab53108be8ba1ed02759ce3db0da5b49939ebe97bd8a"
+  },
+  "ZpaqInheritedFdHarness.c": {
+    "bytes": 2830,
+    "sha256": "9e858122ed082ab11febbc27b9f007271c1c42b149f5e598b84a93264ce7b65f"
+  },
+  "libAvaloniaNative.dylib": {
+    "bytes": 1548640,
+    "sha256": "63cb5e2f3e375cc766dc70d01aacc69abe4892af2cd24d79680a28d237568581"
+  },
+  "libHarfBuzzSharp.dylib": {
+    "bytes": 2922800,
+    "sha256": "b2d7d39a46954b3d7310540bdf393f398ac4194ee029b995deeb1db0c161c43d"
+  },
+  "libSkiaSharp.dylib": {
+    "bytes": 15201456,
+    "sha256": "e09f07ae1df62ded475351f56d8dc8366cd679043f28b65d9dee597a5fd0da6c"
+  }
+}

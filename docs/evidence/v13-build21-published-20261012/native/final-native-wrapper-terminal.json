@@ -1,0 +1,15 @@
+{
+  "pid": 28088,
+  "startedUtc": "2026-10-12T13:02:09.344094+00:00",
+  "completedUtc": "2026-10-12T13:02:20.072133+00:00",
+  "actualExitCode": 0,
+  "argv": [
+    "python3",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/run-final-native-build21.py",
+    "--execute",
+    "--builder-receipt",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/prerelease-build-result.json",
+    "--destination",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/final-native-build21-20261012T1300"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "arm64": {
+    "ctimeNs": 1791807343998410401,
+    "device": 16777232,
+    "inode": 57543278,
+    "links": 1,
+    "modifiedWithinActualBuilderInterval": true,
+    "mtimeNs": 1791807342882499068,
+    "owner": 501,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Native/osx-arm64/libsha3_ref.dylib"
+  },
+  "x86_64": {
+    "ctimeNs": 1791807368919923691,
+    "device": 16777232,
+    "inode": 57543586,
+    "links": 1,
+    "modifiedWithinActualBuilderInterval": true,
+    "mtimeNs": 1791807367832805274,
+    "owner": 501,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Native/osx-x64/libsha3_ref.dylib"
+  }
+}

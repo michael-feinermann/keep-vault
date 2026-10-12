@@ -1,0 +1,11 @@
+{
+  "observedUtc": "2026-10-12T13:01:49.312125+00:00",
+  "scope": "Tightened caller-owned public evidence parent after completed local proof, before any ABI child execution.",
+  "device": 16777232,
+  "inode": 57199690,
+  "uid": 501,
+  "beforeMode": "0o755",
+  "afterMode": "0o700",
+  "productSourceOrArtifactBytesChanged": false,
+  "privateMaterialRead": false
+}

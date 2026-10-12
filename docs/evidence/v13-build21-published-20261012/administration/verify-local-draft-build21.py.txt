@@ -1,0 +1,384 @@
+#!/usr/bin/env python3
+"""Prepare/verify local and authenticated Draft Build-21 bytes, without publication.
+
+Default PLAN_ONLY. --execute --local checks the six renamed final builder assets
+and their kit. --execute --draft additionally downloads and verifies an explicitly
+identified draft. No build, signing, upload, publication, installation, Git write,
+private-key read, native GUI or performance claim is performed.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import sys
+from urllib.parse import quote, urlsplit
+
+RUN = Path(__file__).absolute().parent
+REPO = Path('/Users/michael/Developer/GPT-Codex/Kalyna')
+SOURCE = '8c68571695ae9072555ffb462b3c0b9c500811ea'
+TAG = 'v5.0.3-rc.build21'
+GITHUB_REPO = 'michael-feinermann/keep-vault'
+OLD_RELEASE_IDS = {409690404, 385333020}
+PUBLIC_TOOL = RUN / 'verify-public-build21.py'
+PUBLIC_SHA = 'a6539a1c4d78c9305061e5d63a0cfaf4733219ef40448a42e7387c9c557e6421'
+BUILDER_HELPER = RUN / 'run-prerelease-build21.py'
+ORIGINAL_ASSETS = REPO / 'dist/Keep Vault-macOS-prerelease'
+ORIGINAL_BASE = 'Keep Vault-macOS-universal.zip'
+VERIFIER_RELATIVE = 'Keep Vault Installer.app/Contents/MacOS/Keep Vault Release Verifier'
+
+
+def require(value, code):
+    if not value:
+        raise RuntimeError(code)
+
+
+def load_module(name, path, expected_sha=None):
+    # Resolve no symlinks for the implementation before any module code executes.
+    require(path.is_absolute() and path.is_file() and not path.is_symlink(), 'physical-tool-required')
+    raw = path.read_bytes()
+    if expected_sha:
+        require(hashlib.sha256(raw).hexdigest() == expected_sha, 'bound-public-tool-sha-mismatch')
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.dont_write_bytecode = True
+    spec.loader.exec_module(module)
+    require(path.read_bytes() == raw, 'tool-changed-during-import')
+    return module
+
+
+def original_bindings(v):
+    v.physical_directory(ORIGINAL_ASSETS)
+    return {name: v.file_binding(ORIGINAL_ASSETS / (ORIGINAL_BASE + suffix))
+            for name, suffix in zip(v.ASSETS, v.SUFFIXES)}
+
+
+def bytewise_same(left, right):
+    with left.open('rb') as a, right.open('rb') as b:
+        while True:
+            first, second = a.read(1024 * 1024), b.read(1024 * 1024)
+            require(first == second, 'original-to-renamed-byte-mismatch')
+            if not first:
+                return
+
+
+def draft_metadata(v, raw, args):
+    data = v.parse_json(raw)
+    require(type(data.get('id')) is int and data['id'] == args.release_id
+            and data.get('draft') is True and data.get('prerelease') is True
+            and data.get('tag_name') == TAG and data.get('target_commitish') == SOURCE
+            and data.get('published_at') is None, 'exact-new-build21-draft-identity-required')
+    values = data.get('assets')
+    require(isinstance(values, list) and len(values) == 6, 'draft-exact-six-assets-required')
+    assets = {}
+    ids = set()
+    for entry in values:
+        name, asset_id = entry.get('name'), entry.get('id')
+        require(name in v.ASSETS and name not in assets and type(asset_id) is int
+                and asset_id > 0 and asset_id not in ids, 'draft-asset-name-id-uniqueness')
+        ids.add(asset_id)
+        require(entry.get('url') == f'https://api.github.com/repos/{GITHUB_REPO}/releases/assets/{asset_id}'
+                and entry.get('state') == 'uploaded' and type(entry.get('size')) is int
+                and entry['size'] > 0, 'draft-asset-api-url-state-size')
+        fingerprint = entry.get('digest')
+        require(fingerprint is None or isinstance(fingerprint, str)
+                and re.fullmatch(r'sha256:[0-9a-f]{64}', fingerprint), 'draft-api-digest-format')
+        download = urlsplit(entry.get('browser_download_url', ''))
+        prefix = f'/{GITHUB_REPO}/releases/download/'
+        require(download.scheme == 'https' and download.netloc == 'github.com'
+                and not download.query and not download.fragment
+                and download.path.startswith(prefix)
+                and download.path.rsplit('/', 1)[1] == quote(name, safe=''),
+                'draft-browser-download-url-repository-and-asset')
+        assets[name] = {key: entry.get(key) for key in ('id', 'name', 'state', 'size',
+            'digest', 'content_type', 'browser_download_url', 'created_at', 'updated_at')}
+    return {'rawResponseSha256': v.digest(raw),
+            'release': {key: data.get(key) for key in ('id', 'tag_name', 'draft', 'prerelease',
+                'published_at', 'created_at', 'target_commitish', 'html_url', 'immutable')},
+            'assets': {name: assets[name] for name in v.ASSETS}}
+
+
+def fetch_draft_metadata(v, runner, args, moment):
+    raw, command = runner.run('draft.metadata.' + moment,
+        [args.gh, 'api', '--method', 'GET', f'repos/{GITHUB_REPO}/releases/{args.release_id}'],
+        auth=True, preserve=False)
+    value = draft_metadata(v, raw, args)
+    runner.write('metadata/draft-' + moment + '.json', v.canonical(value) + b'\n')
+    command['parsedResponseSha256'] = value['rawResponseSha256']
+    command['metadataScope'] = 'EXPLICIT_DRAFT_RELEASE_ID'
+    return value
+
+
+def original_verifier(v, runner, args):
+    slices = v.slice_hashes(args.verifier)
+    runner.run('verifier.apple.verify', ['/usr/bin/codesign', '--verify', '--strict',
+        '--all-architectures', '-R=identifier "de.michael-feinermann.keep-vault.releaseverifier" and anchor apple generic and certificate leaf[subject.OU] = "2T6K9PGS55"',
+        str(args.verifier)])
+    rows = []
+    for architecture in ('arm64', 'x86_64'):
+        _, receipt = runner.run('verifier.apple.details.' + architecture,
+            ['/usr/bin/codesign', '-d', '--verbose=4', '--arch', architecture, str(args.verifier)])
+        details = (runner.root / f"commands/{receipt['id']}.stderr").read_text()
+        require('Authority=Developer ID Application:' in details and f'TeamIdentifier={v.TEAM}' in details
+                and 'Identifier=de.michael-feinermann.keep-vault.releaseverifier\n' in details
+                and re.search(r'flags=.*runtime', details), 'original-verifier-developer-id-runtime')
+        cdhash = re.search(r'(?m)^CDHash=([0-9a-fA-F]+)$', details)
+        require(cdhash, 'original-verifier-cdhash-required')
+        rows.append({'architecture': architecture, 'cdhash': cdhash.group(1), 'receiptId': receipt['id']})
+    for name in ('stapler', 'notarytool'):
+        output, _ = runner.run('system.resolve.' + name, ['/usr/bin/xcrun', '--find', name])
+        actual = Path(output.decode().strip()).resolve(strict=True)
+        binding = v.file_binding(actual, system=True)
+        require(binding['mode'] & 0o111, 'developer-tool-not-executable')
+        runner.developer_tools[name] = str(actual)
+        runner.tool_bindings[str(actual)] = binding
+    return slices, rows
+
+
+def rebind_closures(v, runner, downloaded, kits):
+    # The public verifier's final helper deliberately requires both auth and
+    # anon. This preliminary helper has local and optional draft scopes only.
+    result = {}
+    for scope, kit in kits.items():
+        actual_tree = v.digest(v.canonical(v.tree_binding(Path(kit['kitRoot']))))
+        require(actual_tree == kit['snapshotSha256'], 'final-kit-snapshot-changed:' + scope)
+        result[scope] = {'status': 'PASS', 'kitSnapshotSha256': actual_tree}
+        if scope in downloaded:
+            expected_assets = {row['name']: row['binding'] for row in downloaded[scope]}
+            actual_assets = v.asset_bindings(runner.root / scope / 'assets')
+            require(actual_assets == expected_assets, 'final-draft-downloads-changed:' + scope)
+            result[scope]['assetBindingsSha256'] = v.digest(v.canonical(actual_assets))
+    return result
+
+
+def execute(args):
+    required = ('local_assets', 'verifier', 'verifier_sha256', 'builder_receipt',
+                'builder_stdout', 'expectations', 'expectations_sha256', 'destination',
+                'max_extracted_bytes', 'notary_id')
+    require(all(getattr(args, key) for key in required), 'all-explicit-frozen-inputs-required')
+    require(args.local != args.draft, 'select-local-or-draft')
+    require(args.max_extracted_bytes > 0 and
+            re.fullmatch('[0-9a-f]{64}', args.verifier_sha256) and
+            re.fullmatch('[0-9a-f]{64}', args.expectations_sha256), 'explicit-hash-and-expansion-bound')
+    if args.draft:
+        require(type(args.release_id) is int and args.release_id > 0
+                and args.release_id not in OLD_RELEASE_IDS, 'explicit-new-build21-release-id-required')
+    v = load_module('bound_public_build21', PUBLIC_TOOL, PUBLIC_SHA)
+    h = load_module('bound_final_builder_helpers', BUILDER_HELPER)
+    args.source_root, args.source_commit, args.tag_commit = REPO, SOURCE, SOURCE
+    args.tag, args.repo = TAG, GITHUB_REPO
+    require(args.verifier == ORIGINAL_ASSETS / VERIFIER_RELATIVE, 'original-final-native-aot-verifier-required')
+    require(args.builder_receipt.name == 'prerelease-build-result.json'
+            and args.builder_receipt.is_relative_to(RUN)
+            and args.builder_stdout == args.builder_receipt.parent / 'builder.stdout.log',
+            'original-receipt-and-stdout-from-one-actual-builder-run-required')
+    require(args.contract_manifest_bound_installer_entry, 'explicit-reviewed-installer-entry-contract-required')
+    for path in (args.local_assets, args.verifier, args.builder_receipt, args.builder_stdout, args.expectations):
+        require(path.is_absolute() and '..' not in path.parts and path.is_relative_to(REPO),
+                'absolute-checkout-input-required')
+    require(args.destination.is_absolute() and args.destination.parent == RUN,
+            'new-destination-must-be-an-immediate-child-of-ignored-run')
+    v.physical_directory(args.destination.parent)
+    require(not args.destination.exists() and not args.destination.is_symlink(), 'fresh-destination-required')
+    args.gh = str(Path(args.gh).resolve(strict=True))
+    builder_binding, builder_raw = v.file_binding(args.builder_receipt, collect=True)
+    builder = v.parse_json(builder_raw)
+    contract = {'status': 'PASS', 'actualBuilderExitCode': 0, 'sourceHeadBefore': SOURCE,
+        'sourceHeadAfter': SOURCE, 'gitCleanAfter': True, 'sourceInputsAndBuilderStable': True,
+        'publishedAotMatchesFinalStagedProduct': True,
+        'retainedNativeComponentsAndSidecarsMatchPublishedProduct': True,
+        'publishMode': 'prerelease', 'fullReleaseGate': 'NOT_RUN', 'overallReleaseApproval': False}
+    require(all(type(builder.get(key)) is type(value) and builder[key] == value
+                for key, value in contract.items()), 'actual-successful-builder-required')
+    require(v.HEX64.fullmatch(builder.get('publishedProductSha256', '')), 'published-builder-core-sha-required')
+    stdout_binding, stdout_raw = v.file_binding(args.builder_stdout, collect=True)
+    require(stdout_binding['sha256'] == builder.get('stdoutSha256'), 'actual-builder-stdout-binding')
+    notary_submissions = v.builder_notary_submissions(stdout_raw, args.notary_id)
+    expected_binding, expected_raw = v.file_binding(args.expectations, collect=True)
+    expected_doc = v.parse_json(expected_raw)
+    require(expected_binding['sha256'] == args.expectations_sha256 and
+            expected_doc.get('schemaVersion') == 1 and expected_doc.get('version') == '5.0.3'
+            and expected_doc.get('build') == '21' and expected_doc.get('productSourceCommit') == SOURCE
+            and expected_doc.get('verifierSha256') == args.verifier_sha256
+            and expected_doc.get('builderReceiptSha256') == builder_binding['sha256'],
+            'frozen-expectation-builder-source-verifier-binding')
+    values = expected_doc.get('assets')
+    require(isinstance(values, list) and len(values) == 6
+            and {row.get('name') for row in values} == set(v.ASSETS), 'exact-six-expectations-required')
+    expected = {row['name']: row for row in values}
+    require(all(v.HEX64.fullmatch(row.get('sha256', '')) and type(row.get('sizeBytes')) is int
+                and row['sizeBytes'] > 0 for row in values), 'expectation-digest-size-format')
+    before_source = h.source_map()
+    require(h.git('rev-parse', 'HEAD').decode().strip() == SOURCE and h.git('status', '--porcelain', '-z') == b'',
+            'exact-clean-compiled-source-required')
+    for suffix in ('before', 'after'):
+        _, raw = v.file_binding(args.builder_receipt.parent / ('source-inputs-' + suffix + '.json'), collect=True)
+        require(v.parse_json(raw) == before_source, 'source-map-differs-from-successful-builder')
+    before_local = v.asset_bindings(args.local_assets)
+    before_original = original_bindings(v)
+    require(all(before_local[name]['sha256'] == expected[name]['sha256'] == before_original[name]['sha256']
+                and before_local[name]['sizeBytes'] == expected[name]['sizeBytes'] == before_original[name]['sizeBytes']
+                for name in v.ASSETS), 'six-assets-not-byte-identical-renames-of-final-builder-output')
+    for name, suffix in zip(v.ASSETS, v.SUFFIXES):
+        bytewise_same(ORIGINAL_ASSETS / (ORIGINAL_BASE + suffix), args.local_assets / name)
+    core = ORIGINAL_ASSETS / 'Keep Vault.app/Contents/MacOS/Keep Vault'
+    core_binding = v.file_binding(core)
+    require(core_binding['sha256'] == builder['publishedProductSha256'], 'original-final-builder-core-mismatch')
+    before_fixed = {str(path): v.file_binding(path) for path in
+        (PUBLIC_TOOL, BUILDER_HELPER, Path(__file__).absolute(), args.verifier, args.builder_receipt,
+         args.builder_stdout, args.expectations, core,
+         args.builder_receipt.parent / 'source-inputs-before.json',
+         args.builder_receipt.parent / 'source-inputs-after.json')}
+    terminal_path = args.builder_receipt.parent / 'builder-terminal.json'
+    start_path = args.builder_receipt.parent / 'builder-start.json'
+    for path in (start_path, terminal_path):
+        before_fixed[str(path)] = v.file_binding(path)
+    _, raw = v.file_binding(start_path, collect=True)
+    builder_start = v.parse_json(raw)
+    _, raw = v.file_binding(terminal_path, collect=True)
+    builder_terminal = v.parse_json(raw)
+    require(builder_start.get('requestedBuild') == 21 and builder_start.get('mode') == 'prerelease'
+            and type(builder_start.get('actualBuilderPid')) is int
+            and builder_start['actualBuilderPid'] == builder_terminal.get('actualBuilderPid')
+            and builder_terminal.get('actualBuilderExitCode') == 0,
+            'actual-builder-pid-terminal-exit-binding-required')
+    require(before_fixed[str(args.verifier)]['sha256'] == args.verifier_sha256,
+            'original-verifier-sha-mismatch')
+    args.destination.mkdir(mode=0o700, exist_ok=False)
+    require(stat.S_IMODE(args.destination.stat().st_mode) == 0o700
+            and args.destination.stat().st_uid == os.getuid(), 'caller-owned-private-output-required')
+    runner = v.Runner(args.destination, args.verifier, args.verifier_sha256)
+    final = {'schemaVersion': 1, 'status': 'FAIL', 'startedAtUtc': v.now(),
+        'mode': 'DRAFT' if args.draft else 'LOCAL', 'sourceCommit': SOURCE,
+        'actualWrapperPid': os.getpid(), 'overallReleaseApproval': False, 'publicationVerification': 'NOT_RUN',
+        'fullReleaseGate': 'NOT_RUN', 'limitations': ['No upload, publication, installation, native GUI, performance, Windows or external audit performed.']}
+    try:
+        final['rootBefore'] = v.directory_identity(args.destination)
+        final['sourceBefore'] = v.source_identity(runner, args)
+        final['sourceInputMapBeforeSha256'] = v.digest(v.canonical(before_source))
+        runner.write('source-inputs-before.json', v.canonical(before_source) + b'\n')
+        final['fixedInputsBefore'] = before_fixed
+        final['originalAssetBindings'] = before_original
+        final['renamedLocalAssetBindings'] = before_local
+        final['originalToRenamedByteIdentity'] = True
+        final['builderNotarySubmissions'] = notary_submissions
+        final['actualBuilderPid'] = builder_terminal['actualBuilderPid']
+        final['actualBuilderStartedUtc'] = builder_start['startedUtc']
+        final['actualBuilderCompletedUtc'] = builder_terminal['completedUtc']
+        slices, verifier_details = original_verifier(v, runner, args)
+        final['originalVerifierSlices'] = slices
+        final['originalVerifierAppleDetails'] = verifier_details
+        runner.strict('local.zip.hybrid', args.local_assets / v.BASE, args.local_assets / v.BASE)
+        local_zip = v.zip_preflight(args.local_assets / v.BASE, args.max_extracted_bytes)
+        require(local_zip['entries'].get('Keep Vault.app/Contents/MacOS/Keep Vault', {}).get('sha256')
+                == builder['publishedProductSha256'], 'local-zip-core-builder-mismatch')
+        require(local_zip['entries'].get(VERIFIER_RELATIVE, {}).get('sha256') == args.verifier_sha256,
+                'local-zip-original-verifier-mismatch')
+        runner.write('local/zip-preflight.json', v.canonical(local_zip) + b'\n')
+        final['localKit'] = v.kit_verify(runner, args, 'local', args.local_assets / v.BASE, local_zip, slices)
+        downloads = {}
+        kits = {'local': final['localKit']}
+        if args.draft:
+            final['releaseId'] = args.release_id
+            final['tagBefore'] = v.resolve_tag(runner, args)
+            before_metadata = fetch_draft_metadata(v, runner, args, 'before')
+            directory = runner.root / 'draft/assets'
+            directory.mkdir(mode=0o700, parents=True, exist_ok=False)
+            argv = [args.gh, 'release', 'download', TAG, '--repo', GITHUB_REPO, '--dir', str(directory)]
+            for name in v.ASSETS:
+                argv += ['--pattern', name]
+            runner.run('draft.authenticated.download.six', argv, auth=True)
+            after_download_metadata = fetch_draft_metadata(v, runner, args, 'after-download')
+            require(v.metadata_identity(before_metadata) == v.metadata_identity(after_download_metadata),
+                    'draft-metadata-changed-during-download')
+            downloads['draft'] = v.compare_assets(args.local_assets, directory, expected, before_metadata)
+            runner.strict('draft.zip.hybrid', directory / v.BASE, directory / v.BASE)
+            draft_zip = v.zip_preflight(directory / v.BASE, args.max_extracted_bytes)
+            require(draft_zip['entries'] == local_zip['entries'], 'draft-zip-entry-content-differs')
+            runner.write('draft/zip-preflight.json', v.canonical(draft_zip) + b'\n')
+            final['draftKit'] = v.kit_verify(runner, args, 'draft', directory / v.BASE, draft_zip, slices)
+            kits['draft'] = final['draftKit']
+            final['tagAfter'] = v.resolve_tag(runner, args)
+            require(final['tagBefore'] == final['tagAfter'], 'draft-tag-reference-changed')
+            after_metadata = fetch_draft_metadata(v, runner, args, 'after-verification')
+            require(v.metadata_identity(before_metadata) == v.metadata_identity(after_metadata),
+                    'draft-release-changed-during-verification')
+            final['draftMetadataSnapshots'] = {'before': before_metadata,
+                'afterDownload': after_download_metadata, 'afterVerification': after_metadata}
+            final['draftDownloadedAssets'] = downloads['draft']
+            final['draftVerification'] = 'PASS'
+        after_source = h.source_map()
+        require(before_source == after_source, 'source-input-map-changed-during-checks')
+        runner.write('source-inputs-after.json', v.canonical(after_source) + b'\n')
+        final['sourceAfter'] = v.source_identity(runner, args)
+        require(final['sourceBefore'] == final['sourceAfter'], 'source-identity-changed')
+        require(v.asset_bindings(args.local_assets) == before_local
+                and original_bindings(v) == before_original, 'local-or-original-six-assets-changed')
+        after_fixed = {path: v.file_binding(Path(path)) for path in before_fixed}
+        require(after_fixed == before_fixed, 'original-core-verifier-tool-builder-expectation-input-changed')
+        final['fixedInputsAfter'] = after_fixed
+        final['closureAfter'] = rebind_closures(v, runner, downloads, kits)
+        final['rootAfter'] = v.directory_identity(args.destination)
+        require(final['rootBefore'] == final['rootAfter'], 'evidence-root-changed')
+        final['status'] = 'PASS'
+        final['localVerification'] = 'PASS'
+    except Exception as error:
+        final['failureCode'] = v.public_text(str(error).encode(), runner.tokens)
+    finally:
+        final['completedAtUtc'] = v.now()
+        final['commandReceiptCount'] = len(runner.rows)
+        final['toolBindings'] = runner.tool_bindings
+        runner.write('commands.json', v.canonical(runner.rows) + b'\n')
+        runner.write('local-draft-receipt.json', v.canonical(final) + b'\n')
+        curated = sorted(['commands.json', 'local-draft-receipt.json', 'source-inputs-before.json'] +
+            (['source-inputs-after.json'] if (runner.root / 'source-inputs-after.json').exists() else []) +
+            [str(p.relative_to(runner.root)) for p in (runner.root / 'commands').glob('*') if p.is_file()] +
+            [str(p.relative_to(runner.root)) for p in (runner.root / 'metadata').glob('*.json') if p.is_file()] +
+            [str(p.relative_to(runner.root)) for p in runner.root.glob('*/zip-preflight.json')] +
+            [str(p.relative_to(runner.root)) for p in runner.root.glob('*/kit-receipt.json')])
+        collection = [{'path': path, 'sha256': v.file_binding(runner.root / path)['sha256'],
+                       'sizeBytes': v.file_binding(runner.root / path)['sizeBytes']} for path in curated]
+        runner.write('collection.json', v.canonical({'schemaVersion': 1, 'files': collection}) + b'\n')
+        runner.write('SHA256SUMS', ''.join(f"{row['sha256']}  {row['path']}\n" for row in collection).encode())
+        print(json.dumps({'status': final['status'], 'mode': final['mode'],
+            'receipt': str(runner.root / 'local-draft-receipt.json'), 'failureCode': final.get('failureCode')}))
+    return 0 if final['status'] == 'PASS' else 2
+
+
+def main():
+    os.umask(0o077)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--execute', action='store_true')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--local', action='store_true')
+    modes.add_argument('--draft', action='store_true')
+    parser.add_argument('--local-assets', type=Path)
+    parser.add_argument('--verifier', type=Path)
+    parser.add_argument('--verifier-sha256', dest='verifier_sha256')
+    parser.add_argument('--builder-receipt', type=Path)
+    parser.add_argument('--builder-stdout', type=Path)
+    parser.add_argument('--expectations', type=Path)
+    parser.add_argument('--expectations-sha256')
+    parser.add_argument('--destination', type=Path)
+    parser.add_argument('--max-extracted-bytes', type=int)
+    parser.add_argument('--release-id', type=int)
+    parser.add_argument('--notary-id')
+    parser.add_argument('--gh', default='/opt/homebrew/bin/gh')
+    parser.add_argument('--contract-manifest-bound-installer-entry', action='store_true')
+    args = parser.parse_args()
+    if not args.execute:
+        print(json.dumps({'mode': 'PLAN_ONLY', 'noChecksOrDownloadsExecuted': True,
+            'publicVerifierSha256': PUBLIC_SHA, 'sourceCommit': SOURCE, 'tag': TAG,
+            'stages': ['--execute --local', '--execute --draft --release-id <new ID>'],
+            'repo': GITHUB_REPO}, indent=2, sort_keys=True))
+        return 0
+    return execute(args)
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

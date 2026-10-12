@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "scope": "Final prepared ignored curator syntax/default mode/refusal checks only; no full suite, product build, release approval or public curation executed.",
+  "startedUtc": "2026-10-12T12:44:29.701755+00:00",
+  "completedUtc": "2026-10-12T12:44:29.964719+00:00",
+  "actualDriverPid": 26405,
+  "curatorSha256": "a46a25c1b75fd22f820674c0a003f4aab54f8ece28720969ba655594595be26d",
+  "syntaxAstParsed": true,
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/curate-build21-evidence.py"
+      ],
+      "startedUtc": "2026-10-12T12:44:29.705544+00:00",
+      "actualPid": 26406,
+      "actualExitCode": 0,
+      "stdoutSha256": "b0d810ce501cfe195f78992e37caa42813328d70491d730b8a8c921b2219cd10",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "{\n  \"mode\": \"PLAN_ONLY\",\n  \"actualInputValidation\": \"NOT_RUN\",\n  \"writes\": \"NONE\",\n  \"sourceCommitExpected\": \"8c68571695ae9072555ffb462b3c0b9c500811ea\",\n  \"actualFullSuite\": \"NOT_CLAIMED\",\n  \"overallReleaseApproval\": false,\n  \"deferredFullReleaseGate\": \"NOT_RUN\",\n  \"expectedRun\": \"/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963\",\n  \"executeRequires\": \"Actual PASS/Exit 0, unchanged Git-bound Source inputs, complete PASS results, original log hashes and retained SDK/harness matches.\"\n}\n",
+      "stderr": "",
+      "expectedExitCode": 0
+    },
+    {
+      "argv": [
+        "python3",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/curate-build21-evidence.py",
+        "--validate"
+      ],
+      "startedUtc": "2026-10-12T12:44:29.753277+00:00",
+      "actualPid": 26407,
+      "actualExitCode": 2,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "d5edcc9abf730dc6ca0ee721fd1fb812302c3cfff8389d6de293baf9ba4fb431",
+      "stdout": "",
+      "stderr": "curation_refused=FileNotFoundError: [Errno 2] No such file or directory: 'builder-terminal.json'\n",
+      "expectedExitCode": 2
+    },
+    {
+      "argv": [
+        "python3",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/curate-build21-evidence.py",
+        "--validate",
+        "--run",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T090448828623Z-80743",
+        "--source-commit",
+        "a57882eca4c5a6694bae167527005bb0391babf8"
+      ],
+      "startedUtc": "2026-10-12T12:44:29.796259+00:00",
+      "actualPid": 26408,
+      "actualExitCode": 2,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "744cc04ca90ab767a4ce1d219a5b0733d84e428a1b4bf30f4ca8820ef86bba2a",
+      "stdout": "",
+      "stderr": "curation_refused=RuntimeError: Wrong actual terminal verdict.\n",
+      "expectedExitCode": 2
+    },
+    {
+      "argv": [
+        "python3",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/curate-build21-evidence.py",
+        "--destination",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/never-created-by-plan-test"
+      ],
+      "startedUtc": "2026-10-12T12:44:29.845067+00:00",
+      "actualPid": 26409,
+      "actualExitCode": 2,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "ccc8b8c689b975ded985ea9db1fbba40833e8c56a36f1912f2cbfdf4353dbaa8",
+      "stdout": "",
+      "stderr": "curation_refused=RuntimeError: Destination is required only with --execute.\n",
+      "expectedExitCode": 2
+    },
+    {
+      "argv": [
+        "python3",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/curate-build21-evidence.py",
+        "--execute"
+      ],
+      "startedUtc": "2026-10-12T12:44:29.884417+00:00",
+      "actualPid": 26410,
+      "actualExitCode": 2,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "ccc8b8c689b975ded985ea9db1fbba40833e8c56a36f1912f2cbfdf4353dbaa8",
+      "stdout": "",
+      "stderr": "curation_refused=RuntimeError: Destination is required only with --execute.\n",
+      "expectedExitCode": 2
+    },
+    {
+      "argv": [
+        "python3",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/curate-build21-evidence.py",
+        "--source-commit",
+        "invalid"
+      ],
+      "startedUtc": "2026-10-12T12:44:29.923424+00:00",
+      "actualPid": 26411,
+      "actualExitCode": 2,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "bf714f5d6e3b79075a13f523e36dc0d7e76e0bc1639cb46bafd676cc99164502",
+      "stdout": "",
+      "stderr": "curation_refused=RuntimeError: Invalid Source/count.\n",
+      "expectedExitCode": 2
+    }
+  ],
+  "overallReleaseApproval": false,
+  "publicDestinationCreated": false
+}

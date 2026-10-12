@@ -1,0 +1,714 @@
+#!/usr/bin/env python3
+"""Execute one real Build-21 prerelease, with exact logs and public evidence.
+
+Prepared only. This file does not imply that any builder or release gate ran.
+Run explicitly with --execute after the source commit is clean. The default
+preserves the builder's fresh, pinned Microsoft SDK. --sdk-path can instead
+bind an existing identical SDK without copying it; its complete file map must
+equal the builder SDK, and its directory identity is recorded.
+"""
+from __future__ import annotations
+
+import argparse
+import contextlib
+import datetime as dt
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import signal
+import stat
+import subprocess
+import sys
+import threading
+import time
+
+REPO = Path('/Users/michael/Developer/GPT-Codex/Kalyna')
+RUN_ROOT = REPO / 'work/v13-evidence/kdf-handoff-release-20261012T053059Z'
+BUILDER = REPO / 'tools/Build-KeepVault-macOS.sh'
+KEYS = Path('/Volumes/Keep Vault Keys 5.0.3 Secure/Keys')
+LOGIN_KEYCHAIN = Path('/Users/michael/Library/Keychains/login.keychain-db')
+PROFILE = 'Keep Vault v13'
+IDENTITY = 'E8C06D4E89287BEC082E0EAD8DB01DD810A302AD'
+HARNESS_PARTS = ('artifacts', 'tests', 'bin', 'KeepVaultMac.Tests', 'release_osx-arm64')
+FULL_MARKER = b'RELEASE GATE: running the complete suite with '
+NATIVE_COMPONENTS = ('zpaq', 'argon2', 'libaes_ref.dylib', 'libargon2_ref.dylib',
+    'libxchachapoly_v13.dylib', 'libkalyna_v13.dylib', 'libmars_ref.dylib',
+    'libcamellia_v13.dylib', 'libserpent_v13.dylib', 'libshacal2_ref.dylib',
+    'libthreefish_ref.dylib')
+NATIVE_SIDECARS = ('.sha3', '.skein', '.khsig', '.sha3.khsig', '.skein.khsig')
+SDK_VERSION = '10.0.400'
+SDK_ARCHIVE_SHA512 = 'e440e9a58d4ff7741c8342ac3e086fa9ee2dadc25e01c0449a88317a74cfbd63625b8092c3b2a131ae14b16ab3401e9cc470e578e4c65a72a0b5786bd2308cde'
+SOURCE_ROOTS = {'KalynaArchiver', 'KalynaArchiver.Tests', 'KeepVaultMac',
+                'KeepVaultMac.Tests', 'KeepVaultMac.ReleaseVerifier',
+                'KalynaArchiver.Signing', 'native', 'tools'}
+ROOT_INPUTS = {'global.json', 'Directory.Build.props', 'Directory.Build.targets',
+               'Directory.Packages.props', 'NuGet.Config', 'AGENTS.md'}
+PUBLIC_PIN = 'KeepVaultMac/Packaging/Keys/mldsa87-public.key'
+SECRET_EXTENSIONS = {'.pfx', '.p12', '.enc'}
+COMPILE_EXTENSIONS = {'.cs', '.axaml', '.csproj', '.props', '.targets'}
+IGNORE_PARTS = {'bin', 'obj', 'build-bin', 'build-obj', 'work', 'build', 'dist', '.git'}
+FLAGS_DIR = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+FLAGS_FILE = os.O_RDONLY | os.O_NOFOLLOW
+
+
+def stamp():
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def fail(message):
+    raise RuntimeError(message)
+
+
+def identity(s):
+    return (s.st_dev, s.st_ino)
+
+
+def file_binding(s):
+    return (s.st_dev, s.st_ino, s.st_uid, s.st_mode, s.st_nlink,
+            s.st_size, s.st_mtime_ns, s.st_ctime_ns)
+
+
+class Directory:
+    """Keep each physical path component open and check its name binding."""
+    def __init__(self, path: Path, private=False):
+        if not path.is_absolute() or '..' in path.parts:
+            fail('Directory path must be absolute without parent traversal.')
+        self.path = path
+        self.chain = []
+        self.fd = os.open('/', FLAGS_DIR)
+        self.chain.append((None, '/', self.fd, identity(os.fstat(self.fd))))
+        try:
+            for name in path.parts[1:]:
+                parent = self.fd
+                child = os.open(name, FLAGS_DIR, dir_fd=parent)
+                current = os.fstat(child)
+                self.chain.append((parent, name, child, identity(current)))
+                self.fd = child
+                if not stat.S_ISDIR(current.st_mode):
+                    fail('A directory component is not a physical directory.')
+            self.validate()
+            s = os.fstat(self.fd)
+            if private and (s.st_uid != os.getuid() or stat.S_IMODE(s.st_mode) != 0o700):
+                fail('Evidence/source root must be caller-owned and mode 0700.')
+        except BaseException:
+            self.close()
+            raise
+
+    def validate(self):
+        for parent, name, fd, expected in self.chain:
+            opened = os.fstat(fd)
+            named = os.stat('/', follow_symlinks=False) if parent is None else os.stat(
+                name, dir_fd=parent, follow_symlinks=False)
+            if (identity(opened) != expected or identity(named) != expected
+                    or not stat.S_ISDIR(named.st_mode)):
+                fail('A physical directory path lost its descriptor/name binding.')
+
+    def close(self):
+        for _, _, fd, _ in reversed(self.chain):
+            os.close(fd)
+        self.chain = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.close()
+
+
+def relative_parts(relative):
+    p = PurePosixPath(relative)
+    if p.is_absolute() or not p.parts or any(x in ('', '.', '..') for x in p.parts):
+        fail('Invalid relative public-input path.')
+    return p.parts
+
+
+@contextlib.contextmanager
+def open_file(root: Directory, relative):
+    root.validate()
+    parts = relative_parts(relative)
+    opened = []
+    parent = root.fd
+    try:
+        for component in parts[:-1]:
+            fd = os.open(component, FLAGS_DIR, dir_fd=parent)
+            opened.append((parent, component, fd, identity(os.fstat(fd))))
+            parent = fd
+        fd = os.open(parts[-1], FLAGS_FILE, dir_fd=parent)
+        opened.append((parent, parts[-1], fd, identity(os.fstat(fd))))
+        s = os.fstat(fd)
+        if not stat.S_ISREG(s.st_mode) or s.st_nlink != 1:
+            fail('Public input must be a physical, single-link regular file.')
+        named = os.stat(parts[-1], dir_fd=parent, follow_symlinks=False)
+        if file_binding(named) != file_binding(s):
+            fail('Public input changed before reading.')
+        yield fd, s
+        after = os.fstat(fd)
+        if file_binding(after) != file_binding(s):
+            fail('Public input changed while reading.')
+        for par, name, opened_fd, expected in opened:
+            named = os.stat(name, dir_fd=par, follow_symlinks=False)
+            if identity(named) != expected or identity(os.fstat(opened_fd)) != expected:
+                fail('Public input path changed while reading.')
+        root.validate()
+    finally:
+        for _, _, fd, _ in reversed(opened):
+            os.close(fd)
+
+
+def digest_file(root, relative):
+    h = hashlib.sha256()
+    with open_file(root, relative) as (fd, s):
+        while chunk := os.read(fd, 1024 * 1024):
+            h.update(chunk)
+        if s.st_uid not in (0, os.getuid()):
+            fail('Public input has an unexpected owner.')
+        return {'sha256': h.hexdigest(), 'bytes': s.st_size}
+
+
+def json_bytes(value):
+    return (json.dumps(value, indent=2, sort_keys=True) + '\n').encode()
+
+
+def write_exact(root, name, payload, executable=False):
+    root.validate()
+    if len(relative_parts(name)) != 1:
+        fail('Receipt/log name must be a single component.')
+    fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                 0o700 if executable else 0o600, dir_fd=root.fd)
+    try:
+        s = os.fstat(fd)
+        if not stat.S_ISREG(s.st_mode) or s.st_nlink != 1 or s.st_uid != os.getuid():
+            fail('Exclusive evidence file has invalid ownership/type.')
+        view = memoryview(payload)
+        while view:
+            count = os.write(fd, view)
+            view = view[count:]
+        os.fsync(fd)
+        named = os.stat(name, dir_fd=root.fd, follow_symlinks=False)
+        if identity(named) != identity(s) or named.st_size != len(payload):
+            fail('Evidence file lost its exclusive name binding.')
+        root.validate()
+    finally:
+        os.close(fd)
+
+
+def save(root, name, value):
+    write_exact(root, name, json_bytes(value))
+
+
+def child_directory(parent, name):
+    parent.validate()
+    if len(relative_parts(name)) != 1:
+        fail('Private evidence child must have one name component.')
+    os.mkdir(name, 0o700, dir_fd=parent.fd)
+    parent.validate()
+    return Directory(parent.path / name, private=True)
+
+
+def git(*args):
+    return subprocess.check_output(['/usr/bin/git', *args], cwd=REPO)
+
+
+def selected_source(relative):
+    p = PurePosixPath(relative)
+    if any(x in IGNORE_PARTS for x in p.parts):
+        return False
+    if p.suffix.lower() in SECRET_EXTENSIONS:
+        return False
+    lower = p.name.lower()
+    if ('wrapping-key' in lower or '-private.' in lower or '.password.' in lower
+            or (p.suffix.lower() == '.key' and relative != PUBLIC_PIN)):
+        return False
+    return relative in ROOT_INPUTS or (p.parts and p.parts[0] in SOURCE_ROOTS)
+
+
+def source_map():
+    tracked = [os.fsdecode(x) for x in git('ls-files', '-z').split(b'\0') if x]
+    # Default compiler globs must not pick up an ignored or untracked source
+    # that is absent from the tracked public source inventory.
+    for options in (('ls-files', '--others', '--exclude-standard', '-z'),
+                    ('ls-files', '--others', '--ignored', '--exclude-standard', '-z')):
+        for raw in git(*options).split(b'\0'):
+            if not raw:
+                continue
+            rel = os.fsdecode(raw)
+            if selected_source(rel) and PurePosixPath(rel).suffix.lower() in COMPILE_EXTENSIONS:
+                fail('A relevant compiler input is untracked/ignored: ' + rel)
+    result = {}
+    with Directory(REPO) as source:
+        for relative in sorted(x for x in tracked if selected_source(x)):
+            result[relative] = digest_file(source, relative)
+    if PUBLIC_PIN not in result or 'tools/Build-KeepVault-macOS.sh' not in result:
+        fail('The tracked public pin or builder is absent from the inventory.')
+    return result
+
+
+def require_clean():
+    if git('status', '--porcelain', '-z'):
+        fail('Source must be committed and Git-clean before this invocation.')
+
+
+def public_harness_file(relative):
+    parts = relative_parts(relative)
+    name = parts[-1]
+    low = name.lower()
+    if any(x in low for x in ('wrapping-key', '-private.', '.password.')) or Path(low).suffix in SECRET_EXTENSIONS:
+        fail('Unexpected private-material name in the public harness subtree.')
+    if parts[0] in {'Native', 'Fixtures'}:
+        return True
+    return len(parts) == 1 and (low.endswith(('.dll', '.runtimeconfig.json', '.deps.json', '.dylib', '.so'))
+        or name in {'MarsKnownAnswers.txt', 'ZpaqInheritedFdHarness.c', '.test-results.json', '.test-timings.json'})
+
+
+def tree_inventory(root, allowed):
+    """No symbolic links/special files; enumerate relative to open directories."""
+    result = []
+
+    def visit(fd, prefix):
+        for name in sorted(os.listdir(fd)):
+            s = os.stat(name, dir_fd=fd, follow_symlinks=False)
+            relative = '/'.join((*prefix, name))
+            if stat.S_ISDIR(s.st_mode):
+                child = os.open(name, FLAGS_DIR, dir_fd=fd)
+                try:
+                    if identity(os.fstat(child)) != identity(s):
+                        fail('Public subtree directory changed during inventory.')
+                    visit(child, (*prefix, name))
+                    if identity(os.stat(name, dir_fd=fd, follow_symlinks=False)) != identity(s):
+                        fail('Public subtree directory lost its name binding.')
+                finally:
+                    os.close(child)
+            elif stat.S_ISREG(s.st_mode) and s.st_nlink == 1:
+                if allowed(relative):
+                    result.append(relative)
+            else:
+                fail('A public preservation subtree contains a link or special object.')
+    root.validate()
+    visit(root.fd, ())
+    root.validate()
+    return result
+
+
+def ensure_destination_parent(root, parts):
+    opened = []
+    parent = root.fd
+    for name in parts:
+        try:
+            os.mkdir(name, 0o700, dir_fd=parent)
+        except FileExistsError:
+            pass
+        child = os.open(name, FLAGS_DIR, dir_fd=parent)
+        s = os.fstat(child)
+        if s.st_uid != os.getuid() or stat.S_IMODE(s.st_mode) != 0o700:
+            os.close(child)
+            fail('A public-copy destination directory is not private.')
+        opened.append((parent, name, child, identity(s)))
+        parent = child
+    return parent, opened
+
+
+def copy_public_tree(source, destination, allowed):
+    manifest = {}
+    for relative in tree_inventory(source, allowed):
+        destination.validate()
+        parts = relative_parts(relative)
+        parent, opened = ensure_destination_parent(destination, parts[:-1])
+        dest_fd = None
+        try:
+            with open_file(source, relative) as (src_fd, src_stat):
+                if src_stat.st_uid not in (0, os.getuid()) or src_stat.st_mode & 0o022:
+                    fail('Public preserve input has an unexpected owner or writable mode.')
+                mode = 0o700 if src_stat.st_mode & 0o111 else 0o600
+                dest_fd = os.open(parts[-1], os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                                  mode, dir_fd=parent)
+                dest_stat = os.fstat(dest_fd)
+                h = hashlib.sha256()
+                while chunk := os.read(src_fd, 1024 * 1024):
+                    h.update(chunk)
+                    view = memoryview(chunk)
+                    while view:
+                        count = os.write(dest_fd, view)
+                        view = view[count:]
+                os.fsync(dest_fd)
+                named = os.stat(parts[-1], dir_fd=parent, follow_symlinks=False)
+                if (identity(named) != identity(dest_stat) or named.st_size != src_stat.st_size
+                        or named.st_uid != os.getuid() or named.st_nlink != 1):
+                    fail('Public copy lost its exclusive destination binding.')
+                manifest[relative] = {'sha256': h.hexdigest(), 'bytes': src_stat.st_size}
+            for par, name, fd, expected in opened:
+                if (identity(os.fstat(fd)) != expected
+                        or identity(os.stat(name, dir_fd=par, follow_symlinks=False)) != expected):
+                    fail('Public copy destination namespace changed.')
+            destination.validate()
+        finally:
+            if dest_fd is not None:
+                os.close(dest_fd)
+            for _, _, fd, _ in reversed(opened):
+                os.close(fd)
+    return manifest
+
+
+def snapshot_tree(source):
+    return {r: digest_file(source, r) for r in tree_inventory(source, lambda _: True)}
+
+
+def tmp_builder_roots():
+    with Directory(Path('/private/tmp')) as tmp:
+        return {n for n in os.listdir(tmp.fd) if re.fullmatch(r'keep-vault-release\.[A-Za-z0-9]{8}', n)}
+
+
+def pick_builder_root(before, declared):
+    if declared is None:
+        fail('The actual builder did not declare its completed test-native path.')
+    root = declared
+    if (root.parent != Path('/private/tmp') or not re.fullmatch(r'keep-vault-release\.[A-Za-z0-9]{8}', root.name)
+            or root.name in before or root.name not in tmp_builder_roots()):
+        fail('The declared builder root is not a new private builder root.')
+    with Directory(root, private=True) as physical:
+        with Directory(root.joinpath(*HARNESS_PARTS)) as harness:
+            for required in ('KeepVaultMac.Tests.dll', 'Keep Vault.dll',
+                             'KeepVaultMac.Tests.runtimeconfig.json', 'KeepVaultMac.Tests.deps.json'):
+                digest_file(harness, required)
+        with Directory(root / 'dotnet-sdk', private=True) as sdk:
+            digest_file(sdk, 'dotnet')
+        physical.validate()
+    return root
+
+
+def builder_arguments():
+    return ['/bin/zsh', '-f', str(BUILDER), '--architecture', 'universal',
+            '--version', '5.0.3', '--build-number', '21', '--identity', IDENTITY,
+            '--mldsa-public-key', str(REPO / PUBLIC_PIN),
+            '--pfx', str(KEYS / 'hybrid-rsa4096.pfx'),
+            '--mldsa-private-key-encrypted', str(KEYS / 'mldsa87-private.key.v12.enc'),
+            '--pfx-password-encrypted', str(KEYS / 'hybrid-rsa4096.pfx.password.v12.enc'),
+            '--notary-profile', PROFILE, '--prerelease', '--install-for-tests']
+
+
+def child_environment():
+    env = os.environ.copy()
+    # Prerelease must not inherit a performance-baseline request or an alternate
+    # Apple keychain. The builder's normal keychain route is checked separately.
+    env.pop('KEEPVAULT_PERF_BASELINE', None)
+    env.pop('KEEPVAULT_APPLE_KEYCHAIN', None)
+    env['KEEPVAULT_MLDSA_WRAPPING_KEY_FILE'] = str(KEYS / 'mldsa-v12-wrapping-key.b64')
+    env['KEEPVAULT_PFX_WRAPPING_KEY_FILE'] = str(KEYS / 'pfx-v12-wrapping-key.b64')
+    return env
+
+
+def run_probe(out, label, args, env=None):
+    # Paths/profile names only. This never requests or records a password.
+    started = stamp()
+    child = subprocess.Popen(args, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    save(out, label + '-start.json', {'startedUtc': started, 'actualPid': child.pid})
+    stdout, stderr = child.communicate()
+    save(out, label + '-terminal.json', {'completedUtc': stamp(), 'actualPid': child.pid,
+         'actualExitCode': child.returncode, 'stdoutSha256': hashlib.sha256(stdout).hexdigest(),
+         'stderrSha256': hashlib.sha256(stderr).hexdigest()})
+    write_exact(out, label + '.stdout.log', stdout)
+    write_exact(out, label + '.stderr.log', stderr)
+    if child.returncode:
+        fail(label + ' failed; actual product builder NOT RUN.')
+
+
+def preserve_at_full_marker(out, child, roots_before, declared_root, external_sdk):
+    os.kill(child.pid, signal.SIGSTOP)
+    stopped = False
+    try:
+        for _ in range(100):
+            observed = subprocess.run(['/bin/ps', '-p', str(child.pid), '-o', 'stat='],
+                                      capture_output=True, check=False)
+            if observed.returncode == 0 and b'T' in observed.stdout:
+                stopped = True
+                break
+            time.sleep(0.05)
+        if not stopped:
+            fail('Could not confirm that the actual builder is paused before cleanup.')
+        root_path = pick_builder_root(roots_before, declared_root)
+        with Directory(root_path, private=True) as build_root:
+            with Directory(root_path.joinpath(*HARNESS_PARTS)) as harness:
+                with child_directory(out, 'public-harness') as dest:
+                    harness_map = copy_public_tree(harness, dest, public_harness_file)
+                    copied_map = snapshot_tree(dest)
+                    if harness_map != copied_map:
+                        fail('Preserved public harness does not match its input hashes.')
+            with Directory(root_path / 'dotnet-sdk', private=True) as sdk:
+                if not (sdk.path / 'sdk' / SDK_VERSION).is_dir():
+                    fail('Builder SDK version directory is missing.')
+                if external_sdk is None:
+                    with child_directory(out, 'public-dotnet-sdk') as dest:
+                        sdk_map = copy_public_tree(sdk, dest, lambda _: True)
+                        if sdk_map != snapshot_tree(dest):
+                            fail('Preserved SDK does not match the builder SDK.')
+                        sdk_path = str(dest.path)
+                        sdk_identity = identity(os.fstat(dest.fd))
+                else:
+                    # No SDK override is passed to the real builder. This only
+                    # binds an independently retained, completely identical tree.
+                    with Directory(external_sdk, private=True) as existing:
+                        sdk_map = snapshot_tree(sdk)
+                        if set(tree_inventory(existing, lambda _: True)) != set(sdk_map):
+                            fail('Optional retained SDK has a different public file inventory.')
+                        if sdk_map != snapshot_tree(existing):
+                            fail('Optional retained SDK differs from the builder SDK.')
+                        sdk_path = str(existing.path)
+                        sdk_identity = identity(os.fstat(existing.fd))
+                build_root.validate()
+                save(out, 'sdk-inputs.json', sdk_map)
+            save(out, 'public-harness-inputs.json', harness_map)
+            with Directory(root_path / 'dist-stage/Keep Vault.app/Contents') as staged_product:
+                staged_aot = digest_file(staged_product, 'MacOS/Keep Vault')
+                for component in NATIVE_COMPONENTS:
+                    native = 'Native/' + component
+                    if harness_map.get(native) != digest_file(staged_product, 'MacOS/' + native):
+                        fail('Preserved native library differs from the actual staged product.')
+                    for suffix in NATIVE_SIDECARS:
+                        relative = native + suffix
+                        if harness_map.get(relative) != digest_file(staged_product, 'Resources/HybridSignatures/' + relative):
+                            fail('Preserved native sidecar differs from the actual staged product.')
+            receipt = {'observedUtc': stamp(), 'actualBuilderPid': child.pid,
+                'builderWasStoppedBeforeCleanup': True, 'builderRoot': str(root_path),
+                'builderRootIdentity': identity(os.fstat(build_root.fd)),
+                'rootSelection': 'Fresh private root declared by this actual builder stdout test_natives marker, with the exact fixed test-harness subtree and native bytes equal to its final staged signed product.',
+                'stagedAotProduct': staged_aot,
+                'managedHarnessIsAotProduct': False,
+                'harnessPath': str(out.path / 'public-harness'),
+                'harnessFileCount': len(harness_map), 'harnessManifestSha256': hashlib.sha256(json_bytes(harness_map)).hexdigest(),
+                'boundSdkPath': sdk_path, 'boundSdkDirectoryIdentity': sdk_identity,
+                'sdkFileCount': len(sdk_map), 'sdkManifestSha256': hashlib.sha256(json_bytes(sdk_map)).hexdigest(),
+                'sdkVersion': SDK_VERSION, 'pinnedMicrosoftArchiveSha512': SDK_ARCHIVE_SHA512,
+                'privateBuildRootCopied': False,
+                'scope': 'Public DLL/runtimeconfig/dependency data, native libraries, public fixtures/results, and the fresh verified Microsoft SDK only; private key material and credentials are never opened or copied.'}
+            save(out, 'public-preservation.json', receipt)
+            return receipt
+    finally:
+        # Always release the actual builder, including after a failed copy.
+        try:
+            os.kill(child.pid, signal.SIGCONT)
+        except ProcessLookupError:
+            pass
+
+
+def evidence_allowed(relative):
+    return bool(re.fullmatch(r'phase-[1-9][0-9]*\.test-(?:results|timings)\.json', relative)) or relative in {'phases.txt', 'test-input-sha256.txt'}
+
+
+def run_builder(out, args, env, external_sdk):
+    roots_before = tmp_builder_roots()
+    log_fds = {}
+    try:
+        for stream in ('stdout', 'stderr'):
+            out.validate()
+            log_fds[stream] = os.open('builder.' + stream + '.log',
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=out.fd)
+        child = subprocess.Popen(args, cwd=REPO, env=env, stdin=None,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except BaseException:
+        for fd in log_fds.values():
+            os.close(fd)
+        raise
+    try:
+        save(out, 'builder-start.json', {'startedUtc': stamp(), 'actualBuilderPid': child.pid,
+             'launcherPid': os.getpid(), 'requestedBuild': 21, 'mode': 'prerelease',
+             'argv': args, 'fullReleaseGate': 'NOT_RUN', 'performanceBaselineSupplied': False})
+    except BaseException:
+        child.terminate()
+        child.communicate()
+        for fd in log_fds.values():
+            os.close(fd)
+        raise
+    print('actual_builder_pid=' + str(child.pid), flush=True)
+    facts = {'preservation': None, 'error': None, 'evidenceRoot': None, 'declaredBuilderRoot': None,
+             'prereleasePublishedMarker': False, 'fullReleaseNotRunMarker': False}
+
+    def consume(stream, pipe, terminal):
+        pending = b''
+        try:
+            while chunk := pipe.read1(65536):
+                view = memoryview(chunk)
+                while view:
+                    count = os.write(log_fds[stream], view)
+                    view = view[count:]
+                os.fsync(log_fds[stream])
+                terminal.buffer.write(chunk)
+                terminal.buffer.flush()
+                if stream != 'stdout':
+                    continue
+                pending += chunk
+                lines = pending.split(b'\n')
+                pending = lines.pop()
+                for line in lines:
+                    if line.startswith(b'test_natives='):
+                        native_path = os.fsdecode(line.split(b'=', 1)[1])
+                        expected_tail = '/'.join((*HARNESS_PARTS, 'Native'))
+                        pattern = r'(/private/tmp/keep-vault-release\.[A-Za-z0-9]{8})/' + re.escape(expected_tail)
+                        matched = re.fullmatch(pattern, native_path)
+                        if not matched or facts['declaredBuilderRoot'] is not None:
+                            fail('Unexpected or repeated actual builder test-native path.')
+                        facts['declaredBuilderRoot'] = Path(matched.group(1))
+                    if line.startswith(b'release_test_evidence='):
+                        p = Path(os.fsdecode(line.split(b'=', 1)[1]))
+                        if not re.fullmatch(r'/private/tmp/keep-vault-release-evidence\.[A-Za-z0-9]{8}', str(p)):
+                            fail('Unexpected public test evidence directory path.')
+                        if facts['evidenceRoot'] is not None:
+                            fail('Builder declared multiple test evidence roots.')
+                        facts['evidenceRoot'] = p
+                    if line.startswith(FULL_MARKER):
+                        if facts['preservation'] is not None:
+                            fail('Builder emitted the full-suite marker more than once.')
+                        facts['preservation'] = preserve_at_full_marker(out, child, roots_before,
+                            facts['declaredBuilderRoot'], external_sdk)
+                    if line.startswith(b'publish_mode=prerelease '):
+                        facts['prereleasePublishedMarker'] = True
+                    if line == b'full_release_gate=NOT_RUN (--release performance campaign remains pending)':
+                        facts['fullReleaseNotRunMarker'] = True
+        except BaseException as exc:
+            facts['error'] = type(exc).__name__ + ': ' + str(exc)
+            try:
+                child.terminate()
+                os.kill(child.pid, signal.SIGCONT)
+            except ProcessLookupError:
+                pass
+
+    readers = [threading.Thread(target=consume, args=('stdout', child.stdout, sys.stdout)),
+               threading.Thread(target=consume, args=('stderr', child.stderr, sys.stderr))]
+    for reader in readers:
+        reader.start()
+    try:
+        interrupted = None
+        try:
+            code = child.wait()
+        except BaseException as exc:
+            interrupted = exc
+            child.terminate()
+            try:
+                os.kill(child.pid, signal.SIGCONT)
+            except ProcessLookupError:
+                pass
+            code = child.wait()
+        # Exact terminal exit is recorded before source/profile/preservation checks.
+        save(out, 'builder-terminal.json', {'completedUtc': stamp(), 'actualBuilderPid': child.pid,
+             'actualBuilderExitCode': code, 'fullReleaseGate': 'NOT_RUN',
+             'scope': 'Actual prerelease builder process exit only; no overall release approval.'})
+        if interrupted is not None:
+            raise interrupted
+    finally:
+        for reader in readers:
+            reader.join()
+        for fd in log_fds.values():
+            os.fsync(fd)
+            os.close(fd)
+    save(out, 'builder-observations.json', {k: str(v) if isinstance(v, Path) else v for k, v in facts.items()})
+    if facts['evidenceRoot'] is not None:
+        with Directory(facts['evidenceRoot'], private=True) as source:
+            with child_directory(out, 'public-test-results') as dest:
+                results_map = copy_public_tree(source, dest, evidence_allowed)
+                if results_map != snapshot_tree(dest):
+                    fail('Copied public result JSON does not match its source.')
+        save(out, 'public-test-results-inputs.json', results_map)
+    return code, facts
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--execute', action='store_true', help='Actually run the prepared prerelease builder.')
+    parser.add_argument('--sdk-path', type=Path, help='Optional retained SDK identical to the fresh builder SDK; no builder SDK override.')
+    options = parser.parse_args()
+    if not options.execute:
+        print('prepared_build=21; publish_mode=prerelease; actual_builder=NOT_RUN')
+        print('Run this ignored wrapper with --execute after committing the clean source freeze.')
+        return 0
+    os.umask(0o077)
+    with Directory(RUN_ROOT) as parent:
+        child_name = 'build21-prerelease-' + dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ') + '-' + str(os.getpid())
+        with child_directory(parent, child_name) as out:
+            print('prerelease_evidence=' + str(out.path), flush=True)
+            builder_ran = False
+            try:
+                require_clean()
+                head = git('rev-parse', 'HEAD').decode().strip()
+                before = source_map()
+                save(out, 'source-inputs-before.json', before)
+                with Directory(RUN_ROOT) as wrapper_root:
+                    wrapper_hash = digest_file(wrapper_root, Path(__file__).name)['sha256']
+                builder_hash = before['tools/Build-KeepVault-macOS.sh']['sha256']
+                save(out, 'invocation.json', {'startedUtc': stamp(), 'sourceHead': head,
+                    'sourceFileCount': len(before), 'sourceMapSha256': hashlib.sha256(json_bytes(before)).hexdigest(),
+                    'builderSha256': builder_hash, 'wrapperSha256': wrapper_hash,
+                    'launcherPid': os.getpid(), 'launcherTerminal': os.ttyname(0) if os.isatty(0) else None,
+                    'requestedBuild': 21, 'publishMode': 'prerelease', 'fullReleaseGate': 'NOT_RUN',
+                    'privateContentReadCopiedOrHashed': False,
+                    'scope': 'Tracked public project/native/build inputs and explicit public signing pin; no private-material bytes.'})
+                env = child_environment()
+                base_probe = ['/usr/bin/xcrun', 'notarytool', 'history', '--keychain-profile', PROFILE, '--output-format', 'json']
+                # First prove the explicit login profile. Then separately prove
+                # the normal default lookup used by this unchanged builder.
+                run_probe(out, 'notary-login-profile-before', base_probe + ['--keychain', str(LOGIN_KEYCHAIN)], env)
+                run_probe(out, 'notary-builder-default-before', base_probe, env)
+                for action in ('list-keychains', 'default-keychain'):
+                    run_probe(out, 'keychain-' + action + '-before', ['/usr/bin/security', action, '-d', 'user'], env)
+                args = builder_arguments()
+                run_probe(out, 'builder-preflight', args + ['--preflight'], env)
+                require_clean()
+                if git('rev-parse', 'HEAD').decode().strip() != head or source_map() != before:
+                    fail('Source changed during preflight; actual product builder NOT RUN.')
+                builder_ran = True
+                code, observations = run_builder(out, args, env, options.sdk_path)
+                after = source_map()
+                save(out, 'source-inputs-after.json', after)
+                head_after = git('rev-parse', 'HEAD').decode().strip()
+                clean_after = git('status', '--porcelain', '-z') == b''
+                stable = (head == head_after and before == after and clean_after
+                          and after['tools/Build-KeepVault-macOS.sh']['sha256'] == builder_hash)
+                product_match = False
+                native_match = False
+                published_product_hash = None
+                if code == 0 and observations['preservation'] is not None:
+                    published_root = REPO / 'dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents'
+                    with Directory(published_root) as published:
+                        published_aot = digest_file(published, 'MacOS/Keep Vault')
+                        published_product_hash = published_aot['sha256']
+                        product_match = published_aot == observations['preservation']['stagedAotProduct']
+                        with Directory(out.path / 'public-harness', private=True) as retained:
+                            native_match = True
+                            for component in NATIVE_COMPONENTS:
+                                relative = 'Native/' + component
+                                native_match = native_match and digest_file(retained, relative) == digest_file(published, 'MacOS/' + relative)
+                                for suffix in NATIVE_SIDECARS:
+                                    sidecar = relative + suffix
+                                    native_match = native_match and digest_file(retained, sidecar) == digest_file(published, 'Resources/HybridSignatures/' + sidecar)
+                passed = (code == 0 and stable and not observations['error'] and product_match and native_match
+                          and observations['prereleasePublishedMarker'] and observations['fullReleaseNotRunMarker'])
+                save(out, 'prerelease-build-result.json', {'completedUtc': stamp(), 'actualBuilderExitCode': code,
+                    'sourceHeadBefore': head, 'sourceHeadAfter': head_after, 'gitCleanAfter': clean_after,
+                    'sourceInputsAndBuilderStable': stable, 'publishedAotMatchesFinalStagedProduct': product_match,
+                    'retainedNativeComponentsAndSidecarsMatchPublishedProduct': native_match,
+                    'managedHarnessIsAotProduct': False,
+                    'publishedProductSha256': published_product_hash,
+                    'stdoutSha256': digest_file(out, 'builder.stdout.log')['sha256'],
+                    'stderrSha256': digest_file(out, 'builder.stderr.log')['sha256'],
+                    'status': 'PASS' if passed else 'FAIL', 'publishMode': 'prerelease',
+                    'fullReleaseGate': 'NOT_RUN', 'overallReleaseApproval': False,
+                    'scope': 'Actual signed/notarized prerelease builder outcome with clean unchanged source and preserved public harness binding; installed GUI/public-download proof and deferred full release gates are separate.'})
+                return code if code else (0 if passed else 2)
+            except BaseException as exc:
+                try:
+                    clean_at_failure = git('status', '--porcelain', '-z') == b''
+                    head_at_failure = git('rev-parse', 'HEAD').decode().strip()
+                except Exception:
+                    clean_at_failure = None
+                    head_at_failure = None
+                save(out, 'wrapper-failure.json', {'observedUtc': stamp(), 'launcherPid': os.getpid(),
+                     'actualProductBuilderStarted': builder_ran, 'status': 'FAIL',
+                     'errorType': type(exc).__name__, 'error': str(exc),
+                     'gitCleanAtFailure': clean_at_failure, 'sourceHeadAtFailure': head_at_failure,
+                     'overallReleaseApproval': False, 'fullReleaseGate': 'NOT_RUN'})
+                print('prerelease_wrapper_failed=' + type(exc).__name__ + ': ' + str(exc), file=sys.stderr, flush=True)
+                return 2
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

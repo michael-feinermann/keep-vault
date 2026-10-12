@@ -1,0 +1,105 @@
+{
+  "actualReviewPid": 70220,
+  "actualZipReadonly": {
+    "binding": {
+      "ctimeNs": 1791807900579025984,
+      "device": 16777232,
+      "gid": 0,
+      "inode": 57603170,
+      "links": 1,
+      "mode": 384,
+      "mtimeNs": 1791807900579025984,
+      "parentDirectoryIdentity": {
+        "device": 16777232,
+        "gid": 0,
+        "inode": 57551375,
+        "mode": 448,
+        "uid": 501
+      },
+      "sha256": "8c2864a4d156a821e07a6c4328401aed0c47137d31f3202ce9adb4125ff990ac",
+      "sizeBytes": 46565158,
+      "uid": 501
+    },
+    "builderResultValidated": false,
+    "entryCount": 355,
+    "expandedBytes": 104883793,
+    "hybridOrAppleChecksExecuted": false,
+    "packageMutationPerformed": false,
+    "path": "/private/tmp/keep-vault-release.CwiuZ5No/dist-stage/Keep Vault-macOS-universal.zip",
+    "status": "ZIP_AND_TRANSPORT_PREFLIGHT_ONLY",
+    "transportContract": {
+      "codeApproval": false,
+      "directoryCount": 21,
+      "fileCount": 167,
+      "nonemptyResourceForksAllowed": false,
+      "status": "VALIDATED_APPLEDOUBLE_METADATA_ONLY"
+    }
+  },
+  "artificialSelfTest": {
+    "actualPid": 70221,
+    "cases": 34,
+    "exitCode": 0,
+    "scope": "public artificial ZIP, AppleDouble, extraction-mapping and final-binding fixtures only",
+    "status": "PASS",
+    "stderrSha256": "ea71c7d85cbc29a213da5d14ee8db9b52ded5d5a8e2f05f712a2af161c08e450",
+    "stdoutSha256": "bd6102ff31f77bebce579172997a179ace0cf28196ed34610ffa088a410f4531"
+  },
+  "createdUtc": "2026-10-12T12:41:23.072221+00:00",
+  "gitWorkingTreeClean": true,
+  "installationPerformed": false,
+  "notaryParserOnly": {
+    "actualOldBuilderExitCode": 1,
+    "actualOldBuilderStatus": "FAIL",
+    "negativeCases": [
+      {
+        "case": "scanner-id-is-not-kit-id",
+        "failureCode": "bound-kit-notary-id-mismatch",
+        "rejected": true
+      },
+      {
+        "case": "missing-kit-terminal-accepted-status",
+        "failureCode": "incomplete-or-ambiguous-accepted-notary-block",
+        "rejected": true
+      },
+      {
+        "case": "mixed-id-in-kit-upload-block",
+        "failureCode": "incomplete-or-ambiguous-accepted-notary-block",
+        "rejected": true
+      },
+      {
+        "case": "additional-ambiguous-submission-block",
+        "failureCode": "exact-scanner-and-kit-submission-blocks-required",
+        "rejected": true
+      }
+    ],
+    "noOriginalBuilderOrApplePassClaim": true,
+    "parsed": {
+      "kit": {
+        "firstLogLine": 353,
+        "lastLogLineExclusive": 926,
+        "status": "Accepted",
+        "submissionId": "f8d5d419-18f4-47a7-9acd-39355a43ea14",
+        "uploadedPath": "/tmp/keep-vault-release.2TNipMnh/dist-stage/Keep Vault-macOS-universal.zip"
+      },
+      "scanner": {
+        "firstLogLine": 164,
+        "lastLogLineExclusive": 353,
+        "status": "Accepted",
+        "submissionId": "d6828cd3-d5c4-461c-b008-69fe18df677c",
+        "uploadedPath": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-publish-helper.9x3upMIJ/QR-Scanner-notary-submission.zip"
+      }
+    },
+    "sourceStdoutSha256": "5181bc4cbd8cd29015b7d9d6fcff6842b5f9d1ba855583d357590d7b17e0a1c1"
+  },
+  "overallReleaseApproval": false,
+  "productBuildPerformed": false,
+  "productSourcesModified": false,
+  "publicDownloadPerformed": false,
+  "pythonSyntax": "PASS",
+  "schemaVersion": 1,
+  "scope": "Ignored verification tool only: artificial fixtures and read-only container compatibility. Actual candidate build, installation, full suite, public downloads and Apple/hybrid execution remain separate Root-owned gates.",
+  "signingPerformed": false,
+  "status": "TOOL_SELF_TEST_AND_READONLY_ZIP_COMPATIBILITY_ONLY",
+  "toolPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/verify-public-build21.py",
+  "toolSha256": "a6539a1c4d78c9305061e5d63a0cfaf4733219ef40448a42e7387c9c557e6421"
+}
