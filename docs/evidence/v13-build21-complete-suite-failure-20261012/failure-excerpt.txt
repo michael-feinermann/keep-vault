@@ -1,0 +1,20 @@
+FAIL lock files match the platform their project builds on
+  seed=0x21FCFACB
+  InvalidOperationException: Lock files do not match their build platform:
+  Lock graph has unchecked project(s): docs/evidence/v13-build21-kdf-handoff-20261012/owner-before-after/probe-source/OwnerBeforeAfterProbe.csproj.
+   at SpecLintTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/SpecLintTests.cs:line 628
+   at SpecLintTests.LockFileRuntimesAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/SpecLintTests.cs:line 304
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1477
+
+FAIL RSA and ML-DSA use independent Keychain identities, ACLs and v12 envelopes
+  seed=0x6F9E1C3F
+  ObjectDisposedException: Cannot access a disposed object.
+Object name: 'KalynaArchiver.Services.LockedSensitiveBuffer'.
+   at KalynaArchiver.Services.LockedSensitiveBuffer.get_Bytes()
+   at HybridKeyProtectionTests.<>c__DisplayClass4_1.<TestHybridKeySeparationAsync>b__0() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 248
+   at KalynaArchiver.Services.LockedSensitiveBuffer.Dispose()
+   at HybridKeyProtectionTests.TestHybridKeySeparationAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 252
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1477
+
+319 macOS groups: 317 passed, 2 failed, 0 blocked.
+wall clock 1422,1s; sum of test times 1395,5s; parallel speedup 0,98x

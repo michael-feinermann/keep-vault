@@ -33,6 +33,8 @@ Die [fehlgeschlagene zweite Managed-Kampagne](evidence/v13-build21-kdf-handoff-s
 
 ## Veröffentlichung und offene Gesamtfreigabe
 
+Der [erste vollständige signierte Build-21-Durchgang](evidence/v13-build21-complete-suite-failure-20261012/README.md) besteht 317 von 319 Gruppen und endet mit Exit 1. Seine zwei Fehler sind die veraltete Before-Unlock-Fixture und die `.csproj`-Archivverpackung. Die Korrektur erhält den geschlossenen Getter und die strenge Projektprüfung; die öffentliche Probe bleibt bytegleich reproduzierbar. Die Unlock-Fehler-Fixtures verwenden beim Cleanup-Retry wieder den echten macOS-Systemaufruf und versuchen alle Bereinigungen auch nach einem Cleanup-Fehler. Beide [gezielten Korrekturprüfungen](evidence/v13-build21-fixture-corrections-20261012/README.md) bestehen danach mit dem regulären sicheren Testrunner und Exit 0. Dieser fehlgeschlagene erste vollständige Durchgang wird nicht nachträglich freigegeben. Der neue vollständige Builder muss separat bestehen.
+
 Build 21 wird separat als `v5.0.3-rc.build21` vorbereitet. `--prerelease` verlangt Developer ID, Notarisierung sowie die regulären Native-, Kryptografie-, Sicherheits- und Funktionsprüfungen. Es ist mit `--release` unvereinbar und ersetzt den offiziellen Ausgabeordner nicht. Der komplette normative `--release`-Block mit seinen 49 Phasen, der historischen Baseline und den Leistungsgrenzen bleibt unverändert.
 
 Noch offen sind insbesondere die final gebundenen Langläufe, wiederholte vergleichbare Geschwindigkeitsmessungen am Netzteil, verbleibende reale GUI-Abnahmen und die anschließende Gesamtfreigabe. Historische Build-20- oder Entwicklungsbelege werden nicht in aktuelle Build-21-Belege umbenannt. Windows und reale Mehr-TiB-Läufe bleiben außerhalb dieses macOS-Durchgangs.

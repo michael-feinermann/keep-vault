@@ -242,18 +242,23 @@ internal static class HybridKeyProtectionTests
 
             bool zeroObservedBeforeUnlock = false;
             LockedSensitiveBuffer zeroizationProbe = LockedSensitiveBuffer.Create(32);
-            RandomNumberGenerator.Fill(zeroizationProbe.Bytes);
-            SecureMemory.SensitiveBufferBeforeUnlockForTests = () =>
-            {
-                zeroObservedBeforeUnlock = zeroizationProbe.Bytes.All(value => value == 0);
-            };
+            byte[] zeroizationBytes = zeroizationProbe.Bytes;
             try
             {
+                RandomNumberGenerator.Fill(zeroizationBytes);
+                SecureMemory.SensitiveBufferBeforeUnlockForTests = () =>
+                {
+                    zeroObservedBeforeUnlock = zeroizationBytes.All(value => value == 0);
+                    RequireThrows<ObjectDisposedException>(
+                        () => _ = zeroizationProbe.Bytes,
+                        "A signing-secret buffer remained accessible during disposal.");
+                };
                 zeroizationProbe.Dispose();
             }
             finally
             {
                 SecureMemory.SensitiveBufferBeforeUnlockForTests = null;
+                zeroizationProbe.Dispose();
             }
             Require(
                 zeroObservedBeforeUnlock,
@@ -1000,25 +1005,40 @@ internal static class HybridKeyProtectionTests
     private static void TestLockedTransferFaults()
     {
         int baselineRetained = SecureMemory.RetainedFailedLockRollbacksForTests;
-
-        LockedSensitiveBuffer earlyResult = LockedSensitiveBuffer.Create(64);
-        LockedSensitiveBuffer earlyTemporary = LockedSensitiveBuffer.Create(64);
-        byte[] earlyResultBytes = earlyResult.Bytes;
-        byte[] earlyTemporaryBytes = earlyTemporary.Bytes;
-        earlyResultBytes.AsSpan().Fill(0xA5);
-        earlyTemporaryBytes.AsSpan().Fill(0x5A);
-        RequireThrows<AggregateException>(
-            () => LockedBufferTransfer.Complete(
-                earlyResult,
-                null,
-                "Injected early cleanup failure.",
-                [earlyTemporary],
-                [new FaultingDisposable()]),
-            "An early descriptor cleanup fault transferred a locked result.");
+        long baselineBytes = SecureMemory.LockedBytesForTests;
+        long baselineAllocations = SecureMemory.LockedAllocationsForTests;
         Require(
-            earlyResultBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0
-                && earlyTemporaryBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
-            "An early cleanup fault left a result or temporary secret unerased.");
+            SecureMemory.MacMemoryUnlockOverrideForTests is null
+                && SecureMemory.SensitiveBufferBeforeUnlockForTests is null,
+            "Locked-transfer fixtures require exclusive ownership of cleanup hooks.");
+
+        LockedSensitiveBuffer? earlyResult = null;
+        LockedSensitiveBuffer? earlyTemporary = null;
+        try
+        {
+            earlyResult = LockedSensitiveBuffer.Create(64);
+            earlyTemporary = LockedSensitiveBuffer.Create(64);
+            byte[] earlyResultBytes = earlyResult.Bytes;
+            byte[] earlyTemporaryBytes = earlyTemporary.Bytes;
+            earlyResultBytes.AsSpan().Fill(0xA5);
+            earlyTemporaryBytes.AsSpan().Fill(0x5A);
+            RequireThrows<AggregateException>(
+                () => LockedBufferTransfer.Complete(
+                    earlyResult,
+                    null,
+                    "Injected early cleanup failure.",
+                    [earlyTemporary],
+                    [new FaultingDisposable()]),
+                "An early descriptor cleanup fault transferred a locked result.");
+            Require(
+                earlyResultBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0
+                    && earlyTemporaryBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
+                "An early cleanup fault left a result or temporary secret unerased.");
+        }
+        finally
+        {
+            RetryTransferFixtureCleanup(earlyTemporary, earlyResult);
+        }
 
         LockedSensitiveBuffer? middleResult = null;
         LockedSensitiveBuffer? middleTemporary = null;
@@ -1036,12 +1056,10 @@ internal static class HybridKeyProtectionTests
             int unlockCalls = 0;
             SecureMemory.MacMemoryUnlockOverrideForTests = (_, _) =>
             {
-                if (Interlocked.Increment(ref unlockCalls) == 1)
-                {
-                    Marshal.SetLastPInvokeError(5);
-                    return -1;
-                }
-                return 0;
+                Interlocked.Increment(ref unlockCalls);
+                SecureMemory.MacMemoryUnlockOverrideForTests = null;
+                Marshal.SetLastPInvokeError(5);
+                return -1;
             };
             RequireThrows<AggregateException>(
                 () => LockedBufferTransfer.Complete(
@@ -1051,6 +1069,7 @@ internal static class HybridKeyProtectionTests
                     [middleTemporary],
                     []),
                 "A temporary-secret unlock fault transferred a locked result.");
+            Require(unlockCalls == 1, "The temporary-secret unlock seam did not inject exactly one failure.");
             Require(
                 middleResultBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0
                     && middleTemporaryBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
@@ -1061,11 +1080,7 @@ internal static class HybridKeyProtectionTests
         }
         finally
         {
-            SecureMemory.MacMemoryUnlockOverrideForTests = (_, _) => 0;
-            SecureMemory.RetryRetainedFailedLockRollbacksForTests();
-            middleTemporary?.Dispose();
-            middleResult?.Dispose();
-            SecureMemory.MacMemoryUnlockOverrideForTests = null;
+            RetryTransferFixtureCleanup(middleTemporary, middleResult);
         }
         Require(
             SecureMemory.RetainedFailedLockRollbacksForTests == baselineRetained,
@@ -1079,8 +1094,11 @@ internal static class HybridKeyProtectionTests
                 checked(Environment.SystemPageSize * 32));
             finalResultBytes = finalResult.Bytes;
             finalResultBytes.AsSpan().Fill(0xC3);
+            int unlockCalls = 0;
             SecureMemory.MacMemoryUnlockOverrideForTests = (_, _) =>
             {
+                Interlocked.Increment(ref unlockCalls);
+                SecureMemory.MacMemoryUnlockOverrideForTests = null;
                 Marshal.SetLastPInvokeError(5);
                 return -1;
             };
@@ -1092,6 +1110,7 @@ internal static class HybridKeyProtectionTests
                     [],
                     []),
                 "A final result-unlock fault lost the composite failure.");
+            Require(unlockCalls == 1, "The result-secret unlock seam did not inject exactly one failure.");
             Require(
                 finalResultBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
                 "A final result-unlock fault left the would-be result unerased.");
@@ -1101,10 +1120,7 @@ internal static class HybridKeyProtectionTests
         }
         finally
         {
-            SecureMemory.MacMemoryUnlockOverrideForTests = (_, _) => 0;
-            SecureMemory.RetryRetainedFailedLockRollbacksForTests();
-            finalResult?.Dispose();
-            SecureMemory.MacMemoryUnlockOverrideForTests = null;
+            RetryTransferFixtureCleanup(finalResult);
         }
         Require(
             SecureMemory.RetainedFailedLockRollbacksForTests == baselineRetained,
@@ -1127,6 +1143,39 @@ internal static class HybridKeyProtectionTests
                 && ReferenceEquals(compositeFailure.InnerExceptions[0], primaryFailure)
                 && compositeFailure.InnerExceptions[1] is IOException,
             "The primary and cleanup failures were not retained separately.");
+        Require(
+            SecureMemory.LockedBytesForTests == baselineBytes
+                && SecureMemory.LockedAllocationsForTests == baselineAllocations
+                && SecureMemory.RetainedFailedLockRollbacksForTests == baselineRetained,
+            "Locked-transfer cleanup did not restore the real-lock accounting baseline.");
+    }
+
+    private static void RetryTransferFixtureCleanup(params LockedSensitiveBuffer?[] buffers)
+    {
+        var failures = new List<Exception>();
+        SecureMemory.MacMemoryUnlockOverrideForTests = null;
+        try
+        {
+            Action[] cleanupActions =
+            [
+                SecureMemory.RetryRetainedFailedLockRollbacksForTests,
+                () => SecureMemory.ZeroAndDisposeAll(buffers),
+                SecureMemory.RetryRetainedFailedLockRollbacksForTests,
+            ];
+            foreach (Action cleanup in cleanupActions)
+            {
+                try { cleanup(); }
+                catch (Exception failure) { failures.Add(failure); }
+            }
+        }
+        finally
+        {
+            SecureMemory.MacMemoryUnlockOverrideForTests = null;
+        }
+        if (failures.Count != 0)
+        {
+            throw new AggregateException("Locked-transfer fixture cleanup failed after attempting every real unlock.", failures);
+        }
     }
 
     private sealed class FaultingDisposable : IDisposable

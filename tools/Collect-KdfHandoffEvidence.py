@@ -422,7 +422,8 @@ def owner_comparison(captures, path, managed):
     for name, digest in hashes.items():
         captures.artifact(source_root / name, digest, "comparison.public-input")
         if not name.endswith(".dll"):
-            raw_source = captures.read(source_root / name, "owner-before-after/probe-source/" + name, "comparison.public-source")
+            archive_name = name + ".txt" if name == "OwnerBeforeAfterProbe.csproj" else name
+            raw_source = captures.read(source_root / name, "owner-before-after/probe-source/" + archive_name, "comparison.public-source")
             require(sha(raw_source) == digest.lower(), "comparison.public-source-copy")
     receipt_hashes = value["receiptSha256"]
     fields(receipt_hashes, ("before-receipt.json", "after-receipt.json"), "comparison.receipt-hashes")

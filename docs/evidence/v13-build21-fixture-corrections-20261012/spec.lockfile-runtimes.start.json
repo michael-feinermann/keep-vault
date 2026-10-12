@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "actualPid": 48541,
+  "startedUtc": "2026-10-12T10:19:16.056912+00:00",
+  "args": [
+    "/bin/zsh",
+    "-f",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/tools/Test-KeepVault.sh",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "spec.lockfile-runtimes",
+    "--parallel",
+    "1"
+  ],
+  "fixtureSha256Before": "c877d0c71a22c7ccd44822c401d62757faea1858706962990ebbee0898661a32",
+  "sourceHead": "a57882eca4c5a6694bae167527005bb0391babf8",
+  "trackedWorktreeDirty": true,
+  "scope": "Exact targeted test of changed fixture/archival correction; ordinary secure runner and productive costs unchanged. Complete frozen builder remains separate."
+}

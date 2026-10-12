@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "a57882eca4c5a6694bae167527005bb0391babf8",
+  "testInventoryHash": "3b3fb99acb9525e96351c65839f1eadd5c7408ef50d26f30c31fd02275059a96",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "spec.lockfile-runtimes",
+      "name": "lock files match the platform their project builds on",
+      "status": "PASS",
+      "seconds": 2.185,
+      "peakRssMiB": 77,
+      "seed": "0x3FF8E941",
+      "failure": null
+    }
+  ]
+}

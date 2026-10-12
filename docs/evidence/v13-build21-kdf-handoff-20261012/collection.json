@@ -1,6 +1,6 @@
 {
-  "collectorSha256": "06a102a4f5fa90a4642d84b3346170394ad68f8139a64492000c2df5baf62f66",
-  "createdUtc": "2026-10-12T08:49:55.965426+00:00",
+  "collectorSha256": "5c17f7e53dbcaf1838aed518daeb8ecabc1ef71b4e0a4a59ef18c0ded06c5d3c",
+  "createdUtc": "2026-10-12T09:42:26.740016+00:00",
   "limitations": [
     "8 MiB KDF fault injection is not a full production-cost/performance run",
     "Audit harness tests do not execute the actual native GUI campaign",
