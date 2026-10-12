@@ -1,6 +1,7 @@
 using System.Threading;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace KalynaArchiver.Services;
 
@@ -16,6 +17,70 @@ internal static class CpuWorkBudget
     private static TaskCompletionSource Changed = NewSignal();
     private static int _used;
     private static readonly AsyncLocal<Lease?> Ambient = new();
+    private static readonly AsyncLocal<Measurements?> Observer = new();
+
+    // Passive aggregate observations have no scheduling, topology, callback,
+    // cancellation or permit authority. The release audit records only grants
+    // that the normal allocator has already committed.
+    internal static IDisposable ObserveForTests(Measurements measurements)
+    {
+        ArgumentNullException.ThrowIfNull(measurements);
+        var scope = new ObservationScope(Observer.Value);
+        Observer.Value = measurements;
+        return scope;
+    }
+
+    private sealed class ObservationScope(Measurements? previous) : IDisposable
+    {
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Observer.Value = previous;
+            _disposed = true;
+        }
+    }
+
+    internal sealed class Measurements
+    {
+        private readonly object _gate = new();
+        private long _admissions, _releases, _waitTicks;
+        private int _peakUsed, _minimumGrant = int.MaxValue, _maximumGrant, _minimumCeiling = int.MaxValue;
+        private volatile bool _unavailable;
+        internal void Admitted(int ceiling, int used, int grant, long started)
+        {
+            try
+            {
+                lock (_gate)
+                {
+                    _admissions = SaturatingAdd(_admissions, 1);
+                    _waitTicks = SaturatingAdd(_waitTicks, Math.Max(0, Stopwatch.GetTimestamp() - started));
+                    _peakUsed = Math.Max(_peakUsed, used);
+                    _minimumGrant = Math.Min(_minimumGrant, grant);
+                    _maximumGrant = Math.Max(_maximumGrant, grant);
+                    _minimumCeiling = Math.Min(_minimumCeiling, ceiling);
+                }
+            }
+            catch { _unavailable = true; }
+        }
+        internal void Released()
+        {
+            try { lock (_gate) _releases = SaturatingAdd(_releases, 1); }
+            catch { _unavailable = true; }
+        }
+        internal BudgetSnapshot Snapshot()
+        {
+            lock (_gate) return new(_admissions, _releases, _peakUsed,
+                _admissions == 0 ? 0 : _minimumGrant, _maximumGrant,
+                _admissions == 0 ? 0 : _minimumCeiling,
+                (double)_waitTicks / Stopwatch.Frequency, !_unavailable,
+                "Acquisition intervals include allocator/topology work; parallel intervals overlap. Peak reservations include other concurrently active in-process leases. No CPU-time or starvation guarantee is inferred from these aggregates.");
+        }
+        private static long SaturatingAdd(long a, long b) => b > long.MaxValue - a ? long.MaxValue : a + b;
+    }
+    internal sealed record BudgetSnapshot(long Admissions, long Releases, int PeakReservedWorkers,
+        int MinimumGrant, int MaximumGrant, int MinimumObservedCeiling,
+        double AcquisitionWallSecondsSum, bool ObservationAvailable, string Interpretation);
 
     internal static bool IsOwnedByCurrentContext
     {
@@ -29,6 +94,8 @@ internal static class CpuWorkBudget
         if (maximum < 1 || preferred < 1) throw new ArgumentOutOfRangeException(nameof(maximum));
         preferred = Math.Min(preferred, maximum);
         if (reservedHeadroom < 0 || reservedHeadroom >= maximum) throw new ArgumentOutOfRangeException(nameof(reservedHeadroom));
+        Measurements? observation = Observer.Value;
+        long observationStarted = observation is null ? 0 : Stopwatch.GetTimestamp();
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -48,11 +115,12 @@ internal static class CpuWorkBudget
                     int committedUsed = checked(_used + grant);
                     ActiveCeilings.TryGetValue(currentMaximum, out int owners);
                     int committedOwners = checked(owners + 1);
-                    var lease = new Lease(currentMaximum, grant);
+                    var lease = new Lease(currentMaximum, grant, observation);
                     // Dictionary insertion may allocate. Commit the counter
                     // only after every potentially allocating acquisition step.
                     ActiveCeilings[currentMaximum] = committedOwners;
                     _used = committedUsed;
+                    observation?.Admitted(ceiling, committedUsed, grant, observationStarted);
                     return lease;
                 }
                 wait = Changed.Task;
@@ -118,7 +186,7 @@ internal static class CpuWorkBudget
 
     private static TaskCompletionSource NewSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    internal sealed class Lease(int maximum, int workers) : IDisposable
+    internal sealed class Lease(int maximum, int workers, Measurements? observation = null) : IDisposable
     {
         internal bool _disposed;
         internal IDisposable EnterScope()
@@ -145,6 +213,7 @@ internal static class CpuWorkBudget
                 if (owners == 0) ActiveCeilings.Remove(maximum); else ActiveCeilings[maximum] = owners;
                 signal = Changed;
                 Changed = replacement;
+                observation?.Released();
             }
             signal.TrySetResult();
         }

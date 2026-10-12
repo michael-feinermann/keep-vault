@@ -1194,7 +1194,7 @@ internal static partial class MacComprehensiveTests
         (ushort pmiOtherSalt, _) = V13MasterKdf.DerivePmi(
             Algorithm, 1, qs, qk, [], saltSha3, saltSkeinAlt);
         (ushort pmiRound2, _) = V13MasterKdf.DerivePmi(
-            Algorithm, 2, qs, qk, [], saltSha3, saltSkein);
+            Algorithm, 2, qs, qk, qs, saltSha3, saltSkein);
         (ushort pmiAltSha3, _) = V13MasterKdf.DerivePmi(
             Algorithm, 1, qs, qk, [], saltSha3Alt, saltSkein);
         Require(
@@ -1202,7 +1202,7 @@ internal static partial class MacComprehensiveTests
             "PMI ignored the second salt.");
         Require(
             pmi != pmiRound2,
-            "PMI ignored the round number.");
+            "PMI ignored the round domain and its mandatory complete M1 input.");
         Require(
             pmi != pmiAltSha3,
             "PMI ignored the first salt.");
@@ -1257,8 +1257,8 @@ internal static partial class MacComprehensiveTests
             Algorithm, 2, qs, qk, saltSha3Round2, saltSkeinRound2, secret: round1, memory2);
 
         // This is the round-chaining regression, stated the only way that proves
-        // anything: the same round 2 computed with a different secret, and with
-        // no secret at all, must both differ. The old defect made round 2
+        // anything: a changed complete M1 changes round 2, while an absent M1
+        // is rejected before Argon2 starts. The old defect made round 2
         // independent of what came before it.
         byte[] wrongSecret = [.. round1];
         wrongSecret[0] ^= 0xFF;
@@ -1268,11 +1268,10 @@ internal static partial class MacComprehensiveTests
             !FixedEqual(round2, round2WrongSecret),
             "Paranoia round 2 ignored a one-bit change in round 1's master.");
 
-        byte[] round2NoSecret = V13MasterKdf.DeriveRoundMaster(
-            Algorithm, 2, qs, qk, saltSha3Round2, saltSkeinRound2, secret: null, memory2);
-        Require(
-            !FixedEqual(round2, round2NoSecret),
-            "Paranoia round 2 produced the same master with and without the round-1 secret.");
+        RequireThrows<ArgumentException>(
+            () => V13MasterKdf.DeriveRoundMaster(
+                Algorithm, 2, qs, qk, saltSha3Round2, saltSkeinRound2, secret: null, memory2),
+            "Paranoia round 2 accepted an absent round-1 master.");
 
         // The master buffers survive the native calls that clear their copies.
         byte[] round1AfterUse = V13MasterKdf.DeriveRoundMaster(
@@ -1297,7 +1296,7 @@ internal static partial class MacComprehensiveTests
 
         await Task.CompletedTask.ConfigureAwait(false);
         Zero(factorA, factorB, qs, qk, otherA, otherB, saltSha3, saltSkein,
-            round1, round1Again, round2, wrongSecret, round2WrongSecret, round2NoSecret,
+            round1, round1Again, round2, wrongSecret, round2WrongSecret,
             round1AfterUse, katSaltSha3Round1, katSaltSkeinRound1, saltSha3Round2, saltSkeinRound2,
             encryptionKey, macKey);
     }

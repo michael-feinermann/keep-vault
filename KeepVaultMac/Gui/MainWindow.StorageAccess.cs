@@ -25,6 +25,11 @@ public sealed partial class MainWindow
     {
         consumed = false;
         ArgumentNullException.ThrowIfNull(file);
+        if (_releaseAudit is not null)
+        {
+            return false;
+        }
+
         string? path = GetLocalPath(file);
         if (_disposed || path is null || !HasArchiveExtension(path))
         {

@@ -1858,10 +1858,12 @@ public sealed partial class KalynaContainerService
         switch (parameters.Suite)
         {
             case EncryptionSuite.Kalyna512_512:
+                DerivedSecretHandoff.Verify("cipher/Kalyna512_512/standalone-consumer", encryptionKey, parameters.EncryptionKeyBytes);
                 using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.CipherKalyna, length))
                     NativeKalyna.XCryptCtr512(encryptionKey, counter, input, output, length);
                 break;
             case EncryptionSuite.Threefish1024:
+                DerivedSecretHandoff.Verify("cipher/Threefish1024/standalone-consumer", encryptionKey, parameters.EncryptionKeyBytes);
                 using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.CipherThreefish, length))
                     NativeThreefish.XCryptCtr1024(encryptionKey, tweak, counter, input, output, length);
                 break;
@@ -1892,6 +1894,11 @@ public sealed partial class KalynaContainerService
     {
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(tag);
+        ArgumentNullException.ThrowIfNull(encryptionKey);
+        ArgumentNullException.ThrowIfNull(tweak);
+        ArgumentNullException.ThrowIfNull(counter);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         XCrypt(parameters, encryptionKey, tweak, counter, input, output, length);
 
         if (parameters.Cascade is not { OutermostIsAead: true } aeadLayout)
@@ -2005,6 +2012,7 @@ public sealed partial class KalynaContainerService
                 stageKeyLock = SecureMemory.TryLock(stageKey);
                 stageCounterLock = SecureMemory.TryLock(stageCounter);
                 encryptionKey.AsSpan(keyOffsets[index], stage.KeyBytes).CopyTo(stageKey);
+                DerivedSecretHandoff.Verify($"cipher/stage-{index}/{stage.Cipher}/ctr-copy", stageKey, stage.KeyBytes);
                 counter.AsSpan(nonceOffsets[index], stage.NonceBytes).CopyTo(stageCounter);
                 ApplyCtrStage(stage, stageKey, tweak, stageCounter, output, length);
             }
@@ -2084,6 +2092,9 @@ public sealed partial class KalynaContainerService
         byte[] encryptionKey,
         byte[] counter)
     {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentNullException.ThrowIfNull(encryptionKey);
+        ArgumentNullException.ThrowIfNull(counter);
         if (!layout.OutermostIsAead || encryptionKey.Length != layout.TotalKeyBytes
             || counter.Length != layout.TotalNonceBytes)
         {
@@ -2096,9 +2107,20 @@ public sealed partial class KalynaContainerService
         }
         int keyOffset = layout.TotalKeyBytes - stage.KeyBytes;
         int nonceOffset = layout.TotalNonceBytes - stage.NonceBytes;
-        return (
-            encryptionKey.AsSpan(keyOffset, stage.KeyBytes).ToArray(),
-            counter.AsSpan(nonceOffset, stage.NonceBytes).ToArray());
+        byte[] key = encryptionKey.AsSpan(keyOffset, stage.KeyBytes).ToArray();
+        byte[]? nonce = null;
+        try
+        {
+            nonce = counter.AsSpan(nonceOffset, stage.NonceBytes).ToArray();
+            DerivedSecretHandoff.Verify($"cipher/stage-{layout.Stages.Count - 1}/XChaCha20Poly1305/aead-copy", key, stage.KeyBytes);
+            return (key, nonce);
+        }
+        catch
+        {
+            CryptographicOperations.ZeroMemory(key);
+            if (nonce is not null) CryptographicOperations.ZeroMemory(nonce);
+            throw;
+        }
     }
 
     private static void ApplyCtrStage(
@@ -2845,19 +2867,23 @@ public sealed partial class KalynaContainerService
         private IDisposable? _sha3MacKeyLock;
         private IDisposable? _skeinMacKeyLock;
         private bool _disposed;
+        private bool _disposalStarted;
+        private readonly byte[] _encryptionKey;
+        private readonly byte[] _sha3MacKey;
+        private readonly byte[] _skeinMacKey;
 
         private SuiteKeyMaterial(EncryptionSuiteParameters parameters)
         {
-            EncryptionKey = new byte[parameters.EncryptionKeyBytes];
-            Sha3MacKey = new byte[parameters.Sha3MacKeyBytes];
-            SkeinMacKey = new byte[parameters.SkeinMacKeyBytes];
+            _encryptionKey = new byte[parameters.EncryptionKeyBytes];
+            _sha3MacKey = new byte[parameters.Sha3MacKeyBytes];
+            _skeinMacKey = new byte[parameters.SkeinMacKeyBytes];
         }
 
-        public byte[] EncryptionKey { get; }
+        public byte[] EncryptionKey { get { ObjectDisposedException.ThrowIf(_disposalStarted, this); return _encryptionKey; } }
 
-        public byte[] Sha3MacKey { get; }
+        public byte[] Sha3MacKey { get { ObjectDisposedException.ThrowIf(_disposalStarted, this); return _sha3MacKey; } }
 
-        public byte[] SkeinMacKey { get; }
+        public byte[] SkeinMacKey { get { ObjectDisposedException.ThrowIf(_disposalStarted, this); return _skeinMacKey; } }
 
         /// <summary>
         /// Takes over the keys the role schedule derived.
@@ -2870,6 +2896,7 @@ public sealed partial class KalynaContainerService
         public static SuiteKeyMaterial FromRoleKeys(RoleKeyMaterial roles, EncryptionSuiteParameters parameters)
         {
             ArgumentNullException.ThrowIfNull(roles);
+            ArgumentNullException.ThrowIfNull(parameters);
             if (roles.EncryptionKey.Bytes.Length != parameters.EncryptionKeyBytes
                 || roles.Sha3MacKey.Bytes.Length != parameters.Sha3MacKeyBytes
                 || roles.SkeinMacKey.Bytes.Length != parameters.SkeinMacKeyBytes)
@@ -2886,6 +2913,7 @@ public sealed partial class KalynaContainerService
                 roles.EncryptionKey.Bytes.CopyTo(material.EncryptionKey, 0);
                 roles.Sha3MacKey.Bytes.CopyTo(material.Sha3MacKey, 0);
                 roles.SkeinMacKey.Bytes.CopyTo(material.SkeinMacKey, 0);
+                material.VerifyHandoffs(parameters);
                 return material;
             }
             catch (Exception operationFailure)
@@ -2907,6 +2935,7 @@ public sealed partial class KalynaContainerService
 
         public static SuiteKeyMaterial Create(ReadOnlySpan<byte> derivedKey, EncryptionSuiteParameters parameters)
         {
+            ArgumentNullException.ThrowIfNull(parameters);
             if (derivedKey.Length != parameters.DerivedKeyBytes)
             {
                 throw new CryptographicException("Argon2id returned an invalid suite key length.");
@@ -2924,6 +2953,7 @@ public sealed partial class KalynaContainerService
                 derivedKey.Slice(0, encryptionKeyEnd).CopyTo(material.EncryptionKey);
                 derivedKey.Slice(encryptionKeyEnd, parameters.Sha3MacKeyBytes).CopyTo(material.Sha3MacKey);
                 derivedKey.Slice(sha3MacKeyEnd, parameters.SkeinMacKeyBytes).CopyTo(material.SkeinMacKey);
+                material.VerifyHandoffs(parameters);
                 return material;
             }
             catch (Exception operationFailure)
@@ -2968,9 +2998,28 @@ public sealed partial class KalynaContainerService
 
         internal void ZeroForDisposal()
         {
-            CryptographicOperations.ZeroMemory(EncryptionKey);
-            CryptographicOperations.ZeroMemory(Sha3MacKey);
-            CryptographicOperations.ZeroMemory(SkeinMacKey);
+            _disposalStarted = true;
+            CryptographicOperations.ZeroMemory(_encryptionKey);
+            CryptographicOperations.ZeroMemory(_sha3MacKey);
+            CryptographicOperations.ZeroMemory(_skeinMacKey);
+        }
+
+        private void VerifyHandoffs(EncryptionSuiteParameters parameters)
+        {
+            string prefix = $"v13/{parameters.Algorithm}/suite-copy";
+            DerivedSecretHandoff.Verify($"{prefix}/encryption", _encryptionKey, parameters.EncryptionKeyBytes);
+            if (parameters.Cascade is { } layout)
+            {
+                int offset = 0;
+                for (int stage = 0; stage < layout.Stages.Count; stage++)
+                {
+                    CascadeStage spec = layout.Stages[stage];
+                    DerivedSecretHandoff.Verify($"{prefix}/stage-{stage}/{spec.Cipher}", _encryptionKey.AsSpan(offset, spec.KeyBytes), spec.KeyBytes);
+                    offset += spec.KeyBytes;
+                }
+            }
+            DerivedSecretHandoff.Verify($"{prefix}/sha3-mac", _sha3MacKey, parameters.Sha3MacKeyBytes);
+            DerivedSecretHandoff.Verify($"{prefix}/skein-mac", _skeinMacKey, parameters.SkeinMacKeyBytes);
         }
     }
 
@@ -3138,6 +3187,7 @@ internal static unsafe class NativeKalyna
 
     public static void XCryptCtr512(byte[] key, byte[] nonce, byte[] input, byte[] output)
     {
+        ArgumentNullException.ThrowIfNull(input);
         XCryptCtr512(key, nonce, input, output, input.Length);
     }
 
@@ -3160,6 +3210,10 @@ internal static unsafe class NativeKalyna
 
     private static void XCryptCtr512(byte[] key, byte[] nonce, byte[] input, byte[] output, int length, bool forceScalar)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(nonce);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != 64 || nonce.Length != 64 || length < 0 || input.Length < length || output.Length < length)
         {
             throw new ArgumentException("Kalyna-512/512 requires a 64-byte key, 64-byte nonce, and sufficiently large buffers.");
@@ -3263,6 +3317,10 @@ internal static unsafe class NativeThreefish
 
     public static void EncryptBlock1024(byte[] key, byte[] tweak, byte[] input, byte[] output)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(tweak);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != 128 || tweak.Length != 16 || input.Length != 128 || output.Length != 128)
         {
             throw new ArgumentException("Threefish-1024 requires a 128-byte key/block and a 16-byte tweak.");
@@ -3286,11 +3344,17 @@ internal static unsafe class NativeThreefish
 
     public static void XCryptCtr1024(byte[] key, byte[] tweak, byte[] nonce, byte[] input, byte[] output)
     {
+        ArgumentNullException.ThrowIfNull(input);
         XCryptCtr1024(key, tweak, nonce, input, output, input.Length);
     }
 
     public static void XCryptCtr1024(byte[] key, byte[] tweak, byte[] nonce, byte[] input, byte[] output, int length)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(tweak);
+        ArgumentNullException.ThrowIfNull(nonce);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != 128
             || tweak.Length != 16
             || nonce.Length != 128
@@ -3327,6 +3391,7 @@ internal static unsafe class NativeThreefish
 
     public static NativeSkein1024Mac CreateSkeinMac(byte[] key)
     {
+        ArgumentNullException.ThrowIfNull(key);
         if (key.Length != Skein1024Digest.MacKeySize)
         {
             throw new ArgumentException("Skein-1024 keyed mode requires a 128-byte key.", nameof(key));
@@ -3349,6 +3414,7 @@ internal static unsafe class NativeThreefish
 
     internal static byte[] HashSkein1024Reference(byte[] input)
     {
+        ArgumentNullException.ThrowIfNull(input);
         EnsureLoaded();
         byte[] output = new byte[Skein1024Digest.DigestSize];
         int result;
@@ -3369,6 +3435,8 @@ internal static unsafe class NativeThreefish
 
     internal static byte[] MacSkein1024Reference(byte[] key, byte[] input)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(input);
         if (key.Length != Skein1024Digest.MacKeySize)
         {
             throw new ArgumentException("Skein-1024 keyed mode requires a 128-byte key.", nameof(key));

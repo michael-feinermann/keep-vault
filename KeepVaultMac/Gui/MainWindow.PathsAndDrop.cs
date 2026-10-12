@@ -216,7 +216,7 @@ public sealed partial class MainWindow
         // nor dispose them before a possible later Drop owns the batch.
         e.DragEffects = DragDropEffects.None;
         e.Handled = true;
-        if (_disposed) return;
+        if (_disposed || _releaseAudit is not null) return;
         try
         {
             IReadOnlyList<IStorageItem> items = e.DataTransfer.TryGetFiles() ?? [];
@@ -247,6 +247,13 @@ public sealed partial class MainWindow
 
     private void ApplyDrop(DragEventArgs e, MacDropTarget target)
     {
+        if (_releaseAudit is not null)
+        {
+            e.DragEffects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+
         IStorageItem[] items = (e.DataTransfer.TryGetFiles() ?? [])
             .Distinct<IStorageItem>(ReferenceEqualityComparer.Instance).ToArray();
         var consumed = new HashSet<IStorageItem>(ReferenceEqualityComparer.Instance);

@@ -3,8 +3,10 @@ using System.Diagnostics;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// Internal, opt-in diagnostic seam. Production has no activation through
-/// arguments, environment, settings, UI, IPC or files. No observer callbacks.
+/// Internal, opt-in passive diagnostic seam. Normal production operations have
+/// no external observer configuration. The fixed, isolated public-fixture
+/// release-audit GUI session may observe its own operations. No callbacks,
+/// secrets, scheduling or operation-authority changes are exposed here.
 /// </summary>
 internal static class OperationPhaseProfile
 {

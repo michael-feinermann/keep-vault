@@ -460,11 +460,12 @@ core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
 marketing_version='5.0.3'
-build_version='20'
+build_version='21'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
 release_mode=0
+prerelease_mode=0
 install_for_tests=0
 notarize_in_xcode=0
 notarization_completed=0
@@ -495,7 +496,8 @@ usage() {
   print -u2 '       [--pfx FILE] [--mldsa-private-key-encrypted FILE] [--pfx-password-encrypted FILE]'
   print -u2 '       [--mldsa-public-key FILE]'
   print -u2 '       [--version X.Y.Z] [--build-number N]'
-  print -u2 '       [--notary-profile NOTARYTOOL_KEYCHAIN_PROFILE | --notarize-in-xcode] [--release] [--preflight]'
+  print -u2 '       [--notary-profile NOTARYTOOL_KEYCHAIN_PROFILE | --notarize-in-xcode] [--release | --prerelease] [--preflight]'
+  print -u2 '       --prerelease requires Developer ID and notarization; the full --release performance campaign remains pending.'
   print -u2 '       [--install-for-tests] (explicitly install this same candidate before root-anchor tests)'
   print -u2 '       [--tool-path-self-test] [--notice-binding-self-test]'
   exit 64
@@ -547,6 +549,10 @@ while (( $# != 0 )); do
       release_mode=1
       shift
       ;;
+    --prerelease)
+      prerelease_mode=1
+      shift
+      ;;
     --install-for-tests)
       install_for_tests=1
       shift
@@ -575,6 +581,15 @@ while (( $# != 0 )); do
     *) usage ;;
   esac
 done
+
+if (( release_mode && prerelease_mode )); then
+  print -u2 -- '--release and --prerelease are mutually exclusive.'
+  exit 64
+fi
+if (( prerelease_mode && ! notarize_in_xcode )) && [[ -z ${notary_profile} ]]; then
+  print -u2 'PRERELEASE GATE: --prerelease requires --notary-profile or --notarize-in-xcode.'
+  exit 2
+fi
 
 if (( notarize_in_xcode )) && [[ -n ${notary_profile} ]]; then
   print -u2 -- '--notarize-in-xcode cannot be combined with a notarytool profile.'
@@ -844,7 +859,7 @@ if [[ ${identity_label} == 'Developer ID Application:'* ]]; then
   fi
 elif [[ ${identity_label} == 'Apple Development:'* ]]; then
   timestamp_arguments=(--timestamp=none)
-  if (( release_mode || notarize_in_xcode )); then
+  if (( release_mode || prerelease_mode || notarize_in_xcode )); then
     print -u2 'RELEASE GATE: published releases and Xcode notarization require Developer ID.'
     exit 2
   fi
@@ -988,6 +1003,9 @@ if (( preflight_only )); then
   print "preflight=passed"
   print "identity=${identity}"
   print "architecture=${architecture}"
+  if (( prerelease_mode )); then
+    print 'build_mode=prerelease (preflight only; no artifact publication or full release approval)'
+  fi
   exit 0
 fi
 
@@ -2110,6 +2128,23 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     recovery.physical-eio-repair
     packaging.keychain-secret-not-in-argv
     packaging.hybrid-key-separation
+    security.kdf-handoff-fault-matrix
+    security.kdf-null-width-round-contracts
+    security.kdf-key-owner-contracts
+    security.kdf-handoff-destination-cleanup
+    security.native-managed-null-contracts
+    security.native-managed-width-contracts
+    crypto.native-constant-key-oracles
+    kdf.native-constant-argon-inputs
+    security.downstream-suite-handoff-faults
+    security.downstream-mac-handoff-faults
+    security.downstream-recovery-handoff-faults
+    security.downstream-disposed-owner-faults
+    security.downstream-null-width-contracts
+    audit.fixed-cli-isolation
+    audit.passive-cpu-observer
+    audit.metadata-allowlist
+    audit.initialization-close-join
     zpaq.full-matrix
     zpaq.verified-read-at
     entropy.rev9-routing
@@ -2302,7 +2337,7 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
     exit 2
   fi
   parallel_test_workers=$(( logical_processors > 8 ? 8 : logical_processors ))
-  if (( release_mode )); then
+  if (( release_mode || prerelease_mode )); then
     # Isolated test hosts do not share the product's live memory reservations.
     # Run release cases sequentially so concurrent full-cost KDFs cannot
     # prevent a negative case from reaching its intended authentication gate.
@@ -2579,10 +2614,21 @@ ${script_dir}/Stage-TestNatives-macOS.sh \
   fi
 )
 
-# ATOMIC PUBLISH: Only official, Developer-ID-signed and notarized release artifacts
-# land in dist/. Development and local builds land in build/dev/ to avoid accidental distribution.
+# ATOMIC PUBLISH: The official release and provisional prerelease have separate
+# destinations. Both require Developer ID and notarization. Development builds
+# remain in build/dev/; the prerelease never replaces the official release tree.
 publish_target_dir=''
-if (( release_mode && notarization_completed )) && [[ ${identity_details} == *'Developer ID Application'* ]]; then
+if (( prerelease_mode )); then
+  if (( ! notarization_completed )) || [[ ${identity_label} != 'Developer ID Application:'* ]]; then
+    print -u2 'PRERELEASE GATE: publication requires Developer ID and completed, verified notarization.'
+    exit 2
+  fi
+  # Keep the same directly opened parent as the official publish path. A nested
+  # dist/prerelease parent would introduce an unchecked intermediate ancestor.
+  publish_target_dir=${repo_root}/dist/Keep\ Vault-macOS-prerelease
+  print 'publish_mode=prerelease (Developer ID + notarized; ordinary native/security/functional gates completed)'
+  print 'full_release_gate=NOT_RUN (--release performance campaign remains pending)'
+elif (( release_mode && notarization_completed )) && [[ ${identity_details} == *'Developer ID Application'* ]]; then
   publish_target_dir=${repo_root}/dist/Keep\ Vault-macOS
 else
   publish_target_dir=${repo_root}/build/dev/Keep\ Vault-macOS

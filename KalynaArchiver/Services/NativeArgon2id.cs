@@ -33,6 +33,9 @@ internal static unsafe partial class NativeArgon2id
 
     public static void HashRaw(uint iterations, uint memoryKiB, uint parallelism, byte[] password, byte[] salt, byte[] output)
     {
+        ArgumentNullException.ThrowIfNull(password);
+        ArgumentNullException.ThrowIfNull(salt);
+        ArgumentNullException.ThrowIfNull(output);
         if (password.Length == 0 || salt.Length < 8 || output.Length < 4)
         {
             throw new ArgumentException("Argon2id benötigt Passwort-, Salt- und Output-Puffer.");
@@ -62,6 +65,7 @@ internal static unsafe partial class NativeArgon2id
 
             if (result != 0)
             {
+                CryptographicOperations.ZeroMemory(output);
                 string lockFailure = DescribeMemoryLockFailure();
                 throw new CryptographicException($"Argon2id PHC reference returned {result}: {GetErrorMessage(result)}.{lockFailure}");
             }
@@ -143,6 +147,15 @@ internal static unsafe partial class NativeArgon2id
         {
             throw new ArgumentException("A v13 Argon2id branch requires associated data.", nameof(associatedData));
         }
+        // Reject missing/truncated one-call inputs before loading a library
+        // or reserving its working set. A NULL optional secret means round 1.
+        if (password.Length != V13MasterKdf.CredentialHashBytes
+            || salt.Length != KdfSalts.SaltBytes
+            || output.Length != V13MasterKdf.BranchOutputBytes
+            || (secret is { Length: > 0 } && secret.Length != V13MasterKdf.MasterBytes))
+        {
+            throw new ArgumentException("A v13 Argon2id branch requires complete credential, salt, secret and output buffers.");
+        }
 
         EnsureLoaded();
 
@@ -176,6 +189,7 @@ internal static unsafe partial class NativeArgon2id
 
             if (result != 0)
             {
+                CryptographicOperations.ZeroMemory(output);
                 string lockFailure = DescribeMemoryLockFailure();
                 throw new CryptographicException(
                     $"Argon2id v13 returned {result}: {GetErrorMessage(result)}.{lockFailure}");

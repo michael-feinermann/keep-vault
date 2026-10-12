@@ -8,6 +8,10 @@ namespace KalynaArchiver.Services;
 internal sealed class ConsumedEntropySnapshot(
     SensitiveMouseRecordStore[] records, ulong[] epochs, EntropyPreparationKind kind, CancellationToken token) : IDisposable
 {
+    // Fixed public-fixture release-audit cases only. No external setter exists;
+    // the isolated GUI child clears the hook before cleanup retry and shutdown.
+    // Only a hash-family selector and a processed-record count cross this seam.
+    internal static Action<bool, long>? AfterReplayRecordForReleaseAudit;
     private readonly CancellationTokenSource _cancel = CancellationTokenSource.CreateLinkedTokenSource(token);
     private readonly object _disposeGate = new();
     private bool _disposed;
@@ -135,6 +139,7 @@ internal sealed class ConsumedEntropySnapshot(
                 int written = sha512 ? Sha512Compat.HashData(transcript.Bytes, accumulator.Bytes)
                     : Sha3_512Compat.HashData(transcript.Bytes, accumulator.Bytes);
                 if (written != 64) throw new CryptographicException("Entropy replay returned an invalid digest width.");
+                AfterReplayRecordForReleaseAudit?.Invoke(sha512, checked(position + 1));
             }
             token.ThrowIfCancellationRequested();
             FinalizePoolOutput(accumulator.Bytes, epoch, purpose, sha512, output);

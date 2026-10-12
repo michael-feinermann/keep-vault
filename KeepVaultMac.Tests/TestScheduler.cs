@@ -857,6 +857,17 @@ internal static class TestCoordinator
             + "private-prefix E2E_PHASE_PROFILE_JSON={\"unrelated\":true}\n"
             + WorkerResultMarker + "{\"schemaVersion\":1,\"status\":\"PASS\"}\n";
         const string privateStandardError = "private-unrelated-stderr";
+        const string publicHandoffRow = "KDF_HANDOFF_MATRIX {\"status\":\"PASS\",\"boundaryCount\":626,\"caseCount\":2504}";
+        string mixedHandoffOutput = "private-unrelated-stdout\n" + publicHandoffRow + "\r\n"
+            + "private-prefix " + publicHandoffRow + "\n" + mixedReleaseOutput;
+        (string handoffOutput, string handoffError) = SelectWorkerDiagnostics(
+            light with { Id = "security.kdf-handoff-fault-matrix" }, mixedHandoffOutput, privateStandardError);
+        Require(handoffOutput == publicHandoffRow && handoffError.Length == 0,
+            "The handoff evidence filter lost the public row or disclosed unrelated worker output.");
+        (string unrelatedHandoffOutput, string unrelatedHandoffError) = SelectWorkerDiagnostics(
+            light with { Id = "security.kdf-handoff-fault-matrix-other" }, mixedHandoffOutput, privateStandardError);
+        Require(unrelatedHandoffOutput.Length == 0 && unrelatedHandoffError.Length == 0,
+            "The handoff evidence filter accepted a different test identifier.");
         TestCase structureRelease = light with { Id = "release.v13-paranoia-structure512" };
         (string releaseOutput, string releaseError) = SelectWorkerDiagnostics(
             structureRelease, mixedReleaseOutput, privateStandardError);
@@ -1347,6 +1358,27 @@ internal static class TestCoordinator
     {
         if (test.IsPerformance)
             return (ExtractWorkerDiagnostics(standardOutput), standardError);
+
+        string? handoffPrefix = test.Id switch
+        {
+            "security.kdf-handoff-fault-matrix" => "KDF_HANDOFF_MATRIX ",
+            "security.downstream-suite-handoff-faults" or
+            "security.downstream-mac-handoff-faults" or
+            "security.downstream-recovery-handoff-faults" => "handoff_fault_matrix=",
+            "security.downstream-disposed-owner-faults" => "handoff_owner_lifecycle=",
+            _ => null,
+        };
+        if (handoffPrefix is not null)
+        {
+            // These exact tests emit only public boundary IDs, fault labels,
+            // counts and cleanup dispositions. Preserve their review evidence
+            // without forwarding unrelated logs, stderr or worker envelopes.
+            string publicRows = string.Join(Environment.NewLine, standardOutput
+                .Split('\n').Select(line => line.TrimEnd('\r'))
+                .Where(line => line.Length <= 1 << 20
+                    && line.StartsWith(handoffPrefix, StringComparison.Ordinal)));
+            return (publicRows, string.Empty);
+        }
 
         if (!string.Equals(test.Id, "release.v13-paranoia-structure512", StringComparison.Ordinal))
             return (string.Empty, string.Empty);

@@ -1,0 +1,365 @@
+{
+  "status": "FAIL",
+  "binding": {
+    "harnessSha256": "1d7090a23c54ae3a4cab7bd7b74cd5a8ce8b455e68c3a9030ad922a541c34f57",
+    "productSha256": "dbf9399d9dc80365760dd55b689b514aff2418462eb7ccacf592fbd1068925ef",
+    "sdkHostSha256": "2ff302a3c5cecc4a371fd6482d2f5547c57d93eff9fe19919ef729a54f69ce04",
+    "nativeFiles": {
+      "libkalyna_v13.dylib": "e7a79b8d9989291ce77689ee4519d39e7c58e9653f0e10339385668bf74a5882",
+      "libargon2_ref.dylib": "a5d20afe53cbbc6504f2b364ed28911d7e2d31a6b9a24ecaf7bdeac2034de039",
+      "libsha3_ref.dylib": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45",
+      "libshacal2_ref.dylib": "9930e72e935b2d7edcb3e5de3d1ca5663b7cc2233fc7073a25ca9377163c5113",
+      "libmldsa87_ref.dylib": "14544e9dbc2ab6d1ad0d38d49eab95cc42ed80acc27a2cb615836362cd545382",
+      "libserpent_v13.dylib": "2ae8c5fcf8893d32b06b19087a80633eceb067da061bb30bda09509f8da1c751",
+      "libxchachapoly_v13.dylib": "7ce5062de2aadb34a66ce5fb6d7418765817576b5f5b6ed44a934d03808a099a",
+      "libthreefish_ref.dylib": "7899d0334c23d9f78423f19713c9bbe8dd6875255191711ce18e648c65cd87a6",
+      "libcamellia_v13.dylib": "2406ef353a627cbf3f1ef030d93ebe3ab11287e8cdf79b01f527b8af26ebef0e",
+      "libmars_ref.dylib": "ffb679b0d6aff77af0ea40d069a6704ceb14446cf86e0f9abf55308c11608e71",
+      "libaes_ref.dylib": "f0dad7807456ae59d5cc0b471933081a5aaa992c459f784b40858bff3d5de34f"
+    }
+  },
+  "cases": [
+    {
+      "testId": "security.native-managed-null-contracts",
+      "pid": 78359,
+      "startedUtc": "2026-10-12T08:34:09.728703+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.native-managed-null-contracts",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 0,
+      "terminalUtc": "2026-10-12T08:34:09.980921+00:00",
+      "stdoutSha256": "6030b06d2ea9506dcaecb600b747c859ec5de6cba108c2e886acc007899d3c67",
+      "binaryBindingStable": true,
+      "resultsSha256": "477c367bd79eb33982209ab0986bcf4fed794360b184b83063da0f0e4d9e63c7"
+    },
+    {
+      "testId": "security.kdf-handoff-fault-matrix",
+      "pid": 78364,
+      "startedUtc": "2026-10-12T08:34:09.985279+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.kdf-handoff-fault-matrix",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:10.206528+00:00",
+      "stdoutSha256": "6e754bc535729a673a3a99e59ad79e97259d15cd3ffb6b19124351305ea046c9",
+      "binaryBindingStable": true,
+      "resultsSha256": "e442a4af6afe702338c05a4daf4181d0d8b2e5473410570a56b8cbaf2d3e9a12"
+    },
+    {
+      "testId": "security.kdf-null-width-round-contracts",
+      "pid": 78371,
+      "startedUtc": "2026-10-12T08:34:10.210842+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.kdf-null-width-round-contracts",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:10.451301+00:00",
+      "stdoutSha256": "438ca6f2de854b1b7d6a3e305744ba0ecabf86482db1e7182c6cf0c85e2d217e",
+      "binaryBindingStable": true,
+      "resultsSha256": "f152dd22df0091f612300a9830dd7ea23f58f89d42e10ff3e63d684aed5e1d97"
+    },
+    {
+      "testId": "security.kdf-key-owner-contracts",
+      "pid": 78376,
+      "startedUtc": "2026-10-12T08:34:10.455512+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.kdf-key-owner-contracts",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 0,
+      "terminalUtc": "2026-10-12T08:34:10.646214+00:00",
+      "stdoutSha256": "f5885c7e9aeb90a5b64568bcffcf4176b4de1194b8de33f068c89c3714f54685",
+      "binaryBindingStable": true,
+      "resultsSha256": "dcb8c347cf8d37843105fdf2f7ffa81619e0621bb84fb9539e16c06c3e20e59f"
+    },
+    {
+      "testId": "security.kdf-handoff-destination-cleanup",
+      "pid": 78381,
+      "startedUtc": "2026-10-12T08:34:10.649779+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.kdf-handoff-destination-cleanup",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:10.840361+00:00",
+      "stdoutSha256": "86bd2fe2d5a7953fc44cea8b4f0c41f4f015c23cfc724addebd125dd3fe06822",
+      "binaryBindingStable": true,
+      "resultsSha256": "4098a2d46694032feeaf9f21dd2e4660f02407ad473f0af25000dfa86dd3a02f"
+    },
+    {
+      "testId": "security.native-managed-width-contracts",
+      "pid": 78386,
+      "startedUtc": "2026-10-12T08:34:10.844017+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.native-managed-width-contracts",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 0,
+      "terminalUtc": "2026-10-12T08:34:11.020403+00:00",
+      "stdoutSha256": "b8b9cb8751dae64bd622fd4a75a53d23ad332b7a4a3f2d59e44319e4ecff6397",
+      "binaryBindingStable": true,
+      "resultsSha256": "f1a1e249db5986a1e247bdd9d64473174b312136dd668cb43e497bdf1cf005e9"
+    },
+    {
+      "testId": "crypto.native-constant-key-oracles",
+      "pid": 78391,
+      "startedUtc": "2026-10-12T08:34:11.023899+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "crypto.native-constant-key-oracles",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:11.208365+00:00",
+      "stdoutSha256": "f02ffb1d6d6ddee119dff0b84368bc5457b657cef87fc0d2c114f3a765a28039",
+      "binaryBindingStable": true,
+      "resultsSha256": "a58c12cde63e5a663f7f0b8b25920d4175515bba530ba0267dfba3be9eed798e"
+    },
+    {
+      "testId": "kdf.native-constant-argon-inputs",
+      "pid": 78396,
+      "startedUtc": "2026-10-12T08:34:11.212074+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "kdf.native-constant-argon-inputs",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:11.559332+00:00",
+      "stdoutSha256": "977b804fb0fc76b1d001030b18b955e65f26fb35055107c1b84f144d992f4f70",
+      "binaryBindingStable": true,
+      "resultsSha256": "6ecc5231cf8e7e0ac284307e875ceaabd2f8fc1b5ed748306a3355440aa8485d"
+    },
+    {
+      "testId": "security.downstream-suite-handoff-faults",
+      "pid": 78402,
+      "startedUtc": "2026-10-12T08:34:11.562936+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.downstream-suite-handoff-faults",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:11.767134+00:00",
+      "stdoutSha256": "1cda09ebf29ce83705a1699fe1a5bf87fcb8dce8e9a85058854fe298ba45f5a4",
+      "binaryBindingStable": true,
+      "resultsSha256": "2aa32ae2aacc08fa90f33507d284c44fb7110fa9915921a5a99645053645b70d"
+    },
+    {
+      "testId": "security.downstream-mac-handoff-faults",
+      "pid": 78410,
+      "startedUtc": "2026-10-12T08:34:11.771261+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.downstream-mac-handoff-faults",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:11.976629+00:00",
+      "stdoutSha256": "b6582ef2fffb849f89c5a598d3d7ab1f83ca8b58ffa45ae543a87706520c7edc",
+      "binaryBindingStable": true,
+      "resultsSha256": "2b6af8430969f99255fab31dd0bd4dff247c21a160ec83eb04863ca41413846a"
+    },
+    {
+      "testId": "security.downstream-recovery-handoff-faults",
+      "pid": 78417,
+      "startedUtc": "2026-10-12T08:34:11.980253+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.downstream-recovery-handoff-faults",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:12.191681+00:00",
+      "stdoutSha256": "a83cf4967776f84befbefd9cf70b4904240b46a29f7158279ae760f44f889994",
+      "binaryBindingStable": true,
+      "resultsSha256": "bf406be50d37ccbe4ac2a95ac63110f2bc4c591a5df8857afbf79709478ee882"
+    },
+    {
+      "testId": "security.downstream-disposed-owner-faults",
+      "pid": 78427,
+      "startedUtc": "2026-10-12T08:34:12.195548+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.downstream-disposed-owner-faults",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:12.438156+00:00",
+      "stdoutSha256": "14e325b80abdfc273919fbad8dc63bda128e36d8120483e6dab96099daea9d54",
+      "binaryBindingStable": true,
+      "resultsSha256": "f46ed0bad84b3611bda792261fa64b98cce73a7e540fb6899ea522a1bf0a1f5a"
+    },
+    {
+      "testId": "security.downstream-null-width-contracts",
+      "pid": 78433,
+      "startedUtc": "2026-10-12T08:34:12.441785+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "security.downstream-null-width-contracts",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 1,
+      "terminalUtc": "2026-10-12T08:34:12.642588+00:00",
+      "stdoutSha256": "505f520437d2990b2dd0123ab02eba48a26d8f1d6707ef4f30484b787013b5f3",
+      "binaryBindingStable": true,
+      "resultsSha256": "20b1478066a856adc1165882432b3e73c155fc49ae2a822c1096e1caee903238"
+    },
+    {
+      "testId": "audit.fixed-cli-isolation",
+      "pid": 78438,
+      "startedUtc": "2026-10-12T08:34:12.646330+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "audit.fixed-cli-isolation",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 0,
+      "terminalUtc": "2026-10-12T08:34:12.823416+00:00",
+      "stdoutSha256": "7f510ab162e84ed05e71b7f20cad0b83d8c2e1de1bda2d7f8607a30135a5de31",
+      "binaryBindingStable": true,
+      "resultsSha256": "337cdb3c30c47f36fd149ec7380eb7c45dcdf2b565c3004879092490c3dad0a7"
+    },
+    {
+      "testId": "audit.passive-cpu-observer",
+      "pid": 78443,
+      "startedUtc": "2026-10-12T08:34:12.827099+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "audit.passive-cpu-observer",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 0,
+      "terminalUtc": "2026-10-12T08:34:13.024724+00:00",
+      "stdoutSha256": "c4e04a964a30de05de61c63617dbe62038058c1715e0e3480036ee001a9bb73a",
+      "binaryBindingStable": true,
+      "resultsSha256": "42d141fcb00e3d87038c440cec1addcd47fa87e6443f0ac191c7d63418fa40ff"
+    },
+    {
+      "testId": "audit.metadata-allowlist",
+      "pid": 78448,
+      "startedUtc": "2026-10-12T08:34:13.028522+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "audit.metadata-allowlist",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 0,
+      "terminalUtc": "2026-10-12T08:34:13.214304+00:00",
+      "stdoutSha256": "69018f3a74d76ffecefde9b14cf2d12a385b225762dec26d99a3342863472a9a",
+      "binaryBindingStable": true,
+      "resultsSha256": "cd39beb830d0cabf21c5c5f7117b69cef43e2ccc2d2a31405b7ea2ea0df506eb"
+    },
+    {
+      "testId": "audit.initialization-close-join",
+      "pid": 78453,
+      "startedUtc": "2026-10-12T08:34:13.218121+00:00",
+      "args": [
+        "/private/tmp/keep-vault-kdf-build-utngfbys/sdk/dotnet",
+        "/private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+        "--full",
+        "--no-smoke",
+        "--only",
+        "audit.initialization-close-join",
+        "--parallel",
+        "1"
+      ],
+      "exitCode": 0,
+      "terminalUtc": "2026-10-12T08:34:14.082580+00:00",
+      "stdoutSha256": "2cdd2bbd7e8afb7c62b19d598fefd3e6c7a2ca2aea6a66a7ea7a81d6b2e3fb33",
+      "binaryBindingStable": true,
+      "resultsSha256": "73944e2486058727aa1c875fbd708d759f3273dabbc81ff97399870f31327935"
+    }
+  ],
+  "finishedUtc": "2026-10-12T08:34:14.085003+00:00",
+  "scope": "Actual targeted managed harness cases, no native GUI or complete release verdict"
+}

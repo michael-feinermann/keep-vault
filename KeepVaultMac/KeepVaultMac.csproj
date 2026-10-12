@@ -103,6 +103,7 @@
     <Compile Include="../KalynaArchiver/Services/Skein1024Service.cs" Link="Services/Skein1024Service.cs" />
     <Compile Include="../KalynaArchiver/Services/KdfPrimitives.cs" Link="Services/KdfPrimitives.cs" />
     <Compile Include="../KalynaArchiver/Services/SuiteKeySchedule.cs" Link="Services/SuiteKeySchedule.cs" />
+    <Compile Include="../KalynaArchiver/Services/DerivedSecretHandoff.cs" Link="Services/DerivedSecretHandoff.cs" />
     <Compile Include="../KalynaArchiver/Services/KdfSalts.cs" Link="Services/KdfSalts.cs" />
     <Compile Include="../KalynaArchiver/Services/ArchiveOperationPolicy.cs" Link="Services/ArchiveOperationPolicy.cs" />
     <Compile Include="../KalynaArchiver/Services/ResourcePlanning.cs" Link="Services/ResourcePlanning.cs" />

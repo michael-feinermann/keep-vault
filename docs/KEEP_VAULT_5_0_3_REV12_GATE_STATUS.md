@@ -1,5 +1,15 @@
 # Keep Vault 5.0.3 / v13: REV12-Abnahmematrix
 
+## Aktueller Auftrag: vorläufige Veröffentlichung Build 21, 12. Oktober 2026
+
+Der Benutzer hat ausdrücklich eine vorläufige GitHub-Freigabe verlangt und die abschließenden Langläufe sowie vergleichbaren Geschwindigkeitsmessungen verschoben. Gesamtstatus: `NICHT GESAMTFREIGEGEBEN`. Ein neuer Build 21 wird als eigene Vorabversion vorbereitet; die offizielle Version 5.0.2 und der ältere Build-20-Kandidat bleiben unverändert.
+
+Die [KDF-/Schlüsselübergabeprüfung](KEEP_VAULT_5_0_3_KDF_HANDOFF_REVIEW.md) dokumentiert behobene Null- und Lifecycle-Verträge, 2.504 injizierte KDF-/Rollenfehler an 626 Grenzen, 440 weitere Cipher-/MAC-/Recovery-Fehler und 48 Caller-Cleanup-Fälle. Alle 17 neuen gezielten Managed-Gruppen bestehen. Die tatsächlichen nativen Nullpointer-/Breitenprüfungen bestehen mit je 161 Fällen auf ARM64 und x86_64 unter Rosetta. Das [öffentliche Belegpaket](evidence/v13-build21-kdf-handoff-20261012/README.md) trennt diese Entwicklungsassembly und ihre signierten Native-Dateien von dem erst anschließend zu bauenden Universal-/AOT-Kandidaten. Frühere fehlgeschlagene Versuche werden erhalten.
+
+Der neue isolierte [GUI-Audit-Modus](KEEP_VAULT_5_0_3_RELEASE_AUDIT_MODE_REVIEW.md) besitzt vier bestandene gezielte Gruppen einschließlich echter Initializer-/Window-Dispose-Join-Prüfung. Das ist kein Ersatz für die ausstehenden realen Bedienprüfungen. Eine Vorabversion verlangt weiterhin die reguläre vollständige Funktionssuite, Apple-/Hybrid-Signaturen, Notarisierung und eine frische Prüfung der öffentlich heruntergeladenen Dateien. Diese Gates sind hier bis zu ihren tatsächlichen neuen Belegen `NOT RUN`. Der vollständige 49-Phasen-Releaseblock samt Baseline und Grenzwerten bleibt unverändert und wird durch eine Vorabversion nicht bestanden.
+
+Die nachfolgenden Abschnitte sind historische, an ihre jeweiligen Quellen und Produktbytes gebundene Belege. Sie erteilen keine aktuelle Build-21-Gesamtfreigabe.
+
 ## Installerhinweis und erneuter Abschlusslauf, 5. Oktober 2026
 
 Der ergänzende Abgleich mit REV12 Abschnitt 0 hat einen fehlenden Installationshinweis gefunden: Der native macOS-Installer und die Installationsanleitung erwähnten die absichtliche v12-Inkompatibilität nicht vor dem Installationsabschluss. Der anfängliche Bestätigungsdialog zeigt diesen Hinweis jetzt auf Deutsch und Englisch vor „Installieren“. Auch die Anleitung und der reguläre CLI-Installer nennen ihn; der CLI-Hinweis steht vor dem Beginn der Mutationstransaktion. Vorhandene v12-Archive, KPAR2-Dateien und Schlüsselzettel bleiben unverändert, eine automatische Konvertierung findet nicht statt. Die Änderung betrifft ausschließlich Hinweistexte, keine Kryptografie oder Installationsschutzprüfung.

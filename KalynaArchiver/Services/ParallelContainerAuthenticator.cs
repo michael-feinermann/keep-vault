@@ -180,6 +180,8 @@ internal static class ParallelContainerAuthenticator
             }
 
             PhaseTimer rootInitialization = Measure(PhaseForTests.RootInitialization);
+            DerivedSecretHandoff.Verify("mac/tree/sha3-root-consumer", sha3RootKey.Bytes, Sha3Bytes);
+            DerivedSecretHandoff.Verify("mac/tree/skein-root-consumer", skeinRootKey.Bytes, SkeinBytes);
             using var rootSha3 = new HmacSha3_512(sha3RootKey.Bytes);
             using NativeSkein1024Mac rootSkein = NativeThreefish.CreateSkeinMac(skeinRootKey.Bytes);
             byte[] rootHeader = new byte[RootDomain.Length + sizeof(long) + sizeof(long) + sizeof(int)];
@@ -351,6 +353,10 @@ internal static class ParallelContainerAuthenticator
         Span<byte> skeinLeafKey,
         Span<byte> skeinRootKey)
     {
+        ArgumentNullException.ThrowIfNull(sha3MacKey);
+        ArgumentNullException.ThrowIfNull(skeinMacKey);
+        DerivedSecretHandoff.Verify("mac/tree/sha3-parent-consumer", sha3MacKey, Sha3Bytes);
+        DerivedSecretHandoff.Verify("mac/tree/skein-parent-consumer", skeinMacKey, SkeinBytes);
         using (var leaf = new HmacSha3_512(sha3MacKey))
         {
             leaf.AppendData(Sha3LeafKeyDomain);
@@ -358,6 +364,7 @@ internal static class ParallelContainerAuthenticator
             try
             {
                 value.CopyTo(sha3LeafKey);
+                DerivedSecretHandoff.Verify("mac/tree/sha3-leaf-derived", sha3LeafKey, Sha3Bytes);
             }
             finally
             {
@@ -372,6 +379,7 @@ internal static class ParallelContainerAuthenticator
             try
             {
                 value.CopyTo(sha3RootKey);
+                DerivedSecretHandoff.Verify("mac/tree/sha3-root-derived", sha3RootKey, Sha3Bytes);
             }
             finally
             {
@@ -380,7 +388,9 @@ internal static class ParallelContainerAuthenticator
         }
 
         KeyedSkein1024.Compute(skeinMacKey, SkeinKeyDomain, SkeinLeafKeyLabel, skeinLeafKey);
+        DerivedSecretHandoff.Verify("mac/tree/skein-leaf-derived", skeinLeafKey, SkeinBytes);
         KeyedSkein1024.Compute(skeinMacKey, SkeinKeyDomain, SkeinRootKeyLabel, skeinRootKey);
+        DerivedSecretHandoff.Verify("mac/tree/skein-root-derived", skeinRootKey, SkeinBytes);
     }
 
     private static async Task<LeafResult[]> ComputeSerialBatchAsync(
@@ -624,6 +634,8 @@ internal static class ParallelContainerAuthenticator
         byte[] sha3LeafKey,
         byte[] skeinLeafKey)
     {
+        DerivedSecretHandoff.Verify("mac/tree/sha3-leaf-consumer", sha3LeafKey, Sha3Bytes);
+        DerivedSecretHandoff.Verify("mac/tree/skein-leaf-consumer", skeinLeafKey, SkeinBytes);
         Span<byte> header = stackalloc byte[LeafDomain.Length + sizeof(long) + sizeof(int)];
         LeafDomain.CopyTo(header);
         int offset = LeafDomain.Length;

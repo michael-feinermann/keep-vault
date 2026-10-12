@@ -42,8 +42,10 @@ internal static partial class ContainerKeyDerivation
     /// </summary>
     public sealed class MasterResult : IDisposable
     {
-        public MasterResult(LockedSensitiveBuffer master, uint round1MemoryKiB, uint? round2MemoryKiB)
+        public MasterResult(LockedSensitiveBuffer master, uint round1MemoryKiB, uint? round2MemoryKiB, string handoffBoundary = "v13/master/final-owner")
         {
+            ArgumentNullException.ThrowIfNull(master);
+            DerivedSecretHandoff.Verify(handoffBoundary, master.Bytes, V13MasterKdf.MasterBytes);
             Master = master;
             Round1MemoryKiB = round1MemoryKiB;
             Round2MemoryKiB = round2MemoryKiB;
@@ -354,16 +356,20 @@ internal static partial class ContainerKeyDerivation
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
-        using OperationMemoryBudget.Lease memory = OperationMemoryBudget.AcquireAsync(
-            ArchiveOperationPolicy.Current, cancellationToken).AsTask().GetAwaiter().GetResult();
-        using IDisposable memoryScope = memory.EnterScope();
-        cancellationToken = memory.Token;
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(salts);
+        ArgumentNullException.ThrowIfNull(salts.Sha3Round1);
+        ArgumentNullException.ThrowIfNull(salts.SkeinRound1);
+        ArgumentNullException.ThrowIfNull(factorAHex);
+        ArgumentNullException.ThrowIfNull(factorBHex);
         ValidatePasswordEncoding(userPassword);
         ValidatePinEncoding(pin);
         bool paranoia = parameters.UsesTwoKdfRounds;
         salts.Validate(paranoia);
+        using OperationMemoryBudget.Lease memory = OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).AsTask().GetAwaiter().GetResult();
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
 
         LockedSensitiveBuffer? factorA = null;
         LockedSensitiveBuffer? factorB = null;
@@ -401,10 +407,11 @@ internal static partial class ContainerKeyDerivation
             V13MasterKdf.DeriveRoundMaster(
                 algorithm, 1, sha3Credential.Bytes, skeinCredential.Bytes,
                 salts.Sha3Round1, salts.SkeinRound1, ReadOnlySpan<byte>.Empty, memory1, round1Master.Bytes, cancellationToken);
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/master/round-1-ready", round1Master.Bytes, V13MasterKdf.MasterBytes);
 
             if (!paranoia)
             {
-                completed = new MasterResult(round1Master, memory1, null);
+                completed = new MasterResult(round1Master, memory1, null, $"v13/{algorithm}/master/final-owner");
                 round1Master = null; // ownership transferred to result
                 return completed;
             }
@@ -421,7 +428,8 @@ internal static partial class ContainerKeyDerivation
             V13MasterKdf.DeriveRoundMaster(
                 algorithm, 2, sha3Credential.Bytes, skeinCredential.Bytes,
                 salts.Sha3Round2!, salts.SkeinRound2!, round1Master.Bytes, memory2, round2Master.Bytes, cancellationToken);
-            completed = new MasterResult(round2Master, memory1, memory2);
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/master/round-2-ready", round2Master.Bytes, V13MasterKdf.MasterBytes);
+            completed = new MasterResult(round2Master, memory1, memory2, $"v13/{algorithm}/master/final-owner");
             round2Master = null; // ownership transferred to result
             return completed;
         }
@@ -480,6 +488,7 @@ internal static partial class ContainerKeyDerivation
         {
             master = DeriveMaster(
                 parameters, userPassword, pin, factorAHex, factorBHex, salts, progress, cancellationToken);
+            DerivedSecretHandoff.Verify($"v13/{parameters.Algorithm}/master/role-schedule-input", master.Master.Bytes, V13MasterKdf.MasterBytes);
             using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.KeySchedule))
                 completed = SuiteKeySchedule.DeriveSuiteKeys(master.Master.Bytes, parameters);
             return completed;

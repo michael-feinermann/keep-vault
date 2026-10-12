@@ -41,6 +41,8 @@ public sealed partial class MainWindow : Window, IDisposable
     private readonly RecoveryService _recovery = new();
     private readonly MacKeySheetService _keySheets = new();
     private readonly IAppSettingsStore _settingsStore;
+    private readonly ReleaseAuditSession? _releaseAudit;
+    private readonly ReleaseAuditInitialization _releaseAuditInitialization = new();
     private readonly CancellationTokenSource _lifetime = new();
     private readonly CancellationToken _lifetimeToken;
     private CancellationTokenSource? _operationCancellation;
@@ -70,7 +72,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private string _language = "de";
 
     public MainWindow()
-        : this(new IsolatedStorageAppSettingsStore())
+        : this(ReleaseAuditSession.Current?.Settings ?? new IsolatedStorageAppSettingsStore())
     {
     }
 
@@ -78,6 +80,7 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         _lifetimeToken = _lifetime.Token;
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
+        _releaseAudit = ReleaseAuditSession.Current;
         InitializeComponent();
         InitializeConsole();
         LoadLogo();
@@ -144,6 +147,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ? T("threefishAvailable")
                 : $"{T("threefishMissing")} — {KalynaContainerService.NativeThreefishLoadError ?? T("notFound")}");
             LogCompanionScannerState();
+            await InitializeReleaseAuditAsync();
         }
     }
 
@@ -265,6 +269,10 @@ public sealed partial class MainWindow : Window, IDisposable
         Attempt(DisposeConsole);
         Attempt(DisposeProgressObserver);
         Attempt(_lifetime.Cancel);
+        // The audit initializer has no UI work. Join its registered worker
+        // after cancellation, before any shared entropy reset or audit-owner
+        // disposal can race a late public-fixture/pool allocation.
+        Attempt(_releaseAuditInitialization.CloseAndJoin);
         // Failed entropy owners remain registered for an explicit reset retry.
         Attempt(() => EntropyMixer.DisposeEntropyOwners(null, "Window entropy cleanup failed.", entropy));
         Attempt(EntropyMixer.Reset);
@@ -274,6 +282,7 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         Attempt(_integrity.Dispose);
         Attempt(_lifetime.Dispose);
+        if (Volatile.Read(ref _operationActive) == 0) Attempt(() => _releaseAudit?.Dispose());
         GC.SuppressFinalize(this);
         if (failures is not null)
         {
@@ -346,7 +355,7 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         // The live collection has a separate owner from any detached snapshot
         // and remains available during preparation, KDF and archive work.
-        if (_disposed || _entropyCaptureFaulted
+        if (_releaseAudit?.IsFault == true || _disposed || _entropyCaptureFaulted
             || !EntropyMixer.GetPoolStatus().Healthy) return;
         try
         {
@@ -538,6 +547,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void CreateArchive_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("create")) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
@@ -617,12 +627,19 @@ public sealed partial class MainWindow : Window, IDisposable
                 ? CompressionBox.SelectedIndex
                 : DefaultCompressionLevel;
             bool deleteOriginals = DeleteOriginalsBox.IsChecked == true;
+            if (_releaseAudit is { } audit)
+            {
+                audit.RequirePublicCredentials(CreatePasswordBox.Text, CreatePinBox.Text);
+                audit.RequirePublicCreation(inputs, archivePath, encrypted, deleteOriginals, compression);
+                _ = audit.BeginOperation("create", ArchiveOperationPolicy.Current, _operationCancellation!);
+            }
             using MacOriginalDeletionService.CreationSnapshot? creationSnapshot = deleteOriginals
                 ? await Task.Run(() => MacOriginalDeletionService.CaptureCreationSnapshot(inputs, OperationToken), OperationToken)
                 : null;
             OperationStatusText.Text = T("working");
             Log(T("creatingZpaq"));
             ProcessResult result;
+            _releaseAudit?.MarkWorkStart();
             if (encrypted)
             {
                 EncryptionSuite suite = SelectedEncryptionSuite;
@@ -732,6 +749,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void ExtractArchive_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("extract")) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
@@ -745,6 +763,13 @@ public sealed partial class MainWindow : Window, IDisposable
             TestHookBeforeCredentialOperation?.Invoke("extract");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
             string output = OutputFolderBox.Text?.Trim() ?? string.Empty;
+            if (_releaseAudit is { } audit)
+            {
+                audit.RequirePublicCredentials(ExtractPasswordBox.Text, ExtractPinBox.Text);
+                audit.RequirePublicArchive(archive, output);
+                _ = audit.BeginOperation("extract", ArchiveOperationPolicy.Current, _operationCancellation!);
+                audit.MarkWorkStart();
+            }
             if (archive.Length > 0 && output.Length == 0)
             {
                 string? retainedParent = _extractOutputParentAccess is null
@@ -809,6 +834,8 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
+            if (_releaseAudit is { } extractionAudit)
+                await extractionAudit.VerifyPublicExtractionAsync(output, OperationToken);
             ClearExtractSecrets();
             Log($"{T("extractedTo")}: {output}");
             MarkOperationSucceeded();
@@ -835,6 +862,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void ListArchive_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("list")) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
@@ -847,6 +875,13 @@ public sealed partial class MainWindow : Window, IDisposable
             using IDisposable resourceScope = Preflight(ResourcePolicyForOperation, ArchivePreflightReason.Resources).EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("list");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
+            if (_releaseAudit is { } audit)
+            {
+                audit.RequirePublicCredentials(ExtractPasswordBox.Text, ExtractPinBox.Text);
+                audit.RequirePublicArchive(archive);
+                _ = audit.BeginOperation("list", ArchiveOperationPolicy.Current, _operationCancellation!);
+                audit.MarkWorkStart();
+            }
             if (archive.Length == 0)
             {
                 await WarnAsync(T("archiveMissing"));
@@ -922,6 +957,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void EmergencyRecovery_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("recovery")) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
@@ -934,6 +970,13 @@ public sealed partial class MainWindow : Window, IDisposable
             using IDisposable resourceScope = Preflight(ResourcePolicyForOperation, ArchivePreflightReason.Resources).EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("recovery");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
+            if (_releaseAudit is { } audit)
+            {
+                audit.RequirePublicCredentials(ExtractPasswordBox.Text, ExtractPinBox.Text);
+                audit.RequirePublicArchive(archive);
+                _ = audit.BeginOperation("recovery", ArchiveOperationPolicy.Current, _operationCancellation!);
+                audit.MarkWorkStart();
+            }
             if (archive.Length == 0)
             {
                 await WarnAsync(T("archiveMissing"));
@@ -1020,11 +1063,17 @@ public sealed partial class MainWindow : Window, IDisposable
 
     internal async Task GenerateArchiveEntropyAsync()
     {
+        if (!AuditAllowsOperation("generate")) return;
         if (!TryBeginProtectedOperation()) return;
         GeneratedArchiveEntropy? next = null;
         try
         {
             using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
+            if (_releaseAudit is { } audit)
+            {
+                _ = audit.BeginOperation("generate", ArchiveOperationPolicy.Current, _operationCancellation!);
+                audit.BeforeGenerate();
+            }
             EncryptBox.IsChecked = true;
             foreach (EntropyPurpose purpose in Enum.GetValues<EntropyPurpose>()) EnsureEntropyReady(purpose);
             EntropyPreparationKind kind = SelectedEncryptionSuite == EncryptionSuite.ParanoiaCascade
@@ -1039,8 +1088,10 @@ public sealed partial class MainWindow : Window, IDisposable
                 }
             });
             using OperationProgressSource? entropyProgress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.Entropy, ProgressUnit.Steps);
+            _releaseAudit?.MarkWorkStart();
             next = await Task.Run(() => EntropyMixer.CreateArchiveEntropy(kind, token, progress), token);
             token.ThrowIfCancellationRequested();
+            _releaseAudit?.RejectFaultPublication();
             if (_disposed) return;
             GeneratedArchiveEntropy? previous = _generatedEntropy;
             previous?.Dispose();
@@ -1070,6 +1121,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void SaveKeySheet_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("key-sheet")) return;
         if (!TryBeginProtectedOperation()) return;
         try
         {
@@ -1099,6 +1151,7 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 return;
             }
+            _releaseAudit?.RequireOwnedOutput(path);
 
             if (_disposed)
             {
@@ -1139,6 +1192,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void PrintKeySheet_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("key-sheet")) return;
         if (!TryBeginProtectedOperation()) return;
         try
         {
@@ -1432,6 +1486,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void EraseContainer_Click(object? sender, RoutedEventArgs e)
     {
+        if (_releaseAudit is not null) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
@@ -1500,6 +1555,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async Task AnalyzeEraseAsync()
     {
+        if (_releaseAudit is not null) return;
         try
         {
             string path = ErasePathBox.Text?.Trim() ?? string.Empty;
@@ -2085,6 +2141,11 @@ public sealed partial class MainWindow : Window, IDisposable
         int version = Interlocked.Increment(ref _hintLoadVersion);
         SetExtractHint(null, loaded: false);
         string path = archive.Trim();
+        if (_releaseAudit is { } audit)
+        {
+            try { audit.RequirePublicArchive(path); }
+            catch { return; }
+        }
         if (!File.Exists(path) || _disposed)
         {
             return;
@@ -2251,22 +2312,31 @@ public sealed partial class MainWindow : Window, IDisposable
     private void EndProtectedOperation()
     {
         CancellationTokenSource? completed = _operationCancellation;
-        try { FinishOperationProgress(completed?.IsCancellationRequested == true); }
+        bool wasCancelled = completed?.IsCancellationRequested == true;
+        try { FinishOperationProgress(wasCancelled); }
         finally
         {
             _operationCancellation = null;
             try { completed?.Dispose(); }
             finally { Interlocked.Exchange(ref _operationActive, 0); }
         }
-        if (_disposed)
+        try
         {
-            DisposeStorageAccess();
-            return;
-        }
+            if (_disposed)
+            {
+                DisposeStorageAccess();
+                return;
+            }
 
-        OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
-        UpdateProtectedOperationControls();
-        UpdateEntropyStatus(force: true);
+            OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
+            UpdateProtectedOperationControls();
+            UpdateEntropyStatus(force: true);
+        }
+        finally
+        {
+            CompleteReleaseAuditOperation(wasCancelled);
+            if (_disposed) _releaseAudit?.Dispose();
+        }
     }
 
     private void UpdateProtectedOperationControls()
@@ -2290,6 +2360,7 @@ public sealed partial class MainWindow : Window, IDisposable
         ListArchiveButton.IsEnabled = protectedEnabled;
         EmergencyRecoveryButton.IsEnabled = protectedEnabled;
         EraseContainerButton.IsEnabled = protectedEnabled;
+        ApplyReleaseAuditControlRestrictions();
     }
 
     private IProgress<string> Progress() => new Progress<string>(Log);
@@ -2321,6 +2392,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async Task ShowAsync(string message, SecurityDialogKind kind)
     {
+        using IDisposable? auditDialog = _releaseAudit?.ObserveDialogWait();
         if (TestHookShowDialogAsync is { } testHook)
         {
             await testHook(kind, message);

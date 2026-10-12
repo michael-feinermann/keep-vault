@@ -84,6 +84,9 @@ internal static class V13MasterKdf
         Span<byte> destination)
     {
         using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.CredentialSha3);
+        ArgumentException.ThrowIfNullOrEmpty(algorithm);
+        ArgumentNullException.ThrowIfNull(userPassword);
+        ArgumentNullException.ThrowIfNull(pin);
         RequireFactor(factorA, nameof(factorA));
         RequireFactor(factorB, nameof(factorB));
         if (destination.Length < CredentialHashBytes)
@@ -135,7 +138,10 @@ internal static class V13MasterKdf
             WriteLengthPrefixed(message2Buf.Bytes, ref offset2, b2);
 
             _ = Sha3_512Compat.HashData(message1Buf.Bytes, destination.Slice(0, 64));
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/credential/sha3-half-0", destination.Slice(0, 64), 64);
             _ = Sha3_512Compat.HashData(message2Buf.Bytes, destination.Slice(64, 64));
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/credential/sha3-half-1", destination.Slice(64, 64), 64);
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/credential/sha3-complete", destination[..CredentialHashBytes], CredentialHashBytes);
         }
         catch (Exception failure)
         {
@@ -190,6 +196,9 @@ internal static class V13MasterKdf
         Span<byte> destination)
     {
         using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.CredentialSkein);
+        ArgumentException.ThrowIfNullOrEmpty(algorithm);
+        ArgumentNullException.ThrowIfNull(userPassword);
+        ArgumentNullException.ThrowIfNull(pin);
         RequireFactor(factorA, nameof(factorA));
         RequireFactor(factorB, nameof(factorB));
         if (destination.Length < CredentialHashBytes)
@@ -230,6 +239,7 @@ internal static class V13MasterKdf
                 $"Kalyna-ZPAQ/v13/{algorithm}/Skein-MAC-1024-1024/User+PIN/Factors-A+B-Key",
                 messageBuf.Bytes,
                 destination);
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/credential/skein-complete", destination[..CredentialHashBytes], CredentialHashBytes);
         }
         catch (Exception failure)
         {
@@ -282,6 +292,7 @@ internal static class V13MasterKdf
         ReadOnlySpan<byte> sha3Salt,
         ReadOnlySpan<byte> skeinSalt)
     {
+        ValidateRoundInputs(algorithm, round, sha3CredentialHash, skeinCredentialHash, sha3Salt, skeinSalt, previousMaster);
         using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.KdfPmiDerivation);
         string domain = $"Kalyna-ZPAQ/v13/{algorithm}/SHA3-512/PMI/Round-{round}";
         byte[] domainBytes = Encoding.UTF8.GetBytes(domain);
@@ -358,6 +369,7 @@ internal static class V13MasterKdf
         Span<byte> destination,
         CancellationToken cancellationToken = default)
     {
+        ValidateRoundInputs(algorithm, round, sha3CredentialHash, skeinCredentialHash, sha3Salt, skeinSalt, secret);
         using var phaseProfile = OperationPhaseProfile.Measure(round == 1 ? OperationPhaseProfile.Phase.KdfRound1 : OperationPhaseProfile.Phase.KdfRound2);
         if (destination.Length < MasterBytes)
         {
@@ -401,6 +413,7 @@ internal static class V13MasterKdf
             branchProgress?.Advance(1);
 
             MasterInterleave.Interleave(left.Bytes, right.Bytes, destination);
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/round-{round}/master-interleaved", destination[..MasterBytes], MasterBytes);
         }
         catch (Exception failure)
         {
@@ -468,7 +481,7 @@ internal static class V13MasterKdf
                 $"A credential hash must be exactly {CredentialHashBytes} bytes.", nameof(credentialHash));
         }
 
-        if (!secret.IsEmpty && secret.Length != MasterBytes)
+        if ((round == 1 && !secret.IsEmpty) || (round == 2 && secret.Length != MasterBytes))
         {
             throw new ArgumentException(
                 $"The Argon2id secret must be the complete {MasterBytes}-byte master.", nameof(secret));
@@ -489,12 +502,15 @@ internal static class V13MasterKdf
         {
             passwordCopy = LockedSensitiveBuffer.Create(CredentialHashBytes);
             credentialHash.CopyTo(passwordCopy.Bytes);
+            string boundary = $"v13/{algorithm}/round-{round}/{(sha3Branch ? "sha3" : "skein")}";
+            DerivedSecretHandoff.Verify($"{boundary}/password-copy", passwordCopy.Bytes, CredentialHashBytes);
             secretCopy = secret.IsEmpty
                 ? null
                 : LockedSensitiveBuffer.Create(MasterBytes);
             if (!secret.IsEmpty)
             {
                 secret.CopyTo(secretCopy!.Bytes);
+                DerivedSecretHandoff.Verify($"{boundary}/secret-copy", secretCopy.Bytes, MasterBytes);
             }
 
             // Fixed Argon2 lanes remain four. The native adapter separately
@@ -524,6 +540,7 @@ internal static class V13MasterKdf
                     output,
                     useKatProfile: TestMemoryOverride.Value == memoryKiB,
                     workerBudget: (uint)cpu.Workers);
+            DerivedSecretHandoff.Verify($"{boundary}/argon2-output", output, BranchOutputBytes);
             cancellationToken.ThrowIfCancellationRequested();
             OperationMemoryBudget.ReportProgress(BranchOutputBytes);
         }
@@ -550,6 +567,45 @@ internal static class V13MasterKdf
                 CryptographicOperations.ZeroMemory(output);
                 throw;
             }
+        }
+    }
+
+    // The optional Argon2 secret is absent only in round one. A missing M1 in
+    // round two must never be silently interpreted as a reduced KDF path.
+    private static void ValidateRoundInputs(
+        string algorithm,
+        int round,
+        ReadOnlySpan<byte> sha3CredentialHash,
+        ReadOnlySpan<byte> skeinCredentialHash,
+        ReadOnlySpan<byte> sha3Salt,
+        ReadOnlySpan<byte> skeinSalt,
+        ReadOnlySpan<byte> previousMaster)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(algorithm);
+        if (round is not (1 or 2))
+        {
+            throw new ArgumentOutOfRangeException(nameof(round), "A v13 KDF round must be one or two.");
+        }
+
+        if (sha3CredentialHash.Length != CredentialHashBytes || skeinCredentialHash.Length != CredentialHashBytes)
+            throw new ArgumentException("Each v13 credential hash must be exactly 128 bytes.");
+        DerivedSecretHandoff.Require(sha3CredentialHash, CredentialHashBytes);
+        DerivedSecretHandoff.Require(skeinCredentialHash, CredentialHashBytes);
+        if (sha3Salt.Length != KdfSalts.SaltBytes || skeinSalt.Length != KdfSalts.SaltBytes)
+        {
+            throw new ArgumentException("Each v13 branch salt must be exactly 64 bytes.");
+        }
+
+        if (round == 1)
+        {
+            if (!previousMaster.IsEmpty)
+                throw new ArgumentException("Round one must not carry a previous master.", nameof(previousMaster));
+        }
+        else
+        {
+            if (previousMaster.Length != MasterBytes)
+                throw new ArgumentException("Round two requires the complete 128-byte first master.", nameof(previousMaster));
+            DerivedSecretHandoff.Require(previousMaster, MasterBytes);
         }
     }
 

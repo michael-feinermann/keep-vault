@@ -1650,6 +1650,12 @@ public sealed partial class RecoveryService
         byte[]? skeinKey = null;
         try
         {
+            ArgumentNullException.ThrowIfNull(parentSha3Key);
+            ArgumentNullException.ThrowIfNull(parentSkeinKey);
+            ArgumentNullException.ThrowIfNull(sha3Message);
+            ArgumentNullException.ThrowIfNull(skeinMessage);
+            DerivedSecretHandoff.Verify("recovery/parent/sha3-consumer", parentSha3Key, Sha3_512Compat.HashSizeInBytes);
+            DerivedSecretHandoff.Verify("recovery/parent/skein-consumer", parentSkeinKey, Skein1024Digest.MacKeySize);
             using (var hmac = new HmacSha3_512(parentSha3Key))
             {
                 hmac.AppendData(sha3Message);
@@ -1660,11 +1666,13 @@ public sealed partial class RecoveryService
                 RecoveryKeyDerivationTestStage.AfterSha3,
                 sha3Key,
                 null);
+            DerivedSecretHandoff.Verify("recovery/certification/sha3-output", sha3Key, Sha3_512Compat.HashSizeInBytes);
             skeinKey = NativeThreefish.MacSkein1024Reference(parentSkeinKey, skeinMessage);
             RecoveryKeyDerivationHookOverride.Value?.Invoke(
                 RecoveryKeyDerivationTestStage.AfterSkein,
                 sha3Key,
                 skeinKey);
+            DerivedSecretHandoff.Verify("recovery/certification/skein-output", skeinKey, Skein1024Digest.MacKeySize);
 
             var result = new RecoveryKeys(sha3Key, skeinKey);
             sha3Key = null;
@@ -1716,6 +1724,8 @@ public sealed partial class RecoveryService
             if (locator.ProtectionMode == RecoveryProtectionMode.DualAuthenticatedEncrypted)
             {
                 if (keys is null) throw new CryptographicException("Authenticated KPAR2 certification requires recovery MAC keys.");
+                DerivedSecretHandoff.Verify("recovery/certification/sha3-consumer", keys.Sha3Key, Sha3_512Compat.HashSizeInBytes);
+                DerivedSecretHandoff.Verify("recovery/certification/skein-consumer", keys.SkeinKey, Skein1024Digest.MacKeySize);
                 using var hmac = new HmacSha3_512(keys.Sha3Key);
                 using NativeSkein1024Mac skein = NativeThreefish.CreateSkeinMac(keys.SkeinKey);
                 hmac.AppendData(prefix); skein.AppendData(prefix);
@@ -1732,6 +1742,17 @@ public sealed partial class RecoveryService
             return (sha3.GetHashAndReset(), skeinHash.GetHashAndReset());
         }
         finally { CryptographicOperations.ZeroMemory(prefix); CryptographicOperations.ZeroMemory(buffer); payload.Position = 0; }
+    }
+
+    internal static (byte[] Sha3, byte[] Skein) ComputeMetadataCertificationForTests(
+        RecoveryLocator locator, Stream payload, IDisposable keys)
+    {
+        ArgumentNullException.ThrowIfNull(locator);
+        ArgumentNullException.ThrowIfNull(payload);
+        ArgumentNullException.ThrowIfNull(keys);
+        if (keys is not RecoveryKeys ownedKeys)
+            throw new ArgumentException("Certification requires a recovery key owner.", nameof(keys));
+        return ComputeMetadataCertification(locator, payload, ownedKeys);
     }
 
     private static (byte[] Sha3, byte[] Skein) ComputeDualHash(Stream input)
@@ -4634,17 +4655,24 @@ public sealed partial class RecoveryService
         private readonly IDisposable _sha3Lock;
         private readonly IDisposable _skeinLock;
         private bool _disposed;
+        private bool _disposalStarted;
+        private readonly byte[] _sha3Key;
+        private readonly byte[] _skeinKey;
 
         public RecoveryKeys(byte[] sha3Key, byte[] skeinKey)
         {
+            ArgumentNullException.ThrowIfNull(sha3Key);
+            ArgumentNullException.ThrowIfNull(skeinKey);
             if (sha3Key.Length != Sha3_512Compat.HashSizeInBytes
                 || skeinKey.Length != Skein1024Digest.MacKeySize)
             {
                 throw new CryptographicException("Derived KPAR2 MAC key length is invalid.");
             }
 
-            Sha3Key = sha3Key;
-            SkeinKey = skeinKey;
+            DerivedSecretHandoff.Require(sha3Key, Sha3_512Compat.HashSizeInBytes);
+            DerivedSecretHandoff.Require(skeinKey, Skein1024Digest.MacKeySize);
+            _sha3Key = sha3Key;
+            _skeinKey = skeinKey;
             IDisposable? sha3Lock = null;
             IDisposable? skeinLock = null;
             try
@@ -4674,14 +4702,15 @@ public sealed partial class RecoveryService
             }
         }
 
-        public byte[] Sha3Key { get; }
+        public byte[] Sha3Key { get { ObjectDisposedException.ThrowIf(_disposalStarted, this); return _sha3Key; } }
 
-        public byte[] SkeinKey { get; }
+        public byte[] SkeinKey { get { ObjectDisposedException.ThrowIf(_disposalStarted, this); return _skeinKey; } }
 
         internal void ZeroForDisposal()
         {
-            CryptographicOperations.ZeroMemory(Sha3Key);
-            CryptographicOperations.ZeroMemory(SkeinKey);
+            _disposalStarted = true;
+            CryptographicOperations.ZeroMemory(_sha3Key);
+            CryptographicOperations.ZeroMemory(_skeinKey);
         }
 
         public void Dispose()

@@ -44,7 +44,14 @@ using IDisposable testStoragePolicy = new ArchiveOperationPolicy(
     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KeepVault", "Work"),
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
     maxExtractedTotalBytes: 1L << 30, maxSingleFileBytes: 1L << 30).EnterScope();
-return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests.Concat(EntropyRev9Tests.All).Concat(MacPhasePerformanceTests.All).Concat(OperationStoragePolicyTests.Tests).ToArray()).ConfigureAwait(false);
+return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests
+    .Concat(EntropyRev9Tests.All)
+    .Concat(MacPhasePerformanceTests.All)
+    .Concat(OperationStoragePolicyTests.Tests)
+    .Concat(KdfHandoffFaultTests.Tests)
+    .Concat(NativeKeyHandoffTests.Tests)
+    .Concat(DownstreamHandoffFaultTests.Tests)
+    .Concat(GuiAuditTests.All).ToArray()).ConfigureAwait(false);
 
 static Task TestSha3Async()
 {
@@ -129,10 +136,18 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
     string installationManifestVerifierSource = await File.ReadAllTextAsync(
         Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier", "InstallationManifestVerifier.cs")).ConfigureAwait(false);
-    Require(keepVaultBuilderSource.Contains("build_version='20'", StringComparison.Ordinal)
-        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"20\"", StringComparison.Ordinal)
-        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"20\")", StringComparison.Ordinal),
+    Require(keepVaultBuilderSource.Contains("build_version='21'", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"21\"", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"21\")", StringComparison.Ordinal),
         "The release builder and strict installation manifest/bundle build pins differ.");
+    (int conflictingModeExit, _, _) = await RunProcessAsync(
+        keepVaultBuilder, "--prerelease", "--release", "--preflight").ConfigureAwait(false);
+    Require(conflictingModeExit == 64,
+        "The builder accepted simultaneous provisional and complete release modes.");
+    (int unsignedPrereleaseExit, _, _) = await RunProcessAsync(
+        keepVaultBuilder, "--prerelease", "--notary-profile", "", "--preflight").ConfigureAwait(false);
+    Require(unsignedPrereleaseExit == 2,
+        "The provisional builder accepted a missing notarization method.");
     string portableBuilderSource = await File.ReadAllTextAsync(portableBuilder).ConfigureAwait(false);
     string releasePublishRenameSource = await File.ReadAllTextAsync(releasePublishRename).ConfigureAwait(false);
     string[] installerFailurePoints =

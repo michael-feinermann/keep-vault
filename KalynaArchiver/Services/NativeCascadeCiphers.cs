@@ -83,6 +83,9 @@ internal sealed unsafe class NativeV13Ctr(string libraryName, string algorithm)
     }
     internal void EncryptBlock(byte[] key, byte[] input, byte[] output)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != 32 || input.Length != 16 || output.Length < 16) throw new ArgumentException("Invalid block KAT buffers.");
         EnsureLoaded();
         fixed (byte* k = key) fixed (byte* i = input) fixed (byte* o = output)
@@ -144,6 +147,10 @@ internal static unsafe class NativeMars
 
     public static void XCryptCtr448(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(nonce);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != KeyBytes || nonce.Length != BlockBytes
             || length < 0 || input.Length < length || output.Length < length)
         {
@@ -174,9 +181,16 @@ internal static unsafe class NativeMars
     /// </summary>
     internal static void EncryptBlock(byte[] key, byte[] input, byte[] output)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (input.Length != BlockBytes || output.Length < BlockBytes)
         {
             throw new ArgumentException($"MARS operates on {BlockBytes}-byte blocks.");
+        }
+        if (key.Length < 16 || key.Length > KeyBytes || key.Length % 8 != 0)
+        {
+            throw new ArgumentException("MARS block keys require 16 through 56 bytes in eight-byte steps.", nameof(key));
         }
 
         EnsureLoaded();
@@ -275,6 +289,10 @@ internal static unsafe class NativeShacal2
 
     public static void XCryptCtr512(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(nonce);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != KeyBytes || nonce.Length != BlockBytes
             || length < 0 || input.Length < length || output.Length < length)
         {
@@ -300,9 +318,16 @@ internal static unsafe class NativeShacal2
 
     internal static void EncryptBlock(byte[] key, byte[] input, byte[] output)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (input.Length != BlockBytes || output.Length < BlockBytes)
         {
             throw new ArgumentException($"SHACAL-2 operates on {BlockBytes}-byte blocks.");
+        }
+        if (key.Length < 16 || key.Length > KeyBytes)
+        {
+            throw new ArgumentException("SHACAL-2 block keys require 16 through 64 bytes.", nameof(key));
         }
 
         EnsureLoaded();
@@ -436,6 +461,10 @@ internal static unsafe class NativeAes
     /// </remarks>
     public static void XCryptCtr256(byte[] key, byte[] nonce, byte[] input, byte[] output, int length)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(nonce);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != KeyBytes || nonce.Length != BlockBytes
             || length < 0 || input.Length < length || output.Length < length)
         {
@@ -464,9 +493,16 @@ internal static unsafe class NativeAes
 
     internal static void EncryptBlock(byte[] key, byte[] input, byte[] output)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (input.Length != BlockBytes || output.Length < BlockBytes)
         {
             throw new ArgumentException($"AES operates on {BlockBytes}-byte blocks.");
+        }
+        if (key.Length is not (16 or 24 or 32))
+        {
+            throw new ArgumentException("AES block keys require 16, 24 or 32 bytes.", nameof(key));
         }
 
         EnsureLoaded();
@@ -990,6 +1026,10 @@ internal static unsafe class NativeXChaChaPoly
     /// </remarks>
     private static int XCrypt(byte[] key, byte[] nonce, uint blockCounter, byte[] input, byte[] output, int length, bool serial)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(nonce);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != KeyBytes || nonce.Length != RawNonceBytes
             || length < 0 || input.Length < length || output.Length < length)
         {
@@ -1011,6 +1051,11 @@ internal static unsafe class NativeXChaChaPoly
 
     private static void Validate(byte[] key, byte[] nonce, byte[] tag, byte[] input, byte[] output, int length)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(nonce);
+        ArgumentNullException.ThrowIfNull(tag);
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
         if (key.Length != KeyBytes || nonce.Length != NonceBytes || tag.Length != TagBytes
             || length < 0 || length > MaximumPayloadBytes || input.Length < length || output.Length < length)
         {
@@ -1027,6 +1072,10 @@ internal static unsafe class NativeXChaChaPoly
         byte[] ciphertext,
         int length)
     {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(nonce);
+        ArgumentNullException.ThrowIfNull(tag);
+        ArgumentNullException.ThrowIfNull(ciphertext);
         if (key.Length != KeyBytes || nonce.Length != NonceBytes || tag.Length != TagBytes
             || length < 0 || length > MaximumPayloadBytes || ciphertext.Length < length)
         {

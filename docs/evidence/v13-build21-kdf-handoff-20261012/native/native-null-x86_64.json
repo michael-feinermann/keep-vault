@@ -1,0 +1,1367 @@
+{
+  "checks": 161,
+  "children": [
+    {
+      "binding_valid": true,
+      "child_pid": 79018,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:36.350686+00:00",
+      "library": "argon2",
+      "library_sha256": "e45ddf8d398c338b910ff920640dfe12f62ae830a204795428c2bd7c10b19c9f",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "keepvault_argon2id_v13_with_budget.null.password",
+            "elapsed_seconds": 0.00040870799999997987,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.null.salt",
+            "elapsed_seconds": 5.66600000001527e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.null.secret",
+            "elapsed_seconds": 2.541999999994271e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.null.associated_data",
+            "elapsed_seconds": 2.3749999999989058e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.null.output",
+            "elapsed_seconds": 2.2500000000369447e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.invalid.password_width",
+            "elapsed_seconds": 2.541999999994271e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.invalid.salt_width",
+            "elapsed_seconds": 2.2499999999814335e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.invalid.secret_width",
+            "elapsed_seconds": 2.2080000000035405e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.invalid.associated_data_empty",
+            "elapsed_seconds": 2.3329999999655016e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.invalid.output_width",
+            "elapsed_seconds": 2.3749999999989058e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.invalid.worker_zero",
+            "elapsed_seconds": 2.2920000000148377e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_with_budget.invalid.secret_present_length_zero",
+            "elapsed_seconds": 2.459000000010203e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.null.password",
+            "elapsed_seconds": 3.125000000048228e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.null.salt",
+            "elapsed_seconds": 2.1669999999973655e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.null.secret",
+            "elapsed_seconds": 2.0420000000354044e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.null.associated_data",
+            "elapsed_seconds": 2.0830000000415794e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.null.output",
+            "elapsed_seconds": 3.4169999999500433e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.invalid.password_width",
+            "elapsed_seconds": 2.3339999999927308e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.invalid.salt_width",
+            "elapsed_seconds": 2.3330000000210127e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.invalid.secret_width",
+            "elapsed_seconds": 2.3330000000210127e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.invalid.associated_data_empty",
+            "elapsed_seconds": 2.2089999999752585e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.invalid.output_width",
+            "elapsed_seconds": 2.1660000000256474e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.invalid.worker_zero",
+            "elapsed_seconds": 2.2920000000148377e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_argon2id_v13_kat_with_budget.invalid.secret_present_length_zero",
+            "elapsed_seconds": 2.2500000000369447e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "phc_argon2id_hash_raw.null.password",
+            "elapsed_seconds": 2.1250000000194724e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "phc_argon2id_hash_raw.null.salt",
+            "elapsed_seconds": 1.6669999999829876e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "phc_argon2id_hash_raw.null.output",
+            "elapsed_seconds": 1.5420000000210266e-06,
+            "native_status": -25,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "argon2.kat.optional_null_secret.allowed",
+            "elapsed_seconds": 0.016533458,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          },
+          {
+            "case": "argon2.kat.password_one_call_copy_erased",
+            "status": "PASS"
+          }
+        ],
+        "checks": 29,
+        "finished_utc": "2026-10-12T08:38:36.345981+00:00",
+        "library": "argon2",
+        "library_sha256": "e45ddf8d398c338b910ff920640dfe12f62ae830a204795428c2bd7c10b19c9f",
+        "pid": 79018,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:36.084749+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:35.248073+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "60faaaa97774b7bdc3d411ad5d11d29032780e1e834616364b492e5665d35bea"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79021,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:36.608186+00:00",
+      "library": "aes",
+      "library_sha256": "d3487bf6a0478e0fb727df169f34b68816e5b4371cad0dd6ddabe038a5fc77df",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "aes_256.null.key",
+            "elapsed_seconds": 7.57500000000133e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "aes_256.null.nonce",
+            "elapsed_seconds": 6.499999999992623e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "aes_256.null.input",
+            "elapsed_seconds": 1.9169999999901766e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "aes_256.null.output",
+            "elapsed_seconds": 1.912500000000872e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "aes_256.worker_zero",
+            "elapsed_seconds": 1.8750000000122835e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "aes.block.null.key",
+            "elapsed_seconds": 3.500000000017378e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "aes.block.null.input",
+            "elapsed_seconds": 1.3330000000200126e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "aes.block.null.output",
+            "elapsed_seconds": 1.1659999999968917e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "aes.block.key_width",
+            "elapsed_seconds": 1.2920000000138376e-06,
+            "native_status": 2,
+            "output_unchanged": true,
+            "status": "PASS"
+          }
+        ],
+        "checks": 9,
+        "finished_utc": "2026-10-12T08:38:36.603643+00:00",
+        "library": "aes",
+        "library_sha256": "d3487bf6a0478e0fb727df169f34b68816e5b4371cad0dd6ddabe038a5fc77df",
+        "pid": 79021,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:36.413524+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:36.351167+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "016de5c91ae9590c60bbc97d132132ba943e1df5b6f0a576bf03387a7fb7d9a4"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79035,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:36.833775+00:00",
+      "library": "mars",
+      "library_sha256": "1b7fa0987e41ce2ed15ab10b798db9cb6b198f37d1e9a6cefd7df34a6194df90",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "mars_448.null.key",
+            "elapsed_seconds": 5.0165999999990385e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "mars_448.null.nonce",
+            "elapsed_seconds": 2.9169999999911767e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "mars_448.null.input",
+            "elapsed_seconds": 1.958999999995825e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "mars_448.null.output",
+            "elapsed_seconds": 1.7079999999891626e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "mars_448.worker_zero",
+            "elapsed_seconds": 1.7090000000163919e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "mars.block.null.key",
+            "elapsed_seconds": 1.8329999999788793e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "mars.block.null.input",
+            "elapsed_seconds": 1.3339999999917307e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "mars.block.null.output",
+            "elapsed_seconds": 1.2909999999866084e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "mars.block.key_width",
+            "elapsed_seconds": 1.3749999999979057e-06,
+            "native_status": 2,
+            "output_unchanged": true,
+            "status": "PASS"
+          }
+        ],
+        "checks": 9,
+        "finished_utc": "2026-10-12T08:38:36.829355+00:00",
+        "library": "mars",
+        "library_sha256": "1b7fa0987e41ce2ed15ab10b798db9cb6b198f37d1e9a6cefd7df34a6194df90",
+        "pid": 79035,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:36.673924+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:36.608715+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "b3c0f0825aee5258284363ac00ed81daf95f37159ba1e284416bdbe89836da99"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79085,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:37.051295+00:00",
+      "library": "shacal2",
+      "library_sha256": "43ebaff3dcde975e6936ea107d238deaebbfa551841738bee833115f04c6b989",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "shacal2_512.null.key",
+            "elapsed_seconds": 5.0749999999988304e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "shacal2_512.null.nonce",
+            "elapsed_seconds": 2.79200000000146e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "shacal2_512.null.input",
+            "elapsed_seconds": 1.5830000000272015e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "shacal2_512.null.output",
+            "elapsed_seconds": 1.5409999999937973e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "shacal2_512.worker_zero",
+            "elapsed_seconds": 1.6250000000050946e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "shacal2.block.null.key",
+            "elapsed_seconds": 1.7500000000225668e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "shacal2.block.null.input",
+            "elapsed_seconds": 1.2080000000025404e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "shacal2.block.null.output",
+            "elapsed_seconds": 1.1659999999968917e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "shacal2.block.key_width",
+            "elapsed_seconds": 1.250000000008189e-06,
+            "native_status": 2,
+            "output_unchanged": true,
+            "status": "PASS"
+          }
+        ],
+        "checks": 9,
+        "finished_utc": "2026-10-12T08:38:37.046632+00:00",
+        "library": "shacal2",
+        "library_sha256": "43ebaff3dcde975e6936ea107d238deaebbfa551841738bee833115f04c6b989",
+        "pid": 79085,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:36.899891+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:36.834228+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "051a8af1f15ffea33b296e3c60b647a50fd4a1a4674c24b1d362f359ae919669"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79208,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:37.277013+00:00",
+      "library": "kalyna",
+      "library_sha256": "76b42a589eb01ba80ce3b4fcc32bef01dce86c2331099f7de6efa16d6c8af87b",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_with_workers.null.key",
+            "elapsed_seconds": 4.991699999998267e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_with_workers.null.nonce",
+            "elapsed_seconds": 2.9169999999911767e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_with_workers.null.input",
+            "elapsed_seconds": 1.7920000000004599e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_with_workers.null.output",
+            "elapsed_seconds": 1.7079999999891626e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_with_workers.empty_null_data.allowed",
+            "elapsed_seconds": 1.5959000000009826e-05,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_scalar.null.key",
+            "elapsed_seconds": 2.3339999999927308e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_scalar.null.nonce",
+            "elapsed_seconds": 1.4580000000097293e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_scalar.null.input",
+            "elapsed_seconds": 1.3749999999979057e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_scalar.null.output",
+            "elapsed_seconds": 1.3340000000194863e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_kalyna_512_512_ctr_xcrypt_scalar.empty_null_data.allowed",
+            "elapsed_seconds": 1.0420000000066487e-06,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          },
+          {
+            "case": "kalyna.worker_zero",
+            "elapsed_seconds": 1.8340000000061085e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          }
+        ],
+        "checks": 11,
+        "finished_utc": "2026-10-12T08:38:37.272067+00:00",
+        "library": "kalyna",
+        "library_sha256": "76b42a589eb01ba80ce3b4fcc32bef01dce86c2331099f7de6efa16d6c8af87b",
+        "pid": 79208,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:37.116291+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:37.051902+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "7f44613df2dd50e2557837de4824b3384c80288f2170aedb0d6e31a87e3edc8a"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79313,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:37.525327+00:00",
+      "library": "threefish",
+      "library_sha256": "66004460d3d4a7c6ac4a2e299aaf552ecc1594b003fcff7c123dcbd4be6f4f16",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "threefish_1024_ctr_xcrypt_v13_with_workers.null.key",
+            "elapsed_seconds": 4.9709000000008885e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish_1024_ctr_xcrypt_v13_with_workers.null.tweak",
+            "elapsed_seconds": 3.875000000014284e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish_1024_ctr_xcrypt_v13_with_workers.null.nonce",
+            "elapsed_seconds": 2.332999999993257e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish_1024_ctr_xcrypt_v13_with_workers.null.input",
+            "elapsed_seconds": 2.0419999999798932e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish_1024_ctr_xcrypt_v13_with_workers.null.output",
+            "elapsed_seconds": 2.1250000000194724e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish_1024_ctr_xcrypt_v13_with_workers.worker_zero",
+            "elapsed_seconds": 2.416999999976799e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish_1024_ctr_xcrypt_v13_with_workers.empty_null_data.allowed",
+            "elapsed_seconds": 2.083000000013824e-06,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish.block.null.key",
+            "elapsed_seconds": 4.290999999989609e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish.block.null.tweak",
+            "elapsed_seconds": 1.6250000000050946e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish.block.null.input",
+            "elapsed_seconds": 1.1669999999963654e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "threefish.block.null.output",
+            "elapsed_seconds": 1.250000000008189e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.mac_create.null_key",
+            "status": "PASS"
+          },
+          {
+            "case": "skein.mac_create.invalid_key_width",
+            "status": "PASS"
+          },
+          {
+            "case": "skein.update.null_handle",
+            "elapsed_seconds": 3.124999999992717e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.final.null_handle",
+            "elapsed_seconds": 1.2920000000138376e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.update.null_data_positive_length",
+            "elapsed_seconds": 2.1669999999973655e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.update.empty_null_data.allowed",
+            "elapsed_seconds": 1.1250000000184723e-06,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.final.null_output",
+            "elapsed_seconds": 1.3749999999979057e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.final.invalid_output_width",
+            "elapsed_seconds": 1.3750000000256613e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.valid_state.final",
+            "elapsed_seconds": 2.6660000000122697e-06,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.final.already_finalized",
+            "elapsed_seconds": 1.0830000000128237e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.destroy.null_handle.allowed",
+            "status": "PASS"
+          },
+          {
+            "case": "skein.hash.null.input",
+            "elapsed_seconds": 1.7499999999948113e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.hash.null.output",
+            "elapsed_seconds": 1.1669999999963654e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.mac.null.key",
+            "elapsed_seconds": 1.7500000000225668e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.mac.null.input",
+            "elapsed_seconds": 1.209000000002014e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.mac.null.output",
+            "elapsed_seconds": 1.209000000002014e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.mac.invalid_key_width",
+            "elapsed_seconds": 1.3749999999979057e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.personalized_mac.null.key",
+            "elapsed_seconds": 1.665999999983514e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.personalized_mac.null.personalization",
+            "elapsed_seconds": 1.6250000000050946e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.personalized_mac.null.input",
+            "elapsed_seconds": 1.332999999992257e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "skein.personalized_mac.null.output",
+            "elapsed_seconds": 1.3339999999917307e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          }
+        ],
+        "checks": 32,
+        "finished_utc": "2026-10-12T08:38:37.520777+00:00",
+        "library": "threefish",
+        "library_sha256": "66004460d3d4a7c6ac4a2e299aaf552ecc1594b003fcff7c123dcbd4be6f4f16",
+        "pid": 79313,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:37.345771+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:37.277507+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3f8a3307fbcf0366174ff68ce15e3a37d62457359a484320029b2cc9baa6d88f"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79402,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:37.766488+00:00",
+      "library": "camellia",
+      "library_sha256": "e0363a7d5c352414bc9522f69ecb1dc88036e60834edb428ab9d8c60e243abae",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.null.key",
+            "elapsed_seconds": 8.650000000001712e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.null.nonce",
+            "elapsed_seconds": 3.083999999986542e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.null.input",
+            "elapsed_seconds": 2.083000000013824e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.null.output",
+            "elapsed_seconds": 1.8750000000122835e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.invalid.key_width",
+            "elapsed_seconds": 1.833999999978353e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.invalid.nonce_width",
+            "elapsed_seconds": 1.8340000000061085e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.invalid.output_capacity",
+            "elapsed_seconds": 1.6670000000107432e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.invalid.worker_zero",
+            "elapsed_seconds": 1.7920000000004599e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "camellia.block.null.key",
+            "elapsed_seconds": 1.8330000000066349e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "camellia.block.null.input",
+            "elapsed_seconds": 1.332999999992257e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "camellia.block.null.output",
+            "elapsed_seconds": 1.2909999999866084e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_camellia_256_ctr_xcrypt.empty_null_data.allowed",
+            "elapsed_seconds": 1.6670000000107432e-06,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          }
+        ],
+        "checks": 12,
+        "finished_utc": "2026-10-12T08:38:37.762144+00:00",
+        "library": "camellia",
+        "library_sha256": "e0363a7d5c352414bc9522f69ecb1dc88036e60834edb428ab9d8c60e243abae",
+        "pid": 79402,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:37.590770+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:37.525800+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "055a5c5b07c9d81f0872e356d8f8a13f71f49de5006a873b3dfbfa0a516ad8af"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79539,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:37.989693+00:00",
+      "library": "serpent",
+      "library_sha256": "8077cb8adc7f76f9bda792ed9bc94efa00948f1f33e187da45f293cf8e8b9e70",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.null.key",
+            "elapsed_seconds": 6.354100000000029e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.null.nonce",
+            "elapsed_seconds": 3.333999999993731e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.null.input",
+            "elapsed_seconds": 2.0419999999798932e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.null.output",
+            "elapsed_seconds": 1.958999999995825e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.invalid.key_width",
+            "elapsed_seconds": 2.1250000000194724e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.invalid.nonce_width",
+            "elapsed_seconds": 1.8330000000066349e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.invalid.output_capacity",
+            "elapsed_seconds": 1.8330000000066349e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.invalid.worker_zero",
+            "elapsed_seconds": 1.8340000000061085e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "serpent.block.null.key",
+            "elapsed_seconds": 2.042000000007649e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "serpent.block.null.input",
+            "elapsed_seconds": 1.415999999976325e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "serpent.block.null.output",
+            "elapsed_seconds": 1.4589999999814474e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_v13_serpent_256_ctr_xcrypt.empty_null_data.allowed",
+            "elapsed_seconds": 1.915999999990703e-06,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          }
+        ],
+        "checks": 12,
+        "finished_utc": "2026-10-12T08:38:37.985362+00:00",
+        "library": "serpent",
+        "library_sha256": "8077cb8adc7f76f9bda792ed9bc94efa00948f1f33e187da45f293cf8e8b9e70",
+        "pid": 79539,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:37.833904+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:37.767002+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "0a9cfd46b9c2ca99792827eee00d3b7075066880be8cf0c1a475d4d457951737"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79627,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:38.229746+00:00",
+      "library": "xchacha",
+      "library_sha256": "b7c71637c409e5445ec0f7976c762e5bacd6780064eb5691bada08c5740e6766",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.null.key",
+            "elapsed_seconds": 5.795899999999632e-05,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.null.nonce",
+            "elapsed_seconds": 3.707999999991163e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.null.aad",
+            "elapsed_seconds": 2.459000000010203e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.null.input",
+            "elapsed_seconds": 2.250000000009189e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.null.output",
+            "elapsed_seconds": 2.2499999999814335e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.null.tag",
+            "elapsed_seconds": 2.3339999999927308e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.invalid.key_width",
+            "elapsed_seconds": 2.5420000000220266e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.invalid.nonce_width",
+            "elapsed_seconds": 2.2499999999814335e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.invalid.output_capacity",
+            "elapsed_seconds": 2.209000000003014e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.invalid.tag_width",
+            "elapsed_seconds": 2.1669999999973655e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_encrypt_with_budget.invalid.worker_zero",
+            "elapsed_seconds": 2.3749999999989058e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.null.key",
+            "elapsed_seconds": 2.874999999985528e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.null.nonce",
+            "elapsed_seconds": 2.2080000000035405e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.null.aad",
+            "elapsed_seconds": 2.042000000007649e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.null.input",
+            "elapsed_seconds": 2.042000000007649e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.null.output",
+            "elapsed_seconds": 2.083000000013824e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.null.tag",
+            "elapsed_seconds": 2.1669999999973655e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.invalid.key_width",
+            "elapsed_seconds": 2.1669999999973655e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.invalid.nonce_width",
+            "elapsed_seconds": 2.2909999999876085e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.invalid.output_capacity",
+            "elapsed_seconds": 2.250000000009189e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.invalid.tag_width",
+            "elapsed_seconds": 2.2089999999752585e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "keepvault_xchacha20poly1305_v13_decrypt_with_budget.invalid.worker_zero",
+            "elapsed_seconds": 2.165999999997892e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "hchacha.null.key",
+            "elapsed_seconds": 3.374999999999906e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "hchacha.null.nonce",
+            "elapsed_seconds": 1.459000000009203e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "hchacha.null.output",
+            "elapsed_seconds": 1.2909999999866084e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "poly1305.create.null_key",
+            "status": "PASS"
+          },
+          {
+            "case": "poly1305.update.null_handle",
+            "elapsed_seconds": 2.000000000002e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "poly1305.final.null_handle",
+            "elapsed_seconds": 1.291000000014364e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "poly1305.update.null_data_positive_length",
+            "elapsed_seconds": 1.4170000000035543e-06,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "poly1305.update.empty_null_data.allowed",
+            "elapsed_seconds": 1.2080000000025404e-06,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          },
+          {
+            "case": "poly1305.final.null_output",
+            "elapsed_seconds": 9.579999999953515e-07,
+            "native_status": 1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "poly1305.destroy.null_handle.allowed",
+            "status": "PASS"
+          }
+        ],
+        "checks": 32,
+        "finished_utc": "2026-10-12T08:38:38.225814+00:00",
+        "library": "xchacha",
+        "library_sha256": "b7c71637c409e5445ec0f7976c762e5bacd6780064eb5691bada08c5740e6766",
+        "pid": 79627,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:38.060039+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:37.990306+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "05d085a0bfe33f998b90e258689ed47ca4c0dccf3787651fd570ebed3d683acf"
+    },
+    {
+      "binding_valid": true,
+      "child_pid": 79630,
+      "exit_code": 0,
+      "finished_utc": "2026-10-12T08:38:38.518608+00:00",
+      "library": "sha3",
+      "library_sha256": "5d069ec3e137906c2cf6627a1ef7895fb7429aaa7a72ab9fbe4c9e5c8bb394ef",
+      "receipt": {
+        "architecture": "x86_64",
+        "cases": [
+          {
+            "case": "sha3.hash.null.input",
+            "elapsed_seconds": 4.19580000000086e-05,
+            "native_status": -2,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "sha3.hash.null.output",
+            "elapsed_seconds": 2.3749999999989058e-06,
+            "native_status": -1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "sha3.hmac.null.key",
+            "elapsed_seconds": 2.2089999999752585e-06,
+            "native_status": -2,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "sha3.hmac.null.input",
+            "elapsed_seconds": 1.4170000000035543e-06,
+            "native_status": -2,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "sha3.hmac.null.output",
+            "elapsed_seconds": 1.3330000000477682e-06,
+            "native_status": -1,
+            "output_unchanged": true,
+            "status": "PASS"
+          },
+          {
+            "case": "sha3.hmac.empty_null_key_and_message.allowed",
+            "elapsed_seconds": 8.124999999969962e-06,
+            "native_status": 0,
+            "output_unchanged": null,
+            "status": "PASS"
+          }
+        ],
+        "checks": 6,
+        "finished_utc": "2026-10-12T08:38:38.514393+00:00",
+        "library": "sha3",
+        "library_sha256": "5d069ec3e137906c2cf6627a1ef7895fb7429aaa7a72ab9fbe4c9e5c8bb394ef",
+        "pid": 79630,
+        "schema": "keepvault.native-key-handoff-null-child.v1",
+        "started_utc": "2026-10-12T08:38:38.289029+00:00",
+        "status": "PASS"
+      },
+      "started_utc": "2026-10-12T08:38:38.230247+00:00",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d74eceee88e01a3c87e1565e3cfba07dd261701e9c00a03c6db1b5cf1f322e37"
+    }
+  ],
+  "finished_utc": "2026-10-12T08:38:38.518769+00:00",
+  "harness_sha256": "ee0e2495776f01427e4b0bb7a55d7bb8bde2f10a197aa7406d45f56cd1325474",
+  "native_directory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/x64-abi-native-public-copy",
+  "no_invalid_nonnull_addresses_or_expired_handles": true,
+  "no_production_argon2_allocation": true,
+  "pid": 79014,
+  "requested_architecture": "x86_64",
+  "schema": "keepvault.native-key-handoff-nulls.v1",
+  "scope": "NULL ABI rejection and legitimate optional NULL; independent constant-key oracles are separate managed tests",
+  "source_head": "fe6340e3c3493ac482d253f1aaadee149ff26980",
+  "started_utc": "2026-10-12T08:38:35.247666+00:00",
+  "status": "PASS",
+  "tracked_worktree_dirty": true
+}

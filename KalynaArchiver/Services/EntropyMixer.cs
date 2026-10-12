@@ -842,7 +842,9 @@ public static partial class EntropyMixer
 
     private static void FillSystemRandom(byte[] buffer) => FillRandom(buffer, EntropyRandomRole.OutputXor);
 
-    private static void FillSystemRandomCore(byte[] buffer)
+    // The isolated fixed release-audit fault cases forward every nonfailed
+    // role to this same reviewed OS adapter. No user-supplied provider is loaded.
+    internal static void FillSystemRandomCore(byte[] buffer)
     {
         int status = OperatingSystem.IsWindows()
             ? BCryptGenRandom(0, buffer, buffer.Length, BcryptUseSystemPreferredRng)

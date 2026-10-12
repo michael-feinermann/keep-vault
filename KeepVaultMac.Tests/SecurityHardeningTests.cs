@@ -458,8 +458,11 @@ internal static class SecurityHardeningTests
             () =>
             {
                 var encryption = LockedSensitiveBuffer.Create(pageSizedBuffer);
-                var sha3 = LockedSensitiveBuffer.Create(pageSizedBuffer);
-                var skein = LockedSensitiveBuffer.Create(pageSizedBuffer);
+                var sha3 = LockedSensitiveBuffer.Create(64);
+                var skein = LockedSensitiveBuffer.Create(128);
+                encryption.Bytes.AsSpan().Fill(0x5A);
+                sha3.Bytes.AsSpan().Fill(0x5A);
+                skein.Bytes.AsSpan().Fill(0x5A);
                 var material = new RoleKeyMaterial(encryption, sha3, skein);
                 return new CompositeSecretFixture(
                     material.Dispose,
