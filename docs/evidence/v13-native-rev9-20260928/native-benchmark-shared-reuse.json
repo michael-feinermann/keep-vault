@@ -1,0 +1,151 @@
+{
+  "status": "PASS",
+  "scope": "primitive cascade, fixed public keys/nonces; no KDF, derived nonce, global MAC, container or I/O claim",
+  "executor": "shared persistent product source",
+  "runtime": ".NET 10.0.11",
+  "architecture": "Arm64",
+  "artifacts": {
+    "libaes_ref.dylib": "F0DAD7807456AE59D5CC0B471933081A5AAA992C459F784B40858BFF3D5DE34F",
+    "libmars_ref.dylib": "FFB679B0D6AFF77AF0EA40D069A6704CEB14446CF86E0F9ABF55308C11608E71",
+    "libcamellia_v13.dylib": "2406EF353A627CBF3F1EF030D93EBE3AB11287E8CDF79B01F527B8AF26EBEF0E",
+    "libserpent_v13.dylib": "2AE8C5FCF8893D32B06B19087A80633ECEB067DA061BB30BDA09509F8DA1C751",
+    "libshacal2_ref.dylib": "9930E72E935B2D7EDCB3E5DE3D1CA5663B7CC2233FC7073A25CA9377163C5113",
+    "libkalyna_v13.dylib": "1D0C22112C2D4A94E7C3792999D2E5A9E78E6A2D03A92DDDDE2337D8D015BF92",
+    "libthreefish_ref.dylib": "7899D0334C23D9F78423F19713C9BBE8DD6875255191711CE18E648C65CD87A6",
+    "libxchachapoly_v13.dylib": "7CE5062DE2AADB34A66CE5FB6D7418765817576B5F5B6ED44A934D03808A099A"
+  },
+  "results": [
+    {
+      "suite": "Camellia256",
+      "worker_grant": 10,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.6734192,
+        0.6803434,
+        0.6780039,
+        0.6676101,
+        0.6614147
+      ],
+      "median_mib_per_second": 380.14954132581903,
+      "managed_allocated_bytes": [
+        27280,
+        27184,
+        27568,
+        27248,
+        26736
+      ],
+      "cpu_seconds": [
+        6.075795,
+        6.092624,
+        6.055229,
+        6.038257,
+        6.062684
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "60C2673AC203B3B8254AA7F10E57709468834C918F118F53C3DA5C74D0B57633",
+      "threadpool_threads": 10
+    },
+    {
+      "suite": "Serpent256",
+      "worker_grant": 10,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.2944517,
+        0.2991275,
+        0.3361499,
+        0.2907354,
+        0.2956274
+      ],
+      "median_mib_per_second": 865.9549148691901,
+      "managed_allocated_bytes": [
+        27440,
+        27504,
+        27248,
+        27440,
+        27184
+      ],
+      "cpu_seconds": [
+        2.676248,
+        2.707703,
+        2.660122,
+        2.639366,
+        2.703102
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "8A4F302B6867785026ECD5D954A57A2C4F826903E3ABEA63999C61BBD3588B99",
+      "threadpool_threads": 10
+    },
+    {
+      "suite": "StandardCascade",
+      "worker_grant": 10,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.3479572,
+        0.3490733,
+        0.3503739,
+        0.3490318,
+        0.3485372
+      ],
+      "median_mib_per_second": 733.4575245006329,
+      "managed_allocated_bytes": [
+        132936,
+        133744,
+        133040,
+        132912,
+        133808
+      ],
+      "cpu_seconds": [
+        3.105845,
+        3.098077,
+        3.10136,
+        3.102382,
+        3.095685
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "B04E24B3A2C8920754B27250A3078AD1B11C169392DD08DDBD9C29002C52F08C",
+      "threadpool_threads": 11
+    },
+    {
+      "suite": "ParanoiaCascade8",
+      "worker_grant": 10,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        1.6317944,
+        1.6283884,
+        1.6657565,
+        1.6391638,
+        1.6967533
+      ],
+      "median_mib_per_second": 156.17719229768252,
+      "managed_allocated_bytes": [
+        241520,
+        240704,
+        239600,
+        240944,
+        240944
+      ],
+      "cpu_seconds": [
+        14.995314,
+        14.932384,
+        14.954314,
+        14.983145,
+        15.02082
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "C293F6E86170D99373B253A52A25F221378FC3E9B6C9770920698FE9F4803ADF",
+      "threadpool_threads": 11
+    }
+  ]
+}

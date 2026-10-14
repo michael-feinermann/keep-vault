@@ -1,0 +1,21 @@
+{
+  "matrix": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/workflow-1gib-matrix-pinned-20261003T172229Z-c571f026",
+  "executionsSha256": "fce6e001dae0114b95f01a8232ecb0393ffc43a664b98a3f01f41d300d51fe0b",
+  "planSha256": "8478a6731225e471886ec61cfbd0eacb4d7411c4e393919c7087470565cda394",
+  "observedUtc": "2026-10-04T07:06:49.701725+00:00",
+  "statuses": {
+    "performance.rev12-workflow-1gib-standard-auto": "PASS",
+    "performance.rev12-workflow-1gib-xchacha-aes-auto": "PASS",
+    "performance.rev12-workflow-1gib-mixed-auto": "PASS",
+    "performance.rev12-workflow-1gib-paranoia-auto": "PASS",
+    "performance.rev12-workflow-1gib-threefish1024-auto": "PASS",
+    "performance.rev12-workflow-1gib-kalyna512-512-auto": "PASS",
+    "performance.rev12-workflow-1gib-shacal2-512-auto": "PASS",
+    "performance.rev12-workflow-1gib-mars448-auto": "PASS",
+    "performance.rev12-workflow-1gib-aes256-auto": "PASS",
+    "performance.rev12-workflow-1gib-camellia-auto": "PASS",
+    "performance.rev12-workflow-1gib-serpent-auto": "PASS",
+    "performance.rev12-workflow-1gib-xchacha20-poly1305-auto": "PASS"
+  },
+  "scope": "Terminal predecessor and no live owned groups/fixtures; predecessor FAILs remain FAILs"
+}

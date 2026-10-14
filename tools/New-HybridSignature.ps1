@@ -4,7 +4,9 @@ param(
     [string[]] $Path,
     [string] $CertificateThumbprint,
     [string] $PfxPath,
-    [string] $PfxPassword,
+    [string] $PfxPasswordEncryptedPath,
+    [string] $PfxWrappingKeyPath,
+    [System.Security.Cryptography.X509Certificates.X509Certificate2] $SigningCertificate,
     [string] $MldsaPrivateKeyPath,
     [string] $MldsaPrivateKeyEncryptedPath,
     [string] $WrappingKeyPath,
@@ -22,7 +24,7 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $signingProject = Join-Path $root "KalynaSigningTool\KalynaSigningTool.csproj"
-$signingTool = Join-Path $root "KalynaSigningTool\bin\Release\net9.0-windows\KalynaSigningTool.dll"
+$signingTool = Join-Path $root "KalynaSigningTool\bin\Release\net10.0-windows\KalynaSigningTool.dll"
 
 if ($MldsaPrivateKeyPath -and $MldsaPrivateKeyEncryptedPath) {
     throw "Provide either MldsaPrivateKeyPath or MldsaPrivateKeyEncryptedPath, not both."
@@ -40,12 +42,8 @@ if (-not $MldsaReferencePath) {
     $MldsaReferencePath = Join-Path $root "tools\mldsa87_ref.dll"
 }
 
-if (-not $NoBuild -or -not (Test-Path -LiteralPath $signingTool)) {
-    & dotnet build $signingProject -c Release --nologo
-    if ($LASTEXITCODE -ne 0) {
-        throw "KalynaSigningTool build failed."
-    }
-}
+. (Join-Path $PSScriptRoot 'Import-SigningRuntime.ps1')
+Import-SigningRuntime -NoBuild:$NoBuild
 
 $privateKeyPath = if ($MldsaPrivateKeyEncryptedPath) { $MldsaPrivateKeyEncryptedPath } else { $MldsaPrivateKeyPath }
 foreach ($required in @($privateKeyPath, $MldsaPublicKeyPath, $MldsaReferencePath, $signingTool)) {
@@ -63,65 +61,36 @@ if (-not $ExpectedMldsa87Sha256) { $ExpectedMldsa87Sha256 = $propertyGroup.Selec
 if (-not $ExpectedMldsa87Sha3_512) { $ExpectedMldsa87Sha3_512 = $propertyGroup.SelectSingleNode("KalynaExpectedMldsa87Sha3_512").InnerText }
 if (-not $ExpectedMldsa87Skein1024) { $ExpectedMldsa87Skein1024 = $propertyGroup.SelectSingleNode("KalynaExpectedMldsa87Skein1024").InnerText }
 
-$oldPfxPassword = $env:KALYNA_HYBRID_PFX_PASSWORD
+$ownedCertificate = $null
 try {
-    if ($PfxPath) {
-        $env:KALYNA_HYBRID_PFX_PASSWORD = $PfxPassword
+    if (-not $SigningCertificate) {
+        if ($PfxPath) {
+            if (-not $PfxPasswordEncryptedPath -or -not $PfxWrappingKeyPath) {
+                throw 'PFX signing requires the v12 password envelope and its separate wrapping-key file.'
+            }
+            $ownedCertificate = [KalynaArchiver.Signing.ReleaseSigningOperations]::LoadCertificate(
+                (Resolve-Path -LiteralPath $PfxPath).Path, $PfxPasswordEncryptedPath, $PfxWrappingKeyPath)
+        }
+        elseif ($CertificateThumbprint) {
+            if ($CertificateThumbprint -notmatch '^[0-9A-Fa-f]{40}$') { throw 'Invalid certificate thumbprint.' }
+            $ownedCertificate = Get-Item -LiteralPath "Cert:\CurrentUser\My\$CertificateThumbprint"
+        }
+        else {
+            throw 'Hybrid signing requires a signing certificate, CertificateThumbprint, or PfxPath.'
+        }
+        $SigningCertificate = $ownedCertificate
     }
 
     foreach ($target in $Path) {
         $resolvedTarget = (Resolve-Path -LiteralPath $target).Path
-        $signaturePath = "$resolvedTarget.khsig"
-        $arguments = @(
-            $signingTool,
-            "sign",
-            "--file", $resolvedTarget,
-            "--signature", $signaturePath,
-            "--public-key", $MldsaPublicKeyPath,
-            "--reference-dll", $MldsaReferencePath
-        )
-        if ($MldsaPrivateKeyEncryptedPath) {
-            if (-not $WrappingKeyPath) {
-                throw "WrappingKeyPath is required for an encrypted ML-DSA release key."
-            }
-            $arguments += @(
-                "--private-key-encrypted", $MldsaPrivateKeyEncryptedPath,
-                "--wrapping-key-file", (Resolve-Path -LiteralPath $WrappingKeyPath).Path
-            )
-        }
-        else {
-            $arguments += @("--private-key", $MldsaPrivateKeyPath)
-        }
-        if ($PfxPath) {
-            $arguments += @("--pfx", (Resolve-Path -LiteralPath $PfxPath).Path, "--pfx-password-env", "KALYNA_HYBRID_PFX_PASSWORD")
-        }
-        elseif ($CertificateThumbprint) {
-            $arguments += @("--certificate-thumbprint", $CertificateThumbprint)
-        }
-        else {
-            throw "Hybrid signing requires CertificateThumbprint or PfxPath."
-        }
-
-        & dotnet @arguments
-        if ($LASTEXITCODE -ne 0) {
-            throw "Hybrid RSA/ML-DSA signing failed for $resolvedTarget."
-        }
-
-        & dotnet $signingTool verify `
-            --file $resolvedTarget `
-            --signature $signaturePath `
-            --public-key $MldsaPublicKeyPath `
-            --rsa-sha256 $ExpectedSignerSha256 `
-            --rsa-sha3 $ExpectedSignerSha3_512 `
-            --rsa-skein $ExpectedSignerSkein1024 `
-            --mldsa-sha256 $ExpectedMldsa87Sha256 `
-            --mldsa-sha3 $ExpectedMldsa87Sha3_512 `
-            --mldsa-skein $ExpectedMldsa87Skein1024
-        if ($LASTEXITCODE -ne 0) {
-            throw "Hybrid signature verification failed for $resolvedTarget."
-        }
+        [KalynaArchiver.Signing.ReleaseSigningOperations]::SignFile(
+            $resolvedTarget, $SigningCertificate, $privateKeyPath, $WrappingKeyPath,
+            $MldsaPublicKeyPath, $MldsaReferencePath, (-not [bool]$MldsaPrivateKeyEncryptedPath),
+            $ExpectedSignerSha256, $ExpectedSignerSha3_512, $ExpectedSignerSkein1024,
+            $ExpectedMldsa87Sha256, $ExpectedMldsa87Sha3_512, $ExpectedMldsa87Skein1024)
+        Write-Host "Hybrid signature verified: $resolvedTarget"
     }
 }
 finally {
-    $env:KALYNA_HYBRID_PFX_PASSWORD = $oldPfxPassword
+    if ($ownedCertificate) { $ownedCertificate.Dispose() }
 }

@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-12T02:35:02.683148+00:00",
+  "actualPid": 41998,
+  "args": [
+    "/usr/bin/codesign",
+    "--verify",
+    "--deep",
+    "--strict",
+    "--all-architectures",
+    "-R=anchor apple generic and certificate leaf[subject.OU] = \"2T6K9PGS55\"",
+    "/Applications/Keep Vault.app"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "checks": 33545,
+  "cases": 132,
+  "fuzz_cases": 10000,
+  "seconds": 2.82,
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "architecture": "arm64",
+  "library_sha256": "7af023052d0631636a7ea54290463cdd3c2f23aea41d5b5404f5a54c2a827682",
+  "pynacl": "1.6.2",
+  "libsodium": "1.0.20-stable (2025-12-31 build, PyNaCl 1.6.2 metadata)",
+  "libsodium_binding_sha256": "49032c357199dde6ae341319e558ce3ed9daa80f5ac83972aa9a63158b0b5371",
+  "go_crypto": "v0.43.0",
+  "maximum_payload": 16777216,
+  "sources": [
+    "https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-xchacha-03",
+    "https://github.com/pyca/pynacl/tree/1.6.2",
+    "https://pkg.go.dev/golang.org/x/crypto@v0.43.0/chacha20poly1305"
+  ]
+}

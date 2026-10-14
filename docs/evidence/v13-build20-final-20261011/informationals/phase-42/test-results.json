@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "testInventoryHash": "2b275841e29601cb690e68c2741203b9470ac037a47641946066d9828579c3cd",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.rev12-workflow-1gib-aes256-auto",
+      "name": "explicit public one-GiB production-KDF level-3 complete archive/KPAR2/original-compare workflow: aes256/auto",
+      "status": "PASS",
+      "seconds": 568.207,
+      "peakRssMiB": 1701,
+      "seed": "0x4C9B957A",
+      "failure": null
+    }
+  ]
+}

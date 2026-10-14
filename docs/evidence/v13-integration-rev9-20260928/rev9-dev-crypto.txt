@@ -1,0 +1,60 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 2 worker(s)
+FULL PASS SHA3/SHA512 reset, HMAC BC equivalence and owned-pad disposal (0,6s)
+FULL PASS Camellia-256 KAT, independent CTR and full-width carry (1,3s)
+FULL PASS KDF primitives against independent second implementations (0,2s)
+FULL PASS Final Serpent-256 KAT, independent CTR and full-width carry (1,1s)
+FULL PASS ML-DSA-87 managed/reference interoperability (0,0s)
+FULL PASS SHA3, Skein, Kalyna and Threefish reference vectors (0,5s)
+FULL PASS randomised differential testing against every reference library (0,5s)
+FULL PASS v13 parallel MAC tree against an independent serial KAT (0,3s)
+FULL PASS AES-256 Crypto++ CTR against independent platform AES over 256 MiB (0,9s)
+FULL PASS ChaCha20 worker split against the serial keystream over 256 MiB (1,7s)
+FULL PASS XChaCha20-Poly1305 draft KAT, independent Crypto++ and 16 MiB worker differential (6,3s)
+FULL PASS cascade layering: the outer layer alone reveals nothing (0,5s)
+
+FAIL two-round key derivation from one pool consumption
+  seed=0x2D8CD1C1
+  ArgumentException: This suite requires single-round preparation. (Parameter 'suite')
+   at KalynaArchiver.Services.EntropyMixer.CreateTwoRoundEncryptionParameters(EncryptionSuite suite, CancellationToken cancellationToken)
+   at MacComprehensiveTests.TestTwoRoundDerivationAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 4817
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "crypto.two-round-derivation" --seed 0x2D8CD1C1
+
+FULL PASS salt and nonce for every single-round suite without prepared entropy (0,5s)
+
+FAIL per-chunk nonces across a multi-chunk archive
+  seed=0x36D65D68
+  AggregateException: One or more errors occurred. (Invalid argument)
+  Inner: Invalid argument
+   at System.Threading.Tasks.TaskReplicator.Run[TState](ReplicatableUserAction`1 action, ParallelOptions options, Boolean stopOnFirstFailure)
+   at System.Threading.Tasks.Parallel.ForWorker[TLocal,TInt](TInt fromInclusive, TInt toExclusive, ParallelOptions parallelOptions, Action`1 body, Action`2 bodyWithState, Func`4 bodyWithLocal, Func`1 localInit, Action`1 localFinally)
+--- End of stack trace from previous location ---
+   at System.Threading.Tasks.Parallel.ForWorker[TLocal,TInt](TInt fromInclusive, TInt toExclusive, ParallelOptions parallelOptions, Action`1 body, Action`2 bodyWithState, Func`4 bodyWithLocal, Func`1 localInit, Action`1 localFinally)
+   at KalynaArchiver.Services.VerifiedArchiveInput.Capture(String path, ArchiveOperationPolicy policy, Boolean copyCiphertext, CancellationToken token)
+   at KalynaArchiver.Services.VerifiedArchiveInput.<>c__DisplayClass39_0.<CaptureAsync>b__0()
+   at System.Threading.Tasks.Task`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at KalynaArchiver.Services.KalynaContainerService.DecryptToStreamAsync(String encryptedPath, String userPassword, String pin, String firstGeneratedPassword, String secondGeneratedPassword, Stream plainZpaqDestination, IProgress`1 progress, CancellationToken cancellationToken)
+   at MacComprehensiveTests.TestPerChunkNoncesAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 4773
+   at MacComprehensiveTests.TestPerChunkNoncesAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 4790
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "crypto.per-chunk-nonces" --seed 0x36D65D68
+
+FULL PASS AES, MARS, SHACAL-2 and Threefish vectors plus independent CTR behaviour (1,6s)
+FULL PASS Kalyna-512/512 Crypto++ against independent Bouncy Castle over 256 MiB (20,7s)
+
+17 macOS groups: 15 passed, 2 failed, 0 blocked.
+wall clock 23,4s; sum of test times 40,1s; parallel speedup 1,71x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL crypto.two-round-derivation — two-round key derivation from one pool consumption
+  FAIL crypto.per-chunk-nonces — per-chunk nonces across a multi-chunk archive

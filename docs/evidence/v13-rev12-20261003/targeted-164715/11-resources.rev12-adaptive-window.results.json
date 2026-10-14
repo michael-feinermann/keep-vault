@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "testInventoryHash": "d1e834e3d4cbb621e32903dfa71fcf69ae562811ab47cb6a2fcb97966f888b43",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "resources.rev12-adaptive-window",
+      "name": "REV12 accepted-window probes, loss rollback, no retry loop and fresh resource authority",
+      "status": "PASS",
+      "seconds": 0.015,
+      "peakRssMiB": 60,
+      "seed": "0x1985C034",
+      "failure": null
+    }
+  ]
+}

@@ -1,0 +1,267 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "scope": "actual ParallelContainerAuthenticator.ComputeAsync over public in-memory ciphertext",
+  "leaf_interval": "batch scheduling, CPU permit wait, both leaf MAC families and join wall time",
+  "non_leaf_interval": "operation wall minus measured leaf batches; includes ordered root, key setup, memory-stream reads, cleanup, uninstrumented overhead and permit waits; not a universal serial CPU fraction",
+  "observer": "optional AsyncLocal timing-only seam; absent-observer control produces identical tags",
+  "stopwatch_frequency": 1000000000,
+  "results": [
+    {
+      "worker_count": 1,
+      "payload_bytes": 67108864,
+      "authenticated_prefix_bytes": 59,
+      "leaf_bytes": 1048576,
+      "leaf_count": 65,
+      "warmup_runs": 1,
+      "measured_runs": 5,
+      "wall_seconds": [
+        0.2227665,
+        0.2277295,
+        0.2569185,
+        0.2238917,
+        0.2222029
+      ],
+      "cpu_seconds": [
+        0.233315,
+        0.227897,
+        0.256462,
+        0.225639,
+        0.222229
+      ],
+      "phases_seconds": [
+        {
+          "KeyPreparation": 3.6375e-05,
+          "RootInitialization": 2.666e-06,
+          "InputRead": 0.004966167,
+          "LeafBatches": 0.217195913,
+          "OrderedRoot": 6.1212e-05,
+          "FinalTags": 1.208e-06,
+          "Cleanup": 0.0003565
+        },
+        {
+          "KeyPreparation": 3.3625e-05,
+          "RootInitialization": 2.833e-06,
+          "InputRead": 0.005764459,
+          "LeafBatches": 0.221310337,
+          "OrderedRoot": 6.9787e-05,
+          "FinalTags": 1.375e-06,
+          "Cleanup": 0.000381834
+        },
+        {
+          "KeyPreparation": 3.9875e-05,
+          "RootInitialization": 2.75e-06,
+          "InputRead": 0.009544665,
+          "LeafBatches": 0.246635832,
+          "OrderedRoot": 7.6175e-05,
+          "FinalTags": 1.417e-06,
+          "Cleanup": 0.00038475
+        },
+        {
+          "KeyPreparation": 4.1583e-05,
+          "RootInitialization": 3e-06,
+          "InputRead": 0.005109627,
+          "LeafBatches": 0.218176461,
+          "OrderedRoot": 6.0415e-05,
+          "FinalTags": 1.416e-06,
+          "Cleanup": 0.000353747
+        },
+        {
+          "KeyPreparation": 3.15e-05,
+          "RootInitialization": 2.959e-06,
+          "InputRead": 0.004796922,
+          "LeafBatches": 0.216837711,
+          "OrderedRoot": 5.6246e-05,
+          "FinalTags": 1.333e-06,
+          "Cleanup": 0.00035354
+        }
+      ],
+      "root_seconds": [
+        6.5086e-05,
+        7.399500000000001e-05,
+        8.0342e-05,
+        6.4831e-05,
+        6.0538e-05
+      ],
+      "non_leaf_wall_seconds": [
+        0.005570587000000016,
+        0.0064191630000000055,
+        0.010282667999999995,
+        0.005715239000000011,
+        0.00536518900000002
+      ],
+      "root_fraction": [
+        0.0002921713992005082,
+        0.0003249249658037277,
+        0.00031271395403600753,
+        0.00028956410621742566,
+        0.00027244468906571426
+      ],
+      "median_wall_seconds": 0.2238917,
+      "median_root_seconds": 6.5086e-05,
+      "median_non_leaf_wall_seconds": 0.005715239000000011,
+      "managed_allocated_bytes": [
+        67251864,
+        67251864,
+        67253816,
+        67251864,
+        67251864
+      ],
+      "sha3_tag": "751025FA5899290860F2940F5587532F8190FFFFD3EB4FA43F34D3F31516CA3E6F5DDF68410D7895286ED7B339EE1BBB6993673E33BA13A24839881F3CAEAF0B",
+      "skein_tag": "6E199E9FA568DFAA143D57EB38D256BE7514CDCA5AC91081340E517715A200B255BA3D58C51A215C13EAEE90DD005F9C8B939CC909820D79CBF895DA329BAD3308C4AF92C5965AD3A4854F29575FD200448D40433E2A6ED16DC35C2820EEAA78A450DA64AFECEB935C33B462EBE1F1504E2D142DD2E2105BD75458BACE510850"
+    },
+    {
+      "worker_count": 10,
+      "payload_bytes": 67108864,
+      "authenticated_prefix_bytes": 59,
+      "leaf_bytes": 1048576,
+      "leaf_count": 65,
+      "warmup_runs": 1,
+      "measured_runs": 5,
+      "wall_seconds": [
+        0.0545221,
+        0.051376,
+        0.0516073,
+        0.0531203,
+        0.0540507
+      ],
+      "cpu_seconds": [
+        0.319929,
+        0.316491,
+        0.326488,
+        0.309245,
+        0.321416
+      ],
+      "phases_seconds": [
+        {
+          "KeyPreparation": 3.4417e-05,
+          "RootInitialization": 2.75e-06,
+          "InputRead": 0.006793584,
+          "LeafBatches": 0.046973166,
+          "OrderedRoot": 5.3374e-05,
+          "FinalTags": 1.5e-06,
+          "Cleanup": 0.000509249
+        },
+        {
+          "KeyPreparation": 3.2458e-05,
+          "RootInitialization": 3e-06,
+          "InputRead": 0.004635792,
+          "LeafBatches": 0.045955961,
+          "OrderedRoot": 5.7957e-05,
+          "FinalTags": 1.5e-06,
+          "Cleanup": 0.000658122
+        },
+        {
+          "KeyPreparation": 2.7459e-05,
+          "RootInitialization": 3.334e-06,
+          "InputRead": 0.004916959,
+          "LeafBatches": 0.046121917,
+          "OrderedRoot": 5.2956e-05,
+          "FinalTags": 1.334e-06,
+          "Cleanup": 0.000456793
+        },
+        {
+          "KeyPreparation": 3.0833e-05,
+          "RootInitialization": 2.667e-06,
+          "InputRead": 0.004993959,
+          "LeafBatches": 0.047454583,
+          "OrderedRoot": 5.2293e-05,
+          "FinalTags": 1.458e-06,
+          "Cleanup": 0.000559791
+        },
+        {
+          "KeyPreparation": 2.9916e-05,
+          "RootInitialization": 2.666e-06,
+          "InputRead": 0.004839916,
+          "LeafBatches": 0.048538499,
+          "OrderedRoot": 5.2125e-05,
+          "FinalTags": 1.416e-06,
+          "Cleanup": 0.000562459
+        }
+      ],
+      "root_seconds": [
+        5.7624e-05,
+        6.2457e-05,
+        5.7623999999999996e-05,
+        5.6418e-05,
+        5.6207e-05
+      ],
+      "non_leaf_wall_seconds": [
+        0.007548934,
+        0.0054200390000000015,
+        0.005485383000000003,
+        0.005665717000000001,
+        0.005512201000000001
+      ],
+      "root_fraction": [
+        0.0010568925261499466,
+        0.0012156843662410465,
+        0.0011165862193914427,
+        0.0010620798451815973,
+        0.0010398940254242775
+      ],
+      "median_wall_seconds": 0.0531203,
+      "median_root_seconds": 5.7623999999999996e-05,
+      "median_non_leaf_wall_seconds": 0.005512201000000001,
+      "managed_allocated_bytes": [
+        67264048,
+        67253872,
+        67253872,
+        67253872,
+        67253872
+      ],
+      "sha3_tag": "751025FA5899290860F2940F5587532F8190FFFFD3EB4FA43F34D3F31516CA3E6F5DDF68410D7895286ED7B339EE1BBB6993673E33BA13A24839881F3CAEAF0B",
+      "skein_tag": "6E199E9FA568DFAA143D57EB38D256BE7514CDCA5AC91081340E517715A200B255BA3D58C51A215C13EAEE90DD005F9C8B939CC909820D79CBF895DA329BAD3308C4AF92C5965AD3A4854F29575FD200448D40433E2A6ED16DC35C2820EEAA78A450DA64AFECEB935C33B462EBE1F1504E2D142DD2E2105BD75458BACE510850"
+    }
+  ],
+  "recorded_utc": "2026-09-28T14:20:57.445559+00:00",
+  "evidence_log_sha256": "5ba841b4182617ed1f6c5708573a845ef507b65cc60e114f5badb13d191c0369",
+  "assembly_sha256": {
+    "work/v13-dev-trust-20260928/KeepVaultMac.Tests.dll": "1535fc69a08154da7cc4532a77f0901327dbd3f8c3c58ccc96ca91b1bf473af6",
+    "work/v13-dev-trust-20260928/Keep Vault.dll": "7d763bcdbc664d63cc26f1e79f4fd66639a066094290598fb3e2daceb2d61fba"
+  },
+  "source_sha256": {
+    "KalynaArchiver/Services/ParallelContainerAuthenticator.cs": "3f92948d079050538563efba4575b095b4381908567eff47baf95cee48fce206",
+    "KeepVaultMac.Tests/MacPhasePerformanceTests.cs": "64971ede45cc2f668ed17b2bd636664db18724c39297acc4ba2741215d7c901e",
+    "KalynaArchiver/Services/CpuWorkBudget.cs": "867d1b8b41b597b7c1b27e359ef2eaf23c553caf2a8ac3ac1f527d2bb5c3b25c",
+    "KalynaArchiver/Services/NativeCascadeCiphers.cs": "a1fd9137cfba4997dbf1f6bcba3fe1ef91a583f1f253b3dc2c6df251bd3f1d03",
+    "KalynaArchiver/Services/KalynaContainerService.cs": "d109577afd3e7f0ac2626660bf27f0070657048d73d642720e1eafd9d8b15063"
+  },
+  "host_observation": {
+    "utc": "2026-09-28T14:11:50.000413+00:00",
+    "scope": "Host observation during development performance run; power condition is reported, not controlled.",
+    "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+    "cpu": "Apple M5\n10\n17179869184",
+    "xcode": "Xcode 27.0\nBuild version 27A266a",
+    "power": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=22216803)\t51%; discharging; 3:24 remaining present: true"
+  },
+  "host_observation_sha256": "c506e72d8b836669b4f94a28e5650e925a6ea155567d347aa42f2eecc7babe57",
+  "runner_result": {
+    "schemaVersion": 3,
+    "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+    "testInventoryHash": "8e8445016363c1e0810d88d368e47528f3fe9555a4773fbb35f990bd5bbc18ac",
+    "platform": "macos",
+    "osArchitecture": "arm64",
+    "processArchitecture": "arm64",
+    "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+    "budget": {
+      "maxWorkers": 1,
+      "cpuTokens": 9,
+      "memoryMiB": 9011,
+      "argonSlots": 2,
+      "zpaqSlots": 1
+    },
+    "tests": [
+      {
+        "id": "performance.mac-root-phases",
+        "name": "actual v13 dual-MAC leaf/root/serial remainder timing",
+        "status": "PASS",
+        "seconds": 2.269,
+        "peakRssMiB": 460,
+        "seed": "0x42E4BF2F",
+        "failure": null
+      }
+    ]
+  },
+  "runner_result_sha256": "2a9dcd0e426988d05ed60e522aec03959328cbc5df9d16ded6c5ca812a5a4f6a"
+}

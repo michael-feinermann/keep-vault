@@ -1,0 +1,15 @@
+{
+  "builderSha256": "f010ef728a7ac4213eeca5a8e91e2f5b19ed0b700b07144bf7f24767fe46bf6e",
+  "fullReleaseGate": "NOT_RUN",
+  "launcherPid": 59052,
+  "launcherTerminal": null,
+  "privateContentReadCopiedOrHashed": false,
+  "publishMode": "prerelease",
+  "requestedBuild": 21,
+  "scope": "Tracked public project/native/build inputs and explicit public signing pin; no private-material bytes.",
+  "sourceFileCount": 566,
+  "sourceHead": "8c68571695ae9072555ffb462b3c0b9c500811ea",
+  "sourceMapSha256": "51474d237dcc8c5071b3fa319c39404c55b9f08163ce9d469974004d80721d26",
+  "startedUtc": "2026-10-12T10:25:14.630688+00:00",
+  "wrapperSha256": "abd83dd90640116d4ab93dc89b45ca606463603985cb365988c5099879d17a9e"
+}

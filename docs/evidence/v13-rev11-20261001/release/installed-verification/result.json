@@ -1,0 +1,516 @@
+{
+  "schema_version": 1,
+  "utc_started": "2026-10-01T10:17:42.445174+00:00",
+  "source_commit": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "candidate": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W",
+  "scope": "Read-only installed main/scanner and candidate-kit installer verification. No builds, signing, installation, GUI or key access. Inventories include regular-file bytes, symlink targets and directory topology; comparisons do not assert equality of owner/timestamps/xattrs.",
+  "installer_application_path_present": false,
+  "apps": {
+    "main": {
+      "path": "/Applications/Keep Vault.app",
+      "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault.app",
+      "scope": "installed app",
+      "metadata": {
+        "CFBundleIdentifier": "de.michael-feinermann.keep-vault",
+        "CFBundleShortVersionString": "5.0.3",
+        "CFBundleVersion": "15",
+        "CFBundleExecutable": "Keep Vault Launcher"
+      },
+      "metadata_matches_candidate": true,
+      "expected_version_build_identifier": true,
+      "entry_count": 111,
+      "file_count": 103,
+      "differences_from_candidate": [],
+      "object_metadata_unchanged_during_check": true,
+      "candidate_metadata_unchanged_during_check": true,
+      "checks": {
+        "codesign_all_architectures": {
+          "label": "main codesign all architectures",
+          "argv": [
+            "/usr/bin/codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "--all-architectures",
+            "/Applications/Keep Vault.app"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "",
+          "elapsed_seconds": 0.07647450000513345
+        },
+        "slices": {
+          "arm64": {
+            "command_index": 2,
+            "exit_code": 0,
+            "Identifier": "de.michael-feinermann.keep-vault",
+            "TeamIdentifier": "2T6K9PGS55",
+            "CDHash": "e3204436331deaa1bf7a76133394c758552bbd94",
+            "Timestamp": "1. Oct 2026 at 10:48:49",
+            "Runtime Version": "27.0.0",
+            "authorities": [
+              "Developer ID Application: Michael Feinermann (2T6K9PGS55)",
+              "Developer ID Certification Authority",
+              "Apple Root CA"
+            ]
+          },
+          "x86_64": {
+            "command_index": 3,
+            "exit_code": 0,
+            "Identifier": "de.michael-feinermann.keep-vault",
+            "TeamIdentifier": "2T6K9PGS55",
+            "CDHash": "c4b3b291b288c5f9a8275792151793d0de3db4a6",
+            "Timestamp": "1. Oct 2026 at 10:48:49",
+            "Runtime Version": "27.0.0",
+            "authorities": [
+              "Developer ID Application: Michael Feinermann (2T6K9PGS55)",
+              "Developer ID Certification Authority",
+              "Apple Root CA"
+            ]
+          }
+        },
+        "gatekeeper": {
+          "label": "main Gatekeeper",
+          "argv": [
+            "/usr/sbin/spctl",
+            "--assess",
+            "--type",
+            "execute",
+            "--verbose=4",
+            "/Applications/Keep Vault.app"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "/Applications/Keep Vault.app: accepted\nsource=Notarized Developer ID\n",
+          "elapsed_seconds": 0.270632291038055
+        },
+        "stapling": {
+          "label": "main stapling",
+          "argv": [
+            "/usr/bin/xcrun",
+            "stapler",
+            "validate",
+            "/Applications/Keep Vault.app"
+          ],
+          "exit_code": 0,
+          "stdout": "Processing: /Applications/Keep Vault.app\nThe validate action worked!\n",
+          "stderr": "",
+          "elapsed_seconds": 0.2344025420024991
+        },
+        "passed": true,
+        "architectures": {
+          "label": "main Mach-O architectures",
+          "argv": [
+            "/usr/bin/lipo",
+            "-archs",
+            "/Applications/Keep Vault.app/Contents/MacOS/Keep Vault Launcher"
+          ],
+          "exit_code": 0,
+          "stdout": "x86_64 arm64\n",
+          "stderr": "",
+          "elapsed_seconds": 0.06461474997922778
+        }
+      },
+      "passed": true
+    },
+    "scanner": {
+      "path": "/Applications/QR-Scanner.app",
+      "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/QR-Scanner.app",
+      "scope": "installed app",
+      "metadata": {
+        "CFBundleIdentifier": "de.michael-feinermann.qr-scanner",
+        "CFBundleShortVersionString": "5.0.3",
+        "CFBundleVersion": "15",
+        "CFBundleExecutable": "QR-Scanner"
+      },
+      "metadata_matches_candidate": true,
+      "expected_version_build_identifier": true,
+      "entry_count": 11,
+      "file_count": 6,
+      "differences_from_candidate": [],
+      "object_metadata_unchanged_during_check": true,
+      "candidate_metadata_unchanged_during_check": true,
+      "checks": {
+        "codesign_all_architectures": {
+          "label": "scanner codesign all architectures",
+          "argv": [
+            "/usr/bin/codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "--all-architectures",
+            "/Applications/QR-Scanner.app"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "",
+          "elapsed_seconds": 0.022070250008255243
+        },
+        "slices": {
+          "arm64": {
+            "command_index": 8,
+            "exit_code": 0,
+            "Identifier": "de.michael-feinermann.qr-scanner",
+            "TeamIdentifier": "2T6K9PGS55",
+            "CDHash": "5699ef25bf1b8a6bf7aec79dbe6cf77a9e2416a2",
+            "Timestamp": "1. Oct 2026 at 10:49:40",
+            "Runtime Version": "14.0.0",
+            "authorities": [
+              "Developer ID Application: Michael Feinermann (2T6K9PGS55)",
+              "Developer ID Certification Authority",
+              "Apple Root CA"
+            ]
+          },
+          "x86_64": {
+            "command_index": 9,
+            "exit_code": 0,
+            "Identifier": "de.michael-feinermann.qr-scanner",
+            "TeamIdentifier": "2T6K9PGS55",
+            "CDHash": "f7dd960262bbcb2007fd902ac6097c656cbeb5a1",
+            "Timestamp": "1. Oct 2026 at 10:49:40",
+            "Runtime Version": "14.0.0",
+            "authorities": [
+              "Developer ID Application: Michael Feinermann (2T6K9PGS55)",
+              "Developer ID Certification Authority",
+              "Apple Root CA"
+            ]
+          }
+        },
+        "gatekeeper": {
+          "label": "scanner Gatekeeper",
+          "argv": [
+            "/usr/sbin/spctl",
+            "--assess",
+            "--type",
+            "execute",
+            "--verbose=4",
+            "/Applications/QR-Scanner.app"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "/Applications/QR-Scanner.app: accepted\nsource=Notarized Developer ID\n",
+          "elapsed_seconds": 0.14914704096736386
+        },
+        "stapling": {
+          "label": "scanner stapling",
+          "argv": [
+            "/usr/bin/xcrun",
+            "stapler",
+            "validate",
+            "/Applications/QR-Scanner.app"
+          ],
+          "exit_code": 0,
+          "stdout": "Processing: /Applications/QR-Scanner.app\nThe validate action worked!\n",
+          "stderr": "",
+          "elapsed_seconds": 0.2258600000059232
+        },
+        "passed": true,
+        "architectures": {
+          "label": "scanner Mach-O architectures",
+          "argv": [
+            "/usr/bin/lipo",
+            "-archs",
+            "/Applications/QR-Scanner.app/Contents/MacOS/QR-Scanner"
+          ],
+          "exit_code": 0,
+          "stdout": "x86_64 arm64\n",
+          "stderr": "",
+          "elapsed_seconds": 0.01562408299650997
+        }
+      },
+      "passed": true
+    },
+    "installer": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault Installer.app",
+      "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault Installer.app",
+      "scope": "candidate-kit installer, not installed under /Applications",
+      "metadata": {
+        "CFBundleIdentifier": "de.michael-feinermann.keep-vault.installer",
+        "CFBundleShortVersionString": "5.0.3",
+        "CFBundleVersion": "15",
+        "CFBundleExecutable": "Keep Vault Installer"
+      },
+      "metadata_matches_candidate": true,
+      "expected_version_build_identifier": true,
+      "entry_count": 28,
+      "file_count": 21,
+      "differences_from_candidate": [],
+      "object_metadata_unchanged_during_check": true,
+      "candidate_metadata_unchanged_during_check": true,
+      "checks": {
+        "codesign_all_architectures": {
+          "label": "installer codesign all architectures",
+          "argv": [
+            "/usr/bin/codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "--all-architectures",
+            "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault Installer.app"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "",
+          "elapsed_seconds": 0.03581312496680766
+        },
+        "slices": {
+          "arm64": {
+            "command_index": 14,
+            "exit_code": 0,
+            "Identifier": "de.michael-feinermann.keep-vault.installer",
+            "TeamIdentifier": "2T6K9PGS55",
+            "CDHash": "e3f8db46be109783a64358a43eecd626b2970ef2",
+            "Timestamp": "1. Oct 2026 at 10:52:53",
+            "Runtime Version": "27.0.0",
+            "authorities": [
+              "Developer ID Application: Michael Feinermann (2T6K9PGS55)",
+              "Developer ID Certification Authority",
+              "Apple Root CA"
+            ]
+          },
+          "x86_64": {
+            "command_index": 15,
+            "exit_code": 0,
+            "Identifier": "de.michael-feinermann.keep-vault.installer",
+            "TeamIdentifier": "2T6K9PGS55",
+            "CDHash": "5267f030484ac87315c9032ccc15cb8479747acd",
+            "Timestamp": "1. Oct 2026 at 10:52:52",
+            "Runtime Version": "27.0.0",
+            "authorities": [
+              "Developer ID Application: Michael Feinermann (2T6K9PGS55)",
+              "Developer ID Certification Authority",
+              "Apple Root CA"
+            ]
+          }
+        },
+        "gatekeeper": {
+          "label": "installer Gatekeeper",
+          "argv": [
+            "/usr/sbin/spctl",
+            "--assess",
+            "--type",
+            "execute",
+            "--verbose=4",
+            "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault Installer.app"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault Installer.app: accepted\nsource=Notarized Developer ID\n",
+          "elapsed_seconds": 0.17186983401188627
+        },
+        "stapling": {
+          "label": "installer stapling",
+          "argv": [
+            "/usr/bin/xcrun",
+            "stapler",
+            "validate",
+            "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault Installer.app"
+          ],
+          "exit_code": 0,
+          "stdout": "Processing: /Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault Installer.app\nThe validate action worked!\n",
+          "stderr": "",
+          "elapsed_seconds": 0.235737208975479
+        },
+        "passed": true,
+        "architectures": {
+          "label": "installer Mach-O architectures",
+          "argv": [
+            "/usr/bin/lipo",
+            "-archs",
+            "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault Installer.app/Contents/MacOS/Keep Vault Installer"
+          ],
+          "exit_code": 0,
+          "stdout": "x86_64 arm64\n",
+          "stderr": "",
+          "elapsed_seconds": 0.014773709001019597
+        }
+      },
+      "passed": true
+    }
+  },
+  "anchor": {
+    "path": "/Library/Application Support/Keep Vault/v13",
+    "comparisons": [
+      {
+        "name": "zpaq",
+        "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault.app/Contents/MacOS/Native/zpaq",
+        "expected_sha256": "34ee8d3ce378560bc4f56f55d8780bcba2ee0bcc01f77a483c0ee9d2590a549a",
+        "actual_sha256": "34ee8d3ce378560bc4f56f55d8780bcba2ee0bcc01f77a483c0ee9d2590a549a",
+        "equal": true,
+        "safe_owner_mode": true
+      },
+      {
+        "name": "zpaq.sha3",
+        "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.sha3",
+        "expected_sha256": "27d3b730b5104a9929e1108eefacbdc4aba14b5354f212fe86dfa5c0b07a1578",
+        "actual_sha256": "27d3b730b5104a9929e1108eefacbdc4aba14b5354f212fe86dfa5c0b07a1578",
+        "equal": true,
+        "safe_owner_mode": true
+      },
+      {
+        "name": "zpaq.skein",
+        "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.skein",
+        "expected_sha256": "f1601f2f32a907054815fbb074e485868613a39575ea76dcf384c257f5869f81",
+        "actual_sha256": "f1601f2f32a907054815fbb074e485868613a39575ea76dcf384c257f5869f81",
+        "equal": true,
+        "safe_owner_mode": true
+      },
+      {
+        "name": "zpaq.khsig",
+        "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.khsig",
+        "expected_sha256": "c4fc67900d3e2b11565a9279dc127a438dc974b3556b41e529dc83050d9770f2",
+        "actual_sha256": "c4fc67900d3e2b11565a9279dc127a438dc974b3556b41e529dc83050d9770f2",
+        "equal": true,
+        "safe_owner_mode": true
+      },
+      {
+        "name": "zpaq.sha3.khsig",
+        "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.sha3.khsig",
+        "expected_sha256": "fa96d59352a4b1f32df2894e060f5be316ac142ddf41be55c121c243d738a4a0",
+        "actual_sha256": "fa96d59352a4b1f32df2894e060f5be316ac142ddf41be55c121c243d738a4a0",
+        "equal": true,
+        "safe_owner_mode": true
+      },
+      {
+        "name": "zpaq.skein.khsig",
+        "reference": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.skein.khsig",
+        "expected_sha256": "c2f49b1773f4a76989cc4532243bf8d79066ea5f6fc543fd9ef45d761d01aea5",
+        "actual_sha256": "c2f49b1773f4a76989cc4532243bf8d79066ea5f6fc543fd9ef45d761d01aea5",
+        "equal": true,
+        "safe_owner_mode": true
+      }
+    ],
+    "ancestors": [
+      {
+        "path": "/Library",
+        "device": 16777230,
+        "inode": 41024364,
+        "mode": "0o755",
+        "uid": 0,
+        "gid": 0,
+        "links": 70,
+        "size": 2240,
+        "mtime_ns": 1789815141005316921,
+        "ctime_ns": 1789815141005316921,
+        "flags": 1048576,
+        "safe": true
+      },
+      {
+        "path": "/Library/Application Support",
+        "device": 16777230,
+        "inode": 41026165,
+        "mode": "0o755",
+        "uid": 0,
+        "gid": 80,
+        "links": 28,
+        "size": 896,
+        "mtime_ns": 1788349480877894666,
+        "ctime_ns": 1788349480877894666,
+        "flags": 0,
+        "safe": true
+      },
+      {
+        "path": "/Library/Application Support/Keep Vault",
+        "device": 16777230,
+        "inode": 37962542,
+        "mode": "0o755",
+        "uid": 0,
+        "gid": 0,
+        "links": 5,
+        "size": 160,
+        "mtime_ns": 1790848581602613840,
+        "ctime_ns": 1790848581602613840,
+        "flags": 0,
+        "safe": true
+      },
+      {
+        "path": "/Library/Application Support/Keep Vault/v13",
+        "device": 16777230,
+        "inode": 53672685,
+        "mode": "0o755",
+        "uid": 0,
+        "gid": 0,
+        "links": 8,
+        "size": 256,
+        "mtime_ns": 1790845078707331736,
+        "ctime_ns": 1790845078909611718,
+        "flags": 0,
+        "safe": true
+      }
+    ],
+    "minimum_version": {
+      "path": "/Library/Application Support/Keep Vault/minimum-version",
+      "device": 16777230,
+      "inode": 53688879,
+      "mode": "0o644",
+      "uid": 0,
+      "gid": 0,
+      "links": 1,
+      "size": 2,
+      "mtime_ns": 1790848576681130163,
+      "ctime_ns": 1790848576691225302,
+      "flags": 0,
+      "value": "15",
+      "safe": true
+    },
+    "exact_expected_entries": true,
+    "unchanged_during_check": true,
+    "checks": {
+      "codesign_all_architectures": {
+        "label": "installed v13 ZPAQ anchor codesign all architectures",
+        "argv": [
+          "/usr/bin/codesign",
+          "--verify",
+          "--deep",
+          "--strict",
+          "--all-architectures",
+          "/Library/Application Support/Keep Vault/v13/zpaq"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "elapsed_seconds": 0.01646358403377235
+      },
+      "slices": {
+        "arm64": {
+          "command_index": 20,
+          "exit_code": 0,
+          "Identifier": "de.michael-feinermann.keep-vault.component.b15c6c7b755deefc",
+          "TeamIdentifier": "2T6K9PGS55",
+          "CDHash": "61209144f756f2ad7ef66d84c95bca9340282b14",
+          "Timestamp": "1. Oct 2026 at 10:48:29",
+          "Runtime Version": "27.0.0",
+          "authorities": [
+            "Developer ID Application: Michael Feinermann (2T6K9PGS55)",
+            "Developer ID Certification Authority",
+            "Apple Root CA"
+          ]
+        },
+        "x86_64": {
+          "command_index": 21,
+          "exit_code": 0,
+          "Identifier": "de.michael-feinermann.keep-vault.component.b15c6c7b755deefc",
+          "TeamIdentifier": "2T6K9PGS55",
+          "CDHash": "98655de79640864b07fef1bd95668b48355e0d0d",
+          "Timestamp": "1. Oct 2026 at 10:48:29",
+          "Runtime Version": "27.0.0",
+          "authorities": [
+            "Developer ID Application: Michael Feinermann (2T6K9PGS55)",
+            "Developer ID Certification Authority",
+            "Apple Root CA"
+          ]
+        }
+      },
+      "passed": true
+    },
+    "passed": true
+  },
+  "utc_finished": "2026-10-01T10:17:44.320609+00:00",
+  "passed": true,
+  "limitations": [
+    "Installer was verified in the preserved candidate kit; no third installed /Applications app is claimed.",
+    "App hash equality covers file bytes, symlink targets and topology. Extended attributes are not compared; Apple code signatures are independently verified.",
+    "This is an identity/signature/install comparison, not completion of the running full suite, GUI acceptance or public release/download verification.",
+    "No independent new RSA/ML-DSA signature invocation; anchor sidecars are compared byte-for-byte with the candidate already verified by the release builder."
+  ]
+}

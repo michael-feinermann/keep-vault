@@ -2,9 +2,11 @@
 
 [Deutsch](README.de.md) · [English](README.md) · [Dokumentationsverzeichnis](docs/README.md)
 
+Aktuelle macOS-Veröffentlichung: [5.0.3/v13 Build 21](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3), auf ausdrücklichen Wunsch als regulärer GitHub-Release veröffentlicht und als Latest ausgewählt. Die zusätzlichen Tests folgen später; die technische Gesamtfreigabe ist weiterhin ausstehend. Alle sechs Dateien sind bytegleich zum signierten, notarisierten und installierten Build-21-Kandidaten, kompiliert aus `8c68571695ae9072555ffb462b3c0b9c500811ea`. Der [aktuelle Veröffentlichungsstand](docs/KEEP_VAULT_5_0_3_PUBLICATION_STATUS.md) trennt diese Veröffentlichungsentscheidung von den bisherigen [Build-21-Belegen](docs/PRERELEASE_BUILD21_REPORT.md) und dem offenen 49-Phasen-Freigabelauf, den abschließenden Zwölf-Suite-1-GiB-Messungen mit Kompressionsstufe 3 und realen Bediengates. Frühere Releases bleiben erhalten. Windows und reale Mehr-TiB-Läufe gehören nicht zu diesem Durchgang.
+
 Archivierung, Entpackung und kryptografische Löschung von ZPAQ-Archiven. Die aktuelle
-Veröffentlichung richtet sich an macOS und verwendet das Containerformat v12:
-eine wählbare Kaskade aus bis zu sechs unabhängigen Chiffren über dem komprimierten
+Entwicklungsversion 5.0.3 verwendet das Containerformat v13:
+eine wählbare Kaskade aus bis zu acht unabhängigen Chiffren über dem komprimierten
 Datenstrom, Schlüssel aus zwei Argon2id-Zweigen, deren Speicherbedarf aus deinen
 Zugangsdaten abgeleitet wird, zwei getrennte MACs und vier Zugangsfaktoren:
 eine Passphrase, eine PIN und zwei von der App erzeugte 1024-Bit-Faktoren.
@@ -12,12 +14,11 @@ eine Passphrase, eine PIN und zwei von der App erzeugte 1024-Bit-Faktoren.
 Die Anwendung wird weiterentwickelt. Sie ersetzt weder ein externes
 kryptografisches Audit noch ein HSM oder die Absicherung des Betriebssystems.
 
-> Die Plattformen werden getrennt geprüft. macOS-Versionen werden auf echter
-> Apple-Hardware gebaut und getestet. Die Windows-WPF-Anwendung und ihr eigener
-> QR-Scanner werden in einem späteren, getrennten Schritt auf v12 portiert und
-> veröffentlicht. Der aktuelle Windows-Entwicklungsstand gehört nicht zu dieser
-> v12-Veröffentlichung; bestandene macOS-Tests gelten niemals als Windows-Nachweis.
-
+> Die Plattformen werden getrennt geprüft. macOS und Windows werden auf ihrer
+> jeweiligen Hardware gebaut und getestet. Windows 5.0.2 folgt der macOS-v12-
+> Referenz. Windows-Nachweise und offene Freigabeprüfungen stehen im
+> [Windows-Prüfbericht](docs/KEEP_VAULT_5_0_2_WINDOWS_AUDIT.md); macOS-Ergebnisse
+> gelten niemals als Windows-Nachweis.
 ---
 
 ## Installation
@@ -32,7 +33,7 @@ WLAN und unabhängiger IPv4/IPv6-Überwachung bestanden. Die Nachweise für Kern
 echte GUI sind im [macOS-Audit](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.md) getrennt dokumentiert.
 
 Die stabile [Veröffentlichung v5.0.2](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.2)
-ist seit dem 9. September 2026 öffentlich und enthält die sechs geprüften Dateien.
+ist seit dem 9. September 2026 öffentlich; ihre sechs macOS-Dateien wurden getrennt geprüft.
 Der Release-Tag zeigt auf den geprüften Commit `8df29a9e13eb65c0769666c3835b4cf0b96dad20`;
 die hochgeladenen Dateien wurden erneut heruntergeladen und bytegenau verifiziert.
 Spätere reine Dokumentationsänderungen ändern diesen Tag und die notarisierten
@@ -42,19 +43,38 @@ Fertige Pakete findest du auf der
 [Releases-Seite](https://github.com/michael-feinermann/keep-vault/releases).
 Voraussetzung: macOS 14 oder neuer, Apple Silicon oder Intel (Universal Binary).
 
-Die folgenden Befehle betreffen den getrennten, unveröffentlichten
-Windows-Entwicklungsstand und gehören nicht zur macOS-Veröffentlichung von v12.
-Für einen lokalen Windows-x64-Build führst du `tools/Build-Portable.ps1` und danach
-`tools/Install-KeepVaultShortcuts.ps1` aus. Die verbindliche Portierungscheckliste steht in
-[`docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md`](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md);
-sie muss auf echter Windows-Hardware vollständig abgearbeitet werden, bevor eine
-Windows-Veröffentlichung behauptet werden darf. Die Verknüpfungen zeigen auf den
-verifizierten portablen Verzeichnisbaum in diesem Workspace. Ein neuer erfolgreicher
-portabler Build wird damit ohne zweite veränderbare Kopie zur lokal installierten
-Version. Derselbe Baum enthält den separat gebauten und signierten
-`QR-Scanner\QR-Scanner.exe`; Keep Vault prüft dieses Begleitprogramm beim Start.
-Der Scanner bleibt der einzige Windows-Prozess des Releases mit Kamerazugriff.
+Windows 5.0.2 wird als eigenständiges x64-Paket für Windows 10 2004 oder neuer
+gebaut. `Keep Vault Setup.exe` prüft das signierte Vollinventar und sämtliche
+Programme, kopiert in ein neues Anwendungsverzeichnis des Benutzerkontos und
+prüft die installierte Kopie vor dem Anlegen der Verknüpfungen. SDK, Compiler,
+eine PowerShell-Installation oder eine separat installierte .NET-Laufzeit sind
+nicht erforderlich. Bei bereits vorhandenen Verknüpfungen bricht der Installer
+vor der Installation mit einer klaren Meldung ab; alte Installationen werden
+nicht stillschweigend ersetzt. Der getrennte `QR-Scanner\QR-Scanner.exe` bleibt
+der einzige Prozess mit Kamerazugriff. Das entpackte Paket muss vollständig
+zusammenbleiben, einschließlich aller `.khsig`-, `.sha3`-, `.skein`-Dateien und
+`RELEASE-INVENTORY.json`.
 
+Für einen Quellbuild dient `tools/Build-Portable.ps1 -ReleaseKeyDirectory <Schlüsselverzeichnis>`
+mit dem exakten SDK aus `global.json` und der dokumentierten nativen Toolchain.
+Das Skript verlangt committete, unveränderte Quelldateien und baut eine unabhängige
+Kopie unter `work\release-builds\<commit>-<eindeutig>\src` im aktiven Repository.
+Der verbindliche Windows-Arbeitsordner ist `C:\Dev\Kalyna`. Entwicklung und
+Builds in OneDrive sind verboten; die Release-/Native-Vorprüfung weist diese
+Pfade ab. Siehe [Arbeitsanweisungen](AGENTS.md).
+Quelldateien und Eingabeverzeichnisse bleiben während des Builds gesperrt. Native
+Werkzeuge werden unter `work\native-tools` dieses Snapshots neu gebaut; Änderungen
+an versionierten nativen Ausgaben ersetzen diesen Build nicht. Geprüfte Pakete
+bleiben im vom Skript ausgegebenen `dist`-Verzeichnis des Snapshots. Die Paketierung
+prüft native Tests, das vollständige signierte Inventar, exakte Produktversionen
+5.0.2, SHA-512-Authenticode, RFC-3161-Zeitstempel und das ZIP nach dem Entpacken
+in ein neues Verzeichnis.
+Die [Windows-Checkliste](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md) und der
+[Windows-Prüfbericht](docs/KEEP_VAULT_5_0_2_WINDOWS_AUDIT.md) enthalten die getrennten
+Freigabeprüfungen. Das Release-Zertifikat ist selbstsigniert und wird über die
+fest eingebauten öffentlichen RSA- und ML-DSA-Schlüssel geprüft. Dadurch wird
+seine Zertifikatskette nicht allgemein von Windows als vertrauenswürdig eingestuft.
+Es wird kein Stammzertifikat installiert.
 Das macOS-Paket enthält `Keep Vault.app`, `QR-Scanner.app` und die separate
 `Keep Vault Installer.app`. Der Scanner liest die QR-Codes der ausgedruckten
 Schlüsselzettel. Er ist ein eigenständiges Programm in einer Sandbox mit eigener
@@ -116,49 +136,32 @@ einen getrennten vertrauenswürdigen Kanal beziehen.
 
 ## Formatregeln
 
-Die App schreibt und liest ausschließlich Containerformat Version 12. Jede andere
-Version wird abgelehnt, auch Version 11. Es gibt keinen Entschlüsselungspfad für
-Altformate und es ist keiner geplant. Mit v11 oder älter erstellte Archive lassen
-sich mit dieser Version nicht öffnen. Der Leser nennt diesen Grund ausdrücklich,
-anstatt ein falsches Passwort zu melden.
+Die Entwicklungsversion 5.0.3 schreibt und liest ausschließlich Containerformat Version 13. Version 12 und alle anderen Versionen werden ausdrücklich abgelehnt. Bestehende Archive werden weder überschrieben noch konvertiert. Für v12-Archive bleibt eine passende frühere Installation erforderlich.
 
-Das ist eine bewusste Entscheidung. Eine aus Kompatibilitätsgründen beibehaltene
-ältere Ableitung wäre eine zweite angreifbare Konstruktion, ein weiterer Satz
-fehleranfälliger Domänen und ein dauerhafter Grund, die jeweils schwächere Variante
-beizubehalten. Diese Formatentscheidung fiel während der Entwicklung, als keine
-aufzubewahrenden Archive gegen die Entfernung sprachen.
+Alle containergebundenen Domänen enthalten `v13`. Header-Version, Algorithmusstring, KDF-Kennung, Rollen, Nonce- und Tweakbreiten bestimmen gemeinsam genau eine Konstruktion. Die getrennten Signierschlüsselhüllen bleiben unverändert. Der vollständige Vertrag steht in [Containerformat v13](docs/KEEP_VAULT_V13_FORMAT.md).
 
-Die Domänentrenner der Schlüsselableitung enthalten `v12`; im Header benennt eine
-explizite Zeichenfolge `KdfMode` die Konstruktion. Eine Versionsnummer allein
-reichte nicht aus: 4.0.0/4.0.1 und 4.0.2 schrieben beide `"Version": 9`, leiteten
-aber unterschiedliche Paranoia-Schlüssel ab. Mit `KdfMode` ändert eine künftige
-Korrektur einen direkt lesbaren Wert statt eines nur indirekt erschließbaren Werts.
+Pro frischem Archivschlüsselsatz gilt ein von der Datenträgerfreigabe unabhängiges Nutzungsbudget von 64 TiB Payload und 2^22 Chunks. Die [quantitative Begründung und Modellgrenzen](docs/KEEP_VAULT_V13_CRYPTO_USAGE.md) unterscheiden Counterüberlappung, Primitive, AEAD und MACs.
 
-### Die zehn Optionen
+### Die zwölf Optionen
 
 Sie werden in dieser Reihenfolge angeboten:
 
-| # | Option | Schichten, äußerste zuerst | Nonce | Chiffrenschlüssel |
+| # | Option | Schichten, äußerste zuerst | Stufen-Nonce | Chiffrenschlüssel |
 |---|---|---|---|---|
-| 1 | Standard | Threefish-1024 → Kalyna-512/512 | 192 B | 192 B |
-| 2 | Schnell | ChaCha20-Poly1305 → AES-256 | 28 B | 64 B |
-| 3 | Gemischt | ChaCha20-Poly1305 → Threefish-1024 → AES-256 | 156 B | 192 B |
-| 4 | Paranoia | ChaCha20-Poly1305 → Threefish-1024 → Kalyna-512/512 → SHACAL-2-512 → MARS-448 → AES-256 | 268 B | 376 B |
+| 1 | Standard | XChaCha20-Poly1305 → Threefish-1024 → Kalyna-512/512 → AES-256 | 232 B | 256 B |
+| 2 | Schnell | XChaCha20-Poly1305 → AES-256 | 40 B | 64 B |
+| 3 | Gemischt | XChaCha20-Poly1305 → Threefish-1024 → AES-256 | 168 B | 192 B |
+| 4 | Paranoia | XChaCha20-Poly1305 → Threefish-1024 → Kalyna-512/512 → SHACAL-2-512 → Serpent-256 → Camellia-256 → MARS-448 → AES-256 | 312 B | 440 B |
 | 5 | Threefish-1024 | einzelne Chiffre | 128 B | 128 B |
 | 6 | Kalyna-512/512 | einzelne Chiffre | 64 B | 64 B |
 | 7 | SHACAL-2-512 | einzelne Chiffre | 32 B | 64 B |
 | 8 | MARS-448 | einzelne Chiffre | 16 B | 56 B |
 | 9 | AES-256 | einzelne Chiffre | 16 B | 32 B |
-| 10 | ChaCha20-Poly1305 | einzelne Chiffre | 12 B | 32 B |
+| 10 | Camellia-256 | einzelne Chiffre | 16 B | 32 B |
+| 11 | Serpent-256 | einzelne Chiffre | 16 B | 32 B |
+| 12 | XChaCha20-Poly1305 | einzelne Chiffre | 24 B | 32 B |
 
-Die vier Kaskaden stehen zuerst, von der Alltagsoption bis zur aufwendigsten
-Variante. Wer die Liste überfliegt, wählt den ersten passenden Eintrag. Die Option
-mit sechs Datendurchläufen steht am Ende, sodass sie bewusst gewählt wird.
-Die sechs einzelnen Chiffren folgen nach absteigender Schlüsselgröße.
-
-Die App und die ausgedruckten Zettel zeigen die Namen in Klammernotation, je nach
-ausgewählter Sprache auf Deutsch oder Englisch, zum Beispiel
-`Paranoia: ChaCha20-Poly1305(Threefish 1024(Kalyna 512/512(SHACAL-2 512(MARS 448(AES 256(Data))))))`.
+Die vier Kaskaden stehen zuerst, danach die acht Einzelchiffren. Paranoia führt acht Cipherstufen aus. Die Tabelle nennt ausschließlich die Stufen-IV-Breiten. Alle zwölf Optionen speichern eine 320-Byte-Archivbasis; nur Paranoia ergänzt eine zweite 320-Byte-Basis. Schlüsselbreiten addieren sich nicht zu einer zugesagten Sicherheitsstärke.
 
 #### Gemessene Leistung auf Apple M5 (macOS)
 
@@ -209,16 +212,16 @@ und [Release-Prüfbericht](docs/KEEP_VAULT_5_0_2_MACOS_AUDIT.md).
 
 Eine Windows-Übersicht mit Messungen auf einem Intel Core i9-13900K wird später ergänzt.
 
+
+
 ### Funktionsweise einer Kaskade
 
-Jede Schicht erhält einen eigenen Schlüssel und einen eigenen Abschnitt der Nonce.
-Bei der Standardkaskade sind das je 64 Byte Schlüssel und Nonce für die innere
-Kalyna-Schicht sowie je 128 Byte für die äußere Threefish-Schicht.
+Jede Schicht erhält einen getrennt abgeleiteten Schlüssel und einen eigenen Nonceabschnitt. Standard verarbeitet innen nach außen AES-256-CTR, Kalyna-512/512-CTR, Threefish-1024-CTR und XChaCha20-Poly1305. Die Schlüsselbreiten sind 32, 64, 128 und 32 Byte; die Noncebreiten 16, 64, 128 und 24 Byte. Nur Paranoia verwendet eine zweite Master-Runde.
 
 Ein früherer Entwurf schnitt diese Schlüssel aus einer einzigen flachen
 Argon2id-Ausgabe aus. Der Schlüssel hing damit von seiner Position im Puffer ab;
 dieselbe Chiffre konnte an zwei Positionen strukturelle Gemeinsamkeiten aufweisen.
-v12 leitet jeden Schlüssel getrennt aus einem kanonischen Kontext ab: Algorithmus,
+v13 leitet jeden Schlüssel getrennt aus einem kanonischen Kontext ab: Algorithmus,
 Stufenindex, Chiffre, Zweck und Schlüsselbreite. Dieser Kontext durchläuft zwei
 PRF-Familien, deren Ergebnisse kombiniert werden:
 
@@ -235,31 +238,24 @@ beide Familien die vorausgesetzten Eigenschaften besitzen und die Kontexte
 eindeutig sind. Sie ist kein robuster Kombinator gegen beliebige oder bösartig
 korrelierte Primitive.
 
-Die Reihenfolge ist entscheidend. Das Brechen nur der äußeren Schicht liefert den
-Geheimtext der inneren Schicht, weder Klartext noch Archivstruktur. Jedes Nutzdatenbyte
-sowie Dateinamen, Größen und Zeitstempel liegen im ZPAQ-Datenstrom innerhalb aller
-Schichten. Ein automatisierter Test belegt das, indem er die äußere Schicht mit
-dem richtigen Schlüssel entfernt und das Ergebnis nach einer bekannten Markierung
-durchsucht.
-
-Alle Schichten außer dem äußersten ChaCha20-Poly1305 sind Schlüsselstromkonstruktionen.
-Die Sicherheit bleibt daher erhalten, solange mindestens eine davon ungebrochen ist.
+Die inneren CTR-Stufen XORen getrennte Schlüsselströme. Die äußere AEAD authentifiziert jeden Chunk zusätzlich. Beim Lesen müssen zunächst beide globalen MACs und danach das lokale Tag erfolgreich sein, bevor der zugehörige Klartext weitergegeben wird. Diese Zusammensetzung setzt korrekte Primitive, getrennte Rollen und eingehaltene Nutzungsgrenzen voraus; sie ist kein formaler Sicherheitsbeweis.
 
 ### Nonces pro Datenblock
 
-Bei jeder Option erhält jeder 16-MiB-Datenblock eine eigene Nonce, die aus Basisnonce
-und Blockindex mit SHA3-512 abgeleitet wird. Ein fortlaufender CTR-Zähler über
-beliebig große Archive würde sich irgendwann wiederholen. Ein wiederholter
-Zählerblock unter demselben Schlüssel verrät das XOR zweier Klartexte.
+Jeder höchstens 16 MiB große Chunk verwendet `Seed320-Blockwise64-SHA3-512-ActivePrefix-v3`. Für den Stufenbedarf W werden genau k=ceil(W/64) aktive 64-Byte-Blöcke der vollständigen 320-/640-Byte-Basis verarbeitet. Jeder Block wird separat mit Domain, Version, Suite, Algorithmus, Kapazität, k, W, 64-Bit-Chunkindex und Blockindex durch SHA3-512 gebunden. Die Cipherstufen erhalten direkt den W-Byte-Präfix der aktiven Digests. Es gibt keine zusätzlichen Stufenhashes und keine Rotation der Reserve.
+
+Standard benötigt vier von fünf Blöcken, Paranoia fünf von zehn. Die vollständige Basis einschließlich Reserve bleibt in Header-MACs und dem einmal je Operation berechneten AAD-Identitätsdigest gebunden. Der Threefish-Tweak verwendet das gesamte erste 320-Byte-B1. Gehashte Startwerte garantieren keine kollisionsfreien oder disjunkten CTR-Intervalle. Das genaue Transcript und die getrennten Grenzen stehen im [v13-Formatvertrag](docs/KEEP_VAULT_V13_FORMAT.md).
 
 ### Ableitung des Hauptschlüssels
 
-v12 leitet die Schlüssel aus vier Zugangsfaktoren ab: Benutzerpassphrase, PIN und
+v13 leitet die Schlüssel aus vier Zugangsfaktoren ab: Benutzerpassphrase, PIN und
 den zwei 1024-Bit-Faktoren der gedruckten Schlüsselzettel. Neue Archive verlangen
 24 bis 256 UTF-16-Codeeinheiten für die Passphrase und eine PIN aus 6 bis 16 Ziffern
-(nur ASCII). Diese Auswahlgrenzen gelten nicht beim Lesen vorhandener v12-Archive.
+(nur ASCII). Diese Auswahlgrenzen gelten nicht beim Lesen vorhandener v13-Archive.
 Es gibt weder einen reduzierten KDF-Modus noch eine Suite, die einen Zugangsfaktor
 überspringt.
+
+Die Faktoreingabe akzeptiert 256 ASCII-Hexzeichen zusammen mit dem ausdrücklich festgelegten Unicode-WhiteSpace-Satz. Rohtext ist auf 65.536 UTF-16-Einheiten begrenzt; nach Entfernen dieses Leerraums müssen genau 128 Byte entstehen. Einfügen, Drop und abgeschlossene Texteingabekomposition werden vollständig übernommen oder ohne stilles Abschneiden abgewiesen. Diese Verarbeitung normalisiert oder verändert weder Passwort noch PIN. In der englischen App heißt die Zugangskomponente „password“.
 
 Zunächst entstehen zwei unterschiedlich konstruierte Verarbeitungspfade. Der
 SHA3-Pfad teilt jeden Faktor in zwei binäre 512-Bit-Hälften und verknüpft sie
@@ -339,7 +335,7 @@ Runden an derselben Position; nur das Secret und die Salts ändern sich.
 
 Das ersetzt eine frühere Anordnung, bei der beide Runden denselben 128-Byte-Vorhash
 der Zugangsdaten verwendeten. Weil der PHC-Adapter das übergebene Passwort löscht,
-führten 4.0.0 und 4.0.1 ihre zweite Runde über 128 Nullbytes aus. v12 teilt überhaupt
+führten 4.0.0 und 4.0.1 ihre zweite Runde über 128 Nullbytes aus. v13 teilt überhaupt
 keinen Puffer zwischen den Runden. Der Regressionstest ändert ein Bit aus Runde eins
 und prüft, dass sich Runde zwei dadurch ändert. Ein bloßer Ver- und Entschlüsselungstest
 würde auch dann bestehen, wenn beide Seiten denselben Fehler hätten.
@@ -353,7 +349,7 @@ Computer, der es geschrieben hat.
 - Magic `KZPAQ2\0`, UTF-8-JSON-Header, 64-Byte-HMAC-SHA3-512-Baum-Tag,
   128-Byte-Skein-1024-MAC-Tag, danach Geheimtext
 - Passwortmodus `UserPassword24to256+PIN6to16+GeneratedHex1024x2`
-- KDF-Eingabemodus `DualBranch-v12: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024`
+- KDF-Eingabemodus `DualBranch-v13: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024`
 - KDF-Modus `DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024`
 - Ein 1024-Bit-Saltpaar pro Runde; Argon2id 0x13 mit `t=4`, `p=4` und aus den
   Zugangsdaten abgeleitetem Speicherbedarf; `Argon2MemoryKiB` wird als `0` gespeichert
@@ -366,7 +362,7 @@ Beide MACs decken dieselbe Magic, Headerlänge, denselben Header und den vollst�
 Geheimtext ab. Beide Tags werden vollständig und ohne vorzeitigen Abbruch verglichen,
 bevor Klartext die ZPAQ-Pipe erreicht.
 
-Der v12-Leser akzeptiert nur `t=4`, `p=4` und ein Speicherfeld mit Wert null.
+Der v13-Leser akzeptiert nur `t=4`, `p=4` und ein Speicherfeld mit Wert null.
 Abweichende Headerwerte werden vor der KDF abgelehnt. Ein manipuliertes Archiv kann
 damit weder schwächere noch höhere Argon2-Kosten erzwingen. Der Speicherbedarf steht
 überhaupt nicht im Header; dafür existiert kein manipulierbares Feld. Der native
@@ -409,7 +405,7 @@ leeren Ordner. Eine `.kzpaq` ohne gültigen Containerheader und ohne nutzbare
 KPAR2-Daten wird vollständig abgelehnt und niemals als einfaches ZPAQ an den
 nativen Parser übergeben.
 
-Kryptografisch löschen: Analysiere einen gültigen verschlüsselten v12-Container.
+Kryptografisch löschen: Analysiere einen gültigen verschlüsselten v13-Container.
 Zuerst wird die rekonstruierbare Wiederherstellungsdatei zerstört, anschließend
 wird der Container über denselben exklusiven Dateihandle beschädigt und gelöscht.
 Die Schaltfläche bleibt gesperrt, bis du die SSD/APFS-Einschränkung ausdrücklich
@@ -478,7 +474,7 @@ Auswahlregeln aus und benötigen keine Passwortmodelldaten. Es gelten nur die
 ursprüngliche Kodierung, die Faktorformate, eine separate technische Grenze von
 1.048.576 UTF-16-Codeeinheiten je Benutzerzugangsdatenfeld und die kryptografische
 Verifikation. Es erfolgt keine Netzwerkabfrage zur Laufzeit. Die
-[v12-Zugangsdatenregeln und der Windows-Vertrag](docs/KEEP_VAULT_V12_CREDENTIAL_POLICY.md)
+[historischen v12-Zugangsdatenregeln und dem Windows-Vertrag](docs/KEEP_VAULT_V12_CREDENTIAL_POLICY.md)
 beschreiben die genauen Grenzen, Datenherkunft, Unsicherheit und erforderlichen Nachweise.
 
 ### Die vier Zugangsfaktoren
@@ -490,7 +486,7 @@ bewusst unterschiedlich. Kein Zweig lässt sich aus der Ausgabe des anderen bere
 
 `Q_S` und `Q_K` gehen ungekürzt in ihren jeweiligen Argon2id-Zweig ein, jeweils mit
 einem eigenen 512-Bit-Salt. Die App kompiliert die unveränderten PHC-Argon2-Referenzquellen.
-Tests vergleichen den nativen Adapter mit der PHC-CLI; den v12-Zweig prüfen sie
+Tests vergleichen den nativen Adapter mit der PHC-CLI; den v13-Zweig prüfen sie
 zusätzlich gegen die unabhängige Argon2id-Implementierung von Bouncy Castle.
 
 Jeder Zwischenpuffer wird vor dem ersten Schreibzugriff gegen Auslagerung gesperrt
@@ -512,38 +508,15 @@ hier die beiden unabhängigen Faktoren und die speicheraufwendige KDF.
 
 ## Zufall, Salt, Nonce und Tweak
 
-Neun getrennte Pools sammeln Mausmesswerte: A1, A2, B1, B2, SHA3-Salt, Skein-Salt
-und drei Nonce-Teile. Ein 1024-Bit-Faktor entsteht durch Aneinanderreihen zweier
-Pools, A = A1 ‖ A2. Das ist zusätzliche Absicherung, keine Behauptung, jeder Pool
-enthalte 512 Bit reale Entropie. Jeder Pool benötigt mindestens 1024 Messwerte,
-bevor Archivzufallsdaten erzeugt werden können. Bei der zyklischen Verteilung sind
-das mindestens 9216 Mausereignisse pro Epoche; die neun Zähler unterscheiden sich
-höchstens um eins.
+Elf Pools speichern unveränderte Mausrecords: A1, A2, B1, B2, zwei Salts und fünf Nonceblöcke. Ein Betriebssystem-CSPRNG verteilt jedes Ereignis unabhängig mit Zurücklegen und gleichverteilt auf IDs 0 bis 10; Rejection Sampling verhindert Moduloverzerrung. Jeder Pool muss mindestens 1024 Records enthalten. Die tatsächlichen Zähler sind sichtbar und dürfen sich unterscheiden. Eine feste Ereignissumme garantiert keine Bereitschaft.
 
-Die Oberfläche zeigt alle neun Zähler. Sie gruppiert A1/A2 und B1/B2 visuell;
-es bleiben aber zwei Benutzerfaktoren, keine vier.
+Records enthalten 80 Originalbytes plus ihre ursprüngliche Sequenz. Sie bleiben segmentweise in gesperrtem RAM. Das Entropiebudget berücksichtigt auch spätere Permutationsindizes. Bei ausdrücklichem Generieren wird ein vollständiger Snapshot atomar von der neuen Live-Sammlung getrennt. Für jeden Pool wird dessen Indexfolge rückwärts nach Fisher-Yates mit frischen, unabhängig verworfenen OS-Zufallsziehungen gemischt. Originalrecords und ursprüngliche Sequenzen bleiben unverändert.
 
-Diese Anzahl belegt keine 512 Bit physikalischer Mausentropie. Die Sicherheit kann
-bereits allein auf dem CSPRNG des Betriebssystems beruhen; Mausdaten liefern
-zusätzliche Vielfalt. Jede Ausgabe ist das XOR zweier unabhängiger Beiträge:
+Runde 1 beginnt mit einem 64-Byte-Nullakkumulator und spielt jeden Record in der gemischten Reihenfolge mit Sequenz und Zweckkennung durch SHA3-512. Der Finalhash bindet Pooldigest, LE64-Epoche, LE32(0) und LE32-Zweck. Nur Paranoia mischt dieselbe Indexfolge ein zweites Mal mit frischen OS-Ziehungen und verarbeitet dieselben Originalrecords aus einem neuen Nullakkumulator mit SHA-512. Abhängige Schritte eines Pools bleiben sequenziell, verschiedene Pools dürfen ihr genehmigtes CPU-Budget teilen.
 
-- `SecRandomCopyBytes` als primärer CSPRNG
-- eine domänengetrennte SHA3-512-Erweiterung des jeweiligen Mauspools
+Runde 1 verknüpft Faktoren (256 Byte), beide Salts (je 64 Byte) und die gesamte Nonce (320 Byte) jeweils mit eigenen OS-Zufallsbytes durch XOR. Runde 2 verwirft ihre Faktorresultate und erzeugt neue Salts und eine zweite 320-Byte-Nonce mit getrennten OS-Beiträgen. Die beiden 1024-Bit-Faktoren stammen aus Runde 1. Alle alten Records, Indizes, Zufallscaches und temporären Ableitungen werden nach Join gelöscht, bevor ein neues Ergebnis veröffentlicht wird. Fehler veröffentlichen keinen teilweise erzeugten Zustand.
 
-Faktoren, beide Salts und alle drei Nonce-Teile werden gemeinsam und atomar aus
-einer Epoche erzeugt, jeweils aus dem eigenen Pool. Danach wird jeder Pool ersetzt,
-noch gesperrt genullt und sein Zähler auf null gesetzt. Null bedeutet in diesem
-Zustand verbraucht, nicht unzureichend. Beide Salts und die vollständige Nonce
-bleiben bis zum Verschlüsselungsbeginn im gesperrten RAM und werden genau einmal
-entnommen. Scheitert der Versuch nach der Entnahme, bleiben A und B gültig. Der
-Wiederholungsversuch leitet aber aus einer neuen Epoche frische Salts und Nonces ab,
-sodass eine Nonce niemals unter demselben Schlüssel wiederverwendet wird.
-
-Jede Runde besitzt ein 1024-Bit-Saltpaar: 512 Bit für den SHA3-Zweig und 512 Bit
-für den Skein-Zweig. Identische Werte werden abgelehnt. Paranoia verwendet zwei
-solche Paare. Der öffentliche 16-Byte-Threefish-Tweak wird deterministisch und
-domänengetrennt aus der Nonce abgeleitet und im authentifizierten Header gespeichert.
-Salt, Nonce und Tweak müssen nicht geheim bleiben.
+Diese Ausgabebreiten belegen keine entsprechende physikalische Mausentropie. Die Sicherheit kann auf dem OS-CSPRNG beruhen; Mausrecords liefern zusätzliche Vielfalt. Salts, Nonces und der deterministische, domänengetrennte 16-Byte-Threefish-Tweak sind öffentliche, authentifizierte Parameter. Salts verschiedener KDF-Zweige und Runden müssen verschieden sein.
 
 ---
 
@@ -554,22 +527,21 @@ beiden Faktoren gedruckt oder ausdrücklich als Test-PDF exportiert werden.
 
 - Physischer Druck ohne Datei ist der Standardweg.
 - Offensichtliche virtuelle PDF-/XPS-/Faxdrucker werden gesperrt.
-- Unter macOS entstehen zwei getrennte Druckaufträge: Faktor A mit öffentlicher
+- Es entstehen zwei getrennte Druckaufträge: Faktor A mit öffentlicher
   Installationsseite, danach Faktor B mit eigener öffentlicher Installationsseite.
-  Jeder Auftrag hat zwei Seiten. Die getrennte Windows-Entwicklungsimplementierung
-  behält ihr dreiseitiges Layout A / öffentliche Trennseite / B und benötigt
-  eigene Release-Prüfungen.
+  Jeder Auftrag hat zwei Seiten. Die Windows-Implementierung 5.0.2 folgt diesem
+  Referenzlayout; ihre tatsächliche Druckprüfung wird getrennt im Windows-Prüfbericht geführt.
 - Jede geheime Seite nennt Suite, Gerätename, Archivpfad, genau einen
   1024-Bit-Faktor in 32 Gruppen aus acht Hexzeichen, ein leeres handschriftliches
-  Feld für das Benutzerpasswort und zweimal den QR-Code dieses Faktors. Unter
-  macOS 5.0.2 enthält der Titel die Keep-Vault-Version und das Passwortfeld
+  Feld für das Benutzerpasswort und zweimal den QR-Code dieses Faktors. In
+  Version 5.0.2 enthält der Titel die Keep-Vault-Version und das Passwortfeld
   mindestens drei Zeilen. Bezeichnungen einschließlich Doppelpunkt sind in beiden
   Sprachfassungen fett gesetzt.
 - Die PIN steht bewusst nicht auf dem Zettel; der Zettel weist darauf hin.
   Schon das Handschriftfeld für die Passphrase ist ein Kompromiss. Ein Zettel
   mit Passphrase, PIN und einem Faktor enthielte drei der vier Zugangsfaktoren.
 - A und B sollen getrennt und offline aufbewahrt werden.
-- Test-PDF speichern schreibt unter macOS bewusst zwei getrennte Dateien, eine
+- Test-PDF speichern schreibt bewusst zwei getrennte Dateien, eine
   je Faktor mit zugehöriger öffentlicher Installationsseite. Beide Faktoren liegen
   damit dauerhaft auf dem gewählten Datenträger; das ist kein sicherer Standardweg.
 
@@ -581,7 +553,9 @@ und Drucker können außerhalb der App eigene temporäre Daten erzeugen.
 
 ## Streaming und Parallelität
 
-ZPAQ liegt unter `external/zpaq`, die lizenzierte v12-Kalyna-Implementierung in
+REV11 öffnet und bindet die verschlüsselte v13-Originaldatei einmal. Der erste Nutzdatenpass erstellt einen lokalen Doppel-MAC-Index und berechnet beide globalen Authentifikatoren aus denselben Puffern. Eine zusätzliche vollständige Ciphertextkopie entfällt. Der gemeinsame Indexcache wächst nach tatsächlichem Bedarf bis 16 MiB; nur darüber hinaus erforderliche authentifizierte Metadaten werden ausgelagert. Jeder vollständige 1-MiB-Abschnitt wird beim Lesen erneut in einem privaten Puffer geprüft. Normale Konsumenten erhalten erst nach beiden globalen Container-MACs Zugriff. Die vertrauenswürdige Ressourcenpolicy begrenzt Größen, Speicher, CPU-Arbeiter und Queue; Archivdaten können diese Werte nicht erhöhen. Reguläre `.zpaq`-Eingaben binden die Originaldatei und speichern nur einen lokalen Authentifizierungsindex. Die reguläre 256-MiB-Testgrenze und die ausdrücklich erweiterte Paranoia-Strukturprüfung mit 512 MiB belegen keine realen Mehr-TB-Läufe.
+
+ZPAQ liegt unter `external/zpaq`, die lizenzierte v13-Kalyna-Implementierung in
 Crypto++ 8.9.0 unter `external/cryptopp` und der offizielle Skein-1.3-/Threefish-Code
 unter `external/Skein-reference`. Der frühere unlizenzierte Kalyna-Referenzstand
 und alle daraus abgeleiteten Tabellenadapter wurden vor dieser Veröffentlichung
@@ -605,60 +579,48 @@ werden abgelehnt. Archivziele dürfen weder einer Eingabe entsprechen noch inner
 eines gelesenen Verzeichnisbaums liegen. Der native ZPAQ-JIT ist deaktiviert;
 Modell- und Indexgrößen sind fest begrenzt.
 
-Das verschlüsselte Streamingformat gilt ausschließlich für v12 (`KVP12ZP1`).
+Das verschlüsselte Streamingformat gilt ausschließlich für v13 (`KVP13ZP1`).
 Jeder unabhängig komprimierte ZPAQ-Block liegt in einem kanonischen Rahmen mit
 exakter komprimierter und unkomprimierter Länge sowie Prüfsumme. Rahmen werden in
 Indexreihenfolge erzeugt und verarbeitet; begrenzte Arbeitsgruppen komprimieren
 oder dekomprimieren unabhängige Blöcke parallel. Ein Rahmen ist auf 24 MiB
 komprimierte Daten, 32 MiB unkomprimierte Daten und ein 128-MiB-Modell begrenzt.
 Höchstens 512 MiB komprimierte Pipe-Daten dürfen auf geordnete Verarbeitung warten.
-Reguläre Archive verwenden pro Auftrag eine Ausgabegrenze von 64 MiB und ein
-Modelllimit von 512 MiB. Ein gemeinsames Verarbeitungsbudget von 6 GiB lässt nur so
-viele Kompressionsaufträge zu je 384 MiB oder reguläre Aufträge zu je 592 MiB zu,
-wie hineinpassen; die angeforderte Zahl von Arbeitern ist zusätzlich auf 64 begrenzt.
+Reguläre Archive behalten begrenzte Ausgabe- und Modellgrößen für den Parser.
+REV11 lässt tatsächliche Puffer und Modellallokationen anhand einer gemeinsamen
+Speicherrechnung zu, einschließlich aktueller OS-Auslastung und geschützter
+Entropierecords. Eine feste Reservierung von 6 GiB entfällt. Numerische Maxima
+erlauben Arbeit; sie reservieren weder diesen RAM noch entsprechenden
+Datenträgerplatz. Zusätzlich gilt das gemeinsame CPU-Budget des Auftrags.
 Abgeschnittene, vertauschte, nicht kanonische oder prüfsummenfehlerhafte Rahmen
 werden abgelehnt, ohne hinter der Beschädigung erneut zu synchronisieren.
 
-Ein bereits authentifiziertes reguläres `.zpaq` auf der Standardeingabe wird
-in einer internen `KV12VM`-Hülle mit zwei Nullbytes und einer 64-Bit-Länge in
-Big-Endian-Reihenfolge übertragen. Der native Prozess prüft Magic, Grenzen,
-exakte Länge und EOF und hält das Archiv anschließend in anonymem privatem
-VM-Speicher. Vor dem Parserzugriff werden sowohl aktueller als auch maximaler
-Speicherschutz auf nur lesend gesetzt. Der Parser kann mit `mprotect` keinen
-Schreibzugriff wiederherstellen. Das ermöglicht positionsunabhängiges paralleles
-Lesen ohne benanntes Shared-Memory-Objekt; benanntes POSIX-SHM ist in den Profilen
-verboten. Die Grenze für verifizierte Eingaben beträgt 512 GiB. Daraus folgen
-weder unbegrenzt verfügbarer physischer RAM noch ein Ausschluss von Betriebssystem-Swap. Das Entpacken
-ist außerdem auf insgesamt 500 GiB, 500 GiB je Datei, 500.000 Einträge, einen
-512-MiB-Index und 2^26 Fragmente begrenzt. Verschlüsselte Container verwenden diese
-Zwischenablage des gesamten Archivs nicht: Ihre entschlüsselten `KVP12ZP1`-Rahmen
-bleiben in der begrenzten vorwärts gerichteten Pipe.
+Reguläres `.zpaq` wird über das begrenzte Duplexprotokoll `KV13RA` entpackt und aufgelistet. Der Elternprozess öffnet die Originaldatei einmal, erstellt einen privaten Doppel-MAC-Index über ihre 1-MiB-Abschnitte und prüft beide erforderlichen Gesamthash-Dateien. Der native Parser erhält keinen Archivdateideskriptor. Er fordert Abschnitte mit 64-Bit-Offset und höchstens 1 MiB Länge an. Vor jeder Antwort prüft der Elternprozess den vollständigen Originalabschnitt erneut in einem privaten Puffer und überträgt erst danach den gewünschten Ausschnitt. Änderungen, Kürzungen, fehlerhafte Anfragen und unvollständige Antworten führen zum Abbruch. Parallele Parserleser serialisieren vollständige Anfrage-Antwort-Transaktionen.
 
-Die Containerschicht verarbeitet begrenzte Gruppen aus 16-MiB-Blöcken. Die
-Slotgrenze beginnt bei einem Slot pro vier logischen Prozessoren, mindestens einem
-und höchstens 64. Ein Speicherbudget aus einem Sechzehntel des gemeldeten verfügbaren
-Speichers begrenzt sie weiter; mindestens ein Slot bleibt möglich. Slots werden bei
-Bedarf angelegt. Jeder besitzt zwei gesperrte 16-MiB-Puffer sowie Zähler-, Nonce- und
-Tag-Speicher. Nach dem Lesen einer Gruppe arbeiten die Blockarbeiter parallel.
-Alle werden zusammengeführt, bevor der Schreiber die Gruppe in kanonischer
-Reihenfolge ausgibt. Er beendet die Ausgabe vor dem Lesen der nächsten Gruppe.
-Native Transformationsgruppen sind über gleichzeitige Containeroperationen hinweg
-begrenzt; jede nutzt höchstens 64 Arbeiter. Kaskadenschichten bleiben sequenziell,
-weil jede die Ausgabe der vorherigen verarbeitet. Innerhalb einer Schicht verteilen
-die nativen CTR- und ChaCha20-Treiber disjunkte Zählerbereiche auf Arbeiter.
-Umordnung wird abgelehnt, alle gestarteten Arbeiter werden auf jedem Beendigungspfad
-zusammengeführt, und eine fehlgeschlagene Operation veröffentlicht keinen Teilcontainer.
+Dieser Pfad erzeugt weder eine Klartextkopie des Archivs noch eine Vollarchiv-SHM-/VM-Allokation. Die globalen `.sha3`- und `.skein`-Dateien bleiben ungeschlüsselte Korruptionsprüfungen. Wer Quelle und beide Prüfsummen ersetzen kann, kann ihren Inhalt austauschen. Der flüchtige lokale MAC-Index bindet die einmal geprüften Bytes während des laufenden Auftrags. Die Ressourcenpolicy begrenzt weiterhin Parsermodelle, Index, Ausgabe und Einträge.
 
-Auch Poly1305 arbeitet parallel. Ab 1 MiB verarbeiten bis zu 64 Arbeiter
+Native ZPAQ-Gruppen, Cipher-Gruppen, MAC-Blattarbeiter und Argon2-Ausführungsthreads teilen CPU-Permits. Native REV11-Worker geben ihre Rechenfreigabe vor blockierenden Pipe-, I/O- und Steuerkanal-Wartezeiten frei und erwerben sie zum Rechnen erneut. Eine manuelle CPU-Obergrenze von eins wird unterstützt. Die vier kryptographischen Argon2-Lanes bleiben auch bei weniger gewährten Ausführungsthreads unverändert.
+
+Die Ressourcenseite startet mit Automatisch. Optionale manuelle Obergrenzen bleiben von den aktuell ermittelten Werten getrennt. Kleine Aufträge beginnen mit einem Speicherplatz; größere bereitstehende Arbeit kann nach Prüfung weitere erhalten. Für unbekannte Extraktionsmengen gilt zunächst eine sichtbare Freigabe von 256 MiB, die unter Ressourcen ausdrücklich angepasst werden kann. Sie reserviert keinen Datenträgerplatz. Argon2id benötigt auch bei winzigen Archiven weiterhin vorübergehend 1 GiB bis knapp 2 GiB zuzüglich Betriebsbedarf.
+
+REV12 behält das bewährte Chunkfenster während der Probe eines größeren Fensters. Der erste Auto-Batch nutzt einen Slot; ein zweiter verlangt konkret bekannte Restarbeit und frische Zulassung. Eine unbekannte Pipelänge allein erzeugt keine zusätzlichen bereiten Chunks. Eine langsamere Probe wird zurückgenommen, ohne Cipher-, MAC-, KDF- oder Recoveryarbeit zu reduzieren. Freier Datenträgerplatz wird für tatsächliche anstehende Schreibvorgänge geprüft; ein kleines gültiges Archiv scheitert dadurch nicht an einer unabhängigen festen 256-MiB-Reserve.
+
+Archivierung, Extraktion und Reparatur haben keine anwendungsseitige Wandzeit-, CPU-Zeit- oder Stillstandsfrist. Manueller Abbruch, echte Fehler und begrenzte Abbrucheskalation bleiben erhalten. Der Fortschritt zeigt erledigte Phaseneinheiten und verstrichene Zeit. Eine Phasenrestzeit erscheint erst nach ausreichenden frischen Messungen; unbekannte Gesamtarbeit bleibt unbekannt. Siehe [REV11-Fortschrittsprüfung](docs/KEEP_VAULT_5_0_3_PROGRESS_ETA_REV11_REVIEW.md).
+
+Die Sicherheitskonsole startet zugeklappt. Der aufgeklappte Bereich berücksichtigt zwölf gerenderte Textzeilen und die tatsächlichen Scrollleisten; der Fortschritt bleibt außerhalb der Umschaltung. Lange Zeilen haben eine horizontale Scrollleiste. Neue Einträge erhalten eine markierte oder gescrollte Leseposition; automatisches Folgen bewegt nur vertikal, wenn zuvor bereits das Ende gelesen wurde. Ausdrückliches Leeren und begrenzte Aufbewahrung bleiben verfügbar.
+
+Die Containerschicht verarbeitet begrenzte Gruppen aus 16-MiB-Blöcken. Speicherplätze sind von CPU-Workern getrennt: Ein Slot besitzt zwei gesperrte 16-MiB-Puffer sowie kleine Zähler-/Nonce-/Tag-Puffer. Selbst ein einzelner Chunk kann mehrere genehmigte Cipher-Worker nutzen. Das gemeinsame Budget reserviert jedes Team einschließlich seines Aufrufers; native Cipher verwenden geliehene Arbeit über den gemeinsamen Executor. Es gibt keine feste Gesamtgrenze von 64 oder 1024 CPUs. Die tatsächliche Prozess-CPU-Verfügbarkeit und RAM-/Queue-Budgets bleiben Grenzen. Ausgaben bleiben geordnet; vor Freigabe werden aktive Arbeiten beendet und alle temporären Geheimnisse gelöscht. Fehler veröffentlichen keinen Teilcontainer. Numerische Viele-Kern-Tests belegen keine Messung einer solchen Maschine.
+
+Auch Poly1305 arbeitet parallel. Ab 1 MiB verarbeitet ein durch CPU-Zuteilung und verfügbare Blöcke begrenztes Team
 zusammenhängende, an 16 Byte ausgerichtete Teile des exakten RFC-8439-Transkripts.
 Ihre Feldelemente werden in Nachrichtenreihenfolge mit der passenden Potenz des
 maskierten Einmalschlüssels zusammengeführt. Eine erhaltene skalare Implementierung,
-umfassende Vergleiche an Padding-Grenzen, der RFC-Vektor und ein differentieller
-256-MiB-Test prüfen Bytegleichheit mit dem seriellen Authentifikator.
+umfassende Vergleiche an Padding-Grenzen, der XChaCha-Entwurfsvektor und begrenzte
+differentielle Chunk-Tests prüfen Bytegleichheit mit dem seriellen Authentifikator.
 Beim Entschlüsseln wird der Tag geprüft, bevor Klartext in den Ausgabepuffer des
 Aufrufers geschrieben wird.
 
-Die beiden globalen Containerauthentifikatoren verwenden einen für v12
+Die beiden globalen Containerauthentifikatoren verwenden einen für v13
 domänengetrennten Baum über 1-MiB-Blätter. Jedes Blatt bindet Index und exakte
 Länge; die geordnete Wurzel bindet logische Gesamtlänge, Blattzahl, Blattgröße
 und beide vollständigen Blatttags. HMAC-SHA3-512 und Skein-MAC-1024 verwenden
@@ -702,8 +664,7 @@ solange höchstens drei Datenscherben je Streifen betroffen sind. Blockweises Le
 behandelt vom Dateisystem gemeldete E/A-Fehler als Auslöschungen.
 
 Paritätserzeugung, Scherbenhashing, Prüfung und Rekonstruktion verteilen unabhängige
-Streifen und Scherben auf eine hardwareabhängig begrenzte Gruppe mit höchstens
-64 Arbeitern. Jeder schreibt in disjunkte Ergebnisbereiche; die Reihenfolge von
+Streifen und Scherben auf Worker aus dem gemeinsam reservierten CPU-Budget. Jeder schreibt in disjunkte Ergebnisbereiche; die Reihenfolge von
 Manifest, Locators und Ausgabe bleibt kanonisch. Ein eigener Wiederherstellungstest
 vergleicht den Pfad mit einem Arbeiter und den produktiven Mehrarbeiterpfad auf Bytegleichheit.
 
@@ -731,7 +692,7 @@ desselben Ableitungsschemas. Ihre Ableitung ist lediglich gleich teuer anzugreif
 v4 bindet außerdem die Containerversion in den authentifizierten
 Wiederherstellungskontext, sowohl bei der Schlüsselableitung als auch im
 Zertifizierungspräfix. Das nicht schlüsselgebundene Versionsfeld im Locator kann damit
-keine andere Schlüsselableitung auswählen. Da nur Containerversion 12 existiert,
+keine andere Schlüsselableitung auswählen. Da dieser Leser ausschließlich Containerversion 13 akzeptiert,
 wird jeder andere Wert unmittelbar abgelehnt.
 
 Die Argon2id-Kostenfelder wurden aus Locator und Manifest entfernt; vorhandene
@@ -898,8 +859,8 @@ die externe PFX-Datei und die beiden v12-Hüllen, konfiguriert über
 
 ```sh
 ./tools/Build-Native-macOS.sh          # reference ciphers, Argon2, ZPAQ
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.2 --build-number 13
-./tools/Build-KeepVault-macOS.sh --version 5.0.2 --build-number 13
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh --version 5.0.3 --build-number 16
+./tools/Build-KeepVault-macOS.sh --version 5.0.3 --build-number 16
 ./tools/Build-Portable-macOS.sh        # portable folder and ZIP
 ./tools/Install-KeepVault-macOS.sh     # verify and install to /Applications
 ./tools/Verify-KeepVault-macOS.sh      # check an installed or built bundle
@@ -949,7 +910,7 @@ fehlender Signaturen; SHA3-, Skein-, Kalyna- und Threefish-Referenzvektoren;
 ML-DSA-87-Interoperabilität mit dem kompilierten Referenzadapter in beiden Richtungen;
 randomisierte differentielle Tests gegen alle Referenzbibliotheken; das feste
 Argon2id-Profil gegen PHC und Bouncy Castle; ZPAQ-Stufen, Streaming, Pfadtraversierung
-und einen Korpus fehlerhafter Eingaben; v12-Rundläufe und Manipulationsablehnung;
+und einen Korpus fehlerhafter Eingaben; v13-Rundläufe und Manipulationsablehnung;
 den Nachweis, dass die äußere Kaskadenschicht allein nichts offenlegt;
 Zweirundenableitung aus einem Poolverbrauch; blockeigene Nonces über mehrere
 Archivblöcke; Salt und Nonce für jede Einrundensuite; veröffentlichte MARS- und
@@ -988,9 +949,10 @@ Backend ohne sichtbares Fenster.
 - Ein 1024-Bit-Threefish-Schlüssel und ein 1024-Bit-Skein-Tag bedeuten nicht,
   dass die Gesamtkonstruktion 1024 Bit Sicherheit besitzt. KDF, Passwortmaterial,
   Chiffren, beide MACs und Implementierung begrenzen gemeinsam die reale Stärke;
-  Sicherheitsbits addieren sich nicht. Auch sechs Chiffren machen die Kaskade
-  nicht sechsmal stärker. Ein Angreifer muss jede Schicht überwinden; die
-  Einzelstärken werden nicht summiert.
+  Sicherheitsbits addieren sich nicht. Acht Chiffrenschichten bedeuten nicht die
+  achtfache Sicherheit. Für die Gesamtkonstruktion liegt kein formaler Beweis
+  vor, dass jede denkbare Schwäche anderer Schichten die Sicherheit der
+  stärksten Schicht erhält.
 - Zwei schlüssellose Hashes sind keine digitale Signatur. Aktiven Fälschungswiderstand
   erhalten Release-Manifeste erst durch ihre verpflichtenden RSA-PSS-/ML-DSA-
   `.khsig`-Signaturen und den Schutz beider privater Schlüssel.
@@ -1038,4 +1000,4 @@ Quellen: [Crypto++ Kalyna](https://github.com/weidai11/cryptopp),
 [pq-crystals/dilithium](https://github.com/pq-crystals/dilithium),
 [Threefish-/Skein-Autoren](https://www.schneier.com/academic/skein/threefish/),
 [Skein-1.3-Fachartikel](https://www.schneier.com/wp-content/uploads/2015/01/skein.pdf),
-[RFC 8439 / ChaCha20-Poly1305](https://www.rfc-editor.org/rfc/rfc8439).
+[RFC 8439 / ChaCha20-Poly1305 inner construction](https://www.rfc-editor.org/rfc/rfc8439).

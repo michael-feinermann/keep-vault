@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "fe6340e3c3493ac482d253f1aaadee149ff26980",
+  "testInventoryHash": "3b3fb99acb9525e96351c65839f1eadd5c7408ef50d26f30c31fd02275059a96",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "audit.fixed-cli-isolation",
+      "name": "release audit accepts only fixed case selectors without activating hooks",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x54CD2FB3",
+      "failure": null
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-11T10:43:45.496912+00:00",
+  "actualWrapperPid": 24097,
+  "wrapperSha256": "3507f77d62387126e7980db21a586a7c155706cf3a0e6a1914e79d8d96683253",
+  "originalRunnerSha256": "4985710142f8f419d7622992a91a233dab0de7e26e66c0ca1b0c7a662fcbefe1",
+  "parserSourceSha256": "ce9f8fdf8bdb1fa61eba42d401b260194d16164f069cd10ccc5e35874fc21cd3",
+  "sourceHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "role": "INFORMATIONAL_ONLY",
+  "scope": "Informational one-run 1-GiB complete production-service/native workflows with recorded boundary host load, level 3, functional original hash/topology comparison and authenticated healthy KPAR2 verification. No quiet-host comparison, causal suite/CPU-scaling result, original deletion, installed AOT GUI phase observation, release phase satisfaction or Release49 PASS.",
+  "originalBuilderExitCode": 1,
+  "originalPhase8ExitCode": 1
+}

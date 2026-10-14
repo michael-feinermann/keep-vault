@@ -1,0 +1,5 @@
+# Erhaltener fehlgeschlagener Test-Staginglauf
+
+Der tatsächliche Campaign-02-Lauf vom 12. Oktober 2026 bleibt FAIL. Ein neuer Testbuild hatte signierte Native-Testkopien durch unsignierte Buildkopien ersetzt. Die Produktintegritätsprüfung verweigerte diese Dateien. Die 17 tatsächlichen Gruppenergebnisse und Exitcodes bleiben im bytegleichen [Terminalbeleg](campaign02-terminal.json) erhalten; sieben Gruppen bestanden und zehn wurden abgewiesen. Die Binärbindung beschreibt genau diesen fehlgeschlagenen Stagingstand.
+
+Nach erneutem Staging der unveränderten signierten Build-20-Dateien besteht Campaign 03 mit 17 Gruppen, siehe [gesondertes Belegpaket](../v13-build21-kdf-handoff-20261012/README.md). Ein neuer Lauf ersetzt den alten Fehler nicht rückwirkend. Dieses kleine Paket enthält keine rekonstruierten PASS-Ausgaben und erteilt keine Releasefreigabe. Die vollständigen ursprünglichen stdout-Dateien bleiben lokal erhalten; hier werden ihre im tatsächlichen Terminalbeleg aufgenommenen Hashes bewahrt.

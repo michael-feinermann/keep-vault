@@ -882,7 +882,9 @@ done
 executable=${macos_dir}/${app_name}
 if (( ${#thin_binaries} > 1 )); then
   lipo -create ${thin_binaries[@]} -output ${executable}
-  lipo ${executable} -verify_arch ${architectures[@]}
+  for slice in ${architectures[@]}; do
+    lipo ${executable} -verify_arch ${slice}
+  done
 else
   ditto ${thin_binaries[1]} ${executable}
 fi

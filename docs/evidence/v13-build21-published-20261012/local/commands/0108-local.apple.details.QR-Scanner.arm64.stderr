@@ -1,0 +1,31 @@
+Executable=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/local-verification-build21-20261012T1258/local/kit/QR-Scanner.app/Contents/MacOS/QR-Scanner
+Identifier=de.michael-feinermann.qr-scanner
+Format=app bundle with Mach-O thin (arm64)
+CodeDirectory v=20500 size=908 flags=0x10000(runtime) hashes=17+7 location=embedded
+VersionPlatform=1
+VersionMin=917504
+VersionSDK=917504
+Hash type=sha256 size=32
+CandidateCDHash sha256=290c44b287479aa49b8d492627c076b8f7a3d8b3
+CandidateCDHashFull sha256=290c44b287479aa49b8d492627c076b8f7a3d8b3d67f44dfbfbe52133f1c0786
+Hash choices=sha256
+CMSDigest=290c44b287479aa49b8d492627c076b8f7a3d8b3d67f44dfbfbe52133f1c0786
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=131072
+Executable Segment flags=0x1
+Page size=16384
+CDHash=290c44b287479aa49b8d492627c076b8f7a3d8b3
+Signature size=8986
+Authority=Developer ID Application: Michael Feinermann (2T6K9PGS55)
+Authority=Developer ID Certification Authority
+Authority=Apple Root CA
+Timestamp=12. Oct 2026 at 14:18:27
+Notarization Ticket=stapled
+Info.plist entries=18
+TeamIdentifier=2T6K9PGS55
+Runtime Version=14.0.0
+Sealed Resources version=2 rules=13 files=1
+Internal requirements count=1 size=192
+Total signatures=1
+Chosen signature=1

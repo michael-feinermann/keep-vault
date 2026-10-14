@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "observedUtc": "2026-10-01T11:00:22.629095+00:00",
+  "app": "/Applications/Keep Vault.app",
+  "sourceCommit": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "version": "5.0.3",
+  "build": "15",
+  "scope": "Actual installed GUI, public 64-MiB source, unencrypted level5, CPU limit1; not an encrypted cancellation proof.",
+  "cancel": {
+    "status": "PASS",
+    "visibleRunningPhase": "Phase: Kompression",
+    "initialProgressText": "Verarbeitet: 4 KiB von 64 MiB · Restzeit dieser Phase: derzeit nicht schätzbar · Gesamtrestzeit: unbekannt · Verstrichen: weniger als 1 min",
+    "method": "Visible CancelOperationButton via native UI",
+    "terminalStatus": "Bereit",
+    "terminalPhase": "Abgebrochen",
+    "lastProgressPercent": 62.506103515625,
+    "sourceBytes": 67108864,
+    "sourceSha256": "fca4e5f5f03c78bd3588611d0828532a60f5b950cee6c1d9d5646be22b44b338",
+    "sourceUnchanged": true,
+    "targetAbsentAfterCancelBeforeRetry": true,
+    "nativeChildAbsentAfterCancelBeforeRetry": true
+  },
+  "retry": {
+    "status": "ARCHIVE_CREATION_PASS_EXTRACTION_IN_PROGRESS",
+    "sameSource": true,
+    "sameTarget": "cancel-attempt.zpaq",
+    "method": "Keyboard Tab to CreateArchiveButton, Return",
+    "successDialog": "Archiv und KPAR2-Wiederherstellungsdaten wurden erstellt.",
+    "terminalPhase": "Abgeschlossen",
+    "terminalProgressPercent": 100,
+    "artifacts": [
+      {
+        "name": "cancel-attempt.zpaq",
+        "bytes": 67149524,
+        "sha256": "bdfa6b358da386e9051f7b3f9db2863d28ce20f4dde167f24eba29262caee043"
+      },
+      {
+        "name": "cancel-attempt.zpaq.kpar2",
+        "bytes": 10203136,
+        "sha256": "808ff7185e2643805f0a0f63819526083431b5c85b2d9f0a9d5dd7f906b1eaba"
+      },
+      {
+        "name": "cancel-attempt.zpaq.sha3",
+        "bytes": 128,
+        "sha256": "6e3a0e76db1f09a7ae3e68aff3477a8d0f06d543d32ad3dbe2004e41d54ec137"
+      },
+      {
+        "name": "cancel-attempt.zpaq.skein",
+        "bytes": 256,
+        "sha256": "168029b512cc359c2990c6ad40a9ec354925b606508b24a1c41a170466b917eb"
+      }
+    ]
+  },
+  "updatedUtc": "2026-10-01T11:04:47.736745+00:00"
+}

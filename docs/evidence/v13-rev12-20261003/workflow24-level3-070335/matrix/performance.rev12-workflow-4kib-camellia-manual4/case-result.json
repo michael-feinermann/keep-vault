@@ -1,0 +1,76 @@
+{
+  "testId": "performance.rev12-workflow-4kib-camellia-manual4",
+  "suite": "Camellia256",
+  "sourceBytes": 4096,
+  "requestedWorkers": 4,
+  "attempted": true,
+  "status": "PASS",
+  "errors": [],
+  "startedUtc": "2026-10-04T07:20:52.127511+00:00",
+  "hostBefore": {
+    "os": {
+      "exitCode": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+    },
+    "battery": {
+      "exitCode": 0,
+      "output": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t63%; charging; 1:55 remaining present: true\n"
+    },
+    "thermal": {
+      "exitCode": 0,
+      "output": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    }
+  },
+  "command": [
+    "/usr/bin/python3",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/run-campaign.py",
+    "--performance",
+    "performance.rev12-workflow-4kib-camellia-manual4"
+  ],
+  "ownedProcessGroupId": 16890,
+  "campaignExit": 0,
+  "campaignOutputSha256": "c6aaaf587219eb14bee3e71a96151e96e2c3c943939962f3174dfb08afe76979",
+  "campaignEvidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/campaign-20261004T072052Z-e2c0866f.json",
+  "campaignReceiptSha256": "c7869cbe3c0e7513fbd2d3eb3f49ad2ac381b911ed75ef6f3f85abc85beeb3ed",
+  "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z/run-20261004T072052Z-2e0d830d",
+  "originalRunCopies": {
+    "execution.json": "0372edc346e82e7d7d73ea10fa1df127e4ae0522092e503b4c8e1a8f2504f793",
+    "test-results.json": "b70716802b4d8346aab0d5ddb17b4ee2fc60dd064721dfd6ce9e7e94c4770ff3",
+    "test-timings.json": "fdb5949a58f4b1eba6a1ccbb0a583d3d718403d0817b24d3bf1ab26c298844cf",
+    "run.log": "8933b4cad0d1aedda999ef28c48c695f213abc269e307da52ac1e379eb058f21"
+  },
+  "executionSha256": "0372edc346e82e7d7d73ea10fa1df127e4ae0522092e503b4c8e1a8f2504f793",
+  "executionExit": 0,
+  "driverExit": 0,
+  "testResult": {
+    "id": "performance.rev12-workflow-4kib-camellia-manual4",
+    "name": "production-KDF level-3 complete archive/KPAR2/original-compare matrix: 4kib/camellia/manual4",
+    "status": "PASS",
+    "seconds": 17.714,
+    "peakRssMiB": 1907,
+    "seed": "0x40B7E0CF",
+    "failure": null
+  },
+  "artifact": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-4kib-camellia-manual4-20261004T072110301-874b06b201c94e979eedd50d5d565a24.json",
+    "sha256": "bb8d694aa07689da203a021c8f33badd33cceb9f2540d5600584f113afbc6488"
+  },
+  "remainingOwnedProcesses": [],
+  "newOwnedFixturesAfterCase": [],
+  "hostAfter": {
+    "os": {
+      "exitCode": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+    },
+    "battery": {
+      "exitCode": 0,
+      "output": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t63%; charging; 1:55 remaining present: true\n"
+    },
+    "thermal": {
+      "exitCode": 0,
+      "output": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    }
+  },
+  "inputBindingVerified": true,
+  "completedUtc": "2026-10-04T07:21:10.543387+00:00"
+}

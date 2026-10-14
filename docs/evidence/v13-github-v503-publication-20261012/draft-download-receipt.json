@@ -1,0 +1,68 @@
+{
+  "status": "PASS",
+  "scope": "Fresh authenticated draft downloads, byte identity to previously verified Build21; no new functional or full-release approval",
+  "releaseId": 410709242,
+  "assets": [
+    {
+      "assetId": 634064361,
+      "name": "Keep.Vault-macOS-universal.zip",
+      "pid": 33370,
+      "startedUtc": "2026-10-12T14:47:03.052178+00:00",
+      "endedUtc": "2026-10-12T14:47:06.827677+00:00",
+      "exitCode": 0,
+      "sizeBytes": 46565158,
+      "sha256": "8c2864a4d156a821e07a6c4328401aed0c47137d31f3202ce9adb4125ff990ac"
+    },
+    {
+      "assetId": 634064363,
+      "name": "Keep.Vault-macOS-universal.zip.khsig",
+      "pid": 33382,
+      "startedUtc": "2026-10-12T14:47:06.827758+00:00",
+      "endedUtc": "2026-10-12T14:47:07.741028+00:00",
+      "exitCode": 0,
+      "sizeBytes": 6547,
+      "sha256": "4a48e1012d8274de5c7cb91ce966c8deeba8c224527e7cabb1f1202e766ce54e"
+    },
+    {
+      "assetId": 634064352,
+      "name": "Keep.Vault-macOS-universal.zip.sha3",
+      "pid": 33386,
+      "startedUtc": "2026-10-12T14:47:07.741091+00:00",
+      "endedUtc": "2026-10-12T14:47:08.239962+00:00",
+      "exitCode": 0,
+      "sizeBytes": 129,
+      "sha256": "635123eca1e6b98634ef21188a83e10af10296486928ef45f17523eea2274a52"
+    },
+    {
+      "assetId": 634064353,
+      "name": "Keep.Vault-macOS-universal.zip.sha3.khsig",
+      "pid": 33390,
+      "startedUtc": "2026-10-12T14:47:08.240054+00:00",
+      "endedUtc": "2026-10-12T14:47:08.753159+00:00",
+      "exitCode": 0,
+      "sizeBytes": 6547,
+      "sha256": "6e9515816d8b60ea4ef86657ea3059c64bf5ff014e0196829f8631621c00e903"
+    },
+    {
+      "assetId": 634064349,
+      "name": "Keep.Vault-macOS-universal.zip.skein",
+      "pid": 33393,
+      "startedUtc": "2026-10-12T14:47:08.753258+00:00",
+      "endedUtc": "2026-10-12T14:47:09.246070+00:00",
+      "exitCode": 0,
+      "sizeBytes": 257,
+      "sha256": "7d9a71a42b56bfdd2d9355d7806cb866ae404b4104f53de57c89406d00eb94f8"
+    },
+    {
+      "assetId": 634064393,
+      "name": "Keep.Vault-macOS-universal.zip.skein.khsig",
+      "pid": 33396,
+      "startedUtc": "2026-10-12T14:47:09.246157+00:00",
+      "endedUtc": "2026-10-12T14:47:09.734477+00:00",
+      "exitCode": 0,
+      "sizeBytes": 6547,
+      "sha256": "41d71ab500995b1cc797771395294f8864dd807f7d2d1828bf48895cfe9453b4"
+    }
+  ],
+  "overallReleaseApproval": false
+}

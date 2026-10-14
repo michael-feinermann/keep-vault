@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "createdUtc": "2026-10-04T15:53:36.844655+00:00",
+  "copiedOriginals": 24,
+  "allOriginalCopiesByteEqual": true,
+  "files": [
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/build-result.json",
+      "public": "build/build-result.json",
+      "sha256": "5ea8c15ee184bcd9d0ef98c8c8b3438f9db2323260bf0ecac73e89fca487ca93",
+      "bytes": 178,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/source-inputs-before.json",
+      "public": "build/source-inputs-before.json",
+      "sha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+      "bytes": 34628,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/source-inputs-after.json",
+      "public": "build/source-inputs-after.json",
+      "sha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+      "bytes": 34628,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/toolchain.json",
+      "public": "build/toolchain.json",
+      "sha256": "24e85498ce0bec7ab7b44d71559133e3281258dc95b17ffd1f063e3221bac259",
+      "bytes": 369,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/build-0.log",
+      "public": "build/build-0.log",
+      "sha256": "efff0b407b0d61b14ff8925df4b3992f2ebee266700e6a58b2e881c68ae20a9b",
+      "bytes": 286,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/build-1.log",
+      "public": "build/build-1.log",
+      "sha256": "ac7fa9fddbcad2b7bb6e78c5962a03c68da72c06a6ef39c02daf5f1dde576aea",
+      "bytes": 503,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/build-2.log",
+      "public": "build/build-2.log",
+      "sha256": "5113ba24cf3972c8af58b929567facc0e9db1ec67c8619dcb755a674c42df3c3",
+      "bytes": 1404,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/run-20261004T101611Z-1150e4ab/run.log",
+      "public": "run/run.log",
+      "sha256": "b15ffeb56068bffdd97d2dc2ce236027b756d38c960ac5a0fb8020fed3871c88",
+      "bytes": 28278,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/run-20261004T101611Z-1150e4ab/test-results.json",
+      "public": "run/test-results.json",
+      "sha256": "95831a375d66fb48376a1f3528a9d20913ba834a1eaf54efd13ece4f60cf05f8",
+      "bytes": 80805,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/run-20261004T101611Z-1150e4ab/test-timings.json",
+      "public": "run/test-timings.json",
+      "sha256": "7b39d457fb307242e2e4f690e1c95fa08d76cc86aeadfdd239ec3fe67a0f1401",
+      "bytes": 13286,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/run-20261004T101611Z-1150e4ab/execution.json",
+      "public": "run/execution.json",
+      "sha256": "72e1f3d0f1d9224019494f81037f916e4409bc01e36ee03edce3cd314a6c8ffa",
+      "bytes": 1086,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/launcher.log",
+      "public": "wrapper/launcher.log",
+      "sha256": "ea4017064ea78c64eca33c49f1ea0b677b86d21238abd125953e59230d29d2d2",
+      "bytes": 159,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/start.json",
+      "public": "wrapper/start.json",
+      "sha256": "4fe3efb8b6102d179c9bf37924276bddeb1588e6738dc217089b667de304ee9b",
+      "bytes": 395,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/exit.json",
+      "public": "wrapper/exit.json",
+      "sha256": "2415bf3a98f3101d4c5e552cbb579e8ecfec78703f54d31986cc44da13988494",
+      "bytes": 312,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/harness-inputs-before.json",
+      "public": "wrapper/harness-inputs-before.json",
+      "sha256": "0b213fea2d0af5c8a5ea203df20b16e6b323fb9b00ef86608e05319265c12c9b",
+      "bytes": 12845,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/harness-inputs-after.json",
+      "public": "wrapper/harness-inputs-after.json",
+      "sha256": "fe7acc65603d0abf1f13b9cd562f9510d73813ad2274e10af75a9e5dfde292dc",
+      "bytes": 12948,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/preparation-original-not-run.json",
+      "public": "wrapper/preparation-original-not-run.json",
+      "sha256": "4310a232213d095857804ce52da84ba89bf6c9d0c595ece827f15ac6fbb0128b",
+      "bytes": 187,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/run-full.py",
+      "public": "wrapper/run-full.py",
+      "sha256": "fd55412ac1dac8e701baac7ca47bf054e14f85f606479eeb497017c573deb106",
+      "bytes": 2572,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/run-development.py",
+      "public": "administration/run-development.py",
+      "sha256": "86c3d5e66f6858c9a59e428e79779f4a441bcf55b87660670956d3583f4820a4",
+      "bytes": 9130,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev11-release-b41144e/resume-harness/sdk-copy.json",
+      "public": "toolchain/sdk-copy.json",
+      "sha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+      "bytes": 1248610,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev11-release-b41144e/resume-harness/packages-copy.json",
+      "public": "toolchain/packages-copy.json",
+      "sha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "bytes": 696030,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/progress-overhead-public.json",
+      "public": "generated-output/progress-overhead-public.json",
+      "sha256": "cfad9228c3f206878022f032bc5596a89f5b2bcfefb31b1df1cbb5f2448f81d1",
+      "bytes": 207,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/publish-full-development-evidence.py",
+      "public": "administration/publish-full-development-evidence.py",
+      "sha256": "7c09765f191a426325178a19696b471ff3e25c3de8e1b28fff043843463a5e37",
+      "bytes": 11083,
+      "byteEqual": true
+    },
+    {
+      "original": "work/v13-evidence/rev12-full-current-20261004/toolchain-after-observation.json",
+      "public": "toolchain/toolchain-after-observation.json",
+      "sha256": "76b007f2878fbc712e201b8249f0e01fbdab00d1e16ff2cd0cdec9f3c21f5d78",
+      "bytes": 1243,
+      "byteEqual": true
+    }
+  ],
+  "scope": "Exact original public run/build/wrapper/helper/baseline/output bytes; derived classifications are separate files"
+}

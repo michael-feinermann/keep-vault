@@ -20,7 +20,7 @@ namespace KalynaArchiver.Services;
 /// and the comparison reads the archive that was actually written, not the
 /// buffers it was written from.
 /// </remarks>
-internal sealed class MacOriginalDeletionService
+internal sealed partial class MacOriginalDeletionService
 {
     private const int CompareBufferBytes = 1024 * 1024;
 
@@ -43,12 +43,12 @@ internal sealed class MacOriginalDeletionService
     /// carried alongside so a mismatch can say what changed. The digest comes
     /// from the comparison pass itself, so recording it costs no extra reads.
     /// </remarks>
-    internal readonly record struct OriginalFileState(long Length, long ModifiedUtcTicks, string Digest);
+    internal readonly record struct OriginalFileState(long Length, long ModifiedUtcTicks, string Digest, MacFileIdentity Identity);
 
     /// <summary>
     /// Every original file the verification covered, keyed by full path.
     /// </summary>
-    internal sealed record OriginalSnapshot(IReadOnlyDictionary<string, OriginalFileState> Files);
+    internal sealed record OriginalSnapshot(IReadOnlyDictionary<string, OriginalFileState> Files, CreationSnapshot? Creation = null);
 
     /// <summary>
     /// Compares every file below <paramref name="extractedRoot"/> with its
@@ -63,115 +63,79 @@ internal sealed class MacOriginalDeletionService
         IReadOnlyList<string> originals,
         string extractedRoot,
         IProgress<string>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        CreationSnapshot? creationSnapshot = null)
     {
         ArgumentNullException.ThrowIfNull(originals);
         ArgumentException.ThrowIfNullOrWhiteSpace(extractedRoot);
-
-        Dictionary<string, string> expected;
-        try
-        {
-            expected = ZpaqService.BuildArchiveEntryMap(originals);
-        }
-        catch (Exception ex)
-        {
-            return new VerificationResult(false, 0, 0, $"Fehler beim Ermitteln der Archiveinträge: {ex.Message}");
-        }
-
-        foreach (var kvp in expected)
-        {
-            if (new FileInfo(kvp.Value).LinkTarget is not null)
-            {
-                return new VerificationResult(false, 0, 0,
-                    $"Die Eingabe enthält einen symbolischen Link: {kvp.Value}");
-            }
-        }
-
-        if (expected.Count == 0)
-        {
-            return new VerificationResult(false, 0, 0, "Es wurden keine Originaldateien zum Vergleich gefunden.");
-        }
-
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        var states = new Dictionary<string, OriginalFileState>(StringComparer.Ordinal);
         int compared = 0;
         long bytes = 0;
-        List<(string FullPath, string RelativePath)> extractedFiles;
         try
         {
-            extractedFiles = MacSafeFileSystem.EnumerateDirectoryTreeNoFollow(extractedRoot);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Win32Exception)
-        {
-            return new VerificationResult(
-                false,
-                0,
-                0,
-                $"Fehler beim sicheren Prüfen des entpackten Baums: {ex.Message}");
-        }
-
-        foreach ((string extracted, string relative) in extractedFiles)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!expected.TryGetValue(relative, out string? original))
+            // Standalone comparisons remain possible, but only a snapshot held
+            // from before creation grants the subsequent irreversible action.
+            using CreationSnapshot? comparisonOnly = creationSnapshot is null
+                ? CaptureCreationSnapshot(originals, cancellationToken) : null;
+            CreationSnapshot source = creationSnapshot ?? comparisonOnly!;
+            source.RequireUnchanged(originals, cancellationToken);
+            using CreationSnapshot extracted = CaptureCreationSnapshot([extractedRoot], cancellationToken);
+            var expected = source.Files.Keys.ToDictionary(path => Path.GetRelativePath(source.WorkingDirectory, path),
+                path => path, StringComparer.Ordinal);
+            var extractedDirectories = extracted.Directories.Where(entry => entry.Value.Strict
+                && !string.Equals(entry.Key, Path.TrimEndingDirectorySeparator(Path.GetFullPath(extractedRoot)), StringComparison.Ordinal))
+                .Select(entry => Path.GetRelativePath(extractedRoot, entry.Key)).ToHashSet(StringComparer.Ordinal);
+            if (!source.ExpectedDirectories().SetEquals(extractedDirectories))
+                return new(false, 0, 0, "Die entpackte Verzeichnisstruktur weicht vom Erstellungsstand ab.");
+            if (expected.Count == 0)
+                return new(false, 0, 0, "Es wurden keine Originaldateien zum Vergleich gefunden.");
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var states = new Dictionary<string, OriginalFileState>(StringComparer.Ordinal);
+            foreach ((string path, MacFileIdentity extractedIdentity) in extracted.Files)
             {
-                return new VerificationResult(false, compared, bytes,
-                    $"Das Archiv enthält eine unerwartete Datei: {relative}");
+                cancellationToken.ThrowIfCancellationRequested();
+                string relative = Path.GetRelativePath(extractedRoot, path);
+                if (!expected.TryGetValue(relative, out string? original))
+                    return new(false, compared, bytes, $"Das Archiv enthält eine unerwartete Datei: {relative}");
+                progress?.Report(relative);
+                OriginalFileState? state = await CompareAsync(original, path, source.Files[original], extractedIdentity,
+                    cancellationToken).ConfigureAwait(false);
+                if (state is not OriginalFileState actual)
+                    return new(false, compared, bytes, $"Der bitweise Vergleich schlug fehl: {relative}");
+                states.Add(original, actual);
+                seen.Add(relative);
+                compared = checked(compared + 1);
+                bytes = checked(bytes + actual.Length);
             }
-
-            progress?.Report(relative);
-            (long length, string? digest) = await CompareAsync(original, extracted, cancellationToken)
-                .ConfigureAwait(false);
-            if (length < 0 || digest is null)
-            {
-                return new VerificationResult(false, compared, bytes,
-                    $"Der bitweise Vergleich schlug fehl: {relative}");
-            }
-
-            states[original] = new OriginalFileState(
-                length,
-                File.GetLastWriteTimeUtc(original).Ticks,
-                digest);
-            seen.Add(relative);
-            compared++;
-            bytes += length;
+            if (seen.Count != expected.Count)
+                return new(false, compared, bytes, "Das Archiv enthält eine Originaldatei nicht.");
+            // Includes empty directories, identities, metadata and both complete
+            // entry sets. An identical-byte pathname replacement cannot mint a
+            // fresh deletion capability during the comparison.
+            source.RequireUnchanged(originals, cancellationToken);
+            extracted.RequireUnchanged([extractedRoot], cancellationToken);
+            return new(true, compared, bytes, null, new OriginalSnapshot(states, creationSnapshot));
         }
-
-        if (seen.Count != expected.Count)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or Win32Exception or ObjectDisposedException)
         {
-            string missing = expected.Keys.Except(seen, StringComparer.Ordinal).First();
-            return new VerificationResult(false, compared, bytes,
-                $"Das Archiv enthält eine Originaldatei nicht: {missing}");
+            return new(false, compared, bytes, $"Die sichere Erstellungs-/Extraktionsprüfung schlug fehl: {error.Message}");
         }
-
-        return new VerificationResult(true, compared, bytes, null, new OriginalSnapshot(states));
     }
 
-    /// <summary>
-    /// Compares two files byte for byte, returning the length on a match and
-    /// -1 otherwise.
-    /// </summary>
-    /// <remarks>
-    /// A hash comparison would be enough in practice, but comparing the bytes
-    /// removes the question entirely and costs nothing here: both files are
-    /// being read from disk regardless.
-    /// </remarks>
-    private static async Task<(long Length, string? Digest)> CompareAsync(
-        string original,
-        string extracted,
+    private static async Task<OriginalFileState?> CompareAsync(
+        string original, string extracted, MacFileIdentity expectedOriginal, MacFileIdentity expectedExtracted,
         CancellationToken cancellationToken)
     {
-        using FileStream left = MacSafeFileSystem.OpenReadNoSymlinks(original);
-        using FileStream right = MacSafeFileSystem.OpenReadNoSymlinks(extracted);
-        if (left.Length != right.Length)
-        {
-            return (-1, null);
-        }
-
-        byte[] leftBuffer = new byte[CompareBufferBytes];
-        byte[] rightBuffer = new byte[CompareBufferBytes];
-        // The original's digest falls out of the bytes already being read, and
-        // it is what the pre-deletion re-check compares against.
+        using FileStream left = MacSafeFileSystem.OpenReadNoSymlinks(original, requireSingleLink: true);
+        using FileStream right = MacSafeFileSystem.OpenReadNoSymlinks(extracted, requireSingleLink: true);
+        MacFileIdentity leftIdentity = MacSafeFileSystem.GetIdentity(left.SafeFileHandle);
+        MacFileIdentity rightIdentity = MacSafeFileSystem.GetIdentity(right.SafeFileHandle);
+        if (!leftIdentity.SameObjectAndMetadata(expectedOriginal) || !rightIdentity.SameObjectAndMetadata(expectedExtracted)
+            || left.Length != right.Length) return null;
+        int capacity = checked((int)Math.Max(1, Math.Min(CompareBufferBytes, left.Length)));
+        using OperationMemoryBudget.HeavyLease buffers = await OperationMemoryBudget.AcquireWorkingAsync(checked(2L * capacity), cancellationToken);
+        byte[] leftBuffer = new byte[capacity];
+        byte[] rightBuffer = new byte[capacity];
+        buffers.CommitAllocation();
         using var digest = IncrementalHash.CreateHash(HashAlgorithmName.SHA512);
         try
         {
@@ -179,21 +143,20 @@ internal sealed class MacOriginalDeletionService
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 int leftRead = await left.ReadAsync(leftBuffer, cancellationToken).ConfigureAwait(false);
-                if (leftRead == 0)
-                {
-                    break;
-                }
-
+                if (leftRead == 0) break;
                 await right.ReadExactlyAsync(rightBuffer.AsMemory(0, leftRead), cancellationToken).ConfigureAwait(false);
-                if (!leftBuffer.AsSpan(0, leftRead).SequenceEqual(rightBuffer.AsSpan(0, leftRead)))
-                {
-                    return (-1, null);
-                }
-
+                using CpuWorkBudget.Lease cpu = await CpuWorkBudget.AcquireAsync(
+                    ArchiveOperationPolicy.Current.MaxCpuWorkers, 1, cancellationToken).ConfigureAwait(false);
+                if (!leftBuffer.AsSpan(0, leftRead).SequenceEqual(rightBuffer.AsSpan(0, leftRead))) return null;
                 digest.AppendData(leftBuffer.AsSpan(0, leftRead));
             }
-
-            return (left.Length, Convert.ToHexString(digest.GetHashAndReset()));
+            if (right.Position != right.Length
+                || !MacSafeFileSystem.GetIdentity(left.SafeFileHandle).SameObjectAndMetadata(leftIdentity)
+                || !MacSafeFileSystem.GetIdentity(right.SafeFileHandle).SameObjectAndMetadata(rightIdentity)
+                || !MacSafeFileSystem.GetPathIdentityNoFollow(original).SameObjectAndMetadata(leftIdentity)
+                || !MacSafeFileSystem.GetPathIdentityNoFollow(extracted).SameObjectAndMetadata(rightIdentity)) return null;
+            return new(left.Length, File.GetLastWriteTimeUtc(original).Ticks,
+                Convert.ToHexString(digest.GetHashAndReset()), expectedOriginal);
         }
         finally
         {
@@ -252,6 +215,11 @@ internal sealed class MacOriginalDeletionService
         ArgumentNullException.ThrowIfNull(originals);
         ArgumentNullException.ThrowIfNull(originalsVerified);
         ArgumentException.ThrowIfNullOrWhiteSpace(archivePath);
+        if (originalsVerified.Creation is not { IsDisposed: false } creation)
+            return ["Es fehlt eine noch gültige Bindung an den Erstellungsstand. Es wurde nichts gelöscht."];
+        try { creation.RequireUnchanged(originals, CancellationToken.None); }
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException or Win32Exception)
+        { return [$"Die Originale unterscheiden sich vom Erstellungsstand: {failure.Message}. Es wurde nichts gelöscht."]; }
 
         FileStream archiveStream;
         MacFileIdentity archiveIdentity;
@@ -381,7 +349,8 @@ internal sealed class MacOriginalDeletionService
         try
         {
             using FileStream stream = MacSafeFileSystem.OpenReadNoSymlinks(path);
-            if (stream.Length != expected.Length)
+            MacFileIdentity before = MacSafeFileSystem.GetIdentity(stream.SafeFileHandle);
+            if (!before.SameObjectAndMetadata(expected.Identity) || before.LinkCount != 1 || stream.Length != expected.Length)
             {
                 return $"Eine Originaldatei hat sich seit der Prüfung geändert: {path}. "
                     + "Es wurde nichts gelöscht.";
@@ -391,6 +360,8 @@ internal sealed class MacOriginalDeletionService
             if (!CryptographicOperations.FixedTimeEquals(
                     Convert.FromHexString(digest),
                     Convert.FromHexString(expected.Digest))
+                || !MacSafeFileSystem.GetIdentity(stream.SafeFileHandle).SameObjectAndMetadata(before)
+                || !MacSafeFileSystem.GetPathIdentityNoFollow(path).SameObjectAndMetadata(before)
                 || File.GetLastWriteTimeUtc(path).Ticks != expected.ModifiedUtcTicks)
             {
                 return $"Eine Originaldatei hat sich seit der Prüfung geändert: {path}. "
@@ -448,6 +419,7 @@ internal sealed class MacOriginalDeletionService
                 {
                     SafeFileHandle? parentHandle = MacSafeFileSystem.OpenDirectoryHandle(canonicalParent);
                     MacFileIdentity parentIdentity = MacSafeFileSystem.GetIdentity(parentHandle);
+                    verified.Creation!.RequireParentIdentity(canonicalParent, parentIdentity);
                     string qDirName = ".keepvault_quarantine_" + Guid.NewGuid().ToString("N");
                     string qDirPath = Path.Combine(canonicalParent, qDirName);
                     bool qDirCreated = false;
@@ -508,6 +480,8 @@ internal sealed class MacOriginalDeletionService
                     OriginalFileState expected = verified.Files[path];
                     sourceStream = MacSafeFileSystem.OpenReadNoSymlinks(path, requireSingleLink: true);
                     MacFileIdentity sourceIdentity = MacSafeFileSystem.GetIdentity(sourceStream.SafeFileHandle);
+                    if (!sourceIdentity.SameObjectAndMetadata(expected.Identity))
+                        throw new InvalidDataException($"Originaldatei unterscheidet sich vom Erstellungsstand: {path}");
                     RequireBoundOriginalMatches(sourceStream, path, expected, sourceIdentity);
 
                     context.VerifyParentIdentity();
@@ -522,8 +496,8 @@ internal sealed class MacOriginalDeletionService
                     context.VerifyParentIdentity();
                     MacFileIdentity finalHandleIdentity = MacSafeFileSystem.GetIdentity(sourceStream.SafeFileHandle);
                     MacFileIdentity finalSourceEntryIdentity = MacSafeFileSystem.GetIdentityAt(context.ParentHandle, fileName);
-                    if (!finalHandleIdentity.SameObject(sourceIdentity)
-                        || !finalSourceEntryIdentity.SameObject(sourceIdentity)
+                    if (!finalHandleIdentity.SameObjectAndMetadata(sourceIdentity)
+                        || !finalSourceEntryIdentity.SameObjectAndMetadata(sourceIdentity)
                         || finalHandleIdentity.LinkCount != 1
                         || finalSourceEntryIdentity.LinkCount != 1)
                     {
@@ -674,8 +648,8 @@ internal sealed class MacOriginalDeletionService
                 item.ParentContext.VerifyParentIdentity();
                 MacFileIdentity handleIdentity = MacSafeFileSystem.GetIdentity(item.Stream.SafeFileHandle);
                 MacFileIdentity commitIdentity = MacSafeFileSystem.GetIdentityAt(item.ParentContext.QuarantineDirHandle, item.FileName);
-                if (!handleIdentity.SameObject(item.Identity)
-                    || !commitIdentity.SameObject(item.Identity)
+                if (!handleIdentity.SameObjectAndMetadata(item.Identity)
+                    || !commitIdentity.SameObjectAndMetadata(item.Identity)
                     || handleIdentity.LinkCount != 1
                     || commitIdentity.LinkCount != 1)
                 {
@@ -706,8 +680,11 @@ internal sealed class MacOriginalDeletionService
         MacFileIdentity expectedIdentity)
     {
         MacFileIdentity before = MacSafeFileSystem.GetIdentity(stream.SafeFileHandle);
-        if (!before.SameObject(expectedIdentity)
-            || before.LinkCount != 1
+        if (!before.SameObjectAndMetadata(expectedIdentity)
+            || !before.SameObject(expected.Identity)
+            || before.LinkCount != 1 || before.Mode != expected.Identity.Mode
+            || before.ModificationSeconds != expected.Identity.ModificationSeconds
+            || before.ModificationNanoseconds != expected.Identity.ModificationNanoseconds
             || stream.Length != expected.Length)
         {
             throw new InvalidDataException($"Originaldatei hat vor dem Löschen ihre Identität oder Größe geändert: {path}");

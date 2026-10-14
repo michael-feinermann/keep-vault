@@ -1,0 +1,429 @@
+{
+  "scope": "24 actual L3 managed development controls; installed/AOT/release approval is separate",
+  "compressionLevel": 3,
+  "executions": [
+    {
+      "testId": "performance.rev12-workflow-4kib-standard-auto",
+      "suite": "StandardCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": null,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "case",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.703362+00:00",
+      "hostAfter": {
+        "os": {
+          "exitCode": 0,
+          "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+        },
+        "battery": {
+          "exitCode": 0,
+          "output": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t70%; discharging; 2:56 remaining present: true\n"
+        },
+        "thermal": {
+          "exitCode": 0,
+          "output": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+        }
+      },
+      "inputBindingVerified": true,
+      "completedUtc": "2026-10-04T07:06:49.986281+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-standard-manual1",
+      "suite": "StandardCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": 1,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.986733+00:00",
+      "completedUtc": "2026-10-04T07:06:49.986737+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-standard-manual4",
+      "suite": "StandardCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": 4,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.987172+00:00",
+      "completedUtc": "2026-10-04T07:06:49.987175+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-standard-auto",
+      "suite": "StandardCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": null,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.988098+00:00",
+      "completedUtc": "2026-10-04T07:06:49.988106+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-standard-manual1",
+      "suite": "StandardCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 1,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.988612+00:00",
+      "completedUtc": "2026-10-04T07:06:49.988617+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-standard-manual4",
+      "suite": "StandardCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 4,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.989215+00:00",
+      "completedUtc": "2026-10-04T07:06:49.989218+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-paranoia-auto",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": null,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.989851+00:00",
+      "completedUtc": "2026-10-04T07:06:49.989856+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-paranoia-manual1",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": 1,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.990588+00:00",
+      "completedUtc": "2026-10-04T07:06:49.990593+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-paranoia-manual4",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 4096,
+      "requestedWorkers": 4,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.991209+00:00",
+      "completedUtc": "2026-10-04T07:06:49.991213+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-paranoia-auto",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": null,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.991831+00:00",
+      "completedUtc": "2026-10-04T07:06:49.991835+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-paranoia-manual1",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 1,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.992623+00:00",
+      "completedUtc": "2026-10-04T07:06:49.992658+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-paranoia-manual4",
+      "suite": "ParanoiaCascade",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 4,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.993263+00:00",
+      "completedUtc": "2026-10-04T07:06:49.993266+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-camellia-auto",
+      "suite": "Camellia256",
+      "sourceBytes": 4096,
+      "requestedWorkers": null,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.993817+00:00",
+      "completedUtc": "2026-10-04T07:06:49.993820+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-camellia-manual1",
+      "suite": "Camellia256",
+      "sourceBytes": 4096,
+      "requestedWorkers": 1,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.994388+00:00",
+      "completedUtc": "2026-10-04T07:06:49.994391+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-camellia-manual4",
+      "suite": "Camellia256",
+      "sourceBytes": 4096,
+      "requestedWorkers": 4,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.995119+00:00",
+      "completedUtc": "2026-10-04T07:06:49.995127+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-camellia-auto",
+      "suite": "Camellia256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": null,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.995660+00:00",
+      "completedUtc": "2026-10-04T07:06:49.995662+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-camellia-manual1",
+      "suite": "Camellia256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 1,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.996219+00:00",
+      "completedUtc": "2026-10-04T07:06:49.996224+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-camellia-manual4",
+      "suite": "Camellia256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 4,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.996734+00:00",
+      "completedUtc": "2026-10-04T07:06:49.996737+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-serpent-auto",
+      "suite": "Serpent256",
+      "sourceBytes": 4096,
+      "requestedWorkers": null,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.997314+00:00",
+      "completedUtc": "2026-10-04T07:06:49.997316+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-serpent-manual1",
+      "suite": "Serpent256",
+      "sourceBytes": 4096,
+      "requestedWorkers": 1,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.997932+00:00",
+      "completedUtc": "2026-10-04T07:06:49.997936+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-4kib-serpent-manual4",
+      "suite": "Serpent256",
+      "sourceBytes": 4096,
+      "requestedWorkers": 4,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.998552+00:00",
+      "completedUtc": "2026-10-04T07:06:49.998554+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-serpent-auto",
+      "suite": "Serpent256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": null,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:49.999247+00:00",
+      "completedUtc": "2026-10-04T07:06:49.999255+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-serpent-manual1",
+      "suite": "Serpent256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 1,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:50.000027+00:00",
+      "completedUtc": "2026-10-04T07:06:50.000032+00:00"
+    },
+    {
+      "testId": "performance.rev12-workflow-256mib-serpent-manual4",
+      "suite": "Serpent256",
+      "sourceBytes": 268435456,
+      "requestedWorkers": 4,
+      "attempted": false,
+      "status": "NOT RUN",
+      "errors": [
+        {
+          "stage": "blocked-after-binding-or-cleanup-failure",
+          "type": "ValueError",
+          "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+        }
+      ],
+      "startedUtc": "2026-10-04T07:06:50.000673+00:00",
+      "completedUtc": "2026-10-04T07:06:50.000675+00:00"
+    }
+  ]
+}

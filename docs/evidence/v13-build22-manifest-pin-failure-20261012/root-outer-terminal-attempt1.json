@@ -1,0 +1,10 @@
+{
+  "observedUtc": "2026-10-12T21:47:17.825534+00:00",
+  "actualWrapperPid": 37656,
+  "actualWrapperExitCode": 3,
+  "execSessionId": 11433,
+  "scope": "Actual unified exec completion; original builder PID64988 Exit3 retained separately",
+  "status": "FAIL",
+  "overallReleaseApproval": false,
+  "failure": "Manifest schema/version/build rejection before tests"
+}

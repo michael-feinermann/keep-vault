@@ -1,0 +1,114 @@
+{
+  "scope": "Managed development evidence; installed release approval is separate",
+  "performance": false,
+  "executions": [
+    {
+      "testId": "containers.suite.kalyna512-512",
+      "startedUtc": "2026-10-03T17:18:31.786979+00:00",
+      "completedUtc": "2026-10-03T17:18:47.044947+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171831Z-3282a379",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171831Z-3282a379\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.threefish1024",
+      "startedUtc": "2026-10-03T17:18:47.045191+00:00",
+      "completedUtc": "2026-10-03T17:19:00.455139+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171847Z-e92ac257",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171847Z-e92ac257\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.threefish-over-kalyna",
+      "startedUtc": "2026-10-03T17:19:00.455320+00:00",
+      "completedUtc": "2026-10-03T17:19:16.233501+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171900Z-6782d664",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171900Z-6782d664\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.chacha-over-aes",
+      "startedUtc": "2026-10-03T17:19:16.233693+00:00",
+      "completedUtc": "2026-10-03T17:19:30.135968+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171916Z-2e368e39",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171916Z-2e368e39\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.paranoia-cascade",
+      "startedUtc": "2026-10-03T17:19:30.136159+00:00",
+      "completedUtc": "2026-10-03T17:19:55.429701+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171930Z-0dee458e",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171930Z-0dee458e\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.aes256",
+      "startedUtc": "2026-10-03T17:19:55.429905+00:00",
+      "completedUtc": "2026-10-03T17:20:11.224534+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171955Z-a37d09eb",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T171955Z-a37d09eb\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.mars448",
+      "startedUtc": "2026-10-03T17:20:11.224762+00:00",
+      "completedUtc": "2026-10-03T17:20:23.029267+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172011Z-f32d4795",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172011Z-f32d4795\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.shacal2-512",
+      "startedUtc": "2026-10-03T17:20:23.029503+00:00",
+      "completedUtc": "2026-10-03T17:20:37.855888+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172023Z-9471d2c4",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172023Z-9471d2c4\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.chacha20-poly1305",
+      "startedUtc": "2026-10-03T17:20:37.856119+00:00",
+      "completedUtc": "2026-10-03T17:20:49.510093+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172037Z-25e2c55d",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172037Z-25e2c55d\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.mixed-cascade",
+      "startedUtc": "2026-10-03T17:20:49.510316+00:00",
+      "completedUtc": "2026-10-03T17:21:03.414722+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172049Z-946804d7",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172049Z-946804d7\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.camellia256",
+      "startedUtc": "2026-10-03T17:21:03.414957+00:00",
+      "completedUtc": "2026-10-03T17:21:18.322163+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172103Z-926a7f9a",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172103Z-926a7f9a\n",
+      "status": "PASS"
+    },
+    {
+      "testId": "containers.suite.serpent256",
+      "startedUtc": "2026-10-03T17:21:18.322429+00:00",
+      "completedUtc": "2026-10-03T17:21:32.496419+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172118Z-86ee59e9",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T172118Z-86ee59e9\n",
+      "status": "PASS"
+    }
+  ]
+}

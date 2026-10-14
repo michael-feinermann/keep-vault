@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "testInventoryHash": "98de307771f5d7b76634e3adf02bce6d46e694e36212e8a6ef4e5bea276d2cb9",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.cipher-suites",
+      "name": "primitive and full-container release medians for every cipher suite and cascade",
+      "status": "FAIL",
+      "seconds": 622.721,
+      "peakRssMiB": 3375,
+      "seed": "0x17B67156",
+      "failure": "InvalidOperationException: The adaptive production Auto pipeline reaches only 365,5 MiB/s while 2 reaches 409,2 MiB/s. Revisit the actual resource planner and joined-boundary growth.\n   at CipherSuitePerformanceTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KalynaArchiver.Tests/CipherSuitePerformanceTests.cs:line 1242\n   at CipherSuitePerformanceTests.RunPipelineSlotScalingAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KalynaArchiver.Tests/CipherSuitePerformanceTests.cs:line 543\n   at CipherSuitePerformanceTests.Run() in /Users/michael/Developer/GPT-Codex/Kalyna/KalynaArchiver.Tests/CipherSuitePerformanceTests.cs:line 188\n   at MacComprehensiveTests.\u003C\u003Ec.\u003Cget_AllTests\u003Eb__16_0() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 155\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList\u00601 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1440"
+    }
+  ]
+}

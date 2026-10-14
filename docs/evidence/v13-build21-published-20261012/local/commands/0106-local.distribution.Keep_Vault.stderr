@@ -1,0 +1,147 @@
+Checking distribution readiness on /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/local-verification-build21-20261012T1258/local/kit/Keep Vault.app
+Checking certificate type for /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/local-verification-build21-20261012T1258/local/kit/Keep Vault.app
+Passed developer ID certificate check
+Passed certificate-profile match check
+Passed codesign --verify -R="notarized" --check-notarization
+Passed codesign check
+Passed xptool
+  Progress: 859795 / 86839296 = 0.009901
+  Progress: 1010555 / 87140816 = 0.011597
+  Progress: 1161315 / 87140816 = 0.013327
+  Progress: 1308603 / 87435392 = 0.014967
+  Progress: 1455891 / 87435392 = 0.016651
+  Progress: 1532331 / 87588272 = 0.017495
+  Progress: 1608771 / 87588272 = 0.018367
+  Progress: 1693971 / 87758672 = 0.019303
+  Progress: 1779171 / 87758672 = 0.020273
+  Progress: 1926891 / 88054112 = 0.021883
+  Progress: 2074611 / 88054112 = 0.023561
+  Progress: 2134347 / 88173584 = 0.024206
+  Progress: 2194083 / 88173584 = 0.024884
+  Progress: 2341571 / 88468560 = 0.026468
+  Progress: 2489059 / 88468560 = 0.028135
+  Progress: 2789067 / 89068576 = 0.031314
+  Progress: 3089075 / 89068576 = 0.034682
+  Progress: 3615859 / 90122144 = 0.040122
+  Progress: 4142643 / 90122144 = 0.045967
+  Progress: 4307115 / 90451088 = 0.047618
+  Progress: 4471587 / 90451088 = 0.049437
+  Progress: 5331382 / 90451088 = 0.058942
+  Progress: 6191177 / 90451088 = 0.068448
+  Progress: 7050972 / 90451088 = 0.077953
+  Progress: 7910767 / 90451088 = 0.087459
+  Progress: 8770562 / 90451088 = 0.096965
+  Progress: 9630357 / 90451088 = 0.106470
+  Progress: 10490152 / 90451088 = 0.115976
+  Progress: 11349947 / 90451088 = 0.125482
+  Progress: 12209742 / 90451088 = 0.134987
+  Progress: 13069537 / 90451088 = 0.144493
+  Progress: 13234193 / 90780400 = 0.145782
+  Progress: 13398849 / 90780400 = 0.147596
+  Progress: 14840513 / 93663728 = 0.158445
+  Progress: 16282177 / 93663728 = 0.173837
+  Progress: 17141972 / 93663728 = 0.183016
+  Progress: 18001768 / 93663728 = 0.192196
+  Progress: 18861562 / 93663728 = 0.201375
+  Progress: 19721357 / 93663728 = 0.210555
+  Progress: 20581152 / 93663728 = 0.219734
+  Progress: 21440947 / 93663728 = 0.228914
+  Progress: 22300743 / 93663728 = 0.238094
+  Progress: 23160537 / 93663728 = 0.247273
+  Progress: 24020332 / 93663728 = 0.256453
+  Progress: 24880128 / 93663728 = 0.265632
+  Progress: 25739922 / 93663728 = 0.274812
+  Progress: 26599718 / 93663728 = 0.283992
+  Progress: 27459512 / 93663728 = 0.293171
+  Progress: 28319308 / 93663728 = 0.302351
+  Progress: 29179104 / 93663728 = 0.311530
+  Progress: 30038898 / 93663728 = 0.320710
+  Progress: 30898692 / 93663728 = 0.329890
+  Progress: 31758488 / 93663728 = 0.339069
+  Progress: 32618282 / 93663728 = 0.348249
+  Progress: 33478078 / 93663728 = 0.357428
+  Progress: 34337872 / 93663728 = 0.366608
+  Progress: 35197666 / 93663728 = 0.375788
+  Progress: 36057462 / 93663728 = 0.384967
+  Progress: 36917256 / 93663728 = 0.394147
+  Progress: 37777054 / 93663728 = 0.403326
+  Progress: 38636848 / 93663728 = 0.412506
+  Progress: 39496642 / 93663728 = 0.421686
+  Progress: 40356438 / 93663728 = 0.430865
+  Progress: 41216232 / 93663728 = 0.440045
+  Progress: 42076028 / 93663728 = 0.449224
+  Progress: 42935824 / 93663728 = 0.458404
+  Progress: 43795616 / 93663728 = 0.467584
+  Progress: 44655412 / 93663728 = 0.476763
+  Progress: 45515208 / 93663728 = 0.485943
+  Progress: 46375004 / 93663728 = 0.495122
+  Progress: 47234800 / 93663728 = 0.504302
+  Progress: 48094592 / 93663728 = 0.513481
+  Progress: 48954388 / 93663728 = 0.522661
+  Progress: 49814184 / 93663728 = 0.531841
+  Progress: 50673980 / 93663728 = 0.541020
+  Progress: 51533776 / 93663728 = 0.550200
+  Progress: 52393568 / 93663728 = 0.559379
+  Progress: 53253364 / 93663728 = 0.568559
+  Progress: 54113160 / 93663728 = 0.577739
+  Progress: 54972952 / 93663728 = 0.586918
+  Progress: 55832748 / 93663728 = 0.596098
+  Progress: 56692544 / 93663728 = 0.605277
+  Progress: 57552336 / 93663728 = 0.614457
+  Progress: 58412132 / 93663728 = 0.623637
+  Progress: 59271928 / 93663728 = 0.632816
+  Progress: 60131724 / 93663728 = 0.641996
+  Progress: 60991516 / 93663728 = 0.651175
+  Progress: 61851312 / 93663728 = 0.660355
+  Progress: 62711108 / 93663728 = 0.669535
+  Progress: 63570900 / 93663728 = 0.678714
+  Progress: 64430696 / 93663728 = 0.687894
+  Progress: 65290492 / 93663728 = 0.697073
+  Progress: 66150284 / 93663728 = 0.706253
+  Progress: 67010080 / 93663728 = 0.715433
+  Progress: 67869880 / 93663728 = 0.724612
+  Progress: 68729676 / 93663728 = 0.733792
+  Progress: 69589468 / 93663728 = 0.742971
+  Progress: 70449264 / 93663728 = 0.752151
+  Progress: 71309060 / 93663728 = 0.761331
+  Progress: 72168852 / 93663728 = 0.770510
+  Progress: 73028648 / 93663728 = 0.779690
+  Progress: 73888444 / 93663728 = 0.788869
+  Progress: 74748240 / 93663728 = 0.798049
+  Progress: 75608032 / 93663728 = 0.807229
+  Progress: 76467824 / 93663728 = 0.816408
+  Progress: 77327624 / 93663728 = 0.825588
+  Progress: 78187416 / 93663728 = 0.834767
+  Progress: 79047216 / 93663728 = 0.843947
+  Progress: 79907008 / 93663728 = 0.853126
+  Progress: 80766800 / 93663728 = 0.862306
+  Progress: 81626600 / 93663728 = 0.871486
+  Progress: 82486392 / 93663728 = 0.880665
+  Progress: 83346184 / 93663728 = 0.889845
+  Progress: 84205984 / 93663728 = 0.899024
+  Progress: 85065784 / 93663728 = 0.908204
+  Progress: 85925576 / 93663728 = 0.917384
+  Progress: 86785368 / 93663728 = 0.926563
+  Progress: 87645168 / 93663728 = 0.935743
+  Progress: 88504960 / 93663728 = 0.944922
+  Progress: 89364752 / 93663728 = 0.954102
+  Progress: 90136992 / 95208208 = 0.946736
+  Progress: 90909232 / 95208208 = 0.954847
+  Progress: 90991312 / 95372368 = 0.954064
+  Progress: 91073392 / 95372368 = 0.954924
+  Progress: 91933192 / 95372368 = 0.963939
+  Progress: 92792984 / 95372368 = 0.972955
+  Progress: 100365632 / 110517664 = 0.908141
+  Progress: 107938280 / 110517664 = 0.976661
+  Progress: 108798072 / 110517664 = 0.984441
+  Progress: 139065168 / 171051856 = 0.813000
+  Progress: 169332264 / 171051856 = 0.989947
+  Progress: 170192064 / 171051856 = 0.994973
+  Progress: 171051856 / 171051856 = 1.000000
+
+  Top level policy match: notarized
+  Deep policy match: notarized
+Passed Gatekeeper scan
+Only one signature found in file:///Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/local-verification-build21-20261012T1258/local/kit/Keep%20Vault.app, skipping dual signature check
+Passed dual signature check
+App passed all pre-distribution checks and is ready for distribution.

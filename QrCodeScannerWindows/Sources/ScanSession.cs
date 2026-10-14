@@ -255,13 +255,6 @@ public sealed class ScanSession : IAsyncDisposable
 
     private void OnFrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
     {
-        using MediaFrameReference? reference = sender.TryAcquireLatestFrame();
-        SoftwareBitmap? bitmap = reference?.VideoMediaFrame?.SoftwareBitmap;
-        if (bitmap is null)
-        {
-            return;
-        }
-
         lock (_gate)
         {
             if (_paused || _disposed || _processingFrame)
@@ -282,6 +275,15 @@ public sealed class ScanSession : IAsyncDisposable
         byte[]? pixels = null;
         try
         {
+            // Acquisition can fail when a camera is unplugged or closed. It
+            // belongs to the same guarded lifetime as conversion and decode.
+            using MediaFrameReference? reference = sender.TryAcquireLatestFrame();
+            SoftwareBitmap? bitmap = reference?.VideoMediaFrame?.SoftwareBitmap;
+            if (bitmap is null)
+            {
+                return;
+            }
+
             SoftwareBitmap usable = bitmap.BitmapPixelFormat == BitmapPixelFormat.Bgra8
                 ? bitmap
                 : converted = SoftwareBitmap.Convert(bitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
@@ -394,12 +396,14 @@ public sealed class ScanSession : IAsyncDisposable
         return detections;
     }
 
-    private static (double X, double Y) NormalisedCenter(Result result, int width, int height)
+    internal static (double X, double Y) NormalisedCenter(Result result, int width, int height)
     {
         ResultPoint[]? points = result.ResultPoints;
         if (points is null || points.Length == 0 || width <= 0 || height <= 0)
         {
-            return (0, 0);
+            // Missing geometry cannot corroborate a second physical code.
+            // (0,0) is a valid in-frame point and would be accepted as one.
+            return (double.NaN, double.NaN);
         }
 
         double sumX = 0;

@@ -1,0 +1,61 @@
+{
+  "scope": "Independent supplementary binding of one original completed product run; not a terminal matrix row or retrospectively timed launcher post-observation.",
+  "originalMatrixCheckpoint": {
+    "testId": "performance.rev12-workflow-1gib-mars448-auto",
+    "attempted": true,
+    "status": "NOT RUN",
+    "errors": [],
+    "startedUtc": "2026-10-03T20:11:58.239210+00:00",
+    "hostBefore": {
+      "os": {
+        "exitCode": 0,
+        "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+      },
+      "battery": {
+        "exitCode": 0,
+        "output": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t18%; discharging; 1:16 remaining present: true\n"
+      },
+      "thermal": {
+        "exitCode": 0,
+        "output": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+      }
+    },
+    "command": [
+      "/usr/bin/python3",
+      "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/run-development.py",
+      "test",
+      "--performance",
+      "--only",
+      "performance.rev12-workflow-1gib-mars448-auto",
+      "--parallel",
+      "1"
+    ],
+    "ownedProcessGroupId": 1792
+  },
+  "originalRun": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/run-20261003T201158Z-695d51a8",
+  "originalExecutionSha256": "49a849c41198cb616fb46f4ef72f3e36892d11b9fd05fb1d10a9c74afd7ba9dc",
+  "originalProductTestResult": {
+    "id": "performance.rev12-workflow-1gib-mars448-auto",
+    "name": "explicit public one-GiB production-KDF level-5 complete archive/KPAR2/original-compare workflow: mars448/auto",
+    "status": "PASS",
+    "seconds": 1442.402,
+    "peakRssMiB": 2055,
+    "seed": "0x39F94C8B",
+    "failure": null
+  },
+  "originalProfile": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-mars448-auto-20261003T203600995-1974e3ed85de485f99a4e9a9915f0411.json",
+    "sha256": "2712ffab0db3f3d82a613eb37cbc7baf600c55170c63fdde544fcb44de5a337c"
+  },
+  "currentObservationStartedUtc": "2026-10-03T21:06:14.337659+00:00",
+  "currentObservationCompletedUtc": "2026-10-03T21:06:14.506452+00:00",
+  "originalNativeHeadersUnchanged": true,
+  "sourceBinaryMetadataMatchExpected": true,
+  "noLiveOwnedGroupProcessesAtObservation": true,
+  "ownedProcessGroup": 1792,
+  "zombiesExcludedByOriginalGuard": true,
+  "remainingOwnedWorkflowFixturesAtObservation": [],
+  "missingMatrixLauncherStdout": true,
+  "missingOriginalMatrixTerminalReceipt": true,
+  "boundaryLimit": "Original run ended 20:36 UTC. Post inventory is observed now, not silently attributed to that completion time. Intermediate drift between those times is not continuously observed. Matrix parent stays unmodified and no process is signalled."
+}

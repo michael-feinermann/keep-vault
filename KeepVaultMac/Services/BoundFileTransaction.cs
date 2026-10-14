@@ -6,7 +6,7 @@ using Microsoft.Win32.SafeHandles;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// Descriptor-relative file creation, validation and commit for shared v12
+/// Descriptor-relative file creation, validation and commit for shared v13
 /// writer code on macOS.
 /// </summary>
 internal sealed class BoundFileTransaction : IDisposable
@@ -17,6 +17,7 @@ internal sealed class BoundFileTransaction : IDisposable
     private readonly string _parentPath;
     private readonly MacFileIdentity _identity;
     private FileStream? _stream;
+    private FileStream? _preparedReadOnly;
     private string _currentName;
     private bool _deleted;
 
@@ -37,6 +38,44 @@ internal sealed class BoundFileTransaction : IDisposable
         ?? throw new ObjectDisposedException(nameof(BoundFileTransaction));
 
     internal bool IsCommitted { get; private set; }
+    internal static Action<string>? BeforeReadOnlyOpenForTests;
+
+    /// <summary>Acquire an independent kernel read-only handle before unlinking.</summary>
+    internal void PrepareReadOnly()
+    {
+        if (_deleted || _preparedReadOnly is not null || !Stream.CanWrite)
+            throw new InvalidOperationException("Read-only preparation requires a named writable transaction.");
+        SafeFileHandle writer = Stream.SafeFileHandle;
+        BeforeReadOnlyOpenForTests?.Invoke(Path.Combine(_parentPath, _currentName));
+        FileStream reader = MacSafeFileSystem.OpenReadAt(_parentHandle, _currentName);
+        try
+        {
+            MacFileIdentity original = MacSafeFileSystem.GetIdentity(writer);
+            MacFileIdentity opened = MacSafeFileSystem.GetIdentity(reader.SafeFileHandle);
+            if (!original.SameObject(_identity) || !opened.SameObject(_identity))
+                throw new IOException("The read-only handle does not identify the exclusively created working file.");
+            _preparedReadOnly = reader;
+        }
+        catch (Exception failure)
+        {
+            try { reader.Dispose(); }
+            catch (Exception cleanupFailure)
+            {
+                throw new AggregateException("Read-only binding failed and its reader could not be closed.", failure, cleanupFailure);
+            }
+            throw;
+        }
+    }
+
+    /// <summary>After joined writes and durable flush, revoke our write capability.</summary>
+    internal void SealReadOnly()
+    {
+        FileStream reader = _preparedReadOnly
+            ?? throw new InvalidOperationException("No bound read-only handle was prepared.");
+        Stream.Dispose();
+        _stream = reader;
+        _preparedReadOnly = null;
+    }
 
     internal static BoundFileTransaction CreateNew(
         string path,
@@ -257,7 +296,10 @@ internal sealed class BoundFileTransaction : IDisposable
 
     public void Dispose()
     {
-        Interlocked.Exchange(ref _stream, null)?.Dispose();
-        _parentHandle.Dispose();
+        // Both owners exist before sealing. Failure of one close must not skip
+        // the other descriptor or the directory owner.
+        SecureMemory.DisposeAll(_stream, _preparedReadOnly, _parentHandle);
+        _stream = null;
+        _preparedReadOnly = null;
     }
 }

@@ -1,0 +1,6 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+FULL PASS documentation matches the normative v13 specification (0,0s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 0,2s; sum of test times 0,0s; parallel speedup 0,09x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json

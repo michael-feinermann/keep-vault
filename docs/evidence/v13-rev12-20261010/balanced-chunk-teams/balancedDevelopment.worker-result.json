@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "performance.pipeline-slot-scaling",
+  "status": "PASS",
+  "seconds": 150.0526933,
+  "peakRssMiB": 2780,
+  "seed": 151888956,
+  "failure": null
+}

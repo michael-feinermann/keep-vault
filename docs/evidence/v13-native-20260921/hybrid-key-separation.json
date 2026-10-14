@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "305da05a123779a7c00dede97337c6c5773a4c30",
+  "testInventoryHash": "4106465ebffd13abea1ea0b34cb5a3ca4e8370c289e5fb6a2579eb6d0fcdc0a8",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 5,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "packaging.hybrid-key-separation",
+      "name": "RSA and ML-DSA use independent Keychain identities, ACLs and v12 envelopes",
+      "status": "PASS",
+      "seconds": 67.322,
+      "peakRssMiB": 0,
+      "seed": "0x1B1DACAB",
+      "failure": null
+    }
+  ]
+}

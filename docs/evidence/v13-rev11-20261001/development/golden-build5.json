@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+  "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "v13-golden-readonly",
+      "name": "independent verifier rejects missing, invalid and on-disk mutated fixtures without writing them",
+      "status": "PASS",
+      "seconds": 1.608,
+      "peakRssMiB": 67,
+      "seed": "0x683B53B8",
+      "failure": null
+    }
+  ]
+}

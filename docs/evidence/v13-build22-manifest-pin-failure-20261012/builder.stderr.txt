@@ -1,0 +1,221 @@
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.cpp:7:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.h:11:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/filters.h:17:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/simple.h:17:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/misc.h:721:11: warning: comparison of integers of different signs: 'unsigned long' and 'long long' [-Wsign-compare]
+  721 |         if (from != to || (from > 0) != (to > 0))
+      |             ~~~~ ^  ~~
+/Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.cpp:215:7: note: in instantiation of function template specialization 'CryptoPP::SafeConvert<unsigned long, long long>' requested here
+  215 |         if (!SafeConvert(skipMax, offset))
+      |              ^
+1 warning generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:60:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.h:1300:25: warning: unused parameter 'size' [-Wunused-parameter]
+ 1300 |   Encoder(ZPAQL& z, int size=0):
+      |                         ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:5320:33: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 5320 |             const auto close_output = [this](FP& stream,
+      |                                        ^~~~
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:780:19: warning: unused variable 'WBPLUS' [-Wunused-const-variable]
+  780 | const char* const WBPLUS="wb+";
+      |                   ^~~~~~
+3 warnings generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:25:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.h:1300:25: warning: unused parameter 'size' [-Wunused-parameter]
+ 1300 |   Encoder(ZPAQL& z, int size=0):
+      |                         ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:155:33: warning: unused parameter 'newsize' [-Wunused-parameter]
+  155 | void allocx(U8* &p, int &n, int newsize) {
+      |                                 ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:683:24: warning: unused parameter 'c' [-Wunused-parameter]
+  683 |                    int c, char* buf, int dkLen) {
+      |                        ^
+3 warnings generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.cpp:7:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.h:11:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/filters.h:17:
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/simple.h:17:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/misc.h:721:11: warning: comparison of integers of different signs: 'unsigned long' and 'long long' [-Wsign-compare]
+  721 |         if (from != to || (from > 0) != (to > 0))
+      |             ~~~~ ^  ~~
+/Users/michael/Developer/GPT-Codex/Kalyna/external/cryptopp/files.cpp:215:7: note: in instantiation of function template specialization 'CryptoPP::SafeConvert<unsigned long, long long>' requested here
+  215 |         if (!SafeConvert(skipMax, offset))
+      |              ^
+1 warning generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:60:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.h:1300:25: warning: unused parameter 'size' [-Wunused-parameter]
+ 1300 |   Encoder(ZPAQL& z, int size=0):
+      |                         ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:5320:33: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+ 5320 |             const auto close_output = [this](FP& stream,
+      |                                        ^~~~
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/zpaq.cpp:780:19: warning: unused variable 'WBPLUS' [-Wunused-const-variable]
+  780 | const char* const WBPLUS="wb+";
+      |                   ^~~~~~
+3 warnings generated.
+In file included from /Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:25:
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.h:1300:25: warning: unused parameter 'size' [-Wunused-parameter]
+ 1300 |   Encoder(ZPAQL& z, int size=0):
+      |                         ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:155:33: warning: unused parameter 'newsize' [-Wunused-parameter]
+  155 | void allocx(U8* &p, int &n, int newsize) {
+      |                                 ^
+/Users/michael/Developer/GPT-Codex/Kalyna/external/zpaq/libzpaq.cpp:683:24: warning: unused parameter 'c' [-Wunused-parameter]
+  683 |                    int c, char* buf, int dkLen) {
+      |                        ^
+3 warnings generated.
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/argon2: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/zpaq: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Launcher: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app: replacing existing signature
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/argon2
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/argon2
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/zpaq
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/zpaq
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app: satisfies its Designated Requirement
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/argon2
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/argon2
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/zpaq
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/zpaq
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor
+--prepared:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault
+--validated:/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Launcher: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Launcher: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/argon2: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/argon2: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/zpaq: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/zpaq: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor: valid on disk
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app/Contents/MacOS/Keep Vault Supervisor: satisfies its Designated Requirement
+/private/tmp/keep-vault-release.dgWxOhNf/Keep Vault.app: rejected
+source=Unnotarized Developer ID
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.7JXXjhdj/QR-Scanner.app: replacing existing signature
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.7JXXjhdj/QR-Scanner.app: valid on disk
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.7JXXjhdj/QR-Scanner.app: satisfies its Designated Requirement
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.7JXXjhdj/QR-Scanner.app: accepted
+source=Notarized Developer ID
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.7JXXjhdj/QR-Scanner.app: valid on disk
+/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-build.7JXXjhdj/QR-Scanner.app: satisfies its Designated Requirement
+test_foreign_local_ticket_rejected_before_apple_policy (__main__.PackageModeTests) ... ok
+test_hard_linked_helper_is_rejected (__main__.PackageModeTests) ... ok
+test_helper_byte_change_before_execution (__main__.PackageModeTests) ... ok
+test_helper_ctime_only_change_is_still_rejected (__main__.PackageModeTests) ... ok
+test_identical_replacement_installer_inode_is_rejected (__main__.PackageModeTests) ... ok
+test_installer_directory_ctime_only_update_is_accepted (__main__.PackageModeTests) ... ok
+test_installer_directory_mode_change_is_rejected (__main__.PackageModeTests) ... ok
+test_installer_directory_mtime_change_is_rejected (__main__.PackageModeTests) ... ok
+test_metadata_gate_needs_no_developer_tools (__main__.PackageModeTests) ... ok
+test_missing_local_ticket_rejected_before_apple_policy (__main__.PackageModeTests) ... ok
+test_native_mutation_is_rejected_after_execution (__main__.PackageModeTests) ... ok
+test_package_root_ctime_change_is_still_rejected (__main__.PackageModeTests) ... ok
+test_replaced_helper_inode_is_rejected (__main__.PackageModeTests) ... ok
+test_symlinked_helper_is_rejected (__main__.PackageModeTests) ... ok
+test_symlinked_installer_directory_is_rejected (__main__.PackageModeTests) ... ok
+test_user_owned_packages_fail_before_sdk_discovery (__main__.PackageModeTests) ... ok
+test_valid_bound_native_invocation (__main__.PackageModeTests) ... ok
+test_writable_helper_is_rejected (__main__.PackageModeTests) ... ok
+test_writable_installer_directory_is_rejected (__main__.PackageModeTests) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 5.230s
+
+OK
+/private/tmp/keep-vault-release.dgWxOhNf/dist-stage/Keep Vault Installer.app/Contents/MacOS/Keep Vault Release Verifier: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/dist-stage/Keep Vault Installer.app/Contents/MacOS/InstallerBoundDelete: replacing existing signature
+/private/tmp/keep-vault-release.dgWxOhNf/dist-stage/Keep Vault Installer.app: replacing existing signature
+RESULT: BLOCKED - The installation manifest has an unsupported schema, version or build.

@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-12T02:35:02.541520+00:00",
+  "status": "AD_HOC_VERIFIER_ASSERTION_FAILED_NOT_PRODUCT_FAILURE",
+  "observedToolCommandExit": 1,
+  "failedCommandChildPidRecorded": false,
+  "reason": "The initial compound precheck expected the UI nickname PARANOIA in the canonical Algorithm. The actual v13 Algorithm is the exact cascade expression from EncryptionSuiteCatalog. A later unexecuted assertion also incorrectly expected a stored literal memory cost; v13 requires Argon2MemoryKiB=0 with KdfMemoryMode=PMI16.",
+  "protocolSource": "KalynaArchiver/Services/EncryptionSuite.cs:130 and KalynaContainerService.cs:2354",
+  "productChanged": false
+}

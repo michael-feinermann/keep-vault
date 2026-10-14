@@ -1,0 +1,1545 @@
+{
+  "utc": "2026-10-01T10:20:38.305733+00:00",
+  "state": "CONFIGURATION_EXIT_2 before performance phases: required regular same-machine schema-2 performance baseline missing or unavailable",
+  "release_gate_error": "RELEASE GATE: --release requires KEEPVAULT_PERF_BASELINE to name a regular same-machine schema-2 baseline.",
+  "completed_phases": 7,
+  "passed_test_executions": 271,
+  "unique_test_ids": 265,
+  "failed_test_executions": 0,
+  "blocked_test_executions": 0,
+  "special_gates": [
+    {
+      "id": "release.v13-paranoia-structure512",
+      "result": {
+        "id": "release.v13-paranoia-structure512",
+        "name": "v13 Paranoia 256 MiB tree plus 256 MiB file, production KDF, KPAR2 repair and full structural comparison",
+        "status": "PASS",
+        "seconds": 824.68,
+        "peakRssMiB": 2192,
+        "seed": "0x5E0D963C",
+        "failure": null
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "performance.paranoia-256mib-e2e",
+      "result": null,
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "performance.paranoia-complex-tree-e2e",
+      "result": null,
+      "status": "NOT_RUN"
+    }
+  ],
+  "observed_e2e_results": [
+    {
+      "SchemaVersion": 1,
+      "Label": "v13-paranoia-structure512-production-kdf",
+      "OperatingSystem": "macOS 26.6.2",
+      "Architecture": "Arm64",
+      "LogicalProcessors": 10,
+      "CompressionLevel": 5,
+      "Suite": "ParanoiaCascade",
+      "Argon2Iterations": 4,
+      "Argon2Parallelism": 4,
+      "InputFiles": 149,
+      "InputDirectories": 32,
+      "InputBytes": 536870912,
+      "ContainerBytes": 382749598,
+      "RecoveryBytes": 63053824,
+      "SetupAndInitialManifestSeconds": 0.516886,
+      "ArchiveEncryptSeconds": 370.237134,
+      "RecoveryCreateSeconds": 21.6670797,
+      "RecoveryVerifySeconds": 7.4573662,
+      "RecoveryRepairSeconds": 18.0113246,
+      "RepairedShards": 1,
+      "DecryptExtractSeconds": 405.80773,
+      "FinalManifestSeconds": 0.2554848,
+      "WorkflowSeconds": 823.9138433
+    }
+  ],
+  "phases": [
+    {
+      "phase": 1,
+      "exit": 0,
+      "file": "phase-1.test-results.json",
+      "sha256": "8ad2052b275cf369374f4fa0b30a4711d606ad609998717fb572a5a7aa96cd87",
+      "counts": {
+        "PASS": 265
+      },
+      "tests": [
+        {
+          "id": "smoke.sha3-512-fips",
+          "status": "PASS",
+          "seconds": 0.011
+        },
+        {
+          "id": "smoke.hmac-sha3-512",
+          "status": "PASS",
+          "seconds": 0.005
+        },
+        {
+          "id": "smoke.descriptor-identity",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "smoke.archive-input-symlink",
+          "status": "PASS",
+          "seconds": 0.004
+        },
+        {
+          "id": "smoke.symlink-rejection",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "smoke.archive-input-snapshot-location",
+          "status": "PASS",
+          "seconds": 0.013
+        },
+        {
+          "id": "smoke.archive-input-snapshot-races",
+          "status": "PASS",
+          "seconds": 0.02
+        },
+        {
+          "id": "smoke.overlapping-input-normalization",
+          "status": "PASS",
+          "seconds": 0.023
+        },
+        {
+          "id": "smoke.archive-input-hardlink",
+          "status": "PASS",
+          "seconds": 0.055
+        },
+        {
+          "id": "smoke.apple-signature-binding",
+          "status": "PASS",
+          "seconds": 0.005
+        },
+        {
+          "id": "smoke.locked-secret-lifecycle",
+          "status": "PASS",
+          "seconds": 0.003
+        },
+        {
+          "id": "smoke.password-policy",
+          "status": "PASS",
+          "seconds": 0.153
+        },
+        {
+          "id": "smoke.descriptor-bound-snapshot",
+          "status": "PASS",
+          "seconds": 0.645
+        },
+        {
+          "id": "smoke.private-snapshot-cleanup-identity",
+          "status": "PASS",
+          "seconds": 0.639
+        },
+        {
+          "id": "smoke.private-snapshot-race-failclosed",
+          "status": "PASS",
+          "seconds": 0.669
+        },
+        {
+          "id": "infra.runner-invariants",
+          "status": "PASS",
+          "seconds": 0.887
+        },
+        {
+          "id": "smoke.private-snapshot-resource-failures",
+          "status": "PASS",
+          "seconds": 0.665
+        },
+        {
+          "id": "smoke.native-snapshot-cleanup-identity",
+          "status": "PASS",
+          "seconds": 0.102
+        },
+        {
+          "id": "smoke.private-authenticated-snapshot",
+          "status": "PASS",
+          "seconds": 1.083
+        },
+        {
+          "id": "smoke.release-companion-version",
+          "status": "PASS",
+          "seconds": 0.845
+        },
+        {
+          "id": "smoke.trailing-separator-folder",
+          "status": "PASS",
+          "seconds": 1.581
+        },
+        {
+          "id": "smoke.native-atomic-publish",
+          "status": "PASS",
+          "seconds": 1.078
+        },
+        {
+          "id": "smoke.portable-rollback-binding",
+          "status": "PASS",
+          "seconds": 1.322
+        },
+        {
+          "id": "smoke.qr-atomic-publish",
+          "status": "PASS",
+          "seconds": 2.087
+        },
+        {
+          "id": "smoke.release-atomic-publish",
+          "status": "PASS",
+          "seconds": 2.109
+        },
+        {
+          "id": "v13-std-catalog",
+          "status": "PASS",
+          "seconds": 0.003
+        },
+        {
+          "id": "v13-std-layout",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-header-canonical-fields",
+          "status": "PASS",
+          "seconds": 0.033
+        },
+        {
+          "id": "v13-std-tweak",
+          "status": "PASS",
+          "seconds": 0.004
+        },
+        {
+          "id": "v13-std-nonces-aad",
+          "status": "PASS",
+          "seconds": 0.018
+        },
+        {
+          "id": "v13-std-rolekeys",
+          "status": "PASS",
+          "seconds": 0.236
+        },
+        {
+          "id": "v13-par8-rolekeys",
+          "status": "PASS",
+          "seconds": 0.221
+        },
+        {
+          "id": "v13-nonce-vectors",
+          "status": "PASS",
+          "seconds": 0.01
+        },
+        {
+          "id": "v13-nonce-seeded-fuzz",
+          "status": "PASS",
+          "seconds": 0.299
+        },
+        {
+          "id": "v13-nonce-plan",
+          "status": "PASS",
+          "seconds": 0.002
+        },
+        {
+          "id": "v13-nonce-capacity",
+          "status": "PASS",
+          "seconds": 0.013
+        },
+        {
+          "id": "v13-nonce-faults",
+          "status": "PASS",
+          "seconds": 0.011
+        },
+        {
+          "id": "entropy.rev9-finalization-golden",
+          "status": "PASS",
+          "seconds": 0.015
+        },
+        {
+          "id": "v13-usage-boundaries",
+          "status": "PASS",
+          "seconds": 0.004
+        },
+        {
+          "id": "crypto.hash-cleanup-regression",
+          "status": "PASS",
+          "seconds": 0.37
+        },
+        {
+          "id": "v13-usage-writer-guard",
+          "status": "PASS",
+          "seconds": 0.009
+        },
+        {
+          "id": "v13-usage-reader-guard",
+          "status": "PASS",
+          "seconds": 0.034
+        },
+        {
+          "id": "v13-usage-model",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-header-seeded-fuzz",
+          "status": "PASS",
+          "seconds": 0.864
+        },
+        {
+          "id": "io.verified-input-domain-kats",
+          "status": "PASS",
+          "seconds": 0.248
+        },
+        {
+          "id": "v13-std-composition",
+          "status": "PASS",
+          "seconds": 1.154
+        },
+        {
+          "id": "entropy.rev9-cache-equivalence",
+          "status": "PASS",
+          "seconds": 0.792
+        },
+        {
+          "id": "io.verified-input-ranges",
+          "status": "PASS",
+          "seconds": 0.582
+        },
+        {
+          "id": "io.verified-input-state",
+          "status": "PASS",
+          "seconds": 1.037
+        },
+        {
+          "id": "fuzz.verified-read-at-server-10000",
+          "status": "PASS",
+          "seconds": 2.025
+        },
+        {
+          "id": "io.verified-input-read-only-seal",
+          "status": "PASS",
+          "seconds": 0.85
+        },
+        {
+          "id": "io.verified-input-private-copy",
+          "status": "PASS",
+          "seconds": 0.483
+        },
+        {
+          "id": "io.verified-input-policy",
+          "status": "PASS",
+          "seconds": 0.037
+        },
+        {
+          "id": "io.verified-original",
+          "status": "PASS",
+          "seconds": 0.529
+        },
+        {
+          "id": "io.plain-manifest-rejection",
+          "status": "PASS",
+          "seconds": 0.388
+        },
+        {
+          "id": "v13-cascade-independent-composition",
+          "status": "PASS",
+          "seconds": 1.603
+        },
+        {
+          "id": "recovery.streaming-metadata-canonical",
+          "status": "PASS",
+          "seconds": 0.145
+        },
+        {
+          "id": "io.verified-input-tamper",
+          "status": "PASS",
+          "seconds": 1.314
+        },
+        {
+          "id": "io.verified-input-cleanup-retry",
+          "status": "PASS",
+          "seconds": 0.267
+        },
+        {
+          "id": "resources.shared-memory-budget",
+          "status": "PASS",
+          "seconds": 0.006
+        },
+        {
+          "id": "v13-nonce-isolation",
+          "status": "PASS",
+          "seconds": 0.233
+        },
+        {
+          "id": "resources.shared-runtime-budget",
+          "status": "PASS",
+          "seconds": 0.002
+        },
+        {
+          "id": "recovery.streaming-metadata-negative",
+          "status": "PASS",
+          "seconds": 0.201
+        },
+        {
+          "id": "v13-time-no-wall",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-time-no-cpu",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-time-no-stall-abort",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-progress-counts",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-progress-order",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-progress-unknown",
+          "status": "PASS",
+          "seconds": 0.003
+        },
+        {
+          "id": "v13-progress-eta",
+          "status": "PASS",
+          "seconds": 0.002
+        },
+        {
+          "id": "v13-progress-stale",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-progress-clock",
+          "status": "PASS",
+          "seconds": 0.002
+        },
+        {
+          "id": "v13-progress-overlap",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "v13-progress-finish",
+          "status": "PASS",
+          "seconds": 0.003
+        },
+        {
+          "id": "v13-progress-bounds",
+          "status": "PASS",
+          "seconds": 0.004
+        },
+        {
+          "id": "v13-progress-privacy",
+          "status": "PASS",
+          "seconds": 0.002
+        },
+        {
+          "id": "v13-progress-native-ipc",
+          "status": "PASS",
+          "seconds": 0.046
+        },
+        {
+          "id": "recovery.streaming-metadata-large-logical",
+          "status": "PASS",
+          "seconds": 0.856
+        },
+        {
+          "id": "v13-zpaq-bound-source",
+          "status": "PASS",
+          "seconds": 0.026
+        },
+        {
+          "id": "io.verified-input-parallel-lifetime",
+          "status": "PASS",
+          "seconds": 1.391
+        },
+        {
+          "id": "v13-zpaq-phase-readiness",
+          "status": "PASS",
+          "seconds": 0.013
+        },
+        {
+          "id": "deletion.rev11-creation-binding",
+          "status": "PASS",
+          "seconds": 0.14
+        },
+        {
+          "id": "v13-zpaq-owner-lifetime",
+          "status": "PASS",
+          "seconds": 0.195
+        },
+        {
+          "id": "io.verified-input-descriptor-capture",
+          "status": "PASS",
+          "seconds": 3.471
+        },
+        {
+          "id": "crypto.v13-camellia-reference",
+          "status": "PASS",
+          "seconds": 1.558
+        },
+        {
+          "id": "v13-golden-readonly",
+          "status": "PASS",
+          "seconds": 1.975
+        },
+        {
+          "id": "io.rev11-index-ram-small",
+          "status": "PASS",
+          "seconds": 0.2
+        },
+        {
+          "id": "io.rev11-input-fused",
+          "status": "PASS",
+          "seconds": 1.305
+        },
+        {
+          "id": "crypto.v13-serpent-reference",
+          "status": "PASS",
+          "seconds": 1.192
+        },
+        {
+          "id": "v13-progress-perf",
+          "status": "PASS",
+          "seconds": 0.052
+        },
+        {
+          "id": "io.rev11-index-spill",
+          "status": "PASS",
+          "seconds": 0.112
+        },
+        {
+          "id": "io.rev11-header-binding",
+          "status": "PASS",
+          "seconds": 0.33
+        },
+        {
+          "id": "io.rev11-index-cache-boundary",
+          "status": "PASS",
+          "seconds": 0.643
+        },
+        {
+          "id": "io.rev11-repair-capability",
+          "status": "PASS",
+          "seconds": 0.256
+        },
+        {
+          "id": "io.rev11-repair-erasures",
+          "status": "PASS",
+          "seconds": 0.283
+        },
+        {
+          "id": "recovery.record-table-layout",
+          "status": "PASS",
+          "seconds": 0.256
+        },
+        {
+          "id": "io.rev11-index-identical",
+          "status": "PASS",
+          "seconds": 1.47
+        },
+        {
+          "id": "recovery.record-table-cleanup",
+          "status": "PASS",
+          "seconds": 0.196
+        },
+        {
+          "id": "fuzz.recovery-streaming-10000",
+          "status": "PASS",
+          "seconds": 7.589
+        },
+        {
+          "id": "recovery.record-table-tamper",
+          "status": "PASS",
+          "seconds": 0.541
+        },
+        {
+          "id": "resources.cpu-worker-budget",
+          "status": "PASS",
+          "seconds": 0.011
+        },
+        {
+          "id": "spec.normative-v13-docs",
+          "status": "PASS",
+          "seconds": 0.01
+        },
+        {
+          "id": "spec.lockfile-runtimes",
+          "status": "PASS",
+          "seconds": 0.03
+        },
+        {
+          "id": "security.process-hardening",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "recovery.record-table-budget",
+          "status": "PASS",
+          "seconds": 0.22
+        },
+        {
+          "id": "packaging.macho-signature-closure",
+          "status": "PASS",
+          "seconds": 0.005
+        },
+        {
+          "id": "spec.no-legacy-source",
+          "status": "PASS",
+          "seconds": 0.225
+        },
+        {
+          "id": "packaging.companion-qr",
+          "status": "PASS",
+          "seconds": 0.256
+        },
+        {
+          "id": "crypto.kdf-primitives",
+          "status": "PASS",
+          "seconds": 0.167
+        },
+        {
+          "id": "packaging.installer-lock-cleanup",
+          "status": "PASS",
+          "seconds": 0.64
+        },
+        {
+          "id": "trust.native-tools",
+          "status": "PASS",
+          "seconds": 0.816
+        },
+        {
+          "id": "policy.pin-creation",
+          "status": "PASS",
+          "seconds": 0.018
+        },
+        {
+          "id": "policy.password",
+          "status": "PASS",
+          "seconds": 0.158
+        },
+        {
+          "id": "zpaq.verified-staging-vm",
+          "status": "PASS",
+          "seconds": 1.245
+        },
+        {
+          "id": "zpaq.verified-read-at",
+          "status": "PASS",
+          "seconds": 1.271
+        },
+        {
+          "id": "security.pipeline-worker-policy",
+          "status": "PASS",
+          "seconds": 0.001
+        },
+        {
+          "id": "keysheet.full-factor-print",
+          "status": "PASS",
+          "seconds": 0.017
+        },
+        {
+          "id": "security.pipeline-native-concurrency",
+          "status": "PASS",
+          "seconds": 0.008
+        },
+        {
+          "id": "security.secure-memory-unlock-accounting",
+          "status": "PASS",
+          "seconds": 0.003
+        },
+        {
+          "id": "security.composite-secret-cleanup",
+          "status": "PASS",
+          "seconds": 0.008
+        },
+        {
+          "id": "security.container-worker-multifailure",
+          "status": "PASS",
+          "seconds": 0.004
+        },
+        {
+          "id": "security.authenticator-worker-multifailure",
+          "status": "PASS",
+          "seconds": 0.011
+        },
+        {
+          "id": "security.extraction-parent-no-side-effects",
+          "status": "PASS",
+          "seconds": 0.009
+        },
+        {
+          "id": "crypto.primitive-vectors",
+          "status": "PASS",
+          "seconds": 1.247
+        },
+        {
+          "id": "security.production-secret-cleanup-faults",
+          "status": "PASS",
+          "seconds": 0.287
+        },
+        {
+          "id": "recovery.manifest-json-preflight",
+          "status": "PASS",
+          "seconds": 0.005
+        },
+        {
+          "id": "packaging.keychain-secret-not-in-argv",
+          "status": "PASS",
+          "seconds": 0.003
+        },
+        {
+          "id": "packaging.usb-wrapping-key-input",
+          "status": "PASS",
+          "seconds": 0.077
+        },
+        {
+          "id": "zpaq.free-space-descriptor",
+          "status": "PASS",
+          "seconds": 0.044
+        },
+        {
+          "id": "packaging.private-directory-lease",
+          "status": "PASS",
+          "seconds": 0.143
+        },
+        {
+          "id": "entropy.exception-safety",
+          "status": "PASS",
+          "seconds": 0.004
+        },
+        {
+          "id": "deletion.quarantine-symlink",
+          "status": "PASS",
+          "seconds": 0.128
+        },
+        {
+          "id": "deletion.secure-file-object-binding",
+          "status": "PASS",
+          "seconds": 0.115
+        },
+        {
+          "id": "security.skein-workspace-wipe",
+          "status": "PASS",
+          "seconds": 2.072
+        },
+        {
+          "id": "crypto.mldsa87-interop",
+          "status": "PASS",
+          "seconds": 0.249
+        },
+        {
+          "id": "crypto.cascade-layering",
+          "status": "PASS",
+          "seconds": 0.963
+        },
+        {
+          "id": "recovery.key-derivation-failure-cleanup",
+          "status": "PASS",
+          "seconds": 0.385
+        },
+        {
+          "id": "recovery.parallel-copy-fail-fast",
+          "status": "PASS",
+          "seconds": 0.035
+        },
+        {
+          "id": "recovery.parallel-copy-concurrency",
+          "status": "PASS",
+          "seconds": 0.06
+        },
+        {
+          "id": "crypto.reference-differential",
+          "status": "PASS",
+          "seconds": 0.7
+        },
+        {
+          "id": "recovery.parallel-copy-scheduling-failure",
+          "status": "PASS",
+          "seconds": 0.037
+        },
+        {
+          "id": "deletion.original-verification",
+          "status": "PASS",
+          "seconds": 0.177
+        },
+        {
+          "id": "crypto.v13-parallel-mac-kat",
+          "status": "PASS",
+          "seconds": 0.314
+        },
+        {
+          "id": "recovery.sidecar-transaction",
+          "status": "PASS",
+          "seconds": 2.824
+        },
+        {
+          "id": "security.pin-password-pair",
+          "status": "PASS",
+          "seconds": 0.02
+        },
+        {
+          "id": "security.pin-local-dates",
+          "status": "PASS",
+          "seconds": 0.005
+        },
+        {
+          "id": "security.pin-pattern-monotonicity",
+          "status": "PASS",
+          "seconds": 0.077
+        },
+        {
+          "id": "security.credential-encoding-only",
+          "status": "PASS",
+          "seconds": 0.009
+        },
+        {
+          "id": "credentials.static-fixture-provenance",
+          "status": "PASS",
+          "seconds": 0.037
+        },
+        {
+          "id": "credentials.creation-still-rejects",
+          "status": "PASS",
+          "seconds": 0.827
+        },
+        {
+          "id": "credentials.read-empty",
+          "status": "PASS",
+          "seconds": 0.062
+        },
+        {
+          "id": "credentials.read-short",
+          "status": "PASS",
+          "seconds": 0.058
+        },
+        {
+          "id": "credentials.read-oversized-raw",
+          "status": "PASS",
+          "seconds": 0.063
+        },
+        {
+          "id": "credentials.read-pin-substring",
+          "status": "PASS",
+          "seconds": 0.061
+        },
+        {
+          "id": "credentials.read-date-2026-09-06",
+          "status": "PASS",
+          "seconds": 0.059
+        },
+        {
+          "id": "credentials.read-model-and-old-pattern",
+          "status": "PASS",
+          "seconds": 0.063
+        },
+        {
+          "id": "security.password-model-data",
+          "status": "PASS",
+          "seconds": 0.31
+        },
+        {
+          "id": "security.password-model-phrases",
+          "status": "PASS",
+          "seconds": 0.525
+        },
+        {
+          "id": "gui.entropy-display",
+          "status": "PASS",
+          "seconds": 4.883
+        },
+        {
+          "id": "v13-zpaq-cpu-one",
+          "status": "PASS",
+          "seconds": 13.778
+        },
+        {
+          "id": "gui.encryption-toggle-target",
+          "status": "PASS",
+          "seconds": 0.447
+        },
+        {
+          "id": "security.password-model-bip39",
+          "status": "PASS",
+          "seconds": 1.388
+        },
+        {
+          "id": "security.password-model-isolation",
+          "status": "PASS",
+          "seconds": 0.175
+        },
+        {
+          "id": "gui.folder-target",
+          "status": "PASS",
+          "seconds": 0.452
+        },
+        {
+          "id": "security.password-model-boundaries",
+          "status": "PASS",
+          "seconds": 0.936
+        },
+        {
+          "id": "gui.destination-folder-target",
+          "status": "PASS",
+          "seconds": 0.451
+        },
+        {
+          "id": "entropy.rev9-golden",
+          "status": "PASS",
+          "seconds": 0.24
+        },
+        {
+          "id": "entropy.rev9-routing",
+          "status": "PASS",
+          "seconds": 0.076
+        },
+        {
+          "id": "security.password-model-bounded",
+          "status": "PASS",
+          "seconds": 0.937
+        },
+        {
+          "id": "gui.archive-picker-filter-reset",
+          "status": "PASS",
+          "seconds": 0.443
+        },
+        {
+          "id": "entropy.rev9-dual-composition",
+          "status": "PASS",
+          "seconds": 0.061
+        },
+        {
+          "id": "entropy.rev9-shuffle",
+          "status": "PASS",
+          "seconds": 0.227
+        },
+        {
+          "id": "gui.password-policy",
+          "status": "PASS",
+          "seconds": 0.692
+        },
+        {
+          "id": "entropy.rev9-output",
+          "status": "PASS",
+          "seconds": 1.205
+        },
+        {
+          "id": "gui.credential-policy-boundary",
+          "status": "PASS",
+          "seconds": 0.783
+        },
+        {
+          "id": "entropy.rev9-faults",
+          "status": "PASS",
+          "seconds": 0.527
+        },
+        {
+          "id": "gui.original-deletion-localization",
+          "status": "PASS",
+          "seconds": 0.478
+        },
+        {
+          "id": "gui.erase-completion-status",
+          "status": "PASS",
+          "seconds": 0.646
+        },
+        {
+          "id": "gui.resource-policy",
+          "status": "PASS",
+          "seconds": 0.502
+        },
+        {
+          "id": "gui.rev11-preference-restart",
+          "status": "PASS",
+          "seconds": 0.489
+        },
+        {
+          "id": "gui.rev11-progress",
+          "status": "PASS",
+          "seconds": 0.492
+        },
+        {
+          "id": "gui.rev11-observer-isolation",
+          "status": "PASS",
+          "seconds": 0.441
+        },
+        {
+          "id": "gui.control-inventory",
+          "status": "PASS",
+          "seconds": 0.449
+        },
+        {
+          "id": "gui.factor-normalization",
+          "status": "PASS",
+          "seconds": 0.447
+        },
+        {
+          "id": "entropy.rev9-suite-plans",
+          "status": "PASS",
+          "seconds": 6.414
+        },
+        {
+          "id": "resources.operation-storage-plan",
+          "status": "PASS",
+          "seconds": 0.028
+        },
+        {
+          "id": "gui.secret-clearing",
+          "status": "PASS",
+          "seconds": 0.45
+        },
+        {
+          "id": "resources.rev11-auto-planner",
+          "status": "PASS",
+          "seconds": 0.002
+        },
+        {
+          "id": "resources.rev11-chunk-window",
+          "status": "PASS",
+          "seconds": 0.08
+        },
+        {
+          "id": "entropy.rev9-lifecycle",
+          "status": "PASS",
+          "seconds": 5.141
+        },
+        {
+          "id": "gui.streaming-thread-boundary",
+          "status": "PASS",
+          "seconds": 0.439
+        },
+        {
+          "id": "gui.create-failure-secret-clearing",
+          "status": "PASS",
+          "seconds": 0.435
+        },
+        {
+          "id": "gui.extract-list-failure-secret-clearing",
+          "status": "PASS",
+          "seconds": 0.458
+        },
+        {
+          "id": "gui.recovery-failure-secret-clearing",
+          "status": "PASS",
+          "seconds": 0.456
+        },
+        {
+          "id": "crypto.chacha20-fast-path-differential",
+          "status": "PASS",
+          "seconds": 1.819
+        },
+        {
+          "id": "gui.kdf-entropy-localization",
+          "status": "PASS",
+          "seconds": 0.46
+        },
+        {
+          "id": "gui.cups-spool-warning-localization",
+          "status": "PASS",
+          "seconds": 0.476
+        },
+        {
+          "id": "zpaq.process-resource-limits",
+          "status": "PASS",
+          "seconds": 0.81
+        },
+        {
+          "id": "zpaq.fail-fast-error-preservation",
+          "status": "PASS",
+          "seconds": 0.121
+        },
+        {
+          "id": "gui.failed-archive-preservation",
+          "status": "PASS",
+          "seconds": 0.459
+        },
+        {
+          "id": "zpaq.sync-consumer-fail-fast",
+          "status": "PASS",
+          "seconds": 0.165
+        },
+        {
+          "id": "zpaq.native-hardening-selftests",
+          "status": "PASS",
+          "seconds": 0.324
+        },
+        {
+          "id": "gui.verification-root-cleanup-identity",
+          "status": "PASS",
+          "seconds": 0.457
+        },
+        {
+          "id": "zpaq.three-file-commit-binding",
+          "status": "PASS",
+          "seconds": 0.59
+        },
+        {
+          "id": "keysheet.pair-cleanup-identity",
+          "status": "PASS",
+          "seconds": 0.586
+        },
+        {
+          "id": "keysheet.cleanup-failure-visible",
+          "status": "PASS",
+          "seconds": 0.541
+        },
+        {
+          "id": "keysheet.pair-atomic-commit",
+          "status": "PASS",
+          "seconds": 0.692
+        },
+        {
+          "id": "crypto.kalyna-fast-path-differential",
+          "status": "PASS",
+          "seconds": 22.123
+        },
+        {
+          "id": "gui.entropy-rev9-phases-cancel",
+          "status": "PASS",
+          "seconds": 10.554
+        },
+        {
+          "id": "gui.operation-cancel-lifetime",
+          "status": "PASS",
+          "seconds": 0.518
+        },
+        {
+          "id": "gui.full-creation-flow",
+          "status": "PASS",
+          "seconds": 4.792
+        },
+        {
+          "id": "zpaq.full-matrix",
+          "status": "PASS",
+          "seconds": 27.959
+        },
+        {
+          "id": "crypto.mars-shacal-vectors",
+          "status": "PASS",
+          "seconds": 1.763
+        },
+        {
+          "id": "crypto.per-chunk-nonces",
+          "status": "PASS",
+          "seconds": 58.27
+        },
+        {
+          "id": "v13-std-default-api",
+          "status": "PASS",
+          "seconds": 1.401
+        },
+        {
+          "id": "v13-std-header",
+          "status": "PASS",
+          "seconds": 1.03
+        },
+        {
+          "id": "v13-std-framing",
+          "status": "PASS",
+          "seconds": 3.521
+        },
+        {
+          "id": "v13-std-nolegacy",
+          "status": "PASS",
+          "seconds": 1.03
+        },
+        {
+          "id": "v13-std-tamper",
+          "status": "PASS",
+          "seconds": 0.992
+        },
+        {
+          "id": "v13-par8-header-auth",
+          "status": "PASS",
+          "seconds": 1.821
+        },
+        {
+          "id": "v13-progress-equivalence",
+          "status": "PASS",
+          "seconds": 3.277
+        },
+        {
+          "id": "kdf.properties",
+          "status": "PASS",
+          "seconds": 12.209
+        },
+        {
+          "id": "crypto.aes-ctr-differential",
+          "status": "PASS",
+          "seconds": 0.726
+        },
+        {
+          "id": "crypto.xchacha20-poly1305-draft03",
+          "status": "PASS",
+          "seconds": 5.658
+        },
+        {
+          "id": "kdf.argon2-equivalence",
+          "status": "PASS",
+          "seconds": 6.06
+        },
+        {
+          "id": "kdf.v13-master-factor-split",
+          "status": "PASS",
+          "seconds": 3.862
+        },
+        {
+          "id": "containers.v13-kpar2-roundtrip",
+          "status": "PASS",
+          "seconds": 27.245
+        },
+        {
+          "id": "crypto.two-round-derivation",
+          "status": "PASS",
+          "seconds": 0.163
+        },
+        {
+          "id": "crypto.unprepared-parameters",
+          "status": "PASS",
+          "seconds": 0.822
+        },
+        {
+          "id": "fuzz.rev11-original-reader-10000",
+          "status": "PASS",
+          "seconds": 164.289
+        },
+        {
+          "id": "fuzz.rev11-range-index-10000",
+          "status": "PASS",
+          "seconds": 177.057
+        },
+        {
+          "id": "packaging.hybrid-key-separation",
+          "status": "PASS",
+          "seconds": 174.235
+        },
+        {
+          "id": "recovery.parallel-worker-equivalence",
+          "status": "PASS",
+          "seconds": 0.114
+        },
+        {
+          "id": "recovery.physical-eio-repair",
+          "status": "PASS",
+          "seconds": 1.369
+        },
+        {
+          "id": "recovery.kpar2-v4-adversarial",
+          "status": "PASS",
+          "seconds": 22.108
+        },
+        {
+          "id": "deletion.cryptographic-erase",
+          "status": "PASS",
+          "seconds": 8.15
+        },
+        {
+          "id": "fuzz.verified-input-10000",
+          "status": "PASS",
+          "seconds": 196.224
+        },
+        {
+          "id": "containers.suite.kalyna512-512",
+          "status": "PASS",
+          "seconds": 18.602
+        },
+        {
+          "id": "containers.suite.threefish1024",
+          "status": "PASS",
+          "seconds": 15.038
+        },
+        {
+          "id": "containers.suite.threefish-over-kalyna",
+          "status": "PASS",
+          "seconds": 19.465
+        },
+        {
+          "id": "containers.suite.chacha-over-aes",
+          "status": "PASS",
+          "seconds": 21.393
+        },
+        {
+          "id": "containers.suite.paranoia-cascade",
+          "status": "PASS",
+          "seconds": 38.566
+        },
+        {
+          "id": "containers.suite.aes256",
+          "status": "PASS",
+          "seconds": 18.061
+        },
+        {
+          "id": "containers.suite.mars448",
+          "status": "PASS",
+          "seconds": 16.388
+        },
+        {
+          "id": "containers.suite.shacal2-512",
+          "status": "PASS",
+          "seconds": 14.701
+        },
+        {
+          "id": "containers.suite.chacha20-poly1305",
+          "status": "PASS",
+          "seconds": 16.774
+        },
+        {
+          "id": "containers.suite.mixed-cascade",
+          "status": "PASS",
+          "seconds": 15.466
+        },
+        {
+          "id": "containers.suite.camellia256",
+          "status": "PASS",
+          "seconds": 19.715
+        },
+        {
+          "id": "recovery.suite.threefish-over-kalyna",
+          "status": "PASS",
+          "seconds": 15.277
+        },
+        {
+          "id": "containers.suite.serpent256",
+          "status": "PASS",
+          "seconds": 22.585
+        },
+        {
+          "id": "recovery.suite.chacha-over-aes",
+          "status": "PASS",
+          "seconds": 14.176
+        },
+        {
+          "id": "recovery.suite.mixed-cascade",
+          "status": "PASS",
+          "seconds": 19.488
+        },
+        {
+          "id": "recovery.suite.threefish1024",
+          "status": "PASS",
+          "seconds": 21.024
+        },
+        {
+          "id": "recovery.suite.paranoia-cascade",
+          "status": "PASS",
+          "seconds": 34.305
+        },
+        {
+          "id": "recovery.suite.kalyna512-512",
+          "status": "PASS",
+          "seconds": 18.387
+        },
+        {
+          "id": "recovery.suite.shacal2-512",
+          "status": "PASS",
+          "seconds": 17.046
+        },
+        {
+          "id": "recovery.suite.mars448",
+          "status": "PASS",
+          "seconds": 15.557
+        },
+        {
+          "id": "recovery.suite.aes256",
+          "status": "PASS",
+          "seconds": 13.56
+        },
+        {
+          "id": "recovery.suite.camellia256",
+          "status": "PASS",
+          "seconds": 14.262
+        },
+        {
+          "id": "recovery.suite.serpent256",
+          "status": "PASS",
+          "seconds": 14.105
+        },
+        {
+          "id": "recovery.suite.chacha20-poly1305",
+          "status": "PASS",
+          "seconds": 14.968
+        },
+        {
+          "id": "release.v13-paranoia-structure512",
+          "status": "PASS",
+          "seconds": 824.68
+        },
+        {
+          "id": "kdf.peak-memory-and-header",
+          "status": "PASS",
+          "seconds": 9.594
+        },
+        {
+          "id": "zpaq.seatbelt-runtime",
+          "status": "PASS",
+          "seconds": 32.544
+        },
+        {
+          "id": "containers.v13-production-worker-equivalence",
+          "status": "PASS",
+          "seconds": 12.273
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "exit": 0,
+      "file": "phase-2.test-results.json",
+      "sha256": "f8b828a3f42b5248515d38b02031eb778f45602cb5b0d9596cd6c57b8fabcb65",
+      "counts": {
+        "PASS": 1
+      },
+      "tests": [
+        {
+          "id": "containers.v13-production-worker-equivalence",
+          "status": "PASS",
+          "seconds": 12.301
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "exit": 0,
+      "file": "phase-3.test-results.json",
+      "sha256": "ab3aae2882f91041ab8d1d49d4a3c8fe2f526944ad84bed90b7df72e2cb44298",
+      "counts": {
+        "PASS": 1
+      },
+      "tests": [
+        {
+          "id": "crypto.v13-parallel-mac-kat",
+          "status": "PASS",
+          "seconds": 0.254
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "exit": 0,
+      "file": "phase-4.test-results.json",
+      "sha256": "795766957a426598853a7f471a4db698d7b2a7cbc2c2d5d68cae1868238a8730",
+      "counts": {
+        "PASS": 1
+      },
+      "tests": [
+        {
+          "id": "containers.v13-kpar2-roundtrip",
+          "status": "PASS",
+          "seconds": 31.437
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "exit": 0,
+      "file": "phase-5.test-results.json",
+      "sha256": "a4b116ed35f316a0798ca36cec75ef37b60a66d5857f7b0af7101eace981fe05",
+      "counts": {
+        "PASS": 1
+      },
+      "tests": [
+        {
+          "id": "recovery.parallel-worker-equivalence",
+          "status": "PASS",
+          "seconds": 0.1
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "exit": 0,
+      "file": "phase-6.test-results.json",
+      "sha256": "8618050b7ab11102ac3a65e76654b096c655cb8a1f6da4a190a56a7fd783a960",
+      "counts": {
+        "PASS": 1
+      },
+      "tests": [
+        {
+          "id": "recovery.physical-eio-repair",
+          "status": "PASS",
+          "seconds": 0.901
+        }
+      ]
+    },
+    {
+      "phase": 7,
+      "exit": 0,
+      "file": "phase-7.test-results.json",
+      "sha256": "9c639b63589cfecd880a7ea978f5491ea9e3bc675117444c50da0128d91a6e03",
+      "counts": {
+        "PASS": 1
+      },
+      "tests": [
+        {
+          "id": "zpaq.full-matrix",
+          "status": "PASS",
+          "seconds": 23.222
+        }
+      ]
+    }
+  ],
+  "log_prefix": {
+    "bytes": 156145,
+    "sha256": "377ba8684427bdf3009848583a3727dfb9e3f5c450e6a8f97b2c33f673f81e43"
+  },
+  "scope": "Read-only observer copied completed phase evidence verbatim. No tests, signing or builds run by observer.",
+  "exit_code": 2,
+  "exit_evidence": "Build script exits 2 at the recorded guard; root process owner confirmed Configuration Exit 2.",
+  "final_utc": "2026-10-01T10:21:35.451520+00:00",
+  "final_log": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/build.log",
+    "bytes": 156145,
+    "sha256": "377ba8684427bdf3009848583a3727dfb9e3f5c450e6a8f97b2c33f673f81e43"
+  },
+  "final_source_checkpoint": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/source-after-baseline-guard.json",
+    "sha256": "0854d8cd8ac13eaa6f1e48e3791546e4b0fa6b17ef0f8584b97fea97fe0845e4",
+    "file_count": 1971,
+    "passed": true,
+    "utc_started": "2026-10-01T10:20:59.364736+00:00",
+    "utc_finished": "2026-10-01T10:20:59.658393+00:00"
+  },
+  "final_git": {
+    "head": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+    "status": "",
+    "cached_diff": "",
+    "unstaged_diff": "",
+    "index_path": "/Users/michael/Developer/GPT-Codex/Kalyna/.git/worktrees/Kalyna/index",
+    "index_bytes": 234342,
+    "index_sha256": "6d4febab04919c9fd55924584402a3fc1e9813b5aa9fc875f9b162651fd2948e"
+  },
+  "phase_result_sha256": {
+    "phase-1.test-results.json": "8ad2052b275cf369374f4fa0b30a4711d606ad609998717fb572a5a7aa96cd87",
+    "phase-2.test-results.json": "f8b828a3f42b5248515d38b02031eb778f45602cb5b0d9596cd6c57b8fabcb65",
+    "phase-3.test-results.json": "ab3aae2882f91041ab8d1d49d4a3c8fe2f526944ad84bed90b7df72e2cb44298",
+    "phase-4.test-results.json": "795766957a426598853a7f471a4db698d7b2a7cbc2c2d5d68cae1868238a8730",
+    "phase-5.test-results.json": "a4b116ed35f316a0798ca36cec75ef37b60a66d5857f7b0af7101eace981fe05",
+    "phase-6.test-results.json": "8618050b7ab11102ac3a65e76654b096c655cb8a1f6da4a190a56a7fd783a960",
+    "phase-7.test-results.json": "9c639b63589cfecd880a7ea978f5491ea9e3bc675117444c50da0128d91a6e03"
+  },
+  "phase_timing_sha256": {
+    "phase-1.test-timings.json": "342a62a460f4da48849fb099b9030c6eb587e3a6a284fd42e2d11fdc7c6f86e0",
+    "phase-2.test-timings.json": "6ab321eb1362f568c6cc170f6f919abfde6f9206799bd595981c0611c5e9a99f",
+    "phase-3.test-timings.json": "2dfb66b36352c228429da1db5b8f4acfacdefcbe1073ebd8c71012a01fd0936c",
+    "phase-4.test-timings.json": "8b5d41c938a0acd5c0d5241d226dab3baa18bc43cde9fa1760b776842f75690d",
+    "phase-5.test-timings.json": "339061735cdf7c35ef383d92cb0f6408c48fd8d046ab17a43ecd7d3f636ff9b8",
+    "phase-6.test-timings.json": "fadec872fcc8d34186f31f5dc30627935b16d31380243c9bccbaf51cfc39edf9",
+    "phase-7.test-timings.json": "fddae0344ebc59b8f597429d21b8a9a5765c2442e2f4e1dafee4b006388fa050"
+  },
+  "observer_index_sha256": "1974b05c78f589398347c49e3be5c4675963c6ee1cc8e7445be5d24d9c8cabd6"
+}

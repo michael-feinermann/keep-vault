@@ -1,0 +1,1454 @@
+{
+  "schemaVersion": 1,
+  "measuredUtc": "2026-10-04T07:21:10.184131+00:00",
+  "testId": "performance.rev12-workflow-4kib-camellia-manual4",
+  "scope": "Managed Release final service/native archive paths: level-3 streaming creation, production KDF, both global MACs, authenticated KPAR2 creation and healthy verification, production original comparison plus independent hash/topology verification, and fixture cleanup. No original deletion. Installed AOT GUI phase profile NOT RUN.",
+  "measuredWorkflows": 1,
+  "warmups": 0,
+  "repetitions": 1,
+  "kdfComparison": "Fresh independently generated factors/salts per case produce potentially different credential-dependent KDF work. The one-run matrix measures actual complete workflows; differences across CPU modes are not a controlled causal CPU-scaling result. Fixed public cipher/tag equivalence and five-run cipher-only comparisons are separate.",
+  "leaseCleanupVerified": true,
+  "median": "NOT APPLICABLE: one expensive complete workflow",
+  "suite": "Camellia256",
+  "compressionLevel": 3,
+  "requestedCpuMode": "Manual",
+  "requestedWorkers": 4,
+  "processArchitecture": "Arm64",
+  "osArchitecture": "Arm64",
+  "operatingSystem": "macOS 27.0.1",
+  "runtimeProcessorCount": 10,
+  "energyState": "NOT OBSERVED by this harness; no power setting was changed",
+  "aesProvider": "ArmV8",
+  "assemblySha256": "082F6154D6AEECF922AF4ADF59821E863598E171E8A11A1D77079E2AD61CE994",
+  "sourceHead": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "sourceBinding": "Assembly SHA-256 binds the built code; Git HEAD alone does not cover the dirty working tree. Bind this artifact to the isolated build\u0027s complete source snapshot evidence.",
+  "nativeTrustedInputSha256": {
+    "zpaq": "34EE8D3CE378560BC4F56F55D8780BCBA2EE0BCC01F77A483C0EE9D2590A549A",
+    "libkalyna_v13.dylib": "F68A3DFF964BD27BACD31FE272EE8F289689EFE6E095D5972D3B1E2FBA36C7F7",
+    "libthreefish_ref.dylib": "F8986BFC20C2C56215BC0EE733BCC728BC07B4DE1B85A76253748867B919D45C",
+    "libmars_ref.dylib": "8B26D47B80408EA7F8B6EADA93764CCEA8E81563CE78B53877C0CD454221287B",
+    "libcamellia_v13.dylib": "4CD3EEFBBA4C1491D53E17811E1E084146F543581D61DAB8CFBED256A35201AB",
+    "libserpent_v13.dylib": "1AAE78DFC55DF08DF61AE81CA2B2A55F011BFB3A616BF205A94A48BF56846C0B",
+    "libshacal2_ref.dylib": "8DE1B7CF4C69E75A1705CFA1148A4B8F9DDC97AF27551B3F6C85E159DB4ED9CF",
+    "libaes_ref.dylib": "ACB6AAE2CC1C89186E7F66ECCF87E0256944CE4648F746AB9AB45E8631C7B8F2",
+    "libxchachapoly_v13.dylib": "A17D448CE591D15336823A28572BE238385EB65A077F90D495CF53CBED11E401",
+    "libargon2_ref.dylib": "8B25EAF59D321BFC601EE5E55C73CA84441A3F5019A7095EB30E88F9E0A920A2"
+  },
+  "nativeProvenance": "SHA-256 of resolved production native inputs before and after the workflow. The trusted loader authenticates sealed files or equivalent private snapshots before loading; executable launch uses a trusted lease. This records file-byte provenance, not a digest of mapped process memory. No installed AOT GUI phase observation is claimed.",
+  "fixturePattern": "Exact 4 KiB source size; fixed repeating bytes and short Unicode text, with empty, hidden, nested and Unicode paths",
+  "receipt": {
+    "InputFiles": 3,
+    "InputDirectories": 5,
+    "InputBytes": 4096,
+    "CompressedPayloadBytesDuringCreation": 3047,
+    "ContainerBytes": 4893,
+    "RecoveryBytes": 151552,
+    "InputManifestSha256": "8AF19C585CDE5EDEB3B2FE18D29A1DAE782A16AD062626C386FA9A9D1432777F",
+    "ContainerSha256": "CF8A9AEF6EFBA2BB42F64D04CD9249BB4819FFBBEBC5B1C6225F699458696B7B",
+    "InitialCpuCeiling": 4,
+    "InitialThrottleReason": "minimum-work-window",
+    "OutputVolumeIdentity": "device:16777232"
+  },
+  "setupSeconds": 0.0044819,
+  "preparationSeconds": 0.094878,
+  "workflowWallSeconds": 17.4397135,
+  "sourceMiBPerSecondCompleteWorkflow": 0.00022398590435559622,
+  "sourceMiBPerSecondArchiveAndEncrypt": 0.0009646063728150723,
+  "phaseWallSeconds": {
+    "originalCreationSnapshot": 0.007918,
+    "archiveAndEncrypt": 4.0495793,
+    "supplementalContainerHash": 0.0001288,
+    "recoveryCreate": 6.5968723,
+    "supplementalRecoveryHealthyVerification": 3.0590697,
+    "decryptAndExtractForOriginalComparison": 3.6901035,
+    "originalComparisonAndIndependentHashTopologyCheck": 0.0242161,
+    "fixtureCleanup": 0.001937
+  },
+  "outerWorkflowTimeline": [
+    {
+      "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+      "StartSeconds": 0,
+      "EndSeconds": 0.0090605,
+      "DurationSeconds": 0.0090605
+    },
+    {
+      "Phase": "archiveAndEncrypt",
+      "StartSeconds": 0.0090605,
+      "EndSeconds": 4.0602071,
+      "DurationSeconds": 4.0511466
+    },
+    {
+      "Phase": "supplementalContainerHash",
+      "StartSeconds": 4.0602071,
+      "EndSeconds": 4.0603412,
+      "DurationSeconds": 0.00013409999999947075
+    },
+    {
+      "Phase": "recoveryCreate",
+      "StartSeconds": 4.0603412,
+      "EndSeconds": 10.6572321,
+      "DurationSeconds": 6.5968909
+    },
+    {
+      "Phase": "supplementalRecoveryHealthyVerification",
+      "StartSeconds": 10.6572321,
+      "EndSeconds": 13.7163235,
+      "DurationSeconds": 3.0590914
+    },
+    {
+      "Phase": "decryptAndExtractForOriginalComparison",
+      "StartSeconds": 13.7163235,
+      "EndSeconds": 17.4064415,
+      "DurationSeconds": 3.690118
+    },
+    {
+      "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+      "StartSeconds": 17.4064415,
+      "EndSeconds": 17.4306663,
+      "DurationSeconds": 0.024224799999998936
+    },
+    {
+      "Phase": "ownedResourcesAndFixtureCleanup",
+      "StartSeconds": 17.4306663,
+      "EndSeconds": 17.4397135,
+      "DurationSeconds": 0.009047200000001254
+    }
+  ],
+  "outerTimelineInterpretation": "Eight monotonic, contiguous outer intervals partition the complete observed workflow walltime, including owner/fixture cleanup. Each interval includes all public checks and bookkeeping between its actual FinishMacro boundaries; service-only phaseWallSeconds can exclude those checks. This is sequential outer workflow ordering only, not a complete internal parallel critical-path analysis. The separate 4096-entry internal timeline can omit later intervals; its aggregates remain complete.",
+  "managedProcessCpuSecondsThroughOriginalComparison": 32.41733,
+  "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 32.4224814,
+  "cpuInterpretation": "Managed process CPU includes native libraries in this process. The separate combined observation adds sampled ZPAQ child CPU counters; it may omit an unsampled terminal interval. Fixture cleanup CPU is outside both counters. Overlapping phase sums are neither CPU time nor additive end-to-end duration; no per-cipher CPU split is asserted.",
+  "phaseProfile": {
+    "SchemaVersion": 2,
+    "ObservationAvailable": true,
+    "TimelineCapacity": 4096,
+    "OmittedTimelineEntries": 0,
+    "Aggregates": [
+      {
+        "Phase": "ArchiveEncryption",
+        "Calls": 1,
+        "WallSecondsSum": 3.787983542,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ArchiveDecryption",
+        "Calls": 1,
+        "WallSecondsSum": 3.418427125,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "PayloadEncryption",
+        "Calls": 1,
+        "WallSecondsSum": 0.047397334,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "PayloadDecryption",
+        "Calls": 1,
+        "WallSecondsSum": 0.002117291,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "CredentialSha3",
+        "Calls": 5,
+        "WallSecondsSum": 0.000186667,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "CredentialSkein",
+        "Calls": 5,
+        "WallSecondsSum": 0.000350875,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "KdfPmiDerivation",
+        "Calls": 5,
+        "WallSecondsSum": 6.6626E-05,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "KdfRound1",
+        "Calls": 5,
+        "WallSecondsSum": 16.165841626,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "KdfRound2",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "Argon2Sha3Round1",
+        "Calls": 5,
+        "WallSecondsSum": 8.22758925,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "Argon2SkeinRound1",
+        "Calls": 5,
+        "WallSecondsSum": 7.936806125,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "Argon2Sha3Round2",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "Argon2SkeinRound2",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "KeySchedule",
+        "Calls": 3,
+        "WallSecondsSum": 0.002619124,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ChunkNonce",
+        "Calls": 2,
+        "WallSecondsSum": 0.000771251,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "Calls": 12,
+        "WallSecondsSum": 0.000197666,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ResourceObservation",
+        "Calls": 4,
+        "WallSecondsSum": 0.000157291,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ResourcePlanning",
+        "Calls": 4,
+        "WallSecondsSum": 1.225E-05,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "WindowDecision",
+        "Calls": 4,
+        "WallSecondsSum": 0.000592041,
+        "PublicBytesSum": 6094
+      },
+      {
+        "Phase": "CipherAes",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "CipherMars",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "CipherCamellia",
+        "Calls": 2,
+        "WallSecondsSum": 0.000252041,
+        "PublicBytesSum": 6094
+      },
+      {
+        "Phase": "CipherSerpent",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "CipherShacal2",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "CipherKalyna",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "CipherThreefish",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "AeadEncryptAndTag",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "AeadVerifyAndDecrypt",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "GlobalAuthentication",
+        "Calls": 3,
+        "WallSecondsSum": 0.013709874,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "PayloadRead",
+        "Calls": 4,
+        "WallSecondsSum": 0.042206124,
+        "PublicBytesSum": 6094
+      },
+      {
+        "Phase": "PayloadWrite",
+        "Calls": 2,
+        "WallSecondsSum": 0.001371042,
+        "PublicBytesSum": 6094
+      },
+      {
+        "Phase": "ZpaqArchive",
+        "Calls": 1,
+        "WallSecondsSum": 4.049106834,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ZpaqExtract",
+        "Calls": 1,
+        "WallSecondsSum": 3.68960125,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ZpaqList",
+        "Calls": 0,
+        "WallSecondsSum": 0,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ZpaqNativeExitWait",
+        "Calls": 2,
+        "WallSecondsSum": 0.132693167,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ZpaqPipeConsumer",
+        "Calls": 1,
+        "WallSecondsSum": 0.075830375,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "ZpaqPipeProducer",
+        "Calls": 1,
+        "WallSecondsSum": 0.007261708,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "PipeRead",
+        "Calls": 3,
+        "WallSecondsSum": 0.041532626,
+        "PublicBytesSum": 3047
+      },
+      {
+        "Phase": "PipeWrite",
+        "Calls": 1,
+        "WallSecondsSum": 0.000264,
+        "PublicBytesSum": 3047
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "Calls": 41,
+        "WallSecondsSum": 0.001287586,
+        "PublicBytesSum": 167936
+      },
+      {
+        "Phase": "RecoveryCreate",
+        "Calls": 1,
+        "WallSecondsSum": 6.593932834,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "RecoveryVerifyRepair",
+        "Calls": 1,
+        "WallSecondsSum": 3.057182292,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "RecoveryMatchOriginal",
+        "Calls": 1,
+        "WallSecondsSum": 0.0007345,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "OriginalTreeComparison",
+        "Calls": 1,
+        "WallSecondsSum": 0.02419425,
+        "PublicBytesSum": 4096
+      },
+      {
+        "Phase": "FinalOutputCommit",
+        "Calls": 1,
+        "WallSecondsSum": 0.000229083,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "VerifiedGlobalBinding",
+        "Calls": 2,
+        "WallSecondsSum": 6.694171001,
+        "PublicBytesSum": 0
+      },
+      {
+        "Phase": "LocalRangeTags",
+        "Calls": 6,
+        "WallSecondsSum": 0.000324917,
+        "PublicBytesSum": 29358
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "Calls": 15,
+        "WallSecondsSum": 0.000193041,
+        "PublicBytesSum": 73395
+      }
+    ],
+    "Timeline": [
+      {
+        "Phase": "ZpaqArchive",
+        "StartSeconds": 0.109634,
+        "DurationSeconds": 4.049106834,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ArchiveEncryption",
+        "StartSeconds": 0.19029225,
+        "DurationSeconds": 3.787983542,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSha3",
+        "StartSeconds": 0.546136167,
+        "DurationSeconds": 0.000131542,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSkein",
+        "StartSeconds": 0.546565834,
+        "DurationSeconds": 0.00029275,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfPmiDerivation",
+        "StartSeconds": 0.546995292,
+        "DurationSeconds": 2.6667E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfRound1",
+        "StartSeconds": 0.547212375,
+        "DurationSeconds": 3.285486084,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 0.547574917,
+        "DurationSeconds": 1.0625E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2Sha3Round1",
+        "StartSeconds": 0.547586292,
+        "DurationSeconds": 1.755037208,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 2.302726834,
+        "DurationSeconds": 3.9041E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2SkeinRound1",
+        "StartSeconds": 2.302767292,
+        "DurationSeconds": 1.52959625,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KeySchedule",
+        "StartSeconds": 3.832731584,
+        "DurationSeconds": 0.002387208,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ZpaqPipeConsumer",
+        "StartSeconds": 3.902580875,
+        "DurationSeconds": 0.075830375,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ZpaqNativeExitWait",
+        "StartSeconds": 3.905181459,
+        "DurationSeconds": 0.052575583,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "PayloadEncryption",
+        "StartSeconds": 3.91392675,
+        "DurationSeconds": 0.047397334,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "WindowDecision",
+        "StartSeconds": 3.91471925,
+        "DurationSeconds": 0.000303917,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ResourceObservation",
+        "StartSeconds": 3.914733292,
+        "DurationSeconds": 4.3833E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ResourcePlanning",
+        "StartSeconds": 3.91478375,
+        "DurationSeconds": 3.292E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "PayloadRead",
+        "StartSeconds": 3.915552084,
+        "DurationSeconds": 0.042087333,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "PipeRead",
+        "StartSeconds": 3.915980375,
+        "DurationSeconds": 0.041277959,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "PipeRead",
+        "StartSeconds": 3.957385625,
+        "DurationSeconds": 0.000250834,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 3.958464459,
+        "DurationSeconds": 8.458E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ChunkNonce",
+        "StartSeconds": 3.958749625,
+        "DurationSeconds": 0.000767959,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CipherCamellia",
+        "StartSeconds": 3.959937042,
+        "DurationSeconds": 0.000191458,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "PayloadWrite",
+        "StartSeconds": 3.960305625,
+        "DurationSeconds": 0.000622584,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "WindowDecision",
+        "StartSeconds": 3.960979959,
+        "DurationSeconds": 0.000159458,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "ResourceObservation",
+        "StartSeconds": 3.961109,
+        "DurationSeconds": 2.7542E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ResourcePlanning",
+        "StartSeconds": 3.961136834,
+        "DurationSeconds": 1.791E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "PayloadRead",
+        "StartSeconds": 3.961139667,
+        "DurationSeconds": 5.5E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "PipeRead",
+        "StartSeconds": 3.961140959,
+        "DurationSeconds": 3.833E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "GlobalAuthentication",
+        "StartSeconds": 3.961416,
+        "DurationSeconds": 0.011351,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "FinalOutputCommit",
+        "StartSeconds": 3.977915792,
+        "DurationSeconds": 0.000229083,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "RecoveryCreate",
+        "StartSeconds": 4.163371875,
+        "DurationSeconds": 6.593932834,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "VerifiedGlobalBinding",
+        "StartSeconds": 4.16888825,
+        "DurationSeconds": 3.347775834,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSha3",
+        "StartSeconds": 4.172397292,
+        "DurationSeconds": 3.0208E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSkein",
+        "StartSeconds": 4.172429417,
+        "DurationSeconds": 2.0167E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfPmiDerivation",
+        "StartSeconds": 4.172450042,
+        "DurationSeconds": 1.7542E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfRound1",
+        "StartSeconds": 4.172470709,
+        "DurationSeconds": 3.341233208,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 4.172540084,
+        "DurationSeconds": 9E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2Sha3Round1",
+        "StartSeconds": 4.17255025,
+        "DurationSeconds": 1.65966425,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 5.832274084,
+        "DurationSeconds": 3.05E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2SkeinRound1",
+        "StartSeconds": 5.832305625,
+        "DurationSeconds": 1.681354459,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KeySchedule",
+        "StartSeconds": 7.513706584,
+        "DurationSeconds": 0.000163708,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "GlobalAuthentication",
+        "StartSeconds": 7.514319709,
+        "DurationSeconds": 0.001897458,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "LocalRangeTags",
+        "StartSeconds": 7.5154815,
+        "DurationSeconds": 8.5917E-05,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.521603792,
+        "DurationSeconds": 0.000110333,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeTags",
+        "StartSeconds": 7.521606875,
+        "DurationSeconds": 0.000106167,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.52220875,
+        "DurationSeconds": 8.75E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.522225959,
+        "DurationSeconds": 7.5E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.52224175,
+        "DurationSeconds": 7.09E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.522925875,
+        "DurationSeconds": 7.5E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.523906167,
+        "DurationSeconds": 9.58E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.523923709,
+        "DurationSeconds": 7.08E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.525437125,
+        "DurationSeconds": 0.000605625,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.526108167,
+        "DurationSeconds": 3.4292E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.526145292,
+        "DurationSeconds": 3.4917E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.526182375,
+        "DurationSeconds": 1.95E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.52821875,
+        "DurationSeconds": 1.042E-06,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.5310225,
+        "DurationSeconds": 2.5459E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.531745292,
+        "DurationSeconds": 2.1417E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.531887542,
+        "DurationSeconds": 1.4542E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 7.532311209,
+        "DurationSeconds": 8.33E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.533778459,
+        "DurationSeconds": 1.375E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.533943667,
+        "DurationSeconds": 1.7042E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 7.534059334,
+        "DurationSeconds": 1.225E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "CredentialSha3",
+        "StartSeconds": 7.538771334,
+        "DurationSeconds": 1.3875E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSkein",
+        "StartSeconds": 7.5387865,
+        "DurationSeconds": 1.5875E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfPmiDerivation",
+        "StartSeconds": 7.538804417,
+        "DurationSeconds": 1.2458E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfRound1",
+        "StartSeconds": 7.538818125,
+        "DurationSeconds": 3.148804584,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 7.538879375,
+        "DurationSeconds": 7.667E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2Sha3Round1",
+        "StartSeconds": 7.538887459,
+        "DurationSeconds": 1.605154625,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 9.144059042,
+        "DurationSeconds": 2.5667E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2SkeinRound1",
+        "StartSeconds": 9.144092875,
+        "DurationSeconds": 1.543508917,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.706765375,
+        "DurationSeconds": 7.7667E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.707230834,
+        "DurationSeconds": 2.7416E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.707352375,
+        "DurationSeconds": 2.2459E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.707449959,
+        "DurationSeconds": 2.4083E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.707559625,
+        "DurationSeconds": 1.8542E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.707656709,
+        "DurationSeconds": 2.4208E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.707775625,
+        "DurationSeconds": 2.325E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.707872167,
+        "DurationSeconds": 1.5208E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.707960167,
+        "DurationSeconds": 1.1917E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708047875,
+        "DurationSeconds": 1.075E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708135,
+        "DurationSeconds": 1.0959E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708221375,
+        "DurationSeconds": 1.2667E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708309542,
+        "DurationSeconds": 1.0625E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708395167,
+        "DurationSeconds": 9.333E-06,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.70847475,
+        "DurationSeconds": 1.2042E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.7085575,
+        "DurationSeconds": 1.8417E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708646709,
+        "DurationSeconds": 1.2125E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708727875,
+        "DurationSeconds": 1.3125E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708810042,
+        "DurationSeconds": 1.025E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708895,
+        "DurationSeconds": 1.15E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.708980584,
+        "DurationSeconds": 9.416E-06,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709063542,
+        "DurationSeconds": 8.75E-06,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709148292,
+        "DurationSeconds": 1.2417E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709168459,
+        "DurationSeconds": 1.0958E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709255834,
+        "DurationSeconds": 1E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709266792,
+        "DurationSeconds": 1.1833E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709279625,
+        "DurationSeconds": 1.025E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709290375,
+        "DurationSeconds": 9.417E-06,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709300334,
+        "DurationSeconds": 8.291E-06,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709309625,
+        "DurationSeconds": 1.2209E-05,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "RecoveryOutputWrite",
+        "StartSeconds": 10.709322209,
+        "DurationSeconds": 8.708E-06,
+        "PublicBytes": 4096
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 10.735318167,
+        "DurationSeconds": 4.58E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 10.737165167,
+        "DurationSeconds": 3.75E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 10.7491775,
+        "DurationSeconds": 5E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 10.755580417,
+        "DurationSeconds": 5E-07,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "RecoveryVerifyRepair",
+        "StartSeconds": 10.759210292,
+        "DurationSeconds": 3.057182292,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSha3",
+        "StartSeconds": 10.763337584,
+        "DurationSeconds": 5.208E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSkein",
+        "StartSeconds": 10.763343084,
+        "DurationSeconds": 6.208E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfPmiDerivation",
+        "StartSeconds": 10.76334975,
+        "DurationSeconds": 4.542E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfRound1",
+        "StartSeconds": 10.763354542,
+        "DurationSeconds": 3.04543475,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 10.763399459,
+        "DurationSeconds": 6.166E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2Sha3Round1",
+        "StartSeconds": 10.763405792,
+        "DurationSeconds": 1.505389042,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 12.268809,
+        "DurationSeconds": 2.0959E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2SkeinRound1",
+        "StartSeconds": 12.268830334,
+        "DurationSeconds": 1.539942708,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "LocalRangeTags",
+        "StartSeconds": 13.815150334,
+        "DurationSeconds": 2.9291E-05,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "RecoveryMatchOriginal",
+        "StartSeconds": 13.815544167,
+        "DurationSeconds": 0.0007345,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 13.815935875,
+        "DurationSeconds": 3.375E-05,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeTags",
+        "StartSeconds": 13.815936042,
+        "DurationSeconds": 3.2917E-05,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "ZpaqExtract",
+        "StartSeconds": 13.816914042,
+        "DurationSeconds": 3.68960125,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ArchiveDecryption",
+        "StartSeconds": 13.836732167,
+        "DurationSeconds": 3.418427125,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "VerifiedGlobalBinding",
+        "StartSeconds": 13.836864,
+        "DurationSeconds": 3.346395167,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSha3",
+        "StartSeconds": 13.8375535,
+        "DurationSeconds": 5.834E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CredentialSkein",
+        "StartSeconds": 13.83756025,
+        "DurationSeconds": 1.5875E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfPmiDerivation",
+        "StartSeconds": 13.837576625,
+        "DurationSeconds": 5.417E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KdfRound1",
+        "StartSeconds": 13.837583,
+        "DurationSeconds": 3.344883,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 13.837633459,
+        "DurationSeconds": 6.708E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2Sha3Round1",
+        "StartSeconds": 13.83764025,
+        "DurationSeconds": 1.702344125,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 15.540009917,
+        "DurationSeconds": 2.5667E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "Argon2SkeinRound1",
+        "StartSeconds": 15.540040834,
+        "DurationSeconds": 1.642403791,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "KeySchedule",
+        "StartSeconds": 17.182468292,
+        "DurationSeconds": 6.8208E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "GlobalAuthentication",
+        "StartSeconds": 17.182773209,
+        "DurationSeconds": 0.000461416,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "LocalRangeTags",
+        "StartSeconds": 17.183062042,
+        "DurationSeconds": 3.2375E-05,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "ZpaqPipeProducer",
+        "StartSeconds": 17.248036042,
+        "DurationSeconds": 0.007261708,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ZpaqNativeExitWait",
+        "StartSeconds": 17.252169625,
+        "DurationSeconds": 0.080117584,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "PayloadDecryption",
+        "StartSeconds": 17.252982584,
+        "DurationSeconds": 0.002117291,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "WindowDecision",
+        "StartSeconds": 17.253019584,
+        "DurationSeconds": 7.4833E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ResourceObservation",
+        "StartSeconds": 17.253021542,
+        "DurationSeconds": 4.0958E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ResourcePlanning",
+        "StartSeconds": 17.253068667,
+        "DurationSeconds": 3.917E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "PayloadRead",
+        "StartSeconds": 17.253291584,
+        "DurationSeconds": 9.5166E-05,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "LocalRangeVerification",
+        "StartSeconds": 17.253332875,
+        "DurationSeconds": 4.05E-05,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "LocalRangeTags",
+        "StartSeconds": 17.253333875,
+        "DurationSeconds": 3.825E-05,
+        "PublicBytes": 4893
+      },
+      {
+        "Phase": "CpuPermitWait",
+        "StartSeconds": 17.253429459,
+        "DurationSeconds": 7.208E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ChunkNonce",
+        "StartSeconds": 17.253769,
+        "DurationSeconds": 3.292E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "CipherCamellia",
+        "StartSeconds": 17.253783334,
+        "DurationSeconds": 6.0583E-05,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "PayloadWrite",
+        "StartSeconds": 17.253948334,
+        "DurationSeconds": 0.000748458,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "PipeWrite",
+        "StartSeconds": 17.254431209,
+        "DurationSeconds": 0.000264,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "WindowDecision",
+        "StartSeconds": 17.254701042,
+        "DurationSeconds": 5.3833E-05,
+        "PublicBytes": 3047
+      },
+      {
+        "Phase": "ResourceObservation",
+        "StartSeconds": 17.254704084,
+        "DurationSeconds": 4.4958E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "ResourcePlanning",
+        "StartSeconds": 17.254749375,
+        "DurationSeconds": 3.25E-06,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "PayloadRead",
+        "StartSeconds": 17.254755167,
+        "DurationSeconds": 1.8125E-05,
+        "PublicBytes": 0
+      },
+      {
+        "Phase": "OriginalTreeComparison",
+        "StartSeconds": 17.506542459,
+        "DurationSeconds": 0.02419425,
+        "PublicBytes": 4096
+      }
+    ],
+    "WindowDecisions": [
+      {
+        "AtSeconds": 3.914971125,
+        "PreviousSlots": 1,
+        "RequestedSlots": 1,
+        "ResolvedSlots": 1,
+        "AdmittedSlotCeiling": 1,
+        "ActiveChunks": 0,
+        "CompleteBatch": false,
+        "PublicBytes": 0,
+        "PublicRateBytesPerSecond": 0,
+        "RateValid": false,
+        "Reason": "InitialCold",
+        "AcceptedSlots": 1,
+        "ProbeSlots": 0,
+        "RejectedSlots": 0
+      },
+      {
+        "AtSeconds": 3.961139042,
+        "PreviousSlots": 1,
+        "RequestedSlots": 1,
+        "ResolvedSlots": 1,
+        "AdmittedSlotCeiling": 1,
+        "ActiveChunks": 1,
+        "CompleteBatch": false,
+        "PublicBytes": 3047,
+        "PublicRateBytesPerSecond": 66331.56202447323,
+        "RateValid": true,
+        "Reason": "IncompleteBatch",
+        "AcceptedSlots": 1,
+        "ProbeSlots": 0,
+        "RejectedSlots": 0
+      },
+      {
+        "AtSeconds": 17.253073625,
+        "PreviousSlots": 1,
+        "RequestedSlots": 1,
+        "ResolvedSlots": 1,
+        "AdmittedSlotCeiling": 1,
+        "ActiveChunks": 0,
+        "CompleteBatch": false,
+        "PublicBytes": 0,
+        "PublicRateBytesPerSecond": 0,
+        "RateValid": false,
+        "Reason": "InitialCold",
+        "AcceptedSlots": 1,
+        "ProbeSlots": 0,
+        "RejectedSlots": 0
+      },
+      {
+        "AtSeconds": 17.254753334,
+        "PreviousSlots": 1,
+        "RequestedSlots": 1,
+        "ResolvedSlots": 1,
+        "AdmittedSlotCeiling": 1,
+        "ActiveChunks": 1,
+        "CompleteBatch": false,
+        "PublicBytes": 3047,
+        "PublicRateBytesPerSecond": 1897732.9347284504,
+        "RateValid": true,
+        "Reason": "IncompleteBatch",
+        "AcceptedSlots": 1,
+        "ProbeSlots": 0,
+        "RejectedSlots": 0
+      }
+    ],
+    "OmittedWindowDecisions": 0,
+    "Interpretation": "Monotonic wall intervals. Nested phases and parallel workers overlap. Aggregate sums are neither CPU time nor additive workflow duration. Bytes identify each interval\u0027s public processed-byte basis and can count the same bytes in several phases. Timeline retains its first bounded entries; aggregates include later completed intervals."
+  },
+  "globalMacPhasesWallSecondsSum": {
+    "KeyPreparation": 0.000236291,
+    "RootInitialization": 0.000144667,
+    "InputRead": 0.000748875,
+    "LeafBatches": 0.001470958,
+    "OrderedRoot": 8.8541E-05,
+    "FinalTags": 1.3583E-05,
+    "Cleanup": 3.1833E-05
+  },
+  "nativeScheduling": {
+    "batches": 0,
+    "completedCallbacks": 0,
+    "activeCallbacks": 0,
+    "peakActiveCallbacks": 0,
+    "minimumGrant": 0,
+    "maximumGrant": 0,
+    "submissionToCallbackSecondsSum": 0,
+    "callbackWallSecondsSum": 0,
+    "callerJoinWallSecondsSum": 0,
+    "observationAvailable": true,
+    "note": "Submission-to-callback includes handle allocation, submission and observer locking. Callback intervals overlap; their sums are not operation walltime or CPU time. Join includes useful callback work. No executor callbacks is possible for an inline single-worker native path."
+  },
+  "observedKdfBranchCalls": [
+    {
+      "Phase": "KdfRound1",
+      "Calls": 5
+    },
+    {
+      "Phase": "KdfRound2",
+      "Calls": 0
+    },
+    {
+      "Phase": "Argon2Sha3Round1",
+      "Calls": 5
+    },
+    {
+      "Phase": "Argon2SkeinRound1",
+      "Calls": 5
+    },
+    {
+      "Phase": "Argon2Sha3Round2",
+      "Calls": 0
+    },
+    {
+      "Phase": "Argon2SkeinRound2",
+      "Calls": 0
+    }
+  ],
+  "byteInterpretation": "Source throughput counts each original byte once. Compressed ciphertext/container/KPAR2 and repeatedly read/verified bytes are separate levels; repeated reads or two MACs never increase the source denominator. Each phase aggregate carries its own actual public processed-byte basis."
+}

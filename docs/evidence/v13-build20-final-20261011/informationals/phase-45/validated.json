@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-11T12:39:04.715111+00:00",
+  "status": "PASS",
+  "testCount": 1,
+  "sourceStable": true,
+  "staticInputsStable": true,
+  "resultsSha256": "5b672ac7486a588aa0621142f57234d49640fcf821c8798a9e42fbd9abb765a5",
+  "profileArtifacts": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-xchacha20-poly1305-auto-20261011T123903105-034f1868ee2e408380f31da76e63254b.json",
+      "sha256": "ab9a3a2c3083de86ba5bb214b692e496f0f653c0c5009de4f898e0c8c7137039",
+      "bytes": 681775
+    }
+  ]
+}

@@ -20,6 +20,7 @@ internal static class ArbiterTests
         + "A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4"
         + "A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4A1B2C3D4";
 
+    [STAThread]
     private static int Main()
     {
         BothCodesReadableIsAcceptedImmediately();
@@ -28,11 +29,13 @@ internal static class ArbiterTests
         DisagreeingCodesAreRefused();
         ADuplicateReportIsNotASecondCode();
         InvalidGeometryCannotCorroborate();
+        MissingDecoderGeometryCannotCorroborate();
         FlickerDoesNotResetTheTally();
         AChangedPayloadRestartsTheTally();
         PayloadInspection();
         BothLanguagesAreComplete();
         DecodesRealCodes();
+        GuiReferenceTests.Run(Expect);
 
         if (_failures == 0)
         {
@@ -247,6 +250,16 @@ internal static class ArbiterTests
         _ = arbiter.Admit(Single("ALPHA"));
         _ = arbiter.Admit(Single("ALPHA"));
         ExpectConfirming(arbiter.Admit(Single("BETA")), 1, 3, "a different payload starts its own tally");
+    }
+
+    private static void MissingDecoderGeometryCannotCorroborate()
+    {
+        var decoded = new ZXing.Result(Factor, [], [], ZXing.BarcodeFormat.QR_CODE);
+        (double x, double y) = ScanSession.NormalisedCenter(decoded, 640, 480);
+        Expect(double.IsNaN(x) && double.IsNaN(y), "missing result points are marked as unavailable geometry");
+        ExpectConfirming(new CodeArbiter(requiredRepeats: 4).Admit(
+            [new Detection(Factor, 0.5, 0.5), new Detection(Factor, x, y)]),
+            1, 4, "missing decoder geometry cannot fake a matching printed copy");
     }
 
     private static void PayloadInspection()

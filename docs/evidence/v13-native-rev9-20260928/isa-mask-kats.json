@@ -1,0 +1,56 @@
+{
+  "status": "PASS",
+  "source": "actual AES and XChaCha adapter sources compiled into isolated feature-masking harness",
+  "results": [
+    {
+      "mode": "auto",
+      "aes_detected": 2,
+      "aes_selected": 2,
+      "chacha_detected": "NEON",
+      "chacha_selected": "NEON",
+      "output_sha256": "b478dfd7ffac828b23d85eca47edb8ebe6b408bb3ddcedd85ac34a3a510989ef",
+      "aes_fips197_kat": "PASS",
+      "architecture": "arm64"
+    },
+    {
+      "mode": "baseline",
+      "aes_detected": 2,
+      "aes_selected": 6,
+      "chacha_detected": "NEON",
+      "chacha_selected": "NEON",
+      "output_sha256": "b478dfd7ffac828b23d85eca47edb8ebe6b408bb3ddcedd85ac34a3a510989ef",
+      "aes_fips197_kat": "PASS",
+      "architecture": "arm64"
+    },
+    {
+      "mode": "auto",
+      "aes_detected": 6,
+      "aes_selected": 6,
+      "chacha_detected": "C++",
+      "chacha_selected": "C++",
+      "output_sha256": "b478dfd7ffac828b23d85eca47edb8ebe6b408bb3ddcedd85ac34a3a510989ef",
+      "aes_fips197_kat": "PASS",
+      "architecture": "x86_64"
+    },
+    {
+      "mode": "no-avx2",
+      "aes_detected": 6,
+      "aes_selected": 6,
+      "chacha_detected": "C++",
+      "chacha_selected": "C++",
+      "output_sha256": "b478dfd7ffac828b23d85eca47edb8ebe6b408bb3ddcedd85ac34a3a510989ef",
+      "aes_fips197_kat": "PASS",
+      "architecture": "x86_64"
+    },
+    {
+      "mode": "baseline",
+      "aes_detected": 6,
+      "aes_selected": 6,
+      "chacha_detected": "C++",
+      "chacha_selected": "C++",
+      "output_sha256": "b478dfd7ffac828b23d85eca47edb8ebe6b408bb3ddcedd85ac34a3a510989ef",
+      "aes_fips197_kat": "PASS",
+      "architecture": "x86_64"
+    }
+  ]
+}

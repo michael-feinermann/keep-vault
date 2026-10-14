@@ -7,38 +7,69 @@ using System.Text.Json;
 using KalynaArchiver.Services;
 
 /// <summary>
-/// Manual, full-cost release measurements requested for v12. These are kept
+/// Manual, full-cost release measurements requested for v13. These are kept
 /// outside the automatic suite because every invocation performs the real
-/// Paranoia Argon2id profile and processes hundreds of MiB at ZPAQ level 5.
+/// Paranoia Argon2id profile and processes hundreds of MiB at the shared
+/// <see cref="ArchiveWorkflowTestSettings.CompressionLevel"/> ZPAQ setting.
 /// </summary>
 internal static class ReleaseEndToEndPerformanceTests
 {
-    private const int CompressionLevel = 5;
+    private const int CompressionLevel = ArchiveWorkflowTestSettings.CompressionLevel;
     private const long ExactBenchmarkBytes = 256L * 1024 * 1024;
     private const int IoBufferBytes = 1024 * 1024;
     private const string UserPassword = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
     private const string UserPin = "428317";
     private static readonly byte[] TextPattern = Encoding.UTF8.GetBytes(
-        "Keep Vault v12 Parallelisierung: Kompression, Verschluesselung, "
+        "Keep Vault v13 Parallelisierung: Kompression, Verschluesselung, "
         + "Authentifizierung und Fehlerkorrektur. Grüße aus Dortmund.\n");
 
     internal static Task RunExact256MiBAsync() =>
         RunWorkflowAsync(
-            "paranoia-256mib-level5",
+            $"paranoia-256mib-level{CompressionLevel}",
             CreateExact256MiBFixtureAsync,
             damageAndRepair: false);
 
     internal static Task RunComplexTreeAsync() =>
         RunWorkflowAsync(
-            "paranoia-complex-tree-level5-repair",
+            $"paranoia-complex-tree-level{CompressionLevel}-repair",
             CreateComplexTreeFixtureAsync,
             damageAndRepair: true);
+
+    internal static Task RunV13ParanoiaStructure512Async() =>
+        RunWorkflowAsync(
+            "v13-paranoia-structure512-production-kdf",
+            CreateV13Structure512Async,
+            damageAndRepair: true);
+
+    private static async Task CreateV13Structure512Async(string root)
+    {
+        await CreateComplexTreeFixtureAsync(root).ConfigureAwait(false);
+        for (int index = 0; index < 128; ++index)
+        {
+            await WritePatternFileAsync(Path.Combine(root, "viele kleine Dateien", $"Gruppe {index % 8:00}", $"Datei {index:000}.bin"),
+                index * 31L, DataPattern.PseudoRandom, (ulong)index + 991).ConfigureAwait(false);
+        }
+        Directory.CreateDirectory(Path.Combine(root, "vollständig leer"));
+        Directory.CreateDirectory(Path.Combine(root, "Unicode", "空のフォルダー", "🙂"));
+        await WritePatternFileAsync(Path.Combine(root, ".versteckt-null"), 0, DataPattern.Zero, 1).ConfigureAwait(false);
+        TreeManifest manifest = await BuildManifestAsync(root).ConfigureAwait(false);
+        long remaining = checked(ExactBenchmarkBytes - manifest.TotalBytes);
+        Require(remaining > 0, "The v13 structure fixture exceeded its 256 MiB source budget.");
+        await WritePatternFileAsync(Path.Combine(root, "Rest bis exakt 256 MiB zufällig.bin"), remaining,
+            DataPattern.PseudoRandom, 0x5631335354525543).ConfigureAwait(false);
+        // Explicit user exception: the complete 256 MiB tree plus one additional
+        // individually 256 MiB file. All other release fixtures keep the old cap.
+        await WritePatternFileAsync(Path.Combine(root, "Zusätzliche Einzeldatei exakt 256 MiB.bin"),
+            ExactBenchmarkBytes, DataPattern.PseudoRandom, 0x5631334249474649).ConfigureAwait(false);
+    }
 
     private static async Task RunWorkflowAsync(
         string label,
         Func<string, Task> createFixture,
         bool damageAndRepair)
     {
+        IReadOnlyDictionary<string, string> nativeInputs = PublicNativeProfileEvidence.Capture();
+        string assemblySha256 = PublicNativeProfileEvidence.AssemblySha256();
         Require(
             EncryptionSuiteCatalog.Get(EncryptionSuite.ParanoiaCascade).UsesTwoKdfRounds,
             "The release E2E fixture no longer selects the two-round Paranoia suite.");
@@ -63,7 +94,15 @@ internal static class ReleaseEndToEndPerformanceTests
             await createFixture(sourceRoot).ConfigureAwait(false);
             TreeManifest expected = await BuildManifestAsync(sourceRoot).ConfigureAwait(false);
             setupTimer.Stop();
-            Require(expected.TotalBytes > 0, "The release E2E fixture contains no payload bytes.");
+            bool isExtendedStructure = label.StartsWith("v13-paranoia-structure512", StringComparison.Ordinal);
+            long approvedBudget = isExtendedStructure ? checked(2 * ExactBenchmarkBytes) : ExactBenchmarkBytes;
+            Require(expected.TotalBytes > 0 && expected.TotalBytes <= approvedBudget,
+                "The release E2E fixture exceeded its explicitly approved source budget.");
+            if (isExtendedStructure)
+            {
+                Require(expected.TotalBytes == 2 * ExactBenchmarkBytes && expected.Files.Count >= 147
+                    && expected.Directories.Count >= 24, "The v13 structural fixture lost its exact size or topology diversity.");
+            }
             if (!damageAndRepair)
             {
                 Require(
@@ -78,6 +117,16 @@ internal static class ReleaseEndToEndPerformanceTests
             var zpaq = new ZpaqService();
             var containers = new KalynaContainerService();
             var recovery = new RecoveryService();
+
+            // Opt-in, test-only observations. Product launch has no activation
+            // route. Each collector contains only closed public phase IDs,
+            // elapsed wall intervals, byte counts and bounded scheduling data.
+            var phaseMeasurements = new OperationPhaseProfile.Measurements();
+            var macMeasurements = new ParallelContainerAuthenticator.PhaseMeasurementsForTests();
+            var nativeMeasurements = new NativeCipherExecutor.Measurements();
+            using IDisposable phaseObservation = OperationPhaseProfile.ObserveForTests(phaseMeasurements);
+            using IDisposable macObservation = ParallelContainerAuthenticator.ObservePhasesForTests(macMeasurements);
+            using IDisposable nativeObservation = NativeCipherExecutor.ObserveForTests(nativeMeasurements);
 
             Stopwatch totalTimer = Stopwatch.StartNew();
             Stopwatch phaseTimer = Stopwatch.StartNew();
@@ -94,7 +143,7 @@ internal static class ReleaseEndToEndPerformanceTests
                         factorB,
                         EncryptionSuite.ParanoiaCascade,
                         entropy,
-                        "v12 release E2E",
+                        "v13 release E2E",
                         null,
                         cancellationToken),
                 null,
@@ -102,7 +151,7 @@ internal static class ReleaseEndToEndPerformanceTests
             phaseTimer.Stop();
             Require(
                 creation.Succeeded && File.Exists(encryptedPath),
-                $"Level-5 archive and Paranoia encryption failed: {creation.StandardError}");
+                $"Level-{CompressionLevel} archive and Paranoia encryption failed: {creation.StandardError}");
             double archiveEncryptSeconds = phaseTimer.Elapsed.TotalSeconds;
             long encryptedBytes = new FileInfo(encryptedPath).Length;
             Console.WriteLine(
@@ -224,7 +273,7 @@ internal static class ReleaseEndToEndPerformanceTests
             phaseTimer.Stop();
             Require(
                 extraction.Succeeded,
-                $"Paranoia decryption and level-5 extraction failed: {extraction.StandardError}");
+                $"Paranoia decryption and level-{CompressionLevel} extraction failed: {extraction.StandardError}");
             double decryptExtractSeconds = phaseTimer.Elapsed.TotalSeconds;
             Console.WriteLine(
                 $"    {label}: decrypt+extract {decryptExtractSeconds:F3} s, "
@@ -232,8 +281,11 @@ internal static class ReleaseEndToEndPerformanceTests
 
             phaseTimer.Restart();
             string extractedFixture = Path.Combine(extractedRoot, Path.GetFileName(sourceRoot));
-            TreeManifest actual = await BuildManifestAsync(extractedFixture).ConfigureAwait(false);
-            RequireEquivalent(expected, actual);
+            using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.OriginalTreeComparison, expected.TotalBytes))
+            {
+                TreeManifest actual = await BuildManifestAsync(extractedFixture).ConfigureAwait(false);
+                RequireEquivalent(expected, actual);
+            }
             phaseTimer.Stop();
             double manifestVerifySeconds = phaseTimer.Elapsed.TotalSeconds;
             totalTimer.Stop();
@@ -246,8 +298,8 @@ internal static class ReleaseEndToEndPerformanceTests
                 LogicalProcessors: Environment.ProcessorCount,
                 CompressionLevel: CompressionLevel,
                 Suite: EncryptionSuite.ParanoiaCascade.ToString(),
-                Argon2Iterations: V12MasterKdf.Iterations,
-                Argon2Parallelism: V12MasterKdf.Parallelism,
+                Argon2Iterations: V13MasterKdf.Iterations,
+                Argon2Parallelism: V13MasterKdf.Parallelism,
                 InputFiles: expected.Files.Count,
                 InputDirectories: expected.Directories.Count,
                 InputBytes: expected.TotalBytes,
@@ -262,7 +314,25 @@ internal static class ReleaseEndToEndPerformanceTests
                 DecryptExtractSeconds: decryptExtractSeconds,
                 FinalManifestSeconds: manifestVerifySeconds,
                 WorkflowSeconds: totalTimer.Elapsed.TotalSeconds);
+            PublicNativeProfileEvidence.RequireUnchanged(nativeInputs);
             Console.WriteLine("    E2E_RESULT_JSON=" + JsonSerializer.Serialize(result));
+            Console.WriteLine("    E2E_PHASE_PROFILE_JSON=" + JsonSerializer.Serialize(new
+            {
+                schemaVersion = 1,
+                label,
+                actualRunKind = "Managed test harness using production KDF and services; installed AOT GUI phase profile remains NOT RUN",
+                processArchitecture = RuntimeInformation.ProcessArchitecture.ToString(),
+                assemblySha256,
+                nativeTrustedInputSha256 = nativeInputs,
+                nativeProvenance = PublicNativeProfileEvidence.Interpretation,
+                sourceInputBytes = expected.TotalBytes,
+                encryptedContainerBytes = encryptedBytes,
+                workflowWallSeconds = totalTimer.Elapsed.TotalSeconds,
+                phaseProfile = phaseMeasurements.Snapshot(),
+                globalMacPhasesWallSecondsSum = macMeasurements.Seconds(),
+                nativeScheduling = nativeMeasurements.Snapshot(),
+                interpretation = "Cipher stages use actual compressed payload bytes, read/write phases use actual transferred bytes, and source rates use the complete original source-byte count. Nested and concurrent intervals overlap and must not be summed as workflow duration. Native exit wait excludes launch setup and is not native CPU time. No PMI, memory-matrix cost, credentials, keys, tags, nonces or paths are included."
+            }));
         }
         catch (Exception ex)
         {

@@ -1,0 +1,9 @@
+{
+  "status": "2 PASS, 1 FAIL",
+  "groups": 3,
+  "rawLog": "work/v13-evidence/rev9-dev-spec.log",
+  "failureIds": [
+    "spec.lockfile-runtimes"
+  ],
+  "limitation": "Spec result JSON was superseded by the concurrently completing Security run; this summary is sourced from the preserved complete log. The eight subsequent targeted reruns were serialized and captured individually."
+}

@@ -14,7 +14,7 @@ Generated: 2026-08-15T15:46:48Z
   derived table adapter were removed before v12: the pinned upstream tree did
   not contain a licence grant, so neither its source nor a derived binary is
   built, bundled or distributed.
-- The v12 adapter exports v12-specific symbols only. An official
+- The v13 adapter exports v13-specific product symbols. An official
   DSTU 7624:2014 vector, an independent Bouncy Castle differential matrix,
   scalar-versus-parallel equivalence and full container KATs gate the change.
 
@@ -86,11 +86,22 @@ compile and would have to be maintained by hand at every update. Only the files
 listed below are actually built; the rest is carried so the release is the
 upstream release and its checksum still means something.
 
-Used for:
-- **MARS-448** (`mars.cpp`), **SHACAL-2-512** (`shacal2.cpp`),
-  **ChaCha20-Poly1305** (`chachapoly.cpp`, `chacha.cpp`) and the
-  **AES-256 reference fallback** (`rijndael.cpp`) — primitives with no
-  reference implementation in this repository before.
+Used for in v13:
+- Production AES-256 (`rijndael.cpp`), MARS-448 (`mars.cpp`),
+  SHACAL-2-512 (`shacal2.cpp`) and Serpent-256 (`serpent.cpp`).
+- Production XChaCha20-Poly1305 uses the first-party HChaCha adapter and
+  Crypto++ ChaCha20/Poly1305 primitives. The product ABI accepts exactly
+  24 nonce bytes; the retained raw 12-byte ChaCha test oracle is separate.
+  Full AEAD results are also checked against libsodium and Go x/crypto.
+- Production Camellia-256 derives from the public-domain implementation in
+  `camellia.cpp`. The separate first-party `native/camellia_fixed_access.hpp`
+  replaces secret-addressed S-box accesses in both key setup and all 24 rounds
+  with public table loads and register selection on ARM64, or a full-table
+  volatile scan on portable targets. Explicit key/state temporaries are wiped.
+  The vendored source itself is unchanged; its original table implementation
+  is not a production fallback. Published vectors, independent Bouncy Castle
+  2.6.2 block/manual-CTR results, sanitizer checks and the scope limitations are
+  documented in `docs/KEEP_VAULT_5_0_3_CIPHER_REFERENCE_REPORT.md`.
 - **SHA-512** (`sha.cpp`) for the second Argon2id round, which needs a
   reference to check the platform implementation against; only SHA3-512 had one.
 - The **production implementation** of Kalyna-512/512 (`kalyna.cpp`) and an
@@ -107,13 +118,40 @@ Used for:
 ## phc-winner-argon2
 - Upstream: https://github.com/P-H-C/phc-winner-argon2
 - Base commit: `f57e61e19229e23c4445b85494dbf7c07de721cb`
-- Local changes (line-ending noise excluded): 1 file changed, 16 insertions(+)
+- Local patches are bound by `NATIVE_SOURCE_SHA256SUMS`. The Windows 5.0.2
+  review corrects late rolling-worker failure cleanup to wait for every
+  successfully created worker, snapshots validated lane/thread bounds, and
+  annotates the CLI's non-returning fatal handler. The isolated Windows
+  fault regression detects premature reclamation in the negative control
+  and passes with the corrected completion target.
 
 ## zpaq
 - Upstream: https://github.com/zpaq/zpaq
 - Base commit: `9ab539f644e364f0d92e2918b90ce2534c75653f`
-- Local changes (line-ending noise excluded): 3 files changed, 2213 insertions(+), 366 deletions(-)
-  (`zpaq.cpp` +2181/-350, `libzpaq.cpp` +8/-8, `libzpaq.h` +24/-8).
+- Local patches are described below and bound by `NATIVE_SOURCE_SHA256SUMS`.
+
+Version 5.0.3 adds the bounded `KV13RA` verified read-at backend and v13 pipe framing. The parser receives protected range responses, never an archive descriptor or a complete plaintext staging copy. A validated `-kv-memory-budget` covers the native process: model/queue admission and a charged allocator bound C++ objects, libzpaq arrays, StringBuffer growth and BWT workspaces before allocation. Reallocation charges both owners while they coexist; all released usable capacity is wiped. Overaligned C++ allocations use the same quota. Dynamic thread and extraction limits remain finite, checked and caller-authorized instead of fixed 64-thread/500-GiB ceilings. ARM64, x86_64 and ARM64 ASan/UBSan checks include allocator failures and real bounded plain/read-at/pipe structural roundtrips. These are small-data tests, not physical TiB evidence.
+
+Windows 5.0.2 adds first-party extraction hardening in
+`native/windows_zpaq_output.hpp` (pinned in `native/WINDOWS_SOURCE_SHA256SUMS`):
+relative `NtCreateFile` output with exclusive creation and no-follow checks,
+retained file/directory handles, object-bound metadata, and caller-supplied
+root identity. Windows UTF conversion now preserves supplementary characters
+and rejects malformed encodings. The existing v12 streaming comment fields
+carry original timestamps and attributes through the Windows parallel writer;
+the wire format and macOS reader are unchanged. Windows thread/synchronization
+infrastructure failures terminate the complete native helper before any unsafe
+job-table unwind. Native self-tests cover junctions, precreation, aliases,
+fragment reopening, metadata bounds, and thread create/wait failures.
+
+The 15 September native analysis review additionally moves bounded large
+buffers off the stack, preserves plaintext wiping on disposal, keeps pivot
+distances in `ptrdiff_t`, and records the existing non-returning error
+callback contract. The first-party Threefish wrapper allocates worker
+tables before starting any worker and wipes/releases them after completion.
+The exact reviewed bytes, fault-test evidence, analysis coverage, and
+remaining visible diagnostics are recorded in
+[`WINDOWS_NATIVE_ANALYSIS_5.0.2.md`](../docs/WINDOWS_NATIVE_ANALYSIS_5.0.2.md).
 
 Every first-party native build verifies the reviewed vendor-source inventory in
 `NATIVE_SOURCE_SHA256SUMS` before compiling. The manifest also prevents a newly

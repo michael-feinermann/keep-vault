@@ -5,7 +5,7 @@ internal static partial class MacComprehensiveTests
     private static async Task TestVerifiedArchiveStagingAsync()
     {
         string root = RepositoryLayout.FindRepositoryRoot();
-        string temporary = CreateTempRoot("keep-vault-v12-vm-test-");
+        string temporary = CreateTempRoot("keep-vault-v13-vm-test-");
         try
         {
             string binary = Path.Combine(temporary, "verified-staging-test");
@@ -14,7 +14,7 @@ internal static partial class MacComprehensiveTests
                     Path.Combine(root, "KeepVaultMac.Tests", "VerifiedArchiveStagingTests.cpp"), "-o", binary], root);
             Require(build.Succeeded, "The native verified-staging test did not compile: " + build.StandardError);
             ProcessResult run = await RunProcessAsync(binary, [], temporary);
-            Require(run.Succeeded && run.StandardOutput.Contains("verified_staging_vm=pass checks=44", StringComparison.Ordinal),
+            Require(run.Succeeded && run.StandardOutput.Contains("verified_staging_vm=pass checks=45", StringComparison.Ordinal),
                 "The native verified-staging bounds/immutability test failed: " + run.StandardError);
         }
         finally

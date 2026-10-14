@@ -1,0 +1,1328 @@
+#!/usr/bin/python3
+"""Read-only public Build-21 verification. No signing, upload, installation or build.
+
+Default: print the contract only. --prepare-expectations reads six local files.
+--execute performs explicit fresh auth/anonymous downloads and bound native/Apple
+checks. All outputs stay in a new caller-owned ignored evidence directory.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import plistlib
+import platform
+import re
+import stat
+import struct
+import subprocess
+import sys
+import tempfile
+import time
+import unicodedata
+from urllib.parse import quote, urlsplit
+import zipfile
+
+BASE = "Keep.Vault-macOS-universal.zip"
+SUFFIXES = ("", ".sha3", ".skein", ".khsig", ".sha3.khsig", ".skein.khsig")
+ASSETS = tuple(BASE + suffix for suffix in SUFFIXES)
+APPS = {
+    "Keep Vault.app": "de.michael-feinermann.keep-vault",
+    "QR-Scanner.app": "de.michael-feinermann.qr-scanner",
+    "Keep Vault Installer.app": "de.michael-feinermann.keep-vault.installer",
+}
+ENTRY = "Keep Vault Installer.app/Contents/MacOS/Keep Vault Installer"
+TEAM = "2T6K9PGS55"
+SAFE_ENV = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8",
+            "DOTNET_EnableDiagnostics": "0", "COMPlus_EnableDiagnostics": "0"}
+MACHO = {bytes.fromhex(value) for value in
+         ("feedface", "cefaedfe", "feedfacf", "cffaedfe",
+          "cafebabe", "bebafeca", "cafebabf", "bfbafeca")}
+POINTER = re.compile(r"0x[0-9a-fA-F]{9,}")
+HEX64 = re.compile(r"^[0-9a-f]{64}$")
+HEX40 = re.compile(r"^[0-9a-f]{40}$")
+UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+IGNORED_RUN = Path(__file__).absolute().parent
+
+
+def now():
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+class GateError(RuntimeError):
+    pass
+
+
+def require(condition, code):
+    if not condition:
+        raise GateError(code)
+
+
+def json_unique(pairs):
+    result = {}
+    for key, value in pairs:
+        require(key not in result, "duplicate-json-property")
+        result[key] = value
+    return result
+
+
+def parse_json(data):
+    return json.loads(data, object_pairs_hook=json_unique)
+
+
+def canonical(value):
+    return json.dumps(value, ensure_ascii=False, sort_keys=True,
+                      separators=(",", ":")).encode("utf-8")
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def physical_directory(path):
+    path = Path(path)
+    require(path.is_absolute() and ".." not in path.parts, "absolute-physical-directory-required")
+    parent = Path("/")
+    for name in path.parts[1:]:
+        parent /= name
+        value = parent.lstat()
+        require(stat.S_ISDIR(value.st_mode) and not stat.S_ISLNK(value.st_mode),
+                "directory-symlink-or-nondirectory")
+    return path
+
+
+def identity(s):
+    return {"device": s.st_dev, "inode": s.st_ino, "uid": s.st_uid,
+            "gid": s.st_gid, "mode": stat.S_IMODE(s.st_mode), "links": s.st_nlink,
+            "sizeBytes": s.st_size, "mtimeNs": s.st_mtime_ns, "ctimeNs": s.st_ctime_ns}
+
+
+def directory_identity(path):
+    physical_directory(path)
+    return {key: value for key, value in identity(path.lstat()).items()
+            if key in ("device", "inode", "uid", "gid", "mode")}
+
+
+def file_binding(path, *, system=False, collect=False):
+    path = Path(path)
+    physical_directory(path.parent)
+    before = path.lstat()
+    require(stat.S_ISREG(before.st_mode) and not stat.S_ISLNK(before.st_mode),
+            "ordinary-file-required")
+    require(system or before.st_nlink == 1, "hardlinked-input-forbidden")
+    require(not stat.S_IMODE(before.st_mode) & 0o022, "group-other-writable-input")
+    if system:
+        require(before.st_uid == 0, "system-tool-not-root-owned")
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    h = hashlib.sha256()
+    chunks = []
+    try:
+        require(identity(os.fstat(fd)) == identity(before), "file-open-identity-changed")
+        while True:
+            data = os.read(fd, 1024 * 1024)
+            if not data:
+                break
+            h.update(data)
+            if collect:
+                require(sum(map(len, chunks)) + len(data) <= 8 * 1024 * 1024,
+                        "bounded-input-text-exceeded")
+                chunks.append(data)
+        require(identity(os.fstat(fd)) == identity(before) == identity(path.lstat()),
+                "file-changed-during-hash")
+    finally:
+        os.close(fd)
+    result = identity(before)
+    result["sha256"] = h.hexdigest()
+    result["parentDirectoryIdentity"] = directory_identity(path.parent)
+    return (result, b"".join(chunks)) if collect else result
+
+
+def tree_binding(root):
+    root = physical_directory(root)
+    nodes = {}
+    seen = set()
+    for directory, dirs, files in os.walk(root, followlinks=False):
+        for name in sorted(dirs + files):
+            path = Path(directory) / name
+            relative = path.relative_to(root).as_posix()
+            value = path.lstat()
+            normalized = unicodedata.normalize("NFC", relative).casefold()
+            require(normalized not in seen, "ambiguous-extracted-namespace")
+            seen.add(normalized)
+            if stat.S_ISDIR(value.st_mode):
+                nodes[relative] = {"kind": "directory", "mode": stat.S_IMODE(value.st_mode)}
+            else:
+                nodes[relative] = {"kind": "file", **file_binding(path)}
+    return nodes
+
+
+def public_text(data, secret_values=()):
+    text = data.decode("utf-8", "replace")
+    for value in secret_values:
+        if value:
+            text = text.replace(value, "[REDACTED_CREDENTIAL]")
+    text = POINTER.sub("[REDACTED_POINTER]", text)
+    # Redirect URLs may contain signed bearer query parameters. Never retain them.
+    text = re.sub(r"https://[^\s<>\"']+\?[^\s<>\"']+", "[REDACTED_REDIRECT_URL]", text)
+    text = re.sub(r"(?im)^(authorization|cookie|set-cookie|location):.*$",
+                  "[REDACTED_HTTP_HEADER]", text)
+    return text
+
+
+class Runner:
+    def __init__(self, root, verifier, expected_verifier):
+        self.root = root
+        self.verifier = verifier
+        self.expected_verifier = expected_verifier
+        self.rows = []
+        self.counter = 0
+        self.tool_bindings = {}
+        self.developer_tools = {}
+        self.tokens = tuple(os.environ.get(k, "") for k in
+                            ("GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN",
+                             "GITHUB_ENTERPRISE_TOKEN"))
+
+    def run(self, name, argv, inputs=(), *, auth=False, preserve=True, check=True,
+            timeout=1800):
+        self.counter += 1
+        receipt_id = f"{self.counter:04d}-{name}"
+        require(re.fullmatch(r"[0-9A-Za-z._-]+", receipt_id), "invalid-receipt-name")
+        system_tool = str(argv[0]).startswith(("/usr/bin/", "/usr/sbin/", "/bin/"))
+        executable = file_binding(argv[0], system=system_tool)
+        require(executable["uid"] in (0, os.getuid()), "tool-owner-not-root-or-current-user")
+        require(executable["mode"] & 0o111, "system-tool-not-executable")
+        if argv[0] not in self.tool_bindings:
+            self.tool_bindings[argv[0]] = executable
+        require(self.tool_bindings[argv[0]] == executable, "tool-changed-between-commands")
+        before = {str(p): file_binding(p) for p in dict.fromkeys([self.verifier, *inputs])}
+        require(before[str(self.verifier)]["sha256"] == self.expected_verifier,
+                "trusted-verifier-before-mismatch")
+        env = dict(SAFE_ENV)
+        if auth:
+            for key in ("HOME", "GH_CONFIG_DIR", "GH_TOKEN", "GITHUB_TOKEN",
+                        "GH_ENTERPRISE_TOKEN", "GITHUB_ENTERPRISE_TOKEN"):
+                if key in os.environ:
+                    env[key] = os.environ[key]
+        started = now()
+        process = subprocess.Popen(argv, env=env, stdin=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        timed_out = False
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            process.kill()
+            stdout, stderr = process.communicate()
+        after = {str(p): file_binding(p) for p in before}
+        require(before == after, "bound-command-input-changed")
+        require(file_binding(argv[0], system=system_tool) == executable, "system-tool-changed")
+        row = {"id": receipt_id, "commandName": name, "actualPid": process.pid,
+               "startedAtUtc": started, "completedAtUtc": now(),
+               "exactArguments": list(argv), "exitCode": process.returncode,
+               "timedOut": timed_out, "inputBindingsBefore": before,
+               "inputBindingsAfter": after, "systemExecutableBinding": executable,
+               "stdoutOriginalSha256": digest(stdout), "stderrOriginalSha256": digest(stderr),
+               "statusScope": "PROCESS_EXIT_ONLY",
+               "status": "PASS" if process.returncode == 0 and not timed_out else "FAIL"}
+        # Auth API output is parsed and field-allowlisted; raw release bodies are not copied.
+        if preserve:
+            require(len(stdout) + len(stderr) <= 2 * 1024 * 1024, "process-output-limit")
+            for kind, raw in (("stdout", stdout), ("stderr", stderr)):
+                safe = public_text(raw, self.tokens).encode("utf-8")
+                self.write(f"commands/{receipt_id}.{kind}", safe)
+                row[kind + "PublicSha256"] = digest(safe)
+                row[kind + "WasRedacted"] = safe != raw
+        self.rows.append(row)
+        self.write("commands.json", canonical(self.rows) + b"\n")
+        if check:
+            require(row["status"] == "PASS", "process-failed:" + name)
+        return stdout, row
+
+    def write(self, relative, data):
+        destination = self.root / relative
+        destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        require(destination.resolve().is_relative_to(self.root), "output-outside-new-root")
+        temporary = destination.with_name(destination.name + ".writing")
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+
+    def native(self, name, arch, args, inputs=()):
+        stdout, row = self.run(name + "." + arch,
+                              ["/usr/bin/arch", "-" + arch, str(self.verifier), *args],
+                              inputs)
+        row["requestedArchitecture"] = arch
+        row["verifierKind"] = "NativeAOT"
+        return stdout.decode("utf-8", "strict"), row
+
+    def strict(self, name, payload, base):
+        files = [payload, *[Path(str(base) + s) for s in SUFFIXES[1:]]]
+        receipts = []
+        for architecture in ("arm64", "x86_64"):
+            output, row = self.native(name, architecture,
+                                     ["verify-artifact", "--payload", str(payload),
+                                      "--sidecar-base", str(base), "--require-all-sidecars"],
+                                     files)
+            require(output.splitlines() == ["hybrid_verified=" + str(payload)],
+                    "strict-hybrid-output-contract")
+            row["signaturePairs"] = 3
+            row["bothAlgorithmsRequiredPerPair"] = True
+            row["observedOutputContract"] = "EXACT_HYBRID_VERIFIED_PAYLOAD_LINE"
+            receipts.append(row["id"])
+        return receipts
+
+
+def asset_bindings(root):
+    root = physical_directory(root)
+    require({p.name for p in root.iterdir()} == set(ASSETS), "local-set-not-exact-six")
+    return {name: file_binding(root / name) for name in ASSETS}
+
+
+def appledouble_metadata(raw):
+    # This packaging contract permits FinderInfo/xattrs, never a data fork or
+    # a nonempty resource fork. Raw metadata values are not exported.
+    require(82 <= len(raw) <= 1024 * 1024, "appledouble-size-bound")
+    magic, version = struct.unpack(">II", raw[:8])
+    require(magic == 0x00051607 and version == 0x00020000 and
+            raw[8:24] in (b"Mac OS X        ", bytes(16)), "appledouble-header")
+    require(struct.unpack(">H", raw[24:26])[0] == 2, "appledouble-exact-metadata-records")
+    records = [struct.unpack(">III", raw[26 + i * 12:38 + i * 12]) for i in range(2)]
+    require({r[0] for r in records} == {2, 9}, "appledouble-unknown-or-duplicate-record")
+    by_id = {record_id: (offset, length) for record_id, offset, length in records}
+    require(by_id[9] == (50, len(raw) - 50) and by_id[2] == (len(raw), 0),
+            "appledouble-metadata-bounds-or-resource-fork")
+    attributes = 0
+    if by_id[9][1] != 32:
+        require(len(raw) >= 120 and raw[82:84] == bytes(2), "appledouble-xattr-header-bounds")
+        fields = struct.unpack(">IIIIIIIIHH", raw[84:120])
+        signature, debug, total, data_start, data_length = fields[:5]
+        reserved, flags, attributes = fields[5:8], fields[8], fields[9]
+        require(signature == 0x41545452 and debug == 0 and total == len(raw) and
+                not any(reserved) and flags == 0 and attributes <= 256 and
+                120 <= data_start <= len(raw) and data_start + data_length == len(raw),
+                "appledouble-xattr-header")
+        cursor, names, spans = 120, set(), []
+        for _ in range(attributes):
+            require(cursor + 11 <= data_start, "appledouble-xattr-entry-bounds")
+            offset, length, attr_flags, name_length = struct.unpack(">IIHB", raw[cursor:cursor + 11])
+            require(attr_flags == 0 and name_length >= 2 and
+                    cursor + 11 + name_length <= data_start, "appledouble-xattr-name-bounds")
+            encoded = raw[cursor + 11:cursor + 11 + name_length]
+            require(encoded[-1:] == b"\0" and b"\0" not in encoded[:-1], "appledouble-xattr-name")
+            name = encoded[:-1].decode("utf-8", "strict")
+            require(name not in names and not any(ord(c) < 32 or ord(c) == 127 for c in name),
+                    "appledouble-xattr-name-ambiguity")
+            names.add(name)
+            require(data_start <= offset <= len(raw) and offset + length <= len(raw),
+                    "appledouble-xattr-value-bounds")
+            spans.append((offset, offset + length))
+            cursor = (cursor + 11 + name_length + 3) & ~3
+        require(cursor <= data_start and not any(raw[cursor:data_start]), "appledouble-xattr-table-padding")
+        spans.sort()
+        require(all(left[1] <= right[0] for left, right in zip(spans, spans[1:])),
+                "appledouble-xattr-overlapping-values")
+    return {"version": 2, "recordIds": [2, 9], "attributeCount": attributes,
+            "resourceForkBytes": 0, "scope": "TRANSPORT_METADATA_ONLY_NO_CODE_APPROVAL"}
+
+
+def ordinary_zip_namespace(entries):
+    ordinary = {name: value for name, value in entries.items() if not value["transportResource"]}
+    namespace = {name: value["kind"] for name, value in ordinary.items()}
+    for name in ordinary:
+        parts = name.split("/")
+        for i in range(1, len(parts)):
+            parent = "/".join(parts[:i])
+            require(namespace.get(parent, "directory") == "directory", "normal-zip-file-parent")
+            namespace[parent] = "directory"
+    return ordinary, namespace
+
+
+def zip_preflight(path, maximum_bytes, maximum_entries=20000):
+    before = file_binding(path)
+    entries = {}
+    normalized = set()
+    component_names = {}
+    with zipfile.ZipFile(path) as archive:
+        infos = archive.infolist()
+        require(0 < len(infos) <= maximum_entries, "zip-entry-count")
+        require(sum(i.file_size for i in infos) <= maximum_bytes, "zip-expansion-bound")
+        for info in infos:
+            original = info.orig_filename
+            require(original == info.filename and "\0" not in original and "\\" not in original,
+                    "zip-nul-or-backslash")
+            is_directory = info.is_dir()
+            name = original[:-1] if is_directory else original
+            parts = name.split("/")
+            require(name and not name.startswith("/") and
+                    all(p and p not in (".", "..") and ":" not in p for p in parts),
+                    "zip-path-traversal-or-invalid-component")
+            require(not any(ord(c) < 32 or ord(c) == 127 for c in name), "zip-control-character")
+            key = unicodedata.normalize("NFC", name).casefold()
+            require(key not in normalized and name not in entries, "zip-duplicate-or-ambiguous-path")
+            normalized.add(key)
+            for index in range(1, len(parts) + 1):
+                component_path = "/".join(parts[:index])
+                component_key = unicodedata.normalize("NFC", component_path).casefold()
+                require(component_key not in component_names or
+                        component_names[component_key] == component_path,
+                        "zip-ambiguous-implicit-directory")
+                component_names[component_key] = component_path
+            require(not info.flag_bits & 1, "zip-encrypted-entry")
+            mode = info.external_attr >> 16
+            file_type = stat.S_IFMT(mode)
+            require(file_type in (0, stat.S_IFDIR if is_directory else stat.S_IFREG),
+                    "zip-link-or-special-entry")
+            require(not mode & 0o7000, "zip-special-permissions")
+            require(not is_directory or info.file_size == 0, "zip-directory-has-data")
+            transport = name == "__MACOSX" or name.startswith("__MACOSX/")
+            if transport and not is_directory:
+                require(info.file_size <= 1024 * 1024, "appledouble-size-bound")
+            metadata_bytes = bytearray()
+            h = hashlib.sha256()
+            length = 0
+            # zipfile validates the actual CRC upon reaching EOF, not just the directory CRC field.
+            with archive.open(info) as stream:
+                while True:
+                    chunk = stream.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    length += len(chunk)
+                    require(length <= info.file_size, "zip-actual-length-exceeded")
+                    h.update(chunk)
+                    if transport and not is_directory:
+                        metadata_bytes.extend(chunk)
+            require(length == info.file_size, "zip-length-mismatch")
+            entries[name] = {"kind": "directory" if is_directory else "file",
+                             "sizeBytes": length, "sha256": h.hexdigest(),
+                             "crc32": f"{info.CRC:08x}", "unixMode": mode,
+                             "transportResource": transport}
+            if transport and not is_directory:
+                entries[name]["appleDouble"] = appledouble_metadata(bytes(metadata_bytes))
+        for name in entries:
+            parts = name.split("/")
+            for i in range(1, len(parts)):
+                parent = "/".join(parts[:i])
+                require(parent not in entries or entries[parent]["kind"] == "directory",
+                        "zip-file-used-as-parent")
+        _, ordinary_namespace = ordinary_zip_namespace(entries)
+        for name, value in entries.items():
+            if not value["transportResource"]:
+                continue
+            if value["kind"] == "directory":
+                require(name == "__MACOSX" or
+                        ordinary_namespace.get(name[len("__MACOSX/"):]) == "directory",
+                        "unmirrored-appledouble-directory")
+                continue
+            path_parts = name[len("__MACOSX/"):].split("/")
+            require(path_parts[-1].startswith("._") and len(path_parts[-1]) > 2,
+                    "appledouble-metadata-filename")
+            path_parts[-1] = path_parts[-1][2:]
+            mirrored = "/".join(path_parts)
+            require(mirrored in ordinary_namespace, "unmirrored-appledouble-target")
+            value["mirroredPath"] = mirrored
+    require(file_binding(path) == before, "zip-changed-during-preflight")
+    return {"zipBinding": before, "entryCount": len(entries),
+            "expandedBytes": sum(e["sizeBytes"] for e in entries.values()),
+            "entries": entries, "status": "PASS",
+            "transportContract": {"status": "VALIDATED_APPLEDOUBLE_METADATA_ONLY",
+                "fileCount": sum(value["transportResource"] and value["kind"] == "file" for value in entries.values()),
+                "directoryCount": sum(value["transportResource"] and value["kind"] == "directory" for value in entries.values()),
+                "nonemptyResourceForksAllowed": False, "codeApproval": False}}
+
+
+def reconcile_zip_tree(zip_receipt, snapshot):
+    ordinary, namespace = ordinary_zip_namespace(zip_receipt["entries"])
+    expected_files = {name: value for name, value in ordinary.items() if value["kind"] == "file"}
+    actual_files = {name: value for name, value in snapshot.items() if value["kind"] == "file"}
+    require(set(expected_files) == set(actual_files), "zip-extracted-file-path-set-mismatch")
+    require({name for name, kind in namespace.items() if kind == "directory"} ==
+            {name for name, value in snapshot.items() if value["kind"] == "directory"},
+            "zip-extracted-directory-path-set-mismatch")
+    for name, expected in expected_files.items():
+        actual = actual_files[name]
+        require(actual["sizeBytes"] == expected["sizeBytes"] and actual["sha256"] == expected["sha256"],
+                "zip-extracted-file-size-or-hash-mismatch")
+    return {"status": "PASS", "ordinaryFileCount": len(expected_files),
+            "directoryCount": sum(kind == "directory" for kind in namespace.values()),
+            "ordinaryFileContentSha256": digest(canonical({name: {"sizeBytes": value["sizeBytes"], "sha256": value["sha256"]}
+                for name, value in expected_files.items()})),
+            "transportScope": "Validated mirrored AppleDouble metadata; no transport code approval"}
+
+
+def rebind_downloaded_closure(root, downloaded, kits):
+    result = {}
+    for scope in ("auth", "anon"):
+        expected_assets = {row["name"]: row["binding"] for row in downloaded[scope]}
+        actual_assets = asset_bindings(root / scope / "assets")
+        require(actual_assets == expected_assets, "final-downloaded-assets-changed:" + scope)
+        actual_tree_hash = digest(canonical(tree_binding(Path(kits[scope]["kitRoot"]))))
+        require(actual_tree_hash == kits[scope]["snapshotSha256"], "final-downloaded-kit-changed:" + scope)
+        result[scope] = {"status": "PASS", "assetBindingsSha256": digest(canonical(actual_assets)),
+                         "kitSnapshotSha256": actual_tree_hash}
+    return result
+
+
+def slice_hashes(path):
+    before = file_binding(path)
+    result = {}
+    with path.open("rb") as stream:
+        magic = stream.read(4)
+        require(magic in MACHO, "expected-macho")
+        require(magic in {bytes.fromhex(v) for v in ("cafebabe", "bebafeca", "cafebabf", "bfbafeca")},
+                "universal-fat-macho-required")
+        little = magic in (bytes.fromhex("bebafeca"), bytes.fromhex("bfbafeca"))
+        wide = magic in (bytes.fromhex("cafebabf"), bytes.fromhex("bfbafeca"))
+        fmt = "<" if little else ">"
+        count = struct.unpack(fmt + "I", stream.read(4))[0]
+        require(count == 2, "exact-two-architecture-slices-required")
+        spans = []
+        for _ in range(count):
+            entry = stream.read(32 if wide else 20)
+            fields = struct.unpack(fmt + ("IIQQII" if wide else "IIIII"), entry)
+            cpu, subtype, offset, length = fields[:4]
+            require((subtype & 0xffffff) in (0, 3), "unsupported-macho-subtype")
+            arch = {0x0100000c: "arm64", 0x01000007: "x86_64"}.get(cpu)
+            require(arch and arch not in result, "duplicate-or-foreign-macho-architecture")
+            require(offset >= 8 + count * (32 if wide else 20) and length > 0 and
+                    offset + length <= before["sizeBytes"], "macho-slice-bounds")
+            result[arch] = None
+            spans.append((offset, length, arch))
+        require(set(result) == {"arm64", "x86_64"}, "required-slices-absent")
+        spans.sort()
+        require(spans[0][0] + spans[0][1] <= spans[1][0], "overlapping-macho-slices")
+        for offset, length, arch in spans:
+            stream.seek(offset)
+            h = hashlib.sha256()
+            remaining = length
+            while remaining:
+                block = stream.read(min(remaining, 1024 * 1024))
+                require(block, "truncated-macho-slice")
+                h.update(block)
+                remaining -= len(block)
+            result[arch] = {"sha256": h.hexdigest(), "sizeBytes": length}
+    require(file_binding(path) == before, "macho-changed-during-slice-hashing")
+    return result
+
+
+def metadata(raw, args):
+    require(len(raw) <= 2 * 1024 * 1024, "github-metadata-size-bound")
+    data = parse_json(raw)
+    require(data.get("id") == args.release_id and data.get("tag_name") == args.tag and
+            data.get("draft") is False and data.get("prerelease") is True and
+            isinstance(data.get("published_at"), str), "published-prerelease-identity")
+    values = data.get("assets")
+    require(isinstance(values, list) and len(values) == 6, "github-exact-six-assets")
+    selected = {}
+    ids = set()
+    for asset in values:
+        name = asset.get("name")
+        asset_id = asset.get("id")
+        require(name in ASSETS and name not in selected and isinstance(asset_id, int) and
+                asset_id > 0 and asset_id not in ids, "github-asset-name-id-uniqueness")
+        ids.add(asset_id)
+        url = asset.get("browser_download_url")
+        expected_url = f"https://github.com/{args.repo}/releases/download/{quote(args.tag, safe='')}/{quote(name, safe='')}"
+        require(url == expected_url and asset.get("state") == "uploaded" and
+                isinstance(asset.get("size"), int) and asset["size"] >= 0,
+                "github-asset-url-state-size")
+        fingerprint = asset.get("digest")
+        require(fingerprint is None or
+                (isinstance(fingerprint, str) and re.fullmatch(r"sha256:[0-9a-f]{64}", fingerprint)),
+                "github-digest-format")
+        selected[name] = {k: asset.get(k) for k in
+                          ("id", "name", "state", "size", "digest", "content_type",
+                           "browser_download_url", "created_at", "updated_at")}
+    return {"rawResponseSha256": digest(raw),
+            "release": {k: data.get(k) for k in
+                        ("id", "tag_name", "draft", "prerelease", "published_at",
+                         "created_at", "target_commitish", "html_url", "immutable")},
+            "assets": {name: selected[name] for name in ASSETS}}
+
+
+def metadata_identity(value):
+    # Download counters can legitimately change. Required IDs/bytes/digests cannot.
+    return {"release": value["release"], "assets": value["assets"]}
+
+
+def builder_notary_submissions(raw, expected_kit_id):
+    """Parse only the two actual notarytool text submission blocks, not JSON.
+
+    This is log correlation only. Its caller must separately require a successful
+    builder, bind the complete log digest, and validate the final Apple tickets.
+    The submitted pre-staple kit ZIP is not the published post-staple ZIP.
+    """
+    require(UUID.fullmatch(expected_kit_id), "notary-kit-id-format")
+    require(len(raw) <= 8 * 1024 * 1024, "builder-stdout-size-bound")
+    lines = raw.decode("utf-8", "strict").splitlines()
+    starts = [index for index, line in enumerate(lines) if line == "Submission ID received"]
+    require(len(starts) == 2, "exact-scanner-and-kit-submission-blocks-required")
+    selected = {}
+    for ordinal, start in enumerate(starts):
+        end = starts[ordinal + 1] if ordinal + 1 < len(starts) else len(lines)
+        block = lines[start:end]
+        ids = [match.group(1) for line in block
+               if (match := re.fullmatch(r"  id: (.+)", line))]
+        paths = [match.group(1) for line in block
+                 if (match := re.fullmatch(r"  path: (.+)", line))]
+        statuses = [match.group(1) for line in block
+                    if (match := re.fullmatch(r"  status: (.+)", line))]
+        require(len(ids) == 3 and all(UUID.fullmatch(value) for value in ids) and
+                len(set(ids)) == 1 and len(paths) == 1 and statuses == ["Accepted"] and
+                "Successfully uploaded file" in block and
+                "Waiting for processing to complete." in block and
+                any(re.fullmatch(r"Current status: Accepted\.*Processing complete", line)
+                    for line in block), "incomplete-or-ambiguous-accepted-notary-block")
+        path = PurePosixPath(paths[0])
+        require(path.is_absolute() and ".." not in path.parts and
+                "\\" not in paths[0] and not any(ord(c) < 32 or ord(c) == 127 for c in paths[0]),
+                "invalid-notary-uploaded-path")
+        if path.parts[-2:] == ("dist-stage", "Keep Vault-macOS-universal.zip"):
+            kind = "kit"
+        elif path.name == "QR-Scanner-notary-submission.zip":
+            kind = "scanner"
+        else:
+            raise GateError("unhandled-notary-submission-payload")
+        require(kind not in selected, "duplicate-notary-submission-kind")
+        selected[kind] = {"submissionId": ids[0], "status": "Accepted",
+                          "uploadedPath": paths[0], "firstLogLine": start + 1,
+                          "lastLogLineExclusive": end + 1}
+    require(set(selected) == {"scanner", "kit"} and
+            selected["kit"]["submissionId"] == expected_kit_id and
+            selected["scanner"]["submissionId"] != expected_kit_id,
+            "bound-kit-notary-id-mismatch")
+    return selected
+
+
+def github_metadata(runner, args, scope, moment):
+    endpoint = f"repos/{args.repo}/releases/{args.release_id}"
+    if scope == "auth":
+        output, command = runner.run(f"metadata.{scope}.{moment}",
+                                    [args.gh, "api", "--method", "GET", endpoint],
+                                    auth=True, preserve=False)
+    else:
+        destination = runner.root / f"metadata/anon-{moment}.temporary"
+        output, command = runner.run(f"metadata.{scope}.{moment}",
+                                    curl_command("https://api.github.com/" + endpoint, destination),
+                                    preserve=True)
+        require(output.decode().strip() == "http=200\ntls=0", "anonymous-metadata-http-tls")
+        bound, raw = file_binding(destination, collect=True)
+        output = raw
+        destination.unlink()
+        command["responseBinding"] = bound
+    value = metadata(output, args)
+    runner.write(f"metadata/{scope}-{moment}.json", canonical(value) + b"\n")
+    return value
+
+
+def curl_command(url, destination):
+    require(urlsplit(url).scheme == "https" and urlsplit(url).hostname in
+            ("github.com", "api.github.com") and not urlsplit(url).query,
+            "initial-download-url-not-public-github")
+    destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    require(not destination.exists(), "download-destination-already-exists")
+    return ["/usr/bin/curl", "-q", "--fail", "--location", "--proto", "=https",
+            "--proto-redir", "=https", "--noproxy", "*", "--connect-timeout", "30",
+            "--max-time", "1200", "--header", "Cache-Control: no-cache",
+            "--output", str(destination), "--write-out", "http=%{http_code}\ntls=%{ssl_verify_result}\n", url]
+
+
+def compare_assets(local, downloaded, expected, github):
+    actual = asset_bindings(downloaded)
+    rows = []
+    for name in ASSETS:
+        value = actual[name]
+        specified = expected[name]
+        api = github["assets"][name]
+        require(value["sha256"] == specified["sha256"] and
+                value["sizeBytes"] == specified["sizeBytes"] == api["size"],
+                "download-size-or-sha256-mismatch")
+        if api["digest"] is not None:
+            require(api["digest"] == "sha256:" + value["sha256"], "github-published-digest-mismatch")
+        with (local / name).open("rb") as left, (downloaded / name).open("rb") as right:
+            while True:
+                a, b = left.read(1024 * 1024), right.read(1024 * 1024)
+                require(a == b, "bytewise-download-comparison")
+                if not a:
+                    break
+        require(file_binding(downloaded / name) == value, "download-changed-during-comparison")
+        require(file_binding(local / name)["sha256"] == specified["sha256"],
+                "local-original-changed")
+        rows.append({"name": name, "githubAssetId": api["id"], "binding": value,
+                     "bytewiseEqualToLocal": True,
+                     "apiDigestStatus": "PASS" if api["digest"] is not None else "UNAVAILABLE",
+                     "apiDigest": api["digest"]})
+    return rows
+
+
+def source_identity(runner, args):
+    physical_directory(args.source_root)
+    stdout, _ = runner.run("source.head", ["/usr/bin/git", "-C", str(args.source_root),
+                                          "rev-parse", "HEAD"], preserve=False)
+    head = stdout.decode().strip()
+    require(head == args.source_commit, "source-head-does-not-match-builder-source")
+    status, _ = runner.run("source.status", ["/usr/bin/git", "-C", str(args.source_root),
+                                            "status", "--porcelain", "--untracked-files=normal"],
+                          preserve=False)
+    require(not status, "source-working-tree-not-clean")
+    return {"root": str(args.source_root), "directoryIdentity": identity(args.source_root.lstat()),
+            "sourceCommit": head, "workingTreeStatusSha256": digest(status),
+            "workingTreeClean": True}
+
+
+def resolve_tag(runner, args):
+    output, _ = runner.run("tag.ref", [args.gh, "api", "--method", "GET",
+                                     f"repos/{args.repo}/git/ref/tags/{args.tag}"],
+                          auth=True, preserve=False)
+    value = parse_json(output)["object"]
+    chain = []
+    for depth in range(8):
+        sha, kind = value.get("sha"), value.get("type")
+        require(isinstance(sha, str) and HEX40.fullmatch(sha), "tag-object-sha")
+        chain.append({"sha": sha, "type": kind})
+        if kind == "commit":
+            require(sha == args.tag_commit, "tag-commit-mismatch")
+            return {"resolvedCommit": sha, "chain": chain}
+        require(kind == "tag", "tag-object-type")
+        output, _ = runner.run(f"tag.object.{depth}", [args.gh, "api", "--method", "GET",
+                                                      f"repos/{args.repo}/git/tags/{sha}"],
+                              auth=True, preserve=False)
+        value = parse_json(output)["object"]
+    raise GateError("tag-depth-bound")
+
+
+def apple_app(runner, scope, app, expected_id):
+    info = app / "Contents/Info.plist"
+    binding, raw = file_binding(info, collect=True)
+    values = plistlib.loads(raw)
+    require(values.get("CFBundleIdentifier") == expected_id and
+            values.get("CFBundleShortVersionString") == "5.0.3" and
+            values.get("CFBundleVersion") == "21", "app-version-build-identifier")
+    requirement = f'identifier "{expected_id}" and anchor apple generic and certificate leaf[subject.OU] = "{TEAM}"'
+    _, verification = runner.run(scope + ".apple.verify." + app.stem.replace(" ", "_"),
+                                 ["/usr/bin/codesign", "--verify", "--deep", "--strict",
+                                  "--all-architectures", "-R=" + requirement, str(app)], [info])
+    executable = app / "Contents/MacOS" / values["CFBundleExecutable"]
+    require(executable.parent == app / "Contents/MacOS", "unsafe-bundle-executable-name")
+    details = []
+    for architecture in ("arm64", "x86_64"):
+        _, command = runner.run(scope + ".apple.details." + app.stem.replace(" ", "_") + "." + architecture,
+                                 ["/usr/bin/codesign", "-d", "--verbose=4", "--arch",
+                                  architecture, str(app)], [info, executable])
+        raw_details = (runner.root / f"commands/{command['id']}.stderr").read_text()
+        require("Authority=Developer ID Application:" in raw_details and
+                f"TeamIdentifier={TEAM}" in raw_details and
+                f"Identifier={expected_id}\n" in raw_details and
+                re.search(r"flags=.*runtime", raw_details), "developer-id-team-runtime-details")
+        cdhash = re.search(r"(?m)^CDHash=([0-9a-fA-F]+)$", raw_details)
+        require(cdhash is not None, "missing-actual-cdhash")
+        details.append({"architecture": architecture, "cdhash": cdhash.group(1),
+                        "commandReceiptId": command["id"]})
+    entitlement_checks = []
+    for architecture in ("arm64", "x86_64"):
+        entitlements, entitlement_command = runner.run(
+            scope + ".apple.entitlements." + app.stem.replace(" ", "_") + "." + architecture,
+            ["/usr/bin/codesign", "-d", "--entitlements", ":-", "--arch", architecture, str(app)],
+            [info, executable])
+        if entitlements.strip():
+            parsed = plistlib.loads(entitlements)
+            require(isinstance(parsed, dict), "entitlements-dictionary-required")
+            for key in ("com.apple.security.get-task-allow",
+                        "com.apple.security.cs.disable-library-validation",
+                        "com.apple.security.cs.allow-dyld-environment-variables"):
+                require(key not in parsed or parsed[key] is False, "weakened-runtime-entitlement")
+        entitlement_checks.append({"architecture": architecture,
+                                   "commandReceiptId": entitlement_command["id"],
+                                   "status": "PASS"})
+    ticket = app / "Contents/CodeResources"
+    ticket_before = file_binding(ticket)
+    ids = [verification["id"], *[row["commandReceiptId"] for row in entitlement_checks]]
+    for name, argv in (
+        ("stapler", [runner.developer_tools["stapler"], "validate", str(app)]),
+        ("gatekeeper", ["/usr/sbin/spctl", "--assess", "--type", "execute", "--verbose=4", str(app)]),
+        ("distribution", ["/usr/bin/syspolicy_check", "distribution", str(app), "--verbose"]),
+    ):
+        _, command = runner.run(scope + "." + name + "." + app.stem.replace(" ", "_"),
+                                 argv, [info, executable, ticket])
+        ids.append(command["id"])
+        if name == "gatekeeper":
+            result = (runner.root / f"commands/{command['id']}.stderr").read_text()
+            require("accepted" in result and "Notarized Developer ID" in result,
+                    "gatekeeper-not-notarized-accepted")
+    require(file_binding(ticket) == ticket_before, "stapled-ticket-changed")
+    return {"app": app.name, "identifier": expected_id, "version": "5.0.3", "build": "21",
+            "infoPlistBinding": binding, "ticketBinding": ticket_before,
+            "codeSignatures": details, "entitlementChecks": entitlement_checks,
+            "commandReceiptIds": ids, "status": "PASS"}
+
+
+def signature_map(kit):
+    mapping = {}
+    for path in sorted(kit.rglob("*.khsig")):
+        if path.name.endswith((".sha3.khsig", ".skein.khsig")):
+            continue
+        base = Path(str(path)[:-len(".khsig")])
+        if base.is_file():
+            payload = base
+        elif base.name == "Keep Vault.app.launcher" and base.parent == kit:
+            payload = kit / "Keep Vault.app/Contents/MacOS/Keep Vault Launcher"
+        elif base.name == "QR-Scanner.app" and base.parent == kit:
+            payload = kit / "QR-Scanner.app/Contents/MacOS/QR-Scanner"
+        elif "Contents/Resources/HybridSignatures/" in base.relative_to(kit).as_posix():
+            bundle, relative = base.relative_to(kit).as_posix().split(
+                "/Contents/Resources/HybridSignatures/", 1)
+            require(bundle in APPS, "unknown-hybrid-signature-root")
+            payload = kit / bundle / "Contents/MacOS" / relative
+        else:
+            raise GateError("orphan-hybrid-signature")
+        require(payload.is_relative_to(kit) and payload.is_file() and
+                str(payload) not in mapping, "missing-or-duplicate-hybrid-payload")
+        mapping[str(payload)] = base
+    return mapping
+
+
+def kit_verify(runner, args, scope, zip_path, zip_receipt, trusted_slices):
+    kit = runner.root / scope / "kit"
+    kit.mkdir(mode=0o700, parents=True, exist_ok=False)
+    _, extraction = runner.run(scope + ".extract", ["/usr/bin/ditto", "-x", "-k",
+                                                   str(zip_path), str(kit)], [zip_path])
+    snapshot_before = tree_binding(kit)
+    zip_mapping = reconcile_zip_tree(zip_receipt, snapshot_before)
+    manifest = kit / "installation-manifest.json"
+    manifest_files = [Path(str(manifest) + s) for s in SUFFIXES]
+    inventories = []
+    installation_counts = []
+    for architecture in ("arm64", "x86_64"):
+        output, command = runner.native(scope + ".inventory.before", architecture,
+                                        ["verify-installation", "--root", str(kit)],
+                                        manifest_files)
+        lines = output.splitlines()
+        require("installation_manifest=verified" in lines and
+                "hybrid_verified=" + str(manifest) in lines and
+                any(re.fullmatch(r"installation_entries=[1-9][0-9]*", line) for line in lines),
+                "installation-output-contract")
+        count_lines = [line for line in lines if line.startswith("installation_entries=")]
+        require(len(count_lines) == 1, "ambiguous-installation-count")
+        actual_count = int(count_lines[0].split("=", 1)[1])
+        installation_counts.append(actual_count)
+        command["actualInstallationEntries"] = actual_count
+        command["observedOutputContract"] = "HYBRID_VERIFIED_AND_INSTALLATION_MANIFEST_VERIFIED"
+        inventories.append(command["id"])
+    signatures = signature_map(kit)
+    _, encoded_manifest = file_binding(manifest, collect=True)
+    manifest_json = parse_json(encoded_manifest)
+    manifest_entries = {e["path"]: e for e in manifest_json["entries"]}
+    require(installation_counts == [len(manifest_entries)] * 2, "inventory-entry-count-mismatch")
+    directory_checks = []
+    # The reviewed legacy main-app/scanner commands remain applicable. They
+    # additionally enforce the required native components and notice hashes.
+    # The Installer.app/whole-kit legacy command is deliberately not claimed.
+    for app_name in ("Keep Vault.app", "QR-Scanner.app"):
+        code_inputs = [kit / relative for relative, entry in snapshot_before.items()
+                       if entry["kind"] == "file" and relative.startswith(app_name + "/")]
+        for architecture in ("arm64", "x86_64"):
+            output, command = runner.native(scope + ".supported.directory", architecture,
+                                            [str(kit / app_name)], manifest_files + code_inputs)
+            require(output.splitlines()[-1:] ==
+                    ["RESULT: TRUSTED - RSA-PSS/SHA-512 and ML-DSA-87 verification passed."],
+                    "supported-app-directory-hybrid-contract")
+            command["observedOutputContract"] = "LEGACY_APP_DIRECTORY_TRUSTED"
+            directory_checks.append(command["id"])
+    worklist = []
+    for relative, value in snapshot_before.items():
+        path = kit / relative
+        if value["kind"] != "file":
+            continue
+        with path.open("rb") as stream:
+            if stream.read(4) not in MACHO:
+                continue
+        for architecture in ("arm64", "x86_64"):
+            output, _ = runner.native(scope + ".macho.inspect", architecture,
+                                      ["inspect-macho", "--file", str(path),
+                                       "--require-architectures", "arm64 x86_64"], [path])
+            require(output.strip() == "arm64 x86_64", "macho-universal-output")
+        item = {"path": relative, "sha256": value["sha256"], "slices": slice_hashes(path)}
+        if str(path) in signatures:
+            item["coverage"] = "INDIVIDUAL_HYBRID_RSA_PSS_AND_MLDSA87"
+            item["nativeReceiptIds"] = runner.strict(scope + ".code.hybrid", path, signatures[str(path)])
+        else:
+            require(relative == ENTRY and args.contract_manifest_bound_installer_entry,
+                    "unhandled-macho-without-individual-hybrid")
+            entry = manifest_entries.get(relative)
+            require(entry and entry.get("kind") == "file" and
+                    entry.get("sha256") == value["sha256"] and
+                    entry.get("size") == value["sizeBytes"], "installer-entry-not-in-hybrid-inventory")
+            item["coverage"] = "APPLE_ENTRY_BOUND_BY_COMPLETE_HYBRID_INSTALLATION_MANIFEST"
+            item["contract"] = {"buildScript": "tools/Build-InstallerKit-macOS.zsh",
+                                "individualHybridLines": "74-81", "appleEntryLines": "83-85",
+                                "completeInventoryLines": "98-101",
+                                "sourceCommit": args.source_commit}
+        worklist.append(item)
+    require(worklist and any(row["path"] == ENTRY for row in worklist), "missing-installer-entry")
+    downloaded_verifier = kit / "Keep Vault Installer.app/Contents/MacOS/Keep Vault Release Verifier"
+    require(file_binding(downloaded_verifier)["sha256"] == args.verifier_sha256 and
+            slice_hashes(downloaded_verifier) == trusted_slices, "downloaded-verifier-byte-slice-mismatch")
+    apple = [apple_app(runner, scope, kit / name, identifier)
+             for name, identifier in APPS.items()]
+    require(tree_binding(kit) == snapshot_before, "kit-changed-during-native-apple-checks")
+    for architecture in ("arm64", "x86_64"):
+        output, command = runner.native(scope + ".inventory.after", architecture,
+                                        ["verify-installation", "--root", str(kit)],
+                                        manifest_files)
+        require("installation_manifest=verified" in output.splitlines(), "final-inventory-output")
+        inventories.append(command["id"])
+    # These four rows are an explicit code coverage table, not legacy directory-command PASS.
+    closures = []
+    for root in ("KIT", *APPS):
+        covered = [row for row in worklist if root == "KIT" or row["path"].startswith(root + "/")]
+        require(covered, "empty-code-closure-root")
+        closures.append({"root": root, "actualMachOCount": len(covered),
+                         "individualHybridCount": sum(r["coverage"].startswith("INDIVIDUAL") for r in covered),
+                         "manifestBoundAppleEntryCount": sum(r["path"] == ENTRY for r in covered),
+                         "unhandledMachOCount": 0, "status": "PASS",
+                         "proofKind": "EXPLICIT_COVERAGE_TABLE_NOT_LEGACY_VERIFIER_COMMAND"})
+    result = {"scope": scope, "ownerScope": "user-download", "kitRoot": str(kit),
+              "zipSha256": zip_receipt["zipBinding"]["sha256"], "extractionReceiptId": extraction["id"],
+              "zipExtractionMapping": zip_mapping,
+              "snapshotSha256": digest(canonical(snapshot_before)),
+              "manifestBinding": file_binding(manifest), "inventoryReceiptIds": inventories,
+              "actualInstallationEntries": len(manifest_entries),
+              "supportedAppDirectoryReceiptIds": directory_checks,
+              "codeWorklist": worklist, "codeWorklistSha256": digest(canonical(worklist)),
+              "closureRoots": closures, "appleChecks": apple, "status": "PASS",
+              "legacyWholeKitCommand": {"status": "NOT_RUN",
+                  "reason": "Apple-only installer entry is inventory-bound; no legacy whole-kit PASS is asserted."}}
+    runner.write(scope + "/kit-receipt.json", canonical(result) + b"\n")
+    return result
+
+
+def expectation(args):
+    require(args.local_assets and args.verifier and args.builder_receipt and args.source_commit,
+            "expectation-inputs-required")
+    require(HEX40.fullmatch(args.source_commit), "expectation-source-commit-format")
+    expected = {"schemaVersion": 1, "version": "5.0.3", "build": "21",
+                "productSourceCommit": args.source_commit,
+                "builderReceiptSha256": file_binding(args.builder_receipt)["sha256"],
+                "verifierSha256": file_binding(args.verifier)["sha256"],
+                "assets": [{"name": name, "sizeBytes": row["sizeBytes"], "sha256": row["sha256"]}
+                           for name, row in asset_bindings(args.local_assets).items()]}
+    path = args.prepare_expectations
+    physical_directory(path.parent)
+    require(path.parent.resolve().is_relative_to(IGNORED_RUN.resolve()),
+            "expectations-output-must-be-in-this-ignored-run")
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "wb") as stream:
+        stream.write(canonical(expected) + b"\n")
+    print(json.dumps({"status": "PREPARED_EXPECTATIONS_ONLY", "file": str(path),
+                      "sha256": file_binding(path)["sha256"]}))
+
+
+def execute(args):
+    required = ("local_assets", "verifier", "verifier_sha256", "builder_receipt", "builder_stdout",
+                "expectations", "expectations_sha256", "source_commit", "tag_commit",
+                "tag", "release_id", "destination", "max_extracted_bytes", "notary_id")
+    require(all(getattr(args, key) for key in required), "all-final-inputs-required")
+    require(HEX40.fullmatch(args.source_commit) and HEX40.fullmatch(args.tag_commit) and
+            HEX64.fullmatch(args.verifier_sha256) and HEX64.fullmatch(args.expectations_sha256),
+            "explicit-source-hash-format")
+    require(re.fullmatch(r"[A-Za-z0-9._-]+/[A-Za-z0-9._-]+", args.repo) and
+            re.fullmatch(r"v5\.0\.3[-.][A-Za-z0-9._-]+", args.tag), "exact-prerelease-repo-tag")
+    require(args.release_id > 0 and args.max_extracted_bytes > 0, "positive-release-and-expansion-bound")
+    for path in (args.local_assets, args.verifier, args.builder_receipt, args.builder_stdout, args.expectations):
+        require(path.is_absolute() and path.is_relative_to(args.source_root),
+                "product-inputs-must-be-in-explicit-checkout")
+    # Homebrew gh is usually a symlink and caller-owned. Resolve and bind the
+    # physical CLI once, then require that exact binary throughout this run.
+    args.gh = str(Path(args.gh).resolve(strict=True))
+    physical_directory(args.destination.parent)
+    require(args.destination.parent.resolve().is_relative_to(IGNORED_RUN.resolve()),
+            "destination-must-be-in-this-ignored-run")
+    args.destination.mkdir(mode=0o700, exist_ok=False)
+    require(stat.S_IMODE(args.destination.stat().st_mode) == 0o700 and
+            args.destination.stat().st_uid == os.getuid(), "fresh-private-evidence-root")
+    runner = Runner(args.destination, args.verifier, args.verifier_sha256)
+    final = {"schemaVersion": 1, "status": "FAIL", "startedAtUtc": now(),
+             "scope": {"version": "5.0.3", "build": "21", "repo": args.repo,
+                       "tag": args.tag, "releaseId": args.release_id,
+                       "productSourceCommit": args.source_commit, "tagCommit": args.tag_commit},
+             "limitations": ["No build, signing, upload, installation, native GUI, performance, Windows or external audit performed."]}
+    try:
+        final["rootBefore"] = directory_identity(args.destination)
+        final["execution"] = {"actualToolPid": os.getpid(), "os": platform.system(),
+                              "osVersion": platform.mac_ver()[0], "hostArchitecture": platform.machine(),
+                              "pythonVersion": platform.python_version()}
+        expected_binding, raw = file_binding(args.expectations, collect=True)
+        require(expected_binding["sha256"] == args.expectations_sha256, "asset-set-hash-mismatch")
+        expected_doc = parse_json(raw)
+        require(expected_doc.get("schemaVersion") == 1 and expected_doc.get("version") == "5.0.3" and
+                expected_doc.get("build") == "21" and
+                expected_doc.get("productSourceCommit") == args.source_commit and
+                expected_doc.get("verifierSha256") == args.verifier_sha256 and
+                expected_doc.get("builderReceiptSha256") == file_binding(args.builder_receipt)["sha256"],
+                "asset-set-builder-source-verifier-binding")
+        rows = expected_doc.get("assets")
+        require(isinstance(rows, list) and len(rows) == 6 and
+                {r.get("name") for r in rows} == set(ASSETS), "expected-exact-six")
+        expected = {r["name"]: r for r in rows}
+        require(all(HEX64.fullmatch(r.get("sha256", "")) and
+                    isinstance(r.get("sizeBytes"), int) and r["sizeBytes"] >= 0 for r in rows),
+                "expected-digest-size-format")
+        local_before = asset_bindings(args.local_assets)
+        require(all(local_before[n]["sha256"] == expected[n]["sha256"] and
+                    local_before[n]["sizeBytes"] == expected[n]["sizeBytes"] for n in ASSETS),
+                "frozen-local-six-mismatch")
+        final["assetSetBinding"] = expected_binding
+        builder_binding, builder_raw = file_binding(args.builder_receipt, collect=True)
+        builder_result = parse_json(builder_raw)
+        require(builder_result.get("status") == "PASS" and
+                builder_result.get("actualBuilderExitCode") == 0 and
+                builder_result.get("sourceHeadBefore") == args.source_commit and
+                builder_result.get("sourceHeadAfter") == args.source_commit and
+                builder_result.get("sourceInputsAndBuilderStable") is True and
+                builder_result.get("publishedAotMatchesFinalStagedProduct") is True and
+                builder_result.get("retainedNativeComponentsAndSidecarsMatchPublishedProduct") is True and
+                builder_result.get("publishMode") == "prerelease" and
+                builder_result.get("fullReleaseGate") == "NOT_RUN" and
+                builder_result.get("overallReleaseApproval") is False and
+                isinstance(builder_result.get("publishedProductSha256"), str) and
+                HEX64.fullmatch(builder_result["publishedProductSha256"]),
+                "actual-successful-frozen-prerelease-builder-required")
+        final["builderReceiptBinding"] = builder_binding
+        builder_stdout_binding, builder_stdout = file_binding(args.builder_stdout, collect=True)
+        require(builder_stdout_binding["sha256"] == builder_result.get("stdoutSha256"),
+                "actual-builder-stdout-hash-mismatch")
+        final["builderStdoutBinding"] = builder_stdout_binding
+        final["builderNotarySubmissions"] = builder_notary_submissions(builder_stdout, args.notary_id)
+        final["toolBinding"] = file_binding(Path(__file__).absolute())
+        final["sourceBefore"] = source_identity(runner, args)
+        verifier_slices = slice_hashes(args.verifier)
+        final["verifierSlices"] = verifier_slices
+        _, _ = runner.run("verifier.apple.verify", ["/usr/bin/codesign", "--verify", "--strict",
+              "--all-architectures", '-R=identifier "de.michael-feinermann.keep-vault.releaseverifier" and anchor apple generic and certificate leaf[subject.OU] = "2T6K9PGS55"',
+              str(args.verifier)])
+        final["originalVerifierAppleDetails"] = []
+        for architecture in ("arm64", "x86_64"):
+            _, verifier_details = runner.run("verifier.apple.details." + architecture,
+                ["/usr/bin/codesign", "-d", "--verbose=4", "--arch", architecture, str(args.verifier)])
+            details = (runner.root / f"commands/{verifier_details['id']}.stderr").read_text()
+            require("Authority=Developer ID Application:" in details and
+                    f"TeamIdentifier={TEAM}" in details and
+                    "Identifier=de.michael-feinermann.keep-vault.releaseverifier\n" in details and
+                    re.search(r"flags=.*runtime", details), "original-verifier-developer-id-runtime")
+            cdhash = re.search(r"(?m)^CDHash=([0-9a-fA-F]+)$", details)
+            require(cdhash is not None, "missing-original-verifier-cdhash")
+            final["originalVerifierAppleDetails"].append({"architecture": architecture,
+                "cdhash": cdhash.group(1), "commandReceiptId": verifier_details["id"]})
+        for tool in ("stapler", "notarytool"):
+            output, _ = runner.run("system.resolve." + tool,
+                                    ["/usr/bin/xcrun", "--find", tool])
+            actual = Path(output.decode().strip()).resolve(strict=True)
+            binding = file_binding(actual, system=True)
+            require(binding["mode"] & 0o111, "resolved-developer-tool-not-executable")
+            runner.developer_tools[tool] = str(actual)
+            runner.tool_bindings[str(actual)] = binding
+        runner.strict("local.zip.hybrid", args.local_assets / BASE, args.local_assets / BASE)
+        local_zip = zip_preflight(args.local_assets / BASE, args.max_extracted_bytes)
+        require(local_zip["entries"].get("Keep Vault.app/Contents/MacOS/Keep Vault", {}).get("sha256") ==
+                builder_result["publishedProductSha256"], "zip-core-does-not-match-actual-builder-product")
+        require(local_zip["entries"].get("Keep Vault Installer.app/Contents/MacOS/Keep Vault Release Verifier", {}).get("sha256") ==
+                args.verifier_sha256, "zip-verifier-does-not-match-original-built-verifier")
+        final["zipCoreMatchesPublishedBuilderProduct"] = True
+        final["zipVerifierMatchesOriginalTrustedVerifier"] = True
+        runner.write("local/zip-preflight.json", canonical(local_zip) + b"\n")
+        final["localZipPreflightSha256"] = digest(canonical(local_zip))
+        final["tagBefore"] = resolve_tag(runner, args)
+        snapshots = {}
+        downloaded = {}
+        for scope in ("auth", "anon"):
+            snapshots[scope + "Before"] = github_metadata(runner, args, scope, "before")
+            directory = runner.root / scope / "assets"
+            directory.mkdir(mode=0o700, parents=True, exist_ok=False)
+            if scope == "auth":
+                command = [args.gh, "release", "download", args.tag, "--repo", args.repo,
+                           "--dir", str(directory)]
+                for name in ASSETS:
+                    command += ["--pattern", name]
+                runner.run("auth.download.six", command, auth=True)
+            else:
+                for name in ASSETS:
+                    url = snapshots[scope + "Before"]["assets"][name]["browser_download_url"]
+                    output, row = runner.run("anon.download." + name,
+                                             curl_command(url, directory / name))
+                    require(output.decode().strip() == "http=200\ntls=0", "anonymous-asset-http-tls")
+                    row["publicAssetName"] = name
+                    row["publicAssetId"] = snapshots[scope + "Before"]["assets"][name]["id"]
+                    row["actualDownloadedBinding"] = file_binding(directory / name)
+            snapshots[scope + "After"] = github_metadata(runner, args, scope, "after")
+            require(metadata_identity(snapshots[scope + "Before"]) ==
+                    metadata_identity(snapshots[scope + "After"]), "github-metadata-changed")
+            downloaded[scope] = compare_assets(args.local_assets, directory, expected,
+                                               snapshots[scope + "Before"])
+            runner.strict(scope + ".zip.hybrid", directory / BASE, directory / BASE)
+            preflight = zip_preflight(directory / BASE, args.max_extracted_bytes)
+            require(preflight["entries"] == local_zip["entries"], "downloaded-zip-entry-content-changed")
+            runner.write(scope + "/zip-preflight.json", canonical(preflight) + b"\n")
+            final[scope + "Kit"] = kit_verify(runner, args, scope, directory / BASE,
+                                            preflight, verifier_slices)
+        require(metadata_identity(snapshots["authBefore"]) ==
+                metadata_identity(snapshots["anonAfter"]), "auth-anon-public-metadata-mismatch")
+        require([r["binding"]["sha256"] for r in downloaded["auth"]] ==
+                [r["binding"]["sha256"] for r in downloaded["anon"]], "auth-anon-byte-identity")
+        final["metadataSnapshots"] = snapshots
+        final["downloadedAssets"] = downloaded
+        final["tagAfter"] = resolve_tag(runner, args)
+        require(final["tagAfter"] == final["tagBefore"], "tag-ref-changed")
+        notary, command = runner.run("notary.info",
+                      [runner.developer_tools["notarytool"], "info", args.notary_id,
+                       "--keychain-profile", args.notary_profile,
+                       "--keychain", str(args.keychain), "--output-format", "json"],
+                      [args.builder_receipt, args.builder_stdout], preserve=False)
+        notary_value = parse_json(notary)
+        require(notary_value.get("id") == args.notary_id and
+                notary_value.get("status") == "Accepted", "notary-submission-not-accepted")
+        final["notarization"] = {"submissionId": args.notary_id, "status": "Accepted",
+                                 "responseSha256": digest(notary), "commandReceiptId": command["id"],
+                                 "boundToActualBuilderStdout": True,
+                                 "submissionPayloadIsFinalPostStapleZip": False,
+                                 "scope": "Observed accepted pre-staple kit submission; final app tickets and signed post-staple ZIP are checked separately."}
+        final["sourceAfter"] = source_identity(runner, args)
+        require(final["sourceAfter"] == final["sourceBefore"], "source-identity-changed")
+        require(asset_bindings(args.local_assets) == local_before, "local-six-changed")
+        require(file_binding(args.expectations) == expected_binding, "expected-asset-set-changed")
+        require(file_binding(args.builder_receipt) == builder_binding, "builder-receipt-changed")
+        require(file_binding(args.builder_stdout) == builder_stdout_binding, "builder-stdout-changed")
+        final["downloadedClosureAfter"] = rebind_downloaded_closure(runner.root, downloaded,
+            {scope: final[scope + "Kit"] for scope in ("auth", "anon")})
+        final["rootAfter"] = directory_identity(args.destination)
+        require(final["rootBefore"] == final["rootAfter"], "evidence-root-identity-changed")
+        final["status"] = "PASS"
+        final["publicationVerification"] = "PASS"
+    except Exception as error:
+        final["failureCode"] = public_text(str(error).encode(), runner.tokens)
+        final["publicationVerification"] = "FAIL"
+    finally:
+        final["completedAtUtc"] = now()
+        final["commandReceiptCount"] = len(runner.rows)
+        final["toolBindings"] = runner.tool_bindings
+        runner.write("commands.json", canonical(runner.rows) + b"\n")
+        runner.write("public-download-receipt.json", canonical(final) + b"\n")
+        # Explicit outputs only; downloaded assets and kits are not automatically published.
+        curated = sorted(["commands.json", "public-download-receipt.json"] +
+                         [str(p.relative_to(runner.root)) for p in
+                          (runner.root / "commands").glob("*") if p.is_file()] +
+                         [str(p.relative_to(runner.root)) for p in
+                          (runner.root / "metadata").glob("*.json") if p.is_file()] +
+                         [str(p.relative_to(runner.root)) for p in
+                          runner.root.glob("*/zip-preflight.json")] +
+                         [str(p.relative_to(runner.root)) for p in
+                          runner.root.glob("*/kit-receipt.json")])
+        collection = [{"path": p, "sha256": file_binding(runner.root / p)["sha256"],
+                       "sizeBytes": file_binding(runner.root / p)["sizeBytes"]} for p in curated]
+        runner.write("collection.json", canonical({"schemaVersion": 1, "files": collection}) + b"\n")
+        runner.write("SHA256SUMS", "".join(f"{r['sha256']}  {r['path']}\n" for r in collection).encode())
+        print(json.dumps({"status": final["status"], "receipt": str(runner.root / "public-download-receipt.json"),
+                          "failureCode": final.get("failureCode")}))
+    return 0 if final["status"] == "PASS" else 2
+
+
+def self_test():
+    count = 0
+    with tempfile.TemporaryDirectory(prefix="public-proof-artificial-zip-fixtures-",
+                                     dir=IGNORED_RUN) as folder:
+        root = Path(folder)
+        def test(names, rejected):
+            nonlocal count
+            path = root / f"case-{count}.zip"
+            with zipfile.ZipFile(path, "w") as archive:
+                for name in names:
+                    archive.writestr(name, b"public fixture")
+            os.chmod(path, 0o600)
+            observed_rejection = False
+            try:
+                zip_preflight(path, 1024 * 1024)
+            except (GateError, zipfile.BadZipFile):
+                observed_rejection = True
+            require(observed_rejection == rejected, "self-test-zip-result-mismatch")
+            count += 1
+        test(["a/b.txt"], False)
+        for names in (["../escape"], ["/escape"], ["a\\b"], ["a", "a"],
+                      ["A", "a"], ["é", "e\u0301"], ["a", "a/b"],
+                      ["C:/escape"], ["a//b"], ["a/./b"], ["A/x", "a/y"]):
+            test(names, True)
+        # A correctly encoded symlink must fail before extraction.
+        path = root / "symlink.zip"
+        with zipfile.ZipFile(path, "w") as archive:
+            info = zipfile.ZipInfo("link")
+            info.create_system = 3
+            info.external_attr = (stat.S_IFLNK | 0o777) << 16
+            archive.writestr(info, b"public target")
+        os.chmod(path, 0o600)
+        try:
+            zip_preflight(path, 1024 * 1024)
+            raise AssertionError("accepted symlink")
+        except GateError:
+            count += 1
+        path = root / "crc.zip"
+        with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_STORED) as archive:
+            archive.writestr("test", b"PUBLIC_CRC_FIXTURE")
+        data = path.read_bytes().replace(b"PUBLIC_CRC_FIXTURE", b"PUBLIC_CRC_FIXTURX", 1)
+        path.write_bytes(data)
+        os.chmod(path, 0o600)
+        try:
+            zip_preflight(path, 1024 * 1024)
+            raise AssertionError("accepted damaged CRC")
+        except zipfile.BadZipFile:
+            count += 1
+        def metadata_fixture(*, xattrs=False):
+            body = bytes(32)
+            if xattrs:
+                body += bytes(2) + struct.pack(">IIIIIIIIHH", 0x41545452, 0, 120, 120, 0, 0, 0, 0, 0, 0)
+            length = 50 + len(body)
+            return (struct.pack(">II16sH", 0x00051607, 0x00020000, b"Mac OS X        ", 2) +
+                    struct.pack(">III", 9, 50, len(body)) + struct.pack(">III", 2, length, 0) + body)
+
+        def metadata_zip(pairs, rejected):
+            nonlocal count
+            path = root / f"metadata-{count}.zip"
+            with zipfile.ZipFile(path, "w") as archive:
+                for name, data in pairs:
+                    archive.writestr(name, data)
+            os.chmod(path, 0o600)
+            observed = False
+            try:
+                zip_preflight(path, 1024 * 1024)
+            except (GateError, zipfile.BadZipFile, UnicodeError):
+                observed = True
+            require(observed == rejected, "self-test-appledouble-result-mismatch")
+            count += 1
+
+        basic = metadata_fixture()
+        metadata_zip([("target", b"public fixture"), ("__MACOSX/._target", basic)], False)
+        metadata_zip([("dir/target", b"public fixture"), ("__MACOSX/", b""),
+                      ("__MACOSX/dir/", b""), ("__MACOSX/._dir", basic),
+                      ("__MACOSX/dir/._target", metadata_fixture(xattrs=True))], False)
+        for bad in (b"\xcf\xfa\xed\xfe" + bytes(80),
+                    basic[:4] + struct.pack(">I", 0x00010000) + basic[8:],
+                    basic[:26] + struct.pack(">I", 1) + basic[30:],
+                    basic[:30] + struct.pack(">I", 0xfffffff0) + basic[34:],
+                    basic[:46] + struct.pack(">I", len(b"RESOURCE_FORK")) + basic[50:] + b"RESOURCE_FORK",
+                    metadata_fixture(xattrs=True)[:84] + b"BAD!" + metadata_fixture(xattrs=True)[88:]):
+            metadata_zip([("target", b"public fixture"), ("__MACOSX/._target", bad)], True)
+        metadata_zip([("target", b"public fixture"), ("__MACOSX/._orphan", basic)], True)
+        metadata_zip([("target", b"public fixture"), ("__MACOSX/unapproved", basic)], True)
+        metadata_zip([("target", b"public fixture"), ("__MACOSX/foreign/", b"")], True)
+
+        def check_gate(action, rejected, code):
+            nonlocal count
+            observed = False
+            try:
+                action()
+            except GateError:
+                observed = True
+            require(observed == rejected, code)
+            count += 1
+
+        mapping_zip = root / "mapping.zip"
+        with zipfile.ZipFile(mapping_zip, "w") as archive:
+            archive.writestr("dir/file", b"PUBLIC_TREE_FIXTURE")
+        os.chmod(mapping_zip, 0o600)
+        mapping = zip_preflight(mapping_zip, 1024 * 1024)
+        mapping_root = root / "mapping-tree"
+        (mapping_root / "dir").mkdir(mode=0o700, parents=True)
+        (mapping_root / "dir/file").write_bytes(b"PUBLIC_TREE_FIXTURE")
+        os.chmod(mapping_root / "dir/file", 0o600)
+        snapshot = tree_binding(mapping_root)
+        check_gate(lambda: reconcile_zip_tree(mapping, snapshot), False, "self-test-zip-tree-positive")
+        for variant in ("missing", "additional", "size", "hash", "directory"):
+            altered = {name: dict(value) for name, value in snapshot.items()}
+            if variant == "missing":
+                altered.pop("dir/file")
+            elif variant == "additional":
+                altered["extra"] = dict(altered["dir/file"])
+            elif variant == "directory":
+                altered.pop("dir")
+            else:
+                altered["dir/file"]["sizeBytes" if variant == "size" else "sha256"] = 1 if variant == "size" else "0" * 64
+            check_gate(lambda: reconcile_zip_tree(mapping, altered), True, "self-test-zip-tree-negative")
+
+        closure = root / "closure"
+        downloads, kits = {}, {}
+        for scope in ("auth", "anon"):
+            assets = closure / scope / "assets"
+            assets.mkdir(mode=0o700, parents=True)
+            for name in ASSETS:
+                (assets / name).write_bytes(b"PUBLIC_ASSET_FIXTURE")
+                os.chmod(assets / name, 0o600)
+            kit = closure / scope / "kit"
+            kit.mkdir(mode=0o700)
+            (kit / "file").write_bytes(b"PUBLIC_KIT_FIXTURE")
+            os.chmod(kit / "file", 0o600)
+            downloads[scope] = [{"name": name, "binding": binding}
+                                for name, binding in asset_bindings(assets).items()]
+            kits[scope] = {"kitRoot": str(kit), "snapshotSha256": digest(canonical(tree_binding(kit)))}
+        check_gate(lambda: rebind_downloaded_closure(closure, downloads, kits), False, "self-test-final-closure-positive")
+        (closure / "auth/assets" / ASSETS[-1]).write_bytes(b"CHANGED_PUBLIC_ASSET")
+        check_gate(lambda: rebind_downloaded_closure(closure, downloads, kits), True, "self-test-final-asset-change")
+        downloads["auth"] = [{"name": name, "binding": binding}
+                             for name, binding in asset_bindings(closure / "auth/assets").items()]
+        (closure / "anon/kit/file").write_bytes(b"CHANGED_PUBLIC_KIT")
+        check_gate(lambda: rebind_downloaded_closure(closure, downloads, kits), True, "self-test-final-kit-change")
+    print(json.dumps({"status": "PASS", "selfTestCases": count,
+                      "scope": "public artificial ZIP, AppleDouble, extraction-mapping and final-binding fixtures only"}))
+    return 0
+
+
+def main():
+    os.umask(0o077)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--prepare-expectations", type=Path)
+    parser.add_argument("--local-assets", type=Path)
+    parser.add_argument("--verifier", type=Path)
+    parser.add_argument("--verifier-sha256")
+    parser.add_argument("--builder-receipt", type=Path)
+    parser.add_argument("--builder-stdout", type=Path)
+    parser.add_argument("--expectations", type=Path)
+    parser.add_argument("--expectations-sha256")
+    parser.add_argument("--source-root", type=Path, default=Path("/Users/michael/Developer/GPT-Codex/Kalyna"))
+    parser.add_argument("--source-commit")
+    parser.add_argument("--repo", default="michael-feinermann/keep-vault")
+    parser.add_argument("--tag")
+    parser.add_argument("--tag-commit")
+    parser.add_argument("--release-id", type=int)
+    parser.add_argument("--destination", type=Path)
+    parser.add_argument("--max-extracted-bytes", type=int)
+    parser.add_argument("--gh", default="/opt/homebrew/bin/gh")
+    parser.add_argument("--notary-id")
+    parser.add_argument("--notary-profile", default="Keep Vault v13")
+    parser.add_argument("--keychain", type=Path, default=Path("/Users/michael/Library/Keychains/login.keychain-db"))
+    parser.add_argument("--contract-manifest-bound-installer-entry", action="store_true",
+                        help="Explicitly preserve the reviewed Apple-entry + signed inventory packaging contract.")
+    args = parser.parse_args()
+    require(sum(bool(v) for v in (args.execute, args.self_test, args.prepare_expectations)) <= 1,
+            "choose-one-mode")
+    if args.self_test:
+        return self_test()
+    if args.prepare_expectations:
+        expectation(args)
+        return 0
+    if args.execute:
+        return execute(args)
+    print(json.dumps({"status": "PLAN_ONLY", "expectedAssets": ASSETS,
+                      "requiredVersion": "5.0.3", "requiredBuild": "21",
+                      "noProductOrNetworkActions": True}))
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except Exception as error:
+        print(json.dumps({"status": "FAIL", "failureCode": public_text(str(error).encode())}))
+        sys.exit(2)

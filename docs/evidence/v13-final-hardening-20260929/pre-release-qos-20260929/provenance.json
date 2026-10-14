@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "source_sha256": {
+    "KalynaArchiver/Services/NativeCipherExecutor.cs": "B361713A38DD755D37CE9DCDBFD0BF4AA943C8655BBDAEC748CE4077778D6591",
+    "KalynaArchiver/Services/MacCpuWorkerQos.cs": "BBB7732050A7ADCAE045C9F97C5E67E9E001120A36B970B10EC1AB1C4493130A",
+    "native/mac_bulk_qos.hpp": "473DE01272D0058F6C1BF4EF06C1DB30843F41ACC599A85A8613058220FB015B",
+    "native/kalyna_v13_export.cpp": "2EDD840658800212CB28F32F77681A50935278E99338A2165DF10A521D5F5394",
+    "external/zpaq/zpaq.cpp": "EAFCB45AD66439F0D7C0F4B1AD75B0645C4FD0FD39AB1072E1C7F345BDBF6E41",
+    "external/NATIVE_SOURCE_SHA256SUMS": "5E60BE4245F24519948266A458EB4232085ED12C109F6E05484142815335AEB3",
+    "native/tests/mac_bulk_qos.cpp": "913719A4FCC51473FCC363F8323CB5CD89C2210CE948E0D97B23C65E0842743F",
+    "native/tests/managed_executor/QosChecks.cs": "EF0B9852472271ECFFA17FA5D1831A14B4EEA1C7529716989E6FA3F0185763FF",
+    "native/tests/managed_executor/ManagedExecutor.csproj": "595D6151E73079CF734C2AE3F02891F47FD73FBFDBFB8F30E340BCF71B003C3D",
+    "native/tests/managed_executor/Program.cs": "757E88DBFB38D0A3489F13C0BAE7564275154D5A6284A66C903872EEFD13D559"
+  },
+  "source_manifest_changes": [
+    {
+      "path": "external/zpaq/zpaq.cpp",
+      "before": "BD18C669244253EF531E9E7D40BD636AE17E5D174B8AD0C34560382EFDA8EA93",
+      "after": "EAFCB45AD66439F0D7C0F4B1AD75B0645C4FD0FD39AB1072E1C7F345BDBF6E41"
+    }
+  ],
+  "native_artifact_sha256": "4997E7D187616604A6F46C8018D5CD3DD5BC01DAF570A3D9D37025604611685F",
+  "temporary_managed_harness_sha256": "BB6C40E0D90403135F555C84389BCA1AE9FC5EC5407B891BEE3FA0CB17494C66",
+  "sdk_header_sha256": {
+    "pthread/qos.h": "BFCFCF23501C328F5AA7F3BB39C0C8167730AB111393063C5B5FB4BD72D074F2",
+    "sys/qos.h": "3F1E1E9A2B707F22407DF44EE8A8B270348D3B4B53313EC52D06A6198716E273",
+    "dispatch/queue.h": "7A765CDD34958F2BE27CAB43482889A9B3AE45646ECF018FEF83CC05A1392F06"
+  },
+  "official_documentation": [
+    "https://developer.apple.com/library/archive/documentation/Performance/Conceptual/EnergyGuide-iOS/PrioritizeWorkWithQoS.html"
+  ],
+  "results": {
+    "native_checks": 113,
+    "temporary_managed_checks": 153,
+    "merged_existing_project_run": "PASS: 153 QoS checks, 247 existing cipher/executor checks",
+    "native_files_unchanged": true,
+    "native_files_count": 9,
+    "integrated_build": "PASS: 0 warnings, 0 errors; existing packages.lock.json unchanged",
+    "package_signature": "NU3004: pre-existing pinned Microsoft.NET.ILLink.Tasks 10.0.11 nupkg is unsigned; no publisher-signature claim. Actual archive SHA512 equals the committed lock."
+  },
+  "initial_failure": "Direct pthread_set_qos_class_self_np on a System.Threading.Thread: existing class UNSPECIFIED (0), result EPERM (1). Runtime PAL limitation respected; original failed run and diagnostic logs preserved.",
+  "scope": "No production native rebuild or signing. Existing managed_executor project now provides --qos-only; temporary standalone project removed to preserve reviewed project/lock inventory.",
+  "integrated_harness_sha256": "A4314DD18C89FD2CA1C1BB6CAE7E0A5CF6F8AD950C840026B51B9661BB024173",
+  "integrated_commands": [
+    "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet build ../native/tests/managed_executor/ManagedExecutor.csproj -c Release --artifacts-path /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/pre-release-qos-20260929/executor-artifacts -p:RestorePackagesPath=/Users/michael/.nuget/packages -p:RestoreLockedMode=true -p:DisableImplicitLibraryPacksFolder=true --nologo",
+    "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/pre-release-qos-20260929/executor-artifacts/bin/ManagedExecutor/release/ManagedExecutor.dll --qos-only",
+    "/private/tmp/keep-vault-v503-rev9-sdk/dotnet/dotnet /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/pre-release-qos-20260929/executor-artifacts/bin/ManagedExecutor/release/ManagedExecutor.dll /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-native/budget-native/osx-arm64"
+  ],
+  "integrated_cwd": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac",
+  "log_sha256": {
+    "initial-managed-results.json": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "initial-managed-test.stderr": "C65567C442A3F1BE2BF843C0EEB3F88D9D69224D5736EFEE5738F3D4FDC13EFF",
+    "integrated-build.log": "11A51C26CB3F79A567AC9188AF355A4616662203D4F5B08C77266F64EC60BC3F",
+    "integrated-cipher-results.json": "4F38A5BF5F1E5E3024B78BE297C2F12B5A56A599532C99AEF32C9709F6BC92C9",
+    "integrated-cipher-test.stderr": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "integrated-locked-cache-build.log": "D443B697CDB8C2D88BA366474FD804E3F226F16267FED3587658F96DA3583FAD",
+    "integrated-qos-results.json": "84A83FCCBA48262E639766BF2E0415320CC89190CFB8FB66F25662385801D62F",
+    "integrated-qos-test.stderr": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "locked-package-signature.log": "C8243ECB03C527C6651553A449D36C6633D55DC388EBEC61768474DE6BE3E497",
+    "managed-build.log": "4EED4D0E49293DEAB2FA2F0E79EB48E9F43BA72ABBD94F11A3B311C80F02B0FF",
+    "managed-diagnostic-build.log": "153B8100A7971BCB84CCA9181CF3F63FB89A5464E5872C6164ECD36123732D01",
+    "managed-diagnostic-results.json": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "managed-diagnostic-test.stderr": "DC093296FCD24E4A9764D6A360B5EA235A66A36E459A08D3BD19BD3342946984",
+    "managed-final-build.log": "A10184E05E34F0E2880A9EC1DE2F3902D0173B4A9AD02C99393DB43993436C50",
+    "managed-final-results.json": "93D6B0F361FC5B0075625619EEC340B0F376B1C6D876E98DDF25D4973381F332",
+    "managed-final-test.stderr": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "managed-gcd-build.log": "247D333EBE7383C4FCE68D3D57BDE0C4F407C07BFE020DB4334962C965B24AA5",
+    "managed-gcd-results.json": "B8EFEEF79AD8E90937D3CED0296E891A6DECC79599169A149FF5626CACEEB83C",
+    "managed-gcd-test.stderr": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "managed-lifetime-build.log": "B20A0FB2F849BD2AB7C327D36079CE2805AA9940DAAD2078DDBF620EF8CF05A8",
+    "managed-lifetime-results.json": "84A83FCCBA48262E639766BF2E0415320CC89190CFB8FB66F25662385801D62F",
+    "managed-lifetime-test.stderr": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "native-build.log": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "native-results.json": "09CA2039E054E68B4B36EF8C2776F531B47BD01F65F016A6560FE573705C0959",
+    "native-test.stderr": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  }
+}

@@ -12,7 +12,7 @@ using Forms = System.Windows.Forms;
 using DataFormats = System.Windows.DataFormats;
 using DragEventArgs = System.Windows.DragEventArgs;
 using DragDropEffects = System.Windows.DragDropEffects;
-using MessageBox = System.Windows.MessageBox;
+using MessageBox = KalynaArchiver.Gui.ReferenceMessageBox;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using Point = System.Windows.Point;
@@ -44,7 +44,11 @@ public sealed partial class MainWindow : Window, IDisposable
     private const int MaxLogEntryCharacters = 64_000;
     private string _language = "en";
     private string? _keySheetFingerprint;
+    private long _createDraftRevision;
+    private EncryptionSuite _lastDraftSuite = EncryptionSuiteCatalog.Default;
+    private long _keySheetOutputRevision;
     private bool _componentsReady;
+    private bool _clearingCreateSecrets;
     private bool _extractHintLoaded;
     private bool _extractHintUnavailable;
     private bool _disposed;
@@ -60,7 +64,7 @@ public sealed partial class MainWindow : Window, IDisposable
     // the current result instead of falling back to the transient "checking/activating" text.
     private string? _integrityStatusKey = "integrityChecking";
     private string? _integrityStatusRawMessage;
-    private System.Windows.Media.Brush _integrityStatusBrush = System.Windows.Media.Brushes.Gold;
+    private System.Windows.Media.Brush _integrityStatusBrush = ReferenceWarningBrush;
     private string _captureStatusKey = "captureActivating";
     internal Task ExtractHintLoadTaskForTests { get; private set; } = Task.CompletedTask;
 
@@ -91,7 +95,13 @@ public sealed partial class MainWindow : Window, IDisposable
         SelectLanguageItem(_language);
         SelectCipherSuiteItem(LoadSavedCipherSuite());
         CompressionBox.SelectedIndex = LoadSavedCompressionLevel();
+        _lastDraftSuite = SelectedEncryptionSuite;
         _componentsReady = true;
+        ArchivePathBox.TextChanged += (_, _) => { Interlocked.Increment(ref _createDraftRevision); RefreshKeySheetBinding(); };
+        GeneratedPasswordFirstBox.TextChanged += (_, _) => { Interlocked.Increment(ref _createDraftRevision); RefreshKeySheetBinding(); };
+        GeneratedPasswordSecondBox.TextChanged += (_, _) => { Interlocked.Increment(ref _createDraftRevision); RefreshKeySheetBinding(); };
+        foreach (System.Windows.Controls.PasswordBox field in new[] { CreatePasswordBox, CreatePasswordConfirmBox, CreatePinBox, CreatePinConfirmBox })
+            field.PasswordChanged += (_, _) => Interlocked.Increment(ref _createDraftRevision);
         UpdateProtectedOperationButtons();
         ApplyLanguage();
         CreatePasswordPanel.Opacity = EncryptBox.IsChecked == true ? 1.0 : 0.78;
@@ -104,6 +114,8 @@ public sealed partial class MainWindow : Window, IDisposable
         _mouseMoveHandler = MainWindow_PreviewMouseMove;
         AddHandler(System.Windows.Input.Mouse.PreviewMouseMoveEvent, _mouseMoveHandler, handledEventsToo: true);
         Loaded += MainWindow_Loaded;
+        StateChanged += (_, _) => UpdatePrivacyShield();
+        IsVisibleChanged += (_, _) => UpdatePrivacyShield();
         Closed += (_, _) => Dispose();
     }
 
@@ -123,9 +135,12 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             CreatePasswordBox.Clear();
             CreatePasswordConfirmBox.Clear();
+            CreatePinBox.Clear();
+            CreatePinConfirmBox.Clear();
             GeneratedPasswordFirstBox.Clear();
             GeneratedPasswordSecondBox.Clear();
             ExtractPasswordBox.Clear();
+            ExtractPinBox.Clear();
             ExtractGeneratedPasswordFirstBox.Clear();
             ExtractGeneratedPasswordSecondBox.Clear();
         }
@@ -138,6 +153,7 @@ public sealed partial class MainWindow : Window, IDisposable
         RemoveHandler(System.Windows.Input.Mouse.PreviewMouseMoveEvent, _mouseMoveHandler);
         Interlocked.Increment(ref _extractHintLoadVersion);
         _shutdown.Cancel();
+        EntropyMixer.Reset();
         _shutdown.Dispose();
         _integrity.Dispose();
         GC.SuppressFinalize(this);
@@ -228,10 +244,10 @@ public sealed partial class MainWindow : Window, IDisposable
             _integrityStatusKey = ResolveIntegrityStatusKey(status.Message);
             _integrityStatusRawMessage = _integrityStatusKey is null ? status.Message : null;
             _integrityStatusBrush = status.IsTrusted
-                ? System.Windows.Media.Brushes.LightGreen
+                ? ReferenceSuccessBrush
                 : status.ExpectedSha3_512 is null || status.ExpectedSkein1024 is null
-                    ? System.Windows.Media.Brushes.Gold
-                    : System.Windows.Media.Brushes.OrangeRed;
+                    ? ReferenceWarningBrush
+                    : ReferenceErrorBrush;
             ApplyIntegrityStatusText();
             Log($"SHA3-512(App): {status.ActualSha3_512}");
             Log($"Skein-1024(App): {status.ActualSkein1024}");
@@ -258,7 +274,7 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 _integrityStatusKey = "integrityWarning";
                 _integrityStatusRawMessage = null;
-                _integrityStatusBrush = System.Windows.Media.Brushes.OrangeRed;
+                _integrityStatusBrush = ReferenceErrorBrush;
                 ApplyIntegrityStatusText();
             }
 
@@ -275,7 +291,7 @@ public sealed partial class MainWindow : Window, IDisposable
             UpdateProtectedOperationButtons();
             _integrityStatusKey = "integrityFailed";
             _integrityStatusRawMessage = null;
-            _integrityStatusBrush = System.Windows.Media.Brushes.OrangeRed;
+            _integrityStatusBrush = ReferenceErrorBrush;
             ApplyIntegrityStatusText();
             OperationStatusText.Text = T("blocked");
             Log(ex.Message);
@@ -286,6 +302,7 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         IntegrityText.Text = _integrityStatusRawMessage ?? (_integrityStatusKey is { } key ? T(key) : string.Empty);
         IntegrityText.Foreground = _integrityStatusBrush;
+        IntegrityDot.Fill = _integrityStatusBrush;
     }
 
     private void ApplyCaptureStatusText()
@@ -366,7 +383,7 @@ public sealed partial class MainWindow : Window, IDisposable
         if (dialog.ShowDialog(this) == true)
         {
             ArchivePathBox.Text = NormalizeTargetArchivePath(dialog.FileName, EncryptBox.IsChecked == true);
-            ResetKeySheetStatus();
+            RefreshKeySheetBinding();
         }
     }
 
@@ -388,7 +405,7 @@ public sealed partial class MainWindow : Window, IDisposable
         using var dialog = new Forms.FolderBrowserDialog { Description = T("chooseOutputDialog"), UseDescriptionForTitle = true };
         if (dialog.ShowDialog() == Forms.DialogResult.OK)
         {
-            OutputFolderBox.Text = dialog.SelectedPath;
+            SelectExtractOutputParent(dialog.SelectedPath);
         }
     }
 
@@ -405,8 +422,9 @@ public sealed partial class MainWindow : Window, IDisposable
         CipherSuiteBox.IsEnabled = encryptionEnabled;
         if (!string.IsNullOrWhiteSpace(ArchivePathBox.Text))
         {
-            ArchivePathBox.Text = NormalizeTargetArchivePath(ArchivePathBox.Text, encryptionEnabled);
-            ResetKeySheetStatus();
+            string normalized = NormalizeTargetArchivePath(ArchivePathBox.Text, encryptionEnabled);
+            if (!string.Equals(ArchivePathBox.Text, normalized, StringComparison.Ordinal)) ArchivePathBox.Text = normalized;
+            RefreshKeySheetBinding();
         }
     }
 
@@ -417,7 +435,13 @@ public sealed partial class MainWindow : Window, IDisposable
             return;
         }
 
-        ResetKeySheetStatus();
+        if (CipherSuiteBox.SelectedItem is not System.Windows.Controls.ComboBoxItem) return;
+        if (_lastDraftSuite != SelectedEncryptionSuite)
+        {
+            _lastDraftSuite = SelectedEncryptionSuite;
+            Interlocked.Increment(ref _createDraftRevision);
+        }
+        RefreshKeySheetBinding();
         SaveCipherSuite(SelectedEncryptionSuite);
         Log(string.Format(T("cipherSuiteSelected"), EncryptionSuiteCatalog.Get(SelectedEncryptionSuite).DisplayName));
     }
@@ -441,6 +465,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         string? createdArchivePath = null;
         GeneratedArchiveEntropy? preparedEntropy = null;
+        var lifetime = new ArchiveOperationLifetime();
         try
         {
             var inputs = InputList.Items.Cast<string>().ToArray();
@@ -450,34 +475,42 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            string archivePath = NormalizeTargetArchivePath(ArchivePathBox.Text.Trim(), EncryptBox.IsChecked == true);
+            string archivePath = Preflight(() => NormalizeTargetArchivePath(ArchivePathBox.Text.Trim(), EncryptBox.IsChecked == true), ArchivePreflightReason.Destination);
             if (string.IsNullOrWhiteSpace(archivePath))
             {
                 MessageBox.Show(this, T("targetMissing"), T("targetMissingTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            ArchivePathBox.Text = archivePath;
-            EnsureArchiveTargetIsSafe(archivePath, inputs);
+            if (!string.Equals(ArchivePathBox.Text, archivePath, StringComparison.Ordinal)) ArchivePathBox.Text = archivePath;
+            if (inputs.Any(path => !File.Exists(path) && !Directory.Exists(path)))
+                throw new ArchivePreflightException(ArchivePreflightReason.Input, T("inputsMissing"));
+            Preflight(() => EnsureArchiveTargetIsSafe(archivePath, inputs), ArchivePreflightReason.Destination);
 
             if (EncryptBox.IsChecked == true)
             {
-                EnsurePasswordPair();
+                Preflight(EnsurePasswordPair, ArchivePreflightReason.Credentials);
                 preparedEntropy = _generatedArchiveEntropy is { HasPendingEncryptionParameters: true } current
                     ? current
                     : null;
+                if (preparedEntropy is not null)
+                    Preflight(() => preparedEntropy.ValidateForEncryption(SelectedEncryptionSuite,
+                        GeneratedPasswordFirstBox.Text, GeneratedPasswordSecondBox.Text), ArchivePreflightReason.Credentials);
                 if (preparedEntropy is null)
                 {
-                    EnsureEntropyReady(EntropyPurpose.SaltSha3);
-                    EnsureEntropyReady(EntropyPurpose.SaltSkein);
-                    EnsureEntropyReady(EntropyPurpose.NonceFirst);
-                    EnsureEntropyReady(EntropyPurpose.NonceSecond);
-                    EnsureEntropyReady(EntropyPurpose.NonceThird);
+                    Preflight(() =>
+                    {
+                        EnsureEntropyReady(EntropyPurpose.SaltSha3);
+                        EnsureEntropyReady(EntropyPurpose.SaltSkein);
+                        EnsureEntropyReady(EntropyPurpose.NonceFirst);
+                        EnsureEntropyReady(EntropyPurpose.NonceSecond);
+                        EnsureEntropyReady(EntropyPurpose.NonceThird);
+                    }, ArchivePreflightReason.Input);
                 }
 
-                EnsureKeySheetHandled(archivePath);
+                Preflight(() => EnsureKeySheetHandled(archivePath), ArchivePreflightReason.KeySheet);
                 if (!_kalyna.IsNativeSuiteAvailable(SelectedEncryptionSuite))
                 {
-                    throw new InvalidOperationException(string.Format(
+                    throw new ArchivePreflightException(ArchivePreflightReason.Input, string.Format(
                         T("selectedSuiteMissing"),
                         EncryptionSuiteCatalog.Get(SelectedEncryptionSuite).DisplayName));
                 }
@@ -490,38 +523,10 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 EncryptionSuite suite = SelectedEncryptionSuite;
                 Log(string.Format(T("encryptingStreaming"), EncryptionSuiteCatalog.Get(suite).DisplayName));
+                Func<Stream, CancellationToken, Task> encrypt = CaptureEncryptionConsumer(archivePath, suite, preparedEntropy, lifetime);
                 async Task EncryptArchiveAsync(Stream zpaqStream, CancellationToken cancellationToken)
                 {
-                    if (preparedEntropy is null)
-                    {
-                        await _kalyna.EncryptZpaqStreamAsync(
-                            zpaqStream,
-                            archivePath,
-                            CreatePasswordBox.Password,
-                            CreatePinBox.Password,
-                            GeneratedPasswordFirstBox.Text,
-                            GeneratedPasswordSecondBox.Text,
-                            suite,
-                            HintBox.Text.Trim(),
-                            Progress(),
-                            cancellationToken);
-                    }
-                    else
-                    {
-                        await _kalyna.EncryptZpaqStreamWithPreparedEntropyAsync(
-                            zpaqStream,
-                            archivePath,
-                            CreatePasswordBox.Password,
-                            CreatePinBox.Password,
-                            GeneratedPasswordFirstBox.Text,
-                            GeneratedPasswordSecondBox.Text,
-                            suite,
-                            preparedEntropy,
-                            HintBox.Text.Trim(),
-                            Progress(),
-                            cancellationToken);
-                    }
-
+                    await encrypt(zpaqStream, cancellationToken).ConfigureAwait(false);
                     createdArchivePath = archivePath;
                 }
 
@@ -545,6 +550,7 @@ public sealed partial class MainWindow : Window, IDisposable
             }
             else
             {
+                lifetime.BeginExecution();
                 ProcessResult result = await _zpaq.AddAsync(archivePath, inputs, compressionLevel, Progress(), _shutdown.Token);
                 if (!result.Succeeded)
                 {
@@ -585,7 +591,6 @@ public sealed partial class MainWindow : Window, IDisposable
                 SaveCipherSuite(SelectedEncryptionSuite);
             }
 
-            ClearCreateSecrets();
             Log($"Fertig: {archivePath}");
             MessageBox.Show(
                 this,
@@ -594,8 +599,14 @@ public sealed partial class MainWindow : Window, IDisposable
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
+        catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { }
+        catch (ArchivePreflightException ex) when (!lifetime.ConsumptionStarted)
+        {
+            ShowCredentialMessage(ex.Message, T("missingInputTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
         catch (Exception ex)
         {
+            lifetime.MarkFatalFailure();
             if (createdArchivePath is not null)
             {
                 Log(BuildPreservedArtifactWarning(createdArchivePath));
@@ -607,7 +618,8 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            EndProtectedOperation();
+            try { if (lifetime.MustClearCredentials || preparedEntropy?.ConsumptionStarted == true) ClearCreateSecrets(); }
+            finally { EndProtectedOperation(); }
         }
     }
 
@@ -617,6 +629,7 @@ public sealed partial class MainWindow : Window, IDisposable
         bool encrypted)
     {
         string verifyRoot = Directory.CreateTempSubdirectory("keep-vault-verify-").FullName;
+        Exception? verificationFailure = null;
         try
         {
             Log(T("verifyingBeforeDelete"));
@@ -626,15 +639,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
             ProcessResult extraction = encrypted
                 ? await _zpaq.ExtractStreamingAsync(
-                    (zpaqInput, cancellationToken) => _kalyna.DecryptToStreamAsync(
-                        archivePath,
-                        CreatePasswordBox.Password,
-                        CreatePinBox.Password,
-                        GeneratedPasswordFirstBox.Text,
-                        GeneratedPasswordSecondBox.Text,
-                        zpaqInput,
-                        Progress(),
-                        cancellationToken),
+                    CaptureDecryptionProducer(archivePath, creationCredentials: true),
                     verifyRoot,
                     Progress(),
                     _shutdown.Token)
@@ -686,9 +691,15 @@ public sealed partial class MainWindow : Window, IDisposable
             or InvalidDataException
             or InvalidOperationException)
         {
+            verificationFailure = exception;
             Log($"{T("verifyMismatch")} — {exception.Message}");
             MessageBox.Show(this, T("verifyMismatch"), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
+        }
+        catch (Exception exception)
+        {
+            verificationFailure = exception;
+            throw;
         }
         finally
         {
@@ -696,9 +707,12 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 Directory.Delete(verifyRoot, recursive: true);
             }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            catch (Exception cleanupFailure)
             {
-                Log($"{T("verifyCleanupFailed")} — {exception.Message}");
+                string message = $"{T("verifyCleanupFailed")}: {verifyRoot}";
+                if (verificationFailure is not null)
+                    throw new AggregateException(message, verificationFailure, cleanupFailure);
+                throw new IOException(message, cleanupFailure);
             }
         }
     }
@@ -710,6 +724,7 @@ public sealed partial class MainWindow : Window, IDisposable
             return;
         }
 
+        var lifetime = new ArchiveOperationLifetime();
         try
         {
             TestHookBeforeCredentialOperation?.Invoke("extract");
@@ -717,7 +732,7 @@ public sealed partial class MainWindow : Window, IDisposable
             string output = OutputFolderBox.Text.Trim();
             if (File.Exists(archive) && string.IsNullOrWhiteSpace(output))
             {
-                output = SuggestOutputFolderPath(archive);
+                output = SuggestCurrentOutputFolderPath(archive);
                 OutputFolderBox.Text = output;
             }
 
@@ -727,34 +742,30 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            archive = await PrepareArchiveForUseAsync(archive);
+            archive = await PrepareArchiveForUseAsync(archive, lifetime);
             bool encrypted = await _kalyna.LooksEncryptedAsync(archive, _shutdown.Token);
 
             ProcessResult result;
             if (encrypted)
             {
-                (KalynaContainerInfo info, string effectiveArchive) = await ReadContainerInfoWithRecoveryAsync(archive);
+                (KalynaContainerInfo info, string effectiveArchive) = await ReadContainerInfoWithRecoveryAsync(archive, lifetime);
                 archive = effectiveArchive;
                 ExtractArchiveBox.Text = archive;
                 Log($"Cipher suite: {info.Algorithm}");
                 SetExtractHint(info.Hint, loaded: true);
-                EnsurePasswordPresent();
-                EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
-                EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+                Preflight(() =>
+                {
+                    EnsurePasswordPresent();
+                    EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
+                    EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+                }, ArchivePreflightReason.Credentials);
 
                 Log(T("extractingStreaming"));
+                lifetime.BeginExecution();
                 result = await ExecuteEncryptedWithRecoveryRetryAsync(
                     archive,
                     effectivePath => _zpaq.ExtractStreamingAsync(
-                        (zpaqInput, ct) => _kalyna.DecryptToStreamAsync(
-                            effectivePath,
-                            ExtractPasswordBox.Password,
-                            ExtractPinBox.Password,
-                            ExtractGeneratedPasswordFirstBox.Text,
-                            ExtractGeneratedPasswordSecondBox.Text,
-                            zpaqInput,
-                            Progress(),
-                            ct),
+                        CaptureDecryptionProducer(effectivePath, creationCredentials: false),
                         output,
                         Progress(),
                         _shutdown.Token));
@@ -762,6 +773,7 @@ public sealed partial class MainWindow : Window, IDisposable
             else
             {
                 Log(T("extracting"));
+                lifetime.BeginExecution();
                 result = await _zpaq.ExtractAsync(archive, output, Progress(), _shutdown.Token);
             }
 
@@ -776,15 +788,21 @@ public sealed partial class MainWindow : Window, IDisposable
             Log($"Entpackt nach: {output}");
             MessageBox.Show(this, T("archiveExtracted"), T("doneTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
+        catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { }
+        catch (ArchivePreflightException ex) when (!lifetime.MustClearCredentials)
+        {
+            ShowCredentialMessage(ex.Message, T("missingInputTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
         catch (Exception ex)
         {
+            lifetime.MarkFatalFailure();
             ReportExtractFailure(ex.ToString());
             ShowCredentialMessage(ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { if (lifetime.MustClearCredentials) ClearExtractSecrets(); }
+            finally { EndProtectedOperation(); }
         }
     }
 
@@ -795,6 +813,7 @@ public sealed partial class MainWindow : Window, IDisposable
             return;
         }
 
+        var lifetime = new ArchiveOperationLifetime();
         try
         {
             TestHookBeforeCredentialOperation?.Invoke("list");
@@ -805,38 +824,35 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            archive = await PrepareArchiveForUseAsync(archive);
+            archive = await PrepareArchiveForUseAsync(archive, lifetime);
             bool encrypted = await _kalyna.LooksEncryptedAsync(archive, _shutdown.Token);
 
             ProcessResult result;
             if (encrypted)
             {
-                (KalynaContainerInfo info, string effectiveArchive) = await ReadContainerInfoWithRecoveryAsync(archive);
+                (KalynaContainerInfo info, string effectiveArchive) = await ReadContainerInfoWithRecoveryAsync(archive, lifetime);
                 archive = effectiveArchive;
                 ExtractArchiveBox.Text = archive;
                 Log($"Cipher suite: {info.Algorithm}");
                 SetExtractHint(info.Hint, loaded: true);
-                EnsurePasswordPresent();
-                EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
-                EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+                Preflight(() =>
+                {
+                    EnsurePasswordPresent();
+                    EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
+                    EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+                }, ArchivePreflightReason.Credentials);
 
+                lifetime.BeginExecution();
                 result = await ExecuteEncryptedWithRecoveryRetryAsync(
                     archive,
                     effectivePath => _zpaq.ListStreamingAsync(
-                        (zpaqInput, ct) => _kalyna.DecryptToStreamAsync(
-                            effectivePath,
-                            ExtractPasswordBox.Password,
-                            ExtractPinBox.Password,
-                            ExtractGeneratedPasswordFirstBox.Text,
-                            ExtractGeneratedPasswordSecondBox.Text,
-                            zpaqInput,
-                            Progress(),
-                            ct),
+                        CaptureDecryptionProducer(effectivePath, creationCredentials: false),
                         Progress(),
                         _shutdown.Token));
             }
             else
             {
+                lifetime.BeginExecution();
                 result = await _zpaq.ListAsync(archive, Progress(), _shutdown.Token);
             }
 
@@ -851,15 +867,21 @@ public sealed partial class MainWindow : Window, IDisposable
                 ClearExtractSecrets();
             }
         }
+        catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { }
+        catch (ArchivePreflightException ex) when (!lifetime.MustClearCredentials)
+        {
+            ShowCredentialMessage(ex.Message, T("missingInputTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
         catch (Exception ex)
         {
+            lifetime.MarkFatalFailure();
             ReportExtractFailure(ex.ToString());
             ShowCredentialMessage(ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { if (lifetime.MustClearCredentials) ClearExtractSecrets(); }
+            finally { EndProtectedOperation(); }
         }
     }
 
@@ -870,6 +892,7 @@ public sealed partial class MainWindow : Window, IDisposable
             return;
         }
 
+        var lifetime = new ArchiveOperationLifetime();
         try
         {
             TestHookBeforeCredentialOperation?.Invoke("recovery");
@@ -906,9 +929,13 @@ public sealed partial class MainWindow : Window, IDisposable
             RecoveryRepairResult recovery;
             if (mode == RecoveryProtectionMode.DualAuthenticatedEncrypted)
             {
-                EnsurePasswordPresent();
-                EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
-                EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+                Preflight(() =>
+                {
+                    EnsurePasswordPresent();
+                    EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
+                    EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+                }, ArchivePreflightReason.Credentials);
+                lifetime.BeginExecution();
                 recovery = await _recovery.RecoverToNewFileAuthenticatedAsync(
                     archive,
                     ExtractPasswordBox.Password,
@@ -920,6 +947,7 @@ public sealed partial class MainWindow : Window, IDisposable
             }
             else
             {
+                lifetime.BeginExecution();
                 recovery = await _recovery.RecoverToNewFileAsync(
                     archive,
                     Progress(),
@@ -928,21 +956,27 @@ public sealed partial class MainWindow : Window, IDisposable
 
             string effectivePath = recovery.OutputPath ?? archive;
             ExtractArchiveBox.Text = effectivePath;
-            OutputFolderBox.Text = SuggestOutputFolderPath(effectivePath);
+            OutputFolderBox.Text = SuggestCurrentOutputFolderPath(effectivePath);
             ClearExtractSecrets();
             Log(recovery.Message);
             Log(string.Format(T("recoveryNewFile"), effectivePath));
             ShowCredentialMessage(recovery.Message, T("doneTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
+        catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { }
+        catch (ArchivePreflightException ex) when (!lifetime.MustClearCredentials)
+        {
+            ShowCredentialMessage(ex.Message, T("missingInputTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
         catch (Exception ex)
         {
+            lifetime.MarkFatalFailure();
             ReportExtractFailure(ex.ToString());
             ShowCredentialMessage(ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { if (lifetime.MustClearCredentials) ClearExtractSecrets(); }
+            finally { EndProtectedOperation(); }
         }
     }
 
@@ -966,13 +1000,18 @@ public sealed partial class MainWindow : Window, IDisposable
         GeneratedArchiveEntropy? generatedArchiveEntropy = _generatedArchiveEntropy;
         _generatedArchiveEntropy = null;
         _generatedPasswordPairReady = false;
-        CreatePasswordBox.Clear();
-        CreatePasswordConfirmBox.Clear();
-        CreatePinBox.Clear();
-        CreatePinConfirmBox.Clear();
-        GeneratedPasswordFirstBox.Clear();
-        GeneratedPasswordSecondBox.Clear();
-        generatedArchiveEntropy?.Dispose();
+        _clearingCreateSecrets = true;
+        try
+        {
+            CreatePasswordBox.Clear();
+            CreatePasswordConfirmBox.Clear();
+            CreatePinBox.Clear();
+            CreatePinConfirmBox.Clear();
+            GeneratedPasswordFirstBox.Clear();
+            GeneratedPasswordSecondBox.Clear();
+            generatedArchiveEntropy?.Dispose();
+        }
+        finally { _clearingCreateSecrets = false; }
         ResetKeySheetStatus();
         UpdateEntropyStatus();
         UpdatePasswordPolicyStatus();
@@ -1022,7 +1061,7 @@ public sealed partial class MainWindow : Window, IDisposable
             + string.Join(", ", preservedPaths);
     }
 
-    private async Task<string> PrepareArchiveForUseAsync(string archive)
+    private async Task<string> PrepareArchiveForUseAsync(string archive, ArchiveOperationLifetime? lifetime = null)
     {
         if (await _kalyna.LooksEncryptedAsync(archive, _shutdown.Token))
         {
@@ -1045,9 +1084,13 @@ public sealed partial class MainWindow : Window, IDisposable
         RecoveryRepairResult recovery;
         if (mode == RecoveryProtectionMode.DualAuthenticatedEncrypted)
         {
-            EnsurePasswordPresent();
-            EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
-            EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+            Preflight(() =>
+            {
+                EnsurePasswordPresent();
+                EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
+                EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+            }, ArchivePreflightReason.Credentials);
+            lifetime?.BeginExecution();
             recovery = await _recovery.VerifyAndRepairAuthenticatedAsync(
                 archive,
                 ExtractPasswordBox.Password,
@@ -1059,6 +1102,7 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         else
         {
+            lifetime?.BeginExecution();
             recovery = await _recovery.VerifyAndRepairAsync(
                 archive,
                 Progress(),
@@ -1083,7 +1127,7 @@ public sealed partial class MainWindow : Window, IDisposable
             StringComparison.OrdinalIgnoreCase);
     }
 
-    private async Task<(KalynaContainerInfo Info, string ArchivePath)> ReadContainerInfoWithRecoveryAsync(string archive)
+    private async Task<(KalynaContainerInfo Info, string ArchivePath)> ReadContainerInfoWithRecoveryAsync(string archive, ArchiveOperationLifetime? lifetime = null)
     {
         try
         {
@@ -1091,9 +1135,13 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException)
         {
-            EnsurePasswordPresent();
-            EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
-            EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+            Preflight(() =>
+            {
+                EnsurePasswordPresent();
+                EnsureGeneratedPassword(ExtractGeneratedPasswordFirstBox.Text);
+                EnsureGeneratedPassword(ExtractGeneratedPasswordSecondBox.Text);
+            }, ArchivePreflightReason.Credentials);
+            lifetime?.BeginExecution();
             RecoveryRepairResult recovery = await _recovery.VerifyAndRepairAuthenticatedAsync(
                 archive,
                 ExtractPasswordBox.Password,
@@ -1144,7 +1192,42 @@ public sealed partial class MainWindow : Window, IDisposable
         }
     }
 
-    private void GeneratePassword_Click(object sender, RoutedEventArgs e)
+    // ZPAQ invokes these callbacks on worker threads. Capture every control
+    // value and the dispatcher progress context before handing off the work.
+    internal Func<Stream, CancellationToken, Task> CaptureEncryptionConsumer(
+        string archivePath, EncryptionSuite suite, GeneratedArchiveEntropy? prepared,
+        ArchiveOperationLifetime? lifetime = null)
+    {
+        Dispatcher.VerifyAccess();
+        string password = CreatePasswordBox.Password;
+        string pin = CreatePinBox.Password;
+        string firstFactor = GeneratedPasswordFirstBox.Text;
+        string secondFactor = GeneratedPasswordSecondBox.Text;
+        string hint = HintBox.Text.Trim();
+        IProgress<string> progress = Progress();
+        KalynaContainerService containers = _kalyna;
+        return (stream, token) => prepared is null
+            ? containers.EncryptZpaqStreamTrackedAsync(stream, archivePath, password, pin,
+                firstFactor, secondFactor, suite, hint, progress, token, lifetime)
+            : containers.EncryptZpaqStreamWithPreparedEntropyAsync(stream, archivePath,
+                password, pin, firstFactor, secondFactor, suite, prepared, hint, progress, token, lifetime);
+    }
+
+    internal Func<Stream, CancellationToken, Task> CaptureDecryptionProducer(
+        string archivePath, bool creationCredentials)
+    {
+        Dispatcher.VerifyAccess();
+        string password = (creationCredentials ? CreatePasswordBox : ExtractPasswordBox).Password;
+        string pin = (creationCredentials ? CreatePinBox : ExtractPinBox).Password;
+        string firstFactor = (creationCredentials ? GeneratedPasswordFirstBox : ExtractGeneratedPasswordFirstBox).Text;
+        string secondFactor = (creationCredentials ? GeneratedPasswordSecondBox : ExtractGeneratedPasswordSecondBox).Text;
+        IProgress<string> progress = Progress();
+        KalynaContainerService containers = _kalyna;
+        return (stream, token) => containers.DecryptToStreamAsync(archivePath,
+            password, pin, firstFactor, secondFactor, stream, progress, token);
+    }
+
+    private async void GeneratePassword_Click(object sender, RoutedEventArgs e)
     {
         if (Volatile.Read(ref _protectedOperationActive) != 0)
         {
@@ -1154,7 +1237,7 @@ public sealed partial class MainWindow : Window, IDisposable
         try
         {
             EncryptBox.IsChecked = true;
-            GenerateGeneratedPassword(log: true);
+            await GenerateGeneratedPasswordAsync(log: true);
         }
         catch (Exception ex)
         {
@@ -1171,24 +1254,7 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         try
         {
-            KeySheetData data = BuildCurrentKeySheetData();
-            string archiveDirectory = Path.GetDirectoryName(data.ArchivePath) ?? Environment.CurrentDirectory;
-            string archiveStem = Path.GetFileNameWithoutExtension(data.ArchivePath);
-            var dialog = new SaveFileDialog
-            {
-                Title = T("saveTestKeySheetDialog"),
-                Filter = T("pdfFilter"),
-                DefaultExt = ".pdf",
-                InitialDirectory = archiveDirectory,
-                FileName = $"{archiveStem}-key-sheets-test-export.pdf",
-            };
-
-            if (dialog.ShowDialog(this) == true)
-            {
-                _keySheets.SaveTestPdf(data, dialog.FileName);
-                MarkKeySheetHandled(data);
-                Log(string.Format(T("keySheetTestPdfSavedLog"), dialog.FileName));
-            }
+            RunConfirmedKeySheetOutput(printing: false, SaveKeySheet);
         }
         catch (Exception ex)
         {
@@ -1197,48 +1263,105 @@ public sealed partial class MainWindow : Window, IDisposable
         }
     }
 
+    private void SaveKeySheet(KeySheetData data)
+    {
+        string archiveDirectory = Path.GetDirectoryName(data.ArchivePath) ?? Environment.CurrentDirectory;
+        string archiveStem = Path.GetFileNameWithoutExtension(data.ArchivePath);
+        var dialog = new SaveFileDialog
+        {
+            Title = T("saveTestKeySheetDialog"),
+            Filter = T("pdfFilter"),
+            DefaultExt = ".pdf",
+            InitialDirectory = archiveDirectory,
+            FileName = $"{archiveStem}-key-sheet-A-test-export.pdf",
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            var secondDialog = new SaveFileDialog
+            {
+                Title = T("saveSecondTestKeySheetDialog"),
+                Filter = T("pdfFilter"),
+                DefaultExt = ".pdf",
+                InitialDirectory = archiveDirectory,
+                FileName = $"{archiveStem}-key-sheet-B-test-export.pdf",
+            };
+            if (secondDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            RequireUnchangedKeySheetDraft(data, _keySheetOutputRevision);
+            _keySheets.SaveTestPdf(data, dialog.FileName, secondDialog.FileName);
+            MarkKeySheetHandled(data);
+            Log(string.Format(T("keySheetTestPdfSavedLog"), dialog.FileName));
+            Log(string.Format(T("keySheetTestPdfSavedLog"), secondDialog.FileName));
+        }
+    }
+
     private void PrintKeySheet_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            KeySheetData data = BuildCurrentKeySheetData();
-
-            // Use the classic GDI print dialog + GDI printing instead of WPF's
-            // System.Printing pipeline. Some printer drivers (e.g. the Microsoft IPP Class
-            // Driver) fail every PrintTicket<->DEVMODE conversion with 0x80004005, which makes
-            // the WPF PrintDialog unusable even for selecting a different, working printer.
-            using var printDocument = new System.Drawing.Printing.PrintDocument();
-            if (!printDocument.PrinterSettings.IsValid)
-            {
-                string? firstValid = KeySheetService.FirstValidPhysicalPrinter();
-                if (firstValid is not null)
-                {
-                    printDocument.PrinterSettings.PrinterName = firstValid;
-                }
-            }
-
-            using var dialog = new Forms.PrintDialog
-            {
-                Document = printDocument,
-                UseEXDialog = false,
-                AllowPrintToFile = false,
-                AllowSelection = false,
-                AllowSomePages = false,
-            };
-
-            if (dialog.ShowDialog() == Forms.DialogResult.OK)
-            {
-                KeySheetService.EnsurePhysicalPrinter(dialog.PrinterSettings.PrinterName);
-                _keySheets.PrintKeySheets(dialog.PrinterSettings, data);
-                MarkKeySheetHandled(data);
-                Log(T("keySheetPrintedLog"));
-            }
+            RunConfirmedKeySheetOutput(printing: true, PrintKeySheet);
         }
         catch (Exception ex)
         {
             Log(ex.ToString());
             MessageBox.Show(this, ex.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void PrintKeySheet(KeySheetData data)
+    {
+        // Use the classic GDI print dialog + GDI printing instead of WPF's
+        // System.Printing pipeline. Some printer drivers (e.g. the Microsoft IPP Class
+        // Driver) fail every PrintTicket<->DEVMODE conversion with 0x80004005, which makes
+        // the WPF PrintDialog unusable even for selecting a different, working printer.
+        using var printDocument = new System.Drawing.Printing.PrintDocument();
+        if (!printDocument.PrinterSettings.IsValid)
+        {
+            string? firstValid = KeySheetService.FirstValidPhysicalPrinter();
+            if (firstValid is not null)
+            {
+                printDocument.PrinterSettings.PrinterName = firstValid;
+            }
+        }
+
+        using var dialog = new Forms.PrintDialog
+        {
+            Document = printDocument,
+            UseEXDialog = false,
+            AllowPrintToFile = false,
+            AllowSelection = false,
+            AllowSomePages = false,
+        };
+
+        if (dialog.ShowDialog() == Forms.DialogResult.OK)
+        {
+            KeySheetService.EnsurePhysicalPrinter(dialog.PrinterSettings.PrinterName);
+            RequireUnchangedKeySheetDraft(data, _keySheetOutputRevision);
+            _keySheets.PrintKeySheets(dialog.PrinterSettings, data);
+            MarkKeySheetHandled(data);
+            Log(T("keySheetPrintedLog"));
+        }
+    }
+
+    internal void RunConfirmedKeySheetOutput(bool printing, Action<KeySheetData> output)
+    {
+        Dispatcher.VerifyAccess();
+        if (!TryBeginProtectedOperation()) return;
+        try
+        {
+            KeySheetData data = BuildCurrentKeySheetData();
+            _keySheetOutputRevision = Volatile.Read(ref _createDraftRevision);
+            if (ShowCredentialMessage(T(printing ? "windowsSpoolWarning" : "testPdfWarning"),
+                T("confirmationTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+            RequireUnchangedKeySheetDraft(data, _keySheetOutputRevision);
+            output(data);
+        }
+        finally { EndProtectedOperation(); }
     }
 
     private void ChooseEraseFile_Click(object sender, RoutedEventArgs e)
@@ -1282,11 +1405,10 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, _shutdown.Token);
-            EraseStatusText.Text = analysis.Message;
-            EraseHardwareNoticeText.Text = analysis.HardwareNotice;
+            SetEraseAnalysis(analysis);
             if (!analysis.IsEncryptedContainer)
             {
-                MessageBox.Show(this, analysis.Message, T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, T(_eraseStatusKey), T("errorTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -1303,11 +1425,11 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             CryptoEraseResult result = await _erase.EraseEncryptedContainerAsync(path, Progress(), _shutdown.Token);
-            EraseStatusText.Text = result.Message;
             ErasePathBox.Clear();
             EraseConfirmBox.IsChecked = false;
+            SetEraseStatus("eraseCompleted");
             Log(result.Message);
-            MessageBox.Show(this, result.Message, T("doneTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, T("eraseCompleted"), T("doneTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
@@ -1424,7 +1546,7 @@ public sealed partial class MainWindow : Window, IDisposable
         }
 
         string pin = CreatePinBox.Password;
-        PinPolicyAnalysis analysis = ContainerKeyDerivation.AnalyzePinForCreation(pin);
+        PinPolicyAnalysis analysis = ContainerKeyDerivation.AnalyzePinForCreation(pin, CreatePasswordBox.Password);
         if (!analysis.IsAccepted)
         {
             throw new InvalidOperationException(PinViolationText(analysis.Violations[0]));
@@ -1437,23 +1559,24 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private void EnsurePasswordPresent()
     {
-        EnsurePasswordLength(ExtractPasswordBox.Password);
-        string pin = ExtractPinBox.Password;
         try
         {
-            ContainerKeyDerivation.ValidatePinSyntax(pin);
+            ContainerKeyDerivation.ValidatePasswordEncoding(ExtractPasswordBox.Password);
         }
         catch (ArgumentException ex)
         {
-            throw new InvalidOperationException(T("pinInvalidFormat"), ex);
+            throw new InvalidOperationException(T("extractPasswordTechnicalLimit"), ex);
         }
-    }
 
-    private void EnsurePasswordLength(string password)
-    {
-        if (password.Length < PasswordKeyService.MinPasswordLength || password.Length > PasswordKeyService.MaxPasswordLength)
+        string pin = ExtractPinBox.Password;
+        try
         {
-            throw new InvalidOperationException(T("passwordLength"));
+            ContainerKeyDerivation.ValidatePinEncoding(pin);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new InvalidOperationException(T(pin.Length > ContainerKeyDerivation.MaxCredentialCodeUnits
+                ? "extractPinTechnicalLimit" : "extractPinAscii"), ex);
         }
     }
 
@@ -1496,6 +1619,8 @@ public sealed partial class MainWindow : Window, IDisposable
             EntropyPurpose.NonceFirst => T("entropyNonceFirst"),
             EntropyPurpose.NonceSecond => T("entropyNonceSecond"),
             EntropyPurpose.NonceThird => T("entropyNonceThird"),
+            EntropyPurpose.NonceFourth => T("entropyNonceFourth"),
+            EntropyPurpose.NonceFifth => T("entropyNonceFifth"),
             _ => purpose.ToString(),
         };
         long current = EntropyMixer.GetSampleCount(purpose);
@@ -1538,29 +1663,38 @@ public sealed partial class MainWindow : Window, IDisposable
             throw new InvalidOperationException(T("targetMissing"));
         }
 
-        ArchivePathBox.Text = archivePath;
+        if (!string.Equals(ArchivePathBox.Text, archivePath, StringComparison.Ordinal)) ArchivePathBox.Text = archivePath;
         EncryptBox.IsChecked = true;
         return new KeySheetData(
             Path.GetFullPath(archivePath),
             SelectedEncryptionSuite,
             PasswordKeyService.NormalizeGeneratedPassword(GeneratedPasswordFirstBox.Text),
             PasswordKeyService.NormalizeGeneratedPassword(GeneratedPasswordSecondBox.Text),
-            DateTime.Now);
+            DateTime.Now,
+            IsEnglish);
     }
 
-    private void GenerateGeneratedPassword(bool log)
+    private async Task GenerateGeneratedPasswordAsync(bool log)
     {
-        EnsureAllArchiveEntropyReady();
-        GeneratedArchiveEntropy? generatedEntropy = EntropyMixer.CreateArchiveEntropy();
+        if (!TryBeginProtectedOperation()) return;
+        GeneratedArchiveEntropy? generatedEntropy = null;
         try
         {
+            EnsureAllArchiveEntropyReady();
+            EntropyPreparationKind kind = SelectedEncryptionSuite == EncryptionSuite.ParanoiaCascade
+                ? EntropyPreparationKind.DualRound : EntropyPreparationKind.SingleRound;
+            CancellationToken token = _shutdown.Token;
+            var progress = new Progress<string>(phase => { if (!_disposed) OperationStatusText.Text = T("entropyPhase." + phase); });
+            generatedEntropy = await Task.Run(() => EntropyMixer.CreateArchiveEntropy(kind, token, progress), token);
+            token.ThrowIfCancellationRequested();
+            if (_disposed) return;
             GeneratedArchiveEntropy? previousEntropy = _generatedArchiveEntropy;
+            previousEntropy?.Dispose();
             GeneratedPasswordFirstBox.Text = generatedEntropy.FirstPassword;
             GeneratedPasswordSecondBox.Text = generatedEntropy.SecondPassword;
             _generatedArchiveEntropy = generatedEntropy;
             generatedEntropy = null;
             _generatedPasswordPairReady = true;
-            previousEntropy?.Dispose();
             ResetKeySheetStatus();
             UpdateEntropyStatus();
             UpdatePasswordPolicyStatus();
@@ -1571,8 +1705,50 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            generatedEntropy?.Dispose();
+            try { generatedEntropy?.Dispose(); }
+            finally { EndProtectedOperation(); }
         }
+    }
+
+    private static T Preflight<T>(Func<T> check, ArchivePreflightReason reason)
+    {
+        try { return check(); }
+        catch (ArchivePreflightException) { throw; }
+        catch (Exception failure) when (failure is ArgumentException or InvalidOperationException or IOException)
+        { throw new ArchivePreflightException(reason, failure.Message); }
+    }
+
+    private static void Preflight(Action check, ArchivePreflightReason reason)
+    {
+        try { check(); }
+        catch (ArchivePreflightException) { throw; }
+        catch (Exception failure) when (failure is ArgumentException or InvalidOperationException or IOException)
+        { throw new ArchivePreflightException(reason, failure.Message); }
+    }
+
+    private string? CurrentKeySheetFingerprint()
+    {
+        try
+        {
+            string path = NormalizeTargetArchivePath(ArchivePathBox.Text.Trim(), encrypted: true);
+            if (path.Length == 0 || CipherSuiteBox.SelectedItem is not System.Windows.Controls.ComboBoxItem) return null;
+            return BuildKeySheetFingerprint(path, SelectedEncryptionSuite, GeneratedPasswordFirstBox.Text, GeneratedPasswordSecondBox.Text);
+        }
+        catch (Exception failure) when (failure is ArgumentException or InvalidOperationException or IOException) { return null; }
+    }
+
+    private void RefreshKeySheetBinding()
+    {
+        if (_clearingCreateSecrets || _keySheetFingerprint is null || !_componentsReady || CipherSuiteBox.SelectedItem is not System.Windows.Controls.ComboBoxItem) return;
+        if (!string.Equals(_keySheetFingerprint, CurrentKeySheetFingerprint(), StringComparison.Ordinal)) ResetKeySheetStatus();
+    }
+
+    private void RequireUnchangedKeySheetDraft(KeySheetData data, long revision)
+    {
+        if (_disposed || revision != Volatile.Read(ref _createDraftRevision)
+            || !string.Equals(BuildKeySheetFingerprint(data.ArchivePath, data.Suite,
+                data.FirstGeneratedPassword, data.SecondGeneratedPassword), CurrentKeySheetFingerprint(), StringComparison.Ordinal))
+            throw new ArchivePreflightException(ArchivePreflightReason.DraftChanged, T("draftChanged"));
     }
 
     private void ResetKeySheetStatus()
@@ -1581,7 +1757,7 @@ public sealed partial class MainWindow : Window, IDisposable
         if (_componentsReady)
         {
             KeySheetStatusText.Text = T("keySheetMissing");
-            KeySheetStatusText.Foreground = System.Windows.Media.Brushes.Gold;
+            KeySheetStatusText.Foreground = ReferenceWarningBrush;
         }
     }
 
@@ -1593,7 +1769,7 @@ public sealed partial class MainWindow : Window, IDisposable
             data.FirstGeneratedPassword,
             data.SecondGeneratedPassword);
         KeySheetStatusText.Text = T("keySheetHandled");
-        KeySheetStatusText.Foreground = System.Windows.Media.Brushes.LightGreen;
+        KeySheetStatusText.Foreground = ReferenceSuccessBrush;
     }
 
     private static string BuildKeySheetFingerprint(
@@ -1612,7 +1788,7 @@ public sealed partial class MainWindow : Window, IDisposable
         try
         {
             pathBytes = LockedSensitiveBuffer.Encode(
-                Path.GetFullPath(archivePath).ToUpperInvariant(),
+                Path.GetFullPath(archivePath),
                 Encoding.UTF8);
             suiteBytes = LockedSensitiveBuffer.Encode(suite.ToString(), Encoding.ASCII);
             firstBytes = LockedSensitiveBuffer.Encode(
@@ -1625,7 +1801,7 @@ public sealed partial class MainWindow : Window, IDisposable
             skeinFingerprint = LockedSensitiveBuffer.Create(Skein1024Digest.DigestSize);
             using IncrementalHash hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA3_512);
             using var skein = new Skein1024Digest();
-            AppendFingerprintPart(hasher, skein, "Kalyna-ZPAQ/v12/key-sheet-fingerprint"u8);
+            AppendFingerprintPart(hasher, skein, "Kalyna-ZPAQ/v13/key-sheet-fingerprint"u8);
             AppendFingerprintPart(hasher, skein, pathBytes.Bytes);
             AppendFingerprintPart(hasher, skein, suiteBytes.Bytes);
             AppendFingerprintPart(hasher, skein, firstBytes.Bytes);
@@ -1676,7 +1852,7 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         ErasePathBox.Text = path;
         EraseConfirmBox.IsChecked = false;
-        EraseStatusText.Text = T("eraseNotAnalyzed");
+        SetEraseStatus("eraseNotAnalyzed");
     }
 
     private async Task AnalyzeEraseTargetAsync()
@@ -1684,8 +1860,7 @@ public sealed partial class MainWindow : Window, IDisposable
         try
         {
             CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(ErasePathBox.Text.Trim(), _shutdown.Token);
-            EraseStatusText.Text = analysis.Message;
-            EraseHardwareNoticeText.Text = analysis.HardwareNotice;
+            SetEraseAnalysis(analysis);
             Log(analysis.Message);
             Log(analysis.HardwareNotice);
         }
@@ -1788,9 +1963,9 @@ public sealed partial class MainWindow : Window, IDisposable
         }
 
         EntropyPoolStatus status = EntropyMixer.GetPoolStatus();
-        bool entropyReady = status.Minimum >= EntropyMixer.RequiredMouseSamplesPerPurpose;
+        bool entropyReady = status.IsReady;
 
-        GeneratePasswordButton.IsEnabled = entropyReady;
+        GeneratePasswordButton.IsEnabled = entropyReady && Volatile.Read(ref _protectedOperationActive) == 0;
         GeneratePasswordButton.Content = T(_generatedPasswordPairReady ? "regeneratePassword" : "generatePassword");
         string statusKey = !_generatedPasswordPairReady
             ? "entropyStatusCollecting"
@@ -1809,15 +1984,17 @@ public sealed partial class MainWindow : Window, IDisposable
             status.NonceFirst,
             status.NonceSecond,
             status.NonceThird,
+            status.NonceFourth,
+            status.NonceFifth,
             EntropyMixer.RequiredMouseSamplesPerPurpose);
         EntropyProgress.Value = Math.Min(
             status.Minimum,
             EntropyMixer.RequiredMouseSamplesPerPurpose);
         EntropyStatusText.Foreground = statusKey == "entropyStatusPrepared"
-            ? System.Windows.Media.Brushes.LightGreen
+            ? ReferenceSuccessBrush
             : statusKey == "entropyStatusRetry"
-                ? System.Windows.Media.Brushes.Gold
-                : System.Windows.Media.Brushes.Cyan;
+                ? ReferenceWarningBrush
+                : ReferenceAccentBrush;
     }
 
     private void CreatePasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
@@ -1836,23 +2013,25 @@ public sealed partial class MainWindow : Window, IDisposable
             CreatePasswordBox.Password,
             GeneratedPasswordFirstBox.Text,
             GeneratedPasswordSecondBox.Text);
-        PasswordEntropyStatusText.Text = string.Format(
+        bool modelUnavailable = analysis.Guessability?.Status == PasswordModelStatus.Unavailable;
+        PasswordEntropyStatusText.Text = modelUnavailable ? T("passwordModelUnavailableShort") : string.Format(
             T("passwordEntropyStatus"),
             analysis.ConservativeEntropyBits.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture),
             PasswordKeyService.MinimumConservativeEntropyBits.ToString("0", System.Globalization.CultureInfo.InvariantCulture));
-        PasswordEntropyStatusText.Foreground = analysis.ConservativeEntropyBits >= PasswordKeyService.MinimumConservativeEntropyBits
-            ? System.Windows.Media.Brushes.LightGreen
-            : System.Windows.Media.Brushes.Gold;
+        PasswordEntropyStatusText.Foreground = modelUnavailable ? ReferenceErrorBrush
+            : analysis.ConservativeEntropyBits >= PasswordKeyService.MinimumConservativeEntropyBits
+            ? ReferenceSuccessBrush
+            : ReferenceWarningBrush;
 
         if (analysis.IsAccepted)
         {
             PasswordPolicyStatusText.Text = T("passwordPolicyAccepted");
-            PasswordPolicyStatusText.Foreground = System.Windows.Media.Brushes.LightGreen;
+            PasswordPolicyStatusText.Foreground = ReferenceSuccessBrush;
         }
         else
         {
             PasswordPolicyStatusText.Text = FormatPasswordPolicyViolations(analysis);
-            PasswordPolicyStatusText.Foreground = System.Windows.Media.Brushes.LightCoral;
+            PasswordPolicyStatusText.Foreground = ReferenceErrorBrush;
         }
 
         UpdatePinPolicyStatus();
@@ -1869,7 +2048,7 @@ public sealed partial class MainWindow : Window, IDisposable
         string confirm = CreatePinConfirmBox.Password;
         string? failure = null;
 
-        PinPolicyAnalysis analysis = ContainerKeyDerivation.AnalyzePinForCreation(pin);
+        PinPolicyAnalysis analysis = ContainerKeyDerivation.AnalyzePinForCreation(pin, CreatePasswordBox.Password);
         if (!analysis.IsAccepted)
         {
             failure = PinViolationText(analysis.Violations[0]);
@@ -1880,7 +2059,7 @@ public sealed partial class MainWindow : Window, IDisposable
         }
 
         PinPolicyStatusText.Text = failure ?? T("pinAccepted");
-        PinPolicyStatusText.Foreground = failure is null ? System.Windows.Media.Brushes.LightGreen : System.Windows.Media.Brushes.LightCoral;
+        PinPolicyStatusText.Foreground = failure is null ? ReferenceSuccessBrush : ReferenceErrorBrush;
     }
 
     private string PinViolationText(PinPolicyViolation violation) => violation switch
@@ -1893,6 +2072,11 @@ public sealed partial class MainWindow : Window, IDisposable
         PinPolicyViolation.SequentialAscending => T("pinSequentialAscending"),
         PinPolicyViolation.SequentialDescending => T("pinSequentialDescending"),
         PinPolicyViolation.Blocklisted => T("pinBlocklisted"),
+        PinPolicyViolation.ContainedInPassword => T("pinContainedInPassword"),
+        PinPolicyViolation.CurrentDate => T("pinCurrentDate"),
+        PinPolicyViolation.PlausibleDate => T("pinPlausibleDate"),
+        PinPolicyViolation.PredictablePattern => T("pinPredictablePattern"),
+        PinPolicyViolation.PasswordRequiredForPairCheck => T("pinPasswordRequired"),
         _ => T("pinInvalidFormat"),
     };
 
@@ -1915,6 +2099,8 @@ public sealed partial class MainWindow : Window, IDisposable
             PasswordPolicyViolation.HexadecimalRunTooLong => string.Format(T("passwordViolationHexRun"), PasswordKeyService.MaxHexadecimalRunLength),
             PasswordPolicyViolation.MatchesGeneratedPassword => T("passwordViolationMatchesGenerated"),
             PasswordPolicyViolation.InsufficientConservativeEntropy => string.Format(T("passwordViolationEntropy"), PasswordKeyService.MinimumConservativeEntropyBits.ToString("0", System.Globalization.CultureInfo.InvariantCulture)),
+            PasswordPolicyViolation.ListedPassword => T("passwordListed"),
+            PasswordPolicyViolation.ModelUnavailable => T("passwordModelUnavailable"),
             _ => T("passwordComplexity"),
         };
     }
@@ -1994,7 +2180,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 int addedFromTargetDrop = AddInputFilesFromTargetDrop(paths);
                 string targetArchive = ResolveArchiveTarget(paths[0]);
                 ArchivePathBox.Text = targetArchive;
-                ResetKeySheetStatus();
+                RefreshKeySheetBinding();
                 if (addedFromTargetDrop > 0)
                 {
                     Log(string.Format(T("dropAddedInputs"), addedFromTargetDrop));
@@ -2021,8 +2207,8 @@ public sealed partial class MainWindow : Window, IDisposable
                     return DropResult.None;
                 }
 
-                OutputFolderBox.Text = folder;
-                Log(string.Format(T("dropOutputFolder"), folder));
+                SelectExtractOutputParent(folder);
+                Log(string.Format(T("dropOutputFolder"), OutputFolderBox.Text));
                 return DropResult.OutputFolderSet;
 
             case DropTarget.EraseTarget:
@@ -2115,6 +2301,10 @@ public sealed partial class MainWindow : Window, IDisposable
         return SuggestTargetArchivePath(path, EncryptBox.IsChecked == true);
     }
 
+    private static bool HasArchiveExtension(string path) =>
+        string.Equals(Path.GetExtension(path), ".kzpaq", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Path.GetExtension(path), ".zpaq", StringComparison.OrdinalIgnoreCase);
+
     internal static string NormalizeTargetArchivePath(string path, bool encrypted)
     {
         if (string.IsNullOrWhiteSpace(path))
@@ -2124,7 +2314,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         string trimmed = path.Trim();
         string extension = encrypted ? ".kzpaq" : ".zpaq";
-        if (Directory.Exists(trimmed))
+        if (Directory.Exists(trimmed) && !HasArchiveExtension(trimmed))
         {
             return Path.Combine(trimmed, $"archive{extension}");
         }
@@ -2182,7 +2372,7 @@ public sealed partial class MainWindow : Window, IDisposable
             _suppressExtractArchiveTextChanged = false;
         }
 
-        OutputFolderBox.Text = SuggestOutputFolderPath(archivePath);
+        OutputFolderBox.Text = SuggestCurrentOutputFolderPath(archivePath);
         BeginExtractHintLoad(archivePath, debounce: false);
     }
 
@@ -2377,7 +2567,7 @@ public sealed partial class MainWindow : Window, IDisposable
         }
 
         ArchivePathBox.Text = SuggestTargetArchivePath(firstInput, EncryptBox.IsChecked == true);
-        ResetKeySheetStatus();
+        RefreshKeySheetBinding();
     }
 
     private static string BuildNumberedArchivePath(string directory, string stem, string extension)
@@ -2552,6 +2742,10 @@ public sealed partial class MainWindow : Window, IDisposable
         Title = T("windowTitle");
         TitleText.Text = T("title");
         SubtitleText.Text = T("subtitle");
+        VersionText.Text = $"Version {ProductVersion}";
+        CredentialPolicyHelpTitle.Text = T("credentialPolicyHelpTitle");
+        CredentialPolicyHelpText.Text = T("credentialPolicyHelp");
+        PrivacyShieldText.Text = T("privacyShield");
         LanguageLabel.Text = T("language");
         ArchiveTab.Header = T("archiveTab");
         ExtractTab.Header = T("extractTab");
@@ -2590,6 +2784,10 @@ public sealed partial class MainWindow : Window, IDisposable
         GeneratePasswordButton.Content = T("generatePassword");
         GeneratedPasswordFirstLabel.Text = T("generatedPasswordFirstLabel");
         GeneratedPasswordSecondLabel.Text = T("generatedPasswordSecondLabel");
+        System.Windows.Automation.AutomationProperties.SetLabeledBy(GeneratedPasswordFirstBox, GeneratedPasswordFirstLabel);
+        System.Windows.Automation.AutomationProperties.SetLabeledBy(GeneratedPasswordSecondBox, GeneratedPasswordSecondLabel);
+        System.Windows.Automation.AutomationProperties.SetHelpText(GeneratedPasswordFirstBox, T("createPasswordSetupHelp"));
+        System.Windows.Automation.AutomationProperties.SetHelpText(GeneratedPasswordSecondBox, T("createPasswordSetupHelp"));
         SaveKeySheetButton.Content = T("saveTestKeySheet");
         PrintKeySheetButton.Content = T("printKeySheet");
         ClearCreateSecretsButton.Content = T("clearSecrets");
@@ -2610,6 +2808,13 @@ public sealed partial class MainWindow : Window, IDisposable
         ExtractPinLabel.Text = T("pin");
         ExtractGeneratedPasswordFirstLabel.Text = T("extractGeneratedPasswordFirst");
         ExtractGeneratedPasswordSecondLabel.Text = T("extractGeneratedPasswordSecond");
+        FactorImportHelpText.Text = T("factorImportHelp");
+        System.Windows.Automation.AutomationProperties.SetLabeledBy(ExtractGeneratedPasswordFirstBox, ExtractGeneratedPasswordFirstLabel);
+        System.Windows.Automation.AutomationProperties.SetLabeledBy(ExtractGeneratedPasswordSecondBox, ExtractGeneratedPasswordSecondLabel);
+        System.Windows.Automation.AutomationProperties.SetHelpText(ExtractGeneratedPasswordFirstBox, T("factorImportHelp"));
+        System.Windows.Automation.AutomationProperties.SetHelpText(ExtractGeneratedPasswordSecondBox, T("factorImportHelp"));
+        ExtractGeneratedPasswordFirstBox.LanguageCode = _language;
+        ExtractGeneratedPasswordSecondBox.LanguageCode = _language;
         RenderExtractHint();
         UpdatePasswordPolicyStatus();
         ExtractArchiveButton.Content = T("extract");
@@ -2622,12 +2827,7 @@ public sealed partial class MainWindow : Window, IDisposable
         EraseDropHintText.Text = T("eraseDropHint");
         BrowseEraseButton.Content = T("browse");
         AnalyzeEraseButton.Content = T("analyzeErase");
-        if (EraseStatusText.Text is "No file analyzed yet." or "Noch keine Datei analysiert.")
-        {
-            EraseStatusText.Text = T("eraseNotAnalyzed");
-        }
-
-        EraseHardwareNoticeText.Text = T("eraseHardwareNotice");
+        RenderEraseStatus();
         EraseConfirmBox.Content = T("eraseConfirm");
         EraseContainerButton.Content = T("eraseButton");
         LogTitleText.Text = T("log");
@@ -2643,39 +2843,71 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         return (_language, key) switch
         {
+            ("en", "eraseEncryptedDetected") => "Encrypted container detected. Its recovery data will be destroyed first, followed by the container.",
+            (_, "eraseEncryptedDetected") => "Verschlüsselter Container erkannt. Zuerst werden seine Wiederherstellungsdaten vernichtet, danach der Container.",
+            ("en", "erasePlainDetected") => "This file is not a valid encrypted container and cannot be cryptographically erased here.",
+            (_, "erasePlainDetected") => "Diese Datei ist kein gültiger verschlüsselter Container und kann hier nicht kryptografisch gelöscht werden.",
+            ("en", "eraseCompleted") => "Any associated KPAR2 data was invalidated and deleted, then this local encrypted container was corrupted and deleted. Backups, snapshots and SSD data remnants may still exist. Destroy saved or printed key sheets separately.",
+            (_, "eraseCompleted") => "Vorhandene zugehörige KPAR2-Daten wurden unbrauchbar gemacht und gelöscht, danach dieser lokale verschlüsselte Container beschädigt und gelöscht. Backups, Snapshots und SSD-Datenreste können weiterhin vorhanden sein. Gespeicherte oder gedruckte Schlüsselzettel separat vernichten.",
+            ("en", "saveSecondTestKeySheetDialog") => "Save factor B to a separate test PDF (writes secrets to disk)",
+            (_, "saveSecondTestKeySheetDialog") => "Faktor B in eine getrennte Test-PDF speichern (schreibt Geheimnisse auf den Datenträger)",
+            ("en", "confirmationTitle") => "Confirm protected action",
+            (_, "confirmationTitle") => "Geschützte Aktion bestätigen",
+            ("en", "testPdfWarning") => "This explicit test export permanently writes the secret factors to two separate PDFs, one factor per file. Continue only in a controlled test environment.",
+            (_, "testPdfWarning") => "Dieser ausdrückliche Testexport schreibt die geheimen Faktoren dauerhaft in zwei getrennte PDFs, einen Faktor pro Datei. Nur in einer kontrollierten Testumgebung fortfahren.",
+            ("en", "windowsSpoolWarning") => "The Windows print spooler, the printer, or a network print server can retain this secret key-sheet job in a spool, cache, or device memory. Continue only with a trusted physical printer that you control. Keep Vault cannot erase copies outside the app.",
+            (_, "windowsSpoolWarning") => "Der Windows-Druckspooler, der Drucker oder ein Netzwerk-Druckserver kann diesen geheimen Schlüsselzettelauftrag in einer Warteschlange, einem Zwischenspeicher oder Gerätespeicher behalten. Nur mit einem vertrauenswürdigen physischen Drucker fortfahren, den du kontrollierst. Keep Vault kann Kopien außerhalb der App nicht löschen.",
+            ("en", "privacyShield") => "Secret content is concealed while Keep Vault is not the active application.",
+            (_, "privacyShield") => "Geheimnisinhalte werden verdeckt, solange Keep Vault nicht die aktive App ist.",
+
+            ("en", "credentialPolicyHelp") => "You choose your password and PIN. When creating an archive, all existing rules and the minimum score of 128 still apply. The bundled offline model can only lower the score. It considers German and English word combinations, common patterns and a limited password blocklist. It does not measure actual entropy or guarantee how long guessing would take. Unrecognized patterns may remain.\n\nThe PIN must contain 6 to 16 ASCII digits, must not occur as a complete substring of your password and must not be today's date. Further number-pattern rules also apply. No input or input hash is sent to a server.\n\nExtraction, listing and recovery use your original credentials without these selection checks or the password model. Keep the original password, PIN and both key sheets.",
+            (_, "credentialPolicyHelp") => "Du wählst Passwort und PIN selbst. Beim Archivieren gelten weiterhin alle bisherigen Regeln und der Mindestwert 128. Das mitgelieferte Offline-Modell kann den Wert nur absenken. Es berücksichtigt deutsche und englische Wortkombinationen, häufige Muster und eine begrenzte Passwortsperrliste. Es misst keine tatsächliche Entropie und garantiert keine Dauer eines Rateangriffs. Muster können unerkannt bleiben.\n\nDie PIN muss aus 6 bis 16 ASCII-Ziffern bestehen, darf nicht als vollständiger Teilstring im Passwort vorkommen und darf nicht das heutige Datum sein. Weitere Zahlenmusterregeln gelten ebenfalls. Keine Eingabe und kein Eingabehash werden an einen Server gesendet.\n\nEntpacken, Auflisten und Wiederherstellen verwenden die ursprünglichen Geheimnisse ohne diese Auswahlprüfungen und ohne Passwortmodell. Bewahre das ursprüngliche Passwort, die PIN und beide Schlüsselzettel auf.",
+
+            ("en", "credentialPolicyHelpTitle") => "How password and PIN checks work",
+            (_, "credentialPolicyHelpTitle") => "So werden Passwort und PIN geprüft",
+
+            ("en", "factorImportHelp") => "256 hexadecimal characters each. Spaces and line breaks are ignored.",
+            (_, "factorImportHelp") => "Jeweils 256 Hexadezimalzeichen. Leerzeichen und Zeilenumbrüche werden ignoriert.",
             ("en", "windowTitle") => ProductInfo.Name,
             ("en", "title") => ProductInfo.Name,
-            ("en", "subtitle") => "Create, extract, and cryptographically erase encrypted ZPAQ archives.",
+            ("en", "subtitle") => "Secure, recoverable archives for Windows",
             ("en", "language") => "Language",
             ("en", "archiveTab") => "Archive",
             ("en", "extractTab") => "Extract",
             ("en", "eraseTab") => "Cryptographic erase",
             ("en", "subtitle2") => "Create, extract, and cryptographically erase encrypted ZPAQ archives.",
-            ("en", "createSubtitle") => "Select files or folders, choose the target archive, then print the two separately stored key sheets before encrypting.",
-            ("en", "targetArchiveDropHint") => "Drop a folder here to create folder(1).kzpaq beside it, or drop any file to derive name(1).kzpaq.",
-            ("en", "createPasswordSetupTitle") => "Four-part password for encrypted archives",
-            ("en", "createPasswordSetupHelp") => "Extraction requires the user password, the PIN, and two independently generated 1024-bit hexadecimal factors.",
-            ("en", "passwordGeneratorTitle") => "Two independent generated 1024-bit factors",
-            ("en", "passwordGeneratorHelp") => "Nine separate entropy pools need at least 1024 mouse samples each. Generation atomically creates factors A and B, both salts, and all three nonce parts, then consumes all source pools.",
-            ("en", "entropyStatusCollecting") => "Collecting archive entropy: total {0}; factor A {1}+{2}/{10}; factor B {3}+{4}/{10}; salt-SHA3 {5}/{10}; salt-Skein {6}/{10}; nonce 1 {7}/{10}; nonce 2 {8}/{10}; nonce 3 {9}/{10}",
-            ("en", "entropyStatusPrepared") => "Archive entropy ready: factors A/B, salts, and nonces were generated; their source samples were securely consumed. Fresh pools: total {0}; factor A {1}+{2}/{10}; factor B {3}+{4}/{10}; salt-SHA3 {5}/{10}; salt-Skein {6}/{10}; nonce 1 {7}/{10}; nonce 2 {8}/{10}; nonce 3 {9}/{10}",
-            ("en", "entropyStatusRetry") => "Factors A/B remain valid because their source entropy was already consumed. Fresh salts/nonces are required only for a retry: total {0}; factor A {1}+{2}/{10}; factor B {3}+{4}/{10}; salt-SHA3 {5}/{10}; salt-Skein {6}/{10}; nonce 1 {7}/{10}; nonce 2 {8}/{10}; nonce 3 {9}/{10}",
+            ("en", "createSubtitle") => "Select files or folders, choose a new target, and handle both separate key sheets before encryption.",
+            ("en", "targetArchiveDropHint") => "Drop a folder to create folder(1).kzpaq beside it, or a file to derive name(1).kzpaq.",
+            ("en", "createPasswordSetupTitle") => "Decryption credentials",
+            ("en", "createPasswordSetupHelp") => "Extracting the archive requires the password, the PIN, and both generated factors A and B.",
+            ("en", "passwordGeneratorTitle") => "Two generated key factors",
+            ("en", "passwordGeneratorHelp") => $"Eleven entropy pools collect randomly assigned mouse events. Each pool requires at least {EntropyMixer.RequiredMouseSamplesPerPurpose.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en-US"))} events. Generate creates factors A and B together with the required salts and nonce values, and clears all source pools.",
+            ("en", "entropyStatusCollecting") => "Collecting archive entropy: total {0}; factor A {1}+{2}/{12}; factor B {3}+{4}/{12}; salt-SHA3 {5}/{12}; salt-Skein {6}/{12}; nonce 1 {7}/{12}; nonce 2 {8}/{12}; nonce 3 {9}/{12}; nonce 4 {10}/{12}; nonce 5 {11}/{12}",
+            ("en", "entropyStatusPrepared") => "Archive entropy ready: factors A/B, salts, and nonces were generated; their source samples were securely consumed. Fresh pools: total {0}; factor A {1}+{2}/{12}; factor B {3}+{4}/{12}; salt-SHA3 {5}/{12}; salt-Skein {6}/{12}; nonce 1 {7}/{12}; nonce 2 {8}/{12}; nonce 3 {9}/{12}; nonce 4 {10}/{12}; nonce 5 {11}/{12}",
+            ("en", "entropyStatusRetry") => "Factors A/B remain valid because their source entropy was already consumed. Fresh salts/nonces are required only for a retry: total {0}; factor A {1}+{2}/{12}; factor B {3}+{4}/{12}; salt-SHA3 {5}/{12}; salt-Skein {6}/{12}; nonce 1 {7}/{12}; nonce 2 {8}/{12}; nonce 3 {9}/{12}; nonce 4 {10}/{12}; nonce 5 {11}/{12}",
             ("en", "entropyGeneratedPasswordFirst") => "generated factor A",
             ("en", "entropyGeneratedPasswordSecond") => "generated factor B",
             ("en", "entropySalt") => "salt",
             ("en", "entropyNonceFirst") => "nonce 1",
             ("en", "entropyNonceSecond") => "nonce 2",
             ("en", "entropyNonceThird") => "nonce 3",
+            ("en", "entropyNonceFourth") => "nonce 4",
+            ("en", "entropyNonceFifth") => "nonce 5",
+            ("en", "entropyPhase.shuffle1") => "Mixing mouse records: round 1",
+            ("en", "entropyPhase.sha3") => "Preparing entropy: SHA3-512",
+            ("en", "entropyPhase.shuffle2") => "Mixing mouse records: round 2",
+            ("en", "entropyPhase.sha512") => "Preparing entropy: SHA-512",
+            ("en", "entropyPhase.cleanup") => "Clearing consumed mouse data",
             ("en", "entropyNotReady") => "Not enough mouse entropy samples for {0}. Required: {1}; current: {2}; missing: {3}. Move the mouse over the app window and try again.",
             ("en", "generatePassword") => "Generate",
             ("en", "regeneratePassword") => "Regenerate",
-            ("en", "generatedPasswordFirstLabel") => "Generated factor A",
-            ("en", "generatedPasswordSecondLabel") => "Generated factor B",
+            ("en", "generatedPasswordFirstLabel") => "Factor A",
+            ("en", "generatedPasswordSecondLabel") => "Factor B",
             ("en", "userPassword") => "User password",
             ("en", "userPasswordConfirm") => "Repeat user password",
             ("en", "pin") => "PIN",
             ("en", "repeatPin") => "Repeat PIN",
-            ("en", "pinHelp") => "6 to 16 digits. The PIN is a credential of its own and is required together with the passphrase and both factors.",
+            ("en", "pinHelp") => "6 to 16 digits. The PIN is a separate credential. To extract the archive, you need the password, the PIN, and both generated factors A and B.",
             ("en", "pinAccepted") => "PIN accepted.",
             ("en", "pinMismatch") => "Both PIN entries differ.",
             ("en", "pinTooShort") => "Use at least {0} digits.",
@@ -2686,9 +2918,20 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "pinSequentialAscending") => "Do not use 3 or more ascending consecutive digits.",
             ("en", "pinSequentialDescending") => "Do not use 3 or more descending consecutive digits.",
             ("en", "pinBlocklisted") => "This PIN pattern is too predictable.",
+            ("en", "pinContainedInPassword") => "The PIN must not be contained in the password. Choose a different PIN or password.",
+            ("en", "pinCurrentDate") => "The PIN must not be today's date, including American date formats.",
+            ("en", "pinPlausibleDate") => "Do not use a complete calendar date as the PIN.",
+            ("en", "pinPredictablePattern") => "Avoid predictable number patterns, repetitions and mirrored sequences.",
+            ("en", "pinPasswordRequired") => "Enter the password to check the final password and PIN combination.",
             ("en", "pinInvalidFormat") => "The PIN must consist of 6 to 16 ASCII digits.",
-            ("en", "passwordHelp") => "User password: 24-256 characters, at least 3 character groups, 12 distinct characters, 12 non-hexadecimal characters, no hexadecimal run of 8+, and a conservative score of at least 128 bits. It must differ from both generated factors.",
-            ("en", "passwordEntropyStatus") => "Conservative entropy score: {0} / {1} bits",
+            ("en", "passwordHelp") => "24 to 256 characters, at least 3 character groups, 12 distinct and 12 non-hex characters, no hex run of 8+, and a conservative strength estimate of at least 128.",
+            ("en", "passwordEntropyStatus") => "Conservative model score: {0} / {1} bits (estimate)",
+            ("en", "passwordListed") => "This complete password is in the bundled local blocklist. Choose another password.",
+            ("en", "passwordModelUnavailableShort") => "Password assessment unavailable.",
+            ("en", "passwordModelUnavailable") => "The local password model could not be verified. Reinstall a verified app copy before creating archives. Extraction remains available.",
+            ("en", "extractPasswordTechnicalLimit") => "The password exceeds the technical input limit of 1,048,576 UTF-16 code units.",
+            ("en", "extractPinTechnicalLimit") => "The PIN exceeds the technical input limit of 1,048,576 digits.",
+            ("en", "extractPinAscii") => "Enter the PIN using the original ASCII digits 0 to 9.",
             ("en", "passwordPolicyAccepted") => "All user-password requirements are met.",
             ("en", "passwordViolationTooShort") => "Use at least {0} characters.",
             ("en", "passwordViolationTooLong") => "Use no more than {0} characters.",
@@ -2700,11 +2943,11 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "passwordViolationHexRun") => "Break every hexadecimal-only run after at most {0} characters.",
             ("en", "passwordViolationMatchesGenerated") => "Do not reuse either generated 1024-bit factor as the user password.",
             ("en", "passwordViolationEntropy") => "Increase unique, non-pattern characters until the conservative score reaches {0} bits.",
-            ("en", "extractPasswordHelp") => "Enter the user password, PIN, and both generated hexadecimal factors from the separately stored key sheets.",
-            ("en", "extractGeneratedPasswordFirst") => "Generated factor A from key sheet",
-            ("en", "extractGeneratedPasswordSecond") => "Generated factor B from key sheet",
+            ("en", "extractPasswordHelp") => "Extracting the archive requires the password, the PIN, and both generated factors A and B.",
+            ("en", "extractGeneratedPasswordFirst") => "Factor A from the key sheet",
+            ("en", "extractGeneratedPasswordSecond") => "Factor B from the key sheet",
             ("en", "saveTestKeySheet") => "Save test PDF",
-            ("en", "printKeySheet") => "Print separate key sheets",
+            ("en", "printKeySheet") => "Print separately",
             ("en", "keySheetMissing") => "The two key sheets have not been printed or explicitly exported for testing yet.",
             ("en", "keySheetHandled") => "Separate key sheets were printed or explicitly exported for testing for the current archive and factors.",
             ("en", "keySheetRequired") => "Print the separate key sheets (recommended), or explicitly save a test PDF, before creating the encrypted archive.",
@@ -2720,28 +2963,28 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "passwordMatchesGenerated") => "The user password must not equal either generated 1024-bit factor.",
             ("en", "chooseEraseDialog") => "Select encrypted container for cryptographic erase",
             ("en", "eraseTitle") => "Cryptographic erase",
-            ("en", "eraseSubtitle") => "Erase encrypted containers by corrupting and deleting the encrypted container. Plain files require drive-level secure erase.",
+            ("en", "eraseSubtitle") => "Destroy recovery data first, then corrupt and delete the encrypted container.",
             ("en", "eraseFile") => "Encrypted container",
             ("en", "eraseDropHint") => "Drop an encrypted .kzpaq container here.",
             ("en", "eraseNotAnalyzed") => "No file analyzed yet.",
-            ("en", "eraseHardwareNotice") => "Hardware SSD secure erase is whole-drive vendor/firmware functionality, not a per-file app operation.",
-            ("en", "eraseConfirm") => "I understand that per-file hardware secure erase on SSDs cannot be guaranteed and I want to delete this encrypted container.",
+            ("en", "eraseHardwareNotice") => "This invalidates only the current local container file. Backups, shadow copies and cloud versions are not erased; SSD data remnants may remain.",
+            ("en", "eraseConfirm") => "I understand that backups, shadow copies, cloud versions and SSD data remnants may remain, and I want to delete this local encrypted container.",
             ("en", "eraseButton") => "Cryptographically erase container",
             ("en", "analyzeErase") => "Analyze",
             ("en", "eraseMissing") => "Please select an encrypted container first.",
-            ("en", "eraseConfirmMissing") => "Please confirm the SSD/hardware erase limitation before deleting.",
-            ("en", "eraseFinalConfirm") => "This will corrupt and delete the selected encrypted container. Continue?",
+            ("en", "eraseConfirmMissing") => "Please confirm that backups, shadow copies, cloud versions and SSD data remnants may remain.",
+            ("en", "eraseFinalConfirm") => "This will corrupt and delete the selected local encrypted container. Backups, shadow copies and cloud versions are not erased; SSD data remnants may remain. Continue?",
             ("en", "dropEraseTarget") => "Cryptographic erase target set from drop: {0}",
             ("en", "generatedPasswordLog") => "Generated two independent 1024-bit hexadecimal factors and prepared fresh salts and nonces in locked RAM. Print the separate key sheets before encrypting.",
             ("en", "integrityChecking") => "Checking integrity ...",
             ("en", "captureActivating") => "Screen capture protection: enabling ...",
             ("en", "captureActive") => "Screen capture protection: active",
             ("en", "captureUnavailable") => "Screen capture protection: unavailable",
-            ("en", "createTitle") => "Create Archive",
+            ("en", "createTitle") => "Create archive",
             ("en", "addFiles") => "Add files",
             ("en", "addFolder") => "Add folder",
             ("en", "clearSelection") => "Clear selection",
-            ("en", "inputDropHint") => "Drop files or folders anywhere in this panel to add them.",
+            ("en", "inputDropHint") => "Drop files or folders anywhere in this panel.",
             ("en", "targetArchive") => "Target archive",
             ("en", "browse") => "Browse",
             ("en", "compression") => "Compression",
@@ -2751,33 +2994,33 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "cipherSuiteSelected") => "Cipher suite selected: {0}",
             ("en", "selectedSuiteMissing") => "The signed and manifest-verified reference library for {0} is unavailable.",
             ("en", "saveArchive") => "Save archive",
-            ("en", "extractTitle") => "Extract",
-            ("en", "extractSubtitle") => "Select a ZPAQ file or encrypted ZPAQ container and choose the output folder.",
-            ("en", "recoveryPolicy") => "KPAR2 authenticates encrypted archives with HMAC-SHA3-512 and Skein-1024 MAC. For unencrypted archives it provides error correction only. Emergency recovery always writes a new file.",
+            ("en", "extractTitle") => "Extract archive",
+            ("en", "extractSubtitle") => "Select a ZPAQ archive or encrypted Keep Vault container.",
+            ("en", "recoveryPolicy") => "KPAR2 authenticates encrypted archives with two keyed MACs. For plain archives it only provides error correction. Emergency recovery always writes a new file.",
             ("en", "archiveFile") => "Archive file",
-            ("en", "extractArchiveDropHint") => "Drop a .zpaq or .kzpaq file here, or anywhere in this panel.",
-            ("en", "outputFolder") => "Output folder",
-            ("en", "outputFolderDropHint") => "Suggested automatically from the archive name. Drop a folder here to override it.",
+            ("en", "extractArchiveDropHint") => "Drop a .zpaq or .kzpaq file here.",
+            ("en", "outputFolder") => "New output folder",
+            ("en", "outputFolderDropHint") => "Choose or drop its parent folder. Keep Vault proposes a new subfolder inside it.",
             ("en", "password") => "Password",
             ("en", "passwordConfirm") => "Repeat password",
             ("en", "hint") => "Optional hint",
-            ("en", "hintWarning") => "Stored in the public container header. Do not enter passwords or secret fragments.",
-            ("en", "extractHintLabel") => "Optional hint from archive",
+            ("en", "hintWarning") => "Stored in the public container header. Never enter passwords or secret fragments.",
+            ("en", "extractHintLabel") => "Public archive hint",
             ("en", "extractHintNotLoaded") => "No container hint loaded.",
             ("en", "extractHintNone") => "The container has no password hint.",
             ("en", "extractHintUnverified") => "Unverified public header hint: {0}",
             ("en", "extractHintUnavailable") => "The public hint could not be read from this archive.",
-            ("en", "extractPasswordTitle") => "Four factors for extraction",
+            ("en", "extractPasswordTitle") => "Decryption credentials",
             ("en", "extract") => "Extract",
             ("en", "listContents") => "Show contents",
-            ("en", "emergencyRecoveryButton") => "Emergency recovery to new file",
+            ("en", "emergencyRecoveryButton") => "Emergency recovery",
             ("en", "emergencyRecoveryTitle") => "Unauthenticated emergency recovery",
             ("en", "emergencyRecoveryMissing") => "No valid KPAR2 recovery file was found for this archive.",
             ("en", "emergencyRecoveryEncryptedWarning") => "Emergency mode skips KPAR2 metadata authentication and never modifies the original. It writes a new file and still requires all password factors plus successful SHA3-512/Skein-1024 container authentication. Continue?",
             ("en", "emergencyRecoveryPlainWarning") => "This unencrypted KPAR2 profile provides error correction only, not protection against malicious changes. Emergency mode never modifies the original and writes a new file. Continue?",
             ("en", "encryptedHeaderWithoutRecovery") => "This .kzpaq file has no valid encrypted-container header and no usable KPAR2 recovery file. It is blocked instead of being treated as an unencrypted ZPAQ archive.",
             ("en", "recoveryNewFile") => "Recovery output selected: {0}",
-            ("en", "log") => "Log",
+            ("en", "log") => "Security log",
             ("en", "clear") => "Clear",
             ("en", "working") => "Working",
             ("en", "ready") => "Ready",
@@ -2791,7 +3034,7 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "chooseFolderDialog") => "Select folder for ZPAQ",
             ("en", "saveArchiveDialog") => "Save target archive",
             ("en", "chooseArchiveDialog") => "Select archive",
-            ("en", "chooseOutputDialog") => "Select output folder",
+            ("en", "chooseOutputDialog") => "Choose the parent folder for the new output folder",
             ("en", "kalynaFilter") => "Encrypted ZPAQ Container (*.kzpaq)|*.kzpaq|All files (*.*)|*.*",
             ("en", "zpaqFilter") => "ZPAQ Archives (*.zpaq)|*.zpaq|All files (*.*)|*.*",
             ("en", "archiveFilter") => "Archives (*.zpaq;*.kzpaq)|*.zpaq;*.kzpaq|All files (*.*)|*.*",
@@ -2803,7 +3046,8 @@ public sealed partial class MainWindow : Window, IDisposable
             ("en", "targetMissing") => "Please select a target archive.",
             ("en", "archiveTargetOverwritesInput") => "The target archive would overwrite one of the selected input files. Please choose a .zpaq or .kzpaq target path.",
             ("en", "archiveTargetInsideInput") => "The target archive must not be created inside a selected input folder.",
-            ("en", "archiveTargetExists") => "The target archive already exists. Choose a new numbered target path.",
+            ("en", "archiveTargetExists") => "The target archive path already exists. Choose a different path. Your entries remain available.",
+            ("en", "draftChanged") => "Your entries changed while the dialog was open. Check them and try again.",
             ("en", "creatingZpaq") => "Creating ZPAQ archive ...",
             ("en", "zpaqCreateFailed") => "ZPAQ could not create the archive.",
             ("en", "encrypting") => "Encrypting ZPAQ archive ...",
@@ -2841,37 +3085,44 @@ public sealed partial class MainWindow : Window, IDisposable
 
             (_, "windowTitle") => ProductInfo.Name,
             (_, "title") => ProductInfo.Name,
-            (_, "subtitle") => "Verschlüsselte ZPAQ-Archive erstellen, entpacken und kryptografisch löschen.",
+            (_, "subtitle") => "Sichere, wiederherstellbare Archive für Windows",
             (_, "language") => "Sprache",
             (_, "archiveTab") => "Archivierung",
             (_, "extractTab") => "Entpacken",
-            (_, "eraseTab") => "Cryptographic erase",
+            (_, "eraseTab") => "Kryptografisch löschen",
             (_, "subtitle2") => "Verschlüsselte ZPAQ-Archive erstellen, entpacken und kryptografisch löschen.",
-            (_, "createSubtitle") => "Dateien oder Ordner auswählen, Zielarchiv festlegen und vor der Verschlüsselung die zwei getrennten Schlüsselzettel drucken.",
-            (_, "targetArchiveDropHint") => "Ordner hier ablegen, um daneben ordner(1).kzpaq zu erstellen, oder eine Datei als Namensvorlage für name(1).kzpaq ablegen.",
-            (_, "createPasswordSetupTitle") => "Vierteiliges Passwort für verschlüsselte Archive",
-            (_, "createPasswordSetupHelp") => "Zum Entpacken werden das Userpasswort, die PIN sowie zwei unabhängig generierte 1024-Bit-Hex-Faktoren benötigt.",
-            (_, "passwordGeneratorTitle") => "Zwei unabhängige generierte 1024-Bit-Faktoren",
-            (_, "passwordGeneratorHelp") => "Neun getrennte Entropiepools benötigen je mindestens 1024 Maus-Samples. Generieren erzeugt die Faktoren A und B, beide Salts und alle drei Nonce-Teile atomar und verbraucht danach alle Quellpools.",
-            (_, "entropyStatusCollecting") => "Archiv-Entropie wird gesammelt: gesamt {0}; Faktor A {1}+{2}/{10}; Faktor B {3}+{4}/{10}; Salt-SHA3 {5}/{10}; Salt-Skein {6}/{10}; Nonce 1 {7}/{10}; Nonce 2 {8}/{10}; Nonce 3 {9}/{10}",
-            (_, "entropyStatusPrepared") => "Archiv-Entropie bereit: Faktoren A/B, Salts und Nonces wurden erzeugt; ihre Quell-Samples sind sicher verbraucht. Frische Pools: gesamt {0}; Faktor A {1}+{2}/{10}; Faktor B {3}+{4}/{10}; Salt-SHA3 {5}/{10}; Salt-Skein {6}/{10}; Nonce 1 {7}/{10}; Nonce 2 {8}/{10}; Nonce 3 {9}/{10}",
-            (_, "entropyStatusRetry") => "Faktoren A/B bleiben gültig, da ihre Quell-Entropie bereits verbraucht wurde. Nur für einen Wiederholungsversuch werden frische Salts und Nonces benötigt: gesamt {0}; Faktor A {1}+{2}/{10}; Faktor B {3}+{4}/{10}; Salt-SHA3 {5}/{10}; Salt-Skein {6}/{10}; Nonce 1 {7}/{10}; Nonce 2 {8}/{10}; Nonce 3 {9}/{10}",
+            (_, "createSubtitle") => "Dateien oder Ordner auswählen, ein neues Ziel festlegen und vor der Verschlüsselung beide getrennten Schlüsselzettel behandeln.",
+            (_, "targetArchiveDropHint") => "Ordner ablegen, um daneben ordner(1).kzpaq zu erzeugen, oder eine Datei für name(1).kzpaq ablegen.",
+            (_, "createPasswordSetupTitle") => "Entschlüsselungsdaten",
+            (_, "createPasswordSetupHelp") => "Zum Entpacken sind das Passwort, die PIN und beide generierten Faktoren A und B erforderlich.",
+            (_, "passwordGeneratorTitle") => "Zwei generierte Schlüsselfaktoren",
+            (_, "passwordGeneratorHelp") => $"Elf Entropiepools werden durch zufällig zugeordnete Mausereignisse befüllt. Jeder Pool benötigt mindestens {EntropyMixer.RequiredMouseSamplesPerPurpose} Ereignisse. Generieren erstellt die Faktoren A und B sowie die benötigten Salze und Nonce-Werte und leert alle Quellpools.",
+            (_, "entropyStatusCollecting") => "Archiv-Entropie wird gesammelt: gesamt {0}; Faktor A {1}+{2}/{12}; Faktor B {3}+{4}/{12}; Salt-SHA3 {5}/{12}; Salt-Skein {6}/{12}; Nonce 1 {7}/{12}; Nonce 2 {8}/{12}; Nonce 3 {9}/{12}; Nonce 4 {10}/{12}; Nonce 5 {11}/{12}",
+            (_, "entropyStatusPrepared") => "Archiv-Entropie bereit: Faktoren A/B, Salts und Nonces wurden erzeugt; ihre Quell-Samples sind sicher verbraucht. Frische Pools: gesamt {0}; Faktor A {1}+{2}/{12}; Faktor B {3}+{4}/{12}; Salt-SHA3 {5}/{12}; Salt-Skein {6}/{12}; Nonce 1 {7}/{12}; Nonce 2 {8}/{12}; Nonce 3 {9}/{12}; Nonce 4 {10}/{12}; Nonce 5 {11}/{12}",
+            (_, "entropyStatusRetry") => "Faktoren A/B bleiben gültig, da ihre Quell-Entropie bereits verbraucht wurde. Nur für einen Wiederholungsversuch werden frische Salts und Nonces benötigt: gesamt {0}; Faktor A {1}+{2}/{12}; Faktor B {3}+{4}/{12}; Salt-SHA3 {5}/{12}; Salt-Skein {6}/{12}; Nonce 1 {7}/{12}; Nonce 2 {8}/{12}; Nonce 3 {9}/{12}; Nonce 4 {10}/{12}; Nonce 5 {11}/{12}",
             (_, "entropyGeneratedPasswordFirst") => "generierter Faktor A",
             (_, "entropyGeneratedPasswordSecond") => "generierter Faktor B",
             (_, "entropySalt") => "Salt",
             (_, "entropyNonceFirst") => "Nonce 1",
             (_, "entropyNonceSecond") => "Nonce 2",
             (_, "entropyNonceThird") => "Nonce 3",
+            (_, "entropyNonceFourth") => "Nonce 4",
+            (_, "entropyNonceFifth") => "Nonce 5",
+            (_, "entropyPhase.shuffle1") => "Mausdaten mischen: Runde 1",
+            (_, "entropyPhase.sha3") => "Entropie vorbereiten: SHA3-512",
+            (_, "entropyPhase.shuffle2") => "Mausdaten mischen: Runde 2",
+            (_, "entropyPhase.sha512") => "Entropie vorbereiten: SHA-512",
+            (_, "entropyPhase.cleanup") => "Verbrauchte Mausdaten bereinigen",
             (_, "entropyNotReady") => "Nicht genug Maus-Entropie-Samples für {0}. Erforderlich: {1}; aktuell: {2}; fehlend: {3}. Bewege die Maus über dem App-Fenster und versuche es erneut.",
             (_, "generatePassword") => "Generieren",
             (_, "regeneratePassword") => "Neu generieren",
-            (_, "generatedPasswordFirstLabel") => "Generierter Faktor A",
-            (_, "generatedPasswordSecondLabel") => "Generierter Faktor B",
+            (_, "generatedPasswordFirstLabel") => "Faktor A",
+            (_, "generatedPasswordSecondLabel") => "Faktor B",
             (_, "userPassword") => "Userpasswort",
             (_, "userPasswordConfirm") => "Userpasswort wiederholen",
             (_, "pin") => "PIN",
             (_, "repeatPin") => "PIN wiederholen",
-            (_, "pinHelp") => "6 bis 16 Ziffern. Die PIN ist ein eigener Faktor und wird zusammen mit dem Passwort und beiden Faktoren benötigt.",
+            (_, "pinHelp") => "6 bis 16 Ziffern. Die PIN ist eine eigenständige geheime Eingabe. Zum Entpacken werden das Passwort, die PIN und die beiden generierten Faktoren A und B benötigt.",
             (_, "pinAccepted") => "PIN akzeptiert.",
             (_, "pinMismatch") => "Beide PIN-Eingaben unterscheiden sich.",
             (_, "pinTooShort") => "Mindestens {0} Ziffern verwenden.",
@@ -2882,9 +3133,20 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "pinSequentialAscending") => "Keine 3 aufsteigenden Ziffernfolgen verwenden.",
             (_, "pinSequentialDescending") => "Keine 3 absteigenden Ziffernfolgen verwenden.",
             (_, "pinBlocklisted") => "Dieses PIN-Muster ist leicht erratbar.",
+            (_, "pinContainedInPassword") => "Die PIN darf nicht im Passwort enthalten sein. Wähle eine andere PIN oder ein anderes Passwort.",
+            (_, "pinCurrentDate") => "Die PIN darf nicht dem heutigen Datum entsprechen, auch nicht in amerikanischer Schreibweise.",
+            (_, "pinPlausibleDate") => "Kein vollständiges Kalenderdatum als PIN verwenden.",
+            (_, "pinPredictablePattern") => "Vorhersehbare Zahlenmuster, Wiederholungen und Spiegelungen vermeiden.",
+            (_, "pinPasswordRequired") => "Das Passwort eingeben, damit die endgültige Kombination aus Passwort und PIN geprüft werden kann.",
             (_, "pinInvalidFormat") => "Die PIN muss aus 6 bis 16 ASCII-Ziffern bestehen.",
-            (_, "passwordHelp") => "Userpasswort: 24-256 Zeichen, mindestens 3 Zeichengruppen, 12 verschiedene Zeichen, 12 Nicht-Hex-Zeichen, keine Hex-Folge ab 8 Zeichen und mindestens 128 Bit konservative Bewertung. Es muss von beiden generierten Faktoren verschieden sein.",
-            (_, "passwordEntropyStatus") => "Konservative Entropiebewertung: {0} / {1} Bit",
+            (_, "passwordHelp") => "24 bis 256 Zeichen, mindestens 3 Zeichengruppen, 12 verschiedene und 12 Nicht-Hex-Zeichen, keine Hex-Folge ab 8 Zeichen und mindestens 128 Bit konservative Bewertung.",
+            (_, "passwordEntropyStatus") => "Konservativer Modellwert: {0} / {1} Bit (Schätzung)",
+            (_, "passwordListed") => "Dieses vollständige Passwort steht in der mitgelieferten lokalen Sperrliste. Wähle ein anderes Passwort.",
+            (_, "passwordModelUnavailableShort") => "Passwortbewertung nicht verfügbar.",
+            (_, "passwordModelUnavailable") => "Das lokale Passwortmodell konnte nicht geprüft werden. Vor dem Archivieren eine geprüfte App-Kopie erneut installieren. Entpacken bleibt möglich.",
+            (_, "extractPasswordTechnicalLimit") => "Das Passwort überschreitet die technische Eingabegrenze von 1.048.576 UTF-16-Codeeinheiten.",
+            (_, "extractPinTechnicalLimit") => "Die PIN überschreitet die technische Eingabegrenze von 1.048.576 Ziffern.",
+            (_, "extractPinAscii") => "Die PIN mit den ursprünglichen ASCII-Ziffern 0 bis 9 eingeben.",
             (_, "passwordPolicyAccepted") => "Alle Anforderungen an das Userpasswort sind erfüllt.",
             (_, "passwordViolationTooShort") => "Mindestens {0} Zeichen verwenden.",
             (_, "passwordViolationTooLong") => "Höchstens {0} Zeichen verwenden.",
@@ -2896,11 +3158,11 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "passwordViolationHexRun") => "Jede reine Hex-Folge spätestens nach {0} Zeichen unterbrechen.",
             (_, "passwordViolationMatchesGenerated") => "Keinen der generierten 1024-Bit-Faktoren als Userpasswort wiederverwenden.",
             (_, "passwordViolationEntropy") => "Mehr eindeutige, nicht schematische Zeichen verwenden, bis die konservative Bewertung {0} Bit erreicht.",
-            (_, "extractPasswordHelp") => "Userpasswort, PIN und beide generierten Hex-Faktoren von den getrennt gelagerten Schlüsselzetteln eingeben.",
-            (_, "extractGeneratedPasswordFirst") => "Generierter Faktor A vom Schlüsselzettel",
-            (_, "extractGeneratedPasswordSecond") => "Generierter Faktor B vom Schlüsselzettel",
+            (_, "extractPasswordHelp") => "Zum Entpacken sind das Passwort, die PIN und beide generierten Faktoren A und B erforderlich.",
+            (_, "extractGeneratedPasswordFirst") => "Faktor A vom Schlüsselzettel",
+            (_, "extractGeneratedPasswordSecond") => "Faktor B vom Schlüsselzettel",
             (_, "saveTestKeySheet") => "Test-PDF speichern",
-            (_, "printKeySheet") => "Getrennte Schlüsselzettel drucken",
+            (_, "printKeySheet") => "Getrennt drucken",
             (_, "keySheetMissing") => "Die zwei Schlüsselzettel wurden noch nicht gedruckt oder ausdrücklich als Test exportiert.",
             (_, "keySheetHandled") => "Getrennte Schlüsselzettel wurden für das aktuelle Archiv und die Faktoren gedruckt oder ausdrücklich als Test exportiert.",
             (_, "keySheetRequired") => "Die getrennten Schlüsselzettel vor dem Erstellen drucken (empfohlen) oder ausdrücklich eine Test-PDF speichern.",
@@ -2915,18 +3177,18 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "passwordComplexity") => "Das Userpasswort erfüllt die Sicherheitsrichtlinie nicht.",
             (_, "passwordMatchesGenerated") => "Das Userpasswort darf keinem der generierten 1024-Bit-Passwörter entsprechen.",
             (_, "chooseEraseDialog") => "Verschlüsselten Container für Cryptographic erase auswählen",
-            (_, "eraseTitle") => "Cryptographic erase",
-            (_, "eraseSubtitle") => "Verschlüsselte Container durch Beschädigen und Löschen des Containers entfernen. Unverschlüsselte Dateien benötigen eine Laufwerks-/Hardware-Löschung.",
+            (_, "eraseTitle") => "Kryptografisch löschen",
+            (_, "eraseSubtitle") => "Zuerst Wiederherstellungsdaten vernichten, danach den verschlüsselten Container beschädigen und löschen.",
             (_, "eraseFile") => "Verschlüsselter Container",
             (_, "eraseDropHint") => "Verschlüsselten .kzpaq-Container hier ablegen.",
             (_, "eraseNotAnalyzed") => "Noch keine Datei analysiert.",
-            (_, "eraseHardwareNotice") => "Hardwarebasierte SSD-Löschung ist eine laufwerksweite Hersteller-/Firmware-Funktion, keine per-Datei-App-Operation.",
-            (_, "eraseConfirm") => "Ich verstehe, dass per-Datei-Hardware-Löschung auf SSDs nicht garantiert werden kann, und möchte diesen verschlüsselten Container löschen.",
+            (_, "eraseHardwareNotice") => "Dies macht nur die aktuelle lokale Containerdatei unbrauchbar. Backups, Schattenkopien und Cloud-Versionen werden nicht gelöscht; SSD-Datenreste können bestehen bleiben.",
+            (_, "eraseConfirm") => "Ich verstehe, dass Backups, Schattenkopien, Cloud-Versionen und SSD-Datenreste bestehen bleiben können, und möchte diesen lokalen verschlüsselten Container löschen.",
             (_, "eraseButton") => "Container kryptografisch löschen",
             (_, "analyzeErase") => "Analysieren",
             (_, "eraseMissing") => "Bitte zuerst einen verschlüsselten Container auswählen.",
-            (_, "eraseConfirmMissing") => "Bitte bestätige die SSD-/Hardware-Löschgrenze vor dem Löschen.",
-            (_, "eraseFinalConfirm") => "Der ausgewählte verschlüsselte Container wird beschädigt und gelöscht. Fortfahren?",
+            (_, "eraseConfirmMissing") => "Bitte bestätige, dass Backups, Schattenkopien, Cloud-Versionen und SSD-Datenreste bestehen bleiben können.",
+            (_, "eraseFinalConfirm") => "Der ausgewählte lokale verschlüsselte Container wird beschädigt und gelöscht. Backups, Schattenkopien und Cloud-Versionen werden nicht gelöscht; SSD-Datenreste können bestehen bleiben. Fortfahren?",
             (_, "dropEraseTarget") => "Cryptographic-erase-Ziel per Drag-and-Drop gesetzt: {0}",
             (_, "generatedPasswordLog") => "Zwei unabhängige 1024-Bit-Hex-Faktoren erzeugt sowie frische Salts und Nonces im gesperrten RAM vorbereitet. Vor dem Verschlüsseln die getrennten Schlüsselzettel drucken.",
             (_, "integrityChecking") => "Integrität wird geprüft ...",
@@ -2937,43 +3199,43 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "addFiles") => "Dateien hinzufügen",
             (_, "addFolder") => "Ordner hinzufügen",
             (_, "clearSelection") => "Auswahl leeren",
-            (_, "inputDropHint") => "Dateien oder Ordner irgendwo in dieses Panel ziehen, um sie hinzuzufügen.",
+            (_, "inputDropHint") => "Dateien oder Ordner irgendwo in diesem Panel ablegen.",
             (_, "targetArchive") => "Zielarchiv",
-            (_, "browse") => "Durchsuchen",
+            (_, "browse") => "Auswählen",
             (_, "compression") => "Kompression",
             (_, "encrypt") => "Archiv verschlüsseln",
-            (_, "cipherSuite") => "Verschlüsselungsverfahren",
+            (_, "cipherSuite") => "Verfahren",
             (_, "argon2Profile") => "Zwei sequenzielle KDF-Pfade (1 GiB bis knapp 2 GiB via PMI16, t=4, p=4) mit gemeinsamem 1024-Bit-Master (Paranoia: 4 Argon2id-Aufrufe, gesperrter RAM erforderlich)",
             (_, "cipherSuiteSelected") => "Verschlüsselungsverfahren gewählt: {0}",
             (_, "selectedSuiteMissing") => "Die signierte und manifestgeprüfte Referenzbibliothek für {0} ist nicht verfügbar.",
             (_, "saveArchive") => "Archiv speichern",
-            (_, "extractTitle") => "Entpacken",
-            (_, "extractSubtitle") => "ZPAQ-Datei oder verschlüsselten ZPAQ-Container auswählen und Zielordner festlegen.",
-            (_, "recoveryPolicy") => "KPAR2 authentifiziert verschlüsselte Archive mit HMAC-SHA3-512 und Skein-1024-MAC. Für unverschlüsselte Archive bietet es ausschließlich Fehlerkorrektur. Die Notfallwiederherstellung schreibt immer eine neue Datei.",
+            (_, "extractTitle") => "Archiv entpacken",
+            (_, "extractSubtitle") => "ZPAQ-Archiv oder verschlüsselten Keep-Vault-Container auswählen.",
+            (_, "recoveryPolicy") => "KPAR2 authentifiziert verschlüsselte Archive mit zwei MACs. Für unverschlüsselte Archive bietet es nur Fehlerkorrektur. Die Notfallwiederherstellung schreibt immer eine neue Datei.",
             (_, "archiveFile") => "Archivdatei",
-            (_, "extractArchiveDropHint") => ".zpaq- oder .kzpaq-Datei hier oder irgendwo in dieses Panel ziehen.",
-            (_, "outputFolder") => "Zielordner",
-            (_, "outputFolderDropHint") => "Wird automatisch aus dem Archivnamen vorgeschlagen. Ordner hier ablegen, um ihn zu überschreiben.",
+            (_, "extractArchiveDropHint") => ".zpaq- oder .kzpaq-Datei hier ablegen.",
+            (_, "outputFolder") => "Neuer Ausgabeordner",
+            (_, "outputFolderDropHint") => "Übergeordneten Ordner auswählen oder ablegen. Keep Vault schlägt darin einen neuen Unterordner vor.",
             (_, "password") => "Passwort",
             (_, "passwordConfirm") => "Passwort wiederholen",
             (_, "hint") => "Optionaler Hinweis",
-            (_, "hintWarning") => "Wird im öffentlichen Containerkopf gespeichert. Keine Passwörter oder geheimen Fragmente eintragen.",
-            (_, "extractHintLabel") => "Optionaler Hinweis aus dem Archiv",
+            (_, "hintWarning") => "Wird im öffentlichen Containerkopf gespeichert. Niemals Passwörter oder Geheimnisfragmente eingeben.",
+            (_, "extractHintLabel") => "Öffentlicher Archivhinweis",
             (_, "extractHintNotLoaded") => "Noch kein Containerhinweis geladen.",
             (_, "extractHintNone") => "Der Container enthält keinen Passworthinweis.",
             (_, "extractHintUnverified") => "Unbestätigter öffentlicher Kopf-Hinweis: {0}",
             (_, "extractHintUnavailable") => "Der öffentliche Hinweis konnte aus diesem Archiv nicht gelesen werden.",
-            (_, "extractPasswordTitle") => "Vier Faktoren zum Entpacken",
+            (_, "extractPasswordTitle") => "Entschlüsselungsdaten",
             (_, "extract") => "Entpacken",
             (_, "listContents") => "Inhalt anzeigen",
-            (_, "emergencyRecoveryButton") => "Notfallwiederherstellung in neue Datei",
+            (_, "emergencyRecoveryButton") => "Notfallwiederherstellung",
             (_, "emergencyRecoveryTitle") => "Nicht authentifizierte Notfallwiederherstellung",
             (_, "emergencyRecoveryMissing") => "Für dieses Archiv wurde keine gültige KPAR2-Wiederherstellungsdatei gefunden.",
             (_, "emergencyRecoveryEncryptedWarning") => "Der Notfallmodus überspringt die KPAR2-Metadaten-Authentifizierung und verändert niemals das Original. Er schreibt eine neue Datei und verlangt weiterhin alle Passwortfaktoren sowie eine erfolgreiche SHA3-512-/Skein-1024-Container-Authentifizierung. Fortfahren?",
             (_, "emergencyRecoveryPlainWarning") => "Dieses unverschlüsselte KPAR2-Profil bietet nur Fehlerkorrektur und keinen Schutz gegen absichtliche Änderungen. Der Notfallmodus verändert niemals das Original und schreibt eine neue Datei. Fortfahren?",
             (_, "encryptedHeaderWithoutRecovery") => "Diese .kzpaq-Datei besitzt keinen gültigen Kopf eines verschlüsselten Containers und keine nutzbare KPAR2-Wiederherstellungsdatei. Sie wird blockiert, statt als unverschlüsseltes ZPAQ-Archiv behandelt zu werden.",
             (_, "recoveryNewFile") => "Wiederherstellungsdatei ausgewählt: {0}",
-            (_, "log") => "Protokoll",
+            (_, "log") => "Sicherheitsprotokoll",
             (_, "clear") => "Leeren",
             (_, "working") => "In Bearbeitung",
             (_, "ready") => "Bereit",
@@ -2987,7 +3249,7 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "chooseFolderDialog") => "Ordner für ZPAQ auswählen",
             (_, "saveArchiveDialog") => "Zielarchiv speichern",
             (_, "chooseArchiveDialog") => "Archiv auswählen",
-            (_, "chooseOutputDialog") => "Zielordner auswählen",
+            (_, "chooseOutputDialog") => "Übergeordneten Ordner für den neuen Ausgabeordner auswählen",
             (_, "kalynaFilter") => "Verschlüsselter ZPAQ-Container (*.kzpaq)|*.kzpaq|Alle Dateien (*.*)|*.*",
             (_, "zpaqFilter") => "ZPAQ Archive (*.zpaq)|*.zpaq|Alle Dateien (*.*)|*.*",
             (_, "archiveFilter") => "Archive (*.zpaq;*.kzpaq)|*.zpaq;*.kzpaq|Alle Dateien (*.*)|*.*",
@@ -2999,7 +3261,8 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "targetMissing") => "Bitte ein Zielarchiv auswählen.",
             (_, "archiveTargetOverwritesInput") => "Das Zielarchiv würde eine ausgewählte Eingabedatei überschreiben. Bitte einen .zpaq- oder .kzpaq-Zielpfad wählen.",
             (_, "archiveTargetInsideInput") => "Das Zielarchiv darf nicht innerhalb eines ausgewählten Eingabeordners erstellt werden.",
-            (_, "archiveTargetExists") => "Das Zielarchiv existiert bereits. Bitte einen neuen nummerierten Zielpfad wählen.",
+            (_, "archiveTargetExists") => "Der Zielpfad existiert bereits. Wähle einen anderen Pfad. Deine Eingaben bleiben erhalten.",
+            (_, "draftChanged") => "Die Eingaben wurden während des Dialogs geändert. Prüfe sie und versuche es erneut.",
             (_, "creatingZpaq") => "Erstelle ZPAQ-Archiv ...",
             (_, "zpaqCreateFailed") => "ZPAQ konnte das Archiv nicht erstellen.",
             (_, "encrypting") => "Verschlüssele ZPAQ-Archiv ...",
@@ -3007,7 +3270,7 @@ public sealed partial class MainWindow : Window, IDisposable
             (_, "archiveCreated") => "Archiv wurde erstellt.",
             (_, "archiveCreatedOriginalsDeleted") => "Archiv erstellt; die Originale wurden nach geprüftem bitweisem Abgleich gelöscht.",
             (_, "deleteOriginals") => "Originaldateien nach geprüftem Abgleich löschen",
-            (_, "deleteOriginalsHint") => "Das Archiv wird danach erneut entpackt und bitweise mit den Originalen verglichen. Gelöscht wird erst nach vollständiger Übereinstimmung.",
+            (_, "deleteOriginalsHint") => "Das Archiv wird danach erneut entpackt und bitweise mit den Originalen verglichen. Gelöscht wird erst bei vollständiger Übereinstimmung.",
             (_, "verifyingBeforeDelete") => "Archiv wird erneut entpackt und mit den Originalen verglichen …",
             (_, "verifyExtractFailed") => "Das Archiv konnte zur Prüfung nicht entpackt werden. Es wurde keine Originaldatei gelöscht.",
             (_, "verifyMismatch") => "Das Archiv gibt die Originale nicht bitgenau wieder. Es wurde keine Originaldatei gelöscht.",
@@ -3070,10 +3333,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private EncryptionSuite LoadSavedCipherSuite()
     {
-        string? value = _settingsStore.Read(CipherSuiteSettingsFile)?.Trim();
-        return Enum.TryParse(value, ignoreCase: false, out EncryptionSuite suite) && Enum.IsDefined(suite)
-            ? suite
-            : EncryptionSuiteCatalog.Default;
+        return EncryptionSuiteCatalog.ParsePreference(_settingsStore.Read(CipherSuiteSettingsFile));
     }
 
     private void SaveCipherSuite(EncryptionSuite suite)

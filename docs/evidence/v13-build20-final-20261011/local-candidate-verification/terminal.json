@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-11T13:22:14.030482+00:00",
+  "actualVerificationPid": 31000,
+  "actualResult": 0,
+  "verificationSha256": "5dca8d3744daa9b1fba94b7271ba667feab3c66e2b292b2300529e45d0fb28c0",
+  "role": "READ_ONLY_EXISTING_BUILD20_ARTIFACT_VERIFICATION"
+}

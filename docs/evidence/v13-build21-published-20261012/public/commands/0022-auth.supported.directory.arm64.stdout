@@ -1,0 +1,7 @@
+verified=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/public-verification-build21-20261012T1309/auth/kit/QR-Scanner.app/Contents/MacOS/QR-Scanner
+verified=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/public-verification-build21-20261012T1309/auth/kit/QR-Scanner.app.sha3
+verified=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/public-verification-build21-20261012T1309/auth/kit/QR-Scanner.app.skein
+manifests_match=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/public-verification-build21-20261012T1309/auth/kit/QR-Scanner.app/Contents/MacOS/QR-Scanner
+directory=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/public-verification-build21-20261012T1309/auth/kit/QR-Scanner.app
+verified_artifacts=1
+RESULT: TRUSTED - RSA-PSS/SHA-512 and ML-DSA-87 verification passed.

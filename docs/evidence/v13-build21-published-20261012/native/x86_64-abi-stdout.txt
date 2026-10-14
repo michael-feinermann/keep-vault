@@ -1,0 +1,1 @@
+{"checks": 161, "receipt": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/final-native-build21-20261012T1300/native-null-x86_64.json", "receipt_sha256": "0f93b12b9d6570357650b2d713be51a499f13dff1b009306194296c4aa9fdc20", "status": "PASS"}

@@ -1,0 +1,63 @@
+{
+  "completedUtc": "2026-10-10T06:43:09.258633+00:00",
+  "status": "PAIRED_DIAGNOSTIC_COMPLETE",
+  "results": [
+    {
+      "label": "originalBuild18",
+      "actualPid": 37465,
+      "actualExitCode": 0,
+      "workerResult": {
+        "schemaVersion": 1,
+        "id": "performance.pipeline-slot-scaling",
+        "status": "PASS",
+        "seconds": 150.5505967,
+        "peakRssMiB": 2536,
+        "seed": 151888956,
+        "failure": null
+      },
+      "mediansMiBPerSecond": {
+        "Auto": 399.52712219521425,
+        "1": 419.9977326684901,
+        "2": 419.75890425873285,
+        "3": 362.4553461384843,
+        "4": 318.8640468331569,
+        "5": 409.3949095261238,
+        "6": 329.4139507065479,
+        "8": 381.04588462258073,
+        "10": 344.6437514472345
+      },
+      "bestMode": "1",
+      "autoToBestRatio": 0.9512601881366975
+    },
+    {
+      "label": "balancedDevelopment",
+      "actualPid": 37563,
+      "actualExitCode": 0,
+      "workerResult": {
+        "schemaVersion": 1,
+        "id": "performance.pipeline-slot-scaling",
+        "status": "PASS",
+        "seconds": 150.0526933,
+        "peakRssMiB": 2780,
+        "seed": 151888956,
+        "failure": null
+      },
+      "mediansMiBPerSecond": {
+        "Auto": 381.591774312315,
+        "1": 411.14214484826846,
+        "2": 413.8103381137587,
+        "3": 382.0732998670952,
+        "4": 379.7767684023355,
+        "5": 393.56599540603946,
+        "6": 388.41197158523676,
+        "8": 362.8763850254524,
+        "10": 377.47689723427396
+      },
+      "bestMode": "2",
+      "autoToBestRatio": 0.9221417136451854
+    }
+  ],
+  "compiledInputsStable": true,
+  "sourceBytesStable": true,
+  "scope": "Actual beforeandafter benchmark outputs; final sign/install/GUI andallreleasegates remainseparate."
+}

@@ -1,0 +1,37 @@
+{
+  "declaredBuilderRoot": "/private/tmp/keep-vault-release.CwiuZ5No",
+  "error": null,
+  "evidenceRoot": "/private/tmp/keep-vault-release-evidence.qlvF764O",
+  "fullReleaseNotRunMarker": true,
+  "prereleasePublishedMarker": true,
+  "preservation": {
+    "actualBuilderPid": 59476,
+    "boundSdkDirectoryIdentity": [
+      16777232,
+      57340919
+    ],
+    "boundSdkPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T090448828623Z-80743/public-dotnet-sdk",
+    "builderRoot": "/private/tmp/keep-vault-release.CwiuZ5No",
+    "builderRootIdentity": [
+      16777232,
+      57533562
+    ],
+    "builderWasStoppedBeforeCleanup": true,
+    "harnessFileCount": 124,
+    "harnessManifestSha256": "a6fc3eaf51c7fe5f5aeeb3e9df2d2fab119bd89879eac992862f275c4142fd06",
+    "harnessPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T121300327577Z-31963/public-harness",
+    "managedHarnessIsAotProduct": false,
+    "observedUtc": "2026-10-12T12:31:45.049990+00:00",
+    "pinnedMicrosoftArchiveSha512": "e440e9a58d4ff7741c8342ac3e086fa9ee2dadc25e01c0449a88317a74cfbd63625b8092c3b2a131ae14b16ab3401e9cc470e578e4c65a72a0b5786bd2308cde",
+    "privateBuildRootCopied": false,
+    "rootSelection": "Fresh private root declared by this actual builder stdout test_natives marker, with the exact fixed test-harness subtree and native bytes equal to its final staged signed product.",
+    "scope": "Public DLL/runtimeconfig/dependency data, native libraries, public fixtures/results, and the fresh verified Microsoft SDK only; private key material and credentials are never opened or copied.",
+    "sdkFileCount": 4906,
+    "sdkManifestSha256": "20e6d08810eeb8018825d96c94cdc2684a6d96a7f3391ed4bf21f9fef1c20ed3",
+    "sdkVersion": "10.0.400",
+    "stagedAotProduct": {
+      "bytes": 60534192,
+      "sha256": "bd5a5fbcc1c0b768386a63b7644368bff6cdaa87ddd61c7e504ded91569b078d"
+    }
+  }
+}

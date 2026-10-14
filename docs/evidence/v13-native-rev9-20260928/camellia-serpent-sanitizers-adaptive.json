@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "scope": "new adapters, fixed-access Camellia and shared CTR instrumented; vendor static Crypto++ archive uninstrumented",
+  "leak_sanitizer": "NOT AVAILABLE in Apple arm64 sanitizer runtime; detect_leaks=0",
+  "corpus_sha256": "fd2f6e4224cb0ec0dfa6936fb0735fc70d760e61778a5b7c10e8b2ee0dcae440",
+  "results": [
+    {
+      "sanitizer": "address,undefined",
+      "status": "PASS",
+      "records": 54,
+      "checks": 1296,
+      "maximum_payload": 16777216,
+      "stderr": "",
+      "binary_sha256": {
+        "libserpent_v13.dylib": "7504bff015d41b5bd4d1893415d53c08cb412ef20982b9e7dd6a86d57810b9de",
+        "libcamellia_v13.dylib": "10f0e77431b263b2552c866f495b133e2e6a55f1d684d2e7ee02740ad38c71d7"
+      }
+    },
+    {
+      "sanitizer": "thread",
+      "status": "PASS",
+      "records": 54,
+      "checks": 1296,
+      "maximum_payload": 16777216,
+      "stderr": "",
+      "binary_sha256": {
+        "libserpent_v13.dylib": "b396427cfbc635fd2d23cf9fb0a4f751622915e57a49debd642a44a0dee48284",
+        "libcamellia_v13.dylib": "dcb1803827e70e9daf9886802ef2ee83d7927ead715b10ddcb919b76cef8d5e6"
+      }
+    }
+  ]
+}

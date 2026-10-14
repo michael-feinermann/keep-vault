@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-01T10:18:56.348462+00:00",
+  "manifest_path": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/dist/Keep Vault-macOS/.anchor-install.YOSg3T3W/installation-manifest.json",
+  "sha256": "c8209893cc0d5e27a5e8ac775c5adb7724cef43863d8f35bbbd8f6c84f0fd647",
+  "previously_recorded_sha256": "c8209893cc0d5e27a5e8ac775c5adb7724cef43863d8f35bbbd8f6c84f0fd647",
+  "matches_previous_candidate_record": true,
+  "version": "5.0.3",
+  "build": "15",
+  "app_inventory_comparisons": [
+    {
+      "app": "main",
+      "entries": 111,
+      "matched": true,
+      "differences": []
+    },
+    {
+      "app": "scanner",
+      "entries": 11,
+      "matched": true,
+      "differences": []
+    },
+    {
+      "app": "installer",
+      "entries": 28,
+      "matched": true,
+      "differences": []
+    }
+  ],
+  "source_checkpoint_commit": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "source_checkpoints_all_pass": true,
+  "scope": "Connects this read-only app inventory to the previously recorded candidate manifest and source checkpoints; not a new hybrid-signature verification.",
+  "passed": true
+}

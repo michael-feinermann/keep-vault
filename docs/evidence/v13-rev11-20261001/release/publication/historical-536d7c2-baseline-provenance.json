@@ -1,0 +1,118 @@
+{
+  "utc": "2026-10-01T10:31:26.705055+00:00",
+  "status": "VALID_EXISTING_HISTORICAL_COMPLETE_GROUP",
+  "newMeasurementPerformed": false,
+  "selectedAsCurrentGateBaseline": false,
+  "scope": "Faithful extraction of alreadycompleted536d7c2GCDUtility primitive schema2results from its entirePASS685.081s performance group. Does not supersede or erase current failure. No current baseline or runner modified.",
+  "sourceCommit": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+  "sourceLog": "work/v13-evidence/finish-5.0.3.z9wGjkRO/build.log",
+  "sourceLogSha256": "dcea44bcc4ae9de270f701a00f91a0ea793cd732ed109baa140002c5666f0929",
+  "sourceLine": 1590,
+  "sourceResult": "work/v13-evidence/final-run-536d7c2-20260929/phase-8/phase-8.test-results.json",
+  "sourceResultSha256": "2f902d9cfa24c0d22118092a53a82a9cb2be0b5745f845543bd019b54b2ab401",
+  "preservationRecordSha256": "10994b128b40e8577acffd600ddf8b103d7044775888c647fbb9d72cb31d11c0",
+  "completionRecordSha256": "715be2ae59a9249bc724f621135d9d6410e7661d2f76cdde014604e7f10dec6a",
+  "extractedJsonSha256": "4b76be3c3b403dd1fb981b82ae080890358a04c4194643ecf58685a8c8c3d2ab",
+  "hostEqualsCurrentPreflight": true,
+  "groupSeconds": 685.081,
+  "groupSeed": "0x2B6FF0AB",
+  "ratesComparedWithoutRerun": [
+    {
+      "suite": "Kalyna512_512",
+      "historicalMiBPerSecond": 1691.2123680474492,
+      "currentRoundedMiBPerSecond": 1447.3,
+      "fraction": 0.8557766176171874,
+      "existingThresholdMiBPerSecond": 1268.409276035587,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "Threefish1024",
+      "historicalMiBPerSecond": 2948.8874861194945,
+      "currentRoundedMiBPerSecond": 2484.0,
+      "fraction": 0.84235156875,
+      "existingThresholdMiBPerSecond": 2211.665614589621,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "StandardCascade",
+      "historicalMiBPerSecond": 685.3991245097121,
+      "currentRoundedMiBPerSecond": 575.3,
+      "fraction": 0.8393649472656248,
+      "existingThresholdMiBPerSecond": 514.0493433822841,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "ParanoiaCascade",
+      "historicalMiBPerSecond": 145.0890940551954,
+      "currentRoundedMiBPerSecond": 106.2,
+      "fraction": 0.7319640438281251,
+      "existingThresholdMiBPerSecond": 108.81682054139655,
+      "below25PercentGate": true
+    },
+    {
+      "suite": "XChaChaOverAes",
+      "historicalMiBPerSecond": 2056.996479804071,
+      "currentRoundedMiBPerSecond": 1617.7,
+      "fraction": 0.7864379039453125,
+      "existingThresholdMiBPerSecond": 1542.7473598530532,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "Aes256",
+      "historicalMiBPerSecond": 11396.56945452279,
+      "currentRoundedMiBPerSecond": 8747.3,
+      "fraction": 0.7675379889453124,
+      "existingThresholdMiBPerSecond": 8547.427090892093,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "Mars448",
+      "historicalMiBPerSecond": 1188.8038821876778,
+      "currentRoundedMiBPerSecond": 1131.8,
+      "fraction": 0.952049380859375,
+      "existingThresholdMiBPerSecond": 891.6029116407583,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "Shacal2_512",
+      "historicalMiBPerSecond": 1809.5875624784846,
+      "currentRoundedMiBPerSecond": 1407.8,
+      "fraction": 0.7779673275781249,
+      "existingThresholdMiBPerSecond": 1357.1906718588634,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "XChaCha20Poly1305",
+      "historicalMiBPerSecond": 2211.9898490403334,
+      "currentRoundedMiBPerSecond": 1850.9,
+      "fraction": 0.8367579086328125,
+      "existingThresholdMiBPerSecond": 1658.99238678025,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "MixedCascade",
+      "historicalMiBPerSecond": 1210.5650170353924,
+      "currentRoundedMiBPerSecond": 917.9,
+      "fraction": 0.7582409759765625,
+      "existingThresholdMiBPerSecond": 907.9237627765443,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "Camellia256",
+      "historicalMiBPerSecond": 367.10077289052566,
+      "currentRoundedMiBPerSecond": 275.9,
+      "fraction": 0.7515647483593749,
+      "existingThresholdMiBPerSecond": 275.32557966789426,
+      "below25PercentGate": false
+    },
+    {
+      "suite": "Serpent256",
+      "historicalMiBPerSecond": 829.5608836119599,
+      "currentRoundedMiBPerSecond": 664.0,
+      "fraction": 0.80042346875,
+      "existingThresholdMiBPerSecond": 622.1706627089699,
+      "below25PercentGate": false
+    }
+  ],
+  "conclusion": "Current Paranoia106.2 is still below historicalGCD145.0890940551954*0.75=108.81682054139655. Historicalmethodology resolves baselinecomparability concern but not failedgate; cause remainsunproven."
+}

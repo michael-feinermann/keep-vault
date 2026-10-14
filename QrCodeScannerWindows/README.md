@@ -7,10 +7,10 @@ content in a text box and puts it on the clipboard on request. The content is
 **not** written to a file.
 
 It is independent of Keep Vault: own folder, own project, own dependency set,
-own build, own signature. It shares no source with Keep Vault, reads nothing out
-of its installation, and Keep Vault's build scripts do not touch it. The reason
-is not tidiness — the scanner needs a camera, and the program that holds archive
-keys must never be the one that has one.
+own build, own signature. It shares no source with Keep Vault and reads nothing
+out of its installation. The integrated Windows release builder invokes the
+scanner's own build script and includes its signed output. The scanner runs in
+a separate process: camera access remains outside the archive application.
 
 The macOS counterpart is [`../QrCodeScanner`](../QrCodeScanner). Both make the
 same decision about which of the two printed codes is taken, in the same words,
@@ -129,3 +129,11 @@ For the list above to be worth anything, here is the honest other half.
 | `Tests/QrImage.cs` | Renders codes into a camera-shaped frame for that decode. |
 | `tools/Build-QrScanner-Windows.ps1` | Test, build, sign. |
 | `tools/New-QrScannerIcon.ps1` | Generates the icon, which is itself a scannable QR code. |
+
+## Third-party dependency
+
+The Windows decoder pins [ZXing.Net 0.16.10](https://www.nuget.org/packages/ZXing.Net/0.16.10).
+Its [upstream project](https://github.com/micjahn/ZXing.Net) provides the
+[Apache License 2.0 text](https://github.com/micjahn/ZXing.Net/blob/master/COPYING).
+These references document the dependency; they are not evidence of a new Windows
+build or release in this macOS-only revision.

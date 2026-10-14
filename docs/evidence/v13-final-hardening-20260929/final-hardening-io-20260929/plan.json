@@ -1,0 +1,29 @@
+{
+  "ids": [
+    "io.verified-input-domain-kats",
+    "io.verified-input-state",
+    "io.verified-input-ranges",
+    "io.verified-input-descriptor-capture",
+    "io.verified-input-read-only-seal",
+    "io.verified-input-tamper",
+    "io.verified-input-private-copy",
+    "io.verified-original",
+    "io.verified-input-policy",
+    "io.verified-input-parallel-lifetime",
+    "io.verified-input-cleanup-retry",
+    "fuzz.verified-input-10000",
+    "fuzz.recovery-streaming-10000",
+    "fuzz.verified-read-at-server-10000",
+    "recovery.kpar2-v4-adversarial",
+    "recovery.record-table-layout",
+    "recovery.record-table-tamper",
+    "recovery.record-table-budget",
+    "recovery.record-table-cleanup",
+    "recovery.streaming-metadata-canonical",
+    "containers.v13-production-worker-equivalence"
+  ],
+  "group_count": 21,
+  "seed": "0x5EED0313",
+  "cwd": "KeepVaultMac",
+  "real_source_limit_bytes": 268435456
+}

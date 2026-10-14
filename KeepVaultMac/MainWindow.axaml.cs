@@ -21,6 +21,7 @@ namespace KalynaArchiver;
 public sealed partial class MainWindow : Window, IDisposable
 {
     internal static Action? TestHookBeforeVerificationRootCleanup { get; set; }
+    internal static Action<string>? TestHookBeforeVerificationExtraction { get; set; }
     internal static Action<string>? TestHookBeforeCredentialOperation { get; set; }
     internal static Func<SecurityDialogKind, string, Task>? TestHookShowDialogAsync { get; set; }
 
@@ -40,17 +41,26 @@ public sealed partial class MainWindow : Window, IDisposable
     private readonly RecoveryService _recovery = new();
     private readonly MacKeySheetService _keySheets = new();
     private readonly IAppSettingsStore _settingsStore;
+    private readonly ReleaseAuditSession? _releaseAudit;
+    private readonly ReleaseAuditInitialization _releaseAuditInitialization = new();
     private readonly CancellationTokenSource _lifetime = new();
+    private readonly CancellationToken _lifetimeToken;
+    private CancellationTokenSource? _operationCancellation;
+    private CancellationToken OperationToken => _operationCancellation?.Token ?? _lifetimeToken;
 
     private GeneratedArchiveEntropy? _generatedEntropy;
     private string? _keySheetFingerprint;
+    private long _createDraftRevision;
+    private EncryptionSuite _lastDraftSuite = EncryptionSuiteCatalog.Default;
     private string? _extractHint;
     private string _eraseStatusKey = "eraseNotAnalyzed";
     private string? _integrityStatusKey = "integrityChecking";
     private string? _integrityRawMessage;
     private IBrush _integrityBrush = Brush.Parse("#F2BD55");
     private bool _componentsReady;
+    private bool _clearingCreateSecrets;
     private bool _generatedPairReady;
+    private bool _entropyCaptureFaulted;
     private bool _extractHintLoaded;
     private bool _extractHintUnavailable;
     private bool _integrityTrusted;
@@ -62,14 +72,17 @@ public sealed partial class MainWindow : Window, IDisposable
     private string _language = "de";
 
     public MainWindow()
-        : this(new IsolatedStorageAppSettingsStore())
+        : this(ReleaseAuditSession.Current?.Settings ?? new IsolatedStorageAppSettingsStore())
     {
     }
 
     internal MainWindow(IAppSettingsStore settingsStore)
     {
+        _lifetimeToken = _lifetime.Token;
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
+        _releaseAudit = ReleaseAuditSession.Current;
         InitializeComponent();
+        InitializeConsole();
         LoadLogo();
         // Set from the constant rather than in the markup: a raised sample
         // requirement with a stale maximum leaves the bar full from the start
@@ -81,8 +94,15 @@ public sealed partial class MainWindow : Window, IDisposable
         PopulateSuites();
         SelectSuite(LoadSuite());
         CompressionBox.SelectedIndex = LoadCompression();
+        LoadResourcePreferences();
         EncryptBox.PropertyChanged += EncryptBox_PropertyChanged;
+        _lastDraftSuite = SelectedEncryptionSuite;
         _componentsReady = true;
+        foreach (TextBox field in new[] { CreatePasswordBox, CreatePasswordConfirmBox, CreatePinBox, CreatePinConfirmBox })
+            field.TextChanged += (_, _) => Interlocked.Increment(ref _createDraftRevision);
+        HintBox.TextChanged += (_, _) => Interlocked.Increment(ref _createDraftRevision);
+        GeneratedPasswordFirstBox.TextChanged += GeneratedFactor_TextChanged;
+        GeneratedPasswordSecondBox.TextChanged += GeneratedFactor_TextChanged;
 
         CreatePasswordPanel.Opacity = EncryptBox.IsChecked == true ? 1 : 0.65;
         GeneratedPasswordFirstBox.Text = string.Empty;
@@ -116,6 +136,7 @@ public sealed partial class MainWindow : Window, IDisposable
         CaptureText.Text = T("captureUnavailable");
         Log(T("captureBoundaryLog"));
         await CheckIntegrityAsync();
+        if (_disposed) return;
         Log($"ZPAQ: {_zpaq.ResolveExecutable() ?? T("notFound")}");
         if (_integrityTrusted)
         {
@@ -126,6 +147,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ? T("threefishAvailable")
                 : $"{T("threefishMissing")} — {KalynaContainerService.NativeThreefishLoadError ?? T("notFound")}");
             LogCompanionScannerState();
+            await InitializeReleaseAuditAsync();
         }
     }
 
@@ -200,26 +222,72 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         if (_disposed)
         {
+            if (Volatile.Read(ref _operationActive) == 0)
+            {
+                DisposeStorageAccess();
+            }
             return;
         }
 
         _disposed = true;
-        Interlocked.Increment(ref _hintLoadVersion);
-        _lifetime.Cancel();
-        ClearCreateSecrets();
-        ClearExtractSecrets();
-        HintBox.Text = string.Empty;
+        _integrityTrusted = false;
+        _generatedPairReady = false;
+        GeneratedArchiveEntropy? entropy = _generatedEntropy;
+        _generatedEntropy = null;
         _extractHint = null;
         _keySheetFingerprint = null;
-        _integrityTrusted = false;
+        Interlocked.Increment(ref _hintLoadVersion);
+        Interlocked.Increment(ref _createDraftRevision);
+        List<Exception>? failures = null;
+        void Attempt(Action cleanup)
+        {
+            try { cleanup(); }
+            catch (Exception failure) { (failures ??= []).Add(failure); }
+        }
+
+        // Disable entry first, then invalidate clipboard continuations and undo
+        // before cancellation or locked-memory cleanup can fail or wait.
+        Attempt(UpdateProtectedOperationControls);
+        Attempt(ExtractGeneratedPasswordFirstBox.ClearSensitiveText);
+        Attempt(ExtractGeneratedPasswordSecondBox.ClearSensitiveText);
+        _clearingCreateSecrets = true;
+        try
+        {
+            foreach (TextBox field in new[]
+            {
+                CreatePasswordBox, CreatePasswordConfirmBox, CreatePinBox,
+                CreatePinConfirmBox, GeneratedPasswordFirstBox,
+                GeneratedPasswordSecondBox, ExtractPasswordBox, ExtractPinBox,
+                HintBox,
+            })
+            {
+                Attempt(() => field.Text = string.Empty);
+            }
+        }
+        finally { _clearingCreateSecrets = false; }
+
+        Attempt(DisposeConsole);
+        Attempt(DisposeProgressObserver);
+        Attempt(_lifetime.Cancel);
+        // The audit initializer has no UI work. Join its registered worker
+        // after cancellation, before any shared entropy reset or audit-owner
+        // disposal can race a late public-fixture/pool allocation.
+        Attempt(_releaseAuditInitialization.CloseAndJoin);
+        // Failed entropy owners remain registered for an explicit reset retry.
+        Attempt(() => EntropyMixer.DisposeEntropyOwners(null, "Window entropy cleanup failed.", entropy));
+        Attempt(EntropyMixer.Reset);
         if (Volatile.Read(ref _operationActive) == 0)
         {
-            DisposeStorageAccess();
+            Attempt(DisposeStorageAccess);
         }
-        UpdateProtectedOperationControls();
-        _integrity.Dispose();
-        _lifetime.Dispose();
+        Attempt(_integrity.Dispose);
+        Attempt(_lifetime.Dispose);
+        if (Volatile.Read(ref _operationActive) == 0) Attempt(() => _releaseAudit?.Dispose());
         GC.SuppressFinalize(this);
+        if (failures is not null)
+        {
+            throw new AggregateException("Window cleanup failed.", failures);
+        }
     }
 
     private async Task CheckIntegrityAsync()
@@ -229,8 +297,9 @@ public sealed partial class MainWindow : Window, IDisposable
         OperationStatusText.Text = T("integrityChecking");
         try
         {
-            IntegrityStatus app = await _integrity.CheckSelfAsync(_lifetime.Token);
-            IReadOnlyList<ToolIntegrityStatus> tools = await _integrity.CheckNativeToolsAsync(_lifetime.Token);
+            IntegrityStatus app = await _integrity.CheckSelfAsync(_lifetimeToken);
+            IReadOnlyList<ToolIntegrityStatus> tools = await _integrity.CheckNativeToolsAsync(_lifetimeToken);
+            _lifetimeToken.ThrowIfCancellationRequested();
             foreach (ToolIntegrityStatus component in app.Components)
             {
                 Log($"App-Komponente {Path.GetFileName(component.FilePath)}: dual-hash={component.HashMatches}; hybrid={component.HybridSignatureMatches}; Apple={component.SignatureState}");
@@ -252,7 +321,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 Log(T("integrityBlockedLog"));
             }
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested)
         {
             return;
         }
@@ -266,9 +335,12 @@ public sealed partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            ApplyIntegrityStatus();
-            UpdateProtectedOperationControls();
-            OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
+            if (!_disposed)
+            {
+                ApplyIntegrityStatus();
+                UpdateProtectedOperationControls();
+                OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
+            }
         }
     }
 
@@ -281,155 +353,116 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private void Window_PointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_disposed || Volatile.Read(ref _operationActive) != 0)
+        // The live collection has a separate owner from any detached snapshot
+        // and remains available during preparation, KDF and archive work.
+        if (_releaseAudit?.IsFault == true || _disposed || _entropyCaptureFaulted
+            || !EntropyMixer.GetPoolStatus().Healthy) return;
+        try
         {
-            return;
+            using IDisposable capturePolicy = _resourcePolicy.EnterScope();
+            var point = e.GetCurrentPoint(this);
+            EntropyMixer.AddMouseSample(point.Position.X, point.Position.Y, unchecked((int)e.Timestamp),
+                point.Properties.IsLeftButtonPressed, point.Properties.IsRightButtonPressed, point.Properties.IsMiddleButtonPressed);
         }
-
-        var point = e.GetCurrentPoint(this);
-        EntropyMixer.AddMouseSample(
-            point.Position.X,
-            point.Position.Y,
-            unchecked((int)e.Timestamp),
-            point.Properties.IsLeftButtonPressed,
-            point.Properties.IsRightButtonPressed,
-            point.Properties.IsMiddleButtonPressed);
-        UpdateEntropyStatus(force: false);
+        catch (Exception exception)
+        {
+            _entropyCaptureFaulted = true;
+            Log(exception.ToString());
+        }
+        UpdateEntropyStatus(force: _entropyCaptureFaulted);
     }
 
     private async void AddFiles_Click(object? sender, RoutedEventArgs e)
     {
-        IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        try
         {
-            Title = T("chooseFilesDialog"),
-            AllowMultiple = true,
-        });
-        AddInputStorageItems(files);
-        DisposeUnretainedStorageItems(files);
+            IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = T("chooseFilesDialog"),
+                AllowMultiple = true,
+            });
+            AddInputStorageItems(files);
+        }
+        catch (Exception failure) { await ReportStorageSelectionFailureAsync(failure); }
     }
 
     private async void AddFolder_Click(object? sender, RoutedEventArgs e)
     {
-        IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        try
         {
-            Title = T("chooseFolderDialog"),
-            AllowMultiple = false,
-        });
-        AddInputStorageItems(folders);
-        DisposeUnretainedStorageItems(folders);
+            IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = T("chooseFolderDialog"),
+                AllowMultiple = false,
+            });
+            AddInputStorageItems(folders);
+        }
+        catch (Exception failure) { await ReportStorageSelectionFailureAsync(failure); }
     }
 
-    private void ClearInputs_Click(object? sender, RoutedEventArgs e)
+    private async void ClearInputs_Click(object? sender, RoutedEventArgs e)
     {
-        InputList.Items.Clear();
-        ClearInputStorageAccess();
+        List<Exception>? failures = null;
+        try { InputList.Items.Clear(); }
+        catch (Exception failure) { (failures ??= []).Add(failure); }
+        try { ClearInputStorageAccess(); }
+        catch (Exception failure) { (failures ??= []).Add(failure); }
+        if (failures is not null)
+            await ReportStorageSelectionFailureAsync(new AggregateException("Input clearing failed.", failures));
     }
 
     private async void ChooseArchive_Click(object? sender, RoutedEventArgs e)
     {
-        bool encrypted = EncryptBox.IsChecked == true;
-        IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        try
         {
-            Title = T("saveArchiveDialog"),
-            AllowMultiple = false,
-            SuggestedStartLocation = _archiveDestinationAccess?.Item as IStorageFolder,
-        });
-        IStorageFolder? folder = folders.FirstOrDefault();
-        foreach (IStorageFolder extra in folders.Skip(1))
-        {
-            extra.Dispose();
-        }
-
-        if (folder is null)
-        {
-            return;
-        }
-
-        if (GetLocalPath(folder) is { } path)
-        {
-            if (!RetainArchiveDestinationAccess(folder))
+            bool encrypted = EncryptBox.IsChecked == true;
+            IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
-                return;
-            }
-
-            ArchivePathBox.Text = SuggestArchivePathInDestinationFolder(path, encrypted);
-            ResetKeySheetStatus();
-            return;
+                Title = T("saveArchiveDialog"),
+                AllowMultiple = false,
+                SuggestedStartLocation = _archiveDestinationAccess?.Item as IStorageFolder,
+            });
+            await ApplyStoragePickerSelectionAsync(folders, RetainArchiveDestinationAccess, path =>
+            {
+                ArchivePathBox.Text = SuggestArchivePathInDestinationFolder(path, encrypted);
+                RefreshKeySheetBinding();
+            });
         }
-
-        folder.Dispose();
+        catch (Exception failure) { await ReportStorageSelectionFailureAsync(failure); }
     }
 
     private async void ChooseExtractArchive_Click(object? sender, RoutedEventArgs e)
     {
-        IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        try
         {
-            Title = T("chooseArchiveDialog"),
-            AllowMultiple = false,
-            FileTypeFilter = BuildArchivePickerFilter(AnyArchiveType),
-        });
-        IStorageFile? file = files.FirstOrDefault();
-        foreach (IStorageFile extra in files.Skip(1))
-        {
-            extra.Dispose();
-        }
-
-        if (file is null)
-        {
-            return;
-        }
-
-        if (GetLocalPath(file) is { } path)
-        {
-            if (!HasArchiveExtension(path))
+            IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                file.Dispose();
-                await WarnAsync(T("archiveSelectionTypeInvalid"));
-                return;
-            }
-
-            if (!RetainExtractArchiveAccess(file))
+                Title = T("chooseArchiveDialog"),
+                AllowMultiple = false,
+                FileTypeFilter = BuildArchivePickerFilter(AnyArchiveType),
+            });
+            await ApplyStoragePickerSelectionAsync(files, RetainExtractArchiveAccess, path =>
             {
-                return;
-            }
-
-            SetExtractArchivePath(path);
-            return;
+                SetExtractArchivePathWithoutHint(path);
+                SetExtractArchivePath(path);
+            }, HasArchiveExtension, T("archiveSelectionTypeInvalid"));
         }
-
-        file.Dispose();
+        catch (Exception failure) { await ReportStorageSelectionFailureAsync(failure); }
     }
 
     private async void ChooseOutputFolder_Click(object? sender, RoutedEventArgs e)
     {
-        IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        try
         {
-            Title = T("chooseOutputDialog"),
-            AllowMultiple = false,
-        });
-        IStorageFolder? folder = folders.FirstOrDefault();
-        foreach (IStorageFolder extra in folders.Skip(1))
-        {
-            extra.Dispose();
-        }
-
-        if (folder is null)
-        {
-            return;
-        }
-
-        if (GetLocalPath(folder) is { } path)
-        {
-            if (!RetainExtractOutputParentAccess(folder))
+            IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
-                return;
-            }
-
-            OutputFolderBox.Text = SuggestOutputFolderPath(ExtractArchiveBox.Text ?? string.Empty, path);
-            return;
+                Title = T("chooseOutputDialog"),
+                AllowMultiple = false,
+            });
+            await ApplyStoragePickerSelectionAsync(folders, RetainExtractOutputParentAccess,
+                path => OutputFolderBox.Text = SuggestOutputFolderPath(ExtractArchiveBox.Text ?? string.Empty, path));
         }
-
-        folder.Dispose();
+        catch (Exception failure) { await ReportStorageSelectionFailureAsync(failure); }
     }
 
     private void EncryptBox_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -453,8 +486,9 @@ public sealed partial class MainWindow : Window, IDisposable
         CipherSuiteBox.IsEnabled = enabled;
         if (!string.IsNullOrWhiteSpace(ArchivePathBox.Text))
         {
-            ArchivePathBox.Text = NormalizeTargetArchivePath(ArchivePathBox.Text, enabled);
-            ResetKeySheetStatus();
+            string normalized = NormalizeTargetArchivePath(ArchivePathBox.Text, enabled);
+            if (!string.Equals(ArchivePathBox.Text, normalized, StringComparison.Ordinal)) ArchivePathBox.Text = normalized;
+            RefreshKeySheetBinding();
         }
     }
 
@@ -479,7 +513,14 @@ public sealed partial class MainWindow : Window, IDisposable
             return;
         }
 
-        ResetKeySheetStatus();
+        // PopulateSuites temporarily has no selection during localization.
+        if (CipherSuiteBox.SelectedItem is not ComboBoxItem) return;
+        if (_lastDraftSuite != SelectedEncryptionSuite)
+        {
+            _lastDraftSuite = SelectedEncryptionSuite;
+            Interlocked.Increment(ref _createDraftRevision);
+        }
+        RefreshKeySheetBinding();
         _settingsStore.Write(CipherSuiteSettingsFile, SelectedEncryptionSuite.ToString());
         Log(string.Format(CultureInfo.CurrentCulture, T("cipherSuiteSelected"), EncryptionSuiteCatalog.Get(SelectedEncryptionSuite).DisplayName));
     }
@@ -492,19 +533,21 @@ public sealed partial class MainWindow : Window, IDisposable
         }
     }
 
-    private void ArchivePathBox_TextChanged(object? sender, TextChangedEventArgs e)
+    private async void ArchivePathBox_TextChanged(object? sender, TextChangedEventArgs e)
     {
-        ResetKeySheetStatus();
-        ReleaseArchiveDestinationAccessIfMismatched(ArchivePathBox.Text ?? string.Empty);
+        Interlocked.Increment(ref _createDraftRevision);
+        RefreshKeySheetBinding();
+        await TryReleaseStoragePathAccessAndReportAsync(() => ReleaseArchiveDestinationAccessIfMismatched(ArchivePathBox.Text ?? string.Empty));
     }
 
-    private void OutputFolderBox_TextChanged(object? sender, TextChangedEventArgs e) =>
-        ReleaseExtractOutputAccessIfMismatched(OutputFolderBox.Text ?? string.Empty);
+    private async void OutputFolderBox_TextChanged(object? sender, TextChangedEventArgs e) =>
+        await TryReleaseStoragePathAccessAndReportAsync(() => ReleaseExtractOutputAccessIfMismatched(OutputFolderBox.Text ?? string.Empty));
 
     private void CreatePasswordBox_TextChanged(object? sender, TextChangedEventArgs e) => UpdatePasswordPolicyStatus();
 
     private async void CreateArchive_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("create")) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
@@ -513,8 +556,10 @@ public sealed partial class MainWindow : Window, IDisposable
 
         string? createdArchive = null;
         GeneratedArchiveEntropy? prepared = null;
+        var lifetime = new ArchiveOperationLifetime();
         try
         {
+            using IDisposable resourceScope = Preflight(ResourcePolicyForOperation, ArchivePreflightReason.Resources).EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("create");
             string[] inputs = InputList.Items.OfType<string>().ToArray();
             if (inputs.Length == 0)
@@ -524,65 +569,94 @@ public sealed partial class MainWindow : Window, IDisposable
             }
 
             bool encrypted = EncryptBox.IsChecked == true;
-            string archivePath = NormalizeTargetArchivePath(ArchivePathBox.Text?.Trim() ?? string.Empty, encrypted);
+            string archivePath = Preflight(() => NormalizeTargetArchivePath(ArchivePathBox.Text?.Trim() ?? string.Empty, encrypted), ArchivePreflightReason.Destination);
             if (archivePath.Length == 0)
             {
                 await WarnAsync(T("targetMissing"));
                 return;
             }
 
-            ArchivePathBox.Text = archivePath;
+            if (!string.Equals(ArchivePathBox.Text, archivePath, StringComparison.Ordinal)) ArchivePathBox.Text = archivePath;
+            long draftRevision = Volatile.Read(ref _createDraftRevision);
             if (!await EnsureArchiveDestinationAccessAsync(archivePath))
             {
                 return;
             }
+            if (draftRevision != Volatile.Read(ref _createDraftRevision))
+                throw new ArchivePreflightException(ArchivePreflightReason.DraftChanged, T("draftChanged"));
+            if (inputs.Any(path => !File.Exists(path) && !Directory.Exists(path)))
+                throw new ArchivePreflightException(ArchivePreflightReason.Input, T("inputsMissing"));
 
-            EnsureArchiveTargetIsSafe(archivePath, inputs);
+            Preflight(() => EnsureArchiveTargetIsSafe(archivePath, inputs), ArchivePreflightReason.Destination);
             if (encrypted)
             {
-                EnsureCreationFactors();
-                EnsureKeySheetHandled(archivePath);
+                Preflight(EnsureCreationFactors, ArchivePreflightReason.Credentials);
+                try { OperationMemoryBudget.RequireKnownMinimumKdfAdmission(ArchiveOperationPolicy.Current); }
+                catch (KdfMinimumAdmissionRefusalException refusal)
+                {
+                    throw new ArchivePreflightException(ArchivePreflightReason.Resources, refusal.Message);
+                }
+                Preflight(() => EnsureKeySheetHandled(archivePath), ArchivePreflightReason.KeySheet);
                 if (!_containers.IsNativeSuiteAvailable(SelectedEncryptionSuite))
                 {
-                    throw new InvalidOperationException(string.Format(
+                    throw new ArchivePreflightException(ArchivePreflightReason.Input, string.Format(
                         CultureInfo.CurrentCulture,
                         T("selectedSuiteMissing"),
                         EncryptionSuiteCatalog.Get(SelectedEncryptionSuite).DisplayName));
                 }
 
                 prepared = _generatedEntropy is { HasPendingEncryptionParameters: true } entropy ? entropy : null;
+                if (prepared is not null)
+                    Preflight(() => prepared.ValidateForEncryption(SelectedEncryptionSuite,
+                        GeneratedPasswordFirstBox.Text ?? string.Empty, GeneratedPasswordSecondBox.Text ?? string.Empty),
+                        ArchivePreflightReason.Credentials);
                 if (prepared is null)
                 {
-                    EnsureEntropyReady(EntropyPurpose.SaltSha3);
-                    EnsureEntropyReady(EntropyPurpose.SaltSkein);
-                    EnsureEntropyReady(EntropyPurpose.NonceFirst);
-                    EnsureEntropyReady(EntropyPurpose.NonceSecond);
-                    EnsureEntropyReady(EntropyPurpose.NonceThird);
+                    Preflight(() =>
+                    {
+                        EnsureEntropyReady(EntropyPurpose.SaltSha3);
+                        EnsureEntropyReady(EntropyPurpose.SaltSkein);
+                        EnsureEntropyReady(EntropyPurpose.NonceFirst);
+                        EnsureEntropyReady(EntropyPurpose.NonceSecond);
+                        EnsureEntropyReady(EntropyPurpose.NonceThird);
+                    }, ArchivePreflightReason.Input);
                 }
             }
 
             int compression = CompressionBox.SelectedIndex is >= 0 and <= MaxCompressionLevel
                 ? CompressionBox.SelectedIndex
                 : DefaultCompressionLevel;
+            bool deleteOriginals = DeleteOriginalsBox.IsChecked == true;
+            if (_releaseAudit is { } audit)
+            {
+                audit.RequirePublicCredentials(CreatePasswordBox.Text, CreatePinBox.Text);
+                audit.RequirePublicCreation(inputs, archivePath, encrypted, deleteOriginals, compression);
+                _ = audit.BeginOperation("create", ArchiveOperationPolicy.Current, _operationCancellation!);
+            }
+            using MacOriginalDeletionService.CreationSnapshot? creationSnapshot = deleteOriginals
+                ? await Task.Run(() => MacOriginalDeletionService.CaptureCreationSnapshot(inputs, OperationToken), OperationToken)
+                : null;
             OperationStatusText.Text = T("working");
             Log(T("creatingZpaq"));
             ProcessResult result;
+            _releaseAudit?.MarkWorkStart();
             if (encrypted)
             {
                 EncryptionSuite suite = SelectedEncryptionSuite;
                 Log(string.Format(CultureInfo.CurrentCulture, T("encryptingStreaming"), EncryptionSuiteCatalog.Get(suite).DisplayName));
-                Func<Stream, CancellationToken, Task> encrypt = CaptureEncryptionConsumer(archivePath, suite, prepared);
+                Func<Stream, CancellationToken, Task> encrypt = CaptureEncryptionConsumer(archivePath, suite, prepared, lifetime);
                 async Task ConsumeAsync(Stream zpaqStream, CancellationToken cancellationToken)
                 {
                     await encrypt(zpaqStream, cancellationToken).ConfigureAwait(false);
                     createdArchive = archivePath;
                 }
 
-                result = await _zpaq.AddStreamingAsync(inputs, compression, ConsumeAsync, Progress(), _lifetime.Token);
+                result = await _zpaq.AddStreamingAsync(inputs, compression, ConsumeAsync, Progress(), OperationToken);
             }
             else
             {
-                result = await _zpaq.AddAsync(archivePath, inputs, compression, Progress(), _lifetime.Token);
+                lifetime.BeginExecution();
+                result = await _zpaq.AddAsync(archivePath, inputs, compression, Progress(), OperationToken);
                 if (result.Succeeded)
                 {
                     createdArchive = archivePath;
@@ -611,34 +685,39 @@ public sealed partial class MainWindow : Window, IDisposable
                     GeneratedPasswordFirstBox.Text ?? string.Empty,
                     GeneratedPasswordSecondBox.Text ?? string.Empty,
                     Progress(),
-                    _lifetime.Token);
+                    OperationToken);
             }
             else
             {
-                await _recovery.CreateAsync(archivePath, Progress(), _lifetime.Token);
+                await _recovery.CreateAsync(archivePath, Progress(), OperationToken);
             }
 
             // Deleting the originals is gated on proving the archive reproduces
             // them, so it happens before the secrets are cleared: an encrypted
             // archive can only be read back with the factors still in hand.
-            bool deleteOriginals = DeleteOriginalsBox.IsChecked == true;
             bool originalsDeleted = false;
             if (deleteOriginals)
             {
-                originalsDeleted = await VerifyAndDeleteOriginalsAsync(archivePath, inputs, encrypted);
+                originalsDeleted = await VerifyAndDeleteOriginalsAsync(archivePath, inputs, encrypted, creationSnapshot!);
             }
 
             createdArchive = null;
+            MarkOperationSucceeded();
             Log($"{T("done")}: {archivePath}");
             await InfoAsync(deleteOriginals && originalsDeleted
                 ? T("archiveCreatedOriginalsDeleted")
                 : T("archiveCreated"));
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (OperationToken.IsCancellationRequested)
         {
+        }
+        catch (ArchivePreflightException exception) when (!lifetime.ConsumptionStarted)
+        {
+            await WarnAsync(exception.Message);
         }
         catch (Exception exception)
         {
+            lifetime.MarkFatalFailure();
             if (createdArchive is not null)
             {
                 Log(BuildPreservedArtifactWarning(createdArchive));
@@ -658,8 +737,9 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             try
             {
-                ClearCreateSecrets();
+                if (lifetime.MustClearCredentials || prepared?.ConsumptionStarted == true) ClearCreateSecrets();
             }
+            catch { MarkOperationFailed(); throw; }
             finally
             {
                 EndProtectedOperation();
@@ -669,17 +749,27 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void ExtractArchive_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("extract")) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
             return;
         }
 
+        var lifetime = new ArchiveOperationLifetime();
         try
         {
+            using IDisposable resourceScope = Preflight(ResourcePolicyForOperation, ArchivePreflightReason.Resources).EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("extract");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
             string output = OutputFolderBox.Text?.Trim() ?? string.Empty;
+            if (_releaseAudit is { } audit)
+            {
+                audit.RequirePublicCredentials(ExtractPasswordBox.Text, ExtractPinBox.Text);
+                audit.RequirePublicArchive(archive, output);
+                _ = audit.BeginOperation("extract", ArchiveOperationPolicy.Current, _operationCancellation!);
+                audit.MarkWorkStart();
+            }
             if (archive.Length > 0 && output.Length == 0)
             {
                 string? retainedParent = _extractOutputParentAccess is null
@@ -709,30 +799,32 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            archive = await PrepareArchiveForUseAsync(archive);
-            bool encrypted = await _containers.LooksEncryptedAsync(archive, _lifetime.Token);
+            archive = await PrepareArchiveForUseAsync(archive, lifetime);
+            bool encrypted = await _containers.LooksEncryptedAsync(archive, OperationToken);
             ProcessResult result;
             if (encrypted)
             {
-                (KalynaContainerInfo info, string effective) = await ReadContainerInfoWithRecoveryAsync(archive);
+                (KalynaContainerInfo info, string effective) = await ReadContainerInfoWithRecoveryAsync(archive, lifetime);
                 archive = effective;
                 SetExtractArchivePathWithoutHint(archive);
                 SetExtractHint(info.Hint, loaded: true);
-                EnsureExtractionFactors();
+                Preflight(EnsureExtractionFactors, ArchivePreflightReason.Credentials);
                 Log($"Cipher suite: {info.Algorithm}");
                 Log(T("extractingStreaming"));
+                lifetime.BeginExecution();
                 result = await ExecuteEncryptedWithRecoveryRetryAsync(
                     archive,
                     effectivePath => _zpaq.ExtractStreamingAsync(
                         CaptureDecryptionProducer(effectivePath, creationCredentials: false),
                         output,
                         Progress(),
-                        _lifetime.Token));
+                        OperationToken));
             }
             else
             {
                 Log(T("extracting"));
-                result = await _zpaq.ExtractAsync(archive, output, Progress(), _lifetime.Token);
+                lifetime.BeginExecution();
+                result = await _zpaq.ExtractAsync(archive, output, Progress(), OperationToken);
             }
 
             if (!result.Succeeded)
@@ -742,34 +834,54 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
+            if (_releaseAudit is { } extractionAudit)
+                await extractionAudit.VerifyPublicExtractionAsync(output, OperationToken);
             ClearExtractSecrets();
             Log($"{T("extractedTo")}: {output}");
+            MarkOperationSucceeded();
             await InfoAsync(T("archiveExtracted"));
+        }
+        catch (OperationCanceledException) when (OperationToken.IsCancellationRequested) { }
+        catch (ArchivePreflightException exception) when (!lifetime.MustClearCredentials)
+        {
+            await WarnAsync(exception.Message);
         }
         catch (Exception exception)
         {
+            lifetime.MarkFatalFailure();
             ReportExtractFailure(exception.ToString());
             await ErrorAsync(exception.Message);
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { if (lifetime.MustClearCredentials) ClearExtractSecrets(); }
+            catch { MarkOperationFailed(); throw; }
+            finally { EndProtectedOperation(); }
         }
     }
 
     private async void ListArchive_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("list")) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
             return;
         }
 
+        var lifetime = new ArchiveOperationLifetime();
         try
         {
+            using IDisposable resourceScope = Preflight(ResourcePolicyForOperation, ArchivePreflightReason.Resources).EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("list");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
+            if (_releaseAudit is { } audit)
+            {
+                audit.RequirePublicCredentials(ExtractPasswordBox.Text, ExtractPinBox.Text);
+                audit.RequirePublicArchive(archive);
+                _ = audit.BeginOperation("list", ArchiveOperationPolicy.Current, _operationCancellation!);
+                audit.MarkWorkStart();
+            }
             if (archive.Length == 0)
             {
                 await WarnAsync(T("archiveMissing"));
@@ -787,26 +899,28 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            archive = await PrepareArchiveForUseAsync(archive);
-            bool encrypted = await _containers.LooksEncryptedAsync(archive, _lifetime.Token);
+            archive = await PrepareArchiveForUseAsync(archive, lifetime);
+            bool encrypted = await _containers.LooksEncryptedAsync(archive, OperationToken);
             ProcessResult result;
             if (encrypted)
             {
-                (KalynaContainerInfo info, string effective) = await ReadContainerInfoWithRecoveryAsync(archive);
+                (KalynaContainerInfo info, string effective) = await ReadContainerInfoWithRecoveryAsync(archive, lifetime);
                 archive = effective;
                 SetExtractArchivePathWithoutHint(archive);
                 SetExtractHint(info.Hint, loaded: true);
-                EnsureExtractionFactors();
+                Preflight(EnsureExtractionFactors, ArchivePreflightReason.Credentials);
+                lifetime.BeginExecution();
                 result = await ExecuteEncryptedWithRecoveryRetryAsync(
                     archive,
                     effectivePath => _zpaq.ListStreamingAsync(
                         CaptureDecryptionProducer(effectivePath, creationCredentials: false),
                         Progress(),
-                        _lifetime.Token));
+                        OperationToken));
             }
             else
             {
-                result = await _zpaq.ListAsync(archive, Progress(), _lifetime.Token);
+                lifetime.BeginExecution();
+                result = await _zpaq.ListAsync(archive, Progress(), OperationToken);
             }
 
             Log(result.StandardOutput);
@@ -814,6 +928,7 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 Log(result.StandardError);
                 ClearExtractSecrets();
+                MarkOperationSucceeded();
             }
             else
             {
@@ -821,30 +936,47 @@ public sealed partial class MainWindow : Window, IDisposable
                 await ErrorAsync(T("zpaqListFailed"));
             }
         }
+        catch (OperationCanceledException) when (OperationToken.IsCancellationRequested) { }
+        catch (ArchivePreflightException exception) when (!lifetime.MustClearCredentials)
+        {
+            await WarnAsync(exception.Message);
+        }
         catch (Exception exception)
         {
+            lifetime.MarkFatalFailure();
             ReportExtractFailure(exception.ToString());
             await ErrorAsync(exception.Message);
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { if (lifetime.MustClearCredentials) ClearExtractSecrets(); }
+            catch { MarkOperationFailed(); throw; }
+            finally { EndProtectedOperation(); }
         }
     }
 
     private async void EmergencyRecovery_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("recovery")) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
             return;
         }
 
+        var lifetime = new ArchiveOperationLifetime();
         try
         {
+            using IDisposable resourceScope = Preflight(ResourcePolicyForOperation, ArchivePreflightReason.Resources).EnterScope();
             TestHookBeforeCredentialOperation?.Invoke("recovery");
             string archive = ExtractArchiveBox.Text?.Trim() ?? string.Empty;
+            if (_releaseAudit is { } audit)
+            {
+                audit.RequirePublicCredentials(ExtractPasswordBox.Text, ExtractPinBox.Text);
+                audit.RequirePublicArchive(archive);
+                _ = audit.BeginOperation("recovery", ArchiveOperationPolicy.Current, _operationCancellation!);
+                audit.MarkWorkStart();
+            }
             if (archive.Length == 0)
             {
                 await WarnAsync(T("archiveMissing"));
@@ -862,7 +994,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            RecoveryProtectionMode? mode = await _recovery.TryReadProtectionModeAsync(archive, _lifetime.Token);
+            RecoveryProtectionMode? mode = await _recovery.TryReadProtectionModeAsync(archive, OperationToken);
             if (mode is null)
             {
                 await WarnAsync(T("emergencyRecoveryMissing"));
@@ -880,7 +1012,8 @@ public sealed partial class MainWindow : Window, IDisposable
             RecoveryRepairResult result;
             if (mode == RecoveryProtectionMode.DualAuthenticatedEncrypted)
             {
-                EnsureExtractionFactors();
+                Preflight(EnsureExtractionFactors, ArchivePreflightReason.Credentials);
+                lifetime.BeginExecution();
                 result = await _recovery.RecoverToNewFileAuthenticatedAsync(
                     archive,
                     ExtractPasswordBox.Text ?? string.Empty,
@@ -888,11 +1021,12 @@ public sealed partial class MainWindow : Window, IDisposable
                     ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
                     ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
                     Progress(),
-                    _lifetime.Token);
+                    OperationToken);
             }
             else
             {
-                result = await _recovery.RecoverToNewFileAsync(archive, Progress(), _lifetime.Token);
+                lifetime.BeginExecution();
+                result = await _recovery.RecoverToNewFileAsync(archive, Progress(), OperationToken);
             }
 
             string effective = result.OutputPath ?? archive;
@@ -900,56 +1034,95 @@ public sealed partial class MainWindow : Window, IDisposable
             ClearExtractSecrets();
             Log(result.Message);
             Log(string.Format(CultureInfo.CurrentCulture, T("recoveryNewFile"), effective));
+            MarkOperationSucceeded();
             await InfoAsync(result.Message);
+        }
+        catch (OperationCanceledException) when (OperationToken.IsCancellationRequested) { }
+        catch (ArchivePreflightException exception) when (!lifetime.MustClearCredentials)
+        {
+            await WarnAsync(exception.Message);
         }
         catch (Exception exception)
         {
+            lifetime.MarkFatalFailure();
             ReportExtractFailure(exception.ToString());
             await ErrorAsync(exception.Message);
         }
         finally
         {
-            ClearExtractSecrets();
-            EndProtectedOperation();
+            try { if (lifetime.MustClearCredentials) ClearExtractSecrets(); }
+            catch { MarkOperationFailed(); throw; }
+            finally { EndProtectedOperation(); }
         }
     }
 
-    internal void GeneratePassword_Click(object? sender, RoutedEventArgs e)
+    internal async void GeneratePassword_Click(object? sender, RoutedEventArgs e)
     {
-        if (Volatile.Read(ref _operationActive) != 0)
-        {
-            return;
-        }
+        await GenerateArchiveEntropyAsync();
+    }
 
+    internal async Task GenerateArchiveEntropyAsync()
+    {
+        if (!AuditAllowsOperation("generate")) return;
+        if (!TryBeginProtectedOperation()) return;
+        GeneratedArchiveEntropy? next = null;
         try
         {
-            EncryptBox.IsChecked = true;
-            foreach (EntropyPurpose purpose in Enum.GetValues<EntropyPurpose>())
+            using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
+            if (_releaseAudit is { } audit)
             {
-                EnsureEntropyReady(purpose);
+                _ = audit.BeginOperation("generate", ArchiveOperationPolicy.Current, _operationCancellation!);
+                audit.BeforeGenerate();
             }
-
-            GeneratedArchiveEntropy next = EntropyMixer.CreateArchiveEntropy();
+            EncryptBox.IsChecked = true;
+            foreach (EntropyPurpose purpose in Enum.GetValues<EntropyPurpose>()) EnsureEntropyReady(purpose);
+            EntropyPreparationKind kind = SelectedEncryptionSuite == EncryptionSuite.ParanoiaCascade
+                ? EntropyPreparationKind.DualRound : EntropyPreparationKind.SingleRound;
+            CancellationToken token = OperationToken;
+            var progress = new Progress<string>(phase =>
+            {
+                if (!_disposed && Volatile.Read(ref _operationActive) != 0 && OperationToken == token)
+                {
+                    OperationStatusText.Text = T("entropyPhase." + phase);
+                    UpdateEntropyStatus(force: true);
+                }
+            });
+            using OperationProgressSource? entropyProgress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.Entropy, ProgressUnit.Steps);
+            _releaseAudit?.MarkWorkStart();
+            next = await Task.Run(() => EntropyMixer.CreateArchiveEntropy(kind, token, progress), token);
+            token.ThrowIfCancellationRequested();
+            _releaseAudit?.RejectFaultPublication();
+            if (_disposed) return;
             GeneratedArchiveEntropy? previous = _generatedEntropy;
+            previous?.Dispose();
             _generatedEntropy = next;
             _generatedPairReady = true;
             GeneratedPasswordFirstBox.Text = next.FirstPassword;
             GeneratedPasswordSecondBox.Text = next.SecondPassword;
-            previous?.Dispose();
+            next = null;
             ResetKeySheetStatus();
             UpdateEntropyStatus(force: true);
             UpdatePasswordPolicyStatus();
+            MarkOperationSucceeded();
             Log(T("generatedPasswordLog"));
         }
+        catch (OperationCanceledException) { if (!_disposed) Log(T("cancelled")); }
         catch (Exception exception)
         {
-            Log(exception.ToString());
-            _ = ErrorAsync(exception.Message);
+            if (!_disposed) { Log(exception.ToString()); await ErrorAsync(exception.Message); }
+        }
+        finally
+        {
+            try { next?.Dispose(); }
+            catch { MarkOperationFailed(); throw; }
+            finally { EndProtectedOperation(); }
         }
     }
 
     private async void SaveKeySheet_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("key-sheet")) return;
+        if (!TryBeginProtectedOperation()) return;
         try
         {
             string archivePath = NormalizeTargetArchivePath(ArchivePathBox.Text?.Trim() ?? string.Empty, encrypted: true);
@@ -959,13 +1132,14 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            ArchivePathBox.Text = archivePath;
+            if (!string.Equals(ArchivePathBox.Text, archivePath, StringComparison.Ordinal)) ArchivePathBox.Text = archivePath;
             if (!await EnsureArchiveDestinationAccessAsync(archivePath))
             {
                 return;
             }
 
-            MacKeySheetData data = BuildKeySheetData();
+            MacKeySheetData data = Preflight(BuildKeySheetData, ArchivePreflightReason.Credentials);
+            long draftRevision = Volatile.Read(ref _createDraftRevision);
             using IStorageFile? file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
             {
                 Title = T("saveTestKeySheetDialog"),
@@ -977,6 +1151,7 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 return;
             }
+            _releaseAudit?.RequireOwnedOutput(path);
 
             if (_disposed)
             {
@@ -998,20 +1173,27 @@ public sealed partial class MainWindow : Window, IDisposable
             string stem = Path.GetFileNameWithoutExtension(path);
             string firstPath = Path.Combine(directory, $"{stem}-Faktor-A.pdf");
             string secondPath = Path.Combine(directory, $"{stem}-Faktor-B.pdf");
+            RequireUnchangedKeySheetDraft(data, draftRevision);
             _keySheets.SaveExplicitTestPdf(data, firstPath, secondPath);
+            RequireUnchangedKeySheetDraft(data, draftRevision);
             MarkKeySheetHandled(data);
             Log(string.Format(CultureInfo.CurrentCulture, T("keySheetTestPdfSavedLog"), firstPath));
             Log(string.Format(CultureInfo.CurrentCulture, T("keySheetTestPdfSavedLog"), secondPath));
         }
+        catch (OperationCanceledException) when (OperationToken.IsCancellationRequested) { }
+        catch (ArchivePreflightException exception) { await WarnAsync(exception.Message); }
         catch (Exception exception)
         {
             Log(exception.ToString());
             await ErrorAsync(exception.Message);
         }
+        finally { EndProtectedOperation(); }
     }
 
     private async void PrintKeySheet_Click(object? sender, RoutedEventArgs e)
     {
+        if (!AuditAllowsOperation("key-sheet")) return;
+        if (!TryBeginProtectedOperation()) return;
         try
         {
             string archivePath = NormalizeTargetArchivePath(ArchivePathBox.Text?.Trim() ?? string.Empty, encrypted: true);
@@ -1021,14 +1203,15 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            ArchivePathBox.Text = archivePath;
+            if (!string.Equals(ArchivePathBox.Text, archivePath, StringComparison.Ordinal)) ArchivePathBox.Text = archivePath;
             if (!await EnsureArchiveDestinationAccessAsync(archivePath))
             {
                 return;
             }
 
-            MacKeySheetData data = BuildKeySheetData();
-            IReadOnlyList<string> printers = await _keySheets.GetPhysicalPrintersAsync(_lifetime.Token);
+            MacKeySheetData data = Preflight(BuildKeySheetData, ArchivePreflightReason.Credentials);
+            long draftRevision = Volatile.Read(ref _createDraftRevision);
+            IReadOnlyList<string> printers = await _keySheets.GetPhysicalPrintersAsync(OperationToken);
             if (printers.Count == 0)
             {
                 throw new InvalidOperationException(T("noPhysicalPrinter"));
@@ -1047,18 +1230,34 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            await _keySheets.PrintAsync(data, selected, _lifetime.Token);
+            RequireUnchangedKeySheetDraft(data, draftRevision);
+            await _keySheets.PrintAsync(data, selected, OperationToken);
+            RequireUnchangedKeySheetDraft(data, draftRevision);
             MarkKeySheetHandled(data);
             Log(string.Format(CultureInfo.CurrentCulture, T("keySheetPrintedLog"), selected));
         }
+        catch (OperationCanceledException) when (OperationToken.IsCancellationRequested) { }
+        catch (ArchivePreflightException exception) { await WarnAsync(exception.Message); }
         catch (Exception exception)
         {
             Log(exception.ToString());
             await ErrorAsync(exception.Message);
         }
+        finally { EndProtectedOperation(); }
     }
 
-    private void ClearCreateSecrets_Click(object? sender, RoutedEventArgs e) => ClearCreateSecrets();
+    private async void ClearCreateSecrets_Click(object? sender, RoutedEventArgs e)
+    {
+        if (Volatile.Read(ref _operationActive) != 0) return;
+        try
+        {
+            EntropyMixer.Reset();
+            _entropyCaptureFaulted = false;
+            ClearCreateSecrets();
+            UpdateEntropyStatus(force: true);
+        }
+        catch (Exception exception) { Log(exception.ToString()); await ErrorAsync(exception.Message); }
+    }
 
     private void ClearExtractSecrets_Click(object? sender, RoutedEventArgs e) => ClearExtractSecrets();
 
@@ -1077,7 +1276,8 @@ public sealed partial class MainWindow : Window, IDisposable
     /// The extraction goes to a private directory that is removed afterwards,
     /// so the round trip never leaves a second plaintext copy behind.
     /// </remarks>
-    private async Task<bool> VerifyAndDeleteOriginalsAsync(string archivePath, string[] inputs, bool encrypted)
+    private async Task<bool> VerifyAndDeleteOriginalsAsync(string archivePath, string[] inputs, bool encrypted,
+        MacOriginalDeletionService.CreationSnapshot creationSnapshot)
     {
         // The temporary directory sits below /var/folders, and /var is itself a
         // symlink to /private/var. Every read here goes through the
@@ -1089,9 +1289,11 @@ public sealed partial class MainWindow : Window, IDisposable
         MacFileIdentity verifyParentIdentity = MacSafeFileSystem.GetIdentity(verifyParentHandle);
         MacSafeFileSystem.RequirePathStillNamesHandle(verifyParentHandle, verifyParent);
         string verifyRoot = Path.Combine(verifyParent, "extracted");
+        Exception? verificationFailure = null;
         try
         {
             MacSafeFileSystem.SetUnixFileMode(verifyParentHandle, 0x01C0 /* 0700 */);
+            TestHookBeforeVerificationExtraction?.Invoke(verifyParent);
             Log(T("verifyingBeforeDelete"));
             OperationStatusText.Text = T("verifyingBeforeDelete");
 
@@ -1104,7 +1306,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
             ProcessResult extraction = encrypted
                 ? await ExtractEncryptedForVerificationAsync(archivePath, verifyRoot)
-                : await _zpaq.ExtractAsync(archivePath, verifyRoot, Progress(), _lifetime.Token);
+                : await _zpaq.ExtractAsync(archivePath, verifyRoot, Progress(), OperationToken);
             if (!extraction.Succeeded)
             {
                 Log(extraction.StandardError);
@@ -1117,7 +1319,8 @@ public sealed partial class MainWindow : Window, IDisposable
                     inputs,
                     verifyRoot,
                     Progress(),
-                    _lifetime.Token);
+                    OperationToken,
+                    creationSnapshot);
             if (!verification.Verified || verification.Originals is null)
             {
                 Log($"{T("verifyMismatch")} — {verification.Failure}");
@@ -1153,12 +1356,18 @@ public sealed partial class MainWindow : Window, IDisposable
             or InvalidDataException
             or InvalidOperationException)
         {
+            verificationFailure = exception;
             // The archive itself was written and is fine; only the read-back
             // failed. Report that and keep both the archive and every original,
             // rather than letting the outer handler discard a good archive.
             Log($"{T("verifyMismatch")} — {exception.Message}");
             await ErrorAsync(T("verifyMismatch"));
             return false;
+        }
+        catch (Exception exception)
+        {
+            verificationFailure = exception;
+            throw;
         }
         finally
         {
@@ -1169,9 +1378,16 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 CleanupBoundVerificationRoot(verifyParentHandle, verifyParent, verifyParentIdentity);
             }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            catch (Exception cleanupFailure)
             {
-                Log($"{T("verifyCleanupFailed")} — {verifyParent}");
+                // A verified archive does not authorize reporting success while
+                // its private plaintext copy could remain. Preserve both causes
+                // and let the operation owner report failure without touching
+                // committed outputs or a replacement at the public root path.
+                string message = $"{T("verifyCleanupFailed")}: {verifyParent}";
+                if (verificationFailure is not null)
+                    throw new AggregateException(message, verificationFailure, cleanupFailure);
+                throw new IOException(message, cleanupFailure);
             }
         }
     }
@@ -1198,14 +1414,15 @@ public sealed partial class MainWindow : Window, IDisposable
             CaptureDecryptionProducer(archivePath, creationCredentials: true),
             outputRoot,
             Progress(),
-            _lifetime.Token);
+            OperationToken);
     }
 
     // ZPAQ invokes its producer/consumer on worker threads. Capture every GUI
     // value and the UI synchronization context before handing the callback off.
     // No control may be read inside either returned delegate.
     internal Func<Stream, CancellationToken, Task> CaptureEncryptionConsumer(
-        string archivePath, EncryptionSuite suite, GeneratedArchiveEntropy? prepared)
+        string archivePath, EncryptionSuite suite, GeneratedArchiveEntropy? prepared,
+        ArchiveOperationLifetime? lifetime = null)
     {
         Dispatcher.UIThread.VerifyAccess();
         string password = CreatePasswordBox.Text ?? string.Empty;
@@ -1216,10 +1433,10 @@ public sealed partial class MainWindow : Window, IDisposable
         IProgress<string> progress = Progress();
         KalynaContainerService containers = _containers;
         return (stream, token) => prepared is null
-            ? containers.EncryptZpaqStreamAsync(stream, archivePath, password, pin,
-                firstFactor, secondFactor, suite, hint, progress, token)
+            ? containers.EncryptZpaqStreamTrackedAsync(stream, archivePath, password, pin,
+                firstFactor, secondFactor, suite, hint, progress, token, lifetime)
             : containers.EncryptZpaqStreamWithPreparedEntropyAsync(stream, archivePath,
-                password, pin, firstFactor, secondFactor, suite, prepared, hint, progress, token);
+                password, pin, firstFactor, secondFactor, suite, prepared, hint, progress, token, lifetime);
     }
 
     internal Func<Stream, CancellationToken, Task> CaptureDecryptionProducer(
@@ -1228,8 +1445,8 @@ public sealed partial class MainWindow : Window, IDisposable
         Dispatcher.UIThread.VerifyAccess();
         string password = (creationCredentials ? CreatePasswordBox : ExtractPasswordBox).Text ?? string.Empty;
         string pin = (creationCredentials ? CreatePinBox : ExtractPinBox).Text ?? string.Empty;
-        string firstFactor = (creationCredentials ? GeneratedPasswordFirstBox : ExtractGeneratedPasswordFirstBox).Text ?? string.Empty;
-        string secondFactor = (creationCredentials ? GeneratedPasswordSecondBox : ExtractGeneratedPasswordSecondBox).Text ?? string.Empty;
+        string firstFactor = (creationCredentials ? GeneratedPasswordFirstBox.Text : ExtractGeneratedPasswordFirstBox.Text) ?? string.Empty;
+        string secondFactor = (creationCredentials ? GeneratedPasswordSecondBox.Text : ExtractGeneratedPasswordSecondBox.Text) ?? string.Empty;
         IProgress<string> progress = Progress();
         KalynaContainerService containers = _containers;
         return (stream, token) => containers.DecryptToStreamAsync(archivePath,
@@ -1238,47 +1455,23 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async void ChooseEraseFile_Click(object? sender, RoutedEventArgs e)
     {
-        IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        try
         {
-            Title = T("chooseEraseDialog"),
-            AllowMultiple = false,
-            FileTypeFilter = BuildArchivePickerFilter(EncryptedArchiveType),
-        });
-        IStorageFile? file = files.FirstOrDefault();
-        foreach (IStorageFile extra in files.Skip(1))
-        {
-            extra.Dispose();
-        }
-
-        if (file is null)
-        {
-            return;
-        }
-
-        if (GetLocalPath(file) is { } path)
-        {
-            if (!HasEncryptedArchiveExtension(path))
+            IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                file.Dispose();
-                await WarnAsync(T("eraseSelectionTypeInvalid"));
-                return;
-            }
-
-            if (!RetainEraseArchiveAccess(file))
-            {
-                return;
-            }
-
-            SetErasePath(path);
-            return;
+                Title = T("chooseEraseDialog"),
+                AllowMultiple = false,
+                FileTypeFilter = BuildArchivePickerFilter(EncryptedArchiveType),
+            });
+            await ApplyStoragePickerSelectionAsync(files, RetainEraseArchiveAccess, SetErasePath,
+                HasEncryptedArchiveExtension, T("eraseSelectionTypeInvalid"));
         }
-
-        file.Dispose();
+        catch (Exception failure) { await ReportStorageSelectionFailureAsync(failure); }
     }
 
     private async void AnalyzeErase_Click(object? sender, RoutedEventArgs e) => await AnalyzeEraseAsync();
 
-    private void ErasePathBox_TextChanged(object? sender, TextChangedEventArgs e)
+    private async void ErasePathBox_TextChanged(object? sender, TextChangedEventArgs e)
     {
         if (_componentsReady)
         {
@@ -1287,12 +1480,13 @@ public sealed partial class MainWindow : Window, IDisposable
             {
                 SetEraseStatus("eraseNotAnalyzed");
             }
-            ReleaseEraseAccessIfMismatched(ErasePathBox.Text ?? string.Empty);
+            await TryReleaseStoragePathAccessAndReportAsync(() => ReleaseEraseAccessIfMismatched(ErasePathBox.Text ?? string.Empty));
         }
     }
 
     private async void EraseContainer_Click(object? sender, RoutedEventArgs e)
     {
+        if (_releaseAudit is not null) return;
         if (!TryBeginProtectedOperation())
         {
             await ShowBlockedAsync();
@@ -1301,6 +1495,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         try
         {
+            using IDisposable resourceScope = ResourcePolicyForOperation().EnterScope();
             string path = ErasePathBox.Text?.Trim() ?? string.Empty;
             if (path.Length == 0)
             {
@@ -1326,7 +1521,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, _lifetime.Token);
+            CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, OperationToken);
             SetEraseAnalysis(analysis);
             if (!analysis.IsEncryptedContainer)
             {
@@ -1339,11 +1534,12 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            CryptoEraseResult result = await _erase.EraseEncryptedContainerAsync(path, Progress(), _lifetime.Token);
+            CryptoEraseResult result = await _erase.EraseEncryptedContainerAsync(path, Progress(), OperationToken);
             ErasePathBox.Text = string.Empty;
             EraseConfirmBox.IsChecked = false;
             SetEraseStatus("eraseCompleted");
             Log(result.Message);
+            MarkOperationSucceeded();
             await InfoAsync(T("eraseCompleted"));
         }
         catch (Exception exception)
@@ -1359,6 +1555,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private async Task AnalyzeEraseAsync()
     {
+        if (_releaseAudit is not null) return;
         try
         {
             string path = ErasePathBox.Text?.Trim() ?? string.Empty;
@@ -1380,7 +1577,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, _lifetime.Token);
+            CryptoEraseAnalysis analysis = await _erase.AnalyzeAsync(path, OperationToken);
             SetEraseAnalysis(analysis);
             Log(analysis.Message);
             Log(analysis.HardwareNotice);
@@ -1392,20 +1589,25 @@ public sealed partial class MainWindow : Window, IDisposable
         }
     }
 
-    private void ClearLog_Click(object? sender, RoutedEventArgs e) => LogBox.Text = string.Empty;
+    private void ClearLog_Click(object? sender, RoutedEventArgs e) => ClearConsoleLog();
 
     internal void ClearCreateSecrets()
     {
         GeneratedArchiveEntropy? entropy = _generatedEntropy;
         _generatedEntropy = null;
         _generatedPairReady = false;
-        CreatePasswordBox.Text = string.Empty;
-        CreatePasswordConfirmBox.Text = string.Empty;
-        CreatePinBox.Text = string.Empty;
-        CreatePinConfirmBox.Text = string.Empty;
-        GeneratedPasswordFirstBox.Text = string.Empty;
-        GeneratedPasswordSecondBox.Text = string.Empty;
-        entropy?.Dispose();
+        _clearingCreateSecrets = true;
+        try
+        {
+            CreatePasswordBox.Text = string.Empty;
+            CreatePasswordConfirmBox.Text = string.Empty;
+            CreatePinBox.Text = string.Empty;
+            CreatePinConfirmBox.Text = string.Empty;
+            GeneratedPasswordFirstBox.Text = string.Empty;
+            GeneratedPasswordSecondBox.Text = string.Empty;
+            entropy?.Dispose();
+        }
+        finally { _clearingCreateSecrets = false; }
         ResetKeySheetStatus();
         UpdateEntropyStatus(force: true);
         UpdatePasswordPolicyStatus();
@@ -1415,8 +1617,8 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         ExtractPasswordBox.Text = string.Empty;
         ExtractPinBox.Text = string.Empty;
-        ExtractGeneratedPasswordFirstBox.Text = string.Empty;
-        ExtractGeneratedPasswordSecondBox.Text = string.Empty;
+        ExtractGeneratedPasswordFirstBox.ClearSensitiveText();
+        ExtractGeneratedPasswordSecondBox.ClearSensitiveText();
     }
 
     /// <summary>
@@ -1428,6 +1630,22 @@ public sealed partial class MainWindow : Window, IDisposable
         ClearExtractSecrets();
         Log(diagnostic);
     }
+
+    private static T Preflight<T>(Func<T> check, ArchivePreflightReason reason)
+    {
+        try { return check(); }
+        catch (ArchivePreflightException) { throw; }
+        catch (Exception failure) when (failure is PasswordPolicyException or PinPolicyException
+            or ArgumentException or InvalidOperationException or IOException)
+        {
+            // No inner exception retains a credential-validation buffer or raw
+            // control text. Trust, crypto and cleanup failures remain fatal.
+            throw new ArchivePreflightException(reason, failure.Message);
+        }
+    }
+
+    private static void Preflight(Action check, ArchivePreflightReason reason) =>
+        Preflight(() => { check(); return true; }, reason);
 
     private void EnsureCreationFactors()
     {
@@ -1524,19 +1742,17 @@ public sealed partial class MainWindow : Window, IDisposable
 
         // 1024 samples per pool is the minimum that unlocks generation, not a
         // ceiling: collection continues for as long as the pointer moves, and
-        // the reported counts must keep rising so that the extra entropy stays
-        // visible. Throttle on the true pool minimum, never on the value
-        // clamped for the progress bar — clamping the throttle input froze the
-        // whole display at 1024.
+        // every accepted record remains visible. Throttle on total changes,
+        // since independent routing need not advance the minimum pool.
         long poolMinimum = status.Minimum;
-        if (!force && poolMinimum == _lastEntropyUiMinimum)
+        if (!force && status.Total == _lastEntropyUiMinimum)
         {
             return;
         }
 
-        _lastEntropyUiMinimum = poolMinimum;
+        _lastEntropyUiMinimum = status.Total;
         EntropyProgress.Value = Math.Min(poolMinimum, EntropyMixer.RequiredMouseSamplesPerPurpose);
-        bool ready = poolMinimum >= EntropyMixer.RequiredMouseSamplesPerPurpose;
+        bool ready = status.IsReady && !_entropyCaptureFaulted;
         GeneratePasswordButton.IsEnabled = ready && Volatile.Read(ref _operationActive) == 0;
         GeneratePasswordButton.Content = T(_generatedPairReady ? "regeneratePassword" : "generatePassword");
         string key = !_generatedPairReady
@@ -1544,7 +1760,7 @@ public sealed partial class MainWindow : Window, IDisposable
             : _generatedEntropy is { HasPendingEncryptionParameters: true }
                 ? "entropyPrepared"
                 : "entropyRetry";
-        EntropyStatusText.Text = string.Format(
+        EntropyStatusText.Text = (_entropyCaptureFaulted || !status.Healthy ? T("entropyCollectionFailed") + " " : string.Empty) + string.Format(
             CultureInfo.CurrentCulture,
             T(key),
             status.Total,
@@ -1557,6 +1773,8 @@ public sealed partial class MainWindow : Window, IDisposable
             status.NonceFirst,
             status.NonceSecond,
             status.NonceThird,
+            status.NonceFourth,
+            status.NonceFifth,
             EntropyMixer.RequiredMouseSamplesPerPurpose);
         EntropyStatusText.Foreground = Brush.Parse(key == "entropyPrepared" ? "#7EE2B8" : key == "entropyRetry" ? "#F2BD55" : "#5DE4EC");
     }
@@ -1660,7 +1878,7 @@ public sealed partial class MainWindow : Window, IDisposable
             throw new InvalidOperationException(T("targetMissing"));
         }
 
-        ArchivePathBox.Text = archive;
+        if (!string.Equals(ArchivePathBox.Text, archive, StringComparison.Ordinal)) ArchivePathBox.Text = archive;
         EncryptBox.IsChecked = true;
         return new MacKeySheetData(
             Path.GetFullPath(archive),
@@ -1670,6 +1888,41 @@ public sealed partial class MainWindow : Window, IDisposable
             DateTime.Now,
             IsEnglish,
             string.Empty);
+    }
+
+    private void GeneratedFactor_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        Interlocked.Increment(ref _createDraftRevision);
+        RefreshKeySheetBinding();
+    }
+
+    private string? CurrentKeySheetFingerprint()
+    {
+        try
+        {
+            string path = NormalizeTargetArchivePath(ArchivePathBox.Text?.Trim() ?? string.Empty, encrypted: true);
+            if (path.Length == 0 || CipherSuiteBox.SelectedItem is not ComboBoxItem) return null;
+            return BuildKeySheetFingerprint(new MacKeySheetData(Path.GetFullPath(path), SelectedEncryptionSuite,
+                PasswordKeyService.NormalizeGeneratedPassword(GeneratedPasswordFirstBox.Text ?? string.Empty),
+                PasswordKeyService.NormalizeGeneratedPassword(GeneratedPasswordSecondBox.Text ?? string.Empty),
+                DateTime.MinValue));
+        }
+        catch (Exception failure) when (failure is ArgumentException or InvalidOperationException or IOException) { return null; }
+    }
+
+    private void RefreshKeySheetBinding()
+    {
+        if (_clearingCreateSecrets || _keySheetFingerprint is null || !_componentsReady) return;
+        if (CipherSuiteBox.SelectedItem is not ComboBoxItem) return;
+        if (!string.Equals(_keySheetFingerprint, CurrentKeySheetFingerprint(), StringComparison.Ordinal))
+            ResetKeySheetStatus();
+    }
+
+    private void RequireUnchangedKeySheetDraft(MacKeySheetData data, long revision)
+    {
+        if (_disposed || revision != Volatile.Read(ref _createDraftRevision)
+            || !string.Equals(BuildKeySheetFingerprint(data), CurrentKeySheetFingerprint(), StringComparison.Ordinal))
+            throw new ArchivePreflightException(ArchivePreflightReason.DraftChanged, T("draftChanged"));
     }
 
     private void ResetKeySheetStatus()
@@ -1737,14 +1990,14 @@ public sealed partial class MainWindow : Window, IDisposable
         return MacKeySheetService.BuildBindingFingerprint(data);
     }
 
-    private async Task<string> PrepareArchiveForUseAsync(string archive)
+    private async Task<string> PrepareArchiveForUseAsync(string archive, ArchiveOperationLifetime? lifetime = null)
     {
-        if (await _containers.LooksEncryptedAsync(archive, _lifetime.Token))
+        if (await _containers.LooksEncryptedAsync(archive, OperationToken))
         {
             return archive;
         }
 
-        RecoveryProtectionMode? mode = await _recovery.TryReadProtectionModeAsync(archive, _lifetime.Token);
+        RecoveryProtectionMode? mode = await _recovery.TryReadProtectionModeAsync(archive, OperationToken);
         if (mode is null)
         {
             if (HasEncryptedArchiveExtension(archive))
@@ -1758,7 +2011,8 @@ public sealed partial class MainWindow : Window, IDisposable
         RecoveryRepairResult repair;
         if (mode == RecoveryProtectionMode.DualAuthenticatedEncrypted)
         {
-            EnsureExtractionFactors();
+            Preflight(EnsureExtractionFactors, ArchivePreflightReason.Credentials);
+            lifetime?.BeginExecution();
             repair = await _recovery.VerifyAndRepairAuthenticatedAsync(
                 archive,
                 ExtractPasswordBox.Text ?? string.Empty,
@@ -1766,11 +2020,12 @@ public sealed partial class MainWindow : Window, IDisposable
                 ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
                 ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
                 Progress(),
-                _lifetime.Token);
+                OperationToken);
         }
         else
         {
-            repair = await _recovery.VerifyAndRepairAsync(archive, Progress(), _lifetime.Token);
+            lifetime?.BeginExecution();
+            repair = await _recovery.VerifyAndRepairAsync(archive, Progress(), OperationToken);
         }
 
         string effective = repair.OutputPath ?? archive;
@@ -1783,15 +2038,16 @@ public sealed partial class MainWindow : Window, IDisposable
         return effective;
     }
 
-    private async Task<(KalynaContainerInfo Info, string Archive)> ReadContainerInfoWithRecoveryAsync(string archive)
+    private async Task<(KalynaContainerInfo Info, string Archive)> ReadContainerInfoWithRecoveryAsync(string archive, ArchiveOperationLifetime? lifetime = null)
     {
         try
         {
-            return (await _containers.ReadContainerInfoAsync(archive, _lifetime.Token), archive);
+            return (await _containers.ReadContainerInfoAsync(archive, OperationToken), archive);
         }
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException)
         {
-            EnsureExtractionFactors();
+            Preflight(EnsureExtractionFactors, ArchivePreflightReason.Credentials);
+            lifetime?.BeginExecution();
             RecoveryRepairResult repair = await _recovery.VerifyAndRepairAuthenticatedAsync(
                 archive,
                 ExtractPasswordBox.Text ?? string.Empty,
@@ -1799,7 +2055,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
                 ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
                 Progress(),
-                _lifetime.Token);
+                OperationToken);
             if (!repair.Repaired)
             {
                 throw;
@@ -1807,7 +2063,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
             string effective = repair.OutputPath ?? archive;
             Log(string.Format(CultureInfo.CurrentCulture, T("recoveryNewFile"), effective));
-            return (await _containers.ReadContainerInfoAsync(effective, _lifetime.Token), effective);
+            return (await _containers.ReadContainerInfoAsync(effective, OperationToken), effective);
         }
     }
 
@@ -1828,7 +2084,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ExtractGeneratedPasswordFirstBox.Text ?? string.Empty,
                 ExtractGeneratedPasswordSecondBox.Text ?? string.Empty,
                 Progress(),
-                _lifetime.Token);
+                OperationToken);
             if (!repair.Repaired)
             {
                 throw;
@@ -1842,7 +2098,7 @@ public sealed partial class MainWindow : Window, IDisposable
         }
     }
 
-    private void ExtractArchiveBox_TextChanged(object? sender, TextChangedEventArgs e)
+    private async void ExtractArchiveBox_TextChanged(object? sender, TextChangedEventArgs e)
     {
         if (!_componentsReady || _suppressExtractTextChanged || _disposed || Volatile.Read(ref _operationActive) != 0)
         {
@@ -1850,8 +2106,8 @@ public sealed partial class MainWindow : Window, IDisposable
         }
 
         string path = ExtractArchiveBox.Text ?? string.Empty;
-        ReleaseExtractAccessIfMismatched(path);
-        BeginExtractHintLoad(path, debounce: true);
+        if (await TryReleaseStoragePathAccessAndReportAsync(() => ReleaseExtractAccessIfMismatched(path)))
+            BeginExtractHintLoad(path, debounce: true);
     }
 
     private void SetExtractArchivePath(string path)
@@ -1885,6 +2141,11 @@ public sealed partial class MainWindow : Window, IDisposable
         int version = Interlocked.Increment(ref _hintLoadVersion);
         SetExtractHint(null, loaded: false);
         string path = archive.Trim();
+        if (_releaseAudit is { } audit)
+        {
+            try { audit.RequirePublicArchive(path); }
+            catch { return; }
+        }
         if (!File.Exists(path) || _disposed)
         {
             return;
@@ -1903,7 +2164,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 ?? throw new UnauthorizedAccessException(T("sandboxLeaseFailed"));
             if (debounce)
             {
-                await Task.Delay(150, _lifetime.Token);
+                await Task.Delay(150, _lifetimeToken);
             }
 
             if (version != Volatile.Read(ref _hintLoadVersion))
@@ -1911,12 +2172,12 @@ public sealed partial class MainWindow : Window, IDisposable
                 return;
             }
 
-            if (await _containers.LooksEncryptedAsync(path, _lifetime.Token))
+            if (await _containers.LooksEncryptedAsync(path, _lifetimeToken))
             {
-                hint = (await _containers.ReadContainerInfoAsync(path, _lifetime.Token)).Hint;
+                hint = (await _containers.ReadContainerInfoAsync(path, _lifetimeToken)).Hint;
             }
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested)
         {
             return;
         }
@@ -2016,23 +2277,66 @@ public sealed partial class MainWindow : Window, IDisposable
             return false;
         }
 
+        try
+        {
+            _operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+            BeginOperationProgress();
+        }
+        catch
+        {
+            DisposeProgressObserver();
+            _operationCancellation?.Dispose();
+            _operationCancellation = null;
+            Interlocked.Exchange(ref _operationActive, 0);
+            throw;
+        }
         OperationStatusText.Text = T("working");
         UpdateProtectedOperationControls();
         return true;
     }
 
+    private void CancelOperation_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_operationCancellation is not { } cancellation) return;
+        try
+        {
+            CancelOperationButton.IsEnabled = false;
+            OperationStatusText.Text = T("cancelling");
+            _operationProgress?.SetState(OperationProgressState.Cancelling);
+            RenderOperationProgress();
+        }
+        catch { ShowProgressUnavailable(); }
+        finally { cancellation.Cancel(); }
+    }
+
     private void EndProtectedOperation()
     {
-        Interlocked.Exchange(ref _operationActive, 0);
-        if (_disposed)
+        CancellationTokenSource? completed = _operationCancellation;
+        bool wasCancelled = completed?.IsCancellationRequested == true;
+        try { FinishOperationProgress(wasCancelled); }
+        finally
         {
-            DisposeStorageAccess();
-            return;
+            _operationCancellation = null;
+            try { completed?.Dispose(); }
+            finally { Interlocked.Exchange(ref _operationActive, 0); }
         }
+        try
+        {
+            if (_disposed)
+            {
+                DisposeStorageAccess();
+                return;
+            }
 
-        OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
-        UpdateProtectedOperationControls();
-        UpdateEntropyStatus(force: true);
+            OperationStatusText.Text = _integrityTrusted ? T("ready") : T("blocked");
+            UpdateProtectedOperationControls();
+            UpdateEntropyStatus(force: true);
+        }
+        finally
+        {
+            CompleteReleaseAuditOperation(wasCancelled);
+            if (_disposed) _releaseAudit?.Dispose();
+        }
     }
 
     private void UpdateProtectedOperationControls()
@@ -2044,15 +2348,19 @@ public sealed partial class MainWindow : Window, IDisposable
 
         bool busy = Volatile.Read(ref _operationActive) != 0;
         bool interactive = !_disposed && !busy;
+        CancelOperationButton.IsEnabled = !_disposed && busy && _operationCancellation is { IsCancellationRequested: false };
         CreatePanel.IsEnabled = interactive;
         ExtractPanel.IsEnabled = interactive;
         ErasePanel.IsEnabled = interactive;
+        ResourcesPanel.IsEnabled = interactive;
+        GeneratePasswordButton.IsEnabled = interactive && !_entropyCaptureFaulted && EntropyMixer.GetPoolStatus().IsReady;
         bool protectedEnabled = interactive && _integrityTrusted;
         CreateArchiveButton.IsEnabled = protectedEnabled;
         ExtractArchiveButton.IsEnabled = protectedEnabled;
         ListArchiveButton.IsEnabled = protectedEnabled;
         EmergencyRecoveryButton.IsEnabled = protectedEnabled;
         EraseContainerButton.IsEnabled = protectedEnabled;
+        ApplyReleaseAuditControlRestrictions();
     }
 
     private IProgress<string> Progress() => new Progress<string>(Log);
@@ -2064,26 +2372,11 @@ public sealed partial class MainWindow : Window, IDisposable
             return;
         }
 
-        if (!Dispatcher.UIThread.CheckAccess())
-        {
-            Dispatcher.UIThread.Post(() => Log(message));
-            return;
-        }
-
         string bounded = message.Length <= MaxLogEntryCharacters
             ? message
             : string.Concat(message.AsSpan(0, MaxLogEntryCharacters), " [entry truncated]");
         string entry = $"[{DateTime.Now:HH:mm:ss}] {bounded}{Environment.NewLine}";
-        string existing = LogBox.Text ?? string.Empty;
-        if (existing.Length + entry.Length > MaxLogCharacters)
-        {
-            int start = Math.Max(0, existing.Length - Math.Max(0, RetainedLogCharacters - entry.Length));
-            int line = existing.IndexOf('\n', start);
-            existing = existing[(line >= 0 ? line + 1 : start)..];
-        }
-
-        LogBox.Text = existing + entry;
-        LogBox.CaretIndex = LogBox.Text.Length;
+        AppendConsoleEntry(entry);
     }
 
     private Task<bool> ConfirmAsync(string message) => SecurityDialog.ShowAsync(
@@ -2091,10 +2384,15 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private Task InfoAsync(string message) => ShowAsync(message, SecurityDialogKind.Information);
     private Task WarnAsync(string message) => ShowAsync(message, SecurityDialogKind.Warning);
-    private Task ErrorAsync(string message) => ShowAsync(message, SecurityDialogKind.Error);
+    private Task ErrorAsync(string message)
+    {
+        if (Volatile.Read(ref _operationActive) != 0) MarkOperationFailed();
+        return ShowAsync(message, SecurityDialogKind.Error);
+    }
 
     private async Task ShowAsync(string message, SecurityDialogKind kind)
     {
+        using IDisposable? auditDialog = _releaseAudit?.ObserveDialogWait();
         if (TestHookShowDialogAsync is { } testHook)
         {
             await testHook(kind, message);

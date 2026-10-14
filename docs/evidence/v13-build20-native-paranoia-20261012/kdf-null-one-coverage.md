@@ -1,0 +1,15 @@
+# KDF und Schlüsselübergabe: Abdeckung unerwarteter Null-/Einsfolgen
+
+Auswertung vom 12. Oktober 2026 anhand vorhandener Quellen und tatsächlich bestandener Fälle. Dieser Nachtrag ist kein neuer Testlauf und keine zusätzliche Fehlereinspritzung. Die ursprünglichen Ergebnisse sind an den Produktquellstand `ea0eeecface1a8d16760676c1d6a428baef350c0` gebunden; die Produktquellen wurden für diesen Nachtrag nicht verändert.
+
+Die [Originalergebnisse](../v13-build20-final-20261011/historical/phase-01/test-results.json) enthalten PASS für `kdf.v13-master-factor-split`, `kdf.properties`, `kdf.argon2-equivalence`, `crypto.kdf-primitives`, `v13-std-rolekeys` und `v13-par8-rolekeys`.
+
+- [M1 und M2](../../../KeepVaultMac.Tests/MacComprehensiveTests.cs#L5500) werden bis Zeile 5525 bytegenau mit festen, nicht konstanten Sollwerten verglichen. Eine unerwartete vollständige Folge aus `0x00`, `0x01` oder `0xFF` würde diese Prüfungen nicht bestehen.
+- [Verkürzte Eingaben](../../../KeepVaultMac.Tests/MacComprehensiveTests.cs#L5531) werden ausdrücklich geprüft: Ein auf 64 Bytes gekürzter Rundenmaster und Credentialhash werden abgewiesen, statt mit Nullen auf 128 Bytes aufgefüllt zu werden.
+- Die Standard- und Paranoia-Rollenschlüssel werden mit separat berechneten Sollwerten verglichen. Die Paranoia-Prüfung umfasst die acht Stufenkontexte sowie MAC- und Recovery-Rollen. Der Argon2id-Vergleich und die KDF-Primitivtests prüfen die Übereinstimmung mit unabhängigen Implementierungen.
+
+Die [verwaltete Argon2id-Schnittstelle](../../../KalynaArchiver/Services/NativeArgon2id.cs#L138) weist Nullreferenzen bei Pflichtpuffern ab. Die [native Schnittstelle](../../../native/argon2_ref_export.c#L341) weist erforderliche `NULL`-Pointer sowie falsche Längen und inkonsistente Secretpointer ab. Ein vollständig fehlendes optionales Secret mit Länge null ist für den ersten Ableitungsschritt vorgesehen und kein Fehler. [V13MasterKdf](../../../KalynaArchiver/Services/V13MasterKdf.cs#L457) prüft zusätzlich Ausgabe- und Eingabebreiten. Diese Aussagen beschreiben die geprüften Quellen; sie behaupten keine separat ausgeführte Fehlerinjektion für jede einzelne Bedingung.
+
+`security.production-secret-cleanup-faults` ist ebenfalls PASS. Dieser Fall injiziert Fehler beim Freigeben geschützter Puffer und prüft Fehlerweitergabe sowie Bereinigung. Er simuliert keine native Erfolgsmeldung mit absichtlich falschem Schlüsselinhalt.
+
+Die Grenze der Abdeckung: Es liegt keine vollständige tatsächlich ausgeführte Fehlerinjektion mit `NULL`, unbeschriebenem Ausgabeziel oder konstanten `0x00`-/`0x01`-/`0xFF`-Erfolgsausgaben an jeder KDF- und Cipher-Übergabe vor. Eine Nullreferenz ist außerdem etwas anderes als ein korrekt adressierter Puffer mit Nullbytes. Eine konstante Bitfolge ist mathematisch ein möglicher Schlüsselwert; die Produktion enthält keine allgemeine Inhaltsverweigerung allein wegen dieses Musters. Die vorhandenen Sollwertprüfungen erkennen unerwartete konstante Ausgaben für ihre konkreten Prüfeingaben, begründen aber keine pauschale Garantie gegen jede denkbare Speicherbeschädigung.

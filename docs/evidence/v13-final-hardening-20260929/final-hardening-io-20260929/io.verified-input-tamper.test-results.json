@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "3dde04c28751feda28a12b6c7e78be139747c4c1",
+  "testInventoryHash": "dc0ed328f3efea24176e864c501324940f21b74d7185a2803a857b75b931b215",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "io.verified-input-tamper",
+      "name": "spool, index, truncation, extension and cross-operation replay rejection",
+      "status": "FAIL",
+      "seconds": 0.261,
+      "peakRssMiB": 85,
+      "seed": "0x5EED0313",
+      "failure": "IOException: Cannot retain the attacker\u0027s pre-sealing descriptor.\n   at VerifiedArchiveInputAttack.DuplicateWriter(SafeFileHandle source) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedArchiveInputAttack.cs:line 47\n   at VerifiedArchiveInputAttack.\u003C\u003Ec__DisplayClass20_0.\u003CCaptureAsync\u003Eb__0(VerifiedArchiveInput input) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedArchiveInputAttack.cs:line 25\n   at KalynaArchiver.Services.VerifiedArchiveInput.Capture(String path, ArchiveOperationPolicy policy, Boolean copyCiphertext, CancellationToken token)\n   at KalynaArchiver.Services.VerifiedArchiveInput.\u003C\u003Ec__DisplayClass43_0.\u003CCaptureAsync\u003Eb__0()\n   at System.Threading.Tasks.Task\u00601.InnerInvoke()\n   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)\n--- End of stack trace from previous location ---\n   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)\n   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task\u0026 currentTaskSlot, Thread threadPoolThread)\n--- End of stack trace from previous location ---\n   at VerifiedArchiveInputAttack.CaptureAsync(String path, ArchiveOperationPolicy policy, CancellationToken token) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedArchiveInputAttack.cs:line 30\n   at VerifiedArchiveInputTests.TamperAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedArchiveInputTests.cs:line 349\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList\u00601 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403"
+    }
+  ]
+}

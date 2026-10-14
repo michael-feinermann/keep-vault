@@ -1,0 +1,15 @@
+{
+  "scope": "Development integration evidence; final signed release tests remain separate. Initial failures are retained alongside targeted reruns.",
+  "files": {
+    "rev9-dev-crypto.txt": "0851abb13440d4707d8ef583f339a5a128a0eecbdbf3dfc6f3a4bd6aa05e9151",
+    "rev9-dev-integration-rerun-binaries.json": "cc514db3856f68344c833614c065373b0529d96cc08b8e5c97231e35808c3f0f",
+    "rev9-dev-integration-reruns.json": "2ee3ea780bdf307e0d54ce94e7ab538442a29b94ac178863cbc395ef00eae937",
+    "rev9-dev-security-results.json": "2f8bda4e704804f808cde929483c966fd28d876a5a929a3098e0d010df77a010",
+    "rev9-dev-security.txt": "4e6d30964fb4f5b88ba3db8732ccf58eb4050f2f22a7f04db844254e57744c12",
+    "rev9-dev-smoke-results.json": "aa689178224c10186e64a08147ae680483caaffea776f9608ea9618da03c21d4",
+    "rev9-dev-smoke.txt": "701249c750ea18ab85862de0785e2e130b0fec93c280a2f275906c398e3fffd6",
+    "rev9-dev-spec-results.json": "8bbe0b1a7ab1166d55baeaf13f998e62d7b6c555b73368824da5d2cc3e711c9c",
+    "rev9-dev-spec.txt": "0f7dafef23ad696d5eba585622b8d588a78b55fdd61fc51da9d494885f49ef0a",
+    "test-release-evidence.txt": "d50b1d8fac1fffd98036164b0f79e219d5ed9530b53df3e6b0e17e6e5c2d007f"
+  }
+}

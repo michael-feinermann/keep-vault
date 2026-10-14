@@ -354,8 +354,8 @@ private final class InstallerDelegate: NSObject, NSApplicationDelegate {
         let alert = NSAlert()
         alert.messageText = "Keep Vault \(version)"
         alert.informativeText = english
-            ? "Install Keep Vault and QR-Scanner in Applications. macOS administrator authorization is required to protect the installation files and set up the verified archive component."
-            : "Keep Vault und QR-Scanner unter Programme installieren. Die macOS-Administratorfreigabe wird benötigt, um die Installationsdateien zu schützen und die geprüfte Archivkomponente einzurichten."
+            ? "Install Keep Vault and QR-Scanner in Applications. macOS administrator authorization is required to protect the installation files and set up the verified archive component.\n\nCompatibility: This version uses v13 and cannot open existing v12 archives. Keep your v12 archives, KPAR2 files and key sheets unchanged. No automatic conversion is performed."
+            : "Keep Vault und QR-Scanner unter Programme installieren. Die macOS-Administratorfreigabe wird benötigt, um die Installationsdateien zu schützen und die geprüfte Archivkomponente einzurichten.\n\nKompatibilität: Diese Version verwendet v13 und öffnet vorhandene v12-Archive nicht. Bewahre deine v12-Archive, KPAR2-Dateien und Schlüsselzettel unverändert auf. Es findet keine automatische Konvertierung statt."
         alert.addButton(withTitle: english ? "Install" : "Installieren")
         alert.addButton(withTitle: english ? "Cancel" : "Abbrechen")
         guard alert.runModal() == .alertFirstButtonReturn else { NSApp.terminate(nil); return }

@@ -1,0 +1,8 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+    REV12 workflow XChaCha20Poly1305 requested=Auto 1073741824 source bytes: archive+encrypt 740,047 s (1,38 MiB/s); complete with KPAR2/original compare/cleanup 1649,761 s (0,62 MiB/s), one measured run
+REV12_WORKFLOW_PROFILE_ARTIFACT=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-xchacha20-poly1305-auto-20261004T065811225-7a580916ba5743f2a043f206db0e0b62.json
+FULL PASS explicit public one-GiB production-KDF level-5 complete archive/KPAR2/original-compare workflow: xchacha20-poly1305/auto (1651,5s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 1651,6s; sum of test times 1651,5s; parallel speedup 1,00x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json

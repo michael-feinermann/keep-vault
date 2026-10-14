@@ -1,0 +1,438 @@
+{
+  "status": "PASS",
+  "scope": "isolated candidate builds of identical shared product CTR driver; only preferred claim size differs; actual shared executor",
+  "artifacts": {
+    "libgrain64.dylib": "EE63D6EA2D0CBC757DCCB9A48BEEB751B262C6EF8D07FF9FFFD5B032535CAE1E",
+    "libgrain128.dylib": "EA8B1D647879AF9B0179BC3BF239053CDC7B8C6AD4232C9902132A9C81CEECD8",
+    "libgrain256.dylib": "3F56A3D3176FE3B3464A5139EA6FA40FFF682A705DA26BC4C9C1A0F715A17FEF",
+    "libgrain512.dylib": "C4363365A5A9119473418C80C28EC30893C2CAAE5010937394E29ABC67D960A5",
+    "libgrain1024.dylib": "63D600D347A04EB6E12D4AF9A9096F6438CC76526B7B42A77CA0AF16C4537DDD"
+  },
+  "results": [
+    {
+      "cipher": "AES256",
+      "preferred_claim_kib": 64,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0007463,
+        0.000533,
+        0.0005196,
+        0.0004505,
+        0.000531
+      ],
+      "median_mib_per_second": 30131.826741996232,
+      "sha256": "5BE4CFECF8349455AE1BA280F21D68F45C95F2A1702CCFF615B2238B1C79438D"
+    },
+    {
+      "cipher": "MARS448",
+      "preferred_claim_kib": 64,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0098274,
+        0.0092336,
+        0.0094195,
+        0.0093157,
+        0.0091392
+      ],
+      "median_mib_per_second": 1717.530620350591,
+      "sha256": "77FF0B1341E51520FF8821E407F50326CA055F532C3C0C7B9327A699E5F1FDD4"
+    },
+    {
+      "cipher": "Camellia256",
+      "preferred_claim_kib": 64,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0384165,
+        0.0382685,
+        0.0382587,
+        0.0385022,
+        0.0385165
+      ],
+      "median_mib_per_second": 416.48770710502,
+      "sha256": "038A0DCBAFDA0967F67D00B873CFDC5D2FE357C845A0CC04382569DE20B7A29C"
+    },
+    {
+      "cipher": "Serpent256",
+      "preferred_claim_kib": 64,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.016358,
+        0.015982,
+        0.0164743,
+        0.01573,
+        0.0160783
+      ],
+      "median_mib_per_second": 995.1300821604274,
+      "sha256": "9E1A587D713472F7DE26CD89E00183B8F1E71DB92578BB3BAB6B0E8F4A10ACB3"
+    },
+    {
+      "cipher": "SHACAL2",
+      "preferred_claim_kib": 64,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0078242,
+        0.0074522,
+        0.0074268,
+        0.0077527,
+        0.0076082
+      ],
+      "median_mib_per_second": 2102.9941379038405,
+      "sha256": "54D5662B930D4178BFF4831E9CF46601437C5CC8865823023EBA4E7E4E79F99B"
+    },
+    {
+      "cipher": "AES256",
+      "preferred_claim_kib": 128,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0004307,
+        0.0003952,
+        0.0003648,
+        0.0003578,
+        0.0003742
+      ],
+      "median_mib_per_second": 42757.8834847675,
+      "sha256": "5BE4CFECF8349455AE1BA280F21D68F45C95F2A1702CCFF615B2238B1C79438D"
+    },
+    {
+      "cipher": "MARS448",
+      "preferred_claim_kib": 128,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0092923,
+        0.0096194,
+        0.0094361,
+        0.0096175,
+        0.0096607
+      ],
+      "median_mib_per_second": 1663.6340005198858,
+      "sha256": "77FF0B1341E51520FF8821E407F50326CA055F532C3C0C7B9327A699E5F1FDD4"
+    },
+    {
+      "cipher": "Camellia256",
+      "preferred_claim_kib": 128,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0391754,
+        0.0395152,
+        0.0395762,
+        0.0400199,
+        0.0391416
+      ],
+      "median_mib_per_second": 404.9074786411305,
+      "sha256": "038A0DCBAFDA0967F67D00B873CFDC5D2FE357C845A0CC04382569DE20B7A29C"
+    },
+    {
+      "cipher": "Serpent256",
+      "preferred_claim_kib": 128,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0166886,
+        0.0164978,
+        0.01651,
+        0.0164099,
+        0.0164628
+      ],
+      "median_mib_per_second": 969.8262798676187,
+      "sha256": "9E1A587D713472F7DE26CD89E00183B8F1E71DB92578BB3BAB6B0E8F4A10ACB3"
+    },
+    {
+      "cipher": "SHACAL2",
+      "preferred_claim_kib": 128,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0080388,
+        0.0080654,
+        0.0079745,
+        0.0081479,
+        0.0078332
+      ],
+      "median_mib_per_second": 1990.3468179330248,
+      "sha256": "54D5662B930D4178BFF4831E9CF46601437C5CC8865823023EBA4E7E4E79F99B"
+    },
+    {
+      "cipher": "AES256",
+      "preferred_claim_kib": 256,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.001358,
+        0.0005207,
+        0.0004322,
+        0.0004382,
+        0.0004365
+      ],
+      "median_mib_per_second": 36513.007759014145,
+      "sha256": "5BE4CFECF8349455AE1BA280F21D68F45C95F2A1702CCFF615B2238B1C79438D"
+    },
+    {
+      "cipher": "MARS448",
+      "preferred_claim_kib": 256,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0114692,
+        0.0116623,
+        0.0115187,
+        0.0116397,
+        0.0119662
+      ],
+      "median_mib_per_second": 1374.6058747218572,
+      "sha256": "77FF0B1341E51520FF8821E407F50326CA055F532C3C0C7B9327A699E5F1FDD4"
+    },
+    {
+      "cipher": "Camellia256",
+      "preferred_claim_kib": 256,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0407877,
+        0.0408956,
+        0.040976,
+        0.0414662,
+        0.0409401
+      ],
+      "median_mib_per_second": 390.81487343704583,
+      "sha256": "038A0DCBAFDA0967F67D00B873CFDC5D2FE357C845A0CC04382569DE20B7A29C"
+    },
+    {
+      "cipher": "Serpent256",
+      "preferred_claim_kib": 256,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0182184,
+        0.0180185,
+        0.0179202,
+        0.018227,
+        0.018345
+      ],
+      "median_mib_per_second": 878.2329952136303,
+      "sha256": "9E1A587D713472F7DE26CD89E00183B8F1E71DB92578BB3BAB6B0E8F4A10ACB3"
+    },
+    {
+      "cipher": "SHACAL2",
+      "preferred_claim_kib": 256,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0081835,
+        0.0084297,
+        0.0084755,
+        0.008648,
+        0.0085495
+      ],
+      "median_mib_per_second": 1887.794230428883,
+      "sha256": "54D5662B930D4178BFF4831E9CF46601437C5CC8865823023EBA4E7E4E79F99B"
+    },
+    {
+      "cipher": "AES256",
+      "preferred_claim_kib": 512,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0012151,
+        0.0005,
+        0.0004684,
+        0.0004341,
+        0.0004251
+      ],
+      "median_mib_per_second": 34158.838599487615,
+      "sha256": "5BE4CFECF8349455AE1BA280F21D68F45C95F2A1702CCFF615B2238B1C79438D"
+    },
+    {
+      "cipher": "MARS448",
+      "preferred_claim_kib": 512,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0103507,
+        0.0104229,
+        0.010029,
+        0.0100197,
+        0.0100147
+      ],
+      "median_mib_per_second": 1595.3734170904377,
+      "sha256": "77FF0B1341E51520FF8821E407F50326CA055F532C3C0C7B9327A699E5F1FDD4"
+    },
+    {
+      "cipher": "Camellia256",
+      "preferred_claim_kib": 512,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0408056,
+        0.0419381,
+        0.0416584,
+        0.0424005,
+        0.0437657
+      ],
+      "median_mib_per_second": 381.51466089307814,
+      "sha256": "038A0DCBAFDA0967F67D00B873CFDC5D2FE357C845A0CC04382569DE20B7A29C"
+    },
+    {
+      "cipher": "Serpent256",
+      "preferred_claim_kib": 512,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0173857,
+        0.018377,
+        0.0177243,
+        0.0172778,
+        0.0172714
+      ],
+      "median_mib_per_second": 920.2965655682543,
+      "sha256": "9E1A587D713472F7DE26CD89E00183B8F1E71DB92578BB3BAB6B0E8F4A10ACB3"
+    },
+    {
+      "cipher": "SHACAL2",
+      "preferred_claim_kib": 512,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0079914,
+        0.0082704,
+        0.0087194,
+        0.0079683,
+        0.0086491
+      ],
+      "median_mib_per_second": 1934.6101760495258,
+      "sha256": "54D5662B930D4178BFF4831E9CF46601437C5CC8865823023EBA4E7E4E79F99B"
+    },
+    {
+      "cipher": "AES256",
+      "preferred_claim_kib": 1024,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.000415,
+        0.0004033,
+        0.0004133,
+        0.0004139,
+        0.0003944
+      ],
+      "median_mib_per_second": 38712.79941930801,
+      "sha256": "5BE4CFECF8349455AE1BA280F21D68F45C95F2A1702CCFF615B2238B1C79438D"
+    },
+    {
+      "cipher": "MARS448",
+      "preferred_claim_kib": 1024,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0101847,
+        0.0102697,
+        0.0103381,
+        0.0100569,
+        0.0102669
+      ],
+      "median_mib_per_second": 1558.406140120192,
+      "sha256": "77FF0B1341E51520FF8821E407F50326CA055F532C3C0C7B9327A699E5F1FDD4"
+    },
+    {
+      "cipher": "Camellia256",
+      "preferred_claim_kib": 1024,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0428972,
+        0.0414789,
+        0.0407814,
+        0.0405257,
+        0.0412109
+      ],
+      "median_mib_per_second": 388.24679878381687,
+      "sha256": "038A0DCBAFDA0967F67D00B873CFDC5D2FE357C845A0CC04382569DE20B7A29C"
+    },
+    {
+      "cipher": "Serpent256",
+      "preferred_claim_kib": 1024,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0175708,
+        0.0174053,
+        0.0172997,
+        0.0181003,
+        0.0178218
+      ],
+      "median_mib_per_second": 910.6016800600996,
+      "sha256": "9E1A587D713472F7DE26CD89E00183B8F1E71DB92578BB3BAB6B0E8F4A10ACB3"
+    },
+    {
+      "cipher": "SHACAL2",
+      "preferred_claim_kib": 1024,
+      "worker_grant": 10,
+      "bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.0081206,
+        0.0082987,
+        0.0082269,
+        0.0079427,
+        0.0084565
+      ],
+      "median_mib_per_second": 1944.8394899658435,
+      "sha256": "54D5662B930D4178BFF4831E9CF46601437C5CC8865823023EBA4E7E4E79F99B"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 2 worker(s)
+FULL PASS 10000 seeded bounded read-at request frames with guarded response oracles (1,7s)
+FULL PASS 10000 seeded canonical/hostile KPAR4 metadata streams with fragmented reads (49,8s)
+FULL PASS fixed local HMAC/Skein domain vectors from independent oracles (0,3s)
+FULL PASS disk input requires both global tags and revokes verifier view (0,8s)
+FULL PASS unaligned authenticated ranges and exact disk record framing (0,5s)
+FULL PASS spool, index, truncation, extension and cross-operation replay rejection (1,1s)
+FULL PASS verified private bytes survive later spool mutation; reread fails (0,4s)
+FULL PASS plain original index avoids plaintext copy and rejects later source mutation (0,4s)
+FULL PASS 64-bit policy arithmetic, capacity and cancellation (0,0s)
+FULL PASS independent sealed range readers join before key and full-buffer cleanup (0,4s)
+FULL PASS failed capture retains closed owners and retries cleanup before another capture (0,2s)
+FULL PASS bounded KPAR4 canonical streaming preserves exact wire bytes (0,2s)
+FULL PASS streaming metadata rejects duplicate, oversized, truncated and noncanonical JSON (0,2s)
+FULL PASS 64-bit logical archive geometry with bounded disk-backed digest tables (1,3s)
+FULL PASS bounded record codecs and independent HMAC/Skein authentication (0,2s)
+FULL PASS dual tags, payload, replay, position, lengths and terminal failure (0,2s)
+FULL PASS retryable all-member zeroing and cleanup after unlock failure (0,2s)
+FULL PASS shared metadata budget, nested scopes and release after disposal (0,2s)
+FULL PASS aggregate CPU reservations, cancellation and policy ceilings (0,0s)
+FULL PASS macOS process hardening (0,0s)
+FULL PASS optimized Skein workspace wiping clears complete arrays and preserves adjacent guards on both macOS slices (1,0s)
+
+FAIL v12 chunk worker policy scales across CPU and memory boundaries without overflow
+  seed=0x2CC00A74
+  InvalidOperationException: Nested native teams exceed their CPU-derived concurrency bound.
+   at SecurityHardeningTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/SecurityHardeningTests.cs:line 1417
+   at SecurityHardeningTests.TestPipelineWorkerPolicyAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/SecurityHardeningTests.cs:line 110
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "security.pipeline-worker-policy" --seed 0x2CC00A74
+
+FULL PASS bounded native teams join on cancellation and release every concurrency permit (0,0s)
+FULL PASS mlock rollback and failed munlock preserve exact secure-memory accounting (0,0s)
+FULL PASS composite secret owners erase all bytes, aggregate failures and retain failed locks for retry (0,0s)
+FULL PASS early, middle and last unlock failures in v12 KDF and authenticator cleanup (0,2s)
+FULL PASS parallel container workers preserve every failure in deterministic worker order (0,0s)
+FULL PASS parallel authenticator workers preserve every failure in deterministic leaf order (0,0s)
+FULL PASS rejected extraction parents create no directory through missing or symlinked ancestors (0,0s)
+FULL PASS literal complete PIN/password pairing and pending validation (0,0s)
+FULL PASS local final dates, exact formats, leap years and versioned date bounds (0,0s)
+FULL PASS additional complete PIN patterns retain every sampled historical rejection (0,1s)
+
+FAIL technical credential limits preserve historical v12 byte encodings
+  seed=0x194F7636
+  InvalidOperationException: Technical-validation split changed v12 credential input bytes.
+   at PinCreationPolicyTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/PinCreationPolicyTests.cs:line 210
+   at PinCreationPolicyTests.TestEncodingAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/PinCreationPolicyTests.cs:line 189
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "security.credential-encoding-only" --seed 0x194F7636
+
+FULL PASS offline model integrity, completeness and fail-closed resources (0,3s)
+FULL PASS complete phrase, case, Unicode, morphology and unknown-rest models (0,5s)
+FULL PASS independent BIP39 checksums and exact word-list search spaces (1,3s)
+FULL PASS old password rejections and monotone 128-bit model boundaries (0,8s)
+FULL PASS async isolation and creation-only model access (0,2s)
+FULL PASS bounded evaluation at the 256-code-unit limit (0,8s)
+FULL PASS 10000 seeded sealed-spool states, mutations and guarded range oracles (113,9s)
+
+40 macOS groups: 38 passed, 2 failed, 0 blocked.
+wall clock 114,0s; sum of test times 177,6s; parallel speedup 1,56x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL security.pipeline-worker-policy — v12 chunk worker policy scales across CPU and memory boundaries without overflow
+  FAIL security.credential-encoding-only — technical credential limits preserve historical v12 byte encodings

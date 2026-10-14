@@ -1,0 +1,44 @@
+{
+  "command": [
+    "/opt/homebrew/bin/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "deletion.secure-file-object-binding",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x5EED0313"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 0.20949949999339879,
+  "result": {
+    "schemaVersion": 3,
+    "head": "837e36cf1da2c6940c616348edaed4b03ff05bec",
+    "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+    "platform": "macos",
+    "osArchitecture": "arm64",
+    "processArchitecture": "arm64",
+    "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+    "budget": {
+      "maxWorkers": 1,
+      "cpuTokens": 9,
+      "memoryMiB": 9011,
+      "argonSlots": 2,
+      "zpaqSlots": 1
+    },
+    "tests": [
+      {
+        "id": "deletion.secure-file-object-binding",
+        "name": "secure deletion destroys and deletes the same object",
+        "status": "PASS",
+        "seconds": 0.046,
+        "peakRssMiB": 60,
+        "seed": "0x5EED0313",
+        "failure": null
+      }
+    ]
+  },
+  "log_sha256": "b6ea1aa55789ea321fbd74e01f45d715f3b5b1ba93b6d14ba30e3c91f4bedf65"
+}

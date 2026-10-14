@@ -1,0 +1,7 @@
+{
+  "sdkInventorySha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+  "sdkEntries": 5630,
+  "packageInventorySha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+  "packageEntries": 3223,
+  "provenance": "Preserved previously verified official SDK 10.0.400; copied public package cache; fresh private artifact tree."
+}

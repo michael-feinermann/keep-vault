@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "status": "TWO_FINAL_FOCUSED_DEVELOPMENT_PASS",
+  "scope": "macOS ARM64 managed Avalonia-Headless with unchanged installed signed build15 natives; no final Build16 Universal/AOT/installed GUI or release approval.",
+  "baseHead": "6bfd2e4d31c3493987083379e898a0b84338a102",
+  "sourceChangedPaths": {
+    "KeepVaultMac/Gui/MainWindow.PathsAndDrop.cs": "22457e8b45d4edd1bf9512cce54ebb3bf57e2e857043e9ee8684e785474a459e",
+    "KeepVaultMac/Gui/MainWindow.StorageAccess.cs": "62517b3d5072db57d19591102692a3502ea8b92417227b710f05436d996cf655",
+    "KeepVaultMac.Tests/WindowDisposeRev12Tests.cs": "7790425d7b357a045421c01999d91c874a9d98bc046b6d20d128045345cf79a9"
+  },
+  "finalBuild": "build-20261004T082228Z",
+  "finalSourceInputsSha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+  "buildCount": 6,
+  "runCount": 9,
+  "historicalFailureCount": 5,
+  "historicalStoragePassCount": 2,
+  "finalPassCount": 2,
+  "builds": [
+    {
+      "directory": "build-20261004T080346Z",
+      "status": "PASS",
+      "sourceInputsSha256": "515e07c54182bf34d46fa822e7f549888bc20b3b1bc17dd4eec94c7ff7065434",
+      "sourceEntries": 284,
+      "scope": "Managed development build with installed build15 signed natives, not a new signed product/release.",
+      "sdkInventorySha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+      "packageInventorySha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "binaryInventoryAfterOnly": {
+        "capturedUtc": "2026-10-04T09:50:05.692239+00:00",
+        "limitation": "Captured during publication AFTER runs; not an original before-run inventory; no DLL copies.",
+        "files": {
+          "KeepVaultMac.Tests.dll": {
+            "sha256": "d8b0e064051255b859d397300562c9c0b9dcc78d41cd61b1561417fbb919368f",
+            "bytes": 1809408
+          },
+          "Keep Vault.dll": {
+            "sha256": "7e18e90da049c1155a8fe8636f4271b7eeeadf91101b706e84dfa68b3439053d",
+            "bytes": 2883072
+          }
+        }
+      }
+    },
+    {
+      "directory": "build-20261004T080723Z",
+      "status": "PASS",
+      "sourceInputsSha256": "8a50ae979884d6490d8cbd1aa0462fbd06696bb0fe5c0b259785b3619ca18fc5",
+      "sourceEntries": 284,
+      "scope": "Managed development build with installed build15 signed natives, not a new signed product/release.",
+      "sdkInventorySha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+      "packageInventorySha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "binaryInventoryAfterOnly": {
+        "capturedUtc": "2026-10-04T09:50:05.698534+00:00",
+        "limitation": "Captured during publication AFTER runs; not an original before-run inventory; no DLL copies.",
+        "files": {
+          "KeepVaultMac.Tests.dll": {
+            "sha256": "aa13725440402085ce4a2743fcd34e23b9c5b20c82e14b93bd060c9cddf66137",
+            "bytes": 1809920
+          },
+          "Keep Vault.dll": {
+            "sha256": "7e18e90da049c1155a8fe8636f4271b7eeeadf91101b706e84dfa68b3439053d",
+            "bytes": 2883072
+          }
+        }
+      }
+    },
+    {
+      "directory": "build-20261004T081246Z",
+      "status": "PASS",
+      "sourceInputsSha256": "1abd405ff5ea4cf0578c19f2bfc286d6556b23ca46a17b0f4bbbc06ea6d1fa2c",
+      "sourceEntries": 284,
+      "scope": "Managed development build with installed build15 signed natives, not a new signed product/release.",
+      "sdkInventorySha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+      "packageInventorySha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "binaryInventoryAfterOnly": {
+        "capturedUtc": "2026-10-04T09:50:05.705597+00:00",
+        "limitation": "Captured during publication AFTER runs; not an original before-run inventory; no DLL copies.",
+        "files": {
+          "KeepVaultMac.Tests.dll": {
+            "sha256": "8967541cff9fd69a67a0d4fde6687a71fba9001fe2c6856dc73394d9ddca26de",
+            "bytes": 1809920
+          },
+          "Keep Vault.dll": {
+            "sha256": "7e18e90da049c1155a8fe8636f4271b7eeeadf91101b706e84dfa68b3439053d",
+            "bytes": 2883072
+          }
+        }
+      }
+    },
+    {
+      "directory": "build-20261004T081534Z",
+      "status": "PASS",
+      "sourceInputsSha256": "8a8ac6b2662119ddd18e6f956e7a804956d74a2336905357e5bf234f1c572bdd",
+      "sourceEntries": 284,
+      "scope": "Managed development build with installed build15 signed natives, not a new signed product/release.",
+      "sdkInventorySha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+      "packageInventorySha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "binaryInventoryAfterOnly": {
+        "capturedUtc": "2026-10-04T09:50:05.711586+00:00",
+        "limitation": "Captured during publication AFTER runs; not an original before-run inventory; no DLL copies.",
+        "files": {
+          "KeepVaultMac.Tests.dll": {
+            "sha256": "53c0477e9e4ffa9d776f58130908d2b260cce3dd951f41f8382d3c96332debd6",
+            "bytes": 1810432
+          },
+          "Keep Vault.dll": {
+            "sha256": "7e18e90da049c1155a8fe8636f4271b7eeeadf91101b706e84dfa68b3439053d",
+            "bytes": 2883072
+          }
+        }
+      }
+    },
+    {
+      "directory": "build-20261004T081957Z",
+      "status": "PASS",
+      "sourceInputsSha256": "adf020351e4aeb11a62966521243af3592c4943322d4560e7d56c5da4d5f01fe",
+      "sourceEntries": 284,
+      "scope": "Managed development build with installed build15 signed natives, not a new signed product/release.",
+      "sdkInventorySha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+      "packageInventorySha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "binaryInventoryAfterOnly": {
+        "capturedUtc": "2026-10-04T09:50:05.717775+00:00",
+        "limitation": "Captured during publication AFTER runs; not an original before-run inventory; no DLL copies.",
+        "files": {
+          "KeepVaultMac.Tests.dll": {
+            "sha256": "f8ec1e1293ed7d339c508a8c572626f7abffdf35198158758c5798fd9ca33839",
+            "bytes": 1810944
+          },
+          "Keep Vault.dll": {
+            "sha256": "7e18e90da049c1155a8fe8636f4271b7eeeadf91101b706e84dfa68b3439053d",
+            "bytes": 2883072
+          }
+        }
+      }
+    },
+    {
+      "directory": "build-20261004T082228Z",
+      "status": "PASS",
+      "sourceInputsSha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+      "sourceEntries": 284,
+      "scope": "Managed development build with installed build15 signed natives, not a new signed product/release.",
+      "sdkInventorySha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+      "packageInventorySha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+      "binaryInventoryAfterOnly": {
+        "capturedUtc": "2026-10-04T09:50:05.723224+00:00",
+        "limitation": "Captured during publication AFTER runs; not an original before-run inventory; no DLL copies.",
+        "files": {
+          "KeepVaultMac.Tests.dll": {
+            "sha256": "d674ef9cf5e03cb4544d2d4f477b427ce4a5c17703d737340ddd6ec18133abd3",
+            "bytes": 1811456
+          },
+          "Keep Vault.dll": {
+            "sha256": "7e18e90da049c1155a8fe8636f4271b7eeeadf91101b706e84dfa68b3439053d",
+            "bytes": 2883072
+          }
+        }
+      }
+    }
+  ],
+  "runs": [
+    {
+      "build": "build-20261004T080346Z",
+      "run": "run-20261004T080436Z-45dae70f",
+      "id": "gui.rev12-drop-storage-ownership",
+      "status": "FAIL",
+      "exitCode": 1,
+      "startedUtc": "2026-10-04T08:04:36.302517+00:00",
+      "completedUtc": "2026-10-04T08:04:52.482683+00:00",
+      "seconds": 15.882,
+      "secondsSource": "original result seconds; failed timing catalog has no entry",
+      "peakRssMiB": 125,
+      "seed": "0x64C7863C",
+      "sourceInputsSha256": "515e07c54182bf34d46fa822e7f549888bc20b3b1bc17dd4eec94c7ff7065434",
+      "executionSha256": "b08748267b3ffe9474531ce4ddf811b06e11b929e2592d3463b7ac274168296c",
+      "logSha256": "c32aceb0ba32a34701486157b3d91f3dc034f1cd0c5648a9fce47f6b51e1d212",
+      "resultsSha256": "e79cb9b1c88815492c875178b4f4e3e23f4f326fa5350c5a51ded8fcc05208d2",
+      "timingsSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "build": "build-20261004T080346Z",
+      "run": "run-20261004T080555Z-a7bef7d0",
+      "id": "gui.rev12-storage-transitions",
+      "status": "PASS",
+      "exitCode": 0,
+      "startedUtc": "2026-10-04T08:05:55.994953+00:00",
+      "completedUtc": "2026-10-04T08:05:56.906932+00:00",
+      "seconds": 0.7193878,
+      "secondsSource": "original test-timings entry",
+      "peakRssMiB": 139,
+      "seed": "0x6B64B5CF",
+      "sourceInputsSha256": "515e07c54182bf34d46fa822e7f549888bc20b3b1bc17dd4eec94c7ff7065434",
+      "executionSha256": "9990f9e1093a9882b2855ed5b4212622ce323689308b2d2b0019b6c06ea852fa",
+      "logSha256": "e231d6622ea0edb441f641b24ff3a72cc2f9491d6f0092867a07db112614d379",
+      "resultsSha256": "0ebe09bbf86e6ae01d4e51f4af84958d04c3d9b502a92caf9f37981e360e7423",
+      "timingsSha256": "be9763dec50a8d96a2289878332088a471ffc9a7df8cf6d9441171cc84f7d20a"
+    },
+    {
+      "build": "build-20261004T080723Z",
+      "run": "run-20261004T080907Z-3f21f568",
+      "id": "gui.rev12-drop-storage-ownership",
+      "status": "FAIL",
+      "exitCode": 1,
+      "startedUtc": "2026-10-04T08:09:07.414660+00:00",
+      "completedUtc": "2026-10-04T08:09:09.220717+00:00",
+      "seconds": 1.48,
+      "secondsSource": "original result seconds; failed timing catalog has no entry",
+      "peakRssMiB": 218,
+      "seed": "0x14862A68",
+      "sourceInputsSha256": "8a50ae979884d6490d8cbd1aa0462fbd06696bb0fe5c0b259785b3619ca18fc5",
+      "executionSha256": "abc94303aff9931883f656b06deebbb8f6097f029d464eb5629df98866b728b6",
+      "logSha256": "5f6d33cb4e2eaf4ab8125b75deed9d6567c8c4fd0acadb39dc0f9c7d4871acf7",
+      "resultsSha256": "c14ab4bdf0de34e91f08b1abf3f5a57384c9c85297c4790c9a20818977754ac1",
+      "timingsSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "build": "build-20261004T080723Z",
+      "run": "run-20261004T081006Z-5e8f2beb",
+      "id": "gui.rev12-storage-transitions",
+      "status": "PASS",
+      "exitCode": 0,
+      "startedUtc": "2026-10-04T08:10:06.477810+00:00",
+      "completedUtc": "2026-10-04T08:10:07.447595+00:00",
+      "seconds": 0.7644,
+      "secondsSource": "original test-timings entry",
+      "peakRssMiB": 137,
+      "seed": "0x46361E0A",
+      "sourceInputsSha256": "8a50ae979884d6490d8cbd1aa0462fbd06696bb0fe5c0b259785b3619ca18fc5",
+      "executionSha256": "f59b8790a3980ec0fc8f5e0e7e5fb49e4fed8f04dbaa93f3e4e653402d7bc6dc",
+      "logSha256": "ed6105ea2edaa0b649712ed8c70798b1c540a79269b2e68f4003271002058324",
+      "resultsSha256": "57681a8d5e927ac9eae4ca8fee76ac77f460c70bc05ba854367615b0bfa454cf",
+      "timingsSha256": "f2344996350900e6c154c525829d9a81b6c799febabc58e6198c6a6da6ffd613"
+    },
+    {
+      "build": "build-20261004T081246Z",
+      "run": "run-20261004T081321Z-5c3bc990",
+      "id": "gui.rev12-drop-storage-ownership",
+      "status": "FAIL",
+      "exitCode": 1,
+      "startedUtc": "2026-10-04T08:13:21.690276+00:00",
+      "completedUtc": "2026-10-04T08:13:23.470989+00:00",
+      "seconds": 1.483,
+      "secondsSource": "original result seconds; failed timing catalog has no entry",
+      "peakRssMiB": 218,
+      "seed": "0x38D2E511",
+      "sourceInputsSha256": "1abd405ff5ea4cf0578c19f2bfc286d6556b23ca46a17b0f4bbbc06ea6d1fa2c",
+      "executionSha256": "2ede9879a16f988eed403246400e509bb44e6da27a18a15b90385f3e3635e39c",
+      "logSha256": "4b56f217c9e04941172750f4eb4acac415d5887a023d5de795fe8d0bd7af61b1",
+      "resultsSha256": "d6e3e12863c337c12cbbee2e33a029467d46bccbd0a8e62f8bd3294423c0baaf",
+      "timingsSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "build": "build-20261004T081534Z",
+      "run": "run-20261004T081607Z-463ed09f",
+      "id": "gui.rev12-drop-storage-ownership",
+      "status": "FAIL",
+      "exitCode": 1,
+      "startedUtc": "2026-10-04T08:16:07.703363+00:00",
+      "completedUtc": "2026-10-04T08:16:11.356777+00:00",
+      "seconds": 3.385,
+      "secondsSource": "original result seconds; failed timing catalog has no entry",
+      "peakRssMiB": 370,
+      "seed": "0x2E45BB78",
+      "sourceInputsSha256": "8a8ac6b2662119ddd18e6f956e7a804956d74a2336905357e5bf234f1c572bdd",
+      "executionSha256": "1b14300319d13e3817c36c6c148b69e2b9e75b4a4d7d6363f98742e296b638ce",
+      "logSha256": "4fb0e2e23768e9b2d59ecf057fe8be1056a14d757c7bd4c21ffd7d1f8dd08f28",
+      "resultsSha256": "57a4a36bc1063ef6ab4a48f1de97f428e005acaa89f31e3c9e2796c5b4d27d38",
+      "timingsSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "build": "build-20261004T081957Z",
+      "run": "run-20261004T082046Z-da972faf",
+      "id": "gui.rev12-drop-storage-ownership",
+      "status": "FAIL",
+      "exitCode": 1,
+      "startedUtc": "2026-10-04T08:20:46.801064+00:00",
+      "completedUtc": "2026-10-04T08:20:50.885722+00:00",
+      "seconds": 3.694,
+      "secondsSource": "original result seconds; failed timing catalog has no entry",
+      "peakRssMiB": 378,
+      "seed": "0x13FA837B",
+      "sourceInputsSha256": "adf020351e4aeb11a62966521243af3592c4943322d4560e7d56c5da4d5f01fe",
+      "executionSha256": "5523c413a0b58f66fa443285e307eb23fa79a7b57957f9588eedcbc79537bcf6",
+      "logSha256": "675973288cb1f216f98857886632096469a84849a9d57f051df209d9cef67543",
+      "resultsSha256": "b448284ff00dce5421c51c1ada6e87b1d1f288ee7e55d167e7c1a39192907f27",
+      "timingsSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "build": "build-20261004T082228Z",
+      "run": "run-20261004T082348Z-632a4f21",
+      "id": "gui.rev12-drop-storage-ownership",
+      "status": "PASS",
+      "exitCode": 0,
+      "startedUtc": "2026-10-04T08:23:48.826838+00:00",
+      "completedUtc": "2026-10-04T08:23:54.214883+00:00",
+      "seconds": 5.0230465,
+      "secondsSource": "original test-timings entry",
+      "peakRssMiB": 372,
+      "seed": "0x58550FAF",
+      "sourceInputsSha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+      "executionSha256": "90fd824e82c6d3fea7a26ae485595d4b551b1be70236b86aa2460684002103aa",
+      "logSha256": "9e448038e62bdeacfa52cb8b16eba8283965529489785025c5c7f62c40d69b33",
+      "resultsSha256": "3f3b096776043eda902251881feb141532463182a6d3f5aeb49c01d85b19c0a7",
+      "timingsSha256": "c81ba6cb15992d25354e92ad70ce8b0d78d8049aa6ecc9c2110ed1bc94bb1c99"
+    },
+    {
+      "build": "build-20261004T082228Z",
+      "run": "run-20261004T082404Z-b0ff6e4a",
+      "id": "gui.rev12-storage-transitions",
+      "status": "PASS",
+      "exitCode": 0,
+      "startedUtc": "2026-10-04T08:24:04.153426+00:00",
+      "completedUtc": "2026-10-04T08:24:05.121497+00:00",
+      "seconds": 0.7468022,
+      "secondsSource": "original test-timings entry",
+      "peakRssMiB": 137,
+      "seed": "0x22301413",
+      "sourceInputsSha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+      "executionSha256": "aafb00a618f9f6c1d704bbb90545dfb8784e674c8fd1f2c797607de3116f424f",
+      "logSha256": "5f064aa08c8b7a5e66472fa8232b50daaee501ad28c528e4743ede55b74ea658",
+      "resultsSha256": "a702ac0fe1fb61e5bde45a8c76d721fb84fd0d8258f2cec89438f49cb2f1defb",
+      "timingsSha256": "81b0d79380127519bb4c9e6ca023587b6b523238f3e3bada613e81a37c7adaa6"
+    }
+  ],
+  "originalsCopied": 97,
+  "validations": [
+    "Six PASS/Exit0/source-stable builds, exact source-before/after bytes",
+    "All original execution/log/results/timings/source hash links",
+    "Actual only-test command, result status, matching log marker and exitcode; PASS precise timings, FAIL original empty timing catalog preserved",
+    "Final three source hashes match bound build source map",
+    "All original copies byte-equal",
+    "Additional binary hashes captured explicitly AFTER runs; no SDK, DLL or key copies"
+  ]
+}

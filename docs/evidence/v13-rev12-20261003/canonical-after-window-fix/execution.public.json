@@ -1,0 +1,17 @@
+{
+  "scope": "Managed Release development canonical primitive and full-container fixture using exact trusted build15 natives. Full-container measurements use productive KDF and precompressed 256 MiB public data. Pipeline section deliberately isolates KDF for slot scaling. Relevant source/binary inputs unchanged; not final installed AOT GUI, compression/recovery/original-compare or release approval.",
+  "startedUtc": "2026-10-03T11:45:41.921489+00:00",
+  "completedUtc": "2026-10-03T11:56:04.327944+00:00",
+  "exitCode": 0,
+  "sourceInputsSha256": "3dae078f34d0b6f758d8ae830c4aec496328ec3f6d8aa1eeadf9b70591850555",
+  "binaryInputsSha256": "6002ebb2bcaa2f93b8955955dc96368fead669dafc019c28595bb3455145c8b4",
+  "logSha256": "a88b18fc7568114229f86ff2af1110c7f7f476c5344c5c47c8618bd98e0a5071",
+  "files": {
+    "test-results.json": "f919ea087f1f4f55bd1443e46f968c0e430ae6c1350475aaa8f258643c24a7b5",
+    "test-timings.json": "c9833173742ca4f82b5f31897b39a392758d40489b7b3e2a37f745ac3978f1a4"
+  },
+  "derivedPublicReceipt": true,
+  "originalExecutionSha256": "a7ecd134450f152d90c32129f5941e205acbf9286071a912496b2f156a93f6b4",
+  "sourceBuildIdentity": "build-20261003T113438Z",
+  "runIdentity": "frozen-performance-20261003T114541Z-78eb5e77"
+}

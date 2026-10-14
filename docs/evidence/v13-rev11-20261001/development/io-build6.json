@@ -1,0 +1,1085 @@
+{
+  "scope": "Development final reader/recovery build; installed old trusted crypto components, no final new ZPAQ anchor. One separate smoke invocation selection error is not a product failure; only correctly executed result included.",
+  "groups": [
+    {
+      "result_sha256": "50b2b796d5ca118aaa5b6d438ad02d7eb7c831f00e028a826df702ea1c251253",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.rev11-input-fused",
+            "name": "V13-INPUT-FUSED: unchanged global transcript from one physical original pass",
+            "status": "PASS",
+            "seconds": 1.635,
+            "peakRssMiB": 241,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "9c67d5128bac1111b3e8272fb2e6e3beb10d8cc157b558884a400e585cdbe6c4",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.rev11-index-ram-small",
+            "name": "V13-INDEX-RAM-SMALL: absent unused workspace and lazy resident records",
+            "status": "PASS",
+            "seconds": 0.14,
+            "peakRssMiB": 70,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "c055313fa1d1bc8d7a04010266cfd526540d9243712a100c805573734dc31455",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.rev11-index-spill",
+            "name": "V13-INDEX-SPILL/IDENTICAL: shared resident quota, exact migration and missing-volume rejection",
+            "status": "PASS",
+            "seconds": 0.036,
+            "peakRssMiB": 65,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "0f4c7241a6232ccf2d6a9875714815404703cde7ebc839f9fa38cd6465157fb0",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.rev11-index-identical",
+            "name": "V13-INDEX-IDENTICAL: fixed public keys, one/two workers and RAM/file produce the same 204-byte records",
+            "status": "PASS",
+            "seconds": 1.099,
+            "peakRssMiB": 192,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "647e6c01d6b43eda7de1b3db9f529f688a0095d8571b3f4da7b49faa26d3c00b",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.rev11-index-cache-boundary",
+            "name": "V13-INDEX-SPILL: actual 16-MiB shared cache threshold minus/at/plus one byte",
+            "status": "PASS",
+            "seconds": 0.098,
+            "peakRssMiB": 104,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "2d1761cc276183c6cfca6bbcc7910c18b9ab8181eb9707031777213432c98e17",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.rev11-header-binding",
+            "name": "V13-INPUT-HEADER-BIND: preflight header and stored tags cannot change during KDF",
+            "status": "PASS",
+            "seconds": 0.231,
+            "peakRssMiB": 80,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "75f6ea19a0a4af5180b5fe48c523c4c211d159539e3f20370bad4ae1ab7360b4",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.rev11-repair-capability",
+            "name": "V13-REPAIR-CAPABILITY: local ciphertext seal cannot authorize normal consumption",
+            "status": "PASS",
+            "seconds": 0.13,
+            "peakRssMiB": 70,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "32d093854754b84f848520be0222b95fa25205ab12659d9e62158f8d11d1d86a",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.rev11-repair-erasures",
+            "name": "V13-REPAIR-ERASURES: frozen unreadable regions cannot grant normal authenticity or widen later",
+            "status": "PASS",
+            "seconds": 0.203,
+            "peakRssMiB": 73,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "d16dbd3b99cdb2a6ee3502dfd6035f2358914914d61311d0b441ec999ae55de9",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-parallel-lifetime",
+            "name": "independent sealed range readers join before key and full-buffer cleanup",
+            "status": "PASS",
+            "seconds": 1.026,
+            "peakRssMiB": 120,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "d712ec5e165021a5a7b969b3652483adaa7173f8027a795dbd0a9dbcf214713e",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-domain-kats",
+            "name": "fixed local HMAC/Skein domain vectors from independent oracles",
+            "status": "PASS",
+            "seconds": 0.121,
+            "peakRssMiB": 69,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "1878dcbda7f602d145138426a9e226e4a6ec31e7e406fe66eeff59914aa6ff60",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-state",
+            "name": "bound original input requires both global tags and revokes verifier view",
+            "status": "PASS",
+            "seconds": 0.552,
+            "peakRssMiB": 89,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "a4e0eb0cb315fdbbe9446641f87391d163f85ec0ec58033633040c0fced3d244",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-ranges",
+            "name": "unaligned authenticated ranges and exact disk record framing",
+            "status": "PASS",
+            "seconds": 0.402,
+            "peakRssMiB": 87,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "081565aa5ae820248990ea9a0511bf7e3accb627dca7a3a3f243c6d7ebed875c",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-descriptor-capture",
+            "name": "parallel multi-range captures retain descriptor ownership without buffered cursor races",
+            "status": "PASS",
+            "seconds": 2.44,
+            "peakRssMiB": 130,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "586985db577de5ea5e0be5c0e818be5d6c7ea12ded32d01c13a88ca27b943681",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-read-only-seal",
+            "name": "kernel read-only handles replace capture writers and reject substitution before unlink",
+            "status": "PASS",
+            "seconds": 0.926,
+            "peakRssMiB": 89,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "b61363a61a76374711f4aad0a6e60cf5ba76935712f0ac6083c4722d0707451e",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-tamper",
+            "name": "original, index, truncation, extension and cross-operation replay rejection",
+            "status": "PASS",
+            "seconds": 0.879,
+            "peakRssMiB": 89,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "ea738e88e14bca34c4ba6410c7d6e34a226beabbf8266d4f474c27b2f07193e3",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-private-copy",
+            "name": "verified private bytes survive later original mutation; reread fails",
+            "status": "PASS",
+            "seconds": 0.358,
+            "peakRssMiB": 87,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "a0db8fa0e1f38ab14aed3782188a4eae82fc4bab514c65feeeb92c7f0bb19f7f",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-policy",
+            "name": "64-bit policy arithmetic, capacity and cancellation",
+            "status": "PASS",
+            "seconds": 0.015,
+            "peakRssMiB": 61,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "0986e1b3e1e9eec652a93ac441760b9a537c0da011af6b8d40241fc6171309da",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-input-cleanup-retry",
+            "name": "failed capture retains closed owners and retries cleanup before another capture",
+            "status": "PASS",
+            "seconds": 0.182,
+            "peakRssMiB": 83,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "d61c710c8230fbe6bd30ce7d25073f45c64969abae43a2cfd9516e16c23afad6",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.verified-original",
+            "name": "plain original index avoids plaintext copy and rejects later source mutation",
+            "status": "PASS",
+            "seconds": 0.358,
+            "peakRssMiB": 87,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "48b9a538e0c83df0f2438a660aceb3580f4c2eed5e426e28ffed746470d54c44",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "io.plain-manifest-rejection",
+            "name": "plain archive rejects either digest or changed bytes before lease and extraction publication",
+            "status": "PASS",
+            "seconds": 0.17,
+            "peakRssMiB": 74,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "3341cb2c79d9f8b94c655cb3c6b621286434f8a430c1c4ca64b9da55570caecd",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.record-table-layout",
+            "name": "bounded record codecs and independent HMAC/Skein authentication",
+            "status": "PASS",
+            "seconds": 0.16,
+            "peakRssMiB": 74,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "df17efae3c2e6c56bd15a89fb76ce852030ba92dcf00bfed1f1997c2190038c1",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.record-table-tamper",
+            "name": "dual tags, payload, replay, position, lengths and terminal failure",
+            "status": "PASS",
+            "seconds": 0.195,
+            "peakRssMiB": 74,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "5db7b498f33b7f016aeb8dfdd42bdf664decc95d52d3046953ff760ae3058f40",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.record-table-budget",
+            "name": "shared metadata budget, nested scopes and release after disposal",
+            "status": "PASS",
+            "seconds": 0.147,
+            "peakRssMiB": 74,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "ca119a44f9f3ce4a54a113a61ab63980a9496a5abccfaabf722fa24dc9346c65",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.record-table-cleanup",
+            "name": "retryable all-member zeroing and cleanup after unlock failure",
+            "status": "PASS",
+            "seconds": 0.135,
+            "peakRssMiB": 69,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "e7c46c92d38305ebe9902daa980a5a11632b6e52369065392f2510e0d96d62f2",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.streaming-metadata-canonical",
+            "name": "bounded KPAR4 canonical streaming preserves exact wire bytes",
+            "status": "PASS",
+            "seconds": 0.129,
+            "peakRssMiB": 70,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "56b5ef1647f80e6a7a23344a532db67683bda94fa61c1262e77889737dceb859",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.streaming-metadata-negative",
+            "name": "streaming metadata rejects duplicate, oversized, truncated and noncanonical JSON",
+            "status": "PASS",
+            "seconds": 0.141,
+            "peakRssMiB": 70,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "6513dc58231bf52552fbf82213136e58adbeda6302937d7c64a295992b00121d",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.streaming-metadata-large-logical",
+            "name": "64-bit logical archive geometry with bounded disk-backed digest tables",
+            "status": "PASS",
+            "seconds": 0.649,
+            "peakRssMiB": 83,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "d91eb28d4063eb4f63c06a4accda78e5ca99a1637da6146fa636ac55aff1d085",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.parallel-worker-equivalence",
+            "name": "KPAR2 parity and reconstruction are byte-identical with one and all production workers",
+            "status": "PASS",
+            "seconds": 0.239,
+            "peakRssMiB": 118,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "7ac4aaebbe658c60b568be97ecdabd8cbb12f90901197ac47b788336c3b0339b",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.physical-eio-repair",
+            "name": "descriptor-bound KPAR2 repairs one physical EIO shard and rejects four",
+            "status": "PASS",
+            "seconds": 0.841,
+            "peakRssMiB": 92,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "5ba567e3981535e45e0ea6246474697b1a5d8b6ed813fc85c2c53e1641e8f7f3",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.key-derivation-failure-cleanup",
+            "name": "KPAR2 child-key derivation zeroes every completed secret when either branch boundary fails",
+            "status": "PASS",
+            "seconds": 0.114,
+            "peakRssMiB": 70,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "e7b5612765d4b213f47b21f479ccec55b7c60c76eb7edec21eaff97d7f25c741",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.parallel-copy-fail-fast",
+            "name": "KPAR2 parallel candidate copying cancels and joins sibling workers after the first failure",
+            "status": "PASS",
+            "seconds": 0.012,
+            "peakRssMiB": 63,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "cf66757842b707b8fa8ef3fe0b25f08c92ad672c611ea06f9de415e4175b20ea",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.parallel-copy-concurrency",
+            "name": "KPAR2 starts every configured copy worker before synchronous chunk work can monopolize the queue",
+            "status": "PASS",
+            "seconds": 0.015,
+            "peakRssMiB": 63,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "e9689403aa8d7b9277f4d4e30dae7e0acd98e18dc332804ef6a33a280b429804",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.parallel-copy-scheduling-failure",
+            "name": "KPAR2 cancels and joins already-scheduled copy workers when later worker scheduling fails",
+            "status": "PASS",
+            "seconds": 0.009,
+            "peakRssMiB": 59,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "207ac71c788fa5c9a624fef407e5db4b4d3b4c978dc640b6972980353df18a88",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "recovery.sidecar-transaction",
+            "name": "KPAR2 sidecar replacement survives a failure at every step",
+            "status": "PASS",
+            "seconds": 1.325,
+            "peakRssMiB": 82,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "f4f44484e54674269320741a2b1e8308060ab296878de187cb640981ecd7ce55",
+      "result": {
+        "schemaVersion": 3,
+        "head": "536d7c2afc47a27397f5a611b7ca4a0127067c82",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "containers.v13-production-worker-equivalence",
+            "name": "all twelve production suites are byte-identical with one worker and production workers",
+            "status": "PASS",
+            "seconds": 12.941,
+            "peakRssMiB": 860,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    },
+    {
+      "result_sha256": "4f852d667ccc0839faed1161fffd1aa3658614266356affdf49c7363ad9aa704",
+      "result": {
+        "schemaVersion": 3,
+        "head": "44d227dd82b04b86fb880f8dfa13712a67b4116c",
+        "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+        "platform": "macos",
+        "osArchitecture": "arm64",
+        "processArchitecture": "arm64",
+        "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+        "budget": {
+          "maxWorkers": 1,
+          "cpuTokens": 9,
+          "memoryMiB": 9011,
+          "argonSlots": 2,
+          "zpaqSlots": 1
+        },
+        "tests": [
+          {
+            "id": "smoke.release-companion-version",
+            "name": "release companion version plumbing",
+            "status": "PASS",
+            "seconds": 0.676,
+            "peakRssMiB": 79,
+            "seed": "0x5EED0313",
+            "failure": null
+          }
+        ]
+      }
+    }
+  ]
+}

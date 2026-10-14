@@ -1,0 +1,23 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 2 worker(s)
+FULL PASS Argon2id fixed 1 GiB profile and independent equivalence (7,8s)
+FULL PASS KDF properties: credential binding, PMI range and round chaining (10,8s)
+FULL PASS v13 master KDF and 512/512 factor split mutation isolation (4,6s)
+
+FAIL peak memory stays at one Argon2 matrix, and the header leaks nothing
+  seed=0x5EED0313
+  InvalidOperationException: The v13 header field set changed: NonceDerivationMode
+   at MacComprehensiveTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 5155
+   at MacComprehensiveTests.TestHeaderPublishesNoDerivedCostAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 2425
+   at MacComprehensiveTests.TestCostAndHeaderAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 2292
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "kdf.peak-memory-and-header" --seed 0x5EED0313
+
+
+4 macOS groups: 3 passed, 1 failed, 0 blocked.
+wall clock 20,7s; sum of test times 31,1s; parallel speedup 1,50x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL kdf.peak-memory-and-header — peak memory stays at one Argon2 matrix, and the header leaks nothing

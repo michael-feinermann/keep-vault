@@ -1,6 +1,8 @@
+using KeepVaultMac.Controls;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
+using System.Security.Cryptography;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -39,7 +41,7 @@ internal static class MacGuiTests
 
     internal static TestCase[] Tests =>
     [
-        new("gui.entropy-display", "GUI entropy display beyond the 512 minimum", () => RunOnUiThread(TestEntropyDisplayGrowsPastMinimum), TestResource.Gui, "GUI"),
+        new("gui.entropy-display", "GUI eleven-pool entropy display beyond the 1024 minimum", () => RunOnUiThread(TestEntropyDisplayGrowsPastMinimum), TestResource.Gui, "GUI"),
         new("gui.encryption-toggle-target", "GUI encryption toggle and target normalization", () => RunOnUiThread(TestEncryptionToggle), TestResource.Gui, "GUI"),
         new("gui.folder-target", "GUI folder target lands beside the folder", () => RunOnUiThread(TestFolderTargetSuggestion), TestResource.Gui, "GUI"),
         new("gui.destination-folder-target", "GUI destination picker keeps the archive inside its retained folder", () => RunOnUiThread(TestDestinationFolderTargetSuggestion), TestResource.Gui, "GUI"),
@@ -48,6 +50,10 @@ internal static class MacGuiTests
         new("gui.credential-policy-boundary", "GUI creation pair policy and extraction without model evaluation in both languages", () => RunOnUiThread(TestCredentialPolicyBoundary), TestResource.Gui, "GUI"),
         new("gui.original-deletion-localization", "GUI verified-original-deletion localization", () => RunOnUiThread(TestDeleteOriginalsLocalization), TestResource.Gui, "GUI"),
         new("gui.erase-completion-status", "GUI erase completion survives deferred text events and language changes", () => RunOnUiThread(TestEraseCompletionSurvivesDeferredTextChange), TestResource.Gui, "GUI"),
+        new("gui.resource-policy", "GUI resource choices freeze validated per-operation limits in both languages", () => RunOnUiThread(TestResourcePolicy), TestResource.Gui, "GUI"),
+        new("gui.rev11-preference-restart", "Auto/manual preferences survive restart and obsolete time fields stay inactive", () => RunOnUiThread(TestResourcePreferenceRestart), TestResource.Gui, "GUI"),
+        new("gui.rev11-progress", "real phase widgets, unknown work, DE/EN, cancellation and authoritative completion", () => RunOnUiThread(TestRev11Progress), TestResource.Gui, "GUI"),
+        new("gui.rev11-observer-isolation", "throwing progress presentation and observer cleanup cannot retain operation ownership", () => RunOnUiThread(TestRev11ObserverIsolation), TestResource.Gui, "GUI"),
         new("gui.control-inventory", "GUI reference control inventory", () => RunOnUiThread(TestReferenceControlsPresent), TestResource.Gui, "GUI"),
         new("gui.factor-normalization", "GUI 256-character factor normalization and field handling", () => RunOnUiThread(TestFactorBoxesLengthAndNormalization), TestResource.Gui, "GUI"),
         new("gui.secret-clearing", "GUI secret clearing wipes password, PIN, and factors", () => RunOnUiThread(TestSecretClearing), TestResource.Gui, "GUI"),
@@ -62,6 +68,9 @@ internal static class MacGuiTests
         new("keysheet.pair-cleanup-identity", "key-sheet pair rollback preserves pathname replacements", () => RunOnUiThread(TestKeySheetPairCleanupIdentity), TestResource.Gui, "GUI"),
         new("keysheet.cleanup-failure-visible", "key-sheet cleanup failures remain visible with the export failure", () => RunOnUiThread(TestKeySheetCleanupFailureVisible), TestResource.Gui, "GUI"),
         new("keysheet.pair-atomic-commit", "key-sheet pair final gate rolls both outputs back safely", () => RunOnUiThread(TestKeySheetPairAtomicCommit), TestResource.Gui, "GUI"),
+        new("gui.entropy-rev9-phases-cancel", "GUI REV9 single/dual phases, eleven counters and joined cancellation", () => RunOnUiThread(TestRev9EntropyPhasesAndCancel), TestResource.Gui, "GUI"),
+        new("gui.rev12-live-capture-during-preparation", "GUI pointer events fill the independent live epoch during dual preparation and retain capture guards", () => RunOnUiThread(TestLiveCaptureDuringDualPreparation), TestResource.Gui, "GUI"),
+        new("gui.operation-cancel-lifetime", "GUI operation cancellation stays separate from disposed window lifetime", () => RunOnUiThread(TestOperationCancelLifetime), TestResource.Gui, "GUI"),
         new("gui.full-creation-flow", "GUI full creation flow with mouse sampling and factor generation", () => RunOnUiThread(TestFullCreationFlowViaGui), TestResource.Gui, "GUI"),
     ];
 
@@ -156,7 +165,7 @@ internal static class MacGuiTests
         }
     }
 
-    private static async Task RunOnUiThread(Action<MainWindow> body)
+    internal static async Task RunOnUiThread(Action<MainWindow> body)
     {
         EnsureUiThread();
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -231,11 +240,9 @@ internal static class MacGuiTests
         MacComprehensiveTests.Require(
             !string.Equals(status.Text ?? string.Empty, textAtThreshold, StringComparison.Ordinal),
             "The entropy status line froze at the minimum instead of reporting the additional samples.");
-        // The readout is refreshed when the pool minimum moves, which happens
-        // once per full round across the pools rather than on every sample. It
-        // may therefore trail the running total by up to one round; what it must
-        // not do is stop catching up. Sampling until it agrees checks exactly
-        // that, without assuming a particular number of pools.
+        // The readout follows total accepted samples: independent routing can
+        // leave the minimum unchanged while another pool grows. Check that the
+        // displayed total catches up without assuming balanced pool counts.
         long reportedTotal = 0;
         for (int round = 0; round < 16; round++)
         {
@@ -432,7 +439,7 @@ internal static class MacGuiTests
         {
             SelectLanguage(language, locale);
             string version = Control<TextBlock>(window, "VersionText").Text ?? string.Empty;
-            MacComprehensiveTests.Require(version == "Version 5.0.2", "The visible release version differs from the expected app build.");
+            MacComprehensiveTests.Require(version == "Version 5.0.3", "The visible release version differs from the expected app build.");
             createPassword.Text = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce428317";
             createPin.Text = "428317";
             confirmPin.Text = "428317";
@@ -443,8 +450,8 @@ internal static class MacGuiTests
 
             TextBox password = Control<TextBox>(window, "ExtractPasswordBox");
             TextBox pin = Control<TextBox>(window, "ExtractPinBox");
-            Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = new string('A', 256);
-            Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox").Text = new string('B', 256);
+            Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = new string('A', 256);
+            Control<FactorTextBox>(window, "ExtractGeneratedPasswordSecondBox").Text = new string('B', 256);
             int evaluationAttempts = 0;
             using (PasswordGuessabilityService.ForbidEvaluationForTesting(() => evaluationAttempts++))
             {
@@ -481,7 +488,7 @@ internal static class MacGuiTests
                     }
                 }
                 pin.Text = string.Empty;
-                Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = "invalid";
+                Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox").Text = new string('A', 255);
                 try
                 {
                     extraction.Invoke(window, null);
@@ -713,6 +720,144 @@ internal static class MacGuiTests
     /// too, so a renamed or dropped control fails the suite instead of silently
     /// removing a capability from the macOS build.
     /// </summary>
+    private static void TestResourcePolicy(MainWindow window)
+    {
+        FieldInfo field = typeof(MainWindow).GetField("_resourcePolicy", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        Control<TextBox>(window, "WorkingDirectoryBox").Text = "/nonexistent-unused-keep-vault-work";
+        foreach (string code in new[] { "de", "en" })
+        {
+            SelectLanguage(Control<ComboBox>(window, "LanguageBox"), code);
+            Control<Button>(window, "ApplyResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            ArchiveOperationPolicy automatic = (ArchiveOperationPolicy)field.GetValue(window)!;
+            MacComprehensiveTests.Require(automatic.Preferences.CpuMode == ResourceMode.Auto
+                && automatic.Preferences.MemoryMode == ResourceMode.Auto
+                && automatic.RequestedCpuWorkers == 0
+                && string.IsNullOrEmpty(Control<TextBox>(window, "ResourceWorkersBox").Text),
+                "Apply/language resolved Auto into a persisted manual number.");
+            MacComprehensiveTests.Require(window.FindControl<Control>("ResourceHoursBox") is null, "A product time-limit field survived.");
+            Control<TextBox>(window, "ResourceBudgetBox").Text = "4096";
+            Control<TextBox>(window, "ResourceExtractionBox").Text = "1024";
+            Control<TextBox>(window, "ResourceSingleFileBox").Text = "512";
+            Control<TextBox>(window, "ResourceWorkersBox").Text = "1";
+            Control<Button>(window, "ApplyResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            ArchiveOperationPolicy manual = (ArchiveOperationPolicy)field.GetValue(window)!;
+            MacComprehensiveTests.Require(manual.MaxContainerBytes == 4L << 30 && manual.MaxExtractedTotalBytes == 1L << 30
+                && manual.MaxSingleFileBytes == 512L << 20 && manual.RequestedCpuWorkers == 1,
+                "Independent archive/output limits or manual CPU=1 were not retained.");
+            MacComprehensiveTests.Require(ArchiveOperationPolicy.Current != manual, "Applying preferences leaked ambient policy.");
+            Control<TextBox>(window, "ResourceBudgetBox").Text = "8192";
+            MacComprehensiveTests.Require(manual.MaxContainerBytes == 4L << 30, "Editing a field mutated an active policy.");
+            Control<Button>(window, "ResetResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+    }
+
+    private static void TestResourcePreferenceRestart(MainWindow window)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        var store = (IAppSettingsStore)typeof(MainWindow).GetField("_settingsStore", flags)!.GetValue(window)!;
+        FieldInfo policyField = typeof(MainWindow).GetField("_resourcePolicy", flags)!;
+        store.Write("resource-hours", "1");
+        store.Write("resource-cpu-hours", "1");
+        Control<TextBox>(window, "ResourceWorkersBox").Text = "1";
+        Control<TextBox>(window, "ResourceExtractionBox").Text = "512";
+        Control<TextBox>(window, "WorkingDirectoryBox").Text = "/missing-unused-rev11-workspace";
+        Control<Button>(window, "ApplyResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        using (var restarted = new MainWindow(store))
+        {
+            var policy = (ArchiveOperationPolicy)policyField.GetValue(restarted)!;
+            MacComprehensiveTests.Require(policy.RequestedCpuWorkers == 1 && policy.MaxExtractedTotalBytes == 512L << 20,
+                "Restart lost the explicit manual choice.");
+            MacComprehensiveTests.Require(policy.Preferences.MemoryMode == ResourceMode.Auto
+                && typeof(ArchiveOperationPolicy).GetProperty("WallTimeBudget") is null,
+                "Restart converted Auto or reintroduced a time limit.");
+            Control<Button>(restarted, "ResetResourcesButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+        using var automaticRestart = new MainWindow(store);
+        var automatic = (ArchiveOperationPolicy)policyField.GetValue(automaticRestart)!;
+        MacComprehensiveTests.Require(automatic.RequestedCpuWorkers == 0 && automatic.RequestedMemoryBudgetBytes == 0
+            && automatic.Preferences.WorkingDirectory is null && automatic.MaxExtractedTotalBytes == 256L << 20,
+            "Automatic reset persisted effective values or a stale working folder.");
+    }
+
+    private static void TestRev11Progress(MainWindow window)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        void Invoke(string method) => typeof(MainWindow).GetMethod(method, flags)!.Invoke(window, null);
+        foreach (string language in new[] { "de", "en" })
+        {
+            EnableProtectedOperationsForFailureTest(window);
+            Invoke("TryBeginProtectedOperation");
+            var tracker = (OperationProgressTracker)typeof(MainWindow).GetField("_operationProgress", flags)!.GetValue(window)!;
+            SelectLanguage(Control<ComboBox>(window, "LanguageBox"), language);
+            using var source = tracker.BeginPhase(OperationPhase.GlobalVerification, totalUnits: 10, origin: ProgressTotalOrigin.KnownInput)!;
+            source.Advance(5); Invoke("RenderOperationProgress");
+            var bar = Control<ProgressBar>(window, "OperationPhaseProgress");
+            MacComprehensiveTests.Require(!bar.IsIndeterminate && bar.Value == 50, "Actual phase counts did not reach the real progress widget.");
+            source.Advance(5); Invoke("RenderOperationProgress");
+            MacComprehensiveTests.Require(tracker.Snapshot().State == OperationProgressState.Running
+                && Control<TextBlock>(window, "OperationPhaseText").Text!.StartsWith("Phase:"),
+                "Full phase counter claimed global success.");
+            using var cleanup = tracker.BeginPhase(OperationPhase.Cleanup)!;
+            Invoke("RenderOperationProgress");
+            MacComprehensiveTests.Require(bar.IsIndeterminate, "Unknown cleanup work received invented progress.");
+            Invoke("MarkOperationSucceeded"); Invoke("EndProtectedOperation");
+            MacComprehensiveTests.Require(bar.Value == 100 && !bar.IsIndeterminate
+                && Control<TextBlock>(window, "OperationPhaseText").Text == (language == "en" ? "Completed" : "Abgeschlossen"),
+                "Authoritative completion or its translation was lost.");
+            Invoke("TryBeginProtectedOperation");
+            Invoke("MarkOperationFailed"); Invoke("EndProtectedOperation");
+            MacComprehensiveTests.Require(Control<TextBlock>(window, "OperationPhaseText").Text == (language == "en" ? "Failed" : "Fehlgeschlagen"),
+                "A failed operation was converted to ready/completed by cleanup.");
+        }
+    }
+
+    private static void TestRev11ObserverIsolation(MainWindow window)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        void Invoke(string method) => typeof(MainWindow).GetMethod(method, flags)!.Invoke(window, null);
+        EnableProtectedOperationsForFailureTest(window);
+        OperationProgressTracker? previous = OperationProgressTracker.Current;
+        Invoke("TryBeginProtectedOperation");
+        var scopeField = typeof(MainWindow).GetField("_operationProgressScope", flags)!;
+        var tracker = (OperationProgressTracker)typeof(MainWindow).GetField("_operationProgress", flags)!.GetValue(window)!;
+        scopeField.SetValue(window, new ThrowingObserverCleanup((IDisposable)scopeField.GetValue(window)!));
+        TextBlock phase = Control<TextBlock>(window, "OperationPhaseText");
+        TextBlock details = Control<TextBlock>(window, "OperationProgressDetailsText");
+        int failures = 0;
+        void Fail(object? sender, AvaloniaPropertyChangedEventArgs change)
+        {
+            if (change.Property == TextBlock.TextProperty)
+            { failures++; throw new InvalidOperationException("Injected observer-only UI failure."); }
+        }
+        phase.PropertyChanged += Fail;
+        details.PropertyChanged += Fail;
+        try
+        {
+            using var source = tracker.BeginPhase(OperationPhase.Extraction)!;
+            Invoke("RenderOperationProgress");
+            Invoke("MarkOperationSucceeded");
+            Invoke("EndProtectedOperation");
+        }
+        finally { phase.PropertyChanged -= Fail; details.PropertyChanged -= Fail; }
+        MacComprehensiveTests.Require(failures > 0, "The observer fault injection did not execute.");
+        MacComprehensiveTests.Require((int)typeof(MainWindow).GetField("_operationActive", flags)!.GetValue(window)! == 0
+            && typeof(MainWindow).GetField("_operationCancellation", flags)!.GetValue(window) is null
+            && scopeField.GetValue(window) is null && tracker.RegisterSource() is null
+            && ReferenceEquals(previous, OperationProgressTracker.Current),
+            "A cosmetic observer fault retained CTS, operation, scope or tracker ownership.");
+    }
+
+    private sealed class ThrowingObserverCleanup(IDisposable inner) : IDisposable
+    {
+        public void Dispose()
+        { inner.Dispose(); throw new InvalidOperationException("Injected observer cleanup failure."); }
+    }
+
     private static void TestReferenceControlsPresent(MainWindow window)
     {
         string[] referenceControls =
@@ -743,8 +888,8 @@ internal static class MacGuiTests
     /// </summary>
     private static void TestFactorBoxesLengthAndNormalization(MainWindow window)
     {
-        TextBox extractFactorA = Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox");
-        TextBox extractFactorB = Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox");
+        FactorTextBox extractFactorA = Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox");
+        FactorTextBox extractFactorB = Control<FactorTextBox>(window, "ExtractGeneratedPasswordSecondBox");
 
         // 256-hex characters factor (128 bytes)
         string rawHexA = new string('A', 256);
@@ -814,8 +959,8 @@ internal static class MacGuiTests
 
         TextBox extractPassword = Control<TextBox>(window, "ExtractPasswordBox");
         TextBox extractPin = Control<TextBox>(window, "ExtractPinBox");
-        TextBox extractFactorA = Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox");
-        TextBox extractFactorB = Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox");
+        FactorTextBox extractFactorA = Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox");
+        FactorTextBox extractFactorB = Control<FactorTextBox>(window, "ExtractGeneratedPasswordSecondBox");
 
         extractPassword.Text = "SecretPassword123!456";
         extractPin.Text = "428317";
@@ -833,8 +978,8 @@ internal static class MacGuiTests
     }
 
     /// <summary>
-    /// The real Create button route must erase every creation credential from
-    /// its finally boundary, including failures before input validation.
+    /// An unclassified injected safety failure remains fatal, even during
+    /// preflight. Expected prerequisite warnings are tested separately.
     /// </summary>
     private static void TestCreateFailureSecretClearing(MainWindow window)
     {
@@ -884,6 +1029,7 @@ internal static class MacGuiTests
             MainWindow.TestHookShowDialogAsync = null;
         }
 
+        typeof(MainWindow).GetMethod("FlushConsoleEntries", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, null);
         MacComprehensiveTests.Require(errorDialogs == 1, $"Expected one create failure dialog, got {errorDialogs}.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(password.Text), "Create failure retained the password.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(confirm.Text), "Create failure retained the confirmation password.");
@@ -962,14 +1108,14 @@ internal static class MacGuiTests
     {
         TextBox extractPassword = Control<TextBox>(window, "ExtractPasswordBox");
         TextBox extractPin = Control<TextBox>(window, "ExtractPinBox");
-        TextBox extractFactorA = Control<TextBox>(window, "ExtractGeneratedPasswordFirstBox");
-        TextBox extractFactorB = Control<TextBox>(window, "ExtractGeneratedPasswordSecondBox");
+        FactorTextBox extractFactorA = Control<FactorTextBox>(window, "ExtractGeneratedPasswordFirstBox");
+        FactorTextBox extractFactorB = Control<FactorTextBox>(window, "ExtractGeneratedPasswordSecondBox");
         TextBox log = Control<TextBox>(window, "LogBox");
 
         extractPassword.Text = "synthetic-password";
         extractPin.Text = "123456";
-        extractFactorA.Text = "synthetic-factor-a";
-        extractFactorB.Text = "synthetic-factor-b";
+        extractFactorA.Text = new string('A', 255);
+        extractFactorB.Text = new string('B', 255);
         log.Text = string.Empty;
         const string Diagnostic = "injected credential-operation failure";
         MainWindow.TestHookBeforeCredentialOperation = actualOperation =>
@@ -991,6 +1137,7 @@ internal static class MacGuiTests
             MainWindow.TestHookBeforeCredentialOperation = null;
         }
 
+        typeof(MainWindow).GetMethod("FlushConsoleEntries", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, null);
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractPassword.Text), $"{operation} failure retained the password.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractPin.Text), $"{operation} failure retained the PIN.");
         MacComprehensiveTests.Require(string.IsNullOrEmpty(extractFactorA.Text), $"{operation} failure retained factor A.");
@@ -1420,13 +1567,257 @@ internal static class MacGuiTests
     }
 
     /// <summary>
-    /// Exercises the entire GUI creation flow: gathering 1024 mouse samples across the 9 pools
+    /// Exercises the entire GUI creation flow: gathering 1024 mouse samples across the 11 pools
     /// via genuine pointer movement, clicking the factor generator button, filling out PIN and password,
     /// and validating the creation gate.
     /// </summary>
+    private static void TestOperationCancelLifetime(MainWindow window)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        MethodInfo begin = typeof(MainWindow).GetMethod("TryBeginProtectedOperation", flags)!;
+        MethodInfo end = typeof(MainWindow).GetMethod("EndProtectedOperation", flags)!;
+        PropertyInfo tokenProperty = typeof(MainWindow).GetProperty("OperationToken", flags)!;
+        CancellationToken ReadToken() => (CancellationToken)tokenProperty.GetValue(window)!;
+        EnableProtectedOperationsForFailureTest(window);
+        MacComprehensiveTests.Require((bool)begin.Invoke(window, null)!, "First operation did not begin.");
+        CancellationToken first = ReadToken();
+        Control<Button>(window, "CancelOperationButton").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        MacComprehensiveTests.Require(first.IsCancellationRequested, "Cancel did not reach the captured operation token.");
+        end.Invoke(window, null);
+        EnableProtectedOperationsForFailureTest(window);
+        MacComprehensiveTests.Require((bool)begin.Invoke(window, null)!, "Second operation did not begin.");
+        CancellationToken second = ReadToken();
+        MacComprehensiveTests.Require(!second.IsCancellationRequested && first.IsCancellationRequested && second != first,
+            "A cancelled operation poisoned the next operation or reused its source.");
+        end.Invoke(window, null);
+        window.Dispose();
+        MacComprehensiveTests.Require(ReadToken().IsCancellationRequested,
+            "Disposed window lost its stable cancelled lifetime token.");
+    }
+
+    private static void TestRev9EntropyPhasesAndCancel(MainWindow window)
+    {
+        EnableProtectedOperationsForFailureTest(window);
+        void Fill()
+        {
+            int iterations = 0;
+            while (!EntropyMixer.GetPoolStatus().IsReady)
+            {
+                MoveMouse(window, 512);
+                if (++iterations > 200) throw new InvalidOperationException("Eleven GUI pools did not become ready.");
+            }
+        }
+        void Join(Task task)
+        {
+            var time = System.Diagnostics.Stopwatch.StartNew();
+            while (!task.IsCompleted)
+            {
+                Dispatcher.UIThread.RunJobs();
+                if (time.Elapsed > TimeSpan.FromSeconds(30)) throw new TimeoutException("GUI preparation did not join.");
+                Thread.Sleep(1);
+            }
+            task.GetAwaiter().GetResult(); Dispatcher.UIThread.RunJobs();
+        }
+        try
+        {
+            Fill();
+            using var entered = new ManualResetEventSlim(); using var resume = new ManualResetEventSlim(); int once = 0;
+            EntropyMixer.PreparationPhaseForTests = phase =>
+            {
+                if (phase == "sha3" && Interlocked.CompareExchange(ref once, 1, 0) == 0)
+                {
+                    entered.Set(); if (!resume.Wait(TimeSpan.FromSeconds(20))) throw new TimeoutException("GUI cancel barrier timed out.");
+                }
+            };
+            EnableProtectedOperationsForFailureTest(window);
+            Task cancelled = window.GenerateArchiveEntropyAsync();
+            MacComprehensiveTests.Require(entered.Wait(TimeSpan.FromSeconds(20)), "GUI preparation never reached SHA3 replay.");
+            Dispatcher.UIThread.RunJobs();
+            Button cancel = Control<Button>(window, "CancelOperationButton");
+            MacComprehensiveTests.Require(cancel.IsEnabled && !Control<Button>(window, "GeneratePasswordButton").IsEnabled,
+                "A running preparation cannot be cancelled or allows a duplicate generator.");
+            cancel.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            resume.Set(); Join(cancelled);
+            MacComprehensiveTests.Require(string.IsNullOrEmpty(Control<TextBox>(window, "GeneratedPasswordFirstBox").Text)
+                && EntropyMixer.SampleCount == 0 && SensitiveMouseRecordStore.Segment.ReservedBytes == 0,
+                "Cancelled GUI preparation exposed a partial factor or retained records.");
+            foreach (EncryptionSuite suite in new[] { EncryptionSuite.StandardCascade, EncryptionSuite.ParanoiaCascade })
+            {
+                var phases = new System.Collections.Concurrent.ConcurrentBag<string>();
+                EntropyMixer.PreparationPhaseForTests = phases.Add;
+                ComboBox box = Control<ComboBox>(window, "CipherSuiteBox");
+                box.SelectedItem = box.Items.OfType<ComboBoxItem>().Single(item => string.Equals(item.Tag as string, suite.ToString(), StringComparison.Ordinal));
+                Fill();
+                string counters = Control<TextBlock>(window, "EntropyStatusText").Text ?? "";
+                MacComprehensiveTests.Require(counters.Contains("Nonce 5", StringComparison.OrdinalIgnoreCase), "GUI omits the fifth nonce pool.");
+                EnableProtectedOperationsForFailureTest(window);
+                Join(window.GenerateArchiveEntropyAsync());
+                MacComprehensiveTests.Require(phases.Contains("shuffle1") && phases.Contains("sha3") && phases.Contains("cleanup"), "GUI generation omitted a mandatory phase.");
+                bool dual = suite == EncryptionSuite.ParanoiaCascade;
+                MacComprehensiveTests.Require(phases.Contains("shuffle2") == dual && phases.Contains("sha512") == dual,
+                    "The GUI executed phases that differ from its fixed preparation plan.");
+                MacComprehensiveTests.Require(Control<TextBox>(window, "GeneratedPasswordFirstBox").Text?.Length == 256,
+                    "A successful GUI preparation did not publish the completed factor.");
+            }
+        }
+        finally { EntropyMixer.PreparationPhaseForTests = null; }
+    }
+
+    private static void TestLiveCaptureDuringDualPreparation(MainWindow window)
+    {
+        const BindingFlags instanceFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+        FieldInfo poolsField = typeof(EntropyMixer).GetField("MousePools", BindingFlags.Static | BindingFlags.NonPublic)!;
+        FieldInfo captureFaultField = typeof(MainWindow).GetField("_entropyCaptureFaulted", instanceFlags)!;
+        Action<string>? previousPhase = EntropyMixer.PreparationPhaseForTests;
+        Action<byte[], EntropyRandomRole>? previousRandom = EntropyMixer.RandomFillForTests;
+        using var entered = new ManualResetEventSlim();
+        using var resume = new ManualResetEventSlim();
+        var phases = new ConcurrentBag<string>();
+        Task? generation = null;
+        int boundaryPointer = 0;
+
+        void MoveBoundaryPointer()
+        {
+            // Each guard check receives a distinct position, including after
+            // Dispose, rather than depending on repeated same-point delivery.
+            window.MouseMove(new Point(11 + ++boundaryPointer, 13));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        void Join(Task task)
+        {
+            var time = System.Diagnostics.Stopwatch.StartNew();
+            while (!task.IsCompleted)
+            {
+                Dispatcher.UIThread.RunJobs();
+                if (time.Elapsed > TimeSpan.FromSeconds(30)) throw new TimeoutException("GUI live-capture preparation did not join.");
+                Thread.Sleep(1);
+            }
+            task.GetAwaiter().GetResult();
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        static byte[] Fingerprint(SensitiveMouseRecordStore[] pools)
+        {
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            using LockedSensitiveBuffer record = LockedSensitiveBuffer.Create(SensitiveMouseRecordStore.RecordBytes);
+            foreach (SensitiveMouseRecordStore pool in pools)
+                for (long index = 0; index < pool.Count; ++index)
+                {
+                    pool.CopyRecord(index, record.Bytes);
+                    hash.AppendData(record.Bytes);
+                }
+            return hash.GetHashAndReset();
+        }
+
+        bool ShowsTotal(long total) => (Control<TextBlock>(window, "EntropyStatusText").Text ?? "").Contains(
+            "gesamt " + total.ToString(CultureInfo.CurrentCulture) + ";", StringComparison.Ordinal)
+            || (Control<TextBlock>(window, "EntropyStatusText").Text ?? "").Contains(
+                "total " + total.ToString(CultureInfo.CurrentCulture) + ";", StringComparison.Ordinal);
+
+        try
+        {
+            EntropyMixer.Reset();
+            ComboBox suite = Control<ComboBox>(window, "CipherSuiteBox");
+            suite.SelectedItem = suite.Items.OfType<ComboBoxItem>().Single(item =>
+                string.Equals(item.Tag as string, EncryptionSuite.ParanoiaCascade.ToString(), StringComparison.Ordinal));
+            int fills = 0;
+            while (!EntropyMixer.GetPoolStatus().IsReady)
+            {
+                MoveMouse(window, 512);
+                if (++fills > 200) throw new InvalidOperationException("Live-capture fixture did not fill eleven pools.");
+            }
+            SensitiveMouseRecordStore[] originalPools = (SensitiveMouseRecordStore[])poolsField.GetValue(null)!;
+            long[] originalCounts = originalPools.Select(pool => pool.Count).ToArray();
+            EntropyMixer.PreparationPhaseForTests = phase =>
+            {
+                phases.Add(phase);
+                // Hold every pool before its first replay, so no original store
+                // can be cleaned while its immutable records are compared.
+                if (phase == "sha3")
+                {
+                    entered.Set();
+                    if (!resume.Wait(TimeSpan.FromSeconds(20))) throw new TimeoutException("GUI live-capture barrier timed out.");
+                }
+            };
+            EnableProtectedOperationsForFailureTest(window);
+            generation = window.GenerateArchiveEntropyAsync();
+            MacComprehensiveTests.Require(entered.Wait(TimeSpan.FromSeconds(20)), "Dual GUI preparation never detached its records.");
+            Dispatcher.UIThread.RunJobs();
+            MacComprehensiveTests.Require(!generation.IsCompleted && EntropyMixer.GetPoolStatus().Total == 0
+                && ShowsTotal(0) && Control<ProgressBar>(window, "EntropyProgress").Value == 0,
+                "The running GUI preparation did not display its new empty live epoch.");
+            MacComprehensiveTests.Require(!ReferenceEquals(originalPools, poolsField.GetValue(null))
+                && originalPools.Select(pool => pool.Count).SequenceEqual(originalCounts),
+                "Detach did not preserve a separately owned original snapshot.");
+            byte[] originalFingerprint = Fingerprint(originalPools);
+
+            // Use the real window's routed pointer events, not a direct mixer
+            // injection: the production busy guard is the regression boundary.
+            MoveMouse(window, 37);
+            EntropyPoolStatus newLive = EntropyMixer.GetPoolStatus();
+            MacComprehensiveTests.Require(newLive.Total == 37 && ShowsTotal(37)
+                && originalPools.Select(pool => pool.Count).SequenceEqual(originalCounts)
+                && Fingerprint(originalPools).AsSpan().SequenceEqual(originalFingerprint),
+                "Pointer events changed the detached snapshot or failed to fill the separate live epoch.");
+            Task duplicate = window.GenerateArchiveEntropyAsync();
+            MacComprehensiveTests.Require(duplicate.IsCompleted && !generation.IsCompleted
+                && EntropyMixer.GetPoolStatus() == newLive
+                && !Control<Button>(window, "GeneratePasswordButton").IsEnabled
+                && Control<Button>(window, "CancelOperationButton").IsEnabled
+                && string.IsNullOrEmpty(Control<TextBox>(window, "GeneratedPasswordFirstBox").Text),
+                "Live capture allowed a duplicate Generate or premature factor publication.");
+
+            resume.Set();
+            Join(generation);
+            MacComprehensiveTests.Require(EntropyMixer.GetPoolStatus() == newLive
+                && originalPools.All(pool => pool.Count == 0)
+                && phases.Contains("shuffle2") && phases.Contains("sha512") && phases.Contains("cleanup")
+                && Control<TextBox>(window, "GeneratedPasswordFirstBox").Text?.Length == 256,
+                "Dual cleanup lost new live records or did not finish the original snapshot.");
+
+            EntropyMixer.RandomFillForTests = (_, role) =>
+            {
+                if (role == EntropyRandomRole.PoolRouting) throw new CryptographicException("public injected capture RNG failure");
+            };
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require((bool)captureFaultField.GetValue(window)! && !EntropyMixer.GetPoolStatus().Healthy
+                && EntropyMixer.GetPoolStatus().Total == newLive.Total, "A capture failure did not stop the live collection safely.");
+            EntropyMixer.RandomFillForTests = previousRandom;
+            captureFaultField.SetValue(window, false);
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require(!(bool)captureFaultField.GetValue(window)! && EntropyMixer.GetPoolStatus().Total == newLive.Total,
+                "An unhealthy collection reached the pointer capture path.");
+            captureFaultField.SetValue(window, true);
+            EntropyMixer.Reset();
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require(EntropyMixer.GetPoolStatus().Healthy && EntropyMixer.GetPoolStatus().Total == 0,
+                "The window capture-fault guard accepted an event after the mixer reset.");
+            captureFaultField.SetValue(window, false);
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require(EntropyMixer.GetPoolStatus().Total == 1, "The pointer fixture stopped reaching the live collection.");
+            window.Dispose();
+            MoveBoundaryPointer();
+            MacComprehensiveTests.Require(EntropyMixer.GetPoolStatus().Healthy && EntropyMixer.GetPoolStatus().Total == 0
+                && !(bool)captureFaultField.GetValue(window)!, "A disposed window accepted a new pointer record.");
+        }
+        finally
+        {
+            resume.Set();
+            try { if (generation is not null) Join(generation); }
+            finally
+            {
+                EntropyMixer.PreparationPhaseForTests = previousPhase;
+                EntropyMixer.RandomFillForTests = previousRandom;
+                EntropyMixer.Reset();
+            }
+        }
+    }
+
     private static void TestFullCreationFlowViaGui(MainWindow window)
     {
-        // 1. Move mouse to feed all 9 entropy pools until minimum 1024 is reached
+        EnableProtectedOperationsForFailureTest(window);
+        // 1. Move mouse to feed all 11 entropy pools until minimum 1024 is reached
         long required = EntropyMixer.RequiredMouseSamplesPerPurpose;
         long guard = 0;
         while (EntropyMixer.GetPoolStatus().Minimum < required)
@@ -1442,7 +1833,16 @@ internal static class MacGuiTests
         MacComprehensiveTests.Require(generateBtn.IsEnabled, "GeneratePasswordButton stayed disabled after reaching 1024 samples.");
 
         // 2. Click generate button
-        window.GeneratePassword_Click(generateBtn, new Avalonia.Interactivity.RoutedEventArgs());
+        EnableProtectedOperationsForFailureTest(window);
+        Task generation = window.GenerateArchiveEntropyAsync();
+        var generationDeadline = System.Diagnostics.Stopwatch.StartNew();
+        while (!generation.IsCompleted)
+        {
+            Dispatcher.UIThread.RunJobs();
+            if (generationDeadline.Elapsed > TimeSpan.FromSeconds(30)) throw new TimeoutException("GUI entropy generation did not finish.");
+            Thread.Sleep(1);
+        }
+        generation.GetAwaiter().GetResult();
         Dispatcher.UIThread.RunJobs();
 
         TextBox factorA = Control<TextBox>(window, "GeneratedPasswordFirstBox");

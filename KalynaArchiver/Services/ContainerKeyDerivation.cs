@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// The whole v12 key derivation, from the four things the user holds to the
+/// The whole v13 key derivation, from the four things the user holds to the
 /// keys one suite needs.
 /// </summary>
 /// <remarks>
@@ -26,7 +26,7 @@ internal static partial class ContainerKeyDerivation
     /// <summary>
     /// The one container generation this build derives keys for.
     /// </summary>
-    public const int ContainerVersion = 12;
+    public const int ContainerVersion = 13;
 
     public const int MinPinLength = 6;
     public const int MaxPinSyntaxLength = 16;
@@ -42,8 +42,10 @@ internal static partial class ContainerKeyDerivation
     /// </summary>
     public sealed class MasterResult : IDisposable
     {
-        public MasterResult(LockedSensitiveBuffer master, uint round1MemoryKiB, uint? round2MemoryKiB)
+        public MasterResult(LockedSensitiveBuffer master, uint round1MemoryKiB, uint? round2MemoryKiB, string handoffBoundary = "v13/master/final-owner")
         {
+            ArgumentNullException.ThrowIfNull(master);
+            DerivedSecretHandoff.Verify(handoffBoundary, master.Bytes, V13MasterKdf.MasterBytes);
             Master = master;
             Round1MemoryKiB = round1MemoryKiB;
             Round2MemoryKiB = round2MemoryKiB;
@@ -312,8 +314,9 @@ internal static partial class ContainerKeyDerivation
     /// Parses one key-sheet factor into locked memory.
     /// </summary>
     /// <remarks>
-    /// Only the exact 256-character form is accepted. Nothing is padded and
-    /// nothing is truncated: a factor that arrives one character short is a
+    /// Exactly 256 ASCII hexadecimal payload characters are accepted within the
+    /// shared formatting-whitespace and raw-text contract. Nothing is padded or
+    /// truncated: a factor that arrives one character short is a
     /// transcription error, and silently accepting it would derive a key the
     /// sheet cannot reproduce.
     /// </remarks>
@@ -325,46 +328,12 @@ internal static partial class ContainerKeyDerivation
 
     public static LockedSensitiveBuffer ParseFactor(ReadOnlySpan<char> factorChars, string name)
     {
+        // Validate the whole bounded input before allocating or writing factor bytes.
+        FactorInput.RequireComplete(factorChars);
         var buffer = LockedSensitiveBuffer.Create(FactorBytes);
         try
         {
-            int hexDigitCount = 0;
-            int currentHigh = -1;
-            int byteIndex = 0;
-
-            for (int i = 0; i < factorChars.Length; i++)
-            {
-                char c = factorChars[i];
-                if (char.IsWhiteSpace(c))
-                {
-                    continue;
-                }
-
-                int nibble = DecodeNibble(c, name);
-                hexDigitCount++;
-
-                if (currentHigh < 0)
-                {
-                    currentHigh = nibble;
-                }
-                else
-                {
-                    if (byteIndex >= FactorBytes)
-                    {
-                        throw new ArgumentException(
-                            $"{name} must be exactly {FactorHexLength} hexadecimal characters.", nameof(factorChars));
-                    }
-                    buffer.Bytes[byteIndex++] = (byte)((currentHigh << 4) | nibble);
-                    currentHigh = -1;
-                }
-            }
-
-            if (hexDigitCount != FactorHexLength || byteIndex != FactorBytes)
-            {
-                throw new ArgumentException(
-                    $"{name} must be exactly {FactorHexLength} hexadecimal characters.", nameof(factorChars));
-            }
-
+            FactorInput.Decode(factorChars, buffer.Bytes);
             return buffer;
         }
         catch (Exception operationFailure)
@@ -376,14 +345,6 @@ internal static partial class ContainerKeyDerivation
             throw;
         }
     }
-
-    private static int DecodeNibble(char c, string name) => c switch
-    {
-        >= '0' and <= '9' => c - '0',
-        >= 'A' and <= 'F' => c - 'A' + 10,
-        >= 'a' and <= 'f' => c - 'a' + 10,
-        _ => throw new ArgumentException($"{name} is not valid hexadecimal."),
-    };
 
     public static MasterResult DeriveMaster(
         EncryptionSuiteParameters parameters,
@@ -397,10 +358,18 @@ internal static partial class ContainerKeyDerivation
     {
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(salts);
+        ArgumentNullException.ThrowIfNull(salts.Sha3Round1);
+        ArgumentNullException.ThrowIfNull(salts.SkeinRound1);
+        ArgumentNullException.ThrowIfNull(factorAHex);
+        ArgumentNullException.ThrowIfNull(factorBHex);
         ValidatePasswordEncoding(userPassword);
         ValidatePinEncoding(pin);
         bool paranoia = parameters.UsesTwoKdfRounds;
         salts.Validate(paranoia);
+        using OperationMemoryBudget.Lease memory = OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).AsTask().GetAwaiter().GetResult();
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
 
         LockedSensitiveBuffer? factorA = null;
         LockedSensitiveBuffer? factorB = null;
@@ -420,45 +389,47 @@ internal static partial class ContainerKeyDerivation
             }
 
             string algorithm = parameters.Algorithm;
-            sha3Credential = LockedSensitiveBuffer.Create(V12MasterKdf.CredentialHashBytes);
-            skeinCredential = LockedSensitiveBuffer.Create(V12MasterKdf.CredentialHashBytes);
+            sha3Credential = LockedSensitiveBuffer.Create(V13MasterKdf.CredentialHashBytes);
+            skeinCredential = LockedSensitiveBuffer.Create(V13MasterKdf.CredentialHashBytes);
 
-            V12MasterKdf.DeriveSha3CredentialHash(
+            V13MasterKdf.DeriveSha3CredentialHash(
                 algorithm, userPassword, pin, factorA.Bytes, factorB.Bytes, sha3Credential.Bytes);
-            V12MasterKdf.DeriveSkeinCredentialHash(
+            V13MasterKdf.DeriveSkeinCredentialHash(
                 algorithm, userPassword, pin, factorA.Bytes, factorB.Bytes, skeinCredential.Bytes);
 
             cancellationToken.ThrowIfCancellationRequested();
-            (_, uint memory1) = V12MasterKdf.DerivePmi(
+            (_, uint memory1) = V13MasterKdf.DerivePmi(
                 algorithm, 1, sha3Credential.Bytes, skeinCredential.Bytes,
                 ReadOnlySpan<byte>.Empty, salts.Sha3Round1, salts.SkeinRound1);
             progress?.Report(paranoia ? "Key derivation, round 1 of 2" : "Key derivation");
 
-            round1Master = LockedSensitiveBuffer.Create(V12MasterKdf.MasterBytes);
-            V12MasterKdf.DeriveRoundMaster(
+            round1Master = LockedSensitiveBuffer.Create(V13MasterKdf.MasterBytes);
+            V13MasterKdf.DeriveRoundMaster(
                 algorithm, 1, sha3Credential.Bytes, skeinCredential.Bytes,
-                salts.Sha3Round1, salts.SkeinRound1, ReadOnlySpan<byte>.Empty, memory1, round1Master.Bytes);
+                salts.Sha3Round1, salts.SkeinRound1, ReadOnlySpan<byte>.Empty, memory1, round1Master.Bytes, cancellationToken);
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/master/round-1-ready", round1Master.Bytes, V13MasterKdf.MasterBytes);
 
             if (!paranoia)
             {
-                completed = new MasterResult(round1Master, memory1, null);
+                completed = new MasterResult(round1Master, memory1, null, $"v13/{algorithm}/master/final-owner");
                 round1Master = null; // ownership transferred to result
                 return completed;
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            (_, uint memory2) = V12MasterKdf.DerivePmi(
+            (_, uint memory2) = V13MasterKdf.DerivePmi(
                 algorithm, 2, sha3Credential.Bytes, skeinCredential.Bytes,
                 round1Master.Bytes, salts.Sha3Round2!, salts.SkeinRound2!);
             progress?.Report("Key derivation, round 2 of 2");
             // The first master is the Argon2id secret here, not the password:
             // it makes round two unreachable without round one, and it keeps
             // the credentials themselves in the same position in both rounds.
-            round2Master = LockedSensitiveBuffer.Create(V12MasterKdf.MasterBytes);
-            V12MasterKdf.DeriveRoundMaster(
+            round2Master = LockedSensitiveBuffer.Create(V13MasterKdf.MasterBytes);
+            V13MasterKdf.DeriveRoundMaster(
                 algorithm, 2, sha3Credential.Bytes, skeinCredential.Bytes,
-                salts.Sha3Round2!, salts.SkeinRound2!, round1Master.Bytes, memory2, round2Master.Bytes);
-            completed = new MasterResult(round2Master, memory1, memory2);
+                salts.Sha3Round2!, salts.SkeinRound2!, round1Master.Bytes, memory2, round2Master.Bytes, cancellationToken);
+            DerivedSecretHandoff.Verify($"v13/{algorithm}/master/round-2-ready", round2Master.Bytes, V13MasterKdf.MasterBytes);
+            completed = new MasterResult(round2Master, memory1, memory2, $"v13/{algorithm}/master/final-owner");
             round2Master = null; // ownership transferred to result
             return completed;
         }
@@ -517,7 +488,9 @@ internal static partial class ContainerKeyDerivation
         {
             master = DeriveMaster(
                 parameters, userPassword, pin, factorAHex, factorBHex, salts, progress, cancellationToken);
-            completed = SuiteKeySchedule.DeriveSuiteKeys(master.Master.Bytes, parameters);
+            DerivedSecretHandoff.Verify($"v13/{parameters.Algorithm}/master/role-schedule-input", master.Master.Bytes, V13MasterKdf.MasterBytes);
+            using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.KeySchedule))
+                completed = SuiteKeySchedule.DeriveSuiteKeys(master.Master.Bytes, parameters);
             return completed;
         }
         catch (Exception failure)

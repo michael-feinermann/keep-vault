@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 2,
+  "host": {
+    "operatingSystem": "macOS 27.0.1",
+    "operatingSystemVersion": "27.0.1",
+    "operatingSystemBuild": "26A434",
+    "osArchitecture": "Arm64",
+    "processArchitecture": "Arm64",
+    "logicalProcessors": 10,
+    "cpuDescriptor": "Apple M5",
+    "machineIdentitySha256": "e2cebfd9e17b95227fac0a2afb79df4beff23345bb44b638bf5ab881b9d89116"
+  },
+  "ratesMiBPerSecond": {
+    "Kalyna512_512": 1578.5280719019536,
+    "Threefish1024": 2839.311600029724,
+    "StandardCascade": 688.9530416603984,
+    "ParanoiaCascade": 148.31268253033022,
+    "XChaChaOverAes": 1691.2257753378324,
+    "Aes256": 11467.838536417106,
+    "Mars448": 1432.3785821354413,
+    "Shacal2_512": 1681.263890129405,
+    "XChaCha20Poly1305": 2153.812500525833,
+    "MixedCascade": 1202.0150655685134,
+    "Camellia256": 364.53434013161393,
+    "Serpent256": 809.9112894040825
+  },
+  "provenance": {
+    "sourceCommit": "536d7c2",
+    "sourceLog": "work/v13-evidence/rev11-release-b41144e/historical-control-536d7c2-macos27-20261003/phase-8.log",
+    "sourceLogSha256": "243ef3862cd1d99a42cd6725c9b46b332f19e58a2935b6f953f59876b47f5ba8",
+    "wholeGroupStatus": "FAIL",
+    "wholeGroupFailure": "Historical fixed2 pipeline scaling, after complete primitive and production-KDF container measurements",
+    "scope": "Independent historical primitive-only reference for same-host25% comparisons; not a full historical test approval or current self-reference."
+  }
+}

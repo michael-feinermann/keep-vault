@@ -21,7 +21,67 @@ internal static class HybridKeyProtectionTests
             TestHybridKeySeparationAsync,
             TestResource.ProcessGlobal,
             "Packaging"),
+        new("packaging.private-directory-lease", "private directory lease rejects ACLs and replacement",
+            TestPrivateDirectoryLeaseAsync, TestResource.ProcessGlobal, "Packaging"),
     ];
+
+    private static Task TestPrivateDirectoryLeaseAsync()
+    {
+        string parent = MacSafeFileSystem.ResolveExistingRealPath(Directory.CreateTempSubdirectory("keep-vault-keydir-lease-").FullName);
+        string root = Path.Combine(parent, "keys");
+        string moved = Path.Combine(parent, "moved");
+        Directory.CreateDirectory(root);
+        SetPrivate(root);
+        try
+        {
+            using var lease = MacBoundSecretFile.BindPrivateDirectory(root);
+            lease.Validate();
+            string target = Path.Combine(root, "synthetic-public-test-data");
+            using (var file = MacBoundSecretFile.Create(target, lease))
+            {
+                file.Stream.Write(new byte[] { 1, 2, 3, 4 });
+                file.Stream.Flush(flushToDisk: true);
+                file.Publish();
+            }
+            using (var read = MacBoundSecretFile.ReadPrivateBytes(target, 4, 4, "synthetic fixture"))
+                Require(read.Bytes.AsSpan().SequenceEqual(new byte[] { 1, 2, 3, 4 }), "Bound directory altered synthetic bytes.");
+            Chmod("+a", "everyone allow read", target);
+            RequireThrows<IOException>(() => { using var ignored = MacBoundSecretFile.ReadPrivateBytes(target, 4, 4, "ACL fixture"); },
+                "A mode-0600 file with an extended read ACL was accepted.");
+            Chmod("-N", target);
+            Chmod("+a", "everyone allow read,search", root);
+            RequireThrows<IOException>(() => lease.Validate(), "A mode-0700 directory with an extended ACL was accepted.");
+            RequireThrows<IOException>(() => { using var ignored = MacBoundSecretFile.BindPrivateDirectory(root); }, "Provisioning accepted a directory ACL.");
+            Chmod("-N", root);
+            lease.Validate();
+            File.SetUnixFileMode(root, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead);
+            RequireThrows<IOException>(() => lease.Validate(), "A directory permission change was ignored.");
+            SetPrivate(root);
+            Directory.Move(root, moved);
+            Directory.CreateDirectory(root);
+            SetPrivate(root);
+            RequireThrows<IOException>(() => lease.Validate(), "A replaced physical directory retained the keyset lease.");
+            string redirected = Path.Combine(root, "must-not-be-created");
+            RequireThrows<IOException>(() => { using var ignored = MacBoundSecretFile.Create(redirected, lease); }, "A secret write escaped to a replacement directory.");
+            Require(!File.Exists(redirected), "Rejected keyset write created a replacement-directory object.");
+            Directory.Delete(root);
+            Directory.Move(moved, root);
+            lease.Validate();
+        }
+        finally { Directory.Delete(parent, recursive: true); }
+        return Task.CompletedTask;
+
+        static void SetPrivate(string path) => File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        static void Chmod(params string[] arguments)
+        {
+            var info = new ProcessStartInfo("/bin/chmod") { UseShellExecute = false, RedirectStandardError = true };
+            foreach (string argument in arguments) info.ArgumentList.Add(argument);
+            using var process = Process.Start(info) ?? throw new IOException("Could not start ACL fixture setup.");
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            Require(process.ExitCode == 0, "ACL fixture setup failed: " + error);
+        }
+    }
 
     private static Task TestUsbWrappingKeysAsync()
     {
@@ -182,18 +242,23 @@ internal static class HybridKeyProtectionTests
 
             bool zeroObservedBeforeUnlock = false;
             LockedSensitiveBuffer zeroizationProbe = LockedSensitiveBuffer.Create(32);
-            RandomNumberGenerator.Fill(zeroizationProbe.Bytes);
-            SecureMemory.SensitiveBufferBeforeUnlockForTests = () =>
-            {
-                zeroObservedBeforeUnlock = zeroizationProbe.Bytes.All(value => value == 0);
-            };
+            byte[] zeroizationBytes = zeroizationProbe.Bytes;
             try
             {
+                RandomNumberGenerator.Fill(zeroizationBytes);
+                SecureMemory.SensitiveBufferBeforeUnlockForTests = () =>
+                {
+                    zeroObservedBeforeUnlock = zeroizationBytes.All(value => value == 0);
+                    RequireThrows<ObjectDisposedException>(
+                        () => _ = zeroizationProbe.Bytes,
+                        "A signing-secret buffer remained accessible during disposal.");
+                };
                 zeroizationProbe.Dispose();
             }
             finally
             {
                 SecureMemory.SensitiveBufferBeforeUnlockForTests = null;
+                zeroizationProbe.Dispose();
             }
             Require(
                 zeroObservedBeforeUnlock,
@@ -501,8 +566,8 @@ internal static class HybridKeyProtectionTests
                     && protectionScript.Contains("hybrid_protection_tool_paths=verified", StringComparison.Ordinal),
                 "The provisioning script no longer enforces distinct services and accounts.");
             Require(
-                keepVaultBuildScript.Contains("build_version='13'", StringComparison.Ordinal)
-                    && keepVaultBuildScript.Contains("marketing_version='5.0.2'", StringComparison.Ordinal)
+                keepVaultBuildScript.Contains("build_version='22'", StringComparison.Ordinal)
+                    && keepVaultBuildScript.Contains("marketing_version='5.0.3'", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("require_root_system_tool", StringComparison.Ordinal)
                     && HasIsolatedDotnetBuildPath(keepVaultBuildScript)
                     && keepVaultBuildScript.Contains("sysopen -r -o nofollow", StringComparison.Ordinal)
@@ -513,9 +578,9 @@ internal static class HybridKeyProtectionTests
                     && keepVaultBuildScript.Contains("notice_self_test_inplace_aba", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("output_mutation_status", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains(
-                        "bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159",
+                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
                         StringComparison.Ordinal),
-                "The macOS v12 release default or fixed system-tool gate regressed.");
+                "The macOS v13 release default or fixed system-tool gate regressed.");
             foreach (string lockedBuildScript in new[] { keepVaultBuildScript, portableBuildScript,
                 RepositoryLayout.ReadText(Path.Combine(root, "tools", "Test-KeepVault.sh")) })
             {
@@ -549,7 +614,7 @@ internal static class HybridKeyProtectionTests
                     && portableBuildScript.Contains("${portable_dir}/THIRD-PARTY-NOTICES.txt", StringComparison.Ordinal)
                     && portableBuildScript.Contains("zstat -f ${descriptor}", StringComparison.Ordinal)
                     && portableBuildScript.Contains(
-                        "bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159",
+                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
                         StringComparison.Ordinal),
                 "The portable release build no longer uses a fresh verified SDK and private package cache.");
             Require(
@@ -624,7 +689,7 @@ internal static class HybridKeyProtectionTests
                     && keepVaultVerifierScript.Contains("sysopen -r -o nofollow", StringComparison.Ordinal)
                     && keepVaultVerifierScript.Contains("bound_verifier_notice_identity", StringComparison.Ordinal)
                     && keepVaultVerifierScript.Contains(
-                        "bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159",
+                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
                         StringComparison.Ordinal)
                     && !keepVaultVerifierScript.Contains("${dotnet_command} restore", StringComparison.Ordinal)
                     && !keepVaultVerifierScript.Contains("${dotnet_command} build", StringComparison.Ordinal),
@@ -666,7 +731,7 @@ internal static class HybridKeyProtectionTests
                     && releaseVerifierSource.Contains("THIRD-PARTY-NOTICES.txt", StringComparison.Ordinal)
                     && releaseVerifierSource.Contains("portable root notice", StringComparison.Ordinal)
                     && releaseVerifierSource.Contains(
-                        "BD4BD21C7FFA79D36A4F20ABB6B7AF3116FC005D3971CA0BE09B49E083D6F159",
+                        "1A02EAD03198231BB35F2AA7576B9BE2EA79E153FDF22AB6E85B90FF8B710C3E",
                         StringComparison.Ordinal),
                 "The standalone release verifier lost its bound app/portable notice pin.");
             Require(
@@ -940,25 +1005,40 @@ internal static class HybridKeyProtectionTests
     private static void TestLockedTransferFaults()
     {
         int baselineRetained = SecureMemory.RetainedFailedLockRollbacksForTests;
-
-        LockedSensitiveBuffer earlyResult = LockedSensitiveBuffer.Create(64);
-        LockedSensitiveBuffer earlyTemporary = LockedSensitiveBuffer.Create(64);
-        byte[] earlyResultBytes = earlyResult.Bytes;
-        byte[] earlyTemporaryBytes = earlyTemporary.Bytes;
-        earlyResultBytes.AsSpan().Fill(0xA5);
-        earlyTemporaryBytes.AsSpan().Fill(0x5A);
-        RequireThrows<AggregateException>(
-            () => LockedBufferTransfer.Complete(
-                earlyResult,
-                null,
-                "Injected early cleanup failure.",
-                [earlyTemporary],
-                [new FaultingDisposable()]),
-            "An early descriptor cleanup fault transferred a locked result.");
+        long baselineBytes = SecureMemory.LockedBytesForTests;
+        long baselineAllocations = SecureMemory.LockedAllocationsForTests;
         Require(
-            earlyResultBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0
-                && earlyTemporaryBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
-            "An early cleanup fault left a result or temporary secret unerased.");
+            SecureMemory.MacMemoryUnlockOverrideForTests is null
+                && SecureMemory.SensitiveBufferBeforeUnlockForTests is null,
+            "Locked-transfer fixtures require exclusive ownership of cleanup hooks.");
+
+        LockedSensitiveBuffer? earlyResult = null;
+        LockedSensitiveBuffer? earlyTemporary = null;
+        try
+        {
+            earlyResult = LockedSensitiveBuffer.Create(64);
+            earlyTemporary = LockedSensitiveBuffer.Create(64);
+            byte[] earlyResultBytes = earlyResult.Bytes;
+            byte[] earlyTemporaryBytes = earlyTemporary.Bytes;
+            earlyResultBytes.AsSpan().Fill(0xA5);
+            earlyTemporaryBytes.AsSpan().Fill(0x5A);
+            RequireThrows<AggregateException>(
+                () => LockedBufferTransfer.Complete(
+                    earlyResult,
+                    null,
+                    "Injected early cleanup failure.",
+                    [earlyTemporary],
+                    [new FaultingDisposable()]),
+                "An early descriptor cleanup fault transferred a locked result.");
+            Require(
+                earlyResultBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0
+                    && earlyTemporaryBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
+                "An early cleanup fault left a result or temporary secret unerased.");
+        }
+        finally
+        {
+            RetryTransferFixtureCleanup(earlyTemporary, earlyResult);
+        }
 
         LockedSensitiveBuffer? middleResult = null;
         LockedSensitiveBuffer? middleTemporary = null;
@@ -976,12 +1056,10 @@ internal static class HybridKeyProtectionTests
             int unlockCalls = 0;
             SecureMemory.MacMemoryUnlockOverrideForTests = (_, _) =>
             {
-                if (Interlocked.Increment(ref unlockCalls) == 1)
-                {
-                    Marshal.SetLastPInvokeError(5);
-                    return -1;
-                }
-                return 0;
+                Interlocked.Increment(ref unlockCalls);
+                SecureMemory.MacMemoryUnlockOverrideForTests = null;
+                Marshal.SetLastPInvokeError(5);
+                return -1;
             };
             RequireThrows<AggregateException>(
                 () => LockedBufferTransfer.Complete(
@@ -991,6 +1069,7 @@ internal static class HybridKeyProtectionTests
                     [middleTemporary],
                     []),
                 "A temporary-secret unlock fault transferred a locked result.");
+            Require(unlockCalls == 1, "The temporary-secret unlock seam did not inject exactly one failure.");
             Require(
                 middleResultBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0
                     && middleTemporaryBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
@@ -1001,11 +1080,7 @@ internal static class HybridKeyProtectionTests
         }
         finally
         {
-            SecureMemory.MacMemoryUnlockOverrideForTests = (_, _) => 0;
-            SecureMemory.RetryRetainedFailedLockRollbacksForTests();
-            middleTemporary?.Dispose();
-            middleResult?.Dispose();
-            SecureMemory.MacMemoryUnlockOverrideForTests = null;
+            RetryTransferFixtureCleanup(middleTemporary, middleResult);
         }
         Require(
             SecureMemory.RetainedFailedLockRollbacksForTests == baselineRetained,
@@ -1019,8 +1094,11 @@ internal static class HybridKeyProtectionTests
                 checked(Environment.SystemPageSize * 32));
             finalResultBytes = finalResult.Bytes;
             finalResultBytes.AsSpan().Fill(0xC3);
+            int unlockCalls = 0;
             SecureMemory.MacMemoryUnlockOverrideForTests = (_, _) =>
             {
+                Interlocked.Increment(ref unlockCalls);
+                SecureMemory.MacMemoryUnlockOverrideForTests = null;
                 Marshal.SetLastPInvokeError(5);
                 return -1;
             };
@@ -1032,6 +1110,7 @@ internal static class HybridKeyProtectionTests
                     [],
                     []),
                 "A final result-unlock fault lost the composite failure.");
+            Require(unlockCalls == 1, "The result-secret unlock seam did not inject exactly one failure.");
             Require(
                 finalResultBytes.AsSpan().IndexOfAnyExcept((byte)0) < 0,
                 "A final result-unlock fault left the would-be result unerased.");
@@ -1041,10 +1120,7 @@ internal static class HybridKeyProtectionTests
         }
         finally
         {
-            SecureMemory.MacMemoryUnlockOverrideForTests = (_, _) => 0;
-            SecureMemory.RetryRetainedFailedLockRollbacksForTests();
-            finalResult?.Dispose();
-            SecureMemory.MacMemoryUnlockOverrideForTests = null;
+            RetryTransferFixtureCleanup(finalResult);
         }
         Require(
             SecureMemory.RetainedFailedLockRollbacksForTests == baselineRetained,
@@ -1067,6 +1143,39 @@ internal static class HybridKeyProtectionTests
                 && ReferenceEquals(compositeFailure.InnerExceptions[0], primaryFailure)
                 && compositeFailure.InnerExceptions[1] is IOException,
             "The primary and cleanup failures were not retained separately.");
+        Require(
+            SecureMemory.LockedBytesForTests == baselineBytes
+                && SecureMemory.LockedAllocationsForTests == baselineAllocations
+                && SecureMemory.RetainedFailedLockRollbacksForTests == baselineRetained,
+            "Locked-transfer cleanup did not restore the real-lock accounting baseline.");
+    }
+
+    private static void RetryTransferFixtureCleanup(params LockedSensitiveBuffer?[] buffers)
+    {
+        var failures = new List<Exception>();
+        SecureMemory.MacMemoryUnlockOverrideForTests = null;
+        try
+        {
+            Action[] cleanupActions =
+            [
+                SecureMemory.RetryRetainedFailedLockRollbacksForTests,
+                () => SecureMemory.ZeroAndDisposeAll(buffers),
+                SecureMemory.RetryRetainedFailedLockRollbacksForTests,
+            ];
+            foreach (Action cleanup in cleanupActions)
+            {
+                try { cleanup(); }
+                catch (Exception failure) { failures.Add(failure); }
+            }
+        }
+        finally
+        {
+            SecureMemory.MacMemoryUnlockOverrideForTests = null;
+        }
+        if (failures.Count != 0)
+        {
+            throw new AggregateException("Locked-transfer fixture cleanup failed after attempting every real unlock.", failures);
+        }
     }
 
     private sealed class FaultingDisposable : IDisposable

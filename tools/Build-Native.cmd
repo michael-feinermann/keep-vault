@@ -8,6 +8,11 @@ if not exist "%VSDEVCMD%" (
   set "VSDEVCMD=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
 )
 
+REM GitHub-hosted windows-2022 uses the Enterprise installation.
+if not exist "%VSDEVCMD%" (
+  set "VSDEVCMD=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+
 if not exist "%VSDEVCMD%" (
   echo Visual Studio Developer Command Prompt was not found.
   exit /b 1
@@ -17,7 +22,12 @@ call "%VSDEVCMD%" -arch=x64 -host_arch=x64
 if errorlevel 1 exit /b 1
 
 cd /d "%ROOT%"
-if not exist tools mkdir tools
+set "NATIVEOUTPUT=tools"
+if not "%~1"=="" set "NATIVEOUTPUT=%~1"
+if not exist "%NATIVEOUTPUT%" mkdir "%NATIVEOUTPUT%"
+
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools\Verify-NativeSources.ps1
+if errorlevel 1 exit /b 1
 
 pwsh -NoProfile -ExecutionPolicy Bypass -File tools\Verify-MldsaReference.ps1
 if errorlevel 1 exit /b 1
@@ -33,12 +43,12 @@ if not exist "%NATIVEOBJ%" mkdir "%NATIVEOBJ%"
 set "HARDEN_COMPILE=/O2 /MT /GS /sdl /guard:cf /Fo%NATIVEOBJ%\"
 set "HARDEN_LINK=/link /guard:cf /CETCOMPAT"
 
-cl %HARDEN_COMPILE% /DNOJIT /EHsc /Fetools\zpaq.exe external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
+cl %HARDEN_COMPILE% /std:c++17 /DNOJIT /EHsc /Fe"%NATIVEOUTPUT%\zpaq.exe" external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
 cl %HARDEN_COMPILE% /LD /D_CRT_SECURE_NO_WARNINGS ^
   /Iexternal\Skein-reference\NIST\CD\Reference_Implementation ^
-  /Fetools\threefish_ref.dll ^
+  /Fe"%NATIVEOUTPUT%\threefish_ref.dll" ^
   native\threefish_ref_export.c ^
   external\Skein-reference\NIST\CD\Reference_Implementation\skein.c ^
   external\Skein-reference\NIST\CD\Reference_Implementation\skein_block.c ^
@@ -47,7 +57,7 @@ if errorlevel 1 exit /b 1
 
 cl %HARDEN_COMPILE% /LD /D_CRT_SECURE_NO_WARNINGS /DDILITHIUM_MODE=5 ^
   /Iexternal\ML-DSA-reference\ref ^
-  /Fetools\mldsa87_ref.dll ^
+  /Fe"%NATIVEOUTPUT%\mldsa87_ref.dll" ^
   native\mldsa87_ref_export.c ^
   external\ML-DSA-reference\ref\sign.c ^
   external\ML-DSA-reference\ref\packing.c ^
@@ -67,7 +77,7 @@ if exist external\phc-winner-argon2 (
     /Iexternal\phc-winner-argon2\include ^
     /Iexternal\phc-winner-argon2\src ^
     /Iexternal\phc-winner-argon2\src\blake2 ^
-    /Fetools\argon2_ref.dll ^
+    /Fe"%NATIVEOUTPUT%\argon2_ref.dll" ^
     native\argon2_ref_export.c ^
     external\phc-winner-argon2\src\argon2.c ^
     external\phc-winner-argon2\src\core.c ^
@@ -82,7 +92,7 @@ if exist external\phc-winner-argon2 (
     /Iexternal\phc-winner-argon2\include ^
     /Iexternal\phc-winner-argon2\src ^
     /Iexternal\phc-winner-argon2\src\blake2 ^
-    /Fetools\argon2.exe ^
+    /Fe"%NATIVEOUTPUT%\argon2.exe" ^
     external\phc-winner-argon2\src\run.c ^
     external\phc-winner-argon2\src\argon2.c ^
     external\phc-winner-argon2\src\core.c ^
@@ -119,8 +129,12 @@ set "CPPFLAGS=/nologo /c /MT /GS /guard:cf /EHsc /std:c++17 /D_CRT_SECURE_NO_WAR
 
 REM The library, its test drivers and its validation suites live in one
 REM directory; the drivers carry a main() and the suites are not shipped.
-del /q "%CPPOBJ%\cryptopp-sources.rsp" 2>nul
-pushd "%CRYPTOPP%"
+REM BEGIN CRYPTOPP RESPONSE INPUTS
+REM Reset both lists before generating them. The object list is the exact
+REM compilation set; unrelated or stale .obj files must never enter the library.
+type nul >"%CPPOBJ%\cryptopp-sources.rsp" || exit /b 1
+type nul >"%CPPOBJ%\cryptopp-objects.rsp" || exit /b 1
+pushd "%CRYPTOPP%" || exit /b 1
 for %%F in (*.cpp) do (
   set "SKIP="
   if /i "%%F"=="test.cpp" set "SKIP=1"
@@ -137,9 +151,17 @@ for %%F in (*.cpp) do (
   REM application uses - they are archived only so the library links.
   if /i "%%F"=="gfpcrypt.cpp" set "SKIP=1"
   if /i "%%F"=="hight.cpp" set "SKIP=1"
-  if not defined SKIP echo %%F>>"..\..\%CPPOBJ%\cryptopp-sources.rsp"
+  if not defined SKIP (
+    echo %%F>>"..\..\%CPPOBJ%\cryptopp-sources.rsp"|| (popd & exit /b 1)
+    echo "%CPPOBJ%\%%~nF.obj">>"..\..\%CPPOBJ%\cryptopp-objects.rsp"|| (popd & exit /b 1)
+  )
 )
 popd
+REM These C++ units use a separate optimization command; MASM emits the other two.
+for %%F in (gfpcrypt hight x64dll x64masm) do (
+  echo "%CPPOBJ%\%%F.obj">>"%CPPOBJ%\cryptopp-objects.rsp"|| exit /b 1
+)
+REM END CRYPTOPP RESPONSE INPUTS
 
 pushd "%CRYPTOPP%"
 cl %CPPFLAGS% /O2 /MP /Fo"..\..\%CPPOBJ%\\" @"..\..\%CPPOBJ%\cryptopp-sources.rsp"
@@ -152,15 +174,26 @@ ml64 /nologo /c /Fo"..\..\%CPPOBJ%\x64masm.obj" x64masm.asm
 if errorlevel 1 (popd & exit /b 1)
 popd
 
-lib /nologo /OUT:"%CPPOBJ%\cryptopp.lib" "%CPPOBJ%\*.obj"
+lib /nologo /OUT:"%CPPOBJ%\cryptopp.lib" @"%CPPOBJ%\cryptopp-objects.rsp"
 if errorlevel 1 exit /b 1
 
-for %%A in (aes mars shacal2 chachapoly) do (
+for %%A in (aes mars shacal2) do (
   cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
     /I"%CRYPTOPP%" ^
     /Fo"%CPPOBJ%\adapters\\" ^
-    /Fetools\%%A_ref.dll ^
+    /Fe"%NATIVEOUTPUT%\%%A_ref.dll" ^
     native\%%A_ref_export.cpp ^
+    "%CPPOBJ%\cryptopp.lib" ^
+    %HARDEN_LINK%
+  if errorlevel 1 exit /b 1
+)
+
+for %%A in (camellia serpent) do (
+  cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
+    /I"%CRYPTOPP%" ^
+    /Fo"%CPPOBJ%\adapters\\" ^
+    /Fe"%NATIVEOUTPUT%\%%A_v13.dll" ^
+    native\%%A_v13_export.cpp ^
     "%CPPOBJ%\cryptopp.lib" ^
     %HARDEN_LINK%
   if errorlevel 1 exit /b 1
@@ -169,11 +202,20 @@ for %%A in (aes mars shacal2 chachapoly) do (
 cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
   /I"%CRYPTOPP%" ^
   /Fo"%CPPOBJ%\adapters\\" ^
-  /Fetools\kalyna_v12.dll ^
-  native\kalyna_v12_export.cpp ^
+  /Fe"%NATIVEOUTPUT%\xchachapoly_v13.dll" ^
+  native\xchachapoly_ref_export.cpp ^
   "%CPPOBJ%\cryptopp.lib" ^
   %HARDEN_LINK%
 if errorlevel 1 exit /b 1
 
-echo Keep Vault v12 Windows native toolset built.
+cl %HARDEN_COMPILE% /EHsc /std:c++17 /D_CRT_SECURE_NO_WARNINGS /LD ^
+  /I"%CRYPTOPP%" ^
+  /Fo"%CPPOBJ%\adapters\\" ^
+  /Fe"%NATIVEOUTPUT%\kalyna_v13.dll" ^
+  native\kalyna_v13_export.cpp ^
+  "%CPPOBJ%\cryptopp.lib" ^
+  %HARDEN_LINK%
+if errorlevel 1 exit /b 1
+
+echo Keep Vault v13 Windows native toolset built.
 exit /b 0

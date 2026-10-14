@@ -1,0 +1,8 @@
+{
+  "observedUtc": "2026-10-08T10:35:44.064340+00:00",
+  "actualRunnerPid": 37602,
+  "actualRunnerExitCode": 1,
+  "rootWrapperPid": 37598,
+  "sourceHead": "7f174f85e5886a9f379d51e9ebd5ece43bf7f369",
+  "scope": "Actual Popen/wait result of root runner. Product release approval is separate."
+}

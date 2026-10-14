@@ -1,0 +1,11 @@
+{
+  "build": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z",
+  "buildResultSha256": "5ea8c15ee184bcd9d0ef98c8c8b3438f9db2323260bf0ecac73e89fca487ca93",
+  "sourceInputsSha256": "8d52fc5413ba8b38bb6db6fc56b2555416e91780550470b641b40f7bd9ce5dab",
+  "binaryInputsSha256": "daef4ed1a94c8a3ef3cbe229ce2e3dbae0608d93668217d906c4571b5c28f069",
+  "buildMetadataSha256": "a7ff7159f7787ead52667854b4cffd5966c0f7aa3d0bd66cfdb569dced211311",
+  "driverSha256": "d415c9e3316327099b89e0cc3bab8cde5020f0ad272d5d5e586ecc6d21f6407e",
+  "launcherSha256": "da653011f15d78826dc6cdd963491a313dade2769e5e4ec27a8ea16ab9a2a8d5",
+  "productAssemblySha256": "71709145c0a57de1631ac7e5ff3db1499ef94fbc42a239201c773e3c7ef29655",
+  "testAssemblySha256": "9ddcb0acec6c8264c3f430341896194b2625e56387e78277820ec9660c71aefe"
+}

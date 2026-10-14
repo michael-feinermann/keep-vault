@@ -1,0 +1,44 @@
+{
+  "command": [
+    "/opt/homebrew/bin/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "recovery.kpar2-v4-adversarial",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x5EED0313"
+  ],
+  "exit_code": 1,
+  "wall_seconds": 17.475131375016645,
+  "result": {
+    "schemaVersion": 3,
+    "head": "837e36cf1da2c6940c616348edaed4b03ff05bec",
+    "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+    "platform": "macos",
+    "osArchitecture": "arm64",
+    "processArchitecture": "arm64",
+    "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+    "budget": {
+      "maxWorkers": 1,
+      "cpuTokens": 9,
+      "memoryMiB": 9011,
+      "argonSlots": 2,
+      "zpaqSlots": 1
+    },
+    "tests": [
+      {
+        "id": "recovery.kpar2-v4-adversarial",
+        "name": "KPAR2 v4 repair, authentication and transplantation rejection",
+        "status": "FAIL",
+        "seconds": 17.25,
+        "peakRssMiB": 1753,
+        "seed": "0x5EED0313",
+        "failure": "InvalidDataException: KPAR2 locator consensus failed. At least five of eight self-checking locator blocks must agree.\n   at KalynaArchiver.Services.RecoveryService.ReadConsensusLocatorAsync(FileStream recovery, CancellationToken cancellationToken)\n   at KalynaArchiver.Services.RecoveryService.ReadRecoveryPackageAsync(FileStream recovery, RecoveryProtectionMode expectedMode, Boolean authenticateMetadata, String expectedArchiveFileName, String userPassword, String pin, String firstGeneratedPassword, String secondGeneratedPassword, CancellationToken cancellationToken, RecoveryKeys prederivedRecoveryKeys)\n   at KalynaArchiver.Services.RecoveryService.RepairCoreAsync(String archivePath, RecoveryProtectionMode expectedMode, Boolean authenticateMetadata, Boolean emergencyMode, String userPassword, String pin, String firstGeneratedPassword, String secondGeneratedPassword, IProgress`1 progress, CancellationToken cancellationToken)\n   at KalynaArchiver.Services.RecoveryService.RepairCoreAsync(String archivePath, RecoveryProtectionMode expectedMode, Boolean authenticateMetadata, Boolean emergencyMode, String userPassword, String pin, String firstGeneratedPassword, String secondGeneratedPassword, IProgress`1 progress, CancellationToken cancellationToken)\n   at MacComprehensiveTests.TestRecoveryAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 2986\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403"
+      }
+    ]
+  },
+  "log_sha256": "976fdbafd1a307b70608f65ed886fd6128d525ea09389864a0ca5e08e5fe9100"
+}

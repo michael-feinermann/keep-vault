@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "6bfd2e4d31c3493987083379e898a0b84338a102",
+  "testInventoryHash": "d1e834e3d4cbb621e32903dfa71fcf69ae562811ab47cb6a2fcb97966f888b43",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "gui.rev12-drop-storage-ownership",
+      "name": "REV12 actual DragOver/Drop events report provider Path faults, borrow before Drop, preserve drafts and independently retire consumed owners and aliases",
+      "status": "FAIL",
+      "seconds": 1.48,
+      "peakRssMiB": 218,
+      "seed": "0x14862A68",
+      "failure": "InvalidOperationException: Faulted DragOver opened a modal dialog, lost its bounded error log, took or released a borrowed owner, or changed the draft/drop state.\n   at WindowDisposeRev12Tests.DropStorageOwnership(MainWindow providerWindow) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/WindowDisposeRev12Tests.cs:line 566\n   at MacGuiTests.\u003C\u003Ec__DisplayClass5_0.\u003CEnsureUiThread\u003Eb__0() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacGuiTests.cs:line 128\n--- End of stack trace from previous location ---\n   at MacGuiTests.RunOnUiThread(Action\u00601 body) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacGuiTests.cs:line 177\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList\u00601 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1440"
+    }
+  ]
+}

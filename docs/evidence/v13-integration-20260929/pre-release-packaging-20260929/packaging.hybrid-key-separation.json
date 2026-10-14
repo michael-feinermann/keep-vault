@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "837e36cf1da2c6940c616348edaed4b03ff05bec",
+  "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "packaging.hybrid-key-separation",
+      "name": "RSA and ML-DSA use independent Keychain identities, ACLs and v12 envelopes",
+      "status": "FAIL",
+      "seconds": 42.114,
+      "peakRssMiB": 72,
+      "seed": "0x5EFB840F",
+      "failure": "InvalidOperationException: Release-tool path self-test failed: swift-driver version: 1.168.6 swift-driver version: 1.168.6 The command could not be loaded, possibly because:\n  * You intended to execute a .NET application:\n      The application \u0027--version\u0027 does not exist or is not a managed .dll or .exe.\n  * You intended to execute a .NET SDK command:\n      A compatible .NET SDK was not found.\n\nRequested SDK version: 10.0.401\nglobal.json file: /Users/michael/Developer/GPT-Codex/Kalyna/global.json\n\nInstalled SDKs:\n\nInstall the [10.0.401] .NET SDK or update [/Users/michael/Developer/GPT-Codex/Kalyna/global.json] to match an installed SDK.\n\nLearn about SDK resolution:\nhttps://aka.ms/dotnet/sdk-not-found\n   at HybridKeyProtectionTests.Require(Boolean condition, String message) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 1174\n   at HybridKeyProtectionTests.RequireScriptSelfTestAsync(String script, String argument, String expectedOutput, String shadowPath, String shadowMarker) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 991\n   at HybridKeyProtectionTests.RequireFixedToolSelfTestAsync(String script, String expectedOutput, String shadowPath, String shadowMarker) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 905\n   at HybridKeyProtectionTests.TestHybridKeySeparationAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs:line 803\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList\u00601 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403"
+    }
+  ]
+}

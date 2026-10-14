@@ -1,0 +1,36 @@
+{
+  "architectures": [
+    {
+      "architecture": "arm64",
+      "checks": 161,
+      "elapsedSeconds": 3.343592249962967,
+      "exactProductLibraries": 9,
+      "pid": 28101,
+      "receipt": "native-null-arm64.json",
+      "receiptSha256": "ba9eeccb716d874e4cdfebbb22050a1fe9a01c8932a2ec17d36533d8171f89fa",
+      "status": "PASS",
+      "unshippedReferenceLibraries": 1
+    },
+    {
+      "architecture": "x86_64",
+      "checks": 161,
+      "elapsedSeconds": 3.592932707979344,
+      "exactProductLibraries": 9,
+      "pid": 28139,
+      "receipt": "native-null-x86_64.json",
+      "receiptSha256": "0f93b12b9d6570357650b2d713be51a499f13dff1b009306194296c4aa9fdc20",
+      "status": "PASS",
+      "unshippedReferenceLibraries": 1
+    }
+  ],
+  "completedUtc": "2026-10-12T13:02:20.065546+00:00",
+  "fullReleaseGate": "NOT_RUN",
+  "overallReleaseApproval": false,
+  "schema": "keepvault.final-build21-native-abi.v1",
+  "scope": "True NULL and ABI widths on exact final signed native product bytes; application-derived constant sequences and independent constant-key oracles are separate managed evidence.",
+  "sourceAndOriginalInputsStable": true,
+  "sourceCommit": "8c68571695ae9072555ffb462b3c0b9c500811ea",
+  "status": "PASS",
+  "totalChecks": 322,
+  "wrapperPid": 28088
+}

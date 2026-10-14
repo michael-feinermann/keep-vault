@@ -1,0 +1,19 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+
+FAIL 10000 seeded sealed-spool states, mutations and guarded range oracles
+  seed=0x5EED0313
+  InvalidOperationException: spool fuzz seed=0x08A44C00 case=0 mode=0 length=1049332 offset=160638 count=125
+  Inner: Cannot retain the attacker's pre-sealing descriptor.
+   at VerifiedIoFuzzTests.SpoolAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/VerifiedIoFuzzTests.cs:line 103
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "fuzz.verified-input-10000" --seed 0x5EED0313
+
+
+1 macOS groups: 0 passed, 1 failed, 0 blocked.
+wall clock 0,4s; sum of test times 0,3s; parallel speedup 0,72x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL fuzz.verified-input-10000 — 10000 seeded sealed-spool states, mutations and guarded range oracles

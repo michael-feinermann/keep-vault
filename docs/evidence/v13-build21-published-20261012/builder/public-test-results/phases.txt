@@ -1,0 +1,1 @@
+1 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.CwiuZ5No/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --full --parallel 1 --dump-key-sheets /private/tmp/keep-vault-release.CwiuZ5No/test-sheets.dW9vAu

@@ -135,7 +135,7 @@ static string? ResolvePayloadPath(string sidecarBase)
 static void VerifyPasswordModelNotice(string bundleDirectory)
 {
     const string expectedSha256 =
-        "FCC48F7F9D123570230F6E0FDB45A9E172C9ADDEA17A619081392A3D8EC57EA2";
+        "47E917A325D5BC39BF669F53C727752070B383A41FB50E6BDF037826891F6871";
     const int expectedBytes = 72_883;
     BoundNoticeFile notice = BoundNoticeFile.Read(
         Path.Combine(bundleDirectory, "Contents", "Resources", "PASSWORD-MODEL-NOTICES.txt"),
@@ -152,7 +152,7 @@ static void VerifyPasswordModelNotice(string bundleDirectory)
 static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
 {
     const string ExpectedThirdPartyNoticesSha256 =
-        "BD4BD21C7FFA79D36A4F20ABB6B7AF3116FC005D3971CA0BE09B49E083D6F159";
+        "1A02EAD03198231BB35F2AA7576B9BE2EA79E153FDF22AB6E85B90FF8B710C3E";
     bool isAppBundle = string.Equals(Path.GetExtension(directory), ".app", StringComparison.OrdinalIgnoreCase);
     bool isKeepVaultBundle = isAppBundle
         && File.Exists(Path.Combine(directory, "Contents", "MacOS", "Keep Vault"));
@@ -189,19 +189,17 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
             "Contents/MacOS/Native/zpaq",
             "Contents/MacOS/Native/argon2",
             "Contents/MacOS/Native/libargon2_ref.dylib",
-            "Contents/MacOS/Native/libkalyna_v12.dylib",
+            "Contents/MacOS/Native/libkalyna_v13.dylib",
             "Contents/MacOS/Native/libthreefish_ref.dylib",
-            // The four Crypto++ adapters. The application refuses to reach a
-            // trusted state without them and the cascades that name AES,
-            // MARS, SHACAL-2 or ChaCha20-Poly1305 have nothing to run on, but
-            // this list was written before they existed and never grew - so a
-            // bundle missing any of them verified clean and then could not
-            // open an archive. Build-KeepVault-macOS.sh already stages all
-            // nine; this is the check that says so.
+            // Require the full v13 cascade inventory independently of the
+            // files discovered in the package. A missing adapter must fail
+            // installation before any archive operation can be attempted.
             "Contents/MacOS/Native/libaes_ref.dylib",
             "Contents/MacOS/Native/libmars_ref.dylib",
+            "Contents/MacOS/Native/libcamellia_v13.dylib",
+            "Contents/MacOS/Native/libserpent_v13.dylib",
             "Contents/MacOS/Native/libshacal2_ref.dylib",
-            "Contents/MacOS/Native/libchachapoly_ref.dylib",
+            "Contents/MacOS/Native/libxchachapoly_v13.dylib",
             "Contents/Resources/THIRD-PARTY-NOTICES.txt",
             "Contents/Resources/PASSWORD-MODEL-NOTICES.txt",
             "Contents/Info.plist",

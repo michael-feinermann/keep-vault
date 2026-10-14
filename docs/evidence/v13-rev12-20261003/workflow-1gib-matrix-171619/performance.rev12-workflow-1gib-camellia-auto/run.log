@@ -1,0 +1,8 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+    REV12 workflow Camellia256 requested=Auto 1073741824 source bytes: archive+encrypt 700,238 s (1,46 MiB/s); complete with KPAR2/original compare/cleanup 1539,579 s (0,67 MiB/s), one measured run
+REV12_WORKFLOW_PROFILE_ARTIFACT=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-camellia-auto-20261004T060414148-f4f841a9486945cb83330d96d2af1b97.json
+FULL PASS explicit public one-GiB production-KDF level-5 complete archive/KPAR2/original-compare workflow: camellia/auto (1541,2s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 1541,3s; sum of test times 1541,2s; parallel speedup 1,00x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json

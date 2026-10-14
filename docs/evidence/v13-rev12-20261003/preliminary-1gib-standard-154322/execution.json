@@ -1,0 +1,13 @@
+{
+  "startedUtc": "2026-10-03T15:53:12.801023+00:00",
+  "completedUtc": "2026-10-03T16:17:59.594451+00:00",
+  "exitCode": 0,
+  "logSha256": "ae64036a0d4b5aa2905c6a431977cefd57339ae1088374aff105fc1834ea99f0",
+  "files": {
+    "test-results.json": "84ddb2295809d4172ceacccf0404418f70bb10a4bd4df21a9b12abb0713ac0ea",
+    "test-timings.json": "1816e1c47f33a00c501387235db5484002076f84b35bf609c5d6605d8d373433"
+  },
+  "sourceInputsSha256": "8b1c17f98180c0a9f9628962dc141cf274ea57a46bef02150948c3ed06ffce5a",
+  "scope": "Completed preliminary extra Standard1GiB PASS on frozen154322; full managed binary pre-map was not captured. Public derivation omits command paths; original hashes retained. New unified12-case fixed-build matrix is separate.",
+  "originalExecutionSha256": "552fdfaa31a2c76f3f7ce16c3022e2cbb49d935d3e8fc2d5555bb309eff67b4d"
+}

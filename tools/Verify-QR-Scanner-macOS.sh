@@ -460,7 +460,7 @@ run_dotnet_clean() {
     clean_environment+=(HOME=${private_dotnet_cli_home} USER=${verified_user})
   fi
   local dotnet_status=0
-  ${env_path} -i ${clean_environment[@]} ${dotnet_command} "$@" || dotnet_status=$?
+  (cd ${repo_root}/KeepVaultMac && ${env_path} -i ${clean_environment[@]} ${dotnet_command} "$@") || dotnet_status=$?
   if ! require_private_nuget_cache_identity || ! require_dotnet_host_identity; then
     print -u2 'QR VERIFY GATE: private cache or .NET host identity changed during a .NET invocation.'
     (( dotnet_status != 0 )) && return ${dotnet_status}
@@ -505,7 +505,7 @@ require_notarization=0
 allow_pre_notarization=0
 tool_path_self_test=0
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
-expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF39407EB6BA5EB'
+expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
 
 usage() {
   print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'

@@ -1,0 +1,26 @@
+{
+  "scope": "Independent libc command validation, not compiled product test",
+  "sdk": "sys/filio.h FIOCLEX/FIONCLEX",
+  "rows": [
+    {
+      "enabled": false,
+      "ioctl_result": 0,
+      "flags": 0
+    },
+    {
+      "enabled": true,
+      "ioctl_result": 0,
+      "flags": 1
+    },
+    {
+      "enabled": false,
+      "ioctl_result": 0,
+      "flags": 0
+    },
+    {
+      "enabled": true,
+      "ioctl_result": 0,
+      "flags": 1
+    }
+  ]
+}

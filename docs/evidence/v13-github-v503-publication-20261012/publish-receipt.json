@@ -1,0 +1,17 @@
+{
+  "pid": 33421,
+  "argv": [
+    "gh",
+    "api",
+    "--method",
+    "PATCH",
+    "repos/michael-feinermann/keep-vault/releases/410709242",
+    "--input",
+    "work/v13-evidence/github-v503-publication-20261012/publish.json"
+  ],
+  "startedUtc": "2026-10-12T14:47:36.730195+00:00",
+  "endedUtc": "2026-10-12T14:47:37.406520+00:00",
+  "exitCode": 0,
+  "responseSha256": "49c4341cdf66f3a212596805fe5010888ebf92a99ff4a70024ba4707ea8e745d",
+  "overallReleaseApproval": false
+}

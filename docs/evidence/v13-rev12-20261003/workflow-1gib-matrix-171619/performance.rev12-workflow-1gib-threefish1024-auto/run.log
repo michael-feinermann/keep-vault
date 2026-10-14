@@ -1,0 +1,8 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+    REV12 workflow Threefish1024 requested=Auto 1073741824 source bytes: archive+encrypt 672,014 s (1,52 MiB/s); complete with KPAR2/original compare/cleanup 1439,163 s (0,71 MiB/s), one measured run
+REV12_WORKFLOW_PROFILE_ARTIFACT=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-threefish1024-auto-20261003T192351639-c190fda19bdf4b5390724909f5491712.json
+FULL PASS explicit public one-GiB production-KDF level-5 complete archive/KPAR2/original-compare workflow: threefish1024/auto (1440,7s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 1440,8s; sum of test times 1440,7s; parallel speedup 1,00x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json

@@ -72,7 +72,7 @@ public sealed partial class RecoveryService
     private const int MinimumRecoveryShardSize = 4096;
     private const int RecoveryBlockAlignment = 4096;
     private const int PlainHeaderBytes = 64 * 1024;
-    private const long MaxArchiveBytes = 1L << 40;
+    private static long MaxArchiveBytes => ArchiveOperationPolicy.Current.MaxContainerBytes;
 
     private const int LocatorBlockSize = 4096;
     private const int LocatorAuthenticatedBytes = 3904;
@@ -89,8 +89,8 @@ public sealed partial class RecoveryService
     private const int MetadataBlockSkeinOffset = MetadataBlockHeaderSize + MetadataPayloadSize;
     private const int MetadataBlockSha3Offset = MetadataBlockSkeinOffset + Skein1024Digest.DigestSize;
     private const int MetadataEnvelopeHeaderSize = 8 + sizeof(int) + sizeof(int) + sizeof(long) + Sha3_512Compat.HashSizeInBytes + Skein1024Digest.DigestSize;
-    private const int MaxMetadataEnvelopeBytes = 128 * 1024 * 1024;
-    private const long MaxEncodedMetadataBytes = 192L * 1024 * 1024;
+    private static long MaxMetadataEnvelopeBytes => ArchiveOperationPolicy.Current.MaxMetadataBytes;
+    private static long MaxEncodedMetadataBytes => ArchiveOperationPolicy.Current.MaxMetadataBytes;
     private const int MaxManifestJsonDepth = 8;
     private const int MaxManifestStringUtf8Bytes = 4096;
     private const int MaxManifestPropertyNameUtf8Bytes = 64;
@@ -103,7 +103,6 @@ public sealed partial class RecoveryService
     private const int RecoverySidecarDestructionBytes = 1024 * 1024;
     private const int RecoveryCopyChunkBytes = 1024 * 1024;
     private const int RecoveryParallelChunkBytes = 256 * 1024;
-    private const int MaxRecoveryWorkers = 64;
 
     private static readonly AsyncLocal<int?> RecoveryWorkerOverride = new();
     private static readonly AsyncLocal<Func<long, int, bool>?> RecoverySourceReadFaultOverride = new();
@@ -115,7 +114,7 @@ public sealed partial class RecoveryService
 
     internal static IDisposable UseRecoveryWorkerCountForTests(int workers)
     {
-        if (workers is < 1 or > MaxRecoveryWorkers)
+        if (workers < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(workers));
         }
@@ -169,7 +168,73 @@ public sealed partial class RecoveryService
 
     private static int RecoveryWorkerCount =>
         RecoveryWorkerOverride.Value
-        ?? Math.Clamp(Environment.ProcessorCount, 1, MaxRecoveryWorkers);
+        ?? ArchiveOperationPolicy.Current.MaxCpuWorkers;
+
+    private static readonly AsyncLocal<bool> InsideRecoveryWorker = new();
+
+    private static void RunRecoveryParallel(int start, int end, CancellationToken token, Action<int> action)
+    {
+        if (end <= start) return;
+        // A child digest computation consumes its parent's granted worker.
+        // It never waits for another permit or starts a nested worker team.
+        if (InsideRecoveryWorker.Value)
+        {
+            for (int index = start; index < end; index++) { token.ThrowIfCancellationRequested(); action(index); }
+            return;
+        }
+        using CpuWorkBudget.Lease lease = CpuWorkBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current.MaxCpuWorkers, Math.Min(RecoveryWorkerCount, end - start), token)
+            .AsTask().GetAwaiter().GetResult();
+        using IDisposable cpuScope = lease.EnterScope();
+        Parallel.For(start, end, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = lease.Workers }, index =>
+        {
+            using var qos = MacCpuWorkerQos.EnterSynchronousScope();
+            bool previous = InsideRecoveryWorker.Value;
+            InsideRecoveryWorker.Value = true;
+            try { action(index); }
+            finally { InsideRecoveryWorker.Value = previous; }
+        });
+    }
+
+    private static readonly AsyncLocal<SemaphoreSlim?> RecoveryIoGate = new();
+    private sealed class RecoveryIoScope : IDisposable
+    {
+        private readonly SemaphoreSlim? _previous = RecoveryIoGate.Value;
+        private readonly SemaphoreSlim _gate = new(ArchiveOperationPolicy.Current.MaxIoRequests);
+        internal RecoveryIoScope() { RecoveryIoGate.Value = _gate; }
+        public void Dispose() { RecoveryIoGate.Value = _previous; _gate.Dispose(); }
+    }
+    private readonly struct RecoveryIoLease(SemaphoreSlim? gate) : IDisposable
+    { public void Dispose() => gate?.Release(); }
+    private static async ValueTask<RecoveryIoLease> AcquireRecoveryIoAsync(CancellationToken token)
+    {
+        SemaphoreSlim? gate = RecoveryIoGate.Value;
+        if (gate is not null) await gate.WaitAsync(token).ConfigureAwait(false);
+        return new RecoveryIoLease(gate);
+    }
+    private static async ValueTask WriteAtOffsetAsync(Microsoft.Win32.SafeHandles.SafeFileHandle handle,
+        ReadOnlyMemory<byte> bytes, long offset, CancellationToken token)
+    {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryOutputWrite, bytes.Length);
+        using RecoveryIoLease lease = await AcquireRecoveryIoAsync(token).ConfigureAwait(false);
+        using IDisposable reservation = ArchiveOperationPolicy.Current.ReserveOutputWrite(handle, bytes.Length);
+        await RandomAccess.WriteAsync(handle, bytes, offset, token).ConfigureAwait(false);
+        OperationMemoryBudget.ReportProgress(bytes.Length);
+    }
+
+    private static async ValueTask WriteOutputAsync(FileStream stream, ReadOnlyMemory<byte> bytes, CancellationToken token)
+    {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryOutputWrite, bytes.Length);
+        using RecoveryIoLease lease = await AcquireRecoveryIoAsync(token).ConfigureAwait(false);
+        long offset = stream.Position;
+        Microsoft.Win32.SafeHandles.SafeFileHandle handle = stream.SafeFileHandle;
+        using IDisposable reservation = ArchiveOperationPolicy.Current.ReserveOutputWrite(handle, bytes.Length);
+        // Do not release a disk reservation while these bytes remain only in a
+        // managed FileStream buffer. This sequential writer uses real offsets.
+        await RandomAccess.WriteAsync(handle, bytes, offset, token).ConfigureAwait(false);
+        stream.Position = checked(offset + bytes.Length);
+        OperationMemoryBudget.ReportProgress(bytes.Length);
+    }
 
     private readonly PasswordKeyService _passwords = new();
     private readonly KalynaContainerService _containers = new();
@@ -314,16 +379,47 @@ public sealed partial class RecoveryService
             return null;
         }
 
-#if KEEPVAULT_MACOS
-        using MacPrivateFileSnapshot recoverySnapshot = await MacPrivateFileSnapshot
-            .CaptureAsync(recoveryPath, cancellationToken)
-            .ConfigureAwait(false);
-        FileStream recovery = recoverySnapshot.Stream;
-#else
+        // KPAR2 is untrusted input: only bounded locator/RS records are read here.
+        // Decoded metadata is privately authenticated on disk before certification.
         await using FileStream recovery = OpenRecoveryForRead(recoveryPath);
-#endif
         RecoveryLocator locator = await ReadConsensusLocatorAsync(recovery, cancellationToken).ConfigureAwait(false);
         return locator.ProtectionMode;
+    }
+
+    private async Task<(Stream Stream, IDisposable Owner)> OpenCreationInputAsync(
+        string path, RecoveryProtectionMode protectionMode, string? userPassword, string? pin,
+        string? firstGeneratedPassword, string? secondGeneratedPassword, CancellationToken cancellationToken)
+    {
+        if (protectionMode == RecoveryProtectionMode.DualAuthenticatedEncrypted)
+        {
+            if (userPassword is null || pin is null || firstGeneratedPassword is null || secondGeneratedPassword is null)
+                throw new ArgumentException("All four credentials are required for authenticated recovery metadata.");
+            VerifiedArchiveInput input = await VerifiedArchiveInput.BindEncryptedAsync(
+                path, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await input.VerifyGloballyAsync((view, token) => _containers.VerifyAuthenticationResultAsync(
+                    view, userPassword, pin, firstGeneratedPassword, secondGeneratedPassword, token),
+                    cancellationToken).ConfigureAwait(false);
+                return (input, input);
+            }
+            catch (Exception failure)
+            {
+                try { input.Dispose(); }
+                catch (Exception cleanup) { throw new AggregateException("Recovery input verification and cleanup failed.", failure, cleanup); }
+                throw;
+            }
+        }
+        // A locally sealed plain input claims captured-byte consistency only.
+        VerifiedArchiveInput plain = await VerifiedArchiveInput.CaptureOriginalAsync(
+            path, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        try { return (plain.OpenPlainCapture(), plain); }
+        catch (Exception failure)
+        {
+            try { plain.Dispose(); }
+            catch (Exception cleanup) { throw new AggregateException("Plain recovery input and cleanup failed.", failure, cleanup); }
+            throw;
+        }
     }
 
     private async Task<string> CreateCoreAsync(
@@ -336,7 +432,18 @@ public sealed partial class RecoveryService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryCreate);
         string fullArchivePath = Path.GetFullPath(archivePath);
+        using IDisposable recoveryPolicy = ArchiveOperationPolicy.Current.ForRecovery(
+            Path.GetDirectoryName(GetRecoveryPath(fullArchivePath)) ?? Environment.CurrentDirectory).EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
+        using IDisposable metadataBudget = RecoveryMetadataBudget.Begin(ArchiveOperationPolicy.Current.MaxMetadataBytes);
+        using var ioScope = new RecoveryIoScope();
+        if (ArchiveOperationPolicy.Current.MaxRecoveryBytes < PrefixLocatorBytes + SuffixLocatorBytes)
+            throw new IOException("The approved recovery budget is too small for KPAR2 locator framing.");
         string recoveryPath = GetRecoveryPath(fullArchivePath);
         string recoveryDirectory = Path.GetDirectoryName(recoveryPath) ?? Environment.CurrentDirectory;
         string temporaryPath = Path.Combine(
@@ -347,20 +454,12 @@ public sealed partial class RecoveryService
 
         try
         {
-#if KEEPVAULT_MACOS
-            using MacPrivateFileSnapshot archiveSnapshot = await MacPrivateFileSnapshot
-                .CaptureAsync(fullArchivePath, cancellationToken)
-                .ConfigureAwait(false);
-            FileStream archive = archiveSnapshot.Stream;
-#else
-            await using FileStream archive = SecureFile.OpenReadNoReparse(
-                fullArchivePath,
-                FileShare.Read,
-                bufferSize: 1024 * 1024,
-                randomAccess: true);
-#endif
+            (Stream archive, IDisposable archiveOwner) = await OpenCreationInputAsync(
+                fullArchivePath, protectionMode, userPassword, pin, firstGeneratedPassword,
+                secondGeneratedPassword, cancellationToken).ConfigureAwait(false);
+            using IDisposable ownedArchive = archiveOwner;
             long archiveLength = archive.Length;
-            if (archiveLength > MaxArchiveBytes)
+            if (archiveLength > Math.Min(MaxArchiveBytes, ArchiveOperationPolicy.Current.MaxContainerBytes))
             {
                 throw new NotSupportedException($"Recovery supports archives up to {MaxArchiveBytes} bytes.");
             }
@@ -400,7 +499,7 @@ public sealed partial class RecoveryService
                 int containerVersion = (protectionMode == RecoveryProtectionMode.DualAuthenticatedEncrypted && kdfInfo != null)
                     ? kdfInfo.ContainerVersion
                     : 0;
-                var manifest = new RecoveryManifest
+                using var manifest = new RecoveryManifest
                 {
                     Version = Version,
                     ContainerVersion = protectionMode == RecoveryProtectionMode.DualAuthenticatedEncrypted ? containerVersion : null,
@@ -427,12 +526,17 @@ public sealed partial class RecoveryService
                     Argon2Parallelism = 0,
                 };
 
+                long estimatedSidecarBytes = EstimateRecoverySize(archiveLength, headerLength);
+                if (estimatedSidecarBytes > ArchiveOperationPolicy.Current.MaxRecoveryBytes)
+                    throw new IOException("The estimated KPAR2 sidecar exceeds the approved recovery budget.");
+                ArchiveOperationPolicy.Current.RequireOutputCapacity(recoveryDirectory, estimatedSidecarBytes);
                 using (var sidecarTransaction = RecoverySidecarTransaction.Create(
                     temporaryPath,
                     recoveryPath,
                     progress))
                 {
                     FileStream recovery = sidecarTransaction.Stream;
+                    ArchiveOperationPolicy.Current.RequireBoundOutputFileVolume(recovery.SafeFileHandle, estimatedSidecarBytes);
                     await WriteZeroBytesAsync(recovery, PrefixLocatorBytes, cancellationToken).ConfigureAwait(false);
 
                     if (headerLength > 0)
@@ -467,15 +571,15 @@ public sealed partial class RecoveryService
                         throw new InvalidDataException("Internal KPAR2 parity layout is not 4096-byte aligned.");
                     }
 
-                    byte[] manifestBytes = JsonSerializer.SerializeToUtf8Bytes(manifest, RecoveryJsonContext.Default.RecoveryManifest);
-                    byte[]? envelope = null;
+                    using RecoveryMetadataStream manifestBytes = RecoveryManifestCodec.Serialize(manifest, cancellationToken);
+                    RecoveryMetadataStream? envelope = null;
                     byte[]? envelopeSha3 = null;
                     byte[]? envelopeSkein = null;
                     byte[]? locatorBlock = null;
                     RecoveryKeys? recoveryKeys = null;
                     try
                     {
-                        int envelopeLength = checked(MetadataEnvelopeHeaderSize + manifestBytes.Length);
+                        long envelopeLength = checked(MetadataEnvelopeHeaderSize + manifestBytes.Length);
                         if (envelopeLength > GetMaximumMetadataEnvelopeBytes(archiveLength))
                         {
                             throw new InvalidDataException("Recovery metadata exceeds the supported size.");
@@ -488,7 +592,7 @@ public sealed partial class RecoveryService
                             (long)metadataStripeCount
                             * (DataShardCount + ParityShardCount)
                             * LocatorBlockSize);
-                        if (metadataEncodedLength > MaxEncodedMetadataBytes)
+                        if (metadataEncodedLength > Math.Min(MaxEncodedMetadataBytes, ArchiveOperationPolicy.Current.MaxMetadataBytes))
                         {
                             throw new InvalidDataException("Encoded recovery metadata exceeds the supported size.");
                         }
@@ -551,16 +655,19 @@ public sealed partial class RecoveryService
                         };
                         locatorBlock = BuildLocatorBlock(locator);
 
+                        long requiredRecoveryBytes = checked(metadataOffset + metadataEncodedLength + SuffixLocatorBytes);
+                        if (requiredRecoveryBytes > ArchiveOperationPolicy.Current.MaxRecoveryBytes)
+                            throw new IOException("The KPAR2 sidecar exceeds the approved recovery resource budget.");
                         await WriteEncodedMetadataAsync(recovery, envelope, locator, cancellationToken).ConfigureAwait(false);
                         for (int i = 0; i < SuffixLocatorCopies; i++)
                         {
-                            await recovery.WriteAsync(locatorBlock, cancellationToken).ConfigureAwait(false);
+                            await WriteOutputAsync(recovery, locatorBlock, cancellationToken).ConfigureAwait(false);
                         }
 
                         recovery.Position = 0;
                         for (int i = 0; i < PrefixLocatorCopies; i++)
                         {
-                            await recovery.WriteAsync(locatorBlock, cancellationToken).ConfigureAwait(false);
+                            await WriteOutputAsync(recovery, locatorBlock, cancellationToken).ConfigureAwait(false);
                         }
 
                         long expectedLength = checked(
@@ -575,6 +682,8 @@ public sealed partial class RecoveryService
                         recovery.Flush(flushToDisk: true);
 #pragma warning restore CA1849
 
+                        using OperationProgressSource? finalProgress = OperationProgressTracker.Current?.BeginPhase(
+                            OperationPhase.ResultVerification, ProgressUnit.Bytes, passId: 5);
                         await sidecarTransaction.CommitAsync(
                             (boundSidecar, validationCancellation) => ValidateGeneratedSidecarForCommitAsync(
                                 boundSidecar,
@@ -589,8 +698,7 @@ public sealed partial class RecoveryService
                     finally
                     {
                         recoveryKeys?.Dispose();
-                        CryptographicOperations.ZeroMemory(manifestBytes);
-                        ZeroIfNotNull(envelope);
+                        envelope?.Dispose();
                         ZeroIfNotNull(envelopeSha3);
                         ZeroIfNotNull(envelopeSkein);
                         ZeroIfNotNull(locatorBlock);
@@ -636,7 +744,7 @@ public sealed partial class RecoveryService
     /// </summary>
     private async Task ValidateGeneratedSidecarForCommitAsync(
         FileStream recovery,
-        FileStream archive,
+        Stream archive,
         RecoveryLocator expectedLocator,
         RecoveryProtectionMode expectedMode,
         string expectedArchiveFileName,
@@ -663,7 +771,7 @@ public sealed partial class RecoveryService
             expectedLocator,
             cancellationToken).ConfigureAwait(false);
 
-        RecoveryPackage package = await ReadRecoveryPackageAsync(
+        using RecoveryPackage package = await ReadRecoveryPackageAsync(
             recovery,
             expectedMode,
             authenticateMetadata: true,
@@ -734,9 +842,12 @@ public sealed partial class RecoveryService
         {
             for (int stripe = 0; stripe < locator.MetadataStripeCount; stripe++)
             {
-                byte[][] data = AllocateShards(DataShardCount, MetadataPayloadSize);
-                byte[][] writtenParity = AllocateShards(ParityShardCount, MetadataPayloadSize);
-                byte[][] computedParity = AllocateShards(ParityShardCount, MetadataPayloadSize);
+                using var dataOwner = new RecoveryShards(DataShardCount, MetadataPayloadSize);
+                byte[][] data = dataOwner.Bytes;
+                using var writtenParityOwner = new RecoveryShards(ParityShardCount, MetadataPayloadSize);
+                byte[][] writtenParity = writtenParityOwner.Bytes;
+                using var computedParityOwner = new RecoveryShards(ParityShardCount, MetadataPayloadSize);
+                byte[][] computedParity = computedParityOwner.Bytes;
                 try
                 {
                     for (int shardIndex = 0; shardIndex < DataShardCount + ParityShardCount; shardIndex++)
@@ -809,15 +920,18 @@ public sealed partial class RecoveryService
 
     private static async Task RequireAllGeneratedParityShardsAsync(
         FileStream recovery,
-        FileStream archive,
+        Stream archive,
         RecoveryManifest manifest,
         CancellationToken cancellationToken)
     {
         foreach (RecoverySection section in manifest.Sections)
         {
-            byte[][] data = AllocateShards(section.DataShardCount, section.ShardSize);
-            byte[][] writtenParity = AllocateShards(section.ParityShardCount, section.ShardSize);
-            byte[][] computedParity = AllocateShards(section.ParityShardCount, section.ShardSize);
+            using var dataOwner = new RecoveryShards(section.DataShardCount, section.ShardSize);
+            byte[][] data = dataOwner.Bytes;
+            using var writtenParityOwner = new RecoveryShards(section.ParityShardCount, section.ShardSize);
+            byte[][] writtenParity = writtenParityOwner.Bytes;
+            using var computedParityOwner = new RecoveryShards(section.ParityShardCount, section.ShardSize);
+            byte[][] computedParity = computedParityOwner.Bytes;
             try
             {
                 for (int stripe = 0; stripe < section.StripeCount; stripe++)
@@ -837,19 +951,13 @@ public sealed partial class RecoveryService
                     }
 
                     await Task.WhenAll(dataReads).ConfigureAwait(false);
+                    string[] expectedData = Enumerable.Range(0, section.DataShardCount)
+                        .Select(i => section.DataDigests[checked(stripe * section.DataShardCount + i)]).ToArray();
                     var validData = new bool[section.DataShardCount];
-                    Parallel.For(
-                        0,
-                        section.DataShardCount,
-                        new ParallelOptions
-                        {
-                            CancellationToken = cancellationToken,
-                            MaxDegreeOfParallelism = RecoveryWorkerCount,
-                        },
+                    RunRecoveryParallel(0, section.DataShardCount, cancellationToken,
                         dataIndex =>
                         {
-                        string expectedDataDigest = section.DataDigests[
-                            (stripe * section.DataShardCount) + dataIndex];
+                        string expectedDataDigest = expectedData[dataIndex];
                             validData[dataIndex] = DualDigestMatches(data[dataIndex], expectedDataDigest);
                         });
                     for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
@@ -875,19 +983,13 @@ public sealed partial class RecoveryService
                     }
 
                     bool[] parityReadable = await Task.WhenAll(parityReads).ConfigureAwait(false);
+                    RecoveryParityShard[] expectedParity = Enumerable.Range(0, section.ParityShardCount)
+                        .Select(i => section.Parity[checked(stripe * section.ParityShardCount + i)]).ToArray();
                     var validParity = new bool[section.ParityShardCount];
-                    Parallel.For(
-                        0,
-                        section.ParityShardCount,
-                        new ParallelOptions
-                        {
-                            CancellationToken = cancellationToken,
-                            MaxDegreeOfParallelism = RecoveryWorkerCount,
-                        },
+                    RunRecoveryParallel(0, section.ParityShardCount, cancellationToken,
                         parityIndex =>
                         {
-                            RecoveryParityShard parity = section.Parity[
-                                (stripe * section.ParityShardCount) + parityIndex];
+                            RecoveryParityShard parity = expectedParity[parityIndex];
                             validParity[parityIndex] = parityReadable[parityIndex]
                                 && DualDigestMatches(writtenParity[parityIndex], parity.Digest);
                         });
@@ -961,7 +1063,16 @@ public sealed partial class RecoveryService
         IProgress<string>? progress,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryVerifyRepair);
         string fullArchivePath = Path.GetFullPath(archivePath);
+        using IDisposable recoveryPolicy = ArchiveOperationPolicy.Current.ForRecovery(
+            Path.GetDirectoryName(fullArchivePath) ?? Environment.CurrentDirectory).EnterScope();
+        using OperationMemoryBudget.Lease memory = await OperationMemoryBudget.AcquireAsync(
+            ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+        using IDisposable memoryScope = memory.EnterScope();
+        cancellationToken = memory.Token;
+        using IDisposable metadataBudget = RecoveryMetadataBudget.Begin(ArchiveOperationPolicy.Current.MaxMetadataBytes);
+        using var ioScope = new RecoveryIoScope();
         if (expectedMode == RecoveryProtectionMode.ErrorCorrectionOnly
             && string.Equals(
                 Path.GetExtension(fullArchivePath),
@@ -994,6 +1105,7 @@ public sealed partial class RecoveryService
         }
 
         string? candidatePath = null;
+        string? candidateFinalPath = null;
         bool candidateCompleted = false;
         bool candidateCreatedByThisOperation = false;
         BoundFileTransaction? candidateObject = null;
@@ -1002,15 +1114,8 @@ public sealed partial class RecoveryService
         Exception? operationError = null;
         try
         {
-#if KEEPVAULT_MACOS
-            using MacPrivateFileSnapshot recoverySnapshot = await MacPrivateFileSnapshot
-                .CaptureAsync(recoveryPath, cancellationToken)
-                .ConfigureAwait(false);
-            FileStream recovery = recoverySnapshot.Stream;
-#else
             await using FileStream recovery = OpenRecoveryForRead(recoveryPath);
-#endif
-            RecoveryPackage package = await ReadRecoveryPackageAsync(
+            using RecoveryPackage package = await ReadRecoveryPackageAsync(
                 recovery,
                 expectedMode,
                 authenticateMetadata,
@@ -1021,21 +1126,12 @@ public sealed partial class RecoveryService
                 secondGeneratedPassword,
                 cancellationToken).ConfigureAwait(false);
 
-#if KEEPVAULT_MACOS
-            using MacRecoveryReadLease archiveLease = MacRecoveryReadLease.Open(
-                fullArchivePath,
-                MaxArchiveBytes);
-            FileStream archive = archiveLease.Stream;
-#else
-            await using FileStream archive = SecureFile.OpenReadNoReparse(
-                fullArchivePath,
-                FileShare.None,
-                bufferSize: 1024 * 1024,
-                randomAccess: true);
-#endif
-            var archiveSource = new FileRecoveryRandomAccessSource(
-                archive,
-                enableTestFaults: true);
+            using VerifiedArchiveInput repairCapture = await VerifiedArchiveInput.CaptureForRepairAsync(
+                fullArchivePath, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+            using VerifiedArchiveInput.RepairCiphertextRead repairInput = repairCapture.OpenRepairCiphertext();
+            if (repairCapture.CapturedUnreadableBlocks != 0)
+                progress?.Report($"KPAR2 locally sealed {repairCapture.CapturedUnreadableBlocks} unreadable 4096-byte source blocks as explicit repair erasures.");
+            var archiveSource = new CapturedRecoveryRandomAccessSource(repairInput, enableTestFaults: true);
             using var archiveVerification = new RecoveryRandomAccessStream(archiveSource);
             if (archiveSource.Length != package.Manifest.ArchiveLength)
             {
@@ -1084,9 +1180,7 @@ public sealed partial class RecoveryService
             }
             if (archiveHealthy && !emergencyMode)
             {
-#if KEEPVAULT_MACOS
-                archiveLease.ValidateUnchanged();
-#endif
+                repairCapture.ValidateSource();
                 progress?.Report("KPAR2 verification: archive is unchanged.");
                 return new RecoveryRepairResult(
                     true,
@@ -1102,27 +1196,31 @@ public sealed partial class RecoveryService
                     emergencyMode);
             }
 
-            candidatePath = SuggestRecoveredPath(fullArchivePath, emergencyMode);
+            candidateFinalPath = SuggestRecoveredPath(fullArchivePath, emergencyMode);
+            candidatePath = Path.Combine(Path.GetDirectoryName(candidateFinalPath)!, $".keep-vault-recovery.{Guid.NewGuid():N}.partial");
             progress?.Report(
                 emergencyMode
                     ? "Unauthenticated emergency recovery is writing a new candidate; the original remains unchanged."
                     : "KPAR2 detected damaged blocks; a verified recovery candidate is being created.");
 
+            if (package.Manifest.ArchiveLength > ArchiveOperationPolicy.Current.MaxRecoveryBytes)
+                throw new IOException("The repair candidate exceeds the approved recovery byte budget.");
+            ArchiveOperationPolicy.Current.RequireOutputCapacity(
+                Path.GetDirectoryName(candidatePath)!, package.Manifest.ArchiveLength);
             candidateObject = BoundFileTransaction.CreateNew(
                 candidatePath,
                 bufferSize: 1024 * 1024,
                 FileOptions.RandomAccess | FileOptions.WriteThrough);
             candidateCreatedByThisOperation = true;
             FileStream candidate = candidateObject.Stream;
+            ArchiveOperationPolicy.Current.RequireBoundOutputFileVolume(candidate.SafeFileHandle, package.Manifest.ArchiveLength);
             {
                 int unreadableBlocks = await CopyArchiveForRecoveryAsync(
                     archiveSource,
                     candidate,
                     package.Manifest.ArchiveLength,
                     cancellationToken).ConfigureAwait(false);
-#if KEEPVAULT_MACOS
-                archiveLease.ValidateUnchanged();
-#endif
+                repairCapture.ValidateSource();
                 if (unreadableBlocks > 0)
                 {
                     progress?.Report(
@@ -1155,6 +1253,8 @@ public sealed partial class RecoveryService
                 candidate.Flush(flushToDisk: true);
 #pragma warning restore CA1849
 
+                using OperationProgressSource? resultProgress = OperationProgressTracker.Current?.BeginPhase(
+                    OperationPhase.ResultVerification, ProgressUnit.Bytes, passId: 4);
                 if (!await ArchiveMatchesManifestAsync(candidate, package.Manifest, cancellationToken).ConfigureAwait(false))
                 {
                     throw new InvalidDataException(
@@ -1170,28 +1270,33 @@ public sealed partial class RecoveryService
                         "KPAR2 profile downgrade detected: a plain recovery profile produced an encrypted container.");
                 }
 
-                if (package.Locator.ProtectionMode == RecoveryProtectionMode.DualAuthenticatedEncrypted
-                    && emergencyMode)
+                if (package.Locator.ProtectionMode == RecoveryProtectionMode.DualAuthenticatedEncrypted)
                 {
-                    await _containers.VerifyAuthenticationAsync(
-                        candidate,
-                        userPassword!,
-                        pin!,
-                        firstGeneratedPassword!,
-                        secondGeneratedPassword!,
+                    // Damaged source bytes only enter the bounded RS repair
+                    // path. A fresh protected context authenticates the entire
+                    // completed candidate; repair never grants decrypt access.
+                    using VerifiedArchiveInput verifiedCandidate = await VerifiedArchiveInput.BindEncryptedAsync(
+                        candidatePath, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+                    await verifiedCandidate.VerifyGloballyAsync((view, token) => _containers.VerifyAuthenticationResultAsync(
+                        view, userPassword!, pin!, firstGeneratedPassword!, secondGeneratedPassword!, token),
                         cancellationToken).ConfigureAwait(false);
+                    if (!await ArchiveMatchesManifestAsync(verifiedCandidate, package.Manifest, cancellationToken).ConfigureAwait(false))
+                        throw new CryptographicException("The globally authenticated recovery candidate differs from its certified digests.");
                 }
 
                 if (package.Locator.ProtectionMode == RecoveryProtectionMode.ErrorCorrectionOnly)
                 {
                     (candidateSha3Manifest, candidateSkeinManifest) =
                         await _archiveIntegrity.CreateBoundFromVerifiedDigestsAsync(
-                        candidatePath,
+                        candidateFinalPath,
                         package.Manifest.ArchiveSha3_512,
                         package.Manifest.ArchiveSkein1024,
                         cancellationToken).ConfigureAwait(false);
                 }
 
+                candidateObject.RenameTo(candidateFinalPath, overwrite: false);
+                candidatePath = candidateFinalPath;
+                candidateObject.RequireStillInstalled();
                 candidateCompleted = true;
                 progress?.Report($"KPAR2 recovery completed: {repairedShards} shard(s), output {candidatePath}");
                 return new RecoveryRepairResult(
@@ -1310,8 +1415,8 @@ public sealed partial class RecoveryService
                     : "This KPAR2 file provides error correction only and must not be treated as authenticated.");
         }
 
-        byte[] envelope = await ReadEncodedMetadataAsync(recovery, locator, cancellationToken).ConfigureAwait(false);
-        byte[]? payload = null;
+        using RecoveryMetadataStream envelope = await ReadEncodedMetadataAsync(recovery, locator, cancellationToken).ConfigureAwait(false);
+        RecoveryMetadataStream? payload = null;
         byte[]? expectedSha3 = null;
         byte[]? expectedSkein = null;
         RecoveryKeys? ownedRecoveryKeys = null;
@@ -1388,15 +1493,19 @@ public sealed partial class RecoveryService
                 }
             }
 
-            RecoveryManifest manifest = DeserializeCanonicalManifest(payload, locator.ArchiveLength);
-            ValidateManifest(manifest, locator, expectedArchiveFileName);
-            return new RecoveryPackage(locator, manifest, authenticationVerified);
+            RecoveryManifest manifest = RecoveryManifestCodec.Deserialize(payload, locator.ArchiveLength, cancellationToken);
+            try
+            {
+                ValidateManifest(manifest, locator, expectedArchiveFileName);
+                return new RecoveryPackage(locator, manifest, authenticationVerified);
+            }
+            catch { manifest.Dispose(); throw; }
         }
         finally
         {
             ownedRecoveryKeys?.Dispose();
-            CryptographicOperations.ZeroMemory(envelope);
-            ZeroIfNotNull(payload);
+            envelope.Dispose();
+            payload?.Dispose();
             ZeroIfNotNull(expectedSha3);
             ZeroIfNotNull(expectedSkein);
         }
@@ -1541,6 +1650,12 @@ public sealed partial class RecoveryService
         byte[]? skeinKey = null;
         try
         {
+            ArgumentNullException.ThrowIfNull(parentSha3Key);
+            ArgumentNullException.ThrowIfNull(parentSkeinKey);
+            ArgumentNullException.ThrowIfNull(sha3Message);
+            ArgumentNullException.ThrowIfNull(skeinMessage);
+            DerivedSecretHandoff.Verify("recovery/parent/sha3-consumer", parentSha3Key, Sha3_512Compat.HashSizeInBytes);
+            DerivedSecretHandoff.Verify("recovery/parent/skein-consumer", parentSkeinKey, Skein1024Digest.MacKeySize);
             using (var hmac = new HmacSha3_512(parentSha3Key))
             {
                 hmac.AppendData(sha3Message);
@@ -1551,11 +1666,13 @@ public sealed partial class RecoveryService
                 RecoveryKeyDerivationTestStage.AfterSha3,
                 sha3Key,
                 null);
+            DerivedSecretHandoff.Verify("recovery/certification/sha3-output", sha3Key, Sha3_512Compat.HashSizeInBytes);
             skeinKey = NativeThreefish.MacSkein1024Reference(parentSkeinKey, skeinMessage);
             RecoveryKeyDerivationHookOverride.Value?.Invoke(
                 RecoveryKeyDerivationTestStage.AfterSkein,
                 sha3Key,
                 skeinKey);
+            DerivedSecretHandoff.Verify("recovery/certification/skein-output", skeinKey, Skein1024Digest.MacKeySize);
 
             var result = new RecoveryKeys(sha3Key, skeinKey);
             sha3Key = null;
@@ -1597,49 +1714,63 @@ public sealed partial class RecoveryService
     }
 
     private static (byte[] Sha3, byte[] Skein) ComputeMetadataCertification(
-        RecoveryLocator locator,
-        byte[] payload,
-        RecoveryKeys? keys)
+        RecoveryLocator locator, Stream payload, RecoveryKeys? keys)
     {
         byte[] prefix = BuildCertificationPrefix(locator, payload.Length);
+        byte[] buffer = new byte[65536];
+        payload.Position = 0;
         try
         {
             if (locator.ProtectionMode == RecoveryProtectionMode.DualAuthenticatedEncrypted)
             {
-                if (keys is null)
-                {
-                    throw new CryptographicException("Authenticated KPAR2 certification requires recovery MAC keys.");
-                }
-
-                byte[] sha3;
-                using (var hmac = new HmacSha3_512(keys.Sha3Key))
-                {
-                    hmac.AppendData(prefix);
-                    hmac.AppendData(payload);
-                    sha3 = hmac.GetHashAndReset();
-                }
-
-                using NativeSkein1024Mac skeinMac = NativeThreefish.CreateSkeinMac(keys.SkeinKey);
-                skeinMac.AppendData(prefix);
-                skeinMac.AppendData(payload);
-                return (sha3, skeinMac.GetTag());
+                if (keys is null) throw new CryptographicException("Authenticated KPAR2 certification requires recovery MAC keys.");
+                DerivedSecretHandoff.Verify("recovery/certification/sha3-consumer", keys.Sha3Key, Sha3_512Compat.HashSizeInBytes);
+                DerivedSecretHandoff.Verify("recovery/certification/skein-consumer", keys.SkeinKey, Skein1024Digest.MacKeySize);
+                using var hmac = new HmacSha3_512(keys.Sha3Key);
+                using NativeSkein1024Mac skein = NativeThreefish.CreateSkeinMac(keys.SkeinKey);
+                hmac.AppendData(prefix); skein.AppendData(prefix);
+                int count;
+                while ((count = payload.Read(buffer)) != 0)
+                { hmac.AppendData(buffer.AsSpan(0, count)); skein.AppendData(buffer.AsSpan(0, count)); }
+                return (hmac.GetHashAndReset(), skein.GetTag());
             }
-
-            using var sha3Hash = new Sha3_512Incremental();
-            using var skeinHash = new Skein1024Digest();
-            sha3Hash.AppendData(prefix);
-            sha3Hash.AppendData(payload);
-            skeinHash.AppendData(prefix);
-            skeinHash.AppendData(payload);
-            return (sha3Hash.GetHashAndReset(), skeinHash.GetHashAndReset());
+            using var sha3 = new Sha3_512Incremental(); using var skeinHash = new Skein1024Digest();
+            sha3.AppendData(prefix); skeinHash.AppendData(prefix);
+            int read;
+            while ((read = payload.Read(buffer)) != 0)
+            { sha3.AppendData(buffer.AsSpan(0, read)); skeinHash.AppendData(buffer.AsSpan(0, read)); }
+            return (sha3.GetHashAndReset(), skeinHash.GetHashAndReset());
         }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(prefix);
-        }
+        finally { CryptographicOperations.ZeroMemory(prefix); CryptographicOperations.ZeroMemory(buffer); payload.Position = 0; }
     }
 
-    private static byte[] BuildCertificationPrefix(RecoveryLocator locator, int payloadLength)
+    internal static (byte[] Sha3, byte[] Skein) ComputeMetadataCertificationForTests(
+        RecoveryLocator locator, Stream payload, IDisposable keys)
+    {
+        ArgumentNullException.ThrowIfNull(locator);
+        ArgumentNullException.ThrowIfNull(payload);
+        ArgumentNullException.ThrowIfNull(keys);
+        if (keys is not RecoveryKeys ownedKeys)
+            throw new ArgumentException("Certification requires a recovery key owner.", nameof(keys));
+        return ComputeMetadataCertification(locator, payload, ownedKeys);
+    }
+
+    private static (byte[] Sha3, byte[] Skein) ComputeDualHash(Stream input)
+    {
+        input.Position = 0;
+        using var sha3 = new Sha3_512Incremental(); using var skein = new Skein1024Digest();
+        byte[] buffer = new byte[65536];
+        try
+        {
+            int read;
+            while ((read = input.Read(buffer)) != 0)
+            { sha3.AppendData(buffer.AsSpan(0, read)); skein.AppendData(buffer.AsSpan(0, read)); }
+            return (sha3.GetHashAndReset(), skein.GetHashAndReset());
+        }
+        finally { CryptographicOperations.ZeroMemory(buffer); input.Position = 0; }
+    }
+
+    private static byte[] BuildCertificationPrefix(RecoveryLocator locator, long payloadLength)
     {
         byte[] domain = CertificationDomain;
         byte[] context = BuildLocatorCertificationContext(locator);
@@ -1688,58 +1819,52 @@ public sealed partial class RecoveryService
         return result.AsSpan(0, offset).ToArray();
     }
 
-    private static byte[] BuildMetadataEnvelope(
-        RecoveryProtectionMode protectionMode,
-        byte[] payload,
-        byte[] sha3Certification,
-        byte[] skeinCertification,
-        int formatVersion = 4)
+    private static RecoveryMetadataStream BuildMetadataEnvelope(
+        RecoveryProtectionMode protectionMode, Stream payload, byte[] sha3Certification,
+        byte[] skeinCertification, int formatVersion = 4)
     {
-        if (sha3Certification.Length != Sha3_512Compat.HashSizeInBytes
-            || skeinCertification.Length != Skein1024Digest.DigestSize)
-        {
+        if (sha3Certification.Length != 64 || skeinCertification.Length != 128)
             throw new CryptographicException("KPAR2 certification has an invalid length.");
+        var envelope = new RecoveryMetadataStream();
+        byte[] header = new byte[MetadataEnvelopeHeaderSize];
+        try
+        {
+            MetadataEnvelopeMagic.CopyTo(header, 0);
+            BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(8), formatVersion);
+            BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(12), (int)protectionMode);
+            BinaryPrimitives.WriteInt64LittleEndian(header.AsSpan(16), payload.Length);
+            sha3Certification.CopyTo(header, 24); skeinCertification.CopyTo(header, 88);
+            envelope.Write(header); payload.Position = 0; payload.CopyTo(envelope, 65536);
+            envelope.Seal(); return envelope;
         }
-
-        byte[] envelope = new byte[checked(MetadataEnvelopeHeaderSize + payload.Length)];
-        MetadataEnvelopeMagic.CopyTo(envelope, 0);
-        BinaryPrimitives.WriteInt32LittleEndian(envelope.AsSpan(8), formatVersion);
-        BinaryPrimitives.WriteInt32LittleEndian(envelope.AsSpan(12), (int)protectionMode);
-        BinaryPrimitives.WriteInt64LittleEndian(envelope.AsSpan(16), payload.Length);
-        sha3Certification.CopyTo(envelope, 24);
-        skeinCertification.CopyTo(envelope, 24 + Sha3_512Compat.HashSizeInBytes);
-        payload.CopyTo(envelope, MetadataEnvelopeHeaderSize);
-        return envelope;
+        catch { envelope.Dispose(); throw; }
+        finally { CryptographicOperations.ZeroMemory(header); payload.Position = 0; }
     }
 
-    private static (byte[] Payload, byte[] Sha3, byte[] Skein) ParseMetadataEnvelope(
-        byte[] envelope,
-        RecoveryProtectionMode expectedMode,
-        int expectedFormatVersion)
+    private static (RecoveryMetadataStream Payload, byte[] Sha3, byte[] Skein) ParseMetadataEnvelope(
+        Stream envelope, RecoveryProtectionMode expectedMode, int expectedFormatVersion)
     {
-        if (envelope.Length < MetadataEnvelopeHeaderSize
-            || !envelope.AsSpan(0, 8).SequenceEqual(MetadataEnvelopeMagic)
-            || BinaryPrimitives.ReadInt32LittleEndian(envelope.AsSpan(8)) != expectedFormatVersion
-            || BinaryPrimitives.ReadInt32LittleEndian(envelope.AsSpan(12)) != (int)expectedMode)
+        byte[] header = new byte[MetadataEnvelopeHeaderSize];
+        var payload = new RecoveryMetadataStream();
+        try
         {
-            throw new InvalidDataException("KPAR2 metadata envelope header is invalid.");
+            envelope.Position = 0; envelope.ReadExactly(header);
+            if (!header.AsSpan(0, 8).SequenceEqual(MetadataEnvelopeMagic)
+                || BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(8)) != expectedFormatVersion
+                || BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(12)) != (int)expectedMode)
+                throw new InvalidDataException("KPAR2 metadata envelope header is invalid.");
+            long length = BinaryPrimitives.ReadInt64LittleEndian(header.AsSpan(16));
+            if (length <= 0 || length != envelope.Length - MetadataEnvelopeHeaderSize)
+                throw new InvalidDataException("KPAR2 metadata envelope length is invalid.");
+            envelope.CopyTo(payload, 65536); payload.Seal();
+            return (payload, header.AsSpan(24, 64).ToArray(), header.AsSpan(88, 128).ToArray());
         }
-
-        long payloadLength = BinaryPrimitives.ReadInt64LittleEndian(envelope.AsSpan(16));
-        if (payloadLength <= 0
-            || payloadLength != envelope.Length - MetadataEnvelopeHeaderSize)
-        {
-            throw new InvalidDataException("KPAR2 metadata envelope length is invalid.");
-        }
-
-        return (
-            envelope.AsSpan(MetadataEnvelopeHeaderSize).ToArray(),
-            envelope.AsSpan(24, Sha3_512Compat.HashSizeInBytes).ToArray(),
-            envelope.AsSpan(24 + Sha3_512Compat.HashSizeInBytes, Skein1024Digest.DigestSize).ToArray());
+        catch { payload.Dispose(); throw; }
+        finally { CryptographicOperations.ZeroMemory(header); }
     }
 
     private static async Task<RecoverySection> CreateSectionAsync(
-        FileStream archive,
+        Stream archive,
         FileStream recovery,
         string name,
         long offset,
@@ -1762,8 +1887,13 @@ public sealed partial class RecoveryService
         };
 
         progress?.Report($"Recovery {name}: {section.StripeCount} stripe(s), RS(20,3), 15% redundancy ...");
-        byte[][] data = AllocateShards(DataShardCount, shardSize);
-        byte[][] parity = AllocateShards(ParityShardCount, shardSize);
+        using OperationProgressSource? sectionProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.Recovery, ProgressUnit.Stripes, section.StripeCount, ProgressTotalOrigin.ValidatedPlan,
+            passId: name == "Header" ? 2 : 3);
+        using var dataOwner = new RecoveryShards(DataShardCount, shardSize);
+        byte[][] data = dataOwner.Bytes;
+        using var parityOwner = new RecoveryShards(ParityShardCount, shardSize);
+        byte[][] parity = parityOwner.Bytes;
         try
         {
             for (int stripe = 0; stripe < section.StripeCount; stripe++)
@@ -1784,14 +1914,7 @@ public sealed partial class RecoveryService
 
                 await Task.WhenAll(readTasks).ConfigureAwait(false);
                 var dataDigests = new string[DataShardCount];
-                Parallel.For(
-                    0,
-                    DataShardCount,
-                    new ParallelOptions
-                    {
-                        CancellationToken = cancellationToken,
-                        MaxDegreeOfParallelism = RecoveryWorkerCount,
-                    },
+                RunRecoveryParallel(0, DataShardCount, cancellationToken,
                     dataIndex => dataDigests[dataIndex] = DualDigestBase64(data[dataIndex]));
                 foreach (string digest in dataDigests)
                 {
@@ -1802,7 +1925,9 @@ public sealed partial class RecoveryService
                 for (int parityIndex = 0; parityIndex < ParityShardCount; parityIndex++)
                 {
                     long parityOffset = recovery.Position;
-                    await recovery.WriteAsync(parity[parityIndex], cancellationToken).ConfigureAwait(false);
+                    if (checked(recovery.Position + parity[parityIndex].Length) > ArchiveOperationPolicy.Current.MaxRecoveryBytes)
+                        throw new IOException("The KPAR2 parity exceeds the approved recovery resource budget.");
+                    await WriteOutputAsync(recovery, parity[parityIndex], cancellationToken).ConfigureAwait(false);
                     section.Parity.Add(new RecoveryParityShard(
                         stripe,
                         parityIndex,
@@ -1810,8 +1935,10 @@ public sealed partial class RecoveryService
                         shardSize,
                         DualDigestBase64(parity[parityIndex])));
                 }
+                sectionProgress?.Advance(1);
             }
         }
+        catch { section.Dispose(); throw; }
         finally
         {
             ZeroShards(data);
@@ -1828,8 +1955,12 @@ public sealed partial class RecoveryService
         CancellationToken cancellationToken)
     {
         int repaired = 0;
-        byte[][] data = AllocateShards(section.DataShardCount, section.ShardSize);
-        byte[][] parity = AllocateShards(section.ParityShardCount, section.ShardSize);
+        using OperationProgressSource? sectionProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.Recovery, ProgressUnit.Stripes, section.StripeCount, ProgressTotalOrigin.ValidatedPlan, passId: 3);
+        using var dataOwner = new RecoveryShards(section.DataShardCount, section.ShardSize);
+        byte[][] data = dataOwner.Bytes;
+        using var parityOwner = new RecoveryShards(section.ParityShardCount, section.ShardSize);
+        byte[][] parity = parityOwner.Bytes;
         try
         {
             for (int stripe = 0; stripe < section.StripeCount; stripe++)
@@ -1851,18 +1982,13 @@ public sealed partial class RecoveryService
                 }
 
                 await Task.WhenAll(dataReads).ConfigureAwait(false);
+                string[] expectedData = Enumerable.Range(0, section.DataShardCount)
+                    .Select(i => section.DataDigests[checked(stripe * section.DataShardCount + i)]).ToArray();
                 var validData = new bool[section.DataShardCount];
-                Parallel.For(
-                    0,
-                    section.DataShardCount,
-                    new ParallelOptions
-                    {
-                        CancellationToken = cancellationToken,
-                        MaxDegreeOfParallelism = RecoveryWorkerCount,
-                    },
+                RunRecoveryParallel(0, section.DataShardCount, cancellationToken,
                     dataIndex =>
                     {
-                    string expected = section.DataDigests[(stripe * section.DataShardCount) + dataIndex];
+                    string expected = expectedData[dataIndex];
                         validData[dataIndex] = DualDigestMatches(data[dataIndex], expected);
                     });
                 for (int dataIndex = 0; dataIndex < section.DataShardCount; dataIndex++)
@@ -1875,6 +2001,7 @@ public sealed partial class RecoveryService
 
                 if (badData.Count == 0)
                 {
+                    sectionProgress?.Advance(1);
                     continue;
                 }
 
@@ -1898,19 +2025,13 @@ public sealed partial class RecoveryService
                 }
 
                 bool[] parityReadable = await Task.WhenAll(parityReads).ConfigureAwait(false);
+                RecoveryParityShard[] expectedParity = Enumerable.Range(0, section.ParityShardCount)
+                    .Select(i => section.Parity[checked(stripe * section.ParityShardCount + i)]).ToArray();
                 var validParity = new bool[section.ParityShardCount];
-                Parallel.For(
-                    0,
-                    section.ParityShardCount,
-                    new ParallelOptions
-                    {
-                        CancellationToken = cancellationToken,
-                        MaxDegreeOfParallelism = RecoveryWorkerCount,
-                    },
+                RunRecoveryParallel(0, section.ParityShardCount, cancellationToken,
                     parityIndex =>
                     {
-                        RecoveryParityShard parityInfo = section.Parity[
-                            (stripe * section.ParityShardCount) + parityIndex];
+                        RecoveryParityShard parityInfo = expectedParity[parityIndex];
                         validParity[parityIndex] = parityReadable[parityIndex]
                             && DualDigestMatches(parity[parityIndex], parityInfo.Digest);
                     });
@@ -1935,18 +2056,11 @@ public sealed partial class RecoveryService
                     goodParity.Take(badData.Count).ToArray(),
                     cancellationToken);
                 var repairedValid = new bool[badData.Count];
-                Parallel.For(
-                    0,
-                    badData.Count,
-                    new ParallelOptions
-                    {
-                        CancellationToken = cancellationToken,
-                        MaxDegreeOfParallelism = RecoveryWorkerCount,
-                    },
+                RunRecoveryParallel(0, badData.Count, cancellationToken,
                     repairIndex =>
                     {
                         int dataIndex = badData[repairIndex];
-                        string expected = section.DataDigests[(stripe * section.DataShardCount) + dataIndex];
+                        string expected = expectedData[dataIndex];
                         repairedValid[repairIndex] = DualDigestMatches(data[dataIndex], expected);
                     });
                 for (int repairIndex = 0; repairIndex < badData.Count; repairIndex++)
@@ -1973,6 +2087,7 @@ public sealed partial class RecoveryService
                 }
 
                 await Task.WhenAll(writes).ConfigureAwait(false);
+                sectionProgress?.Advance(1);
                 repaired = checked(repaired + badData.Count);
             }
         }
@@ -1987,7 +2102,7 @@ public sealed partial class RecoveryService
 
     private static async Task WriteEncodedMetadataAsync(
         FileStream recovery,
-        byte[] envelope,
+        Stream envelope,
         RecoveryLocator locator,
         CancellationToken cancellationToken)
     {
@@ -1996,11 +2111,16 @@ public sealed partial class RecoveryService
             throw new InvalidDataException("Internal KPAR2 metadata offset mismatch.");
         }
 
+        using OperationProgressSource? metadataProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.Recovery, ProgressUnit.Stripes, locator.MetadataStripeCount, ProgressTotalOrigin.ValidatedPlan, passId: 4);
+        envelope.Position = 0;
         long envelopeOffset = 0;
         for (int stripe = 0; stripe < locator.MetadataStripeCount; stripe++)
         {
-            byte[][] data = AllocateShards(DataShardCount, MetadataPayloadSize);
-            byte[][] parity = AllocateShards(ParityShardCount, MetadataPayloadSize);
+            using var dataOwner = new RecoveryShards(DataShardCount, MetadataPayloadSize);
+            byte[][] data = dataOwner.Bytes;
+            using var parityOwner = new RecoveryShards(ParityShardCount, MetadataPayloadSize);
+            byte[][] parity = parityOwner.Bytes;
             try
             {
                 int[] payloadLengths = new int[DataShardCount];
@@ -2009,7 +2129,7 @@ public sealed partial class RecoveryService
                     int count = (int)Math.Min(MetadataPayloadSize, envelope.Length - envelopeOffset);
                     if (count > 0)
                     {
-                        envelope.AsSpan((int)envelopeOffset, count).CopyTo(data[dataIndex]);
+                        envelope.ReadExactly(data[dataIndex].AsSpan(0, count));
                         envelopeOffset += count;
                     }
 
@@ -2040,6 +2160,7 @@ public sealed partial class RecoveryService
                         parity[parityIndex],
                         cancellationToken).ConfigureAwait(false);
                 }
+                metadataProgress?.Advance(1);
             }
             finally
             {
@@ -2080,7 +2201,7 @@ public sealed partial class RecoveryService
             (sha3, skein) = ComputeDualHash(block.AsSpan(0, MetadataBlockSkeinOffset));
             skein.CopyTo(block, MetadataBlockSkeinOffset);
             sha3.CopyTo(block, MetadataBlockSha3Offset);
-            await recovery.WriteAsync(block, cancellationToken).ConfigureAwait(false);
+            await WriteOutputAsync(recovery, block, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -2090,20 +2211,22 @@ public sealed partial class RecoveryService
         }
     }
 
-    private static async Task<byte[]> ReadEncodedMetadataAsync(
+    private static async Task<RecoveryMetadataStream> ReadEncodedMetadataAsync(
         FileStream recovery,
         RecoveryLocator locator,
         CancellationToken cancellationToken)
     {
-        byte[] envelope = new byte[locator.MetadataEnvelopeLength];
+        var envelope = new RecoveryMetadataStream();
         long envelopeOffset = 0;
         byte[] block = new byte[LocatorBlockSize];
         try
         {
             for (int stripe = 0; stripe < locator.MetadataStripeCount; stripe++)
             {
-                byte[][] data = AllocateShards(DataShardCount, MetadataPayloadSize);
-                byte[][] parity = AllocateShards(ParityShardCount, MetadataPayloadSize);
+                using var dataOwner = new RecoveryShards(DataShardCount, MetadataPayloadSize);
+                byte[][] data = dataOwner.Bytes;
+                using var parityOwner = new RecoveryShards(ParityShardCount, MetadataPayloadSize);
+                byte[][] parity = parityOwner.Bytes;
                 var badData = new List<int>();
                 var goodParity = new List<int>();
                 try
@@ -2180,7 +2303,7 @@ public sealed partial class RecoveryService
                             dataIndex);
                         if (count > 0)
                         {
-                            data[dataIndex].AsSpan(0, count).CopyTo(envelope.AsSpan((int)envelopeOffset));
+                            envelope.Write(data[dataIndex].AsSpan(0, count));
                             envelopeOffset += count;
                         }
                     }
@@ -2192,11 +2315,9 @@ public sealed partial class RecoveryService
                 }
             }
 
-            if (envelopeOffset != envelope.Length)
-            {
+            if (envelopeOffset != locator.MetadataEnvelopeLength)
                 throw new InvalidDataException("KPAR2 metadata reconstruction produced an invalid length.");
-            }
-
+            envelope.Seal();
             (byte[] actualSha3, byte[] actualSkein) = ComputeDualHash(envelope);
             try
             {
@@ -2218,7 +2339,7 @@ public sealed partial class RecoveryService
         }
         catch
         {
-            CryptographicOperations.ZeroMemory(envelope);
+            envelope.Dispose();
             throw;
         }
         finally
@@ -2461,7 +2582,7 @@ public sealed partial class RecoveryService
                 (RecoveryProtectionMode)BinaryPrimitives.ReadInt32LittleEndian(block.AsSpan(12)),
                 BinaryPrimitives.ReadInt64LittleEndian(block.AsSpan(32)),
                 BinaryPrimitives.ReadInt64LittleEndian(block.AsSpan(40)),
-                checked((int)BinaryPrimitives.ReadInt64LittleEndian(block.AsSpan(48))),
+                BinaryPrimitives.ReadInt64LittleEndian(block.AsSpan(48)),
                 BinaryPrimitives.ReadInt32LittleEndian(block.AsSpan(56)),
                 BinaryPrimitives.ReadInt64LittleEndian(block.AsSpan(64)),
                 BinaryPrimitives.ReadInt32LittleEndian(block.AsSpan(60)),
@@ -2513,14 +2634,16 @@ public sealed partial class RecoveryService
         if (locator.ProtectionMode is not (
                 RecoveryProtectionMode.ErrorCorrectionOnly
                 or RecoveryProtectionMode.DualAuthenticatedEncrypted)
-            || locator.ArchiveLength is < 0 or > MaxArchiveBytes
+            || (locator.ArchiveLength < 0 || locator.ArchiveLength > MaxArchiveBytes)
+            || locator.ArchiveLength > ArchiveOperationPolicy.Current.MaxContainerBytes
+            || recoveryLength > ArchiveOperationPolicy.Current.MaxRecoveryBytes
             || locator.ArchiveId.Length != 32
             || locator.ArchiveId.All(value => value == 0)
             || locator.EnvelopeSha3.Length != Sha3_512Compat.HashSizeInBytes
             || locator.EnvelopeSkein.Length != Skein1024Digest.DigestSize
             || locator.MetadataOffset < PrefixLocatorBytes
             || locator.MetadataOffset % RecoveryBlockAlignment != 0
-            || locator.MetadataEnvelopeLength is <= MetadataEnvelopeHeaderSize or > MaxMetadataEnvelopeBytes
+            || (locator.MetadataEnvelopeLength <= MetadataEnvelopeHeaderSize || locator.MetadataEnvelopeLength > MaxMetadataEnvelopeBytes)
             || locator.MetadataEnvelopeLength > GetMaximumMetadataEnvelopeBytes(locator.ArchiveLength)
             || locator.MetadataStripeCount <= 0)
         {
@@ -2538,7 +2661,7 @@ public sealed partial class RecoveryService
             locator.MetadataOffset + expectedEncodedLength + SuffixLocatorBytes);
         if (locator.MetadataStripeCount != expectedStripes
             || locator.MetadataEncodedLength != expectedEncodedLength
-            || locator.MetadataEncodedLength > MaxEncodedMetadataBytes
+            || locator.MetadataEncodedLength > Math.Min(MaxEncodedMetadataBytes, ArchiveOperationPolicy.Current.MaxMetadataBytes)
             || recoveryLength != expectedFileLength)
         {
             throw new InvalidDataException("KPAR2 locator geometry is inconsistent with the file length.");
@@ -2598,34 +2721,6 @@ public sealed partial class RecoveryService
                     throw new InvalidDataException("Single-round encrypted KPAR2 locator unexpectedly contains round 2 salts.");
                 }
             }
-        }
-    }
-
-    private static RecoveryManifest DeserializeCanonicalManifest(byte[] payload, long archiveLength)
-    {
-        try
-        {
-            PreflightCanonicalManifest(payload, archiveLength);
-            RecoveryManifest manifest = JsonSerializer.Deserialize(payload, RecoveryJsonContext.Default.RecoveryManifest)
-                ?? throw new InvalidDataException("KPAR2 manifest could not be read.");
-            byte[] canonical = JsonSerializer.SerializeToUtf8Bytes(manifest, RecoveryJsonContext.Default.RecoveryManifest);
-            try
-            {
-                if (!payload.AsSpan().SequenceEqual(canonical))
-                {
-                    throw new InvalidDataException("KPAR2 manifest is not in its unique canonical JSON representation.");
-                }
-            }
-            finally
-            {
-                CryptographicOperations.ZeroMemory(canonical);
-            }
-
-            return manifest;
-        }
-        catch (JsonException ex)
-        {
-            throw new InvalidDataException("KPAR2 manifest is not valid canonical JSON.", ex);
         }
     }
 
@@ -2761,12 +2856,12 @@ public sealed partial class RecoveryService
     private static long JsonTokenByteLength(ref Utf8JsonReader reader) =>
         reader.HasValueSequence ? reader.ValueSequence.Length : reader.ValueSpan.Length;
 
-    private static int GetMaximumMetadataEnvelopeBytes(long archiveLength) =>
+    private static long GetMaximumMetadataEnvelopeBytes(long archiveLength) =>
         checked(MetadataEnvelopeHeaderSize + GetManifestJsonLimits(archiveLength).MaximumPayloadBytes);
 
     private static ManifestJsonLimits GetManifestJsonLimits(long archiveLength)
     {
-        if (archiveLength is < 0 or > MaxArchiveBytes)
+        if ((archiveLength < 0 || archiveLength > MaxArchiveBytes) || archiveLength > ArchiveOperationPolicy.Current.MaxContainerBytes)
         {
             throw new InvalidDataException("KPAR2 archive length is outside the supported range.");
         }
@@ -2785,7 +2880,9 @@ public sealed partial class RecoveryService
             + (maximumParityEntries * ManifestParityEntryBudgetBytes));
         maximumPayloadBytes = Math.Min(
             maximumPayloadBytes,
-            MaxMetadataEnvelopeBytes - MetadataEnvelopeHeaderSize);
+            Math.Min(MaxMetadataEnvelopeBytes, ArchiveOperationPolicy.Current.MaxMetadataBytes) - MetadataEnvelopeHeaderSize);
+        if (maximumPayloadBytes <= 0)
+            throw new IOException("The approved metadata budget is too small for KPAR2.");
         long maximumTokens = checked(
             512
             + (MaxManifestSections * 32L)
@@ -2796,7 +2893,7 @@ public sealed partial class RecoveryService
             MaxManifestSections + maximumDataDigests + maximumParityEntries);
 
         return new ManifestJsonLimits(
-            checked((int)maximumPayloadBytes),
+            maximumPayloadBytes,
             maximumTokens,
             checked((int)maximumDataDigests),
             checked((int)maximumParityEntries),
@@ -2811,7 +2908,7 @@ public sealed partial class RecoveryService
     }
 
     internal static int MaximumManifestJsonBytesForTests(long archiveLength) =>
-        GetManifestJsonLimits(archiveLength).MaximumPayloadBytes;
+        checked((int)Math.Min(int.MaxValue, GetManifestJsonLimits(archiveLength).MaximumPayloadBytes));
 
     private enum ManifestArrayKind : byte
     {
@@ -2823,7 +2920,7 @@ public sealed partial class RecoveryService
     }
 
     private readonly record struct ManifestJsonLimits(
-        int MaximumPayloadBytes,
+        long MaximumPayloadBytes,
         long MaximumTokens,
         int MaximumDataDigests,
         int MaximumParityEntries,
@@ -3016,6 +3113,7 @@ public sealed partial class RecoveryService
         RecoveryManifest manifest,
         CancellationToken cancellationToken)
     {
+        using var phaseProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.RecoveryMatchOriginal);
         archive.Position = 0;
         (byte[] actualSha3, byte[] actualSkein) = await IntegrityService.HashStreamAsync(
             archive,
@@ -3145,10 +3243,11 @@ public sealed partial class RecoveryService
         byte[]? skein = null;
         try
         {
-            Parallel.Invoke(
-                new ParallelOptions { MaxDegreeOfParallelism = Math.Min(2, RecoveryWorkerCount) },
-                () => sha3 = Sha3_512Compat.HashData(data),
-                () => skein = Skein1024Digest.HashData(data));
+            RunRecoveryParallel(0, 2, CancellationToken.None, index =>
+            {
+                if (index == 0) sha3 = Sha3_512Compat.HashData(data);
+                else skein = Skein1024Digest.HashData(data);
+            });
             return (
                 sha3 ?? throw new CryptographicException("SHA3-512 recovery digest did not complete."),
                 skein ?? throw new CryptographicException("Skein-1024 recovery digest did not complete."));
@@ -3216,7 +3315,7 @@ public sealed partial class RecoveryService
     }
 
     private static async Task<long> DetectHeaderLengthAsync(
-        FileStream input,
+        Stream input,
         long archiveLength,
         CancellationToken cancellationToken)
     {
@@ -3294,7 +3393,7 @@ public sealed partial class RecoveryService
             while (remaining > 0)
             {
                 int write = Math.Min(remaining, zeroBlock.Length);
-                await stream.WriteAsync(zeroBlock.AsMemory(0, write), cancellationToken).ConfigureAwait(false);
+                await WriteOutputAsync(stream, zeroBlock.AsMemory(0, write), cancellationToken).ConfigureAwait(false);
                 remaining -= write;
             }
         }
@@ -3321,6 +3420,8 @@ public sealed partial class RecoveryService
                 nameof(destination));
         }
 
+        using OperationProgressSource? copyProgress = OperationProgressTracker.Current?.BeginPhase(
+            OperationPhase.Recovery, ProgressUnit.Bytes, length, ProgressTotalOrigin.ValidatedPlan, passId: 2);
         int chunkCount = checked((int)DivideRoundUp(length, RecoveryCopyChunkBytes));
         if (chunkCount == 0)
         {
@@ -3328,7 +3429,10 @@ public sealed partial class RecoveryService
             return 0;
         }
 
-        int workerCount = Math.Min(RecoveryWorkerCount, chunkCount);
+        // Copy workers are I/O jobs. A protected source acquires its own CPU
+        // permit only for local MAC computation after its read has completed.
+        int workerCount = Math.Min(chunkCount,
+            RecoveryWorkerOverride.Value ?? ArchiveOperationPolicy.Current.MaxIoRequests);
         int unreadableBlocks = 0;
         using var workerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         CancellationToken workerToken = workerCts.Token;
@@ -3402,7 +3506,9 @@ public sealed partial class RecoveryService
                 [capturedPrimary.SourceException, .. capturedSecondary]);
         }
 
-        destination.SetLength(length);
+        using (IDisposable growth = ArchiveOperationPolicy.Current.ReserveOutputWrite(destination.SafeFileHandle,
+            Math.Max(0, length - destination.Length)))
+            destination.SetLength(length);
         return unreadableBlocks;
 
         void RecordFailureAndCancelSiblings(Exception failure)
@@ -3443,12 +3549,16 @@ public sealed partial class RecoveryService
         {
             byte[]? chunk = null;
             byte[]? block = null;
+            OperationMemoryBudget.HeavyLease? bufferLease = null;
             int localUnreadableBlocks = 0;
             try
             {
                 workerToken.ThrowIfCancellationRequested();
-                chunk = new byte[RecoveryCopyChunkBytes];
+                int allocatedChunk = checked((int)Math.Min(RecoveryCopyChunkBytes, length));
+                bufferLease = OperationMemoryBudget.AcquireWorking(checked(allocatedChunk + RecoveryBlockAlignment + 64L));
+                chunk = new byte[allocatedChunk];
                 block = new byte[RecoveryBlockAlignment];
+                bufferLease.CommitAllocation();
                 for (int chunkIndex = workerIndex;
                      chunkIndex < chunkCount;
                      chunkIndex = checked(chunkIndex + workerCount))
@@ -3472,11 +3582,12 @@ public sealed partial class RecoveryService
                         workerToken).ConfigureAwait(false);
                     if (chunkReadable)
                     {
-                        await RandomAccess.WriteAsync(
+                        await WriteAtOffsetAsync(
                             destination.SafeFileHandle,
                             chunk.AsMemory(0, chunkLength),
                             chunkOffset,
                             workerToken).ConfigureAwait(false);
+                        copyProgress?.Advance(chunkLength);
                         CryptographicOperations.ZeroMemory(chunk.AsSpan(0, chunkLength));
                         continue;
                     }
@@ -3500,11 +3611,12 @@ public sealed partial class RecoveryService
                             localUnreadableBlocks++;
                         }
 
-                        await RandomAccess.WriteAsync(
+                        await WriteAtOffsetAsync(
                             destination.SafeFileHandle,
                             block.AsMemory(0, blockLength),
                             sourceOffset,
                             workerToken).ConfigureAwait(false);
+                        copyProgress?.Advance(blockLength);
                         CryptographicOperations.ZeroMemory(block.AsSpan(0, blockLength));
                     }
                 }
@@ -3521,6 +3633,7 @@ public sealed partial class RecoveryService
                 }
                 ZeroIfNotNull(chunk);
                 ZeroIfNotNull(block);
+                bufferLease?.Dispose();
             }
         }
     }
@@ -3535,6 +3648,7 @@ public sealed partial class RecoveryService
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
         using IDisposable workerScope = UseRecoveryWorkerCountForTests(workers);
+        using var ioScope = new RecoveryIoScope();
         return await CopyArchiveForRecoveryAsync(
             new FileRecoveryRandomAccessSource(source, enableTestFaults: false),
             destination,
@@ -3554,6 +3668,7 @@ public sealed partial class RecoveryService
             int total = 0;
             while (total < destination.Length)
             {
+                using RecoveryIoLease ioLease = await AcquireRecoveryIoAsync(cancellationToken).ConfigureAwait(false);
                 int read = await source.ReadAtAsync(
                     destination[total..],
                     checked(offset + total),
@@ -3565,6 +3680,7 @@ public sealed partial class RecoveryService
                 }
 
                 total += read;
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             return true;
@@ -3613,6 +3729,7 @@ public sealed partial class RecoveryService
                 }
 
                 total += read;
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             return true;
@@ -3624,19 +3741,36 @@ public sealed partial class RecoveryService
         }
     }
 
-    private static ValueTask<int> ReadAtOffsetAsync(
-        FileStream stream,
+    private static async ValueTask<int> ReadAtOffsetAsync(
+        Stream stream,
         Memory<byte> destination,
         long offset,
         CancellationToken cancellationToken)
     {
-        return stream is IPrivateSnapshotRandomAccess mapped
-            ? mapped.ReadAtAsync(destination, offset, cancellationToken)
-            : RandomAccess.ReadAsync(
-                stream.SafeFileHandle,
-                destination,
-                offset,
-                cancellationToken);
+        using RecoveryIoLease lease = await AcquireRecoveryIoAsync(cancellationToken).ConfigureAwait(false);
+        int read = stream is IPrivateSnapshotRandomAccess mapped
+            ? await mapped.ReadAtAsync(destination, offset, cancellationToken).ConfigureAwait(false)
+            : await RandomAccess.ReadAsync(((FileStream)stream).SafeFileHandle,
+                destination, offset, cancellationToken).ConfigureAwait(false);
+        OperationMemoryBudget.ReportProgress(read);
+        return read;
+    }
+
+    private static long EstimateRecoverySize(long archiveLength, long headerLength)
+    {
+        long parityBytes = 0;
+        void AddSection(long length, int shardSize)
+        {
+            if (length == 0) return;
+            long stripes = DivideRoundUp(length, checked((long)DataShardCount * shardSize));
+            parityBytes = checked(parityBytes + stripes * ParityShardCount * shardSize);
+        }
+        AddSection(headerLength, ChooseHeaderShardSize(headerLength));
+        AddSection(archiveLength - headerLength, ChooseBodyShardSize(archiveLength - headerLength));
+        long envelope = GetMaximumMetadataEnvelopeBytes(archiveLength);
+        long metadataStripes = DivideRoundUp(envelope, (long)DataShardCount * MetadataPayloadSize);
+        long encodedMetadata = checked(metadataStripes * (DataShardCount + ParityShardCount) * LocatorBlockSize);
+        return checked(PrefixLocatorBytes + parityBytes + encodedMetadata + SuffixLocatorBytes);
     }
 
     private static int ChooseHeaderShardSize(long headerLength)
@@ -3689,7 +3823,7 @@ public sealed partial class RecoveryService
     }
 
     private static async Task ReadArchiveShardAtAsync(
-        FileStream archive,
+        Stream archive,
         long shardOffset,
         long sectionEnd,
         byte[] destination,
@@ -3733,7 +3867,7 @@ public sealed partial class RecoveryService
         }
 
         int toWrite = checked((int)Math.Min(source.Length, sectionEnd - shardOffset));
-        await RandomAccess.WriteAsync(
+        await WriteAtOffsetAsync(
             archive.SafeFileHandle,
             source.AsMemory(0, toWrite),
             shardOffset,
@@ -3758,7 +3892,8 @@ public sealed partial class RecoveryService
         }
 
         int missingCount = badData.Count;
-        byte[][] syndromes = AllocateShards(missingCount, parity[0].Length);
+        using var syndromesOwner = new RecoveryShards(missingCount, parity[0].Length);
+        byte[][] syndromes = syndromesOwner.Bytes;
         byte[,] matrix = new byte[missingCount, missingCount];
         try
         {
@@ -3782,14 +3917,7 @@ public sealed partial class RecoveryService
             int shardLength = parity[0].Length;
             int rangeCount = checked((int)DivideRoundUp(shardLength, RecoveryParallelChunkBytes));
             int syndromeWorkItems = checked(missingCount * rangeCount);
-            Parallel.For(
-                0,
-                syndromeWorkItems,
-                new ParallelOptions
-                {
-                    CancellationToken = cancellationToken,
-                    MaxDegreeOfParallelism = RecoveryWorkerCount,
-                },
+            RunRecoveryParallel(0, syndromeWorkItems, cancellationToken,
                 workItem =>
                 {
                     int equation = workItem / rangeCount;
@@ -3832,14 +3960,7 @@ public sealed partial class RecoveryService
             }
 
             int recoveryWorkItems = checked(missingCount * rangeCount);
-            Parallel.For(
-                0,
-                recoveryWorkItems,
-                new ParallelOptions
-                {
-                    CancellationToken = cancellationToken,
-                    MaxDegreeOfParallelism = RecoveryWorkerCount,
-                },
+            RunRecoveryParallel(0, recoveryWorkItems, cancellationToken,
                 workItem =>
                 {
                     int missingIndex = workItem / rangeCount;
@@ -3866,15 +3987,30 @@ public sealed partial class RecoveryService
         }
     }
 
-    private static byte[][] AllocateShards(int count, int shardSize)
+    private sealed class RecoveryShards : IDisposable
     {
-        byte[][] shards = new byte[count][];
-        for (int i = 0; i < shards.Length; i++)
+        private OperationMemoryBudget.HeavyLease? _lease;
+        internal byte[][] Bytes { get; }
+        internal RecoveryShards(int count, int shardSize)
         {
-            shards[i] = new byte[shardSize];
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+            ArgumentOutOfRangeException.ThrowIfNegative(shardSize);
+            _lease = OperationMemoryBudget.AcquireWorking(checked((long)count * (shardSize + 32L) + 32));
+            Bytes = [];
+            try
+            {
+                Bytes = new byte[count][];
+                for (int i = 0; i < Bytes.Length; i++) Bytes[i] = new byte[shardSize];
+                _lease.CommitAllocation();
+            }
+            catch { Dispose(); throw; }
         }
-
-        return shards;
+        public void Dispose()
+        {
+            foreach (byte[]? shard in Bytes)
+                if (shard is not null) CryptographicOperations.ZeroMemory(shard);
+            _lease?.Dispose(); _lease = null;
+        }
     }
 
     private static void ZeroShards(byte[][] shards)
@@ -3949,24 +4085,7 @@ public sealed partial class RecoveryService
         int shardLength = data[0].Length;
         int rangeCount = checked((int)DivideRoundUp(shardLength, RecoveryParallelChunkBytes));
         int workItems = checked(parity.Length * rangeCount);
-        if (RecoveryWorkerCount == 1 || workItems == 1)
-        {
-            for (int parityIndex = 0; parityIndex < parity.Length; parityIndex++)
-            {
-                ComputeRange(parityIndex, 0, shardLength);
-            }
-
-            return;
-        }
-
-        Parallel.For(
-            0,
-            workItems,
-            new ParallelOptions
-            {
-                CancellationToken = cancellationToken,
-                MaxDegreeOfParallelism = RecoveryWorkerCount,
-            },
+        RunRecoveryParallel(0, workItems, cancellationToken,
             workItem =>
             {
                 int parityIndex = workItem / rangeCount;
@@ -3988,12 +4107,15 @@ public sealed partial class RecoveryService
         CancellationToken cancellationToken = default)
     {
         ValidateCodingFixtureForTests(data, expectedCount: DataShardCount);
-        byte[][] parity = AllocateShards(ParityShardCount, data[0].Length);
+        using var parityOwner = new RecoveryShards(ParityShardCount, data[0].Length);
+        byte[][] parity = parityOwner.Bytes;
         try
         {
             using IDisposable scope = UseRecoveryWorkerCountForTests(workers);
             ComputeParity(data, parity, cancellationToken);
-            return parity;
+            // The test caller owns its returned oracle arrays. Production
+            // scratch remains leased and is wiped when this scope ends.
+            return parity.Select(shard => shard.ToArray()).ToArray();
         }
         catch
         {
@@ -4289,6 +4411,21 @@ public sealed partial class RecoveryService
             CancellationToken cancellationToken);
     }
 
+    private sealed class CapturedRecoveryRandomAccessSource(
+        VerifiedArchiveInput.RepairCiphertextRead stream, bool enableTestFaults) : IRecoveryRandomAccessSource
+    {
+        public long Length => stream.Length;
+        private void CheckFault(long offset, int count)
+        {
+            if (enableTestFaults && count != 0 && RecoverySourceReadFaultOverride.Value?.Invoke(offset, count) == true)
+                throw new IOException("Injected damaged recovery source region.");
+        }
+        public int ReadAt(Span<byte> destination, long offset)
+        { CheckFault(offset, destination.Length); return stream.ReadAt(destination, offset); }
+        public ValueTask<int> ReadAtAsync(Memory<byte> destination, long offset, CancellationToken cancellationToken)
+        { CheckFault(offset, destination.Length); return stream.ReadAtAsync(destination, offset, cancellationToken); }
+    }
+
     private sealed class FileRecoveryRandomAccessSource(
         FileStream stream,
         bool enableTestFaults) : IRecoveryRandomAccessSource
@@ -4513,31 +4650,29 @@ public sealed partial class RecoveryService
         }
     }
 
-    [JsonSourceGenerationOptions(
-        PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-        WriteIndented = false,
-        PropertyNameCaseInsensitive = false,
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-        GenerationMode = JsonSourceGenerationMode.Metadata)]
-    [JsonSerializable(typeof(RecoveryManifest))]
-    private sealed partial class RecoveryJsonContext : JsonSerializerContext;
-
     private sealed class RecoveryKeys : IDisposable
     {
         private readonly IDisposable _sha3Lock;
         private readonly IDisposable _skeinLock;
         private bool _disposed;
+        private bool _disposalStarted;
+        private readonly byte[] _sha3Key;
+        private readonly byte[] _skeinKey;
 
         public RecoveryKeys(byte[] sha3Key, byte[] skeinKey)
         {
+            ArgumentNullException.ThrowIfNull(sha3Key);
+            ArgumentNullException.ThrowIfNull(skeinKey);
             if (sha3Key.Length != Sha3_512Compat.HashSizeInBytes
                 || skeinKey.Length != Skein1024Digest.MacKeySize)
             {
                 throw new CryptographicException("Derived KPAR2 MAC key length is invalid.");
             }
 
-            Sha3Key = sha3Key;
-            SkeinKey = skeinKey;
+            DerivedSecretHandoff.Require(sha3Key, Sha3_512Compat.HashSizeInBytes);
+            DerivedSecretHandoff.Require(skeinKey, Skein1024Digest.MacKeySize);
+            _sha3Key = sha3Key;
+            _skeinKey = skeinKey;
             IDisposable? sha3Lock = null;
             IDisposable? skeinLock = null;
             try
@@ -4567,14 +4702,15 @@ public sealed partial class RecoveryService
             }
         }
 
-        public byte[] Sha3Key { get; }
+        public byte[] Sha3Key { get { ObjectDisposedException.ThrowIf(_disposalStarted, this); return _sha3Key; } }
 
-        public byte[] SkeinKey { get; }
+        public byte[] SkeinKey { get { ObjectDisposedException.ThrowIf(_disposalStarted, this); return _skeinKey; } }
 
         internal void ZeroForDisposal()
         {
-            CryptographicOperations.ZeroMemory(Sha3Key);
-            CryptographicOperations.ZeroMemory(SkeinKey);
+            _disposalStarted = true;
+            CryptographicOperations.ZeroMemory(_sha3Key);
+            CryptographicOperations.ZeroMemory(_skeinKey);
         }
 
         public void Dispose()
@@ -4612,7 +4748,7 @@ internal sealed record RecoveryLocator(
     RecoveryProtectionMode ProtectionMode,
     long MetadataOffset,
     long MetadataEncodedLength,
-    int MetadataEnvelopeLength,
+    long MetadataEnvelopeLength,
     int MetadataStripeCount,
     long ArchiveLength,
     int EncryptionSuite,
@@ -4654,9 +4790,12 @@ internal sealed record RecoveryLocator(
 internal sealed record RecoveryPackage(
     RecoveryLocator Locator,
     RecoveryManifest Manifest,
-    bool AuthenticationVerified);
+    bool AuthenticationVerified) : IDisposable
+{
+    public void Dispose() => Manifest.Dispose();
+}
 
-internal sealed class RecoveryManifest
+internal sealed class RecoveryManifest : IDisposable
 {
     public int Version { get; set; }
     [JsonPropertyName("containerVersion")]
@@ -4681,9 +4820,10 @@ internal sealed class RecoveryManifest
     public int Argon2Iterations { get; set; }
     public int Argon2Parallelism { get; set; }
     public List<RecoverySection> Sections { get; set; } = [];
+    public void Dispose() { foreach (RecoverySection section in Sections) section.Dispose(); }
 }
 
-internal sealed class RecoverySection
+internal sealed class RecoverySection : IDisposable
 {
     public string Name { get; set; } = string.Empty;
     public long Offset { get; set; }
@@ -4692,8 +4832,9 @@ internal sealed class RecoverySection
     public int DataShardCount { get; set; }
     public int ParityShardCount { get; set; }
     public int StripeCount { get; set; }
-    public List<string> DataDigests { get; set; } = [];
-    public List<RecoveryParityShard> Parity { get; set; } = [];
+    public RecoveryRecordTable<string> DataDigests { get; } = new();
+    public RecoveryRecordTable<RecoveryParityShard> Parity { get; } = new();
+    public void Dispose() => SecureMemory.DisposeAll(DataDigests, Parity);
 }
 
 internal sealed record RecoveryParityShard(

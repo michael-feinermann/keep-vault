@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-12T02:38:08.817828+00:00",
+  "actualReceiptWriterPid": 42345,
+  "status": "INSTALLED_BUILD20_NATIVE_PARANOIA_MULTICHUNK_ROUNDTRIP_PASS",
+  "productSourceHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "documentationSourceHeadAtExecution": "2273d4d20b754b68b1daf1b46c03ce0629d075fc",
+  "actualNativeAppPid": 19939,
+  "sourceBytes": 134222033,
+  "sourceFileCount": 7,
+  "sourceDirectoryCountIncludingRoot": 16,
+  "outputDirectoryCountIncludingOuterRoot": 17,
+  "largeFileBytes": 134217728,
+  "compressionLevel": 3,
+  "suite": "ParanoiaCascade",
+  "actualEncryptedChunkCount": 9,
+  "testCredentialsScope": "Only synthetic disposable test credentials and generated test factors, no user production secrets or release keys. No credential bytes in this receipt.",
+  "guiObservations": {
+    "initialAllElevenPoolsReady": true,
+    "initialPoolTotal": 11995,
+    "generateProducedFactorLengths": [
+      256,
+      256
+    ],
+    "sourcePoolsZeroImmediatelyAfterGenerate": true,
+    "testPdfWarningConfirmedInOwnedTestDirectory": true,
+    "testPdfBindingStatus": "The key sheets were handled for this exact archive path, suite and factor pair.",
+    "archiveRequestedUtc": "2026-10-12T02:27:39.897Z",
+    "archiveSuccessObservedUtc": "2026-10-12T02:28:46.798Z",
+    "archiveSuccessModal": "The archive and its KPAR2 recovery data were created.",
+    "archiveNativeConsoleKeyDerivationRoundsObserved": [
+      1,
+      2
+    ],
+    "archiveEncryptionProgressObserved": "Processed: 80 MiB; Phase remaining: not currently estimable; Overall remaining: unknown",
+    "extractRequestedUtc": "2026-10-12T02:30:45.228Z",
+    "extractSuccessObservedUtc": "2026-10-12T02:31:33.675Z",
+    "extractSuccessModal": "The archive was extracted.",
+    "extractProgressObserved": "Processed: 16 MiB and 32 MiB of 128.08 MiB; phase approximately less than 1 min; overall unknown",
+    "cancelVisibleAndEnabledDuringBothOperations": true,
+    "createCredentialsAndFactorsEmptyAfterSuccessfulCreation": true,
+    "extractCredentialsAndFactorsEmptyAfterSuccessfulExtraction": true,
+    "finalOperationStatus": "Ready",
+    "finalPhase": "Completed",
+    "finalProgressPercent": 100
+  },
+  "comparisonActualPid": 41827,
+  "comparisonExitCode": 0,
+  "comparisonChecks": {
+    "originalFixtureManifestAndComparisonHelpersRemainExact": true,
+    "originalFixtureCreationBoundToBuild20ProductHead": true,
+    "currentDocumentHeadDeclaredAndStable": true,
+    "gitDiffChangesOnlyDiagnosticSchedulerAndDocumentation": true,
+    "everyOtherCommittedTreeEntryUnchangedSinceBuild20ProductHead": true,
+    "trackedWorktreeHasNoChanges": true,
+    "sourceMatchesPredeclaredPublicFixture": true,
+    "exactSingleArchiveRootAndCompleteOutputTree": true,
+    "allFileSha256AndSizesEqual": true,
+    "allEmptyNestedHiddenUnicodeLongDirectoriesEqual": true,
+    "large128MiBPublicFilePresentAndHashEqual": true,
+    "archiveAndKpar2PresentNonempty": true,
+    "sourceOutputArtifactsAndHelperStable": true,
+    "evidenceRootDirectoryIdentitiesStable": true
+  },
+  "evidencePins": {
+    "filesystem-comparison-20261012T023202599747Z.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/filesystem-comparison-20261012T023202599747Z.json",
+      "bytes": 37346,
+      "sha256": "83ba808bcd67ad281c5f2f2a7a5704dc81f3f29dff595baf4c1358bbce7b66aa"
+    },
+    "comparison-start.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/comparison-start.json",
+      "bytes": 592,
+      "sha256": "43c1d9c171fd6f457597582604a3d23c408fde63300eff8785a176f31f25e562"
+    },
+    "comparison-terminal.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/comparison-terminal.json",
+      "bytes": 124,
+      "sha256": "c447b02d637f70d4a0095b6eb961566e5a9405cf2e98b163a599c01d3498d217"
+    },
+    "container-layout.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/container-layout.json",
+      "bytes": 1137,
+      "sha256": "1fb444d429a7765842e53dfd31da427b115a12b1350c737eae02d2fc8ca905e2"
+    },
+    "installed-native-binding.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/installed-native-binding.json",
+      "bytes": 599,
+      "sha256": "a5e670465bcfd820330dac731a20a27b8faa4518ca99d29d2787f7ab36e2a87e"
+    },
+    "installed-codesign-start.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/installed-codesign-start.json",
+      "bytes": 301,
+      "sha256": "f3a859a7f2c362cd7abbc4d04bbb1445aa2272b141ebf7c14984d8060b7fd02a"
+    },
+    "installed-codesign-terminal.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-final-resume-20261012-native-paranoia/installed-codesign-terminal.json",
+      "bytes": 125,
+      "sha256": "efdb152ce602c9958376d248ae2419bc0f6b1387d9a7d4c7d91e67565e154611"
+    }
+  },
+  "limitations": [
+    "This GUI case performed healthy extraction; it did not damage or repair this native archive. The separately proven 512-MiB functional repair case remains distinct.",
+    "The brief internal Generate shuffle/replay phases were not separately observed; no full native dual-phase pass is claimed.",
+    "GUI observation intervals include permission dialogs, polling and control latency; no controlled benchmark or internal phase profile is claimed.",
+    "Console twelve complete visible lines, Mixed and Single XChaCha native roundtrips, remaining resources/layout/fault gates and formal performance approval remain open.",
+    "This receipt does not approve full REV12 or public release."
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "receiptKind": "Derived public execution receipt, not the original byte stream",
+  "scope": "Bound managed Release development snapshot with build15 trusted natives. Current service sources match frozen build inputs; unrelated GUI source can advance. Not installed AOT GUI or release approval.",
+  "sourceHead": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "sourceHasUncommittedChanges": true,
+  "startedUtc": "2026-10-03T10:30:49.664145+00:00",
+  "completedUtc": "2026-10-03T10:37:49.404108+00:00",
+  "command": {
+    "runtime": "verified retained .NET SDK",
+    "assembly": "KeepVaultMac.Tests.dll",
+    "arguments": [
+      "--performance",
+      "--only",
+      "performance.rev12-stage-profile",
+      "--parallel",
+      "1"
+    ]
+  },
+  "exitCode": 0,
+  "test": {
+    "id": "performance.rev12-stage-profile",
+    "name": "public 256 MiB stage/cascade medians, actual granted teams and observation overhead",
+    "status": "PASS",
+    "seconds": 419.529,
+    "peakRssMiB": 719,
+    "seed": "0x1984AE61",
+    "failure": null
+  },
+  "sourceInputsSha256": "b99c06e1f229238fd051388f97bc6f1622c1fcf164accf81a748b9a4e4baa5fb",
+  "binaryInputsSha256": "dff7eaf0373d17c02dbb92e4682083bef94bac3d3661e06d2cafe2d96f4f9db8",
+  "binaryInputsBeforeAfterIdentical": true,
+  "originalExecutionReceiptSha256": "aa4074b197c32b75d6e1c01f720e4b7406a7e73f38a45aaa1b2066069f33f475",
+  "originalEvidenceDirectory": "work/v13-evidence/rev12-development-20261003/build-20261003T102259Z/frozen-stage-20261003T103049Z-c7dfcc2c",
+  "originalRunLogSha256": "bb3c71e5a02672d447012ea01991a9f6668dc09b8e593d75f31cee51110d1a17",
+  "originalHostBeforeSha256": "5b2d26b73bb936fd29ae589afb0c6da7f4a8a2e88e832ae54861fab81a7f20a5",
+  "originalHostAfterSha256": "53bdce85273565aab41c015b2908a5d6f2ef6cf9825a60d60c9b0f98ccca1c0f",
+  "publicHostSummary": {
+    "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+    "osArchitecture": "arm64",
+    "processArchitecture": "arm64",
+    "powerSource": "AC Power",
+    "batteryPercentBefore": 54,
+    "batteryPercentAfter": 60,
+    "thermalWarningRecordedBefore": false,
+    "thermalWarningRecordedAfter": false,
+    "performanceWarningRecordedBefore": false,
+    "performanceWarningRecordedAfter": false
+  },
+  "omittedOriginalFields": "Absolute local command paths and battery device identifier are omitted. Original receipt and host-file hashes are retained for provenance.",
+  "files": {
+    "cipher-stage-profile.json": {
+      "sha256": "b8d00d9ca0fca371cd435c02a37081a2cbb6087612b3aef24ad1b42b0cd186f6",
+      "bytes": 2303627
+    },
+    "test-results.json": {
+      "sha256": "24778e7ce0b5bb6b63e7bf02cfb0bc93070704070bd3613b22880db36c348245",
+      "bytes": 736
+    },
+    "test-timings.json": {
+      "sha256": "23fc7e735c20df3ddffa38373c9228e3b1e2195e08591735d292d76f8e4ce90a",
+      "bytes": 52
+    },
+    "binary-inputs-before.json": {
+      "sha256": "dff7eaf0373d17c02dbb92e4682083bef94bac3d3661e06d2cafe2d96f4f9db8",
+      "bytes": 15385
+    },
+    "binary-inputs-after.json": {
+      "sha256": "dff7eaf0373d17c02dbb92e4682083bef94bac3d3661e06d2cafe2d96f4f9db8",
+      "bytes": 15385
+    }
+  },
+  "releaseApproval": "NOT RUN: no new native build, installed AOT GUI, KDF, ZPAQ, container MAC, recovery, end-to-end workflow or release gate is approved by this evidence."
+}

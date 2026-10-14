@@ -1,0 +1,37 @@
+# Revision 12: begrenzte Phasenbeobachtung
+
+Stand: 3. Oktober 2026. Implementiert, im gebundenen managed Release-Entwicklungsbuild kompiliert und gezielt regressionsgeprüft. Dieses Dokument ersetzt keine installierte AOT-GUI-Messung.
+
+Fortsetzung am 4. Oktober 2026, 07:11 MESZ (05:11 UTC): Netzstrom wurde tatsächlich verifiziert und der Originalparent nach vollständigem Quellen-/Binary-/Metadata-/Driverabgleich fortgesetzt. Acht Fälle sind jetzt auch vom unveränderten Gesamtrunner terminal PASS; AES 256, Camellia 256, Serpent 256 und XChaCha20-Poly1305 werden seriell ergänzt. [Echter separater Resume-Receipt](evidence/v13-rev12-20261003/workflow-1gib-matrix-171619/administrative-power-resume-20261004T051124Z.json) und frische Awake-Assertion erhalten den Verwaltungsverlauf. Die unabhängige Schlussauswertung bleibt bis zu zwölf terminalen Fällen offen.
+
+Historischer Leistungszwischenstand vom 3. Oktober 2026, 21:06 UTC: Acht tatsächliche 1-GiB-Produktläufe sind PASS; AES 256, Camellia 256, Serpent 256 und XChaCha20-Poly1305 sind noch nicht gestartet. [Vollständige Zwischenauswertung mit Zeiten und Geschwindigkeiten](evidence/v13-rev12-20261003/workflow-1gib-interim-eight-171619/report.de.md) und [Originalbelege](evidence/v13-rev12-20261003/workflow-1gib-interim-eight-171619/README.md) erhalten produktive KDF, Kompression 5, KPAR2 und Struktur-/Hashvergleich. Der Matrixparent ist wegen niedrigen Akkustands bis zu tatsächlichem Netzstrom angehalten. Sein Originalcheckpoint enthält sieben terminale PASS und den noch nicht gesammelten MARS-Fall; dessen eigener Originalproduktlauf ist mit Exit 0/PASS beendet und separat mit einem ausdrücklich später erfassten aktuellen Nachherinventar gebunden. Kein Gesamt-PASS der zwölfteiligen Matrix und keine finale Releasefreigabe.
+
+`OperationPhaseProfile` ist eine interne Testseam. Sie wird ausschließlich durch `ObserveForTests` im ausführenden Testszenario aktiviert. Es existiert keine Aktivierung über Produktargumente, Umgebungsvariablen, Settings, Dateien, Benutzeroberfläche oder IPC. Ohne aktiven Observer liefert `Measure` einen leeren Timer zurück und liest keine Uhr. Erst eine aktivierte Testmessung erzeugt die begrenzten Aggregat- und Timeline-Strukturen.
+
+Ein Timer besitzt nur den Collector, eine geschlossene Phasen-ID, monotone Zeitwerte und eine öffentliche Bytezahl. Er hat keine Referenz auf Datenbuffer, Schlüssel, Tags, Credentials, Nonces oder Pfade. PMI und tatsächliche Argon2-Matrixkosten werden nicht protokolliert. Der Observer führt keine Callbacks aus und kann kein Scheduling, keine CPU-Permits, Cancellation, Output-Commit oder Cleanup steuern. Aufzeichnungsfehler markieren den Beobachter als nicht verfügbar und beeinflussen kein Produktergebnis.
+
+Die Timeline ist auf höchstens 4.096 Einträge begrenzt. Danach bleiben die Aggregate vollständig, während die Anzahl ausgelassener Timeline-Einträge mitgeführt wird. Alle Zähler summieren sättigend. Jeder Timer wird genau einmal abgeschlossen, auch wenn `Complete` und `Dispose` beide aufgerufen werden. Der aktuelle AsyncLocal-Observer wird nach dem Testscope wiederhergestellt.
+
+| Phasen | Tatsächlich gemessener Bereich |
+|---|---|
+| KDF | Credential-SHA3/Skein, PMI-Berechnung ohne deren Ergebnis, Runde 1/2, tatsächlicher nativer Argon2-Aufruf je Branch, Wartezeit auf CPU-Permits. |
+| Cipher | Sieben innere CTR-Kernel und äußere XChaCha20-Poly1305-Verschlüsselung/Tag beziehungsweise Tagprüfung/Entschlüsselung. Stage-Keykopien und Cleanup gehören zum umgebenden Payloadintervall, nicht zur isolierten Kernelzeit. |
+| Nonce/Key-Schedule | Tatsächliche Chunknonce-Derivation und Role-Key-Schedule nach der Master-KDF. |
+| Container | Gesamtverschlüsselung/-entschlüsselung, Payloadintervalle, reale Read-/Write-Mengen und globale Authentisierung. |
+| ZPAQ | Archiv-/Extract-/List-Serviceintervalle, Exit-Warteintervall und Pipe-Producer/Consumer mit tatsächlichen Pipe-Bytezahlen. Exit-Wartezeit beginnt beim Aufruf des Wait-Helpers, enthält keine davor liegende Launchvorbereitung und ist keine Child-CPU-Zeit. |
+| Recovery | Create, Verify/Repair, Original-Ciphertexthashvergleich und Recovery-Ausgabeschreibvorgänge. |
+| E2E-Test | Abschließender vollständiger Vergleich des öffentlichen extrahierten Baums, zusätzlich zur bestehenden Vergleichsassertion. |
+
+`ParallelContainerAuthenticator.ObservePhasesForTests` wird unverändert für seine MAC-Unterphasen verwendet. `NativeCipherExecutor.Measurements` liefert getrennt die tatsächlich erteilten Grants und begrenzte Queue-/Callback-/Join-Aggregate. Die Collections kennen keine Buffer-/Keyreferenzen. Beide werden vom E2E-Test zusammen mit dem neuen Profil aktiviert.
+
+Die reale Workflow-Walltime bleibt die separat bestehende Stoppuhr. Phasen sind teilweise verschachtelt und laufen teilweise parallel. Ihre Summen dürfen nicht als CPU-Zeit oder additive Workflowdauer interpretiert werden. Bei Cipherphasen ist die Bytebasis der tatsächliche komprimierte Payload, bei I/O der tatsächlich übertragene Umfang, bei der ursprünglichen Archivrate der vollständige Quellumfang. Der Profil-JSON-Block enthält diesen Interpretationsvertrag.
+
+Vorbereitete Gruppen `diagnostics.rev12-phase-bounds` und `diagnostics.rev12-phase-equivalence` prüfen die Bounds, verschachtelte/parallel fortgeführte Scope-Ownership, idempotente Timer, das öffentliche Schema, genau gleiche synthetische Container-/Cipher-/Tagbytes sowie tatsächliches Repair und Cleanup auch mit bewusst nicht verfügbarem Observer. Ihre 4-KiB-Fixtures verwenden ausdrücklich die vorhandene testinterne KDF-Speicherseam und sind kein Produktions-KDF-Performancebeleg.
+
+`ReleaseEndToEndPerformanceTests` erzeugt nach dem tatsächlichen vollständigen Produktions-KDF-Workflow einen separaten `E2E_PHASE_PROFILE_JSON`-Block. Die ursprünglichen E2E-Ergebnisse und ihre Basis bleiben erhalten. Der Block bezeichnet den tatsächlich ausgeführten managed Testharness ausdrücklich als solchen. Ein Profil der final installierten AOT-GUI bleibt `NOT RUN`, bis es dafür einen eigenen tatsächlichen Laufnachweis gibt. Es wurde hierfür kein neuer externer Zugriff auf produktive Geheimnisse eingeführt.
+
+## Ausgeführte gezielte Regression und Messgrenzen
+
+Im quellenstabilen `build-20261003T102259Z` sind `diagnostics.rev12-phase-bounds` und `diagnostics.rev12-phase-equivalence` bestanden. Zugehörige Ergebnisse: `work/v13-evidence/rev12-development-20261003/build-20261003T102259Z/run-20261003T102713Z-ceebf244/test-results.json` und `run-20261003T102714Z-3fa123bc/test-results.json`. Die tatsächlichen 4-KiB-Container-/Taggleichheits-, Repair- und Cleanup-Prüfungen nutzen die ausdrücklich benannte reduzierte funktionale KDF-Testseam; daraus folgt kein Produktions-KDF-Leistungsnachweis.
+
+Providerinterne Worker-Key-Expansion gehört zum gemessenen nativen Stageaufruf; sie ist nicht separat als ABI-Unterphase isoliert. Der eigene Role-Key-Schedule nach dem Master bleibt getrennt. In vollständigen Workflows sind Stageintervalle monotone Walltimes; es wird keine separate CPU-Aufteilung pro gleichzeitig laufender Stufe behauptet. Die begrenzte interne Timeline kann spätere Einträge auslassen. Die zusätzlich acht zusammenhängenden äußeren Workflowintervalle decken die vollständige gemessene Walltime einschließlich der Eigentümer-/Fixturebereinigung ab, ersetzen jedoch keinen vollständigen internen parallelen kritischen Pfad. Ein solcher Pfad sowie installierte AOT-Phasenmessung bleiben offen.

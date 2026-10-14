@@ -1,0 +1,547 @@
+{
+  "status": "PASS",
+  "scope": "primitive cascade, fixed public keys/nonces; no KDF, derived nonce, global MAC, container or I/O claim",
+  "executor": "standalone bounded native teams (comparison only)",
+  "runtime": ".NET 10.0.11",
+  "architecture": "Arm64",
+  "artifacts": {
+    "libaes_ref.dylib": "32B9402149E3E0516FC0DB52BCE5EB66F8BC32432B74924B4FD37E07A794F4F2",
+    "libmars_ref.dylib": "C885D9082EF1C66A6F46575688B296C9E6308F9D7AFC3B07FE2F1EC246009DA7",
+    "libcamellia_v13.dylib": "0B586C39BAA295DCE60D91296FE4BEDB910A8C5BE8986DD4C9B93AE91269B0C5",
+    "libserpent_v13.dylib": "7DABEAE67C04CC5EEBC5EE4062D2B6AC8400FD5BA4EAEACF1AE85829814F1CA9",
+    "libshacal2_ref.dylib": "3DA18454C11FE34E2E25E72F033E3054AFBFA5497EF43B619BFE564D81BED110",
+    "libkalyna_v13.dylib": "1D0C22112C2D4A94E7C3792999D2E5A9E78E6A2D03A92DDDDE2337D8D015BF92",
+    "libthreefish_ref.dylib": "7899D0334C23D9F78423F19713C9BBE8DD6875255191711CE18E648C65CD87A6",
+    "libxchachapoly_v13.dylib": "7CE5062DE2AADB34A66CE5FB6D7418765817576B5F5B6ED44A934D03808A099A"
+  },
+  "results": [
+    {
+      "suite": "Camellia256",
+      "worker_grant": 1,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        4.3732381,
+        4.3697145,
+        4.3691112,
+        4.3682718,
+        4.3653257
+      ],
+      "median_mib_per_second": 58.59315276754687,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        4.371574,
+        4.367045,
+        4.367741,
+        4.364973,
+        4.362287
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "60C2673AC203B3B8254AA7F10E57709468834C918F118F53C3DA5C74D0B57633",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "Camellia256",
+      "worker_grant": 2,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        2.2701551,
+        2.2872271,
+        2.2820027,
+        2.2659486,
+        2.2787329
+      ],
+      "median_mib_per_second": 112.34313595946239,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        4.519563,
+        4.545789,
+        4.541532,
+        4.518407,
+        4.544256
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "60C2673AC203B3B8254AA7F10E57709468834C918F118F53C3DA5C74D0B57633",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "Camellia256",
+      "worker_grant": 5,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        1.0707487,
+        1.0646037,
+        1.0719314,
+        1.0721831,
+        1.0775762
+      ],
+      "median_mib_per_second": 238.82125292719292,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        5.173433,
+        5.156643,
+        5.160768,
+        5.162615,
+        5.20099
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "60C2673AC203B3B8254AA7F10E57709468834C918F118F53C3DA5C74D0B57633",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "Camellia256",
+      "worker_grant": 10,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.6679817,
+        0.6641342,
+        0.6629236,
+        0.6716029,
+        0.6650045
+      ],
+      "median_mib_per_second": 384.95980102390286,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        6.12687,
+        6.10779,
+        6.129045,
+        6.134603,
+        6.105533
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "60C2673AC203B3B8254AA7F10E57709468834C918F118F53C3DA5C74D0B57633",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "Serpent256",
+      "worker_grant": 1,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        1.7723106,
+        1.7667637,
+        1.7982649,
+        1.7989061,
+        1.7550964
+      ],
+      "median_mib_per_second": 144.44420746566658,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        1.770778,
+        1.765811,
+        1.794806,
+        1.795698,
+        1.753889
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "8A4F302B6867785026ECD5D954A57A2C4F826903E3ABEA63999C61BBD3588B99",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "Serpent256",
+      "worker_grant": 2,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.946049,
+        0.9469382,
+        0.9471489,
+        0.9466092,
+        0.9418196
+      ],
+      "median_mib_per_second": 270.4389519983537,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        1.885189,
+        1.883556,
+        1.883985,
+        1.882888,
+        1.87496
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "8A4F302B6867785026ECD5D954A57A2C4F826903E3ABEA63999C61BBD3588B99",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "Serpent256",
+      "worker_grant": 5,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.4565876,
+        0.453841,
+        0.4568113,
+        0.4500857,
+        0.4493503
+      ],
+      "median_mib_per_second": 564.0742021985674,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        2.196113,
+        2.184227,
+        2.198299,
+        2.165058,
+        2.162056
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "8A4F302B6867785026ECD5D954A57A2C4F826903E3ABEA63999C61BBD3588B99",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "Serpent256",
+      "worker_grant": 10,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.3373878,
+        0.2942488,
+        0.295248,
+        0.3002746,
+        0.3077076
+      ],
+      "median_mib_per_second": 852.5529631876955,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        2.692029,
+        2.674156,
+        2.684961,
+        2.750962,
+        2.688199
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "8A4F302B6867785026ECD5D954A57A2C4F826903E3ABEA63999C61BBD3588B99",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "StandardCascade",
+      "worker_grant": 1,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        2.0590395,
+        2.0571153,
+        2.0526617,
+        2.050437,
+        2.0489222
+      ],
+      "median_mib_per_second": 124.71611858885467,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        2.056872,
+        2.055252,
+        2.051176,
+        2.049017,
+        2.047735
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "B04E24B3A2C8920754B27250A3078AD1B11C169392DD08DDBD9C29002C52F08C",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "StandardCascade",
+      "worker_grant": 2,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        1.773456,
+        1.7581419,
+        1.7575695,
+        1.7536131,
+        1.7644312
+      ],
+      "median_mib_per_second": 145.60826973067418,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        2.086673,
+        2.071345,
+        2.070816,
+        2.067216,
+        2.078106
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "B04E24B3A2C8920754B27250A3078AD1B11C169392DD08DDBD9C29002C52F08C",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "StandardCascade",
+      "worker_grant": 5,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.5799469,
+        0.5811597,
+        0.57887,
+        0.5761145,
+        0.5782333
+      ],
+      "median_mib_per_second": 442.24091764990413,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        2.689597,
+        2.671414,
+        2.690131,
+        2.674025,
+        2.663618
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "B04E24B3A2C8920754B27250A3078AD1B11C169392DD08DDBD9C29002C52F08C",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "StandardCascade",
+      "worker_grant": 10,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        0.3730615,
+        0.3767551,
+        0.3728375,
+        0.3737567,
+        0.3727835
+      ],
+      "median_mib_per_second": 686.2139352358794,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        3.263153,
+        3.270812,
+        3.27085,
+        3.244136,
+        3.259245
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "B04E24B3A2C8920754B27250A3078AD1B11C169392DD08DDBD9C29002C52F08C",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "ParanoiaCascade8",
+      "worker_grant": 1,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        10.0409403,
+        9.9836305,
+        9.924128,
+        9.9500269,
+        10.178135
+      ],
+      "median_mib_per_second": 25.641974630371184,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        10.033624,
+        9.973839,
+        9.917692,
+        9.932089,
+        10.129917
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "C293F6E86170D99373B253A52A25F221378FC3E9B6C9770920698FE9F4803ADF",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "ParanoiaCascade8",
+      "worker_grant": 2,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        5.8972157,
+        5.8909952,
+        5.8625498,
+        5.8662863,
+        5.8652169
+      ],
+      "median_mib_per_second": 43.63919299335936,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        10.319408,
+        10.302214,
+        10.268778,
+        10.273946,
+        10.272486
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "C293F6E86170D99373B253A52A25F221378FC3E9B6C9770920698FE9F4803ADF",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "ParanoiaCascade8",
+      "worker_grant": 5,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        2.5122781,
+        2.5123571,
+        2.5145326,
+        2.5361256,
+        2.5125955
+      ],
+      "median_mib_per_second": 101.8866745562507,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        12.059816,
+        12.021489,
+        12.075843,
+        12.078631,
+        12.047712
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "C293F6E86170D99373B253A52A25F221378FC3E9B6C9770920698FE9F4803ADF",
+      "threadpool_threads": 0
+    },
+    {
+      "suite": "ParanoiaCascade8",
+      "worker_grant": 10,
+      "bytes_per_run": 268435456,
+      "chunk_bytes": 16777216,
+      "warmups": 1,
+      "repetitions": 5,
+      "seconds": [
+        1.5926531,
+        1.5979833,
+        1.5879976,
+        1.6222656,
+        1.5985222
+      ],
+      "median_mib_per_second": 160.20192451322862,
+      "managed_allocated_bytes": [
+        304,
+        304,
+        304,
+        304,
+        304
+      ],
+      "cpu_seconds": [
+        14.462382,
+        14.387393,
+        14.442565,
+        14.483892,
+        14.342039
+      ],
+      "peak_working_set_bytes": 0,
+      "output_sha256": "C293F6E86170D99373B253A52A25F221378FC3E9B6C9770920698FE9F4803ADF",
+      "threadpool_threads": 0
+    }
+  ]
+}

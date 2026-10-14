@@ -8,10 +8,10 @@ Inhalt wird **nicht** in eine Datei geschrieben.
 
 Sie ist von Keep Vault unabhängig: eigener Ordner, eigenes Projekt, eigene
 Abhängigkeiten, eigener Build, eigene Signatur. Sie teilt keinen Quellcode mit
-Keep Vault, liest nichts aus dessen Installation, und die Buildskripte von
-Keep Vault fassen sie nicht an. Der Grund ist nicht bloß Ordnung: Der Scanner
-braucht eine Kamera, und das Programm, das Archivschlüssel hält, darf niemals
-dasjenige sein, das eine Kamera hat.
+Keep Vault und liest nichts aus dessen Installation. Der gemeinsame Windows-
+Releasebuilder ruft das eigene Scanner-Buildskript auf und übernimmt dessen
+signierte Ausgabe. Der Scanner läuft in einem separaten Prozess; Kamerazugriff
+bleibt außerhalb der Archivierungsanwendung.
 
 Das macOS-Gegenstück ist [`../QrCodeScanner`](../QrCodeScanner). Beide treffen
 mit denselben Worten dieselbe Entscheidung darüber, welcher der beiden
@@ -139,3 +139,11 @@ Damit die Liste oben etwas wert ist, folgt hier ehrlich die andere Hälfte.
 | `Tests/QrImage.cs` | Zeichnet Codes für diese Decodierung in ein Bild im Kameraformat. |
 | `tools/Build-QrScanner-Windows.ps1` | Testen, bauen, signieren. |
 | `tools/New-QrScannerIcon.ps1` | Erzeugt das Icon, das selbst ein scannbarer QR-Code ist. |
+
+## Drittanbieterabhängigkeit
+
+Der Windows-Decoder verwendet fest [ZXing.Net 0.16.10](https://www.nuget.org/packages/ZXing.Net/0.16.10).
+Das [Upstreamprojekt](https://github.com/micjahn/ZXing.Net) stellt den
+[Lizenztext der Apache License 2.0](https://github.com/micjahn/ZXing.Net/blob/master/COPYING) bereit.
+Diese Verweise dokumentieren die Abhängigkeit; sie belegen keinen neuen Windows-
+Build oder eine Windows-Freigabe in diesem auf macOS begrenzten Durchgang.

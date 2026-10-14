@@ -1,0 +1,15 @@
+{
+  "scope": "Managed development evidence; installed release approval is separate",
+  "performance": true,
+  "executions": [
+    {
+      "testId": "performance.rev12-workflow-256mib-camellia-manual1",
+      "startedUtc": "2026-10-04T07:22:14.326556+00:00",
+      "completedUtc": "2026-10-04T07:23:30.318951+00:00",
+      "launcherExit": 0,
+      "evidence": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z/run-20261004T072214Z-dd7f3d21",
+      "launcherOutput": "test_exit=0 evidence=/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z/run-20261004T072214Z-dd7f3d21\n",
+      "status": "PASS"
+    }
+  ]
+}

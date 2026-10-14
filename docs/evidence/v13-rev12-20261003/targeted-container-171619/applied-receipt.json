@@ -1,0 +1,6 @@
+{
+  "sourceSha256Before": "bc77e413f91a2f4d93f683ddf024b1342f1d4af40b60c34957971b80f1e03c04",
+  "sourceSha256After": "64b6871b734d5afcb821b2a5fa8c4b4a008807e177a2ab9b94134a331ad53208",
+  "scope": "Existing-target test oracle correction only, strict Destination reason and retained entropy/lifetime/factors/stream/part/sentinel. Applied only after original source-stable full execution completed with retained 13FAIL. Build171438 is unchanged-source administrative extra build, not the corrected build.",
+  "builderFinalTest": "release.v13-paranoia-structure512"
+}

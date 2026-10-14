@@ -840,6 +840,16 @@ Use at your own risk.
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
+#include <memory>
+
+// Keep Vault's process-wide allocation gate includes libzpaq's C allocations.
+void* keepvault_budget_malloc(size_t);
+size_t keepvault_budget_allocation_overhead() noexcept;
+void* keepvault_budget_calloc(size_t, size_t);
+void* keepvault_budget_realloc(void*, size_t);
+void keepvault_budget_free(void*) noexcept;
+bool keepvault_budget_reserve_mapping(size_t);
+void keepvault_budget_release_mapping(size_t);
 
 namespace libzpaq {
 
@@ -849,13 +859,23 @@ typedef uint16_t U16;
 typedef uint32_t U32;
 typedef uint64_t U64;
 
+// The application installs this once before starting worker threads. A factory
+// failure must throw; a non-null factory may not return a null reservation.
+// Owners release admission only after the associated buffers have been freed.
+class MemoryReservation {
+public:
+  virtual ~MemoryReservation() {}
+};
+typedef MemoryReservation* (*MemoryReservationFactory)(uint64_t bytes);
+void setMemoryReservationFactory(MemoryReservationFactory factory);
+
 // Tables for parsing ZPAQL source code
 extern const char* compname[256];    // list of ZPAQL component types
 extern const int compsize[256];      // number of bytes to encode a component
 extern const char* opcodelist[272];  // list of ZPAQL instructions
 
 // Callback for error handling
-extern void error(const char* msg);
+[[noreturn]] extern void error(const char* msg);
 
 // Virtual base classes for input and output
 // get() and put() must be overridden to read or write 1 byte.
@@ -913,7 +933,7 @@ void Array<T>::resize(size_t sz, int ex) {
   if (n>0) {
     assert(offset>0 && offset<=64);
     assert((char*)data-offset);
-    ::free((char*)data-offset);
+    ::keepvault_budget_free((char*)data-offset);
   }
   n=0;
   offset=0;
@@ -921,7 +941,7 @@ void Array<T>::resize(size_t sz, int ex) {
   n=sz;
   const size_t nb=128+n*sizeof(T);  // test for overflow
   if (nb<=128 || (nb-128)/sizeof(T)!=n) n=0, error("Array too big");
-  data=(T*)::calloc(nb, 1);
+  data=(T*)::keepvault_budget_calloc(nb, 1);
   if (!data) n=0, error("Out of memory");
   offset=64-int(reinterpret_cast<uintptr_t>(data)&uintptr_t(63));
   assert(offset>0 && offset<=64);
@@ -1118,6 +1138,7 @@ public:
   Predictor(ZPAQL&);
   ~Predictor();
   void init();          // build model
+  void clearMemory();   // release model arrays, preserving fixed tables
   int predict();        // probability that next bit is a 1 (0..4095)
   void update(int y);   // train on bit y (0..1)
   int stat(int);        // Defined externally
@@ -1201,6 +1222,7 @@ public:
   int decompress();  // return a byte or EOF
   int skip();        // skip to the end of the segment, return next byte
   void init();       // initialize at start of block
+  void clearModel() {pr.clearMemory();} // preserve buffered compressed input
   int stat(int x) {return pr.stat(x);}
   int get() {        // return 1 byte of buffered input or EOF
     if (rpos==wpos) {
@@ -1242,7 +1264,7 @@ public:
 // For decompression and listing archive contents
 class Decompresser {
 public:
-  Decompresser(): z(), dec(z), pp(), state(BLOCK), decode_state(FIRSTSEG) {}
+  Decompresser();
   void setInput(Reader* in) {dec.in=in;}
   bool findBlock(double* memptr = 0);
   void hcomp(Writer* out2) {z.write(out2, false);}
@@ -1256,6 +1278,9 @@ public:
   int stat(int x) {return dec.stat(x);}
   int buffered() {return dec.buffered();}
 private:
+  // Declaration order is intentional: reservations outlive all model owners.
+  std::unique_ptr<MemoryReservation> fixed_memory;
+  std::unique_ptr<MemoryReservation> model_memory;
   ZPAQL z;
   Decoder dec;
   PostProcessor pp;
@@ -1387,7 +1412,7 @@ class StringBuffer: public libzpaq::Reader, public libzpaq::Writer {
     assert(!al==!p);
     if (a<=al) return;
     unsigned char* q=0;
-    if (a>0) q=(unsigned char*)(p ? realloc(p, a) : malloc(a));
+    if (a>0) q=(unsigned char*)(p ? keepvault_budget_realloc(p, a) : keepvault_budget_malloc(a));
     if (a>0 && !q) error("Out of memory");
     p=q;
     al=a;
@@ -1399,7 +1424,10 @@ class StringBuffer: public libzpaq::Reader, public libzpaq::Writer {
     if (wpos+n>limit || wpos+n<wpos) error("StringBuffer overflow");
     if (wpos+n<=al) return;
     size_t a=al;
-    while (wpos+n>=a) a=a*2+init;
+    while (wpos+n>=a) {
+      if (a>(size_t(-1)-init)/2) { a=wpos+n; break; }
+      a=a*2+init;
+    }
     reserve(a);
   }
 
@@ -1435,7 +1463,7 @@ public:
     if (p) {
       volatile unsigned char* wipe=p;
       for (size_t i=0; i<al; ++i) wipe[i]=0;
-      free(p);
+      keepvault_budget_free(p);
     }
     p=0;
     al=rpos=wpos=0;

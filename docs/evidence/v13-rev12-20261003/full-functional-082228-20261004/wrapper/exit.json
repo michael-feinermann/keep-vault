@@ -1,0 +1,7 @@
+{
+  "completedUtc": "2026-10-04T10:37:09.744261+00:00",
+  "actualHelperExit": 0,
+  "harnessInputsStable": false,
+  "status": "FAIL",
+  "scope": "Fresh complete managed functional regression on current unchanged sources with retained signed Build15 natives. Not a final Build16/AOT/installed GUI release gate."
+}

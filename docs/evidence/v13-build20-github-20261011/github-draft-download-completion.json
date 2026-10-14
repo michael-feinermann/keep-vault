@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-11T13:37:46.201363+00:00",
+  "actualVerificationPid": 31501,
+  "status": "SOURCE_PUSH_DRAFT_PR_SIX_ASSETS_AUTHENTICATED_DOWNLOAD_AND_HYBRID_VERIFIED",
+  "sourceCommit": "0cd37e442dece9d09ef3e5cb56ae9d566ebe88fd",
+  "productSourceCommit": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "candidateTag": "v5.0.3-rc.build20",
+  "releaseId": 409690404,
+  "releaseUrl": "https://github.com/michael-feinermann/keep-vault/releases/tag/untagged-bf09272d4db673097c18",
+  "draft": true,
+  "prerelease": true,
+  "pullRequest": {
+    "baseRefName": "master",
+    "headRefName": "codex/keep-vault-5.0.3-v13",
+    "headRefOid": "0cd37e442dece9d09ef3e5cb56ae9d566ebe88fd",
+    "isDraft": true,
+    "state": "OPEN",
+    "url": "https://github.com/michael-feinermann/keep-vault/pull/3"
+  },
+  "uploadedAndDownloadedAssets": {
+    "Keep.Vault-macOS-universal.zip": {
+      "assetId": 630840076,
+      "bytes": 45992923,
+      "sha256": "84cc050b2ef5588d882b59e154063e6f62e473763d4dfd484c2e4a5f5536a32e"
+    },
+    "Keep.Vault-macOS-universal.zip.sha3": {
+      "assetId": 630840078,
+      "bytes": 129,
+      "sha256": "f795af02e4ea4ebef8ac23a24b4d816e4282f97e9a5ad356327e48645e2fdf94"
+    },
+    "Keep.Vault-macOS-universal.zip.skein": {
+      "assetId": 630840077,
+      "bytes": 257,
+      "sha256": "8f0951608b2428ab71e8d2a778cd6d0cd726f8bd6e12ccaa1ae7994258c1ff26"
+    },
+    "Keep.Vault-macOS-universal.zip.khsig": {
+      "assetId": 630840073,
+      "bytes": 6547,
+      "sha256": "63b8452e8f52f7dbc08d90958ad1c777be7ac91850ec366a99f8d71a37ae3692"
+    },
+    "Keep.Vault-macOS-universal.zip.sha3.khsig": {
+      "assetId": 630840074,
+      "bytes": 6547,
+      "sha256": "d278774990c1eab5dfb018d286d3075d3fb871595e79238c19983dbaaa5816ae"
+    },
+    "Keep.Vault-macOS-universal.zip.skein.khsig": {
+      "assetId": 630840126,
+      "bytes": 6547,
+      "sha256": "ff00ac94463db1ee51d2288ef55158841d070d53cb178583d6947ba79fea618a"
+    }
+  },
+  "hybridArchitectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "oldV502ReleasePreserved": true,
+  "latestRelease": "v5.0.2",
+  "anonymousPublicDownloadClaimed": false,
+  "publicReleaseApproved": false
+}

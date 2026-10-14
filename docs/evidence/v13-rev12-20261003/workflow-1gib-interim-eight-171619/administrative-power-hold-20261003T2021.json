@@ -1,0 +1,12 @@
+{
+  "recordedUtc": "2026-10-03T20:22:02.704230+00:00",
+  "signalRequestedUtc": "2026-10-03T20:22:02.702287+00:00",
+  "parentPid": 98746,
+  "parentCommand": "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python work/v13-evidence/rev12-development-20261003/run-workflow-1gib-matrix-pinned.py --build /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z",
+  "parentStateAfterSignal": "Ts",
+  "activeTestId": "performance.rev12-workflow-1gib-mars448-auto",
+  "uninterruptedChildProcessGroup": 1792,
+  "battery": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t15%; discharging; 1:04 remaining present: true\n",
+  "action": "Only the owned administrative parent was stopped. Active measured test and its native children continue uninterrupted. Future cases await verified AC power. No product source or matrix outcome edited.",
+  "resumedUtc": null
+}

@@ -1566,6 +1566,25 @@ internal static partial class MacSafeFileSystem
 
     internal static Action<MacFileIdentity>? TestHookAfterFreeSpaceDescriptorQuery { get; set; }
 
+    internal static void SetCloseOnExec(SafeFileHandle handle, bool enabled)
+    {
+        bool added = false;
+        try
+        {
+            handle.DangerousAddRef(ref added);
+            int descriptor = checked((int)handle.DangerousGetHandle());
+            // Darwin fcntl's third argument is variadic and has a different
+            // ARM64 ABI from a fixed three-argument P/Invoke. These ioctl
+            // commands have no optional argument (SDK sys/filio.h).
+            if (IoctlNoArgument(descriptor, enabled ? 0x20006601u : 0x20006602u) != 0)
+                throw new Win32Exception(Marshal.GetLastPInvokeError(), "Could not set descriptor inheritance.");
+            int flags = FcntlNoArgument(descriptor, 1 /* F_GETFD */);
+            if (flags < 0 || ((flags & 1) != 0) != enabled)
+                throw new IOException("The descriptor inheritance flags did not match the requested state.");
+        }
+        finally { if (added) handle.DangerousRelease(); }
+    }
+
     internal static long GetFreeDiskSpaceBytes(SafeFileHandle directoryHandle)
     {
         ArgumentNullException.ThrowIfNull(directoryHandle);
@@ -1575,14 +1594,9 @@ internal static partial class MacSafeFileSystem
             directoryHandle.DangerousAddRef(ref added);
             int descriptor = checked((int)directoryHandle.DangerousGetHandle());
             MacFileIdentity identity = GetIdentity(directoryHandle);
-            if (FStatVfs(descriptor, out DarwinStatVfs stat) != 0)
-            {
-                throw new Win32Exception(Marshal.GetLastPInvokeError(), "macOS could not fstatvfs the bound directory descriptor.");
-            }
-
+            long availableBytes = MacOperationVolume.Inspect(directoryHandle).AvailableBytes;
             TestHookAfterFreeSpaceDescriptorQuery?.Invoke(identity);
-            ulong availableBytes = checked((ulong)stat.f_bavail * stat.f_frsize);
-            return checked((long)availableBytes);
+            return availableBytes;
         }
         finally
         {
@@ -1753,24 +1767,8 @@ internal static partial class MacSafeFileSystem
     [LibraryImport("libSystem.B.dylib", EntryPoint = "unlinkat", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
     internal static partial int PInvokeUnlinkAt(int dirfd, string path, int flags);
 
-    [LibraryImport("libSystem.B.dylib", EntryPoint = "fstatvfs", SetLastError = true)]
-    private static partial int FStatVfs(int descriptor, out DarwinStatVfs buf);
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal struct DarwinStatVfs
-{
-    public ulong f_bsize;
-    public ulong f_frsize;
-    public uint f_blocks;
-    public uint f_bfree;
-    public uint f_bavail;
-    public uint f_files;
-    public uint f_ffree;
-    public uint f_favail;
-    public ulong f_fsid;
-    public ulong f_flag;
-    public ulong f_namemax;
+    [LibraryImport("libSystem.B.dylib", EntryPoint = "ioctl", SetLastError = true)]
+    private static partial int IoctlNoArgument(int descriptor, nuint command);
 }
 
 internal readonly record struct MacFileIdentity(
@@ -2070,6 +2068,14 @@ internal sealed class MacExtractionStaging : IDisposable
         long available = MacSafeFileSystem.GetFreeDiskSpaceBytes(_stagingHandle);
         VerifyIdentity();
         return available;
+    }
+
+    internal MacOperationVolume.Info GetOperationVolume()
+    {
+        VerifyIdentity();
+        MacOperationVolume.Info info = MacOperationVolume.Inspect(_stagingHandle);
+        VerifyIdentity();
+        return info;
     }
 
     public void Install(Action<DirectoryTreeMeasurement>? validateFinalTree = null)

@@ -1,0 +1,15 @@
+{
+  "recordedUtc": "2026-10-03T21:11:26.217176+00:00",
+  "action": "SIGTERM only coordinator-owned idle caffeinate assertion",
+  "awakePid": 98811,
+  "awakeCommandBefore": "501 Ss   /usr/bin/caffeinate -i -w 98746",
+  "awakeStateAfter": null,
+  "parentPid": 98746,
+  "parentStateBefore": "501 Ts   /opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python work/v13-evidence/rev12-development-20261003/run-workflow-1gib-matrix-pinned.py --build /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z",
+  "parentStateAfter": "501 Ts   /opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python work/v13-evidence/rev12-development-20261003/run-workflow-1gib-matrix-pinned.py --build /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/build-20261003T171619Z",
+  "battery": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t10%; discharging; 5:33 remaining present: true\n\tBattery Warning: Early\n",
+  "uninterruptedMarsChildCompletedUtc": "2026-10-03T20:36:01.072975+00:00",
+  "liveProcessesInOwnedMarsGroup": [],
+  "ownedWorkflowFixtures": [],
+  "scope": "All current measured child work finished before assertion release. Original parent remains held awaiting verified AC. On actual continuation establish a fresh owned awake assertion before SIGCONT. No child/product time changed; original awake/hold receipts remain historical and unchanged."
+}

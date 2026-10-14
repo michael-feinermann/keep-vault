@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "testInventoryHash": "2b275841e29601cb690e68c2741203b9470ac037a47641946066d9828579c3cd",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.cipher-suites",
+      "name": "primitive and full-container release medians for every cipher suite and cascade",
+      "status": "FAIL",
+      "seconds": 37.387,
+      "peakRssMiB": 862,
+      "seed": "0x0B3B72BB",
+      "failure": "InvalidOperationException: ParanoiaCascade regressed by more than 25 %: 108,8 MiB/s now, 148,3 MiB/s baseline.\n   at CipherSuitePerformanceTests.Require(Boolean condition, String message)\n   at CipherSuitePerformanceTests.ValidateMachineBaseline(PerformanceHostIdentity currentHost, IReadOnlyDictionary\u00602 currentRates, PerformanceBaseline baseline)\n   at CipherSuitePerformanceTests.CompareWithMachineBaseline(PerformanceHostIdentity currentHost, IReadOnlyDictionary\u00602 currentRates)\n   at CipherSuitePerformanceTests.Run()\n   at MacComprehensiveTests.\u003C\u003Ec.\u003Cget_AllTests\u003Eb__16_0()\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList\u00601 allTests, String testId, UInt32 seed, Boolean performanceRequested)"
+    }
+  ]
+}

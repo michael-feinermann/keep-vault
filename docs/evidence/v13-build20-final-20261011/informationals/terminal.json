@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-11T12:39:21.897077+00:00",
+  "actualWrapperPid": 24097,
+  "actualWrapperExitCode": 0,
+  "wrapperSha256": "3507f77d62387126e7980db21a586a7c155706cf3a0e6a1914e79d8d96683253",
+  "summarySha256": "908c49b2f27463fac614b8c5b6043098829674072a5c9a6174b5d6306b8743d9",
+  "role": "INFORMATIONAL_ONLY",
+  "originalBuilderExitCode": 1,
+  "originalPhase8ExitCode": 1
+}

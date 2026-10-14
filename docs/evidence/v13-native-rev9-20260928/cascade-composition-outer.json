@@ -1,0 +1,419 @@
+{
+  "status": "PASS",
+  "scope": "exact Standard/Paranoia inner-stage outputs authenticated by independent libsodium AND Go and compared to actual native AEAD",
+  "checks": 140,
+  "cases": [
+    {
+      "suite_id": 2,
+      "length": 0,
+      "stages": 4,
+      "inner_ciphertext_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tag_hex": "1a172bedf38ec762863c2819470b1e4c",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 1,
+      "stages": 4,
+      "inner_ciphertext_sha256": "62c66a7a5dd70c3146618063c344e531e6d4b59e379808443ce962b3abd63c5a",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "1f184f101c67d585ba00d24cfde36863f747fbab9e84af7760ec771e9b36ca51",
+      "tag_hex": "9a80ecfb3b281b5fc915eab55cdd2ad3",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 15,
+      "stages": 4,
+      "inner_ciphertext_sha256": "46ea6f5807b3fa7218b974da186730f6fae6bea84909d54d5aa8bb88b4947fdd",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "60b6304d095b6998972f53770ab4b004fe908d14db87d2ad77169e2c3d43aafd",
+      "tag_hex": "a2cb639222e621df6f364c2a32d5394b",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 16,
+      "stages": 4,
+      "inner_ciphertext_sha256": "90b547bea6ce7c3976aba540fcb47c132e83d4c229d4f37bbe6aa670f8f39f69",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "8118de177e2c3873db547bea977c4f443332a43295ec8a469d4ccc68eb2e3377",
+      "tag_hex": "2121ed6c1edfb3398eba4d90da013d5e",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 17,
+      "stages": 4,
+      "inner_ciphertext_sha256": "cedd0a9839f98e5ad2130b708f7f6c6d93581e5bd48418e309bebd61f06c7181",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "6ffcd347878ba330a7ff8da0b2ee17a6f7ca74edcbdb46e1104184cabdb0d9be",
+      "tag_hex": "54efb23c254e32d87528c790923da45e",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 63,
+      "stages": 4,
+      "inner_ciphertext_sha256": "aa42914b6a34b055ad2868b7979cb175cae624f9931dec863fd83dbefd043e06",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "a9e392d4aa1da910719fa232bd60df2263f2701f192c2b3a4c16e7a06fc352d0",
+      "tag_hex": "3b430d484f4f5eff0d248c1453d5118d",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 64,
+      "stages": 4,
+      "inner_ciphertext_sha256": "0795fb21483b595649f9053dc606723ae794fa3a0cc104d91a2eda625ab01d1f",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "5bc2c4790fc73f36b24186dc57cf59c0ec0f168f61aa6b01e176a1d33579a185",
+      "tag_hex": "11db76db258ad96ff9429b3b0f9856e2",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 65,
+      "stages": 4,
+      "inner_ciphertext_sha256": "32d75bcf2afa2702caf476e4f7d54b69a35825ba440ce1dd35f94da97a2f3220",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "d5777dee912cb1865344bb110bfddfb5604bac6f72d6d32a4260387a78531165",
+      "tag_hex": "6de3c2ab7b61f6551c947256ce5e38f3",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 127,
+      "stages": 4,
+      "inner_ciphertext_sha256": "79db29cb4e84f6292a853dde206a36f41e1ffa86b575642d2d85a4a05f6d4d1c",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "de304ff0b617d18f1957d7b652615cbfc3fb41d4919b2e21af54d6806007b79a",
+      "tag_hex": "75225365481a6272f5cbba408a271fb1",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 128,
+      "stages": 4,
+      "inner_ciphertext_sha256": "be6cbe4a4618ac7ce07477056f851bdec01c4e1623d8923078acffc25d03c10c",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "e617cf454cb2f775dbf33cff53f345b0852a85c38e031c8c48e9b48ffb744ddc",
+      "tag_hex": "c2ca34e6476987978472458b03d1cfec",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 129,
+      "stages": 4,
+      "inner_ciphertext_sha256": "2c3d0362701d3881bbdada86b50f7cb28406f5775f1ffce6e1e935ec5848f305",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "83c36583f4883f93e559b5071c606fb6f6e3e8192d6c5a4fc8142d50fa26ee43",
+      "tag_hex": "19127a82a34f6e9a42c5f475fc101276",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 1025,
+      "stages": 4,
+      "inner_ciphertext_sha256": "e2665684f328a249e9171bc3002d61c58ed6d5dcd46d09c244c030a0045e57e2",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "6994ec93ef850d2af24288a829f2b159038b7132589a7ffe261694ce43b7e795",
+      "tag_hex": "a001bdec492dd6f15b319e9274105b1b",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 4097,
+      "stages": 4,
+      "inner_ciphertext_sha256": "3246c078c6fc1f82254845f4e4d1da6c573c55012c32b7a6db5559fb78af95d2",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "64f1109bda076a8b00a097cb5977ad8c454bd2f5fbceab905ef227660d3e7227",
+      "tag_hex": "a2eed82dced3ff1aa838ca97c968034c",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 2,
+      "length": 65537,
+      "stages": 4,
+      "inner_ciphertext_sha256": "2cdfb77e968a15a973e73f07c7c9001db98837054d1d1160809cd61d242a2961",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "e2165782a77d56b87f427f616f5b6965c3520d46197eca4aaab3397e4e1d3ce9",
+      "tag_hex": "b0c0af256703035ebc27bcdf14d05231",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 0,
+      "stages": 8,
+      "inner_ciphertext_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tag_hex": "4422d54429286049efd25edcdbd45ffd",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 1,
+      "stages": 8,
+      "inner_ciphertext_sha256": "77adfc95029e73b173f60e556f915b0cd8850848111358b1c370fb7c154e61fd",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "9d277175737fb50041e75f641acf94d10df9b9721db8fffe874ab57f8ffb062e",
+      "tag_hex": "8867dbc1923eafff323567b2b9faadf8",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 15,
+      "stages": 8,
+      "inner_ciphertext_sha256": "c6dbfc8085f4e686d5265bb9e36a7b5a5d538c3313999fc69190a8b52e945cc2",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "a9103f764b1e41b06fa2d211cb25cfc1007bb024469291d65d4f47c2c22f4b79",
+      "tag_hex": "d6b36f6fe406de9fb6c8b53112c05f22",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 16,
+      "stages": 8,
+      "inner_ciphertext_sha256": "c7b7f3bb2c93e5ea500bce95db9257bc5f3738fa469887447da521dc2eb4aa38",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "554ce9e9c0d881fc5655e03abfed79ce9a0d8e4f6a475c085036b72d80069e17",
+      "tag_hex": "b5ce5b4c4a57f233eacc8f44d2cdce52",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 17,
+      "stages": 8,
+      "inner_ciphertext_sha256": "7be6f5864dc35459edb38475f7d05a8cd85739c9d80dd551d2f0b6007959a1c8",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "0c2afd2c5e6dfdc3df65fa2acd72761073c4732a538a7037bf45b9de95a495aa",
+      "tag_hex": "9d7167aed24adffc16040cf8a50c8a8d",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 63,
+      "stages": 8,
+      "inner_ciphertext_sha256": "e5dcbafcaafb43962947d1f6f834ca47010146007385dcc13fe2faa99e9f940c",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "32d7e5b8a9f142246a65d8a3b636785ca37e19a6abbac259ed9ac5c41cd10ab5",
+      "tag_hex": "8078ce9ee4bdc58a4852448b04ba94fc",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 64,
+      "stages": 8,
+      "inner_ciphertext_sha256": "753282d61d1ea32984686696c06f0c7f5c6f0416717eddddd49fd67bd4760d6d",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "27ac1172135b2ec1361636735272c145b4b88e6d8d1077e394a68410e15498b4",
+      "tag_hex": "1c9d3bca16186d0cb897b9d6f929a4dc",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 65,
+      "stages": 8,
+      "inner_ciphertext_sha256": "cb41f23701d4f1895041c508426dc319a8be11fe2f7edd5c0aaa6746d6e22db3",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "f50942ed666f52c94fdf8f41aded39c3727830d1ce09631f91ab89e9ffecdc7b",
+      "tag_hex": "ff5cb7110540e88fcd6d3dfe61b0156d",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 127,
+      "stages": 8,
+      "inner_ciphertext_sha256": "d9dccb33d74f61e50145edd61743c956181fc92dd8a074707c364ef3c74e1732",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "7cdf3d29aaf125da46142f36e724ab6bafb6840392aed6d47d1015c4d33b262a",
+      "tag_hex": "8ac19f1fe53baac4f352c8f50304f10f",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 128,
+      "stages": 8,
+      "inner_ciphertext_sha256": "aba0b80927ffea1c6aa40bafe7d0a7e9ef0399f5705e617c29886ea59e7b305b",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "c936cf395cc981960cec7b93a7b19f414abd1e23f608bde4e7cfa2c6db8912c0",
+      "tag_hex": "2ba42cd5cf6eeed07f924c5365ee0249",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 129,
+      "stages": 8,
+      "inner_ciphertext_sha256": "13405451231db7bcb718ea8097505c0034dd0a07f89e9c66d434d837020adcba",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "bcffd1fa573e00cbf050f9f1ba8a7c3957740ea0ce68d1c52b10ed283af19569",
+      "tag_hex": "14ce6138a0f6fcd0b750982aa6bbf914",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 1025,
+      "stages": 8,
+      "inner_ciphertext_sha256": "7cbf5ec776994187fad7907e89872faeba9ca2e6bc1459e9be43541d70733955",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "1b628fd226f8f74696905541204e8438ded5d0b3067d43ba6bb75e697bab7c6e",
+      "tag_hex": "f92d8da4d2936c7c167387fb9ad91f00",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 4097,
+      "stages": 8,
+      "inner_ciphertext_sha256": "72ccf1336bd35887bf84bbd0e2730c242bfb0fc1fd8efb813211249af8eff2f3",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "07fb2cad87583a47cd9fd4241f5d1dfb9cd8d620963f33748bff5fa6dd646680",
+      "tag_hex": "986beeeb02d619a6b13d913fca226771",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    },
+    {
+      "suite_id": 3,
+      "length": 65537,
+      "stages": 8,
+      "inner_ciphertext_sha256": "e1c7efb27840b3fe3e445ff9faf43c8f95258d01e3d2575c2da08b72d401cb4f",
+      "aad_sha256": "8ed1e7fbd02488b39d1f03d48cc4028a9de6792c429b22306b710f65290dc3e5",
+      "outer_ciphertext_sha256": "840e160cf28e38e5c42b9b202911df2f556dd08e7567d7674562a091ff274c22",
+      "tag_hex": "c990132906b8b4cffb97f14a362064da",
+      "native_grants": [
+        1,
+        2,
+        10
+      ]
+    }
+  ],
+  "elapsed_seconds": 0.017098208016250283,
+  "pynacl": "1.6.2",
+  "libsodium": "1.0.20-stable (PyNaCl1.6.2 release metadata)",
+  "go_crypto": "v0.43.0",
+  "fixture_sha256": "287319cdcf4de2132370e4caa5fefa62315f0b22f2c4f26dec5256477b6ea6a9",
+  "library_sha256": "7ce5062de2aadb34a66ce5fb6d7418765817576b5f5b6ed44a934d03808a099a",
+  "go_oracle_sha256": "7e7a5284e69d5db98c3a834af69febf468969feea0f020a576dccef3d4a4466b",
+  "libsodium_binding_sha256": "49032c357199dde6ae341319e558ce3ed9daa80f5ac83972aa9a63158b0b5371",
+  "source_sha256": {
+    "native/tests/complete_cascade_outer_v13.py": "d3a71d45660ba6648e021fcba28cdd698a5dd87aebc7013c29ec46999aea887a",
+    "native/tests/xchacha_go_reference/main.go": "6775b36cf6281139494c3de7af29d0763deafc166499da03776874827a90d60c",
+    "native/tests/xchacha_go_reference/go.mod": "5e82e537d638627867cfff220452d33a8aad7e3ca975b524bd8e91a73e84725f",
+    "native/tests/xchacha_go_reference/go.sum": "d0a82c35af04b71074b56951ba5b9907bd676fafd1022b2f0cd0376950366471",
+    "native/xchachapoly_ref_export.cpp": "c7dd33a138127ba7beaba7057debeeb1ac4a84c02e2319bf040e0ee8203b01ba",
+    "KeepVaultMac.Tests/Fixtures/V13Reference/CascadeCompositionReference.cs.txt": "b7ab9181640d2ff9403f1ff94a19b2abb293fc2e970463b1244b7e99d79a26a7",
+    "external/cryptopp/mars.cpp": "87e5d61c8b54025479bfe50ca4a8228cb3ed87a79c4a1bde749e61981acbfcf1",
+    "external/cryptopp/marss.cpp": "2003ac72500d317833125b61f7baf5b2e47a84771b27c7180235b0ef6b402e84",
+    "external/cryptopp/TestVectors/mars.txt": "5d30444892b2c9b7c0989e75e71cc5d41812a16ab752761bb2d0ed80c15cd620",
+    "external/cryptopp/TestVectors/shacal2.txt": "a9363a9787bcf45fb4a578112ed0c8327c4dd6400792f1ac8d1c0e0e7e99c137"
+  }
+}

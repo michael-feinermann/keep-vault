@@ -3,7 +3,13 @@ param(
     [switch] $CreateDevelopmentCertificate,
     [switch] $AllowUntimestamped,
     [string] $PfxPath,
-    [string] $PfxPassword,
+    [string] $PfxPasswordEncryptedPath,
+    [string] $PfxWrappingKeyPath,
+    [string] $MldsaPrivateKeyPath,
+    [string] $MldsaPrivateKeyEncryptedPath,
+    [string] $WrappingKeyPath,
+    [string] $MldsaPublicKeyPath,
+    [string] $MldsaReferencePath,
     [string] $CertificateThumbprint,
     [string] $ExpectedSignerSha256,
     [string] $ExpectedSignerSha3_512,
@@ -15,7 +21,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
-$outputDirectory = Join-Path $root "KalynaArchiver\bin\$Configuration\net9.0-windows"
+$outputDirectory = Join-Path $root "KalynaArchiver\bin\$Configuration\net10.0-windows"
 $signScript = Join-Path $root "tools\Sign-Binaries.ps1"
 $sha3Script = Join-Path $root "tools\Generate-Sha3Manifest.ps1"
 $skeinScript = Join-Path $root "tools\Generate-SkeinManifest.ps1"
@@ -81,7 +87,13 @@ $parameters = @{
 
 foreach ($entry in @{
     PfxPath = $PfxPath
-    PfxPassword = $PfxPassword
+    PfxPasswordEncryptedPath = $PfxPasswordEncryptedPath
+    PfxWrappingKeyPath = $PfxWrappingKeyPath
+    MldsaPrivateKeyPath = $MldsaPrivateKeyPath
+    MldsaPrivateKeyEncryptedPath = $MldsaPrivateKeyEncryptedPath
+    WrappingKeyPath = $WrappingKeyPath
+    MldsaPublicKeyPath = $MldsaPublicKeyPath
+    MldsaReferencePath = $MldsaReferencePath
     CertificateThumbprint = $CertificateThumbprint
     ExpectedSignerSha256 = $ExpectedSignerSha256
     ExpectedSignerSha3_512 = $ExpectedSignerSha3_512
@@ -114,6 +126,11 @@ foreach ($path in $paths) {
         NoBuild = $true
     }
     foreach ($entry in @{
+        MldsaPrivateKeyPath = $MldsaPrivateKeyPath
+        MldsaPrivateKeyEncryptedPath = $MldsaPrivateKeyEncryptedPath
+        WrappingKeyPath = $WrappingKeyPath
+        MldsaPublicKeyPath = $MldsaPublicKeyPath
+        MldsaReferencePath = $MldsaReferencePath
         ExpectedSignerSha256 = $ExpectedSignerSha256
         ExpectedSignerSha3_512 = $ExpectedSignerSha3_512
         ExpectedSignerSkein1024 = $ExpectedSignerSkein1024
@@ -127,7 +144,8 @@ foreach ($path in $paths) {
     }
     if ($PfxPath) {
         $hybridParameters.PfxPath = $PfxPath
-        $hybridParameters.PfxPassword = $PfxPassword
+        $hybridParameters.PfxPasswordEncryptedPath = $PfxPasswordEncryptedPath
+            $hybridParameters.PfxWrappingKeyPath = $PfxWrappingKeyPath
     }
     else {
         $hybridParameters.CertificateThumbprint = if ($CertificateThumbprint) {

@@ -1,5 +1,6 @@
 using Avalonia;
 using KalynaArchiver.Services;
+using KalynaArchiver.Gui;
 
 namespace KalynaArchiver;
 
@@ -33,7 +34,22 @@ internal static class Program
             return;
         }
 
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        try
+        {
+            // Selection has no side effects. The actual audit fixture/scopes
+            // remain unavailable until MainWindow passes normal integrity.
+            ReleaseAuditSession.SelectForThisProcess(args);
+        }
+        catch (ArgumentException)
+        {
+            const string message = "The release audit accepts only a fixed case identifier, no paths, providers or extra options.";
+            try { MacNativeAlert.ShowCritical("Keep Vault release audit", message); }
+            catch { Console.Error.WriteLine(message); }
+            Environment.Exit(StartupConfigurationErrorExitCode);
+            return;
+        }
+
+        BuildAvaloniaApp().StartWithClassicDesktopLifetime(ReleaseAuditSession.Current is null ? args : []);
     }
 
     public static AppBuilder BuildAvaloniaApp()

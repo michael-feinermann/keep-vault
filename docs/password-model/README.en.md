@@ -1,8 +1,8 @@
-# Keep Vault 5.0.2: additional local password model
+# Keep Vault 5.0.3: additional local password model
 
 [Deutsch](README.de.md) · [English](README.en.md) · [Documentation index](../README.en.md)
 
-Complete documentation translation of the [embedded model text](../../KalynaArchiver/Resources/PasswordModel/README.md). Relative filenames below refer to that resource directory. The signed resources remain unchanged; language editions are maintained only here.
+Complete documentation translation of the [embedded model text](../../KalynaArchiver/Resources/PasswordModel/README.md). Relative filenames below refer to that resource directory. The model version, manifest, wordlists and license files remain unchanged. The embedded model text is updated for 5.0.3; language editions are maintained here.
 
 Model version: `keep-vault-password-model-2026-09-06-v1`, data retrieved on 6 September 2026. These files are analysis data for archive creation only. Keep Vault does not generate user passwords, PINs or wallets from them. At runtime there are no network requests, downloads, telemetry, HIBP lookups or online activation. An older bundled data version also remains fully usable offline.
 
@@ -18,7 +18,7 @@ Only explicit wordlist spaces have an exactly calculable combinatorial upper bou
 
 For empty input, impermissible length, control characters or invalid UTF-16, the lazy data remains unloaded. Missing, damaged or inconsistent data produces `ModelUnavailable` and prevents a positive archive-creation decision. Extraction, listing, recovery and key derivation must not invoke this model and do not depend on its availability. An internal asynchronously isolated test scope throws on every Evaluate or direct loader call, including with a populated cache; it cannot allow acceptance.
 
-Analysis variants change local copies only. Password, spaces and PIN continue to enter the v12 KDF unchanged through the existing UTF-8/ASCII path. The result object contains no input, matched words, normalized text or keys. Temporary .NET analysis strings are managed immutable strings; guaranteed erasure of these additional GC copies is not claimed. Inputs are neither logged nor persistently stored.
+Analysis variants change local copies only. Password, spaces and PIN continue to enter the v13 KDF unchanged through the existing UTF-8/ASCII path. The result object contains no input, matched words, normalized text or keys. Temporary .NET analysis strings are managed immutable strings; guaranteed erasure of these additional GC copies is not claimed. Inputs are neither logged nor persistently stored.
 
 ## Data and attribution
 

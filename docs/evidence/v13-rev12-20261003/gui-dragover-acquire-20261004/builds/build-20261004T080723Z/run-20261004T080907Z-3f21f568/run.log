@@ -1,0 +1,21 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+
+FAIL REV12 actual DragOver/Drop events report provider Path faults, borrow before Drop, preserve drafts and independently retire consumed owners and aliases
+  seed=0x14862A68
+  InvalidOperationException: Faulted DragOver opened a modal dialog, lost its bounded error log, took or released a borrowed owner, or changed the draft/drop state.
+   at WindowDisposeRev12Tests.DropStorageOwnership(MainWindow providerWindow) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/WindowDisposeRev12Tests.cs:line 566
+   at MacGuiTests.<>c__DisplayClass5_0.<EnsureUiThread>b__0() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacGuiTests.cs:line 128
+--- End of stack trace from previous location ---
+   at MacGuiTests.RunOnUiThread(Action`1 body) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacGuiTests.cs:line 177
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1440
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "gui.rev12-drop-storage-ownership" --seed 0x14862A68
+
+
+1 macOS groups: 0 passed, 1 failed, 0 blocked.
+wall clock 1,6s; sum of test times 1,5s; parallel speedup 0,91x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T080723Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json
+
+Failing tests:
+  FAIL gui.rev12-drop-storage-ownership — REV12 actual DragOver/Drop events report provider Path faults, borrow before Drop, preserve drafts and independently retire consumed owners and aliases

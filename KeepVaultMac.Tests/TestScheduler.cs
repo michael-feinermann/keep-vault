@@ -848,6 +848,44 @@ internal static class TestCoordinator
                 && forwardedPerformanceOutput.Contains("PERF_RESULT_JSON={\"schemaVersion\":2}", StringComparison.Ordinal)
                 && !forwardedPerformanceOutput.Contains(WorkerResultMarker, StringComparison.Ordinal),
             "The coordinator discarded performance medians/JSON or exposed its private worker envelope.");
+        const string publicEndToEndResult = "    E2E_RESULT_JSON={\"SchemaVersion\":1,\"Label\":\"v13-paranoia-structure512-production-kdf\",\"InputBytes\":536870912}";
+        const string publicEndToEndPhaseProfile = "    E2E_PHASE_PROFILE_JSON={\"schemaVersion\":1,\"label\":\"v13-paranoia-structure512-production-kdf\",\"sourceInputBytes\":536870912}";
+        string mixedReleaseOutput = "private-unrelated-stdout\n"
+            + publicEndToEndResult + "\r\n"
+            + publicEndToEndPhaseProfile + "\r\n"
+            + "private-prefix E2E_RESULT_JSON={\"unrelated\":true}\n"
+            + "private-prefix E2E_PHASE_PROFILE_JSON={\"unrelated\":true}\n"
+            + WorkerResultMarker + "{\"schemaVersion\":1,\"status\":\"PASS\"}\n";
+        const string privateStandardError = "private-unrelated-stderr";
+        const string publicHandoffRow = "KDF_HANDOFF_MATRIX {\"status\":\"PASS\",\"boundaryCount\":626,\"caseCount\":2504}";
+        string mixedHandoffOutput = "private-unrelated-stdout\n" + publicHandoffRow + "\r\n"
+            + "private-prefix " + publicHandoffRow + "\n" + mixedReleaseOutput;
+        (string handoffOutput, string handoffError) = SelectWorkerDiagnostics(
+            light with { Id = "security.kdf-handoff-fault-matrix" }, mixedHandoffOutput, privateStandardError);
+        Require(handoffOutput == publicHandoffRow && handoffError.Length == 0,
+            "The handoff evidence filter lost the public row or disclosed unrelated worker output.");
+        (string unrelatedHandoffOutput, string unrelatedHandoffError) = SelectWorkerDiagnostics(
+            light with { Id = "security.kdf-handoff-fault-matrix-other" }, mixedHandoffOutput, privateStandardError);
+        Require(unrelatedHandoffOutput.Length == 0 && unrelatedHandoffError.Length == 0,
+            "The handoff evidence filter accepted a different test identifier.");
+        TestCase structureRelease = light with { Id = "release.v13-paranoia-structure512" };
+        (string releaseOutput, string releaseError) = SelectWorkerDiagnostics(
+            structureRelease, mixedReleaseOutput, privateStandardError);
+        Require(releaseOutput == publicEndToEndResult + Environment.NewLine + publicEndToEndPhaseProfile
+            && releaseError.Length == 0,
+            "The structure release gate lost its public E2E result/phase-profile JSON or exposed unrelated/private worker diagnostics.");
+        foreach (TestCase otherTest in new[] { light, structureRelease with { Id = structureRelease.Id + "-other" } })
+        {
+            (string otherOutput, string otherError) = SelectWorkerDiagnostics(
+                otherTest, mixedReleaseOutput, privateStandardError);
+            Require(otherOutput.Length == 0 && otherError.Length == 0,
+                "The E2E diagnostic exception exposed output from an unrelated non-performance test.");
+        }
+        (string selectedPerformanceOutput, string selectedPerformanceError) = SelectWorkerDiagnostics(
+            performance, mixedReleaseOutput, privateStandardError);
+        Require(selectedPerformanceOutput == ExtractWorkerDiagnostics(mixedReleaseOutput)
+            && selectedPerformanceError == privateStandardError,
+            "The public E2E exception changed the existing performance-diagnostic contract.");
         IReadOnlySet<string> nativeBuildImpact =
             TestRunner.GetPerformanceSensitiveImpact("tools/Build-Native-macOS.sh");
         Require(
@@ -1300,12 +1338,7 @@ internal static class TestCoordinator
 
     private static void ReportWorkerDiagnostics(TestCase test, string standardOutput, string standardError)
     {
-        if (!test.IsPerformance)
-        {
-            return;
-        }
-
-        string diagnostics = ExtractWorkerDiagnostics(standardOutput);
+        (string diagnostics, string errors) = SelectWorkerDiagnostics(test, standardOutput, standardError);
         lock (ConsoleLock)
         {
             if (!string.IsNullOrWhiteSpace(diagnostics))
@@ -1313,11 +1346,52 @@ internal static class TestCoordinator
                 Console.WriteLine(diagnostics);
             }
 
-            if (!string.IsNullOrWhiteSpace(standardError))
+            if (!string.IsNullOrWhiteSpace(errors))
             {
-                Console.Error.WriteLine(standardError.TrimEnd());
+                Console.Error.WriteLine(errors.TrimEnd());
             }
         }
+    }
+
+    private static (string Output, string Error) SelectWorkerDiagnostics(
+        TestCase test, string standardOutput, string standardError)
+    {
+        if (test.IsPerformance)
+            return (ExtractWorkerDiagnostics(standardOutput), standardError);
+
+        string? handoffPrefix = test.Id switch
+        {
+            "security.kdf-handoff-fault-matrix" => "KDF_HANDOFF_MATRIX ",
+            "security.downstream-suite-handoff-faults" or
+            "security.downstream-mac-handoff-faults" or
+            "security.downstream-recovery-handoff-faults" => "handoff_fault_matrix=",
+            "security.downstream-disposed-owner-faults" => "handoff_owner_lifecycle=",
+            _ => null,
+        };
+        if (handoffPrefix is not null)
+        {
+            // These exact tests emit only public boundary IDs, fault labels,
+            // counts and cleanup dispositions. Preserve their review evidence
+            // without forwarding unrelated logs, stderr or worker envelopes.
+            string publicRows = string.Join(Environment.NewLine, standardOutput
+                .Split('\n').Select(line => line.TrimEnd('\r'))
+                .Where(line => line.Length <= 1 << 20
+                    && line.StartsWith(handoffPrefix, StringComparison.Ordinal)));
+            return (publicRows, string.Empty);
+        }
+
+        if (!string.Equals(test.Id, "release.v13-paranoia-structure512", StringComparison.Ordinal))
+            return (string.Empty, string.Empty);
+
+        // This automatic gate emits public E2E result and phase-profile records:
+        // fixture sizes/counts, fixed crypto profile, host information and phase times.
+        // Forward only their explicit JSON lines, never other stdout or stderr.
+        string result = string.Join(Environment.NewLine, standardOutput
+            .Split('\n')
+            .Select(line => line.TrimEnd('\r'))
+            .Where(line => line.TrimStart().StartsWith("E2E_RESULT_JSON=", StringComparison.Ordinal)
+                || line.TrimStart().StartsWith("E2E_PHASE_PROFILE_JSON=", StringComparison.Ordinal)));
+        return (result, string.Empty);
     }
 
     internal static string ExtractWorkerDiagnostics(string standardOutput) => string.Join(

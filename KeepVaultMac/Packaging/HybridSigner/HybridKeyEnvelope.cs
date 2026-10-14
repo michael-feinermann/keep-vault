@@ -32,7 +32,8 @@ internal static class HybridKeyEnvelope
     internal static void WriteMldsaPrivateKey(
         string path,
         ReadOnlySpan<byte> privateKey,
-        ReadOnlySpan<byte> wrappingKey)
+        ReadOnlySpan<byte> wrappingKey,
+        MacBoundSecretFile.PrivateDirectoryLease? directoryLease = null)
     {
         if (privateKey.Length != MldsaPrivateKeyBytes)
         {
@@ -40,7 +41,7 @@ internal static class HybridKeyEnvelope
                 $"The ML-DSA-87 private key must contain exactly {MldsaPrivateKeyBytes} bytes.");
         }
 
-        Write(path, privateKey, wrappingKey, MldsaMagic, "ML-DSA-87 private key");
+        Write(path, privateKey, wrappingKey, MldsaMagic, "ML-DSA-87 private key", directoryLease);
     }
 
     internal static LockedSensitiveBuffer ReadMldsaPrivateKey(
@@ -57,7 +58,8 @@ internal static class HybridKeyEnvelope
     internal static void WritePfxPassword(
         string path,
         ReadOnlySpan<byte> encodedPassword,
-        ReadOnlySpan<byte> wrappingKey)
+        ReadOnlySpan<byte> wrappingKey,
+        MacBoundSecretFile.PrivateDirectoryLease? directoryLease = null)
     {
         if (encodedPassword.IsEmpty || encodedPassword.Length > MaximumPfxPasswordBytes)
         {
@@ -65,7 +67,7 @@ internal static class HybridKeyEnvelope
                 $"The UTF-8 RSA PFX password must contain 1 to {MaximumPfxPasswordBytes} bytes.");
         }
 
-        Write(path, encodedPassword, wrappingKey, PfxPasswordMagic, "RSA PFX password");
+        Write(path, encodedPassword, wrappingKey, PfxPasswordMagic, "RSA PFX password", directoryLease);
     }
 
     internal static LockedSensitiveBuffer ReadPfxPassword(
@@ -84,7 +86,8 @@ internal static class HybridKeyEnvelope
         ReadOnlySpan<byte> payload,
         ReadOnlySpan<byte> wrappingKey,
         ReadOnlySpan<byte> magic,
-        string description)
+        string description,
+        MacBoundSecretFile.PrivateDirectoryLease? directoryLease)
     {
         RequireWrappingKey(wrappingKey);
         string fullPath = Path.GetFullPath(path);
@@ -123,7 +126,7 @@ internal static class HybridKeyEnvelope
             MacBoundSecretFile? staging = null;
             try
             {
-                staging = MacBoundSecretFile.Create(fullPath);
+                staging = MacBoundSecretFile.Create(fullPath, directoryLease);
                 FileStream stream = staging.Stream;
                 stream.Write(envelope);
                 stream.Flush(flushToDisk: true);
@@ -315,7 +318,7 @@ internal static class HybridKeyEnvelope
         }
     }
 
-    private static void WipeOpenFile(FileStream stream)
+    internal static void WipeOpenFile(FileStream stream)
     {
         long remaining = stream.Length;
         stream.Position = 0;

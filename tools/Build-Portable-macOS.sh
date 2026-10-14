@@ -144,7 +144,7 @@ if ! zmodload zsh/system || ! zmodload -F zsh/stat b:zstat; then
   exit 2
 fi
 
-expected_third_party_notices_sha256='bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159'
+expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
 
 portable_notice_fd_identity() {
   local descriptor=$1
@@ -588,7 +588,7 @@ require_private_nuget_cache_identity || {
   print -u2 'Portable release lost the freshly provisioned Microsoft SDK identity.'
   exit 2
 }
-selected_sdk=$(run_dotnet_clean --version)
+selected_sdk=$(cd ${mac_project} && run_dotnet_clean --version)
 if [[ ${selected_sdk} != '10.0.400' ]]; then
   print -u2 'Portable release builds require the reviewed official .NET SDK 10.0.400.'
   exit 2
@@ -799,7 +799,8 @@ done
 verifier_path=${build_root}/Keep\ Vault\ Release\ Verifier
 if (( ${#verifier_slices} > 1 )); then
   xcrun lipo -create ${verifier_slices[@]} -output ${verifier_path}
-  xcrun lipo ${verifier_path} -verify_arch arm64 x86_64
+  xcrun lipo ${verifier_path} -verify_arch arm64
+  xcrun lipo ${verifier_path} -verify_arch x86_64
 else
   ditto ${verifier_slices[1]} ${verifier_path}
 fi

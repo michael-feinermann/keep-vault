@@ -1,0 +1,4 @@
+{
+  "status": "NOT RUN",
+  "preparationError": "Product assembly filename was assumed KeepVaultMac.dll but actual filename must be read from original harness; no test product started."
+}

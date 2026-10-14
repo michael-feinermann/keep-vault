@@ -1,0 +1,2 @@
+Unhandled exception. System.Exception: set test class 15/0, previous=(0, 0), status=1
+   at Program.Main() in /Users/michael/Developer/GPT-Codex/Kalyna/native/tests/managed_qos/Program.cs:line 104

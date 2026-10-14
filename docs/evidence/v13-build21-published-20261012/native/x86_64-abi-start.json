@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "/usr/bin/arch",
+    "-x86_64",
+    "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+    "-I",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/native/tests/test_key_handoff_nulls.py",
+    "--native-dir",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/final-native-build21-20261012T1300/x86_64-native",
+    "--arch",
+    "x86_64",
+    "--python",
+    "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+    "--output",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/final-native-build21-20261012T1300/native-null-x86_64.json"
+  ],
+  "cwd": "/Users/michael/Developer/GPT-Codex/Kalyna",
+  "pid": 28139,
+  "startedUtc": "2026-10-12T13:02:15.274997+00:00"
+}

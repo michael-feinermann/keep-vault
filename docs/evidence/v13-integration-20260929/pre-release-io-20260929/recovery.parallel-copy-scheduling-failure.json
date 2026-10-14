@@ -1,0 +1,44 @@
+{
+  "command": [
+    "/opt/homebrew/bin/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "recovery.parallel-copy-scheduling-failure",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x5EED0313"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 0.20995354099432006,
+  "result": {
+    "schemaVersion": 3,
+    "head": "837e36cf1da2c6940c616348edaed4b03ff05bec",
+    "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+    "platform": "macos",
+    "osArchitecture": "arm64",
+    "processArchitecture": "arm64",
+    "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+    "budget": {
+      "maxWorkers": 1,
+      "cpuTokens": 9,
+      "memoryMiB": 9011,
+      "argonSlots": 2,
+      "zpaqSlots": 1
+    },
+    "tests": [
+      {
+        "id": "recovery.parallel-copy-scheduling-failure",
+        "name": "KPAR2 cancels and joins already-scheduled copy workers when later worker scheduling fails",
+        "status": "PASS",
+        "seconds": 0.011,
+        "peakRssMiB": 57,
+        "seed": "0x5EED0313",
+        "failure": null
+      }
+    ]
+  },
+  "log_sha256": "41a50480e3d2cc5ea20745b93b640379521b4f6149238b1c03d9cc0be7b286f1"
+}

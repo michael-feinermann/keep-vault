@@ -1,0 +1,65 @@
+{
+  "releaseId": 410608510,
+  "tag": "v5.0.3-rc.build21",
+  "operations": [
+    {
+      "name": "github-create-build21",
+      "pid": 28251,
+      "argv": [
+        "gh",
+        "api",
+        "--method",
+        "POST",
+        "repos/michael-feinermann/keep-vault/releases",
+        "--input",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-create-draft-build21.json"
+      ],
+      "startedUtc": "2026-10-12T13:05:33.065674+00:00",
+      "completedUtc": "2026-10-12T13:05:33.966293+00:00",
+      "exitCode": 0,
+      "stdoutSha256": "eee4c0e89dacbddda6d355bfed39547dd4871a24348618abcf154db710760067",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "github-upload-build21",
+      "pid": 28254,
+      "argv": [
+        "gh",
+        "release",
+        "upload",
+        "v5.0.3-rc.build21",
+        "--repo",
+        "michael-feinermann/keep-vault",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.khsig",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.sha3",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.sha3.khsig",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.skein",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/github-assets-build21/Keep.Vault-macOS-universal.zip.skein.khsig"
+      ],
+      "startedUtc": "2026-10-12T13:05:33.967285+00:00",
+      "completedUtc": "2026-10-12T13:05:46.906780+00:00",
+      "exitCode": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "github-draft-build21-metadata",
+      "pid": 28279,
+      "argv": [
+        "gh",
+        "api",
+        "repos/michael-feinermann/keep-vault/releases/410608510"
+      ],
+      "startedUtc": "2026-10-12T13:05:46.906925+00:00",
+      "completedUtc": "2026-10-12T13:05:47.333839+00:00",
+      "exitCode": 0,
+      "stdoutSha256": "915de82f21120690e045981bb56654b767912f6784a521c24b520df53a0965ad",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "assetsUploaded": 6,
+  "releaseStillDraft": true,
+  "publicReleaseVerified": false,
+  "overallReleaseApproval": false
+}

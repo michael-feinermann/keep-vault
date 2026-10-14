@@ -1,0 +1,27 @@
+{
+  "capturedUtc": "2026-10-04T15:53:36.842352+00:00",
+  "observationTiming": "AFTER_ONLY, packaging observation; not a before/during-run runtime inventory",
+  "currentOriginalHarnessInputs": {
+    "count": 127,
+    "allMatchOriginalBeforePins": true
+  },
+  "currentCompiledSourceInputs": {
+    "count": 284,
+    "allMatchOriginalBuildPins": true
+  },
+  "generatedOutput": {
+    "sha256": "cfad9228c3f206878022f032bc5596a89f5b2bcfefb31b1df1cbb5f2448f81d1",
+    "matchesOriginalAfterMap": true
+  },
+  "currentHelperSha256": "86c3d5e66f6858c9a59e428e79779f4a441bcf55b87660670956d3583f4820a4",
+  "matchesActualWrapperAssertedHelperPin": true,
+  "toolchainBaselineReference": {
+    "sdkManifestSha256": "0aae7234f438afd31515b0cac4cdb4e5a6d92a36da9567ce46a47a33ce58b53e",
+    "packagesManifestSha256": "b5b3f9762bfb93f5e515046322f297b87c6109efc20250969ca29ed5ea4288ea",
+    "bothMatchOriginalBuildToolchainReferences": true,
+    "originalWrapperPrecondition": "run-full.py verifies sdk/packages baseline before writing actual start.json",
+    "freshSdkTreeAfterInventory": "NOT RUN by this publisher",
+    "freshBuildRootPackagesAfterInventory": "NOT RUN by this publisher"
+  },
+  "publicPinScope": "Exactly KeepVaultMac/Packaging/Keys/mldsa87-public.key already present in the original284-source map; no key glob or private key read"
+}

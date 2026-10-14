@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "observedUtc": "2026-10-01T11:07:45.043979+00:00",
+  "status": "FAIL_PRODUCT_BUG",
+  "sourceCommit": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "version": "5.0.3",
+  "build": "15",
+  "input": "cancel-attempt.zpaq",
+  "inputUncompressedBytes": 67108864,
+  "volume": "/Volumes/KEEPVAULT GUI CAPACITY TEST 256MiB",
+  "volumeBytes": 268435456,
+  "ownersEnabled": true,
+  "guiError": "ZPAQ-Extraktion abgebrochen: Unzureichender freier Speicherplatz auf dem Ziellaufwerk (266874880 Bytes verbleibend).",
+  "outputPublished": false,
+  "sourceFinding": "ZpaqService.DefaultMinFreeDiskSpaceBytes = 256 MiB still enforced in both running monitor and final validation, independently of new dynamic policy.",
+  "scope": "Actual installed GUI after prior test-setup ownership failure was corrected. This is not an extraction pass. Candidate15 requires product correction and a new build."
+}

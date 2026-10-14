@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-11T13:17:50.957927+00:00",
+  "actualPid": 30680,
+  "actualSupervisorPid": 30669,
+  "actualExitCode": 0,
+  "actualWallSeconds": 236.55632745905314,
+  "logSha256": "7f929179087459c8fb06cafd5d361aafcd7bf7a56eda46b9059bb7435c0127ac",
+  "sourceProductHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "testDllSha256": "d306be46722ea2a7ca5301501f6a6c1ece1c6f22b08318ac32a61f814a49fea3",
+  "powerAfter": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t80%; discharging; 20:00 remaining present: true\n",
+  "role": "REQUESTED_PARANOIA_FUNCTIONAL_REPEAT"
+}

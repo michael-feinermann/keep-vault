@@ -19,15 +19,14 @@ internal static class CipherSuitePerformanceTests
     private const int MeasurementBytes = 256 * 1024 * 1024;
     private const int WarmupBytes = 16 * 1024 * 1024;
     private const int DifferentialBytes = 64 * 1024 * 1024;
-    private const int MeasurementRuns = 3;
+    private const int MeasurementRuns = 5;
     private const double AllowedBaselineRegression = 0.25;
 
     // How close the shipped slot count has to come to the best measured one.
-    // The divisor in KalynaContainerService is a single integer for every
-    // machine, so it cannot be optimal everywhere; this is the margin within
-    // which one number is still the right compromise.
+    // The platform's production policy cannot be optimal on every machine;
+    // this gate requires it to remain within this margin of the measured best.
     private const double PipelineSlotTolerance = 0.90;
-    private const int PipelineScalingBytes = 512 * 1024 * 1024;
+    private const int PipelineScalingBytes = 256 * 1024 * 1024;
     private const uint PipelineScalingArgonMemoryKiB = 8 * 1024;
     private const string BaselineEnvironment = "KEEPVAULT_PERF_BASELINE";
     private const string ContainerPassword = "N!r7$Vq2#Lm8%Tx3&Jd9*Wp4+Kg5=Zu6?Ce";
@@ -38,14 +37,16 @@ internal static class CipherSuitePerformanceTests
     [
         EncryptionSuite.Kalyna512_512,
         EncryptionSuite.Threefish1024,
-        EncryptionSuite.ThreefishOverKalyna,
+        EncryptionSuite.StandardCascade,
         EncryptionSuite.ParanoiaCascade,
-        EncryptionSuite.ChaChaOverAes,
+        EncryptionSuite.XChaChaOverAes,
         EncryptionSuite.Aes256,
         EncryptionSuite.Mars448,
         EncryptionSuite.Shacal2_512,
-        EncryptionSuite.ChaCha20Poly1305,
+        EncryptionSuite.XChaCha20Poly1305,
         EncryptionSuite.MixedCascade,
+        EncryptionSuite.Camellia256,
+        EncryptionSuite.Serpent256,
     ];
 
     internal static void Run()
@@ -71,14 +72,22 @@ internal static class CipherSuitePerformanceTests
         // measures page faults rather than cipher throughput. macOS does not
         // adjust its working-set quota and must not reserve/lock 512 MiB here.
         using IDisposable? benchmarkWorkingSet = OperatingSystem.IsWindows()
-            ? SecureMemory.ReserveWorkingSetCapacity(2L * MeasurementBytes)
+            ? SecureMemory.ReserveWorkingSetCapacity(2L * MeasurementBytes + 2L * NativeXChaChaPoly.MaximumPayloadBytes)
             : null;
 
         byte[] input = CreateDeterministicBytes(MeasurementBytes, 0x4B56504552463131UL);
         byte[] output = new byte[MeasurementBytes];
+        byte[] chunkInput = new byte[NativeXChaChaPoly.MaximumPayloadBytes];
+        byte[] chunkOutput = new byte[NativeXChaChaPoly.MaximumPayloadBytes];
+        byte[] chunkTag = new byte[NativeXChaChaPoly.TagBytes];
         var rates = new Dictionary<string, double>(StringComparer.Ordinal);
         try
         {
+            int maximum = ArchiveOperationPolicy.Current.MaxCpuWorkers;
+            using CpuWorkBudget.Lease cpu = CpuWorkBudget.AcquireAsync(maximum, maximum, CancellationToken.None).GetAwaiter().GetResult();
+            using IDisposable cpuScope = cpu.EnterScope();
+            using IDisposable nativeWorkers = NativeCipherWorkerBudget.EnterScope(cpu.Workers);
+            Console.WriteLine($"    primitive method: 16-MiB native chunks, {cpu.Workers} aggregate CPU permits, fixed per-stage test nonces; input/output chunk copies included; no KDF/nonce-hash/global-MAC/I/O cost");
             foreach (EncryptionSuite suite in ExpectedSuites)
             {
                 EncryptionSuiteParameters parameters = EncryptionSuiteCatalog.Get(suite);
@@ -86,23 +95,16 @@ internal static class CipherSuitePerformanceTests
                     parameters.EncryptionKeyBytes,
                     0x1000UL + (ulong)suite);
                 byte[] counter = CreateDeterministicBytes(
-                    parameters.NonceBytes,
+                    parameters.StageNonceBytes,
                     0x2000UL + (ulong)suite);
-                byte[] tweak = KalynaContainerService.CreateSuiteTweak(parameters, counter);
+                byte[] tweak = KalynaContainerService.CreateSuiteTweak(parameters, CreateDeterministicBytes(parameters.ArchiveNonceBytes, 0x4000UL + (ulong)suite));
                 byte[] associatedData = CreateDeterministicBytes(64, 0x3000UL + (ulong)suite);
-                byte[] tag = new byte[NativeChaChaPoly.TagBytes];
+                byte[] tag = new byte[(MeasurementBytes / NativeXChaChaPoly.MaximumPayloadBytes) * NativeXChaChaPoly.TagBytes];
+                byte[][] counters = CreatePrimitiveCounters(parameters, counter);
                 try
                 {
-                    KalynaContainerService.EncryptSuiteChunkForTests(
-                        parameters,
-                        key,
-                        tweak,
-                        counter,
-                        input,
-                        output,
-                        WarmupBytes,
-                        associatedData,
-                        tag);
+                    RunPrimitiveChunks(parameters, key, tweak, counters, input, output,
+                        WarmupBytes, associatedData, tag, chunkInput, chunkOutput, chunkTag);
 
                     byte[]? expectedDigest = null;
                     byte[]? expectedTag = null;
@@ -113,16 +115,8 @@ internal static class CipherSuitePerformanceTests
                         {
                             Array.Clear(tag);
                             Stopwatch timer = Stopwatch.StartNew();
-                            KalynaContainerService.EncryptSuiteChunkForTests(
-                                parameters,
-                                key,
-                                tweak,
-                                counter,
-                                input,
-                                output,
-                                MeasurementBytes,
-                                associatedData,
-                                tag);
+                            RunPrimitiveChunks(parameters, key, tweak, counters, input, output,
+                                MeasurementBytes, associatedData, tag, chunkInput, chunkOutput, chunkTag);
                             timer.Stop();
                             samples[run] = RateMiBPerSecond(MeasurementBytes, timer.Elapsed);
 
@@ -166,6 +160,7 @@ internal static class CipherSuitePerformanceTests
                 {
                     CryptographicOperations.ZeroMemory(key);
                     CryptographicOperations.ZeroMemory(counter);
+                    foreach (byte[] chunkCounter in counters) CryptographicOperations.ZeroMemory(chunkCounter);
                     CryptographicOperations.ZeroMemory(tweak);
                     CryptographicOperations.ZeroMemory(associatedData);
                     CryptographicOperations.ZeroMemory(tag);
@@ -184,14 +179,59 @@ internal static class CipherSuitePerformanceTests
         {
             CryptographicOperations.ZeroMemory(input);
             CryptographicOperations.ZeroMemory(output);
+            CryptographicOperations.ZeroMemory(chunkInput);
+            CryptographicOperations.ZeroMemory(chunkOutput);
+            CryptographicOperations.ZeroMemory(chunkTag);
         }
 
         RunContainerMeasurementsAsync(host).GetAwaiter().GetResult();
         RunPipelineSlotScalingAsync().GetAwaiter().GetResult();
     }
 
+    private static byte[][] CreatePrimitiveCounters(EncryptionSuiteParameters parameters, byte[] initial)
+    {
+        int count = MeasurementBytes / NativeXChaChaPoly.MaximumPayloadBytes;
+        byte[][] result = new byte[count][];
+        for (int index = 0; index < count; ++index)
+        {
+            result[index] = initial.ToArray();
+            // Distinct high-order prefixes for every stage, fixed before timing.
+            // These public primitive fixtures intentionally do not claim the
+            // container's separately measured active nonce derivation cost.
+            if (parameters.Cascade is null) result[index][0] ^= checked((byte)index);
+            else
+            {
+                int offset = 0;
+                foreach (CascadeStage stage in parameters.Cascade.Stages)
+                {
+                    result[index][offset] ^= checked((byte)index);
+                    offset = checked(offset + stage.NonceBytes);
+                }
+            }
+        }
+        return result;
+    }
+
+    private static void RunPrimitiveChunks(EncryptionSuiteParameters parameters,
+        byte[] key, byte[] tweak, byte[][] counters, byte[] input, byte[] output,
+        int length, byte[] associatedData, byte[] tags, byte[] chunkInput,
+        byte[] chunkOutput, byte[] chunkTag)
+    {
+        const int maximum = NativeXChaChaPoly.MaximumPayloadBytes;
+        for (int offset = 0, index = 0; offset < length; offset += maximum, ++index)
+        {
+            int used = Math.Min(maximum, length - offset);
+            Buffer.BlockCopy(input, offset, chunkInput, 0, used);
+            Array.Clear(chunkTag);
+            KalynaContainerService.EncryptSuiteChunkForTests(parameters, key, tweak,
+                counters[index], chunkInput, chunkOutput, used, associatedData, chunkTag);
+            Buffer.BlockCopy(chunkOutput, 0, output, offset, used);
+            Buffer.BlockCopy(chunkTag, 0, tags, index * chunkTag.Length, chunkTag.Length);
+        }
+    }
+
     /// <summary>
-    /// Measures the complete v12 encrypted-container path for every production
+    /// Measures the complete v13 encrypted-container path for every production
     /// suite. Unlike the primitive matrix above, this includes the production
     /// Argon2id profile, the bounded chunk pipeline, per-chunk AEAD where
     /// applicable, both parallel tree MACs, authenticated verification before
@@ -220,14 +260,14 @@ internal static class CipherSuitePerformanceTests
         try
         {
             Console.WriteLine(
-                $"    full v12 container method: {MeasurementBytes / (1024 * 1024)} MiB pre-compressed payload, "
-                + $"{MeasurementRuns} runs, production Argon2id t={V12MasterKdf.Iterations}/p={V12MasterKdf.Parallelism}, median");
+                $"    full v13 container method: {MeasurementBytes / (1024 * 1024)} MiB pre-compressed payload, "
+                + $"one full warm-up and {MeasurementRuns} measured runs, production Argon2id t={V13MasterKdf.Iterations}/p={V13MasterKdf.Parallelism}, median");
             var containers = new KalynaContainerService();
             foreach (EncryptionSuite suite in ExpectedSuites)
             {
                 var encryptionSamples = new double[MeasurementRuns];
                 var decryptionSamples = new double[MeasurementRuns];
-                for (int run = 0; run < MeasurementRuns; run++)
+                for (int run = -1; run < MeasurementRuns; run++)
                 {
                     string containerPath = Path.Combine(root, $"{suite}-{run}.kzpaq");
                     using GeneratedArchiveEntropy entropy = CreateContainerEntropy(suite, run);
@@ -243,11 +283,11 @@ internal static class CipherSuitePerformanceTests
                         ContainerFactorB,
                         suite,
                         entropy,
-                        "v12 container performance",
+                        "v13 container performance",
                         null,
                         CancellationToken.None).ConfigureAwait(false);
                     timer.Stop();
-                    encryptionSamples[run] = RateMiBPerSecond(MeasurementBytes, timer.Elapsed);
+                    if (run >= 0) encryptionSamples[run] = RateMiBPerSecond(MeasurementBytes, timer.Elapsed);
 
                     using var sink = new HashingWriteStream();
                     timer.Restart();
@@ -261,7 +301,7 @@ internal static class CipherSuitePerformanceTests
                         null,
                         CancellationToken.None).ConfigureAwait(false);
                     timer.Stop();
-                    decryptionSamples[run] = RateMiBPerSecond(MeasurementBytes, timer.Elapsed);
+                    if (run >= 0) decryptionSamples[run] = RateMiBPerSecond(MeasurementBytes, timer.Elapsed);
                     byte[] actualHash = sink.GetHashAndReset();
                     try
                     {
@@ -325,7 +365,7 @@ internal static class CipherSuitePerformanceTests
 
     /// <summary>
     /// Measures the container pipeline at every plausible slot count, so the
-    /// production divisor is a measured choice and not a guess.
+    /// production policy is a measured choice and not a guess.
     /// </summary>
     /// <remarks>
     /// Argon2id runs at the KAT memory cost here. It is a constant per
@@ -335,26 +375,25 @@ internal static class CipherSuitePerformanceTests
     /// parallel tree MACs, the ordered writer and real file output.
     ///
     /// The slot count bounds how many chunks are in flight; it does not hand
-    /// out processors. Each chunk's own transform still spreads across every
-    /// logical processor, so two concurrent chunks on a ten-core machine
-    /// occupy all ten cores.
+    /// out processors. Each transform borrows a share of the common CPU
+    /// budget, including its caller. Concurrent chunks therefore divide the
+    /// available workers rather than independently requesting full teams.
     /// </remarks>
     internal static async Task RunPipelineSlotScalingAsync()
     {
-        const EncryptionSuite scalingSuite = EncryptionSuite.ThreefishOverKalyna;
-        int production = KalynaContainerService.ProductionPipelineWorkerCount;
-        var candidates = new List<int>();
+        const EncryptionSuite scalingSuite = EncryptionSuite.StandardCascade;
+        const int scalingMeasurementRuns = 5;
+        const int orderSeed = 0x534C4F54;
+        // Zero is the real adaptive Auto path: it installs no forced slot seam.
+        const int production = 0;
+        var candidates = new List<int> { production };
+        static string Label(int candidate) => candidate == production ? "Auto" : candidate.ToString(CultureInfo.InvariantCulture);
         foreach (int slots in new[] { 1, 2, 3, 4, 5, 6, 8, 10, 12, 16 })
         {
             if (slots <= Environment.ProcessorCount && !candidates.Contains(slots))
             {
                 candidates.Add(slots);
             }
-        }
-
-        if (!candidates.Contains(production))
-        {
-            candidates.Add(production);
         }
 
         candidates.Sort();
@@ -371,70 +410,162 @@ internal static class CipherSuitePerformanceTests
         }
 
         byte[] payload = CreateDeterministicBytes(PipelineScalingBytes, 0x5343414C494E4731UL);
+        byte[] expectedHash = SHA256.HashData(payload);
         var measured = new Dictionary<string, double>(StringComparer.Ordinal);
         try
         {
             Console.WriteLine(
                 $"    pipeline slot scaling: {PipelineScalingBytes / (1024 * 1024)} MiB through "
                 + $"{EncryptionSuiteCatalog.Get(scalingSuite).DisplayName}, "
-                + $"{MeasurementRuns} runs, KAT Argon2id memory, median; "
+                + $"one full warm-up per candidate, {scalingMeasurementRuns} interleaved rounds, "
+                + $"fixed order seed 0x{orderSeed:X8}, KAT Argon2id memory, median; "
                 + $"{Environment.ProcessorCount} logical CPU(s)");
             using IDisposable memoryScope =
-                V12MasterKdf.UseMemoryCostForTests(PipelineScalingArgonMemoryKiB);
+                V13MasterKdf.UseMemoryCostForTests(PipelineScalingArgonMemoryKiB);
             var containers = new KalynaContainerService();
+
+            // Plan every order before measuring. Consecutive samples in ascending
+            // slot order confound slot count with Windows GC, working-set and I/O
+            // drift. Each fixed round measures every unchanged candidate once;
+            // no result chooses another run, changes the order, or drops a sample.
+            var orderRandom = new Random(orderSeed);
+            var roundOrders = new int[scalingMeasurementRuns][];
+            for (int round = 0; round < roundOrders.Length; round++)
+            {
+                int[] order = candidates.ToArray();
+                for (int index = order.Length - 1; index > 0; index--)
+                {
+                    int other = orderRandom.Next(index + 1);
+                    (order[index], order[other]) = (order[other], order[index]);
+                }
+                roundOrders[round] = order;
+            }
+            var samplesBySlot = candidates.ToDictionary(slots => slots, _ => new double[scalingMeasurementRuns]);
+            var warmupRates = new Dictionary<int, double>();
+            var sampleRecords = new List<object>();
+            var pipelineProfiles = new Dictionary<int, OperationPhaseProfile.ProfileSnapshot>();
+            int nextRunId = 0;
+
+            async Task<double> MeasureSampleAsync(int slots, int runId)
+            {
+                string containerPath = Path.Combine(root, $"slots-{slots}-run-{runId}.kzpaq");
+                // Warm-ups and measurements share one monotonically increasing
+                // ID, so synthetic nonces are unique even across slot counts.
+                using GeneratedArchiveEntropy entropy = CreateContainerEntropy(scalingSuite, runId);
+                await using var input = new MemoryStream(payload, writable: false);
+                // Identical bounded pipeline observation for every candidate.
+                // Other cipher/KDF phases are not timed by this diagnostic scope.
+                var pipelineProfile = new OperationPhaseProfile.Measurements(128, pipelineOnly: true);
+                Stopwatch timer = Stopwatch.StartNew();
+                using (OperationPhaseProfile.ObserveForTests(pipelineProfile))
+                using (slots == production ? null : KalynaContainerService.UsePipelineWorkerCountForTests(slots))
+                {
+                    await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
+                        input,
+                        containerPath,
+                        ContainerPassword,
+                        ContainerPin,
+                        ContainerFactorA,
+                        ContainerFactorB,
+                        scalingSuite,
+                        entropy,
+                        "v13 pipeline slot scaling",
+                        null,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                timer.Stop();
+                OperationPhaseProfile.ProfileSnapshot profile = pipelineProfile.Snapshot();
+                Require(profile.ObservationAvailable && profile.OmittedWindowDecisions == 0
+                    && profile.WindowDecisions.Length > 0,
+                    "A pipeline scaling sample has no complete bounded diagnostic window trace.");
+                Require(profile.WindowDecisions.All(window => window.ResolvedSlots >= 1
+                    && window.ResolvedSlots <= window.AdmittedSlotCeiling
+                    && window.ActiveChunks <= window.PreviousSlots),
+                    "A pipeline request bypassed fresh resource or actual ready-work authority.");
+                Require(profile.Aggregates.Single(phase => phase.Phase == "ResourceObservation").Calls == profile.WindowDecisions.Length
+                    && profile.Aggregates.Single(phase => phase.Phase == "ResourcePlanning").Calls == profile.WindowDecisions.Length,
+                    "Auto and fixed candidates did not perform identical resource-observation and planning boundaries.");
+                pipelineProfiles[runId] = profile;
+                double rate = RateMiBPerSecond(PipelineScalingBytes, timer.Elapsed);
+                // Correctness is outside the timed encryption interval. Every
+                // candidate must authenticate and reproduce exactly the public input.
+                using var sink = new HashingWriteStream();
+                await containers.DecryptToStreamAsync(containerPath, ContainerPassword, ContainerPin,
+                    ContainerFactorA, ContainerFactorB, sink, null, CancellationToken.None).ConfigureAwait(false);
+                byte[] actualHash = sink.GetHashAndReset();
+                try
+                {
+                    Require(sink.BytesWritten == PipelineScalingBytes
+                        && CryptographicOperations.FixedTimeEquals(expectedHash, actualHash),
+                        $"Pipeline {Label(slots)} did not reproduce the complete input.");
+                }
+                finally { CryptographicOperations.ZeroMemory(actualHash); }
+                File.Delete(containerPath);
+                return rate;
+            }
+
             foreach (int slots in candidates)
             {
-                var samples = new double[MeasurementRuns];
-                for (int run = 0; run < MeasurementRuns; run++)
+                int runId = nextRunId++;
+                double rate = await MeasureSampleAsync(slots, runId).ConfigureAwait(false);
+                warmupRates[slots] = rate;
+                sampleRecords.Add(new { phase = "warmup", round = 0, slots, mode = Label(slots), runId, rateMiBPerSecond = rate, pipelineProfile = pipelineProfiles[runId] });
+                Console.WriteLine($"      warm-up {Label(slots),4}, run {runId}: {rate:F1} MiB/s (excluded by design)");
+            }
+            for (int round = 0; round < scalingMeasurementRuns; round++)
+            {
+                Console.WriteLine($"      measured round {round + 1}/{scalingMeasurementRuns}, slot order: {string.Join(", ", roundOrders[round].Select(Label))}");
+                foreach (int slots in roundOrders[round])
                 {
-                    string containerPath = Path.Combine(root, $"slots-{slots}-{run}.kzpaq");
-                    using GeneratedArchiveEntropy entropy = CreateContainerEntropy(scalingSuite, run);
-                    await using var input = new MemoryStream(payload, writable: false);
-                    Stopwatch timer = Stopwatch.StartNew();
-                    using (KalynaContainerService.UsePipelineWorkerCountForTests(slots))
-                    {
-                        await containers.EncryptZpaqStreamWithPreparedEntropyAsync(
-                            input,
-                            containerPath,
-                            ContainerPassword,
-                            ContainerPin,
-                            ContainerFactorA,
-                            ContainerFactorB,
-                            scalingSuite,
-                            entropy,
-                            "v12 pipeline slot scaling",
-                            null,
-                            CancellationToken.None).ConfigureAwait(false);
-                    }
-
-                    timer.Stop();
-                    samples[run] = RateMiBPerSecond(PipelineScalingBytes, timer.Elapsed);
-                    File.Delete(containerPath);
+                    int runId = nextRunId++;
+                    double rate = await MeasureSampleAsync(slots, runId).ConfigureAwait(false);
+                    samplesBySlot[slots][round] = rate;
+                    sampleRecords.Add(new { phase = "measured", round = round + 1, slots, mode = Label(slots), runId, rateMiBPerSecond = rate, pipelineProfile = pipelineProfiles[runId] });
+                    Console.WriteLine($"        {Label(slots),4}, run {runId}: {rate:F1} MiB/s");
                 }
-
+            }
+            foreach (int slots in candidates)
+            {
+                double[] samples = samplesBySlot[slots];
                 double median = Median(samples);
-                measured[slots.ToString(CultureInfo.InvariantCulture)] = median;
+                measured[Label(slots)] = median;
                 Console.WriteLine(
-                    $"      {slots,2} slot(s) {(slots == production ? "<- production" : "             ")}"
+                    $"      {Label(slots),4} {(slots == production ? "<- production" : "             ")}"
                     + $" {median,9:F1} MiB/s"
                     + $" (runs {string.Join(", ", samples.Select(value => value.ToString("F1")))})");
             }
 
+            Console.WriteLine("    PIPELINE_SCALING_SAMPLES_JSON=" + JsonSerializer.Serialize(new
+            {
+                schemaVersion = 3,
+                productionMode = "Auto without a forced slot override",
+                measurementSemantics = "All candidates use fresh OS observation and the same pure resource planner at the initial and every joined chunk boundary. Fixed requests are capped by current CPU, RAM, pressure, queue and remaining work. All candidates carry the same bounded pipeline-only diagnostic scope within encryption timing; snapshot serialization and authenticated plaintext comparison remain outside timing. Schema 2 results retain their original semantics and outcome.",
+                correctness = "every sample authenticated and plaintext SHA-256 compared outside timing",
+                fixedCandidateZeroMeansAuto = true,
+                payloadBytes = PipelineScalingBytes,
+                warmupsPerCandidate = 1,
+                measurementRounds = scalingMeasurementRuns,
+                orderSeed,
+                roundOrders,
+                warmupRatesMiBPerSecond = warmupRates,
+                samples = sampleRecords,
+            }, JsonOptions));
+
             KeyValuePair<string, double> best = measured.OrderByDescending(pair => pair.Value).First();
-            double productionRate = measured[production.ToString(CultureInfo.InvariantCulture)];
+            double productionRate = measured[Label(production)];
             Console.WriteLine(
-                $"    best {best.Key} slot(s) at {best.Value:F1} MiB/s; production {production} slot(s) "
+                $"    best {best.Key} at {best.Value:F1} MiB/s; adaptive production Auto "
                 + $"at {productionRate:F1} MiB/s ({productionRate / best.Value * 100:F1}% of best)");
             Console.WriteLine(
                 "    PIPELINE_SCALING_JSON=" + JsonSerializer.Serialize(measured, JsonOptions));
             Require(
                 productionRate >= best.Value * PipelineSlotTolerance,
-                $"The production pipeline slot count {production} reaches only {productionRate:F1} MiB/s "
-                + $"while {best.Key} slot(s) reach {best.Value:F1} MiB/s. Revisit "
-                + "KalynaContainerService.LogicalProcessorsPerPipelineWorker.");
+                $"The adaptive production Auto pipeline reaches only {productionRate:F1} MiB/s "
+                + $"while {best.Key} reaches {best.Value:F1} MiB/s. Revisit the actual resource planner and joined-boundary growth.");
         }
         finally
         {
+            CryptographicOperations.ZeroMemory(expectedHash);
             CryptographicOperations.ZeroMemory(payload);
             if (Directory.Exists(root))
             {
@@ -453,13 +584,13 @@ internal static class CipherSuitePerformanceTests
         try
         {
             firstSalt = LockedSensitiveBuffer.Create(EntropyMixer.SaltPairBytes);
-            firstNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+            firstNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.ArchiveNonceBytes);
             secondSalt = LockedSensitiveBuffer.Create(EntropyMixer.SaltPairBytes);
-            secondNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.MaxNonceBytes);
+            secondNonce = LockedSensitiveBuffer.Create(EncryptionSuiteCatalog.ArchiveNonceBytes);
 
             // Keep a suite's KDF salts fixed across its measured runs so the
             // secret PMI memory cost is identical and the median is not a
-            // median of three different Argon2 workloads. Nonces remain unique
+            // median of different Argon2 workloads. Nonces remain unique
             // per run, so the repeated benchmark never reuses a keystream.
             FillEntropy(firstSalt.Bytes, 17 + (int)suite, 29);
             FillEntropy(firstNonce.Bytes, 43 + (int)suite, 37 + run);
@@ -505,7 +636,7 @@ internal static class CipherSuitePerformanceTests
 
     private static string CreateFactor(int multiplier, int offset)
     {
-        byte[] bytes = new byte[V12MasterKdf.FactorBytes];
+        byte[] bytes = new byte[V13MasterKdf.FactorBytes];
         try
         {
             for (int index = 0; index < bytes.Length; index++)
@@ -571,7 +702,7 @@ internal static class CipherSuitePerformanceTests
                 {
                     Require(
                         CryptographicOperations.FixedTimeEquals(scalarDigest, parallelDigest),
-                        "Kalyna parallel path differs from its scalar v12 path during the performance gate.");
+                        "Kalyna parallel path differs from its scalar v13 path during the performance gate.");
                 }
                 finally
                 {
@@ -585,7 +716,7 @@ internal static class CipherSuitePerformanceTests
                 parallelMedian >= scalarMedian * 1.20,
                 $"Kalyna parallel speedup disappeared: {parallelMedian:F1} MiB/s parallel vs {scalarMedian:F1} MiB/s scalar.");
             Console.WriteLine(
-                $"    Kalyna v12 parallel invariant: {parallelMedian:F1} MiB/s vs "
+                $"    Kalyna v13 parallel invariant: {parallelMedian:F1} MiB/s vs "
                 + $"{scalarMedian:F1} MiB/s scalar ({parallelMedian / scalarMedian:F2}x)");
         }
         finally
@@ -632,16 +763,18 @@ internal static class CipherSuitePerformanceTests
         Console.WriteLine($"    AES hardware-dispatch invariant: Crypto++ provider {provider}");
     }
 
+    // Separate raw-keystream diagnostic, not the authenticated product ABI.
+    // It deliberately retains its 256-MiB differential input and raw 12-byte IV.
     private static void VerifyChaChaParallelSpeedup(byte[] input, byte[] output)
     {
-        byte[] key = CreateDeterministicBytes(NativeChaChaPoly.KeyBytes, 0x434841434841UL);
-        byte[] nonce = CreateDeterministicBytes(NativeChaChaPoly.NonceBytes, 0x53504C4954UL);
+        byte[] key = CreateDeterministicBytes(NativeXChaChaPoly.KeyBytes, 0x434841434841UL);
+        byte[] nonce = CreateDeterministicBytes(NativeXChaChaPoly.RawNonceBytes, 0x53504C4954UL);
         byte[]? serialDigest = null;
         try
         {
             Require(
-                NativeChaChaPoly.XCryptSerial(key, nonce, 1, input, output, WarmupBytes) == 0
-                    && NativeChaChaPoly.XCrypt(key, nonce, 1, input, output, WarmupBytes) == 0,
+                NativeXChaChaPoly.XCryptSerial(key, nonce, 1, input, output, WarmupBytes) == 0
+                    && NativeXChaChaPoly.XCrypt(key, nonce, 1, input, output, WarmupBytes) == 0,
                 "ChaCha20 warm-up failed.");
 
             var serialSamples = new double[MeasurementRuns];
@@ -649,7 +782,7 @@ internal static class CipherSuitePerformanceTests
             for (int run = 0; run < MeasurementRuns; run++)
             {
                 Stopwatch timer = Stopwatch.StartNew();
-                int serialResult = NativeChaChaPoly.XCryptSerial(
+                int serialResult = NativeXChaChaPoly.XCryptSerial(
                     key,
                     nonce,
                     1,
@@ -673,7 +806,7 @@ internal static class CipherSuitePerformanceTests
                 }
 
                 timer.Restart();
-                int splitResult = NativeChaChaPoly.XCrypt(
+                int splitResult = NativeXChaChaPoly.XCrypt(
                     key,
                     nonce,
                     1,
@@ -951,12 +1084,12 @@ internal static class CipherSuitePerformanceTests
         EncryptionSuite[] declared = Enum.GetValues<EncryptionSuite>();
         Require(
             declared.SequenceEqual(ExpectedSuites),
-            "The EncryptionSuite enum no longer contains exactly the ten performance-gated suites in its stable numeric order.");
+            "The EncryptionSuite enum no longer contains exactly the twelve performance-gated suites in its stable numeric order.");
         Require(
             EncryptionSuiteCatalog.DisplayOrder.Count == ExpectedSuites.Length
                 && EncryptionSuiteCatalog.DisplayOrder.Distinct().Count() == ExpectedSuites.Length
                 && EncryptionSuiteCatalog.DisplayOrder.All(ExpectedSuites.Contains),
-            "The production suite display order no longer contains each of the ten performance-gated suites exactly once.");
+            "The production suite display order no longer contains each of the twelve performance-gated suites exactly once.");
         Require(
             ExpectedSuites.All(EncryptionSuiteCatalog.IsKnown),
             "The performance inventory contains a suite the production catalog does not recognize.");
@@ -971,7 +1104,7 @@ internal static class CipherSuitePerformanceTests
             rates.Count == expectedNames.Length
                 && expectedNames.All(rates.ContainsKey)
                 && rates.Keys.All(expectedNames.Contains),
-            $"The {source} must contain exactly one rate for all ten production suites.");
+            $"The {source} must contain exactly one rate for all twelve production suites.");
         foreach ((string suite, double rate) in rates)
         {
             Require(

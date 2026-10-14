@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/opt/homebrew/bin/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "fuzz.verified-read-at-server-10000",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x5EED0313"
+  ],
+  "cwd": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac",
+  "started_utc": "2026-09-29T07:52:26.213356+00:00",
+  "exit_code": 0,
+  "wall_seconds": 1.8722000830457546,
+  "log_sha256": "b4bf61387e64f9921ff4ff913ef927ec908560402fc4306ae2e7f5dc8be040b2",
+  "result_sha256": "24f9b16d207bc935ae7b169857c207ca55e5150330704678de22498a748e07bd"
+}

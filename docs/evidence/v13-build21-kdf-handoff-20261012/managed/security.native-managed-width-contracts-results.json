@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "fe6340e3c3493ac482d253f1aaadee149ff26980",
+  "testInventoryHash": "3b3fb99acb9525e96351c65839f1eadd5c7408ef50d26f30c31fd02275059a96",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "security.native-managed-width-contracts",
+      "name": "Managed key/nonce/tag widths and output capacities fail without output mutation",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 61,
+      "seed": "0x0D9C510A",
+      "failure": null
+    }
+  ]
+}

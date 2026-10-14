@@ -1,0 +1,6 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+FULL PASS null/default, shortened and misplaced round secrets fail before v13 derivation (0,1s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 0,2s; sum of test times 0,1s; parallel speedup 0,60x
+results written to /private/tmp/keep-vault-kdf-build-utngfbys/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json

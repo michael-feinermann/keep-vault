@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "actualPid": 48541,
+  "startedUtc": "2026-10-12T10:19:16.056912+00:00",
+  "completedUtc": "2026-10-12T10:20:30.533672+00:00",
+  "actualExitCode": 0,
+  "fixtureSha256Before": "c877d0c71a22c7ccd44822c401d62757faea1858706962990ebbee0898661a32",
+  "fixtureSha256After": "c877d0c71a22c7ccd44822c401d62757faea1858706962990ebbee0898661a32",
+  "fixtureStable": true,
+  "stdoutSha256": "59d6438eba429c19b5dad6e2a199bc4a51fb61ec2d8c9dbff08e50c14586f0a5",
+  "stderrSha256": "8ece5e44e9a03e918eab8e0a607ba3aab87a681c96945b446ee95c53becad5f7",
+  "overallReleaseApproval": false
+}

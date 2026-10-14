@@ -7,14 +7,14 @@ using Microsoft.Win32.SafeHandles;
 namespace KalynaArchiver.Services;
 
 /// <summary>
-/// Defines the only macOS pathname from which Keep Vault v12 may execute ZPAQ.
+/// Defines the only macOS pathname from which Keep Vault v13 may execute ZPAQ.
 /// The installer owns this hierarchy as root:wheel, so another process running
 /// as the signed-in user cannot replace the executable between validation and
 /// sandbox-exec opening it by pathname.
 /// </summary>
 internal static partial class MacZpaqRootAnchor
 {
-    internal const string DirectoryPath = "/Library/Application Support/Keep Vault/v12";
+    internal const string DirectoryPath = "/Library/Application Support/Keep Vault/v13";
     internal const string ExecutablePath = DirectoryPath + "/zpaq";
 
     private static readonly string[] SidecarSuffixes =

@@ -1,0 +1,163 @@
+{
+  "scope": "Actual managed Release macOS arm64 Avalonia Headless tests against build154322, unchanged signed build15 natives, not final universal AOT installed GUI or release approval. All13 requested groups executed separately; prior failures retained in separate evidence.",
+  "sourceInputsSha256": "8b1c17f98180c0a9f9628962dc141cf274ea57a46bef02150948c3ed06ffce5a",
+  "originalCampaignSha256": "753aebc8a3b41cfb91ce7cbddd3c8d9ac720aa5f8bcd243d0a37f4b0eb86f6ec",
+  "tests": [
+    {
+      "testId": "gui.rev12-console-text",
+      "id": "gui.rev12-console-text",
+      "name": "REV12 approved DE/EN text, twelve-line console, retention and follow",
+      "status": "PASS",
+      "seconds": 7.499,
+      "peakRssMiB": 480,
+      "seed": "0x2F8A09AA",
+      "failure": null,
+      "resultsFile": "01-gui.rev12-console-text.results.json",
+      "executionFile": "01-gui.rev12-console-text.execution.json"
+    },
+    {
+      "testId": "gui.rev12-console-horizontal",
+      "id": "gui.rev12-console-horizontal",
+      "name": "REV12 native horizontal console chrome, twelve text lines, progress and reading context",
+      "status": "PASS",
+      "seconds": 2.148,
+      "peakRssMiB": 129,
+      "seed": "0x21DAF775",
+      "failure": null,
+      "resultsFile": "02-gui.rev12-console-horizontal.results.json",
+      "executionFile": "02-gui.rev12-console-horizontal.execution.json"
+    },
+    {
+      "testId": "gui.rev12-console-text-nowrap",
+      "id": "gui.rev12-console-text-nowrap",
+      "name": "REV12 historical NoWrap/Disabled console control with identical public corpus and gates",
+      "status": "PASS",
+      "seconds": 6.9,
+      "peakRssMiB": 449,
+      "seed": "0x3336C400",
+      "failure": null,
+      "resultsFile": "03-gui.rev12-console-text-nowrap.results.json",
+      "executionFile": "03-gui.rev12-console-text-nowrap.execution.json"
+    },
+    {
+      "testId": "gui.rev12-dispose-failure",
+      "id": "gui.rev12-dispose-failure",
+      "name": "REV12 window teardown independently clears credentials and invalidates pending clipboard input after actual cleanup failures",
+      "status": "PASS",
+      "seconds": 0.664,
+      "peakRssMiB": 122,
+      "seed": "0x4DBEB1EA",
+      "failure": null,
+      "resultsFile": "04-gui.rev12-dispose-failure.results.json",
+      "executionFile": "04-gui.rev12-dispose-failure.execution.json"
+    },
+    {
+      "testId": "gui.rev12-dispose-storage-ownership",
+      "id": "gui.rev12-dispose-storage-ownership",
+      "name": "REV12 owned storage cleanup attempts independent leases, retains only failed owners for retry and waits for active operation ownership",
+      "status": "PASS",
+      "seconds": 0.628,
+      "peakRssMiB": 122,
+      "seed": "0x6D852881",
+      "failure": null,
+      "resultsFile": "05-gui.rev12-dispose-storage-ownership.results.json",
+      "executionFile": "05-gui.rev12-dispose-storage-ownership.execution.json"
+    },
+    {
+      "testId": "gui.rev12-storage-transitions",
+      "id": "gui.rev12-storage-transitions",
+      "name": "REV12 actual storage replacement, batch input, mismatch, rejected acquisition and reentry preserve every owned item and retry failure",
+      "status": "PASS",
+      "seconds": 0.681,
+      "peakRssMiB": 133,
+      "seed": "0x4D1B34F1",
+      "failure": null,
+      "resultsFile": "06-gui.rev12-storage-transitions.results.json",
+      "executionFile": "06-gui.rev12-storage-transitions.execution.json"
+    },
+    {
+      "testId": "gui.rev12-file-activation-ownership",
+      "id": "gui.rev12-file-activation-ownership",
+      "name": "REV12 actual App activation handoff preserves accepted aliases, attempts all independent cleanup and retains failed owners across window loss",
+      "status": "PASS",
+      "seconds": 0.737,
+      "peakRssMiB": 133,
+      "seed": "0x381EE981",
+      "failure": null,
+      "resultsFile": "07-gui.rev12-file-activation-ownership.results.json",
+      "executionFile": "07-gui.rev12-file-activation-ownership.execution.json"
+    },
+    {
+      "testId": "resources.rev12-adaptive-window",
+      "id": "resources.rev12-adaptive-window",
+      "name": "REV12 accepted-window probes, loss rollback, no retry loop and fresh resource authority",
+      "status": "PASS",
+      "seconds": 0.016,
+      "peakRssMiB": 60,
+      "seed": "0x36B26263",
+      "failure": null,
+      "resultsFile": "08-resources.rev12-adaptive-window.results.json",
+      "executionFile": "08-resources.rev12-adaptive-window.execution.json"
+    },
+    {
+      "testId": "diagnostics.rev12-phase-bounds",
+      "id": "diagnostics.rev12-phase-bounds",
+      "name": "bounded, inert-by-default timing profile with nested async ownership and no secret-bearing schema",
+      "status": "PASS",
+      "seconds": 0.017,
+      "peakRssMiB": 61,
+      "seed": "0x0E1D8F85",
+      "failure": null,
+      "resultsFile": "09-diagnostics.rev12-phase-bounds.results.json",
+      "executionFile": "09-diagnostics.rev12-phase-bounds.execution.json"
+    },
+    {
+      "testId": "diagnostics.rev12-phase-equivalence",
+      "id": "diagnostics.rev12-phase-equivalence",
+      "name": "opt-in and failed observations preserve actual synthetic v13 output, repair and cleanup",
+      "status": "PASS",
+      "seconds": 3.171,
+      "peakRssMiB": 212,
+      "seed": "0x67DEFC5B",
+      "failure": null,
+      "resultsFile": "10-diagnostics.rev12-phase-equivalence.results.json",
+      "executionFile": "10-diagnostics.rev12-phase-equivalence.execution.json"
+    },
+    {
+      "testId": "gui.folder-target",
+      "id": "gui.folder-target",
+      "name": "GUI folder target lands beside the folder",
+      "status": "PASS",
+      "seconds": 0.358,
+      "peakRssMiB": 114,
+      "seed": "0x475BF9A7",
+      "failure": null,
+      "resultsFile": "11-gui.folder-target.results.json",
+      "executionFile": "11-gui.folder-target.execution.json"
+    },
+    {
+      "testId": "gui.destination-folder-target",
+      "id": "gui.destination-folder-target",
+      "name": "GUI destination picker keeps the archive inside its retained folder",
+      "status": "PASS",
+      "seconds": 0.357,
+      "peakRssMiB": 115,
+      "seed": "0x4D78923F",
+      "failure": null,
+      "resultsFile": "12-gui.destination-folder-target.results.json",
+      "executionFile": "12-gui.destination-folder-target.execution.json"
+    },
+    {
+      "testId": "gui.archive-picker-filter-reset",
+      "id": "gui.archive-picker-filter-reset",
+      "name": "GUI archive picker does not poison the shared macOS folder panel",
+      "status": "PASS",
+      "seconds": 0.353,
+      "peakRssMiB": 115,
+      "seed": "0x15807D09",
+      "failure": null,
+      "resultsFile": "13-gui.archive-picker-filter-reset.results.json",
+      "executionFile": "13-gui.archive-picker-filter-reset.execution.json"
+    }
+  ]
+}

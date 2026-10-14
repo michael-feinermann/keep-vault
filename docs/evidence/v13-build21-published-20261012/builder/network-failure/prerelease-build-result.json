@@ -1,0 +1,19 @@
+{
+  "actualBuilderExitCode": 1,
+  "completedUtc": "2026-10-12T11:02:40.300468+00:00",
+  "fullReleaseGate": "NOT_RUN",
+  "gitCleanAfter": true,
+  "managedHarnessIsAotProduct": false,
+  "overallReleaseApproval": false,
+  "publishMode": "prerelease",
+  "publishedAotMatchesFinalStagedProduct": false,
+  "publishedProductSha256": null,
+  "retainedNativeComponentsAndSidecarsMatchPublishedProduct": false,
+  "scope": "Actual signed/notarized prerelease builder outcome with clean unchanged source and preserved public harness binding; installed GUI/public-download proof and deferred full release gates are separate.",
+  "sourceHeadAfter": "8c68571695ae9072555ffb462b3c0b9c500811ea",
+  "sourceHeadBefore": "8c68571695ae9072555ffb462b3c0b9c500811ea",
+  "sourceInputsAndBuilderStable": true,
+  "status": "FAIL",
+  "stderrSha256": "14edbd282f03a41d86072cc31465db4f17ec0d69c35e0b10062ca272f0f51200",
+  "stdoutSha256": "fbf6569f20838f19f17a10b3dc795a8313320d70e5c568c3da98aa0578f39877"
+}

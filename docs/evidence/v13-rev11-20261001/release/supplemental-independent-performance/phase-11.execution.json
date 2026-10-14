@@ -1,0 +1,23 @@
+{
+  "phase": 11,
+  "testId": "performance.paranoia-256mib-e2e",
+  "startedUtc": "2026-10-01T10:27:50.148699+00:00",
+  "completedUtc": "2026-10-01T10:32:44.270511+00:00",
+  "exitCode": 0,
+  "command": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/sdk/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+    "--performance",
+    "--only",
+    "performance.paranoia-256mib-e2e",
+    "--parallel",
+    "1"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-v13-release/Kalyna/KeepVaultMac",
+  "files": {
+    "phase-11.test-results.json": "479f802cfe0e519d42d6878d54af60f56f7c1497439350e6c6f15bfe4f134e90",
+    "phase-11.test-timings.json": "0d8188c21ec1e692be1198873bc41fe0765f4eda1148ae0f295aa231b25540df"
+  },
+  "logSha256": "2bebf023903fc1471499be4a2536cca2cd6f96094be4a58fe7ff1becdec82ea0",
+  "artifacts": []
+}

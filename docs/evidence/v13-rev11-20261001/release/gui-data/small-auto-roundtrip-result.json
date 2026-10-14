@@ -1,0 +1,30 @@
+{
+  "time": "2026-10-01T12:11:17.384632+02:00",
+  "test": "installed-build15-small-plain-auto-roundtrip",
+  "source": {
+    "directories": [
+      "empty",
+      "verschachtelt",
+      "verschachtelt/Grüße 日本語"
+    ],
+    "files": {
+      ".hidden-public-test": "d7b9ad2ad8edfebc69eebdfa3f53fe5415dda05f54eb03fafe9c4c96bbe0c064",
+      "public-test.txt": "b97e06bf6db4c5acb5b5c12122d7fc7c04193e17e1ac3cc032a3957495c59539",
+      "verschachtelt/Grüße 日本語/zero.bin": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "extracted": {
+    "directories": [
+      "empty",
+      "verschachtelt",
+      "verschachtelt/Grüße 日本語"
+    ],
+    "files": {
+      ".hidden-public-test": "d7b9ad2ad8edfebc69eebdfa3f53fe5415dda05f54eb03fafe9c4c96bbe0c064",
+      "public-test.txt": "b97e06bf6db4c5acb5b5c12122d7fc7c04193e17e1ac3cc032a3957495c59539",
+      "verschachtelt/Grüße 日本語/zero.bin": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "match": true,
+  "archive_bytes": 1362
+}

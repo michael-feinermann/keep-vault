@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "started_utc": "2026-09-29T07:32:48.570407+00:00",
+  "duration_seconds": 0.383340958,
+  "repository_commit": "3dde04c28751feda28a12b6c7e78be139747c4c1",
+  "command": [
+    "/bin/zsh",
+    "-f",
+    "-x",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/tools/Test-InstallerBoundDelete-macOS.sh"
+  ],
+  "cwd": "/Users/michael/Developer/GPT-Codex/Kalyna",
+  "environment_overrides": {
+    "TMPDIR": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/pre-release-bounddelete-20260929/temporary/",
+    "KEEPVAULT_variables": "all removed"
+  },
+  "host_architecture": "arm64",
+  "compiler_version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+  "return_code": 0,
+  "source_sha256_before": {
+    "tools/Test-InstallerBoundDelete-macOS.sh": "B684D70B5914DDB32D7EB476F10CAECB6B55CF1654C360D22C2395A18417E2FA",
+    "tools/InstallerBoundDelete.c": "C1B5BEBE0A38E2E594931E1BD952B797F3D52E482C7247EAE5F0DC5CEDD41725"
+  },
+  "source_sha256_after": {
+    "tools/Test-InstallerBoundDelete-macOS.sh": "B684D70B5914DDB32D7EB476F10CAECB6B55CF1654C360D22C2395A18417E2FA",
+    "tools/InstallerBoundDelete.c": "C1B5BEBE0A38E2E594931E1BD952B797F3D52E482C7247EAE5F0DC5CEDD41725"
+  },
+  "source_unchanged": true,
+  "actual_test_helper": {
+    "path_during_test": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/pre-release-bounddelete-20260929/temporary/keep-vault-bound-delete-test.ShBzbmrm/installer-bound-delete",
+    "device": 16777230,
+    "inode": 50793830,
+    "size": 34920,
+    "mode": "0o500",
+    "sha256": "9EF9399A55C46BB5E7F7E6DB7F0966FBCE4C507FB9D6FA919F19AF8547D2DD12",
+    "unchanged_through_exit": true
+  },
+  "log_sha256": "65375C2A69C35C4CCAD4FB31B00F2D5C2B0277B4D1F4B2EEBF463B90DF4C9CD5",
+  "markers": {
+    "installer_bound_delete_file=true": true,
+    "installer_bound_delete_recursive_nofollow=true": true,
+    "installer_bound_delete_identity_mismatch_preserved=true": true,
+    "installer_bound_delete_directory_guards=true": true
+  },
+  "temporary_directory_empty_after_cleanup": true,
+  "scope": "Synthetic file and directory operations using an isolated compiled helper; no product build, release keys, signing, installed application, or GUI checks.",
+  "passed": true
+}

@@ -14,7 +14,7 @@ public sealed partial class MainWindow
 
         string trimmed = path.Trim();
         string extension = encrypted ? ".kzpaq" : ".zpaq";
-        if (Directory.Exists(trimmed))
+        if (Directory.Exists(trimmed) && !HasArchiveExtension(trimmed))
         {
             return Path.Combine(trimmed, $"archive{extension}");
         }
@@ -210,22 +210,25 @@ public sealed partial class MainWindow
         return normalizedPath.StartsWith(normalizedDirectory, StringComparison.Ordinal);
     }
 
-    private static string[] GetDroppedPaths(DragEventArgs e)
+    private void SetDropEffectAndLog(DragEventArgs e, MacDropTarget target)
     {
-        IReadOnlyList<IStorageItem>? items = e.DataTransfer.TryGetFiles();
-        return items?
-            .Select(item => item.TryGetLocalPath())
-            .OfType<string>()
-            .Select(Path.GetFullPath)
-            .ToArray() ?? [];
-    }
-
-    private static void SetDropEffect(DragEventArgs e, MacDropTarget target)
-    {
-        IReadOnlyList<IStorageItem> items = e.DataTransfer.TryGetFiles() ?? [];
-        string[] paths = items.Select(GetLocalPath).OfType<string>().ToArray();
-        e.DragEffects = CanDrop(items, paths, target) ? DragDropEffects.Copy : DragDropEffects.None;
+        // DragOver only borrows provider items. Refusal must neither acquire
+        // nor dispose them before a possible later Drop owns the batch.
+        e.DragEffects = DragDropEffects.None;
         e.Handled = true;
+        if (_disposed || _releaseAudit is not null) return;
+        try
+        {
+            IReadOnlyList<IStorageItem> items = e.DataTransfer.TryGetFiles() ?? [];
+            string[] paths = items.Select(GetLocalPath).OfType<string>().ToArray();
+            MacDropTarget effective = target == MacDropTarget.ExtractPanelAuto
+                ? paths.Any(HasArchiveExtension) ? MacDropTarget.ExtractArchive : MacDropTarget.OutputFolder
+                : target;
+            e.DragEffects = CanDrop(items, paths, effective) ? DragDropEffects.Copy : DragDropEffects.None;
+        }
+        // Hover can repeat before Drop. Its refusal belongs in the bounded
+        // console, without opening repeated modal selection-failure dialogs.
+        catch (Exception failure) { Log(failure.ToString()); }
     }
 
     private static bool CanDrop(
@@ -244,40 +247,60 @@ public sealed partial class MainWindow
 
     private void ApplyDrop(DragEventArgs e, MacDropTarget target)
     {
-        IReadOnlyList<IStorageItem> items = e.DataTransfer.TryGetFiles() ?? [];
-        string[] paths = items
-            .Select(GetLocalPath)
-            .OfType<string>()
-            .ToArray();
+        if (_releaseAudit is not null)
+        {
+            e.DragEffects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+
+        IStorageItem[] items = (e.DataTransfer.TryGetFiles() ?? [])
+            .Distinct<IStorageItem>(ReferenceEqualityComparer.Instance).ToArray();
+        var consumed = new HashSet<IStorageItem>(ReferenceEqualityComparer.Instance);
+        List<Exception>? failures = null;
+        e.DragEffects = DragDropEffects.None;
+        e.Handled = true;
         try
         {
-            MacDropTarget effective = target;
-            if (effective == MacDropTarget.Auto)
+            // Path is provider code too: every captured item is already within
+            // the cleanup scope before any provider callback can fail.
+            string[] paths = items.Select(GetLocalPath).OfType<string>().ToArray();
+            if (!_disposed)
             {
-                effective = paths.Count(HasArchiveExtension) > 0 ? MacDropTarget.ExtractArchive : MacDropTarget.Inputs;
+                MacDropTarget effective = target == MacDropTarget.Auto
+                    ? paths.Any(HasArchiveExtension) ? MacDropTarget.ExtractArchive : MacDropTarget.Inputs
+                    : target == MacDropTarget.ExtractPanelAuto
+                        ? paths.Any(HasArchiveExtension) ? MacDropTarget.ExtractArchive : MacDropTarget.OutputFolder
+                    : target;
+                bool applied = effective switch
+                {
+                    MacDropTarget.Inputs => ApplyInputDrop(items, consumed),
+                    MacDropTarget.TargetArchive => ApplyArchiveTargetDrop(items, paths, consumed),
+                    MacDropTarget.ExtractArchive => ApplyExtractDrop(items, paths, consumed),
+                    MacDropTarget.OutputFolder => ApplyOutputDrop(items, paths, consumed),
+                    MacDropTarget.EraseTarget => ApplyEraseDrop(items, paths, consumed),
+                    _ => false,
+                };
+                e.DragEffects = applied ? DragDropEffects.Copy : DragDropEffects.None;
             }
-
-            bool applied = effective switch
-            {
-                MacDropTarget.Inputs => ApplyInputDrop(items),
-                MacDropTarget.TargetArchive => ApplyArchiveTargetDrop(items, paths),
-                MacDropTarget.ExtractArchive => ApplyExtractDrop(items, paths),
-                MacDropTarget.OutputFolder => ApplyOutputDrop(items, paths),
-                MacDropTarget.EraseTarget => ApplyEraseDrop(items, paths),
-                _ => false,
-            };
-            e.DragEffects = applied ? DragDropEffects.Copy : DragDropEffects.None;
-            e.Handled = true;
         }
+        catch (Exception failure) { (failures ??= []).Add(failure); }
         finally
         {
-            DisposeUnretainedStorageItems(items);
+            try { DisposeUnretainedStorageItems(items.Where(item => !consumed.Contains(item))); }
+            catch (Exception failure) { (failures ??= []).Add(failure); }
         }
+        if (failures is not null) throw new AggregateException("Drop ownership update failed.", failures);
     }
 
-    private bool ApplyInputDrop(IReadOnlyList<IStorageItem> items) => AddInputStorageItems(items) > 0;
+    private bool ApplyInputDrop(IReadOnlyList<IStorageItem> items, ISet<IStorageItem> consumed)
+    {
+        // AddInputStorageItems owns every item, including refused/faulted paths.
+        foreach (IStorageItem item in items) consumed.Add(item);
+        return AddInputStorageItems(items) > 0;
+    }
 
-    private bool ApplyArchiveTargetDrop(IReadOnlyList<IStorageItem> items, IReadOnlyList<string> paths)
+    private bool ApplyArchiveTargetDrop(IReadOnlyList<IStorageItem> items, IReadOnlyList<string> paths, ISet<IStorageItem> consumed)
     {
         if (paths.Count != 1)
         {
@@ -288,10 +311,13 @@ public sealed partial class MainWindow
         IStorageItem? selectedItem = items.FirstOrDefault(item => StorageItemNamesPath(item, path));
         if (selectedItem is IStorageFile && !HasArchiveExtension(path))
         {
+            consumed.Add(selectedItem);
             AddInputStorageItems([selectedItem]);
+            if (!IsStorageAccessRetained(selectedItem)) return false;
         }
         else if (selectedItem is IStorageFolder folder)
         {
+            consumed.Add(folder);
             if (!RetainArchiveDestinationAccess(folder))
             {
                 return false;
@@ -304,7 +330,7 @@ public sealed partial class MainWindow
         return true;
     }
 
-    private bool ApplyExtractDrop(IReadOnlyList<IStorageItem> items, IEnumerable<string> paths)
+    private bool ApplyExtractDrop(IReadOnlyList<IStorageItem> items, IEnumerable<string> paths, ISet<IStorageItem> consumed)
     {
         string? archive = paths.FirstOrDefault(HasArchiveExtension);
         if (archive is null)
@@ -314,6 +340,7 @@ public sealed partial class MainWindow
 
         if (items.FirstOrDefault(item => StorageItemNamesPath(item, archive)) is IStorageFile file)
         {
+            consumed.Add(file);
             if (!RetainExtractArchiveAccess(file))
             {
                 return false;
@@ -330,7 +357,7 @@ public sealed partial class MainWindow
         return true;
     }
 
-    private bool ApplyOutputDrop(IReadOnlyList<IStorageItem> items, IEnumerable<string> paths)
+    private bool ApplyOutputDrop(IReadOnlyList<IStorageItem> items, IEnumerable<string> paths, ISet<IStorageItem> consumed)
     {
         IStorageFolder? storageFolder = items.OfType<IStorageFolder>().FirstOrDefault();
         string? folder = storageFolder is null ? null : GetLocalPath(storageFolder);
@@ -339,6 +366,7 @@ public sealed partial class MainWindow
             return false;
         }
 
+        consumed.Add(storageFolder);
         if (!RetainExtractOutputParentAccess(storageFolder))
         {
             return false;
@@ -350,7 +378,7 @@ public sealed partial class MainWindow
         return true;
     }
 
-    private bool ApplyEraseDrop(IReadOnlyList<IStorageItem> items, IEnumerable<string> paths)
+    private bool ApplyEraseDrop(IReadOnlyList<IStorageItem> items, IEnumerable<string> paths, ISet<IStorageItem> consumed)
     {
         IStorageFile? storageFile = items.OfType<IStorageFile>().FirstOrDefault();
         string? path = storageFile is null ? null : GetLocalPath(storageFile);
@@ -359,6 +387,7 @@ public sealed partial class MainWindow
             return false;
         }
 
+        consumed.Add(storageFile);
         if (!RetainEraseArchiveAccess(storageFile))
         {
             return false;
@@ -370,34 +399,36 @@ public sealed partial class MainWindow
         return true;
     }
 
-    private void Window_DragOver(object? sender, DragEventArgs e) => SetDropEffect(e, MacDropTarget.Auto);
-    private void Window_Drop(object? sender, DragEventArgs e) => ApplyDrop(e, MacDropTarget.Auto);
-    private void CreatePanel_DragOver(object? sender, DragEventArgs e) => SetDropEffect(e, MacDropTarget.Inputs);
-    private void CreatePanel_Drop(object? sender, DragEventArgs e) => ApplyDrop(e, MacDropTarget.Inputs);
-    private void InputList_DragOver(object? sender, DragEventArgs e) => SetDropEffect(e, MacDropTarget.Inputs);
-    private void InputList_Drop(object? sender, DragEventArgs e) => ApplyDrop(e, MacDropTarget.Inputs);
-    private void ArchivePathBox_DragOver(object? sender, DragEventArgs e) => SetDropEffect(e, MacDropTarget.TargetArchive);
-    private void ArchivePathBox_Drop(object? sender, DragEventArgs e) => ApplyDrop(e, MacDropTarget.TargetArchive);
-    private void ExtractPanel_DragOver(object? sender, DragEventArgs e)
+    private async Task ApplyDropAndReportAsync(DragEventArgs e, MacDropTarget target)
     {
-        string[] paths = GetDroppedPaths(e);
-        MacDropTarget target = paths.Any(HasArchiveExtension) ? MacDropTarget.ExtractArchive : MacDropTarget.OutputFolder;
-        SetDropEffect(e, target);
+        try { ApplyDrop(e, target); }
+        catch (Exception failure)
+        {
+            e.DragEffects = DragDropEffects.None;
+            e.Handled = true;
+            await ReportStorageSelectionFailureAsync(failure);
+        }
     }
 
-    private void ExtractPanel_Drop(object? sender, DragEventArgs e)
-    {
-        string[] paths = GetDroppedPaths(e);
-        ApplyDrop(e, paths.Any(HasArchiveExtension) ? MacDropTarget.ExtractArchive : MacDropTarget.OutputFolder);
-    }
-    private void ExtractArchiveBox_DragOver(object? sender, DragEventArgs e) => SetDropEffect(e, MacDropTarget.ExtractArchive);
-    private void ExtractArchiveBox_Drop(object? sender, DragEventArgs e) => ApplyDrop(e, MacDropTarget.ExtractArchive);
-    private void OutputFolderBox_DragOver(object? sender, DragEventArgs e) => SetDropEffect(e, MacDropTarget.OutputFolder);
-    private void OutputFolderBox_Drop(object? sender, DragEventArgs e) => ApplyDrop(e, MacDropTarget.OutputFolder);
-    private void ErasePanel_DragOver(object? sender, DragEventArgs e) => SetDropEffect(e, MacDropTarget.EraseTarget);
-    private void ErasePanel_Drop(object? sender, DragEventArgs e) => ApplyDrop(e, MacDropTarget.EraseTarget);
-    private void ErasePathBox_DragOver(object? sender, DragEventArgs e) => SetDropEffect(e, MacDropTarget.EraseTarget);
-    private void ErasePathBox_Drop(object? sender, DragEventArgs e) => ApplyDrop(e, MacDropTarget.EraseTarget);
+    private void Window_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.Auto);
+    private async void Window_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.Auto);
+    private void CreatePanel_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.Inputs);
+    private async void CreatePanel_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.Inputs);
+    private void InputList_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.Inputs);
+    private async void InputList_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.Inputs);
+    private void ArchivePathBox_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.TargetArchive);
+    private async void ArchivePathBox_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.TargetArchive);
+    private void ExtractPanel_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.ExtractPanelAuto);
+
+    private async void ExtractPanel_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.ExtractPanelAuto);
+    private void ExtractArchiveBox_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.ExtractArchive);
+    private async void ExtractArchiveBox_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.ExtractArchive);
+    private void OutputFolderBox_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.OutputFolder);
+    private async void OutputFolderBox_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.OutputFolder);
+    private void ErasePanel_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.EraseTarget);
+    private async void ErasePanel_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.EraseTarget);
+    private void ErasePathBox_DragOver(object? sender, DragEventArgs e) => SetDropEffectAndLog(e, MacDropTarget.EraseTarget);
+    private async void ErasePathBox_Drop(object? sender, DragEventArgs e) => await ApplyDropAndReportAsync(e, MacDropTarget.EraseTarget);
 }
 
 internal enum MacDropTarget
@@ -408,4 +439,5 @@ internal enum MacDropTarget
     ExtractArchive,
     OutputFolder,
     EraseTarget,
+    ExtractPanelAuto,
 }

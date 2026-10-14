@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "testInventoryHash": "399eac9df0558e255391c65c092260ac0a041fe52fb74ace6fe2f194ae2a09c1",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "gui.folder-target",
+      "name": "GUI folder target lands beside the folder",
+      "status": "PASS",
+      "seconds": 0.358,
+      "peakRssMiB": 114,
+      "seed": "0x475BF9A7",
+      "failure": null
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+{
+  "collectorSha256": "5c17f7e53dbcaf1838aed518daeb8ecabc1ef71b4e0a4a59ef18c0ded06c5d3c",
+  "createdUtc": "2026-10-12T09:42:26.740016+00:00",
+  "limitations": [
+    "8 MiB KDF fault injection is not a full production-cost/performance run",
+    "Audit harness tests do not execute the actual native GUI campaign",
+    "The narrow old/new probe does not replay the complete old KDF matrix",
+    "Nine product native libraries are bound across slices; SHA3 is a separate per-slice test-only reference",
+    "NULL ABI tests never use invalid non-NULL addresses or expired handles",
+    "Cleanup observations have the original caller-array/lock-accounting scope; private temporary spans are not retained",
+    "Reported source HEAD may refer to a dirty worktree; executed-byte binding is not complete independent source attestation"
+  ],
+  "managed": {
+    "auditGroups": 4,
+    "binding": {
+      "harnessSha256": "1d7090a23c54ae3a4cab7bd7b74cd5a8ce8b455e68c3a9030ad922a541c34f57",
+      "nativeFiles": {
+        "libaes_ref.dylib": "d3487bf6a0478e0fb727df169f34b68816e5b4371cad0dd6ddabe038a5fc77df",
+        "libargon2_ref.dylib": "e45ddf8d398c338b910ff920640dfe12f62ae830a204795428c2bd7c10b19c9f",
+        "libcamellia_v13.dylib": "e0363a7d5c352414bc9522f69ecb1dc88036e60834edb428ab9d8c60e243abae",
+        "libkalyna_v13.dylib": "76b42a589eb01ba80ce3b4fcc32bef01dce86c2331099f7de6efa16d6c8af87b",
+        "libmars_ref.dylib": "1b7fa0987e41ce2ed15ab10b798db9cb6b198f37d1e9a6cefd7df34a6194df90",
+        "libmldsa87_ref.dylib": "14544e9dbc2ab6d1ad0d38d49eab95cc42ed80acc27a2cb615836362cd545382",
+        "libserpent_v13.dylib": "8077cb8adc7f76f9bda792ed9bc94efa00948f1f33e187da45f293cf8e8b9e70",
+        "libsha3_ref.dylib": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45",
+        "libshacal2_ref.dylib": "43ebaff3dcde975e6936ea107d238deaebbfa551841738bee833115f04c6b989",
+        "libthreefish_ref.dylib": "66004460d3d4a7c6ac4a2e299aaf552ecc1594b003fcff7c123dcbd4be6f4f16",
+        "libxchachapoly_v13.dylib": "b7c71637c409e5445ec0f7976c762e5bacd6780064eb5691bada08c5740e6766"
+      },
+      "productSha256": "dbf9399d9dc80365760dd55b689b514aff2418462eb7ccacf592fbd1068925ef",
+      "sdkHostSha256": "2ff302a3c5cecc4a371fd6482d2f5547c57d93eff9fe19919ef729a54f69ce04"
+    },
+    "groups": 17,
+    "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+    "inventoryHash": "3b3fb99acb9525e96351c65839f1eadd5c7408ef50d26f30c31fd02275059a96",
+    "matrices": {
+      "kdf": {
+        "assertionScope": "Actual per-suite boundary inventories/counts; per-case hit/rejection/cleanup assertions run in the bound test, not individually exported KDF receipts",
+        "boundaries": 626,
+        "cases": 2504,
+        "profile": "internal-8-MiB-fault-injection-only",
+        "suites": 12
+      },
+      "owners": {
+        "ActualAliasesErased": true,
+        "GettersClosed": true,
+        "LockAllocationBaselineRestored": true,
+        "OwnerTypes": [
+          "LockedSensitiveBuffer",
+          "SuiteKeyMaterial",
+          "RecoveryKeys"
+        ],
+        "SuccessAndFailedUnlockCases": 6
+      },
+      "security.downstream-mac-handoff-faults": {
+        "callerOwnedAliasesErased": true,
+        "contexts": 2,
+        "erasureScope": "Original per-case scopes apply; private internal temporary spans are not retained",
+        "faultCases": 80,
+        "guardContexts": 20,
+        "injectionHitOnce": true,
+        "lockAllocationBaselineRestored": true,
+        "noCompletedResult": true
+      },
+      "security.downstream-recovery-handoff-faults": {
+        "callerOwnedAliasesErased": true,
+        "contexts": 1,
+        "erasureScope": "Original per-case scopes apply; private internal temporary spans are not retained",
+        "faultCases": 24,
+        "guardContexts": 6,
+        "injectionHitOnce": true,
+        "lockAllocationBaselineRestored": true,
+        "noCompletedResult": true
+      },
+      "security.downstream-suite-handoff-faults": {
+        "callerOwnedAliasesErased": true,
+        "contexts": 12,
+        "erasureScope": "Original per-case scopes apply; private internal temporary spans are not retained",
+        "faultCases": 336,
+        "guardContexts": 84,
+        "injectionHitOnce": true,
+        "lockAllocationBaselineRestored": true,
+        "noCompletedResult": true
+      }
+    },
+    "productGroups": 13,
+    "sourceHead": "fe6340e3c3493ac482d253f1aaadee149ff26980",
+    "tests": [
+      {
+        "coordinatorPid": 78714,
+        "peakRssMiB": 61,
+        "seconds": 0.009,
+        "status": "PASS",
+        "testId": "security.native-managed-null-contracts"
+      },
+      {
+        "coordinatorPid": 78719,
+        "peakRssMiB": 94,
+        "seconds": 4.166,
+        "status": "PASS",
+        "testId": "security.kdf-handoff-fault-matrix"
+      },
+      {
+        "coordinatorPid": 78769,
+        "peakRssMiB": 77,
+        "seconds": 0.137,
+        "status": "PASS",
+        "testId": "security.kdf-null-width-round-contracts"
+      },
+      {
+        "coordinatorPid": 78774,
+        "peakRssMiB": 60,
+        "seconds": 0.004,
+        "status": "PASS",
+        "testId": "security.kdf-key-owner-contracts"
+      },
+      {
+        "coordinatorPid": 78779,
+        "peakRssMiB": 79,
+        "seconds": 0.247,
+        "status": "PASS",
+        "testId": "security.kdf-handoff-destination-cleanup"
+      },
+      {
+        "coordinatorPid": 78784,
+        "peakRssMiB": 61,
+        "seconds": 0.004,
+        "status": "PASS",
+        "testId": "security.native-managed-width-contracts"
+      },
+      {
+        "coordinatorPid": 78791,
+        "peakRssMiB": 73,
+        "seconds": 1.053,
+        "status": "PASS",
+        "testId": "crypto.native-constant-key-oracles"
+      },
+      {
+        "coordinatorPid": 78797,
+        "peakRssMiB": 112,
+        "seconds": 0.797,
+        "status": "PASS",
+        "testId": "kdf.native-constant-argon-inputs"
+      },
+      {
+        "coordinatorPid": 78802,
+        "peakRssMiB": 80,
+        "seconds": 1.008,
+        "status": "PASS",
+        "testId": "security.downstream-suite-handoff-faults"
+      },
+      {
+        "coordinatorPid": 78807,
+        "peakRssMiB": 109,
+        "seconds": 0.43,
+        "status": "PASS",
+        "testId": "security.downstream-mac-handoff-faults"
+      },
+      {
+        "coordinatorPid": 78813,
+        "peakRssMiB": 73,
+        "seconds": 0.133,
+        "status": "PASS",
+        "testId": "security.downstream-recovery-handoff-faults"
+      },
+      {
+        "coordinatorPid": 78818,
+        "peakRssMiB": 72,
+        "seconds": 0.128,
+        "status": "PASS",
+        "testId": "security.downstream-disposed-owner-faults"
+      },
+      {
+        "coordinatorPid": 78823,
+        "peakRssMiB": 74,
+        "seconds": 0.172,
+        "status": "PASS",
+        "testId": "security.downstream-null-width-contracts"
+      },
+      {
+        "coordinatorPid": 78830,
+        "peakRssMiB": 56,
+        "seconds": 0.001,
+        "status": "PASS",
+        "testId": "audit.fixed-cli-isolation"
+      },
+      {
+        "coordinatorPid": 78835,
+        "peakRssMiB": 56,
+        "seconds": 0.004,
+        "status": "PASS",
+        "testId": "audit.passive-cpu-observer"
+      },
+      {
+        "coordinatorPid": 78840,
+        "peakRssMiB": 59,
+        "seconds": 0.022,
+        "status": "PASS",
+        "testId": "audit.metadata-allowlist"
+      },
+      {
+        "coordinatorPid": 78845,
+        "peakRssMiB": 123,
+        "seconds": 0.691,
+        "status": "PASS",
+        "testId": "audit.initialization-close-join"
+      }
+    ]
+  },
+  "native": [
+    {
+      "architecture": "arm64",
+      "checks": 161,
+      "childPids": [
+        78731,
+        78735,
+        78737,
+        78739,
+        78740,
+        78742,
+        78744,
+        78748,
+        78754,
+        78758
+      ],
+      "harnessSha256": "ee0e2495776f01427e4b0bb7a55d7bb8bde2f10a197aa7406d45f56cd1325474",
+      "nineActualProductLibrariesMatchCampaign": true,
+      "parentPid": 78726,
+      "scope": "Actual owned-buffer/NULL ABI and legitimate optional NULL calls; no invalid non-NULL/UAF addresses or production Argon allocation",
+      "separateTestReference": {
+        "architecture": "arm64",
+        "library": "libsha3_ref.dylib",
+        "sha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45",
+        "shippedProductComponent": false
+      },
+      "trackedWorktreeDirty": true
+    },
+    {
+      "architecture": "x86_64",
+      "checks": 161,
+      "childPids": [
+        79018,
+        79021,
+        79035,
+        79085,
+        79208,
+        79313,
+        79402,
+        79539,
+        79627,
+        79630
+      ],
+      "harnessSha256": "ee0e2495776f01427e4b0bb7a55d7bb8bde2f10a197aa7406d45f56cd1325474",
+      "nineActualProductLibrariesMatchCampaign": true,
+      "parentPid": 79014,
+      "scope": "Actual owned-buffer/NULL ABI and legitimate optional NULL calls; no invalid non-NULL/UAF addresses or production Argon allocation",
+      "separateTestReference": {
+        "architecture": "x86_64",
+        "library": "libsha3_ref.dylib",
+        "sha256": "5d069ec3e137906c2cf6627a1ef7895fb7429aaa7a72ab9fbe4c9e5c8bb394ef",
+        "shippedProductComponent": false
+      },
+      "trackedWorktreeDirty": true
+    }
+  ],
+  "ownerBeforeAfter": {
+    "afterMatchesCampaignProduct": true,
+    "afterPid": 78971,
+    "beforePid": 78958,
+    "completeOldMatrixExecuted": false,
+    "nativeMemoryLockInvoked": false,
+    "scope": "Only LockedSensitiveBuffer ownership after controlled IDisposable failure; public synthetic 128-byte fixture, separate process per DLL; no native RAM lock, secrets, KDF execution, matrix replay, GUI or release approval",
+    "status": "NARROW_OLD_FAILURE_NEW_PASS_PROVEN_FINAL_MANAGED_BINDING"
+  },
+  "preliminary": true,
+  "proposedCandidate": "v5.0.3-rc.build21",
+  "releaseApproved": false,
+  "remainingGates": [
+    "Frozen candidate/source provenance",
+    "Full in-scope production release checks and performance",
+    "Real installed NativeAOT GUI campaign",
+    "Fresh signing/notarization",
+    "Public-download and installed-artifact verification"
+  ],
+  "schemaVersion": 1,
+  "status": "TARGETED_CAPTURE_VERIFIED",
+  "supersededAttempts": [
+    {
+      "checksPassed": 155,
+      "classificationScope": "Only test-reference loading failed; corrected independently bound per-slice reference is tested by the final 161-check receipt",
+      "errorType": "OSError",
+      "failedReference": "libsha3_ref.dylib",
+      "kind": "x86_64-native-staging",
+      "nineProductLibraryChildrenPassed": true,
+      "originalReceiptSha256": "38b36fbf14fc6d72da3c1442181e8ee93d03de1bf86433a15fb8b35b5b1e3aa8",
+      "rawLoaderTextPublished": false,
+      "referenceChecksUnavailable": 6,
+      "status": "SUPERSEDED_REFERENCE_ASSET_LOAD_FAILURE"
+    },
+    {
+      "actualPid": 75845,
+      "exitCode": 1,
+      "kind": "managed-harness-build",
+      "rawBuildLogPublished": false,
+      "scope": "Terminal metadata only; no release or successful-build claim",
+      "status": "SUPERSEDED_COMPILE_FAILURE"
+    },
+    {
+      "kind": "managed-campaign01",
+      "missingActualManagedNullGroup": true,
+      "missingAuditCloseJoinGroup": true,
+      "reportedPassingGroups": 15,
+      "scope": "Original group outcomes retained; unavailable handoff matrices were never inferred as PASS evidence",
+      "status": "SUPERSEDED_INCOMPLETE_CAPTURE",
+      "workerMatrixJsonSuppressed": true
+    }
+  ]
+}

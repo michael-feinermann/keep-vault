@@ -1,0 +1,22 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+
+FAIL KPAR2 v4 repair, authentication and transplantation rejection
+  seed=0x5EED0313
+  InvalidDataException: KPAR2 locator consensus failed. At least five of eight self-checking locator blocks must agree.
+   at KalynaArchiver.Services.RecoveryService.ReadConsensusLocatorAsync(FileStream recovery, CancellationToken cancellationToken)
+   at KalynaArchiver.Services.RecoveryService.ReadRecoveryPackageAsync(FileStream recovery, RecoveryProtectionMode expectedMode, Boolean authenticateMetadata, String expectedArchiveFileName, String userPassword, String pin, String firstGeneratedPassword, String secondGeneratedPassword, CancellationToken cancellationToken, RecoveryKeys prederivedRecoveryKeys)
+   at KalynaArchiver.Services.RecoveryService.RepairCoreAsync(String archivePath, RecoveryProtectionMode expectedMode, Boolean authenticateMetadata, Boolean emergencyMode, String userPassword, String pin, String firstGeneratedPassword, String secondGeneratedPassword, IProgress`1 progress, CancellationToken cancellationToken)
+   at KalynaArchiver.Services.RecoveryService.RepairCoreAsync(String archivePath, RecoveryProtectionMode expectedMode, Boolean authenticateMetadata, Boolean emergencyMode, String userPassword, String pin, String firstGeneratedPassword, String secondGeneratedPassword, IProgress`1 progress, CancellationToken cancellationToken)
+   at MacComprehensiveTests.TestRecoveryAsync() in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 2986
+   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1403
+
+Re-run:
+  ./tools/Test-KeepVault.sh --full --no-smoke --only "recovery.kpar2-v4-adversarial" --seed 0x5EED0313
+
+
+1 macOS groups: 0 passed, 1 failed, 0 blocked.
+wall clock 17,4s; sum of test times 17,2s; parallel speedup 0,99x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json
+
+Failing tests:
+  FAIL recovery.kpar2-v4-adversarial — KPAR2 v4 repair, authentication and transplantation rejection

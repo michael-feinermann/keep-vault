@@ -1,0 +1,9 @@
+# Finaler Quellenstand der beiden begrenzten Fixes
+
+Die zwei Produktfixes sind gegenüber dem ersten stabilen Stand unverändert. Nur die echten Testfixture-Vorbedingungen und Orakel wurden anhand gebundener Rootläufe korrigiert; sämtliche historischen FAIL-Originale bleiben erhalten. Der Reviewer hat keine Builds oder Tests ausgeführt.
+
+1. Das eigene Hoverwindow wird tatsächlich Show/Opened unterzogen, bevor der unveränderte Integritätsabschluss geprüft wird; nach Assertions folgt Close/Dispose.
+2. Setup-TextChanged-Ereignisse werden vor Preparedstate abgeschlossen. Ein realer öffentlicher Zielpfad, Suite und Faktorpaar erzeugen den tatsächlichen non-null CurrentKeySheetFingerprint. RefreshKeySheetBinding und eine strikte Vorbedingung bestätigen die echte Bindung; nach Hover bleibt sie exakt gleich. Alle anderen Hovergates bleiben erhalten, mit ausschließlich öffentlichen Fehlerlabels.
+3. Der tatsächliche Output-Diagnoselauf bewies ausschließlich den falschen Separator-Prefixtest: Providerparent mit Endseparator true, kanonischer direkter Elternvergleich true, alle anderen Owner-/Dropflags bestanden. Das finale Orakel prüft nun strikt den kanonischen unmittelbaren Parent und verlangt, dass das Kind nicht der Parent selbst ist. Ein bereits angelegtes öffentliches extract(1) erzwingt im tatsächlich leeren Archivstem-Entwurf ein neues nicht existierendes extract(2); erster Child bleibt erhalten. Handled, Copy, NullDispose und exakter Leaseowner sind unverändert streng.
+
+Aktueller Test-SHA: `7790425d7b357a045421c01999d91c874a9d98bc046b6d20d128045345cf79a9`. Produkt-SHA und alle fünf historischen Failure-IDs stehen im getrennten source-review-receipt.json. Owned diffcheck Exit 0. Diese Sourceabnahme ist kein finaler Laufzeit-PASS. Die neue Rootkampagne muss beide bestehenden IDs gegen frische Bytes prüfen. Native PlainURL-Dispose, kopflose Tests und reale Installed/AOT-GUI/YES-Grants bleiben getrennte Evidenzbereiche.

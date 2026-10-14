@@ -1,0 +1,79 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "pid": 40908,
+      "argv": [
+        "/bin/zsh",
+        "-f",
+        "tools/Build-KeepVault-macOS.sh",
+        "--version",
+        "5.0.3",
+        "--build-number",
+        "21",
+        "--preflight"
+      ],
+      "startedUtc": "2026-10-12T21:51:51.148443+00:00",
+      "endedUtc": "2026-10-12T21:51:51.248166+00:00",
+      "actualExitCode": 64,
+      "stderrSha256": "91db2dddc820c8c2621e415785b2fbceb207115d64397e846ca17539e158cb51",
+      "scope": "Actual builder CLI rejects mismatched metadata before build/sign/install; no full or positive signed-kit PASS inferred"
+    },
+    {
+      "pid": 40962,
+      "argv": [
+        "/bin/zsh",
+        "-f",
+        "tools/Build-KeepVault-macOS.sh",
+        "--version",
+        "5.0.3",
+        "--build-number",
+        "23",
+        "--preflight"
+      ],
+      "startedUtc": "2026-10-12T21:51:51.248212+00:00",
+      "endedUtc": "2026-10-12T21:51:51.347384+00:00",
+      "actualExitCode": 64,
+      "stderrSha256": "91db2dddc820c8c2621e415785b2fbceb207115d64397e846ca17539e158cb51",
+      "scope": "Actual builder CLI rejects mismatched metadata before build/sign/install; no full or positive signed-kit PASS inferred"
+    },
+    {
+      "pid": 41015,
+      "argv": [
+        "/bin/zsh",
+        "-f",
+        "tools/Build-KeepVault-macOS.sh",
+        "--version",
+        "5.0.2",
+        "--build-number",
+        "22",
+        "--preflight"
+      ],
+      "startedUtc": "2026-10-12T21:51:51.347416+00:00",
+      "endedUtc": "2026-10-12T21:51:51.429385+00:00",
+      "actualExitCode": 64,
+      "stderrSha256": "91db2dddc820c8c2621e415785b2fbceb207115d64397e846ca17539e158cb51",
+      "scope": "Actual builder CLI rejects mismatched metadata before build/sign/install; no full or positive signed-kit PASS inferred"
+    },
+    {
+      "pid": 41068,
+      "argv": [
+        "/bin/zsh",
+        "-f",
+        "tools/Build-KeepVault-macOS.sh",
+        "--version",
+        "5.0.3",
+        "--build-number",
+        "invalid",
+        "--preflight"
+      ],
+      "startedUtc": "2026-10-12T21:51:51.429423+00:00",
+      "endedUtc": "2026-10-12T21:51:51.512817+00:00",
+      "actualExitCode": 64,
+      "stderrSha256": "2c58cf479434c9216072b2ea897cfa0146a79cc2658c1ca6909f2e2307977d63",
+      "scope": "Actual builder CLI rejects mismatched metadata before build/sign/install; no full or positive signed-kit PASS inferred"
+    }
+  ],
+  "fullReleaseGate": "NOT_RUN",
+  "overallReleaseApproval": false
+}

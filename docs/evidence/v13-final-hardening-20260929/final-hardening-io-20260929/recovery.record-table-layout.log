@@ -1,0 +1,6 @@
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+FULL PASS bounded record codecs and independent HMAC/Skein authentication (0,2s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 0,4s; sum of test times 0,2s; parallel speedup 0,67x
+results written to /Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/.test-results.json

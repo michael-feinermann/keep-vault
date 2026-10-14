@@ -1,0 +1,30 @@
+{
+  "declaredCheckoutTransformations": [
+    {
+      "builderCheckout": {
+        "bytes": 28829,
+        "sha256": "d01e3722382200dc9828599db10e6fca5b6d2dd0d94c7f281d517bfec40c3e89"
+      },
+      "effectiveAttributes": [
+        "native/threefish_ref_export.c: text: set",
+        "native/threefish_ref_export.c: eol: crlf",
+        "native/threefish_ref_export.c: filter: unspecified",
+        "native/threefish_ref_export.c: working-tree-encoding: unspecified"
+      ],
+      "gitBlob": {
+        "bytes": 27894,
+        "sha256": "eaa651c075d7ea04039c146f64146b975aeaae7be84fbbbb0f51392ed9cdb215"
+      },
+      "path": "native/threefish_ref_export.c",
+      "transformation": "LF to CRLF as text eol=crlf at compiled commit"
+    }
+  ],
+  "gitAttributes": {
+    "bytes": 1866,
+    "sha256": "68b118de6a56bdbe6e4a374578a4385cc7f090dee13f8b189eaad40c2d22c556"
+  },
+  "identicalGitBlobBytes": 565,
+  "inputCount": 566,
+  "scope": "Fresh read-only Git object validation of original builder Source maps; checkout transformations are explicit, never called byte identity.",
+  "sourceCommit": "8c68571695ae9072555ffb462b3c0b9c500811ea"
+}

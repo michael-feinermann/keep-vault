@@ -2,6 +2,10 @@ Keep Vault for macOS
 
 Deutsch
 
+Kompatibilität: Keep Vault 5.0.3 verwendet v13 und öffnet vorhandene
+v12-Archive nicht. Bewahre deine v12-Archive, KPAR2-Dateien und Schlüsselzettel
+unverändert auf. Es findet keine automatische Konvertierung statt.
+
 1. Das vollständige ZIP entpacken. Beide Apps, der Keep Vault Installer,
    alle Signaturdateien und das Installationsinventar müssen zusammenbleiben.
 2. Den Download nach der Anleitung des veröffentlichten Releases prüfen.
@@ -21,6 +25,10 @@ der Installation kann einen Internetzugang benötigen. Archivierungsdaten,
 Passwort und PIN werden dabei nicht übermittelt.
 
 English
+
+Compatibility: Keep Vault 5.0.3 uses v13 and cannot open existing v12 archives.
+Keep your v12 archives, KPAR2 files and key sheets unchanged. No automatic
+conversion is performed.
 
 1. Extract the complete ZIP. Keep both apps, Keep Vault Installer, all
    signature files and the installation inventory together.

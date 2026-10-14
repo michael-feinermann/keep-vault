@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "checks": 61498,
+  "fuzz_cases_per_cipher": 10000,
+  "maximum_payload": 16777216,
+  "seconds": 9.27,
+  "architecture": "arm64",
+  "artifacts": {
+    "libcamellia_v13.dylib": "0125174e1596bf58e442841ffd316398aec00c49a9dd68529703fdc45cd1a2ba",
+    "libserpent_v13.dylib": "62c37ea0ca5cde37987528d53e6a5bf5c38533d590ba5ce15b964ad4b6e3bd30"
+  },
+  "reference": "BouncyCastle.Cryptography 2.6.2; independently encoded full-width big-endian CTR",
+  "vector_sources": {
+    "Camellia": {
+      "url": "https://github.com/bcgit/bc-csharp/blob/release-2.6.2/crypto/test/src/crypto/test/CamelliaTest.cs",
+      "sha256": "023aa41109ccb0b2cfd73398cc359ed99e6086db83859d5b0f14a2c6709d138c",
+      "git_blob": "c2b3846dd53c2b74096454efadd0a20ae5b09dda"
+    },
+    "Serpent": {
+      "url": "https://github.com/bcgit/bc-csharp/blob/release-2.6.2/crypto/test/src/crypto/test/SerpentTest.cs",
+      "sha256": "4c05db9fa3a5f112755bf72fd4a70ebc17dc8b88e487d7b0673f671c272aaf77",
+      "git_blob": "a766757f7b03597c8334b7f254511e22ade64092"
+    }
+  },
+  "limitations": "Primitive/ABI test, not installed artifact trust or universal side-channel attestation."
+}

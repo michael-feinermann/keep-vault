@@ -777,9 +777,12 @@ internal sealed class LockedSensitiveBuffer : IDisposable
     private readonly object _gate = new();
     private byte[]? _bytes;
     private IDisposable? _memoryLock;
+    private bool _disposalStarted;
 
     internal LockedSensitiveBuffer(byte[] bytes, IDisposable memoryLock)
     {
+        ArgumentNullException.ThrowIfNull(bytes);
+        ArgumentNullException.ThrowIfNull(memoryLock);
         _bytes = bytes;
         _memoryLock = memoryLock;
     }
@@ -790,6 +793,7 @@ internal sealed class LockedSensitiveBuffer : IDisposable
         {
             lock (_gate)
             {
+                ObjectDisposedException.ThrowIf(_disposalStarted, this);
                 return _bytes ?? throw new ObjectDisposedException(nameof(LockedSensitiveBuffer));
             }
         }
@@ -863,6 +867,7 @@ internal sealed class LockedSensitiveBuffer : IDisposable
     {
         lock (_gate)
         {
+            _disposalStarted = true;
             if (_bytes is not null)
             {
                 CryptographicOperations.ZeroMemory(_bytes);
@@ -874,6 +879,9 @@ internal sealed class LockedSensitiveBuffer : IDisposable
     {
         lock (_gate)
         {
+            // Retain the private backing storage when unlock fails so cleanup
+            // can be retried, but never return its cleared bytes to a consumer.
+            _disposalStarted = true;
             if (_bytes is null)
             {
                 return;

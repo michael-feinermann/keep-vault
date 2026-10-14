@@ -18,7 +18,7 @@ restored in locked mode using the pinned .NET SDK.
 
 ```bash
 ./QrCodeScanner/tools/Build-QrScanner-macOS.sh \
-  --version 5.0.0 --build-number 12
+  --version 5.0.3 --build-number 16
 ```
 
 The script builds universally (arm64 + x86_64), runs the tests, generates the
@@ -79,18 +79,22 @@ xcrun swiftc -parse-as-library -O \
 /tmp/scan-file ~/Downloads/mein-schluesselzettel.pdf
 ```
 
-On the two example sheets: both codes found, a single distinct payload,
-accepted as “confirmed by 2 codes”. If the left code in the image is destroyed,
-the app finds only one and internally confirms the same 128-character factor.
+The four current public v13 test sheets (factor A/B, German/English) each
+yield two matching codes. If the left code is obscured in the image, the decoder
+finds one remaining code and confirms the same 256-character factor after eight
+reads. This is a PDF/image check, not a physical camera or paper test.
 The tool never outputs payload content, substrings, or reversible values
 derived from it, only lengths, positions, counts, and decision metadata.
 
 ## What the app does not write to the SSD
 
-The app has **no** file entitlement, not even `user-selected.read-only`.
-It has nothing to read and nothing to write, and the sandbox makes this a
-system rule rather than a promise in code. Paths through which AppKit writes
-text to disk on its own are also disabled:
+The app has no entitlement for user-selected files, including
+`user-selected.read-only`. It does not save scan contents to files. For its
+single-instance lock, it creates an Application Support directory inside its
+own sandbox container and opens a lock file there; this file contains no scan
+payload. The sandbox permits these container files and therefore does not
+prove that the app performs no writes. Paths through which AppKit writes text
+to disk on its own are also disabled:
 
 - **Window restoration.** `NSWindow.isRestorable = false` and
   `applicationSupportsSecureRestorableState → false`. Otherwise, AppKit stores
@@ -150,9 +154,10 @@ A local `Apple Development` signature is permitted only for development gates
 and is never presented as a releasable build.
 
 ```bash
-xcrun notarytool store-credentials "QR-Scanner" \
-  --apple-id DEINE-APPLE-ID --team-id TEAM-ID
-./QrCodeScanner/tools/Build-QrScanner-macOS.sh --notary-profile "Keep Vault v12"
+xcrun notarytool store-credentials "Keep Vault v13" --team-id TEAM-ID
+./QrCodeScanner/tools/Build-QrScanner-macOS.sh \
+  --arch universal --version 5.0.3 --build-number 16 \
+  --notary-profile "Keep Vault v13"
 ```
 
 `notarytool` prompts for the app-specific password without displaying it and

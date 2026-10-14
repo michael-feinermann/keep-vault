@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "observedUtc": "2026-10-12T13:00:03.893464+00:00",
+  "scope": "Derived wrapper preflight failure classification; no ABI child tests started and no product failure inferred.",
+  "execSessionId": 88639,
+  "actualExecExitCode": 1,
+  "actualWrapperPid": "NOT_CAPTURED",
+  "error": "Evidence/source root must be caller-owned and mode 0700.",
+  "observedRunMode": "0o755",
+  "expectedRunMode": "0o700",
+  "abiOutputDestinationCreated": false,
+  "productBytesMutated": false,
+  "overallReleaseApproval": false
+}

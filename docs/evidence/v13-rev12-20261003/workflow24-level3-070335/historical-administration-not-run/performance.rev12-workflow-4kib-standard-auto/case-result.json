@@ -1,0 +1,32 @@
+{
+  "testId": "performance.rev12-workflow-4kib-standard-auto",
+  "suite": "StandardCascade",
+  "sourceBytes": 4096,
+  "requestedWorkers": null,
+  "attempted": false,
+  "status": "NOT RUN",
+  "errors": [
+    {
+      "stage": "case",
+      "type": "ValueError",
+      "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+    }
+  ],
+  "startedUtc": "2026-10-04T07:06:49.703362+00:00",
+  "hostAfter": {
+    "os": {
+      "exitCode": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+    },
+    "battery": {
+      "exitCode": 0,
+      "output": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t70%; discharging; 2:56 remaining present: true\n"
+    },
+    "thermal": {
+      "exitCode": 0,
+      "output": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    }
+  },
+  "inputBindingVerified": true,
+  "completedUtc": "2026-10-04T07:06:49.986281+00:00"
+}

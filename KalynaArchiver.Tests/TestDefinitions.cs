@@ -631,7 +631,7 @@ internal static class TestRunner
             {
                 bool matched = false;
 
-                if (Mentions(file, "V12MasterKdf", "KdfPrimitives", "KdfSalts", "SuiteKeySchedule",
+                if (Mentions(file, "V13MasterKdf", "KdfPrimitives", "KdfSalts", "SuiteKeySchedule",
                         "PasswordKeyService", "ContainerKeyDerivation", "SecureMemory", "EntropyMixer"))
                 {
                     matched = true;
@@ -738,9 +738,9 @@ internal static class TestRunner
         string normalized = file.Replace('\\', '/');
         return Mentions(
             normalized,
-            "kalyna_v12_export.cpp",
+            "kalyna_v13_export.cpp",
             "threefish_ref_export.c",
-            "chachapoly_ref_export.cpp",
+            "xchachapoly_ref_export.cpp",
             "aes_ref_export.cpp",
             "mars_ref_export.cpp",
             "shacal2_ref_export.cpp",

@@ -1,0 +1,21 @@
+  Wiederherzustellende Projekte werden ermittelt...
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj" wiederhergestellt (in 27,48 Sek.).
+  "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/KeepVaultMac.csproj" wiederhergestellt (in 29,5 Sek.).
+  KeepVaultMac -> /private/tmp/keep-vault-test-runner.5GKI59f7/artifacts/bin/KeepVaultMac/release_osx-arm64/Keep Vault.dll
+  KeepVaultMac.Tests -> /private/tmp/keep-vault-test-runner.5GKI59f7/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll
+
+Der Buildvorgang wurde erfolgreich ausgeführt.
+    0 Warnung(en)
+    0 Fehler
+
+Verstrichene Zeit 00:00:09.42
+release_native_bytes=unchanged
+release_helper_entitlements=verified-empty-of-sandbox-and-inherit
+test_natives=/private/tmp/keep-vault-test-runner.5GKI59f7/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/Native
+scheduler: 10 logical CPUs, 16 GiB; budget 9 CPU tokens / 9011 MiB, 2 Argon slot(s), 1 ZPAQ slot(s), max 1 worker(s)
+FULL PASS lock files match the platform their project builds on (2,2s)
+
+1 macOS groups: 1 passed, 0 failed, 0 blocked.
+wall clock 2,3s; sum of test times 2,2s; parallel speedup 0,96x
+results written to /private/tmp/keep-vault-test-runner.5GKI59f7/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/.test-results.json
+test_evidence=/private/tmp/keep-vault-test-evidence.y9mcFKg3

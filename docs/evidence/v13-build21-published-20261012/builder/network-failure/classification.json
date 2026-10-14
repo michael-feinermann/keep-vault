@@ -1,0 +1,28 @@
+{
+  "actualBuilderExitCode": 1,
+  "actualBuilderPid": 86508,
+  "classification": "NuGet service name resolution during locked HybridSigner restore",
+  "exactPublicFailureLines": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj : error NU1301: Der Dienstindex f\u00fcr die Quelle \"https://api.nuget.org/v3/index.json\" konnte nicht geladen werden.",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj : error NU1301:   nodename nor servname provided, or not known (api.nuget.org:443)",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj : error NU1301:   nodename nor servname provided, or not known"
+  ],
+  "fullSuiteStarted": false,
+  "originalStderrSha256": "14edbd282f03a41d86072cc31465db4f17ec0d69c35e0b10062ca272f0f51200",
+  "originalStdoutSha256": "fbf6569f20838f19f17a10b3dc795a8313320d70e5c568c3da98aa0578f39877",
+  "originalTerminalSha256": "75c70e4af5f286f8e6ceef3728b3896f6ab0b789be34b4019d7c11b5cb195a6a",
+  "overallReleaseApproval": false,
+  "schemaVersion": 1,
+  "scope": "Actual failed builder, not a product test verdict. Later connectivity probe does not rewrite the original failure.",
+  "sourceAndBuilderStable": true,
+  "sourceCommit": "8c68571695ae9072555ffb462b3c0b9c500811ea",
+  "status": "FAIL",
+  "subsequentConnectivityProbe": {
+    "actualCurlExitCode": 0,
+    "httpStatus": 200,
+    "observedUtc": "2026-10-12T12:13:57+00:00",
+    "scope": "Fresh actual curl probe concurrent with UTC clock query; HTTP 200/TLS 0. Earlier successful probe is not assigned this timestamp.",
+    "sslVerifyResult": 0,
+    "url": "https://api.nuget.org/v3/index.json"
+  }
+}

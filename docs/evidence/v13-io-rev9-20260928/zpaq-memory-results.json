@@ -1,0 +1,92 @@
+[
+  {
+    "binary": "zpaq-arm64",
+    "test": "--keepvault-total-memory-self-test",
+    "result": "PASS",
+    "detail": "native_total_memory=pass checks=12 max_fixture=65536"
+  },
+  {
+    "binary": "zpaq-arm64",
+    "test": "--kv-self-test-pipe-memory-order",
+    "result": "PASS",
+    "detail": "pipe_memory_order_reversed_arrival=progress\npipe_memory_order_budget=bounded\npipe_memory_order_stop=joined"
+  },
+  {
+    "binary": "zpaq-arm64",
+    "test": "plain-read-at-and-pipe-roundtrip",
+    "result": "PASS",
+    "source_bytes": 2097197,
+    "archive_bytes": 2673,
+    "pipe_bytes": 2098031,
+    "read_at_requests": 4,
+    "includes_empty_directory": true,
+    "accepted_policy_limit": 4398046511104,
+    "policy_is_logical_only": true
+  },
+  {
+    "binary": "zpaq-arm64",
+    "test": "memory-budget-negative-values",
+    "result": "PASS",
+    "cases": 6
+  },
+  {
+    "binary": "zpaq-x86_64",
+    "test": "--keepvault-total-memory-self-test",
+    "result": "PASS",
+    "detail": "native_total_memory=pass checks=12 max_fixture=65536"
+  },
+  {
+    "binary": "zpaq-x86_64",
+    "test": "--kv-self-test-pipe-memory-order",
+    "result": "PASS",
+    "detail": "pipe_memory_order_reversed_arrival=progress\npipe_memory_order_budget=bounded\npipe_memory_order_stop=joined"
+  },
+  {
+    "binary": "zpaq-x86_64",
+    "test": "plain-read-at-and-pipe-roundtrip",
+    "result": "PASS",
+    "source_bytes": 2097197,
+    "archive_bytes": 2673,
+    "pipe_bytes": 2098031,
+    "read_at_requests": 4,
+    "includes_empty_directory": true,
+    "accepted_policy_limit": 4398046511104,
+    "policy_is_logical_only": true
+  },
+  {
+    "binary": "zpaq-x86_64",
+    "test": "memory-budget-negative-values",
+    "result": "PASS",
+    "cases": 6
+  },
+  {
+    "binary": "zpaq-sanitized",
+    "test": "--keepvault-total-memory-self-test",
+    "result": "PASS",
+    "detail": "native_total_memory=pass checks=12 max_fixture=65536"
+  },
+  {
+    "binary": "zpaq-sanitized",
+    "test": "--kv-self-test-pipe-memory-order",
+    "result": "PASS",
+    "detail": "pipe_memory_order_reversed_arrival=progress\npipe_memory_order_budget=bounded\npipe_memory_order_stop=joined"
+  },
+  {
+    "binary": "zpaq-sanitized",
+    "test": "plain-read-at-and-pipe-roundtrip",
+    "result": "PASS",
+    "source_bytes": 2097197,
+    "archive_bytes": 2673,
+    "pipe_bytes": 2098031,
+    "read_at_requests": 4,
+    "includes_empty_directory": true,
+    "accepted_policy_limit": 4398046511104,
+    "policy_is_logical_only": true
+  },
+  {
+    "binary": "zpaq-sanitized",
+    "test": "memory-budget-negative-values",
+    "result": "PASS",
+    "cases": 6
+  }
+]

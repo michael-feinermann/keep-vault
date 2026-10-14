@@ -1,0 +1,73 @@
+{
+  "actualParserPid": 20763,
+  "createdUtc": "2026-10-12T12:28:11.794563+00:00",
+  "doesNotValidateAppleNotarization": true,
+  "doesNotValidateOriginalBuilderSuccess": true,
+  "negativeParserCases": [
+    {
+      "expectedRejectionObserved": true,
+      "failureCode": "bound-kit-notary-id-mismatch",
+      "test": "scanner-id-is-not-kit-id"
+    },
+    {
+      "expectedRejectionObserved": true,
+      "failureCode": "incomplete-or-ambiguous-accepted-notary-block",
+      "test": "missing-kit-terminal-accepted-status"
+    },
+    {
+      "expectedRejectionObserved": true,
+      "failureCode": "incomplete-or-ambiguous-accepted-notary-block",
+      "test": "mixed-id-in-kit-upload-block"
+    },
+    {
+      "expectedRejectionObserved": true,
+      "failureCode": "exact-scanner-and-kit-submission-blocks-required",
+      "test": "additional-ambiguous-submission-block"
+    }
+  ],
+  "originalBuilderMetadata": {
+    "builder-terminal.json": {
+      "actualBuilderExitCode": 1,
+      "fullReleaseGate": "NOT_RUN"
+    },
+    "prerelease-build-result.json": {
+      "actualBuilderExitCode": 1,
+      "fullReleaseGate": "NOT_RUN",
+      "overallReleaseApproval": false,
+      "status": "FAIL"
+    }
+  },
+  "originalBuilderStdoutPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T090448828623Z-80743/builder.stdout.log",
+  "originalBuilderStdoutSha256": "5181bc4cbd8cd29015b7d9d6fcff6842b5f9d1ba855583d357590d7b17e0a1c1",
+  "overallReleaseApproval": false,
+  "parsedOriginalNotaryBlocks": {
+    "kit": {
+      "firstLogLine": 353,
+      "lastLogLineExclusive": 926,
+      "status": "Accepted",
+      "submissionId": "f8d5d419-18f4-47a7-9acd-39355a43ea14",
+      "uploadedPath": "/tmp/keep-vault-release.2TNipMnh/dist-stage/Keep Vault-macOS-universal.zip"
+    },
+    "scanner": {
+      "firstLogLine": 164,
+      "lastLogLineExclusive": 353,
+      "status": "Accepted",
+      "submissionId": "d6828cd3-d5c4-461c-b008-69fe18df677c",
+      "uploadedPath": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/.qr-publish-helper.9x3upMIJ/QR-Scanner-notary-submission.zip"
+    }
+  },
+  "productBuildPerformed": false,
+  "publicDownloadPerformed": false,
+  "schemaVersion": 1,
+  "scope": "Only Python syntax, 14 artificial ZIP fixtures, and parsing actual old stdout plus four deliberately invalid text variants; no proof that the old failed builder or current candidate passed.",
+  "signingPerformed": false,
+  "status": "PARSER_AND_ARTIFICIAL_SELF_TESTS_ONLY",
+  "syntax": "PASS",
+  "toolSha256": "204f6ea77087ef3eacf672c56c3f1e558c7f761ec371da58a2021107703e4efb",
+  "zipSelfTestCases": 14,
+  "zipSelfTestExitCode": 0,
+  "zipSelfTestPid": 20824,
+  "zipSelfTestStatus": "PASS",
+  "zipSelfTestStderrSha256": "ea71c7d85cbc29a213da5d14ee8db9b52ded5d5a8e2f05f712a2af161c08e450",
+  "zipSelfTestStdoutSha256": "9e4f88edfda374c6b65433e38b1802de0aace7ec8cd7d030b698ac01383f3cc7"
+}

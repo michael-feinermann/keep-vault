@@ -1,0 +1,156 @@
+{
+  "results": [
+    {
+      "id": "deletion.quarantine-symlink",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.02
+    },
+    {
+      "id": "deletion.secure-file-object-binding",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.046
+    },
+    {
+      "id": "deletion.original-verification",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.024
+    },
+    {
+      "id": "recovery.key-derivation-failure-cleanup",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.233
+    },
+    {
+      "id": "recovery.parallel-copy-fail-fast",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.013
+    },
+    {
+      "id": "recovery.parallel-copy-concurrency",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.017
+    },
+    {
+      "id": "recovery.parallel-copy-scheduling-failure",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.011
+    },
+    {
+      "id": "recovery.parallel-worker-equivalence",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.09
+    },
+    {
+      "id": "recovery.physical-eio-repair",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 1.248
+    },
+    {
+      "id": "recovery.sidecar-transaction",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 2.439
+    },
+    {
+      "id": "recovery.kpar2-v4-adversarial",
+      "exit_code": 1,
+      "status": "FAIL",
+      "seconds": 17.25
+    },
+    {
+      "id": "deletion.cryptographic-erase",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 9.933
+    },
+    {
+      "id": "containers.v13-production-worker-equivalence",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 17.931
+    },
+    {
+      "id": "recovery.suite.threefish-over-kalyna",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 13.12
+    },
+    {
+      "id": "recovery.suite.paranoia-cascade",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 24.684
+    },
+    {
+      "id": "recovery.suite.mixed-cascade",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 13.555
+    },
+    {
+      "id": "recovery.suite.chacha-over-aes",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 11.315
+    },
+    {
+      "id": "recovery.suite.kalyna512-512",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 15.869
+    },
+    {
+      "id": "recovery.suite.threefish1024",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 11.459
+    },
+    {
+      "id": "recovery.suite.aes256",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 12.817
+    },
+    {
+      "id": "recovery.suite.mars448",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 14.289
+    },
+    {
+      "id": "recovery.suite.shacal2-512",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 18.881
+    },
+    {
+      "id": "recovery.suite.chacha20-poly1305",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 16.919
+    },
+    {
+      "id": "recovery.suite.camellia256",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 12.93
+    },
+    {
+      "id": "recovery.suite.serpent256",
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 17.342
+    }
+  ],
+  "binary_files_unchanged": true,
+  "finished_utc": "2026-09-29T07:19:01.005441+00:00"
+}

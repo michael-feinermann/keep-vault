@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+  "testInventoryHash": "bb9c62bc6eeb07bcbd981997e7e86287fa0a1ecec25048c0baf7df8ca755e36c",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "recovery.physical-eio-repair",
+      "name": "descriptor-bound KPAR2 repairs one physical EIO shard and rejects four",
+      "status": "PASS",
+      "seconds": 0.901,
+      "peakRssMiB": 92,
+      "seed": "0x3A996583",
+      "failure": null
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "actualBuilderExitCode": 1,
+  "counts": {
+    "BLOCKED": 0,
+    "FAIL": 2,
+    "PASS": 317
+  },
+  "excerptIsCompleteOriginalLog": false,
+  "failedTestIds": [
+    "spec.lockfile-runtimes",
+    "packaging.hybrid-key-separation"
+  ],
+  "fullReleaseGate": "NOT_RUN",
+  "fullSuiteGroups": 319,
+  "managedHarnessIsAotProduct": false,
+  "managedProduct": {
+    "bytes": 3056640,
+    "sha256": "82ceb9863c15e7b2511b78e30e03268106d02ff87eb52e8823d8d404d900d029"
+  },
+  "managedTestHarness": {
+    "bytes": 1954816,
+    "sha256": "9471c287b3cf8ec2bd708dc5ed606afaf6b23a5dd14b03586713fa1b1a3c040f"
+  },
+  "observedBuilderPid": 8295,
+  "originalStderrSha256": "5be04f86a9efca01eac2a373588e20ee005877725f91e721e2aba9378eb29700",
+  "originalStdoutSha256": "5181bc4cbd8cd29015b7d9d6fcff6842b5f9d1ba855583d357590d7b17e0a1c1",
+  "overallReleaseApproval": false,
+  "publishedToGitHubAsRelease": false,
+  "schemaVersion": 1,
+  "scope": "Actual first Build-21 complete-suite failure. Test fixture and archival project census corrections require a new independently recorded builder run. No reconstructed PASS.",
+  "sourceAndBuilderInputsStable": true,
+  "sourceCommit": "a57882eca4c5a6694bae167527005bb0391babf8",
+  "stagedAotProduct": {
+    "bytes": 60534192,
+    "sha256": "4db95333bcdf608dac97b5171c5325fb5aded32cfd9fbb79d2a8f6c4b8267678"
+  },
+  "status": "FAIL"
+}

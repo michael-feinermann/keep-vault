@@ -10,7 +10,7 @@ internal static class SecurityHardeningTests
     [
         new(
             "security.pipeline-worker-policy",
-            "v12 chunk worker policy scales across CPU and memory boundaries without overflow",
+            "v13 staging slots and aggregate native permits obey independent CPU and memory bounds",
             TestPipelineWorkerPolicyAsync,
             TestResource.Light,
             "Security"),
@@ -34,7 +34,7 @@ internal static class SecurityHardeningTests
             "Security"),
         new(
             "security.production-secret-cleanup-faults",
-            "early, middle and last unlock failures in v12 KDF and authenticator cleanup",
+            "early, middle and last unlock failures in v13 KDF and authenticator cleanup",
             TestProductionSecretCleanupFaultsAsync,
             TestResource.ProcessGlobal,
             "Security"),
@@ -64,7 +64,7 @@ internal static class SecurityHardeningTests
             "Recovery"),
         new(
             "zpaq.process-resource-limits",
-            "ZPAQ wall, CPU, RSS and process-count limits",
+            "ZPAQ has no product deadlines; explicit cancellation, RSS and process-count limits remain",
             TestZpaqProcessResourceLimitsAsync,
             TestResource.ZpaqGlobal,
             "ZPAQ"),
@@ -102,54 +102,100 @@ internal static class SecurityHardeningTests
 
     private static Task TestPipelineWorkerPolicyAsync()
     {
-        foreach (int cpus in new[] { int.MinValue, -1, 0, 1, 2, 3, 4, 7, 8, 10, 16, 63, 64, 255, 256, 1024, int.MaxValue })
+        // Slot counts constrain locked buffers, not native team width. The
+        // shared CpuWorkBudget grants the aggregate CPU permits independently.
+        (int CpuCount, int ExpectedSlots)[] cases =
+        [
+            (int.MinValue, 1), (-1, 1), (0, 1), (1, 1), (2, 1), (3, 1),
+            (4, 1), (7, 1), (8, 2), (10, 2), (16, 4), (32, 8),
+            (63, 15), (64, 16), (65, 16), (96, 24), (127, 31), (128, 32),
+            (255, 63), (256, 64), (259, 64), (260, 65), (1024, 256), (4096, 1024),
+            (4100, 1025), (int.MaxValue, 536870911),
+        ];
+        const long bytesPerSlotBudget = 16L * (32L * 1024 * 1024 + 512);
+        foreach ((int cpus, int expected) in cases)
         {
-            int expected = Math.Clamp(cpus / 4, 1, 64);
-            int nativeTeams = KalynaContainerService.CalculateNativeTransformConcurrency(cpus);
-            long effectiveProcessors = Math.Max(1, cpus);
-            Require(nativeTeams is >= 1 and <= 64
-                && nativeTeams * Math.Min(effectiveProcessors, 64) <= 2L * effectiveProcessors,
-                "Nested native teams exceed their CPU-derived concurrency bound.");
-            Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, long.MaxValue) == expected,
-                "The CPU-based chunk limit no longer follows the bounded 1:4 policy.");
+            int actual = KalynaContainerService.CalculatePipelineWorkerCount(cpus, long.MaxValue);
+            Require(actual == expected, $"The 4:1 staging policy selected {actual} slots for {cpus} CPUs; expected {expected}.");
+            Require(KalynaContainerService.CalculateNativeTransformConcurrency(cpus) == Math.Max(1, cpus),
+                "The native topology bound was capped, overflowed, or conflated with memory slots.");
+            Require(actual >= 1 && actual <= Math.Max(1, cpus),
+                "Staging slots exceeded the independently supplied CPU capacity.");
             foreach (long memory in new[] { long.MinValue, -1L, 0L, 1L, 256L * 1024 * 1024 })
-            {
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, memory) == 1,
                     "Missing or small memory must conservatively select one chunk slot.");
-            }
-            const long bytesPerSlotBudget = 16L * (32L * 1024 * 1024 + 512);
-            for (int slots = 1; slots <= 64; slots++)
+            foreach (int slots in Enumerable.Range(1, 64).Concat(new[] { 65, 96, 128, 1024, 1025, 4096 }))
             {
-                long boundary = bytesPerSlotBudget * slots;
+                long boundary = checked(bytesPerSlotBudget * slots);
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, boundary) == Math.Min(expected, slots),
-                    "The chunk policy crossed its locked-memory budget.");
+                    "The chunk policy admitted a slot outside its exact locked-memory budget.");
                 Require(KalynaContainerService.CalculatePipelineWorkerCount(cpus, boundary - 1) == Math.Min(expected, Math.Max(1, slots - 1)),
-                    "The chunk policy rounds up past its memory budget.");
+                    "The chunk policy rounded up past its memory budget.");
             }
         }
+        (int Ceiling, int Chunks, int[] Expected)[] partitions =
+        [
+            (1, 1, [1]), (1, 3, [1, 1, 1]), (3, 2, [2, 1]),
+            (10, 3, [4, 3, 3]), (10, 4, [3, 3, 2, 2]),
+            (10, 6, [2, 2, 2, 2, 1, 1]), (10, 8, [2, 2, 1, 1, 1, 1, 1, 1]),
+            (int.MaxValue, 1, [int.MaxValue]),
+            (int.MaxValue, 2, [1073741824, 1073741823]),
+            (int.MaxValue, 3, [715827883, 715827882, 715827882]),
+        ];
+        foreach ((int ceiling, int chunks, int[] expected) in partitions)
+        {
+            int[] actual = Enumerable.Range(0, chunks)
+                .Select(index => KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, chunks, index)).ToArray();
+            Require(actual.SequenceEqual(expected), "Equal chunks did not receive a balanced, overflow-safe native-team preference.");
+            Require(actual.All(grant => grant >= 1) && actual.Max() - actual.Min() <= 1
+                && actual.Sum(grant => (long)grant) == Math.Max(ceiling, chunks),
+                "Chunk-team preferences lost capacity, multiplied it, or granted no worker.");
+        }
+        foreach (int ceiling in new[] { 65, 1025, 4096, int.MaxValue })
+        {
+            Require(KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, ceiling, ceiling - 1) == 1,
+                "A large equal-width partition introduced a fixed cap or overflow.");
+            Require(KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, int.MaxValue, int.MaxValue - 1) == 1,
+                "Queued chunks beyond available CPUs requested an oversized or zero team.");
+            Require(KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, ceiling - 1, 0) == 2
+                && KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, ceiling - 1, ceiling - 2) == 1,
+                "The single remainder permit was lost or duplicated on a large topology.");
+        }
+        foreach ((int ceiling, int chunks, int index) in new[]
+        {
+            (0, 1, 0), (-1, 1, 0), (1, 0, 0), (1, -1, 0), (1, 1, -1), (1, 1, 1),
+        })
+            Require(CaptureThrows<ArgumentOutOfRangeException>(() =>
+                KalynaContainerService.CalculateNativeChunkWorkerPreference(ceiling, chunks, index)) is not null,
+                "An invalid chunk partition was accepted.");
         return Task.CompletedTask;
     }
 
     private static async Task TestPipelineNativeConcurrencyAsync()
     {
-        int limit = KalynaContainerService.CalculateNativeTransformConcurrency(Environment.ProcessorCount);
-        int workers = Math.Min(64, limit + 3);
+        int limit = Math.Min(CpuTopology.AvailableWorkers, ArchiveOperationPolicy.Current.MaxCpuWorkers);
+        int workers = (int)Math.Min(int.MaxValue, (long)limit + 3);
         using var release = new ManualResetEventSlim();
         using var cancellation = new CancellationTokenSource();
         var occupied = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        int active = 0, started = 0, finished = 0;
+        int active = 0, activePermits = 0, started = 0, finished = 0;
         Task operation = KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(workers, _ =>
         {
             int current = Interlocked.Increment(ref active);
+            int grant = NativeCipherWorkerBudget.Current;
+            int grantedTotal = Interlocked.Add(ref activePermits, grant);
             Interlocked.Increment(ref started);
             try
             {
+                Require(grant >= 1 && grantedTotal <= limit && CpuWorkBudget.IsOwnedByCurrentContext,
+                    "A native callback exceeded the aggregate CPU budget or lost its lease context.");
                 Require(current <= limit, "Native chunk teams exceeded their concurrency limit.");
                 if (current == Math.Min(workers, limit)) occupied.TrySetResult();
                 Require(release.Wait(TimeSpan.FromSeconds(15)), "Native concurrency test timed out.");
             }
             finally
             {
+                Interlocked.Add(ref activePermits, -grant);
                 Interlocked.Decrement(ref active);
                 Interlocked.Increment(ref finished);
             }
@@ -165,19 +211,80 @@ internal static class SecurityHardeningTests
             try { await operation; }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
         }
-        Require(active == 0 && finished == started && started <= limit,
+        Require(active == 0 && activePermits == 0 && finished == started && started <= limit,
             "Cancellation failed to join active native teams or started queued work.");
         int subsequent = 0;
         await KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(
             64, _ => Interlocked.Increment(ref subsequent), CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
         Require(subsequent == 64, "Native-team permits leaked after cancellation.");
+        await TestBalancedNativeChunkTeamsAsync();
+    }
+
+    private static async Task TestBalancedNativeChunkTeamsAsync()
+    {
+        Func<int>? previousAvailability = CpuTopology.AvailabilityForTests;
+        CpuTopology.AvailabilityForTests = () => 10;
+        try
+        {
+            ArchiveOperationPolicy current = ArchiveOperationPolicy.Current;
+            var policy = new ArchiveOperationPolicy(current.WorkingDirectory, current.OutputDirectory, maxCpuWorkers: 10);
+            using IDisposable policyScope = policy.EnterScope();
+            foreach ((int available, int[] expected) in new (int, int[])[]
+            {
+                (10, [4, 3, 3]), (10, [3, 3, 2, 2]),
+                (10, [2, 2, 2, 2, 1, 1]), (10, [2, 2, 1, 1, 1, 1, 1, 1]),
+                (4, [2, 1, 1]),
+            })
+            {
+                // Counts and native grants are simulated, but callbacks, their
+                // blocked lifetime, queued reservations and joins are real.
+                CpuTopology.AvailabilityForTests = () => available;
+                using var release = new ManualResetEventSlim();
+                var occupied = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var grants = new int[expected.Length];
+                int entered = 0, finished = 0;
+                Task operation = KalynaContainerService.RunBoundedChunkWorkersForTestsAsync(expected.Length, index =>
+                {
+                    grants[index] = NativeCipherWorkerBudget.Current;
+                    try
+                    {
+                        Require(CpuWorkBudget.IsOwnedByCurrentContext, "A balanced native team lost its CPU lease context.");
+                        if (Interlocked.Increment(ref entered) == expected.Length) occupied.TrySetResult();
+                        Require(release.Wait(TimeSpan.FromSeconds(15)), "Balanced native-team regression timed out.");
+                    }
+                    finally { Interlocked.Increment(ref finished); }
+                }, CancellationToken.None);
+                try
+                {
+                    await occupied.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                    Require(grants.SequenceEqual(expected) && CpuWorkBudget.ActiveWorkersForTests == available,
+                        "Earlier chunk teams consumed the remainder permits needed by an equally sized sibling.");
+                    using var cancellation = new CancellationTokenSource();
+                    Task<CpuWorkBudget.Lease> queued = CpuWorkBudget.AcquireAsync(10, 1, cancellation.Token).AsTask();
+                    bool escaped = queued.IsCompleted;
+                    cancellation.Cancel();
+                    try { using CpuWorkBudget.Lease unexpected = await queued; throw new InvalidOperationException("A cancelled queued team acquired a permit."); }
+                    catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+                    Require(!escaped, "A queued team exceeded the fully occupied balanced batch.");
+                    Require(!operation.IsCompleted, "A batch returned while its native callbacks remained blocked.");
+                }
+                finally
+                {
+                    release.Set();
+                    await operation;
+                }
+                Require(entered == expected.Length && finished == expected.Length && CpuWorkBudget.ActiveWorkersForTests == 0,
+                    "Balanced chunk teams failed to join exactly once or leaked aggregate CPU permits.");
+            }
+        }
+        finally { CpuTopology.AvailabilityForTests = previousAvailability; }
     }
 
     private static Task TestSecureMemoryUnlockFailureAsync()
     {
         if (!OperatingSystem.IsMacOS())
         {
-            throw new PlatformNotSupportedException("The v12 release gate currently targets macOS only.");
+            throw new PlatformNotSupportedException("The v13 release gate currently targets macOS only.");
         }
 
         long baselineBytes = SecureMemory.LockedBytesForTests;
@@ -307,7 +414,7 @@ internal static class SecurityHardeningTests
     {
         if (!OperatingSystem.IsMacOS())
         {
-            throw new PlatformNotSupportedException("The v12 release gate currently targets macOS only.");
+            throw new PlatformNotSupportedException("The v13 release gate currently targets macOS only.");
         }
 
         int disposeAttempts = 0;
@@ -351,8 +458,11 @@ internal static class SecurityHardeningTests
             () =>
             {
                 var encryption = LockedSensitiveBuffer.Create(pageSizedBuffer);
-                var sha3 = LockedSensitiveBuffer.Create(pageSizedBuffer);
-                var skein = LockedSensitiveBuffer.Create(pageSizedBuffer);
+                var sha3 = LockedSensitiveBuffer.Create(64);
+                var skein = LockedSensitiveBuffer.Create(128);
+                encryption.Bytes.AsSpan().Fill(0x5A);
+                sha3.Bytes.AsSpan().Fill(0x5A);
+                skein.Bytes.AsSpan().Fill(0x5A);
                 var material = new RoleKeyMaterial(encryption, sha3, skein);
                 return new CompositeSecretFixture(
                     material.Dispose,
@@ -479,15 +589,15 @@ internal static class SecurityHardeningTests
     {
         if (!OperatingSystem.IsMacOS())
         {
-            throw new PlatformNotSupportedException("The v12 release gate currently targets macOS only.");
+            throw new PlatformNotSupportedException("The v13 release gate currently targets macOS only.");
         }
 
         byte[] factorA = Enumerable.Repeat((byte)0xA5, ContainerKeyDerivation.FactorBytes).ToArray();
         byte[] factorB = Enumerable.Repeat((byte)0x5A, ContainerKeyDerivation.FactorBytes).ToArray();
-        byte[] sha3Destination = Enumerable.Repeat((byte)0xCC, V12MasterKdf.CredentialHashBytes).ToArray();
-        byte[] skeinDestination = Enumerable.Repeat((byte)0xDD, V12MasterKdf.CredentialHashBytes).ToArray();
+        byte[] sha3Destination = Enumerable.Repeat((byte)0xCC, V13MasterKdf.CredentialHashBytes).ToArray();
+        byte[] skeinDestination = Enumerable.Repeat((byte)0xDD, V13MasterKdf.CredentialHashBytes).ToArray();
         byte[] ciphertext = RandomNumberGenerator.GetBytes(4096);
-        byte[] prefix = "v12-cleanup-auth-prefix"u8.ToArray();
+        byte[] prefix = "v13-cleanup-auth-prefix"u8.ToArray();
         byte[] sha3MacKey = RandomNumberGenerator.GetBytes(64);
         byte[] skeinMacKey = RandomNumberGenerator.GetBytes(128);
         try
@@ -496,10 +606,10 @@ internal static class SecurityHardeningTests
                 "SHA3 credential cleanup, first buffer",
                 failAtBufferOrdinal: 1,
                 expectedBufferDisposals: 4,
-                configureCleanupSeam: callback => V12MasterKdf.BeforeCredentialCleanupForTests = callback,
+                configureCleanupSeam: callback => V13MasterKdf.BeforeCredentialCleanupForTests = callback,
                 operation: () =>
                 {
-                    V12MasterKdf.DeriveSha3CredentialHash(
+                    V13MasterKdf.DeriveSha3CredentialHash(
                         "AES-256",
                         "correct horse battery staple",
                         "583104",
@@ -532,10 +642,10 @@ internal static class SecurityHardeningTests
                 "Skein credential cleanup, last buffer",
                 failAtBufferOrdinal: 4,
                 expectedBufferDisposals: 4,
-                configureCleanupSeam: callback => V12MasterKdf.BeforeCredentialCleanupForTests = callback,
+                configureCleanupSeam: callback => V13MasterKdf.BeforeCredentialCleanupForTests = callback,
                 operation: () =>
                 {
-                    V12MasterKdf.DeriveSkeinCredentialHash(
+                    V13MasterKdf.DeriveSkeinCredentialHash(
                         "AES-256",
                         "correct horse battery staple",
                         "583104",
@@ -548,7 +658,7 @@ internal static class SecurityHardeningTests
         }
         finally
         {
-            V12MasterKdf.BeforeCredentialCleanupForTests = null;
+            V13MasterKdf.BeforeCredentialCleanupForTests = null;
             ParallelContainerAuthenticator.BeforeDerivedKeyCleanupForTests = null;
             SecureMemory.SensitiveBufferBeforeUnlockForTests = null;
             SecureMemory.MacMemoryUnlockOverrideForTests = null;
@@ -801,88 +911,35 @@ internal static class SecurityHardeningTests
             Require(
                 ZpaqService.DefaultMaxZpaqResidentBytes == 4L * 1024 * 1024 * 1024,
                 "The production ZPAQ RSS cap is not exactly 4 GiB.");
-            Require(
-                ZpaqService.DefaultMaxZpaqWallTime == TimeSpan.FromHours(4),
-                "The production ZPAQ wall-time cap is not exactly four hours.");
-            Require(
-                ZpaqService.DefaultMaxZpaqCpuTime == TimeSpan.FromHours(32),
-                "The production ZPAQ aggregate CPU cap is not exactly 32 hours.");
-            Require(
-                ZpaqService.DefaultMaxZpaqProgressStall == TimeSpan.FromMinutes(10),
-                "The production ZPAQ measurable-progress stall cap is not exactly ten minutes.");
-
-            ZpaqService.MaxZpaqWallTimeOverride = TimeSpan.FromMilliseconds(75);
-            ZpaqService.MaxZpaqCpuTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
-            ZpaqService.MaxZpaqChildProcessesOverride = 0;
-            ZpaqService.ProcessMonitorIntervalOverride = TimeSpan.FromMilliseconds(10);
-            var elapsed = Stopwatch.StartNew();
-            Exception wallFailure = await CaptureThrowsAsync(
-                () => ZpaqService.RunTextProcessAsync(
-                    "/bin/sleep",
-                    ["30"],
-                    Path.GetTempPath(),
-                    progress: null,
-                    CancellationToken.None),
-                "A ZPAQ process exceeded its wall-time limit without rejection.").ConfigureAwait(false);
-            elapsed.Stop();
-            Require(
-                ContainsException<TimeoutException>(wallFailure),
-                $"The wall-time gate reported the wrong failure: {wallFailure}");
-            Require(elapsed.Elapsed < TimeSpan.FromSeconds(8), "The wall-time violation did not stop and join the process promptly.");
-
-            ResetZpaqResourceOverrides();
-            ZpaqService.MaxZpaqWallTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqCpuTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
-            ZpaqService.MaxZpaqChildProcessesOverride = 0;
-            ZpaqService.MaxZpaqProgressStallOverrideForTests = TimeSpan.FromMilliseconds(75);
-            ZpaqService.ProcessMonitorIntervalOverride = TimeSpan.FromMilliseconds(10);
-            elapsed.Restart();
-            Exception stallFailure = await CaptureThrowsAsync(
-                () => ZpaqService.RunTextProcessAsync(
-                    "/bin/sleep",
-                    ["30"],
-                    Path.GetTempPath(),
-                    progress: null,
-                    CancellationToken.None),
-                "A ZPAQ process with no measurable progress was not rejected.").ConfigureAwait(false);
-            elapsed.Stop();
-            Require(
-                ContainsException<TimeoutException>(stallFailure)
-                    && stallFailure.ToString().Contains("no measurable", StringComparison.Ordinal),
-                $"The progress-stall gate reported the wrong failure: {stallFailure}");
-            Require(
-                elapsed.Elapsed < TimeSpan.FromSeconds(8),
-                "The progress-stall violation did not stop and join the process promptly.");
-
-            // A hostile decoder can consume CPU forever without advancing its
-            // input, output, or extraction tree. CPU time therefore must not
-            // reset the independently observable progress-stall clock.
-            ResetZpaqResourceOverrides();
-            ZpaqService.MaxZpaqWallTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqCpuTimeOverride = TimeSpan.FromHours(1);
-            ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
-            ZpaqService.MaxZpaqChildProcessesOverride = 0;
-            ZpaqService.MaxZpaqProgressStallOverrideForTests = TimeSpan.FromMilliseconds(75);
-            ZpaqService.ProcessMonitorIntervalOverride = TimeSpan.FromMilliseconds(10);
-            elapsed.Restart();
-            Exception busyLoopFailure = await CaptureThrowsAsync(
-                () => ZpaqService.RunTextProcessAsync(
-                    "/bin/sh",
-                    ["-c", "while :; do :; done"],
-                    Path.GetTempPath(),
-                    progress: null,
-                    CancellationToken.None),
-                "A CPU-burning ZPAQ process without observable forward progress was not rejected.").ConfigureAwait(false);
-            elapsed.Stop();
-            Require(
-                ContainsException<TimeoutException>(busyLoopFailure)
-                    && busyLoopFailure.ToString().Contains("no measurable", StringComparison.Ordinal),
-                $"The CPU-busy progress-stall gate reported the wrong failure: {busyLoopFailure}");
-            Require(
-                elapsed.Elapsed < TimeSpan.FromSeconds(8),
-                "The CPU-busy progress-stall violation did not stop and join the process promptly.");
+            // REV11: neither elapsed time nor absent byte progress is an
+            // operation failure. The finite timeout here belongs exclusively
+            // to this test and explicitly requests caller cancellation.
+            foreach ((string executable, string[] arguments) in new[]
+            {
+                ("/bin/sleep", new[] { "30" }),
+                ("/bin/sh", new[] { "-c", "while :; do :; done" }),
+            })
+            {
+                ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
+                ZpaqService.MaxZpaqChildProcessesOverride = 0;
+                ZpaqService.ProcessMonitorIntervalOverride = TimeSpan.FromMilliseconds(10);
+                using var caller = new CancellationTokenSource();
+                Task<ProcessResult> running = ZpaqService.RunTextProcessAsync(
+                    executable, arguments, Path.GetTempPath(), null, caller.Token);
+                try
+                {
+                    await Task.Delay(300).ConfigureAwait(false);
+                    Require(!running.IsCompleted, "A live native job was ended by a product time/stall deadline.");
+                }
+                finally { caller.Cancel(); }
+                Exception cancellation = await CaptureThrowsAsync(
+                    async () => { _ = await running.WaitAsync(TimeSpan.FromSeconds(10)).ConfigureAwait(false); },
+                    "Explicit caller cancellation was ignored.").ConfigureAwait(false);
+                Require(ContainsException<OperationCanceledException>(cancellation)
+                    && !ContainsException<TimeoutException>(cancellation),
+                    $"Explicit cancellation did not safely stop/join the native job: {cancellation}");
+                ResetZpaqResourceOverrides();
+            }
 
             ResetZpaqResourceOverrides();
             ZpaqService.MaxZpaqResidentBytesOverride = 1;
@@ -894,12 +951,8 @@ internal static class SecurityHardeningTests
 
             ResetZpaqResourceOverrides();
             ZpaqService.MaxZpaqResidentBytesOverride = long.MaxValue;
-            ZpaqService.MaxZpaqCpuTimeOverride = TimeSpan.FromTicks(1);
             ZpaqService.MaxZpaqChildProcessesOverride = 1024;
-            IOException cpuFailure = CaptureThrows<IOException>(
-                () => ZpaqService.ValidateZpaqProcessResources(Process.GetCurrentProcess(), TimeSpan.Zero))
-                ?? throw new InvalidOperationException("The CPU limit accepted an already-running process at one tick.");
-            Require(cpuFailure.Message.Contains("CPU-time", StringComparison.Ordinal), "The CPU limit returned an unrelated error.");
+            ZpaqService.ValidateZpaqProcessResources(Process.GetCurrentProcess(), TimeSpan.FromDays(3651));
 
             ResetZpaqResourceOverrides();
             ZpaqService.MaxZpaqChildProcessesOverride = 0;
@@ -1369,9 +1422,6 @@ internal static class SecurityHardeningTests
     {
         ZpaqService.MaxZpaqResidentBytesOverride = -1;
         ZpaqService.MaxZpaqChildProcessesOverride = -1;
-        ZpaqService.MaxZpaqWallTimeOverride = null;
-        ZpaqService.MaxZpaqCpuTimeOverride = null;
-        ZpaqService.MaxZpaqProgressStallOverrideForTests = null;
         ZpaqService.ProcessMonitorIntervalOverride = null;
         ZpaqService.ProcessTaskJoinTimeoutOverrideForTests = null;
     }

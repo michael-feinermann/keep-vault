@@ -1,11 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
+using KalynaArchiver.Signing;
 
 namespace KalynaArchiver.Services;
 
 /// <summary>
 /// What a single key role is for. Part of the canonical role context, so two
-/// roles can never derive the same bytes.
+/// roles have distinct transcripts; accidental output equality remains probabilistic.
 /// </summary>
 internal enum KeyRolePurpose
 {
@@ -17,13 +18,13 @@ internal enum KeyRolePurpose
 }
 
 /// <summary>
-/// Turns the 1024-bit v12 master into the individual cipher, MAC and recovery
+/// Turns the 1024-bit v13 master into the individual cipher, MAC and recovery
 /// keys.
 /// </summary>
 /// <remarks>
 /// An earlier design sliced one flat Argon2id output into cipher and MAC keys, so the same
 /// cipher in two positions could end up sharing structure and every role's key
-/// was a function of where it happened to sit in that buffer. v12 derives each
+/// was a function of where it happened to sit in that buffer. v13 derives each
 /// role separately from a canonical, domain-separated context instead.
 ///
 /// Each role runs through two independent PRF families and the results are
@@ -50,7 +51,7 @@ internal static class SuiteKeySchedule
 
     /// <summary>
     /// The role schedule belongs to the container generation it serves, so
-    /// every domain string and the context's own version field say v12.
+    /// every domain string and the context's own version field say v13.
     /// </summary>
     /// <remarks>
     /// There is one generation and no second set of domains to select between.
@@ -58,11 +59,11 @@ internal static class SuiteKeySchedule
     /// domains is a second derivation to attack and a second thing to get
     /// wrong, and nothing in this build can read an older container anyway.
     /// </remarks>
-    public const int ContextVersion = 12;
+    public const int ContextVersion = 13;
 
-    private const string RoleDomain = "Kalyna-ZPAQ/v12/RoleKey";
-    private const string Sha3RoleDomain = "Kalyna-ZPAQ/v12/RoleKey/HKDF-HMAC-SHA3-512";
-    private const string SkeinRoleDomain = "Kalyna-ZPAQ/v12/RoleKey/Skein-MAC-1024-1024";
+    private const string RoleDomain = "Kalyna-ZPAQ/v13/RoleKey";
+    private const string Sha3RoleDomain = "Kalyna-ZPAQ/v13/RoleKey/HKDF-HMAC-SHA3-512";
+    private const string SkeinRoleDomain = "Kalyna-ZPAQ/v13/RoleKey/Skein-MAC-1024-1024";
 
     /// <summary>
     /// The stage index reserved for keys that belong to the container as a
@@ -87,7 +88,9 @@ internal static class SuiteKeySchedule
         CascadeCipher.Aes256 => "AES-256",
         CascadeCipher.Mars448 => "MARS-448",
         CascadeCipher.Shacal2_512 => "SHACAL-2-512",
-        CascadeCipher.ChaCha20Poly1305 => "ChaCha20-Poly1305",
+        CascadeCipher.XChaCha20Poly1305 => "XChaCha20-Poly1305",
+        CascadeCipher.Camellia256 => "Camellia-256",
+        CascadeCipher.Serpent256 => "Serpent-256",
         _ => throw new ArgumentOutOfRangeException(nameof(cipher), cipher, null)
     };
 
@@ -162,12 +165,15 @@ internal static class SuiteKeySchedule
     /// <summary>
     /// The full 1024-bit role value, before any truncation.
     /// </summary>
-    public static void DeriveRoleValue(ReadOnlySpan<byte> master, ReadOnlySpan<byte> roleContext, Span<byte> destination)
+    public static void DeriveRoleValue(ReadOnlySpan<byte> master, ReadOnlySpan<byte> roleContext, Span<byte> destination, string handoffBoundary = "v13/role/direct")
     {
         if (master.Length != MasterBytes)
         {
             throw new ArgumentException($"The container master must be {MasterBytes} bytes.", nameof(master));
         }
+        DerivedSecretHandoff.Require(master, MasterBytes);
+        if (roleContext.IsEmpty)
+            throw new ArgumentException("A role value requires a nonempty context.", nameof(roleContext));
 
         if (destination.Length < RoleBytes)
         {
@@ -185,8 +191,9 @@ internal static class SuiteKeySchedule
             sha3Side = LockedSensitiveBuffer.Create(RoleBytes);
             skeinSide = LockedSensitiveBuffer.Create(RoleBytes);
 
-            DeriveSha3Side(master, roleContext, sha3Side.Bytes);
+            DeriveSha3Side(master, roleContext, sha3Side.Bytes, handoffBoundary);
             KeyedSkein1024.Compute(master, SkeinRoleDomain, roleContext, skeinSide.Bytes);
+            DerivedSecretHandoff.Verify($"{handoffBoundary}/skein-branch", skeinSide.Bytes, RoleBytes);
 
             if (sha3Side.Bytes.Length != RoleBytes || skeinSide.Bytes.Length != RoleBytes)
             {
@@ -197,6 +204,7 @@ internal static class SuiteKeySchedule
             {
                 destination[i] = (byte)(sha3Side.Bytes[i] ^ skeinSide.Bytes[i]);
             }
+            DerivedSecretHandoff.Verify($"{handoffBoundary}/combined", destination[..RoleBytes], RoleBytes);
         }
         catch (Exception failure)
         {
@@ -233,7 +241,7 @@ internal static class SuiteKeySchedule
         return result;
     }
 
-    private static void DeriveSha3Side(ReadOnlySpan<byte> master, ReadOnlySpan<byte> roleContext, Span<byte> destination)
+    private static void DeriveSha3Side(ReadOnlySpan<byte> master, ReadOnlySpan<byte> roleContext, Span<byte> destination, string handoffBoundary)
     {
         if (destination.Length < RoleBytes)
         {
@@ -245,7 +253,10 @@ internal static class SuiteKeySchedule
         try
         {
             Sha3HkdfExpand.Expand(master[..64], info0, destination.Slice(0, 64));
+            DerivedSecretHandoff.Verify($"{handoffBoundary}/hkdf-half-0", destination.Slice(0, 64), 64);
             Sha3HkdfExpand.Expand(master[64..], info1, destination.Slice(64, 64));
+            DerivedSecretHandoff.Verify($"{handoffBoundary}/hkdf-half-1", destination.Slice(64, 64), 64);
+            DerivedSecretHandoff.Verify($"{handoffBoundary}/hkdf-complete", destination[..RoleBytes], RoleBytes);
         }
         finally
         {
@@ -291,8 +302,10 @@ internal static class SuiteKeySchedule
         try
         {
             roleValue = LockedSensitiveBuffer.Create(RoleBytes);
-            DeriveRoleValue(master, context, roleValue.Bytes);
+            string boundary = $"v13/{algorithm}/stage-{stageIndex}/{cipher}/{purpose}";
+            DeriveRoleValue(master, context, roleValue.Bytes, boundary);
             roleValue.Bytes.AsSpan(0, destination.Length).CopyTo(destination);
+            DerivedSecretHandoff.Verify($"{boundary}/truncated", destination, destination.Length);
         }
         catch (Exception failure)
         {
@@ -345,6 +358,9 @@ internal static class SuiteKeySchedule
         EncryptionSuiteParameters parameters)
     {
         ArgumentNullException.ThrowIfNull(parameters);
+        if (master.Length != MasterBytes)
+            throw new ArgumentException("The container master must be exactly 128 bytes.", nameof(master));
+        DerivedSecretHandoff.Require(master, MasterBytes);
         var encryptionKey = LockedSensitiveBuffer.Create(parameters.EncryptionKeyBytes);
         LockedSensitiveBuffer? sha3MacKey = null;
         LockedSensitiveBuffer? skeinMacKey = null;
@@ -383,7 +399,7 @@ internal static class SuiteKeySchedule
                 master, parameters.Algorithm, "Skein-MAC-1024-1024",
                 KeyRolePurpose.SkeinMac, skeinMacKey.Bytes.AsSpan(0, parameters.SkeinMacKeyBytes));
 
-            var result = new RoleKeyMaterial(encryptionKey, sha3MacKey, skeinMacKey);
+            var result = new RoleKeyMaterial(encryptionKey, sha3MacKey, skeinMacKey, $"v13/{parameters.Algorithm}/roles/ownership");
             encryptionKey = null!;
             sha3MacKey = null;
             skeinMacKey = null;
@@ -428,7 +444,7 @@ internal static class SuiteKeySchedule
     /// The synthetic stage's cipher label comes from the suite itself, so no two
     /// suites can produce the same role context.
     /// </remarks>
-    private static IReadOnlyList<CascadeStage> StagesOf(EncryptionSuiteParameters parameters)
+    internal static IReadOnlyList<CascadeStage> StagesOf(EncryptionSuiteParameters parameters)
     {
         if (parameters.Cascade is { Stages.Count: > 0 } layout)
         {
@@ -442,7 +458,7 @@ internal static class SuiteKeySchedule
             EncryptionSuite.Aes256 => CascadeCipher.Aes256,
             EncryptionSuite.Mars448 => CascadeCipher.Mars448,
             EncryptionSuite.Shacal2_512 => CascadeCipher.Shacal2_512,
-            EncryptionSuite.ChaCha20Poly1305 => CascadeCipher.ChaCha20Poly1305,
+            EncryptionSuite.XChaCha20Poly1305 => CascadeCipher.XChaCha20Poly1305,
             _ => throw new CryptographicException(
                 $"{parameters.Suite} has neither a cascade layout nor a known single cipher."),
         };
@@ -450,7 +466,7 @@ internal static class SuiteKeySchedule
         return [new CascadeStage(
             cipher,
             parameters.EncryptionKeyBytes,
-            parameters.NonceBytes,
+            parameters.StageNonceBytes,
             parameters.BlockBytes)];
     }
 
@@ -472,8 +488,10 @@ internal static class SuiteKeySchedule
         try
         {
             roleValue = LockedSensitiveBuffer.Create(RoleBytes);
-            DeriveRoleValue(master, context, roleValue.Bytes);
+            string boundary = $"v13/{algorithm}/global-{purpose}/{cipher}";
+            DeriveRoleValue(master, context, roleValue.Bytes, boundary);
             roleValue.Bytes.AsSpan(0, destination.Length).CopyTo(destination);
+            DerivedSecretHandoff.Verify($"{boundary}/truncated", destination, destination.Length);
         }
         catch (Exception failure)
         {
@@ -520,8 +538,15 @@ internal sealed class RoleKeyMaterial : IDisposable
     public RoleKeyMaterial(
         LockedSensitiveBuffer encryptionKey,
         LockedSensitiveBuffer sha3MacKey,
-        LockedSensitiveBuffer skeinMacKey)
+        LockedSensitiveBuffer skeinMacKey,
+        string handoffBoundary = "v13/roles/ownership")
     {
+        ArgumentNullException.ThrowIfNull(encryptionKey);
+        ArgumentNullException.ThrowIfNull(sha3MacKey);
+        ArgumentNullException.ThrowIfNull(skeinMacKey);
+        DerivedSecretHandoff.Verify($"{handoffBoundary}/encryption", encryptionKey.Bytes, encryptionKey.Bytes.Length);
+        DerivedSecretHandoff.Verify($"{handoffBoundary}/sha3", sha3MacKey.Bytes, Sha3_512Compat.HashSizeInBytes);
+        DerivedSecretHandoff.Verify($"{handoffBoundary}/skein", skeinMacKey.Bytes, Skein1024Digest.MacKeySize);
         EncryptionKey = encryptionKey;
         Sha3MacKey = sha3MacKey;
         SkeinMacKey = skeinMacKey;

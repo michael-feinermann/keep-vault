@@ -28,7 +28,8 @@ param(
 
     [string] $PfxPath,
 
-    [string] $PfxPassword,
+    [string] $PfxPasswordEncryptedPath,
+    [string] $PfxWrappingKeyPath,
 
     [switch] $SkipTests
 )
@@ -50,12 +51,29 @@ if (-not $SkipTests) {
     }
 }
 
+# The release snapshot pre-creates this output directory before its source
+# directories are leased. Keep the directory itself: recreating it would need
+# permission to add an entry to the protected scanner source directory.
 if (Test-Path -LiteralPath $distribution) {
-    Remove-Item -LiteralPath $distribution -Recurse -Force
+    $outputDirectory = Get-Item -LiteralPath $distribution -Force
+    if (-not $outputDirectory.PSIsContainer -or
+        ($outputDirectory.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw 'The scanner distribution must be an ordinary output directory.'
+    }
+    $outputPrefix = [IO.Path]::GetFullPath($distribution).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    foreach ($entry in Get-ChildItem -LiteralPath $distribution -Force) {
+        $entryPath = [IO.Path]::GetFullPath($entry.FullName)
+        if (-not $entryPath.StartsWith($outputPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Scanner output cleanup escaped its distribution directory.'
+        }
+        Remove-Item -LiteralPath $entryPath -Recurse -Force
+    }
 }
 
+$iconPath = Join-Path $scannerRoot 'build-obj\scanner-assets\QR-Scanner.ico'
+[IO.Directory]::CreateDirectory((Split-Path -Parent $iconPath)) | Out-Null
 & pwsh -NoProfile -File (Join-Path $PSScriptRoot 'New-QrScannerIcon.ps1') `
-    -OutputPath (Join-Path $scannerRoot 'Assets\QR-Scanner.ico')
+    -OutputPath $iconPath
 if ($LASTEXITCODE -ne 0) {
     throw 'The scanner icon could not be generated.'
 }
@@ -64,6 +82,7 @@ if ($LASTEXITCODE -ne 0) {
     --configuration $Configuration `
     --runtime win-x64 `
     --self-contained true `
+    "-p:ApplicationIcon=$iconPath" `
     --output $distribution
 if ($LASTEXITCODE -ne 0) {
     throw 'The scanner build failed.'
@@ -113,7 +132,8 @@ if ($Sign) {
     $signParameters = @{ Path = @($executable) }
     if ($CertificateThumbprint) { $signParameters.CertificateThumbprint = $CertificateThumbprint }
     if ($PfxPath) { $signParameters.PfxPath = $PfxPath }
-    if ($PfxPassword) { $signParameters.PfxPassword = $PfxPassword }
+    if ($PfxPasswordEncryptedPath) { $signParameters.PfxPasswordEncryptedPath = $PfxPasswordEncryptedPath }
+    if ($PfxWrappingKeyPath) { $signParameters.PfxWrappingKeyPath = $PfxWrappingKeyPath }
     # Invoke in this process so a PFX password is not copied to a child
     # process's command line, where local process inspection could disclose it.
     & $signBinaries @signParameters

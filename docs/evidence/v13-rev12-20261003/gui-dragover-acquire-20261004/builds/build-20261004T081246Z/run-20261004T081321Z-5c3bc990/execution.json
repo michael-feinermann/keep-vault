@@ -1,0 +1,22 @@
+{
+  "startedUtc": "2026-10-04T08:13:21.690276+00:00",
+  "completedUtc": "2026-10-04T08:13:23.470989+00:00",
+  "command": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/sdk/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T081246Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "gui.rev12-drop-storage-ownership",
+    "--parallel",
+    "1"
+  ],
+  "exitCode": 1,
+  "logSha256": "4b56f217c9e04941172750f4eb4acac415d5887a023d5de795fe8d0bd7af61b1",
+  "files": {
+    "test-results.json": "d6e3e12863c337c12cbbee2e33a029467d46bccbd0a8e62f8bd3294423c0baaf",
+    "test-timings.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "sourceInputsSha256": "1abd405ff5ea4cf0578c19f2bfc286d6556b23ca46a17b0f4bbbc06ea6d1fa2c",
+  "scope": "REV12 development evidence; no installed GUI or release approval."
+}

@@ -18,6 +18,8 @@ static async Task<int> RunAsync(string[] args)
         return command switch
         {
             "KEYGEN" => RunKeygen(options),
+            "RELEASE-KEYGEN" => WindowsReleaseKeyCommands.Generate(Require(options, "directory"), Require(options, "public-directory")),
+            "RELEASE-KEY-EXPORT" => WindowsReleaseKeyCommands.Export(Require(options, "directory"), Require(options, "destination")),
             "SIGN" => await RunSignAsync(options).ConfigureAwait(false),
             "VERIFY" => RunVerify(options),
             "FINGERPRINT" => RunFingerprint(options),
@@ -260,14 +262,12 @@ static X509Certificate2 LoadCertificate(Dictionary<string, string> options)
 
     if (options.TryGetValue("pfx", out string? pfxPath))
     {
-        string password = options.TryGetValue("pfx-password-env", out string? environmentName)
-            ? Environment.GetEnvironmentVariable(environmentName)
-                ?? throw new CryptographicException($"PFX password environment variable is not set: {environmentName}")
-            : string.Empty;
-        return X509CertificateLoader.LoadPkcs12FromFile(
-            pfxPath,
-            password,
-            X509KeyStorageFlags.EphemeralKeySet);
+        if (options.ContainsKey("pfx-password-env"))
+        {
+            throw new ArgumentException("PFX passwords cannot be transported through environment variables.");
+        }
+        return ReleaseSigningOperations.LoadCertificate(pfxPath,
+            Require(options, "pfx-password-encrypted"), Require(options, "pfx-wrapping-key-file"));
     }
 
     throw new ArgumentException("Provide --certificate-thumbprint or --pfx.");
@@ -323,6 +323,6 @@ static byte[] ReadExactFile(string path, int expectedBytes)
 static int Usage(string error)
 {
     Console.Error.WriteLine(error);
-    Console.Error.WriteLine("Commands: keygen, sign, verify, fingerprint, reference-self-test");
+    Console.Error.WriteLine("Commands: keygen, sign, verify, fingerprint, reference-self-test, release-keygen, release-key-export");
     return 1;
 }

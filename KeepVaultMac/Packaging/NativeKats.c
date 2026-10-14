@@ -32,15 +32,10 @@ typedef int (*chacha20_fn)(
     const uint8_t*,
     uint8_t*,
     size_t);
-typedef int (*chachapoly_encrypt_fn)(
-    const uint8_t[32],
-    const uint8_t[12],
-    const uint8_t*,
-    size_t,
-    const uint8_t*,
-    uint8_t*,
-    size_t,
-    uint8_t[16]);
+typedef int (*xchachapoly_encrypt_fn)(
+    const uint8_t*, size_t, const uint8_t*, size_t, const uint8_t*, size_t,
+    const uint8_t*, size_t, uint8_t*, size_t, uint8_t*, size_t);
+typedef int (*hchacha_fn)(const uint8_t*, size_t, const uint8_t*, size_t, uint8_t*, size_t);
 typedef int (*mldsa_keypair_fn)(uint8_t*, size_t, uint8_t*, size_t);
 typedef int (*mldsa_sign_fn)(
     uint8_t*,
@@ -173,13 +168,13 @@ static void run_kalyna_kat(const char* directory)
         nonce[index] = (uint8_t)(index + 0x40U);
     }
 
-    void* handle = open_library(directory, "libkalyna_v12.dylib");
+    void* handle = open_library(directory, "libkalyna_v13.dylib");
     kalyna_ctr_fn xcrypt = NULL;
     no_argument_kat_fn join_failure_kat = NULL;
-    load_symbol(handle, "keepvault_v12_kalyna_512_512_ctr_xcrypt", &xcrypt, sizeof(xcrypt));
+    load_symbol(handle, "keepvault_v13_kalyna_512_512_ctr_xcrypt", &xcrypt, sizeof(xcrypt));
     load_symbol(
         handle,
-        "keepvault_v12_kalyna_join_failure_kat",
+        "keepvault_v13_kalyna_join_failure_kat",
         &join_failure_kat,
         sizeof(join_failure_kat));
     if (xcrypt(key, nonce, input, output, sizeof(output)) != 0) {
@@ -429,14 +424,14 @@ static void run_chacha_kats(const char* directory)
         "D2826446079FAA0914C2D705D98B02A2B5129CD1DE164EB9CBD083E8A2503C4E";
     static const char aead_key_hex[] =
         "808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9F";
-    static const char aead_nonce_hex[] = "070000004041424344454647";
+    static const char aead_nonce_hex[] = "404142434445464748494A4B4C4D4E4F5051525354555657";
     static const char aad_hex[] = "50515253C0C1C2C3C4C5C6C7";
     static const char expected_ciphertext_hex[] =
-        "D31A8D34648E60DB7B86AFBC53EF7EC2A4ADED51296E08FEA9E2B5A736EE62D6"
-        "3DBEA45E8CA9671282FAFB69DA92728B1A71DE0A9E060B2905D6A5B67ECD3B36"
-        "92DDBD7F2D778B8C9803AEE328091B58FAB324E4FAD675945585808B4831D7BC"
-        "3FF4DEF08E4B7A9DE576D26586CEC64B6116";
-    static const char expected_tag_hex[] = "1AE10B594F09E26A7E902ECBD0600691";
+        "BD6D179D3E83D43B9576579493C0E939572A1700252BFACCBED2902C21396CBB"
+        "731C7F1B0B4AA6440BF3A82F4EDA7E39AE64C6708C54C216CB96B72E1213B452"
+        "2F8C9BA40DB5D945B11B69B982C1BB9E3F3FAC2BC369488F76B2383565D3FFF9"
+        "21F9664C97637DA9768812F615C68B13B52E";
+    static const char expected_tag_hex[] = "C0875924C1C7987947DEAFD8780ACF49";
     static const char plaintext[] =
         "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it.";
 
@@ -447,7 +442,7 @@ static void run_chacha_kats(const char* directory)
     uint8_t parallel_stream[64] = {0};
     uint8_t serial_stream[64] = {0};
     uint8_t aead_key[32];
-    uint8_t aead_nonce[12];
+    uint8_t aead_nonce[24];
     uint8_t aad[12];
     uint8_t expected_ciphertext[sizeof(plaintext) - 1U];
     uint8_t expected_tag[16];
@@ -462,13 +457,24 @@ static void run_chacha_kats(const char* directory)
     decode_hex(expected_ciphertext_hex, expected_ciphertext, sizeof(expected_ciphertext));
     decode_hex(expected_tag_hex, expected_tag, sizeof(expected_tag));
 
-    void* handle = open_library(directory, "libchachapoly_ref.dylib");
+    void* handle = open_library(directory, "libxchachapoly_v13.dylib");
     chacha20_fn parallel = NULL;
     chacha20_fn serial = NULL;
-    chachapoly_encrypt_fn encrypt = NULL;
-    load_symbol(handle, "chacha20_xcrypt", &parallel, sizeof(parallel));
-    load_symbol(handle, "chacha20_xcrypt_serial", &serial, sizeof(serial));
-    load_symbol(handle, "chacha20poly1305_encrypt", &encrypt, sizeof(encrypt));
+    xchachapoly_encrypt_fn encrypt = NULL;
+    load_symbol(handle, "keepvault_test_chacha20_xcrypt", &parallel, sizeof(parallel));
+    load_symbol(handle, "keepvault_test_chacha20_xcrypt_serial", &serial, sizeof(serial));
+    load_symbol(handle, "keepvault_xchacha20poly1305_v13_encrypt", &encrypt, sizeof(encrypt));
+    hchacha_fn hchacha = NULL;
+    load_symbol(handle, "keepvault_test_hchacha20_v13", &hchacha, sizeof(hchacha));
+    uint8_t hnonce[16], hsubkey[32], expected_hsubkey[32];
+    decode_hex("000000090000004A0000000031415927", hnonce, sizeof(hnonce));
+    decode_hex("82413B4227B27BFED30E42508A877D73A0F9E4D58A74A853C12EC41326D3ECDC",
+        expected_hsubkey, sizeof(expected_hsubkey));
+    if (hchacha(key, sizeof(key), hnonce, sizeof(hnonce), hsubkey, sizeof(hsubkey)) != 0) {
+        fail("HChaCha20 draft-03 section 2.2.1 returned an error");
+    }
+    require_equal(expected_hsubkey, hsubkey, sizeof(hsubkey), "HChaCha20 subkey mismatch");
+    secure_zero(hsubkey, sizeof(hsubkey));
     if (parallel(key, nonce, 1U, zeros, parallel_stream, sizeof(parallel_stream)) != 0
         || serial(key, nonce, 1U, zeros, serial_stream, sizeof(serial_stream)) != 0) {
         fail("ChaCha20 RFC 8439 raw-keystream KAT returned an error");
@@ -508,22 +514,20 @@ static void run_chacha_kats(const char* directory)
     }
 
     if (encrypt(
-            aead_key,
-            aead_nonce,
-            aad,
-            sizeof(aad),
-            (const uint8_t*)plaintext,
-            ciphertext,
-            sizeof(ciphertext),
-            tag) != 0) {
-        fail("ChaCha20-Poly1305 RFC 8439 AEAD KAT returned an error");
+            aead_key, sizeof(aead_key),
+            aead_nonce, sizeof(aead_nonce),
+            aad, sizeof(aad),
+            (const uint8_t*)plaintext, sizeof(plaintext) - 1U,
+            ciphertext, sizeof(ciphertext),
+            tag, sizeof(tag)) != 0) {
+        fail("XChaCha20-Poly1305 draft-03 A.3.1 AEAD KAT returned an error");
     }
     require_equal(
         expected_ciphertext,
         ciphertext,
         sizeof(ciphertext),
-        "ChaCha20-Poly1305 RFC 8439 ciphertext mismatch");
-    require_equal(expected_tag, tag, sizeof(tag), "ChaCha20-Poly1305 RFC 8439 tag mismatch");
+        "XChaCha20-Poly1305 draft-03 A.3.1 ciphertext mismatch");
+    require_equal(expected_tag, tag, sizeof(tag), "XChaCha20-Poly1305 draft-03 A.3.1 tag mismatch");
 
     secure_zero(key, sizeof(key));
     secure_zero(nonce, sizeof(nonce));
@@ -709,6 +713,23 @@ static void run_argon2_policy_kat(const char* directory)
     }
 }
 
+
+static void check_new_v13_block_cipher(const char* directory, const char* library,
+    const char* symbol, const char* key_hex, const char* input_hex, const char* expected_hex)
+{
+    typedef int (*v13_block_fn)(const uint8_t*, size_t, const uint8_t*, size_t, uint8_t*, size_t);
+    void* handle = open_library(directory, library);
+    v13_block_fn block = NULL;
+    load_symbol(handle, symbol, &block, sizeof(block));
+    uint8_t key[32], input[16], expected[16], output[16];
+    decode_hex(key_hex, key, sizeof(key)); decode_hex(input_hex, input, sizeof(input));
+    decode_hex(expected_hex, expected, sizeof(expected));
+    if (block(key, sizeof(key), input, sizeof(input), output, sizeof(output)) != 0) fail(symbol);
+    require_equal(expected, output, sizeof(expected), symbol);
+    secure_zero(key, sizeof(key)); secure_zero(output, sizeof(output));
+    dlclose(handle);
+}
+
 int main(int argument_count, char** arguments)
 {
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
@@ -718,6 +739,12 @@ int main(int argument_count, char** arguments)
         fprintf(stderr, "Usage: %s /absolute/native/slice/directory\n", arguments[0]);
         return 64;
     }
+    check_new_v13_block_cipher(arguments[1], "libcamellia_v13.dylib", "keepvault_test_v13_camellia_256_encrypt_block",
+        "0123456789abcdeffedcba987654321000112233445566778899aabbccddeeff",
+        "0123456789abcdeffedcba9876543210", "9acc237dff16d76c20ef7c919e3a7509");
+    check_new_v13_block_cipher(arguments[1], "libserpent_v13.dylib", "keepvault_test_v13_serpent_256_encrypt_block",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "00000000000000000000000000000001", "ad86de83231c3203a86ae33b721eaa9f");
     run_kalyna_kat(arguments[1]);
     run_threefish_and_skein_kats(arguments[1]);
     run_cryptopp_cipher_kats(arguments[1]);

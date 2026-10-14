@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "utc": "2026-10-11T13:11:50.803773+00:00",
+  "actualPid": 30579,
+  "actualSupervisorPid": 30571,
+  "actualExitCode": 0,
+  "actualWallSeconds": 0.7115915000322275,
+  "logSha256": "f073a8b74746209896df0291a43b205e4c5ecfb22155abb979f3302c484472df",
+  "sourceProductHead": "ea0eeecface1a8d16760676c1d6a428baef350c0",
+  "testDllSha256": "d306be46722ea2a7ca5301501f6a6c1ece1c6f22b08318ac32a61f814a49fea3",
+  "role": "DIAGNOSTIC_HARNESS_REGRESSION_ONLY"
+}

@@ -1,0 +1,75 @@
+{
+  "architecture": "arm64",
+  "libraries": [
+    {
+      "bytes": 152880,
+      "name": "libargon2_ref.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "fc9b31d33e7cdc75b30d0d134f0d25622953f9c591b7d387127f7308bdc12e65",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib"
+    },
+    {
+      "bytes": 329312,
+      "name": "libaes_ref.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "dd05706cc22a385301cc8e99e733c37374719c719633321f35391885efcd8024",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib"
+    },
+    {
+      "bytes": 294576,
+      "name": "libmars_ref.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "219dcbd4387879f0f0d6449c255599cef11b140f42f6ec9878c26681216159c7",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib"
+    },
+    {
+      "bytes": 294976,
+      "name": "libshacal2_ref.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "d49b4f4613e7e748ed05e6751f2ab583f4e85bb3c8ca23a85019efb0081ee7f0",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib"
+    },
+    {
+      "bytes": 301520,
+      "name": "libkalyna_v13.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "0dccebcacea1ba812c165bfb062ef3b75068d7b0851fdacadff69382cc2a8429",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib"
+    },
+    {
+      "bytes": 119472,
+      "name": "libthreefish_ref.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "c7e05b6c7c71adc796ada0f8a783d1429ac43ebe9f031000bfbb152d2c916781",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib"
+    },
+    {
+      "bytes": 328944,
+      "name": "libcamellia_v13.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "a4811cf66d470035e6ae5b897972745b3165ccefaac9e669429d8dca01c2dda6",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib"
+    },
+    {
+      "bytes": 295440,
+      "name": "libserpent_v13.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "734fcd7d6f46934b42b49cbb8a9c3948697ae5458307855b1f57acb19b7d9f7c",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib"
+    },
+    {
+      "bytes": 600016,
+      "name": "libxchachapoly_v13.dylib",
+      "scope": "exact signed product bytes",
+      "sha256": "2b366a08de18b8cadf4f152b8767fb0c2ba0c507981a51dba3fd28ff9a065394",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS-prerelease/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib"
+    },
+    {
+      "bytes": 34080,
+      "name": "libsha3_ref.dylib",
+      "scope": "unshipped SHA3 reference",
+      "sha256": "e8738819584489e357254e594b8bd132e659ae0fad316531c82f8c2e20af2c45",
+      "source": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Native/osx-arm64/libsha3_ref.dylib"
+    }
+  ]
+}

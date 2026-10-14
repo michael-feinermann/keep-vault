@@ -1,0 +1,265 @@
+{
+  "actualBuilderPid": 59476,
+  "curatorToolSha256": "a46a25c1b75fd22f820674c0a003f4aab54f8ece28720969ba655594595be26d",
+  "downstreamCases": {
+    "security.downstream-mac-handoff-faults": 80,
+    "security.downstream-recovery-handoff-faults": 24,
+    "security.downstream-suite-handoff-faults": 336
+  },
+  "fullReleaseGate": "NOT_RUN",
+  "fullSuite": {
+    "blocked": 0,
+    "failed": 0,
+    "groups": 319,
+    "passed": 319,
+    "summaryOriginalLine": "319 macOS groups: 319 passed, 0 failed, 0 blocked.",
+    "walltimeOriginalLine": "wall clock 1456,1s; sum of test times 1432,4s; parallel speedup 0,98x"
+  },
+  "kdfMatrix": {
+    "boundaryCount": 626,
+    "caseCount": 2504,
+    "profile": "internal-8-MiB-fault-injection-only",
+    "suiteCount": 12
+  },
+  "managedHarnessIsAotProduct": false,
+  "networkFailure": {
+    "actualBuilderPid": 86508,
+    "actualExitCode": 1,
+    "excerptOriginalLines": [
+      {
+        "byteOffset": 30573,
+        "bytes": 226,
+        "lineNumber": 213,
+        "sha256": "43225a388df703dd1f6df2450fcc35452fbdc13934a18994f103aa3289d13f4a",
+        "stream": "stdout"
+      },
+      {
+        "byteOffset": 30799,
+        "bytes": 194,
+        "lineNumber": 214,
+        "sha256": "bcc479395fca63fd51318045a6a5c98846683d800943c32e76e0e54642c99d2f",
+        "stream": "stdout"
+      },
+      {
+        "byteOffset": 30993,
+        "bytes": 174,
+        "lineNumber": 215,
+        "sha256": "0d85eaa6dd5b418b9da88f49dc082191b4b5f92f856565c9098748ba136a20e7",
+        "stream": "stdout"
+      }
+    ],
+    "fullSuiteStarted": false,
+    "originalStderrSha256": "14edbd282f03a41d86072cc31465db4f17ec0d69c35e0b10062ca272f0f51200",
+    "originalStdoutSha256": "fbf6569f20838f19f17a10b3dc795a8313320d70e5c568c3da98aa0578f39877",
+    "originalTerminalSha256": "75c70e4af5f286f8e6ceef3728b3896f6ab0b789be34b4019d7c11b5cb195a6a"
+  },
+  "observedUtc": "2026-10-12T13:02:11.305192+00:00",
+  "originalBuilderStderrSha256": "af23e0f53c0e85a3c3acd0494c37620c16bab5e090aa37f8ec20356afb956f02",
+  "originalBuilderStdoutSha256": "912ee9471f7c3e5b1ae917ff0ea60de9e9b830d6c10c48300cbd6aec97cb7559",
+  "overallReleaseApproval": false,
+  "paranoiaWorkflowOriginalResult": {
+    "Architecture": "Arm64",
+    "ArchiveEncryptSeconds": 151.7164322,
+    "Argon2Iterations": 4,
+    "Argon2Parallelism": 4,
+    "CompressionLevel": 3,
+    "ContainerBytes": 382969950,
+    "DecryptExtractSeconds": 118.0316221,
+    "FinalManifestSeconds": 0.2609211,
+    "InputBytes": 536870912,
+    "InputDirectories": 32,
+    "InputFiles": 149,
+    "Label": "v13-paranoia-structure512-production-kdf",
+    "LogicalProcessors": 10,
+    "OperatingSystem": "macOS 27.0.1",
+    "RecoveryBytes": 63053824,
+    "RecoveryCreateSeconds": 18.6876584,
+    "RecoveryRepairSeconds": 18.3835105,
+    "RecoveryVerifySeconds": 8.2703186,
+    "RepairedShards": 1,
+    "SchemaVersion": 1,
+    "SetupAndInitialManifestSeconds": 0.5562853,
+    "Suite": "ParanoiaCascade",
+    "WorkflowSeconds": 315.812045
+  },
+  "privateKeyOrPasswordFilesOpened": false,
+  "publicDownloadAndFreshNativeAbiProof": "SEPARATE_PACKAGES",
+  "publicExcerptOriginalLines": [
+    {
+      "byteOffset": 59683,
+      "bytes": 674,
+      "lineNumber": 626,
+      "sha256": "b93348246b0ae4d1bb1f9a4932c51725149f9074d3a2846f1cb4760a67b81ffa"
+    },
+    {
+      "byteOffset": 479444,
+      "bytes": 124,
+      "lineNumber": 628,
+      "sha256": "59e7bcaa05b01a73befd5df4ab4fe8fdb692e92f1ef8e0216b1276af588dbca4"
+    },
+    {
+      "byteOffset": 484658,
+      "bytes": 71,
+      "lineNumber": 685,
+      "sha256": "2ce0ab7373e51d9f2535ec5832efffdd8212d788d62a8589dd4d21750ee72d3c"
+    },
+    {
+      "byteOffset": 488022,
+      "bytes": 93,
+      "lineNumber": 724,
+      "sha256": "508dbe7a0e4e7eca52fdce6019f8957e40581aec8719292bf3c47d9c33d61a80"
+    },
+    {
+      "byteOffset": 501665,
+      "bytes": 85643,
+      "lineNumber": 871,
+      "sha256": "e0de9f71fb4c982318872cf0fe9f764a4f5d75bc45a3f2442c318b9cc71f628b"
+    },
+    {
+      "byteOffset": 587308,
+      "bytes": 105,
+      "lineNumber": 872,
+      "sha256": "017b208645ccbbd8a397cf0b3181c8421a21d291343024b218c36a1e1b761cb0"
+    },
+    {
+      "byteOffset": 587413,
+      "bytes": 96,
+      "lineNumber": 873,
+      "sha256": "38b8e6ceba14fb1d8ba47065507370b46f14673c27f09be0537522ad6d24e503"
+    },
+    {
+      "byteOffset": 587509,
+      "bytes": 97,
+      "lineNumber": 874,
+      "sha256": "e10b58230ffbfe1fd323a089ea3d44a8f00baf6630be07f6ce99db7b35661fac"
+    },
+    {
+      "byteOffset": 587606,
+      "bytes": 102,
+      "lineNumber": 875,
+      "sha256": "26875c69064e37956605b1992405734b9268ec225c95be4b37b16e3d235b5867"
+    },
+    {
+      "byteOffset": 587708,
+      "bytes": 76,
+      "lineNumber": 876,
+      "sha256": "cea81027483a88b1f39611ac7bf6506b9027c77c71eb4c500a594b4140df03e0"
+    },
+    {
+      "byteOffset": 587784,
+      "bytes": 97,
+      "lineNumber": 877,
+      "sha256": "7ff4c9fa1af050d7d65b1200e133ccc9feb3281d9aa4742f34c0c793e80a9cf1"
+    },
+    {
+      "byteOffset": 587881,
+      "bytes": 104,
+      "lineNumber": 878,
+      "sha256": "f96cc1a31176b2e4721fd4f6fdf7b4eda1f54e13a775a1173754a2fc9fe2bb33"
+    },
+    {
+      "byteOffset": 587985,
+      "bytes": 107,
+      "lineNumber": 879,
+      "sha256": "d0c8c7ae4c8c661e9fd557e42f073264670dd62d83bc00a9975236273bcb8268"
+    },
+    {
+      "byteOffset": 588092,
+      "bytes": 141600,
+      "lineNumber": 880,
+      "sha256": "a7002be96001daae0da54177180a98ffb0a854ebdd0e948ebb8e65d40b787369"
+    },
+    {
+      "byteOffset": 729692,
+      "bytes": 93,
+      "lineNumber": 881,
+      "sha256": "8caa2dc9dcb77155b7787092109e6c0ff509c57ebb085b6bc7ae331fc775d7fc"
+    },
+    {
+      "byteOffset": 729785,
+      "bytes": 26094,
+      "lineNumber": 882,
+      "sha256": "39c5057610e1e1685f64c6e43bde65f6ef5cbeac549a718f45858f3a13db4342"
+    },
+    {
+      "byteOffset": 755879,
+      "bytes": 92,
+      "lineNumber": 883,
+      "sha256": "234445b33bc457234679e9e560cc383ee2d8562217be38b7afdac4eaf8197c7b"
+    },
+    {
+      "byteOffset": 755971,
+      "bytes": 7855,
+      "lineNumber": 884,
+      "sha256": "0c59dda071c99613c15a84f39e48a4e5fb18fa6d07fbfba1486ee3d9bacacfe8"
+    },
+    {
+      "byteOffset": 763826,
+      "bytes": 93,
+      "lineNumber": 885,
+      "sha256": "e5fef384d5abce891eb937011dc1fa0176843d97146e6e7f24bdf9d38cb9f23d"
+    },
+    {
+      "byteOffset": 763919,
+      "bytes": 217,
+      "lineNumber": 886,
+      "sha256": "197f67245d8d1281e72f944de8d4d74891ee25214e0649be11f83304e8013c28"
+    },
+    {
+      "byteOffset": 764136,
+      "bytes": 84,
+      "lineNumber": 887,
+      "sha256": "d56a5718ba33ce0f0287430bc756e6c3a2c6739bafe43448c84965d156c70e75"
+    },
+    {
+      "byteOffset": 764220,
+      "bytes": 80,
+      "lineNumber": 888,
+      "sha256": "a77e5d65176f29cfbbebfd0273bc4f1872344e8624c2381cb295d9a6a6c42ffb"
+    },
+    {
+      "byteOffset": 764300,
+      "bytes": 90,
+      "lineNumber": 889,
+      "sha256": "d51a0cf9682a6ae3702bb1879e923dea525d6ccccca47f0c6cb7fc17e3fc6054"
+    },
+    {
+      "byteOffset": 764390,
+      "bytes": 89,
+      "lineNumber": 890,
+      "sha256": "c67ca70093aca8d1228e6c5bfcbf1930330a343432799f5397891632ff3149a4"
+    },
+    {
+      "byteOffset": 764479,
+      "bytes": 99,
+      "lineNumber": 891,
+      "sha256": "5bdfff37e86dea046a58d7c40d70a4e505b4b1aa14cbab1c84e22865080e55df"
+    },
+    {
+      "byteOffset": 764578,
+      "bytes": 131,
+      "lineNumber": 892,
+      "sha256": "935bff9b0f577e5a578e58cc06f31beccf1c2cb112fbe42df81f448a976d68ad"
+    },
+    {
+      "byteOffset": 764710,
+      "bytes": 51,
+      "lineNumber": 894,
+      "sha256": "34af96a0325483b89d07bb7c779402e14762f26853d757352680b043a4cb7f63"
+    },
+    {
+      "byteOffset": 764761,
+      "bytes": 70,
+      "lineNumber": 895,
+      "sha256": "7078453b40231c6125eac0fcbfa682fe51c7527c56eb22093d69a1a6e755d369"
+    }
+  ],
+  "retainedPublicHarnessFilesRehashed": 124,
+  "retainedPublicSdkFilesRehashed": 4906,
+  "schemaVersion": 1,
+  "scope": "Original actual third-builder prerelease evidence and separate actual second-builder NU1301 failure; no stable release, final GUI, final performance or external audit approval.",
+  "sourceCommit": "8c68571695ae9072555ffb462b3c0b9c500811ea",
+  "sourceInputsBoundToCompiledGitTree": 566,
+  "sourceInputsIdenticalToGitBlobBytes": 565,
+  "status": "ACTUAL_PRERELEASE_PASS_INPUTS_VERIFIED"
+}

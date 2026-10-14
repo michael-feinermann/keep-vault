@@ -1,0 +1,23 @@
+{
+  "actualBuilderExitCode": 3,
+  "completedUtc": "2026-10-12T21:43:18.802634+00:00",
+  "fullReleaseGate": "FAIL",
+  "gitCleanAfter": true,
+  "historicalBaselineStable": true,
+  "localPublishMarkersMatchOfficialDist": false,
+  "managedHarnessIsAotProduct": false,
+  "overallReleaseApproval": false,
+  "publishMode": "release",
+  "publishedAotMatchesFinalStagedProduct": false,
+  "publishedProductSha256": null,
+  "retainedNativeComponentsAndSidecarsMatchPublishedProduct": false,
+  "retainedOriginalPhaseCount": 0,
+  "scope": "Actual signed/notarized official local builder and all original 49 phase results with unchanged source/baseline and native/AOT byte binding. Public downloads, installed GUI and technical overall approval require separate proof.",
+  "sourceHeadAfter": "e79af0483afb10c1206f1cd5a0d975ac0ba6971d",
+  "sourceHeadBefore": "e79af0483afb10c1206f1cd5a0d975ac0ba6971d",
+  "sourceInputsAndBuilderStable": true,
+  "sourceObservationScope": "Before/after only; no continuous source monitoring.",
+  "status": "FAIL",
+  "stderrSha256": "b4bc43dc5a35ba9d7113e98d56ac45abe79d5d50331c7bfe54c36b8a5bd56882",
+  "stdoutSha256": "c58e3113e054fc3dee189b8aa8549a7fbe2668ee44e4e43cb00c1268e5ee555d"
+}

@@ -5,7 +5,6 @@ using Microsoft.Win32.SafeHandles;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography.Pkcs;
 using System.Text;
 using KalynaArchiver.Signing;
 
@@ -122,12 +121,14 @@ public sealed class IntegrityService : IDisposable
     public static readonly IReadOnlyList<string> RequiredNativeTools =
     [
         "zpaq.exe",
-        "kalyna_v12.dll",
+        "kalyna_v13.dll",
         "threefish_ref.dll",
         "mars_ref.dll",
+        "camellia_v13.dll",
+        "serpent_v13.dll",
         "shacal2_ref.dll",
         "aes_ref.dll",
-        "chachapoly_ref.dll",
+        "xchachapoly_v13.dll",
         "argon2_ref.dll",
         "argon2.exe",
     ];
@@ -523,10 +524,10 @@ public sealed class IntegrityService : IDisposable
             while ((read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
             {
                 int count = read;
-                await Task.WhenAll(
-                    Task.Run(() => sha3.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
-                    Task.Run(() => skein.AppendData(buffer.AsSpan(0, count)), CancellationToken.None))
-                    .ConfigureAwait(false);
+                await CpuWorkBudget.RunIndependentAsync(cancellationToken,
+                    () => sha3.AppendData(buffer.AsSpan(0, count)),
+                    () => skein.AppendData(buffer.AsSpan(0, count))).ConfigureAwait(false);
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             sha3Result = sha3.GetHashAndReset();
@@ -560,9 +561,10 @@ public sealed class IntegrityService : IDisposable
             while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
             {
                 int count = read;
-                Parallel.Invoke(
+                CpuWorkBudget.RunIndependentAsync(CancellationToken.None,
                     () => sha3.AppendData(buffer.AsSpan(0, count)),
-                    () => skein.AppendData(buffer.AsSpan(0, count)));
+                    () => skein.AppendData(buffer.AsSpan(0, count))).GetAwaiter().GetResult();
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             sha3Result = sha3.GetHashAndReset();
@@ -603,11 +605,11 @@ public sealed class IntegrityService : IDisposable
             {
                 length = checked(length + read);
                 int count = read;
-                await Task.WhenAll(
-                    Task.Run(() => sha3.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
-                    Task.Run(() => sha512.AppendData(buffer.AsSpan(0, count)), CancellationToken.None),
-                    Task.Run(() => skein.AppendData(buffer.AsSpan(0, count)), CancellationToken.None))
-                    .ConfigureAwait(false);
+                await CpuWorkBudget.RunIndependentAsync(cancellationToken,
+                    () => sha3.AppendData(buffer.AsSpan(0, count)),
+                    () => sha512.AppendData(buffer.AsSpan(0, count)),
+                    () => skein.AppendData(buffer.AsSpan(0, count))).ConfigureAwait(false);
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             sha3Result = sha3.GetHashAndReset();
@@ -645,10 +647,11 @@ public sealed class IntegrityService : IDisposable
             {
                 length = checked(length + read);
                 int count = read;
-                Parallel.Invoke(
+                CpuWorkBudget.RunIndependentAsync(CancellationToken.None,
                     () => sha3.AppendData(buffer.AsSpan(0, count)),
                     () => sha512.AppendData(buffer.AsSpan(0, count)),
-                    () => skein.AppendData(buffer.AsSpan(0, count)));
+                    () => skein.AppendData(buffer.AsSpan(0, count))).GetAwaiter().GetResult();
+                OperationMemoryBudget.ReportProgress(read);
             }
 
             sha3Result = sha3.GetHashAndReset();
@@ -1019,7 +1022,6 @@ internal static partial class AuthenticodeSignature
     private const int CertEUntrustedRoot = unchecked((int)0x800B0109);
     private const string Sha512Oid = "2.16.840.1.101.3.4.2.3";
     private const string Sha512WithRsaOid = "1.2.840.113549.1.1.13";
-    private const int MaximumAuthenticodeBlobBytes = 1024 * 1024;
 
     public static SignatureInfo Check(string path)
     {
@@ -1039,7 +1041,7 @@ internal static partial class AuthenticodeSignature
             string? digestAlgorithm = TryReadPrimaryDigestAlgorithm(path);
             bool sha512PolicySatisfied = string.Equals(digestAlgorithm, Sha512Oid, StringComparison.Ordinal)
                 && certificate?.UsesSha512RsaCertificateSignature == true;
-            if (result == 0)
+            if (result is 0 or CertEUntrustedRoot)
             {
                 if (!singlePrimarySignature || !sha512PolicySatisfied)
                 {
@@ -1050,12 +1052,14 @@ internal static partial class AuthenticodeSignature
                         certificate?.IsSelfSigned ?? false,
                         !singlePrimarySignature
                             ? "Authenticode verification is ambiguous because the file contains secondary signatures."
-                            : "Authenticode must use SHA-512 for both the PE digest and RSA certificate signature.",
+                            : "Authenticode must use SHA-512 for the PE digest, primary CMS signer and RSA certificate signature.",
                         certificate?.SignerSha256,
                         certificate?.SignerSha3_512,
                         certificate?.SignerSkein1024);
                 }
-
+            }
+            if (result == 0)
+            {
                 string trustLabel = certificate?.IsDevelopmentCertificate == true || certificate?.IsSelfSigned == true
                     ? "Trusted development/self-signed Authenticode signature"
                     : "Trusted Authenticode signature";
@@ -1173,100 +1177,15 @@ internal static partial class AuthenticodeSignature
     {
         try
         {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            Span<byte> dosHeader = stackalloc byte[64];
-            stream.ReadExactly(dosHeader);
-            if (BinaryPrimitives.ReadUInt16LittleEndian(dosHeader) != 0x5A4D)
-            {
-                return null;
-            }
-
-            int peOffset = BinaryPrimitives.ReadInt32LittleEndian(dosHeader[0x3C..]);
-            if (peOffset < 64 || peOffset > stream.Length - 24)
-            {
-                return null;
-            }
-
-            stream.Position = peOffset;
-            Span<byte> peAndFileHeader = stackalloc byte[24];
-            stream.ReadExactly(peAndFileHeader);
-            if (BinaryPrimitives.ReadUInt32LittleEndian(peAndFileHeader) != 0x00004550)
-            {
-                return null;
-            }
-
-            int optionalHeaderLength = BinaryPrimitives.ReadUInt16LittleEndian(peAndFileHeader[20..]);
-            if (optionalHeaderLength < 128 || optionalHeaderLength > 4096)
-            {
-                return null;
-            }
-
-            byte[] optionalHeader = new byte[optionalHeaderLength];
-            byte[]? certificateBlob = null;
-            try
-            {
-                stream.ReadExactly(optionalHeader);
-                ushort magic = BinaryPrimitives.ReadUInt16LittleEndian(optionalHeader);
-                int dataDirectoryOffset = magic switch
-                {
-                    0x10B => 96,
-                    0x20B => 112,
-                    _ => -1,
-                };
-                int securityDirectoryOffset = checked(dataDirectoryOffset + (4 * 8));
-                if (dataDirectoryOffset < 0 || securityDirectoryOffset > optionalHeader.Length - 8)
-                {
-                    return null;
-                }
-
-                uint certificateOffset = BinaryPrimitives.ReadUInt32LittleEndian(optionalHeader.AsSpan(securityDirectoryOffset));
-                uint certificateSize = BinaryPrimitives.ReadUInt32LittleEndian(optionalHeader.AsSpan(securityDirectoryOffset + 4));
-                if (certificateOffset == 0
-                    || certificateSize < 8
-                    || certificateSize > MaximumAuthenticodeBlobBytes
-                    || certificateOffset > stream.Length - certificateSize)
-                {
-                    return null;
-                }
-
-                stream.Position = certificateOffset;
-                Span<byte> winCertificateHeader = stackalloc byte[8];
-                stream.ReadExactly(winCertificateHeader);
-                uint encodedLength = BinaryPrimitives.ReadUInt32LittleEndian(winCertificateHeader);
-                ushort revision = BinaryPrimitives.ReadUInt16LittleEndian(winCertificateHeader[4..]);
-                ushort certificateType = BinaryPrimitives.ReadUInt16LittleEndian(winCertificateHeader[6..]);
-                if (encodedLength < 8
-                    || encodedLength > certificateSize
-                    || encodedLength - 8 > MaximumAuthenticodeBlobBytes
-                    || revision != 0x0200
-                    || certificateType != 0x0002)
-                {
-                    return null;
-                }
-
-                certificateBlob = new byte[checked((int)encodedLength - 8)];
-                stream.ReadExactly(certificateBlob);
-                var signedCms = new SignedCms();
-                signedCms.Decode(certificateBlob);
-                return signedCms.SignerInfos.Count == 1
-                    ? signedCms.SignerInfos[0].DigestAlgorithm.Value
-                    : null;
-            }
-            finally
-            {
-                CryptographicOperations.ZeroMemory(optionalHeader);
-                if (certificateBlob is not null)
-                {
-                    CryptographicOperations.ZeroMemory(certificateBlob);
-                }
-            }
+            ReleaseAuthenticodePolicy.RequireSha512(path);
+            return Sha512Oid;
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or CryptographicException or ArgumentException or OverflowException)
+        catch (Exception ex) when (ex is IOException or CryptographicException or ArgumentException
+            or OverflowException or System.Formats.Asn1.AsnContentException)
         {
             return null;
         }
     }
-
     private static WinTrustResult WinVerifyTrustFile(string path)
     {
         nint fileInfoPointer = 0;

@@ -509,7 +509,7 @@ run_dotnet_clean() {
     clean_environment+=(HOME=${private_dotnet_cli_home} USER=${verified_user})
   fi
   local dotnet_status=0
-  ${env_path} -i ${clean_environment[@]} ${dotnet_command} "$@" || dotnet_status=$?
+  (cd ${repo_root}/KeepVaultMac && ${env_path} -i ${clean_environment[@]} ${dotnet_command} "$@") || dotnet_status=$?
   if ! require_private_nuget_cache_identity || ! require_dotnet_host_identity; then
     print -u2 'KEEP VAULT VERIFY GATE: private cache or .NET host identity changed during a .NET invocation.'
     (( dotnet_status != 0 )) && return ${dotnet_status}
@@ -555,7 +555,7 @@ require_notarization=0
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
 require_launcher_signature=0
 tool_path_self_test=0
-expected_signer_lock_sha256='B07635B8B5CF158644267CBB99E6483D6F947F37D3B9918B4FF39407EB6BA5EB'
+expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
 
 usage() {
   print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'
@@ -682,7 +682,7 @@ core=${app_path}/Contents/MacOS/Keep\ Vault
 supervisor=${app_path}/Contents/MacOS/Keep\ Vault\ Supervisor
 native_dir=${app_path}/Contents/MacOS/Native
 third_party_notices=${app_path}/Contents/Resources/THIRD-PARTY-NOTICES.txt
-expected_third_party_notices_sha256='bd4bd21c7ffa79d36a4f20abb6b7af3116fc005d3971ca0be09b49e083d6f159'
+expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
 third_party_notice_fd=-1
 if ! sysopen -r -o nofollow -u third_party_notice_fd ${third_party_notices}; then
   print -u2 'THIRD-PARTY-NOTICES.txt is missing or cannot be opened without following a symbolic link.'
@@ -763,7 +763,7 @@ if (( (model_notice_mode & 8#170000) != 8#100000 \
   exit 1
 fi
 hash_verifier_notice_fd ${model_notice_fd} || exit 1
-if [[ ${REPLY} != fcc48f7f9d123570230f6e0fdb45a9e172c9addea17a619081392a3d8ec57ea2 ]]; then
+if [[ ${REPLY} != 47e917a325d5bc39bf669f53c727752070b383a41fb50e6bdf037826891f6871 ]]; then
   print -u2 'PASSWORD-MODEL-NOTICES.txt does not match the reviewed whole-file digest.'
   exit 1
 fi
@@ -779,12 +779,14 @@ fi
 exec {model_notice_fd}<&-
 required_native=(
   zpaq
-  libkalyna_v12.dylib
+  libkalyna_v13.dylib
   libthreefish_ref.dylib
   libmars_ref.dylib
+  libcamellia_v13.dylib
+  libserpent_v13.dylib
   libshacal2_ref.dylib
   libaes_ref.dylib
-  libchachapoly_ref.dylib
+  libxchachapoly_v13.dylib
   libargon2_ref.dylib
   argon2
 )
@@ -806,11 +808,11 @@ done
 # The list above is the macOS spelling of
 # NativeToolIntegrity.RequiredLogicalToolNames. Presence alone is not enough:
 # an unreviewed extra helper in Native/ is executable payload too and must not
-# slip past the release inventory merely because the nine expected files are
+# slip past the release inventory merely because the eleven expected files are
 # present as well.
 native_entries=(${native_dir}/*(N))
 if (( ${#native_entries[@]} != ${#required_native[@]} )); then
-  print -u2 "The shipped Native directory is not the exact required nine-component set."
+  print -u2 "The shipped Native directory is not the exact required eleven-component set."
   exit 1
 fi
 typeset -A required_native_set

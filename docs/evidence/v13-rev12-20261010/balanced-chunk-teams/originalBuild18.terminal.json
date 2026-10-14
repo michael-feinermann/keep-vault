@@ -1,0 +1,17 @@
+{
+  "actualPid": 37465,
+  "actualExitCode": 0,
+  "startedUtc": "2026-10-10T06:38:08.377827+00:00",
+  "completedUtc": "2026-10-10T06:40:38.997223+00:00",
+  "argv": [
+    "/private/tmp/keep-vault-factor-status-sdk-spmdmhhe/sdk/dotnet",
+    "exec",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-build18-preserved-harness-sdk-20261008T050121819977Z/harness/KeepVaultMac.Tests.dll",
+    "--worker",
+    "--test-id",
+    "performance.pipeline-slot-scaling",
+    "--performance",
+    "--seed",
+    "0x090DA43C"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "createdUtc": "2026-10-04T10:09:53.041403+00:00",
+  "status": "FAIL",
+  "builderExitCode": 69,
+  "sourceHead": "591f2a524e0b6af1f366355afd0863693b95301c",
+  "sourcesStable": true,
+  "actualFailure": "Scanner notarytool submit could not find Keychain profile Keep Vault v13.",
+  "fullFunctionalTests": "NOT RUN",
+  "finalPerformance36": "NOT RUN",
+  "final512StructureRepair": "NOT RUN",
+  "finalCandidatePublished": "NO",
+  "scope": "Actual first Build16 attempt only. No final release approval; existing dist and installed Build15 are not this candidate.",
+  "originalCopies": [
+    {
+      "original": "work/v13-evidence/rev12-final-build16-20261004/build-start.json",
+      "copy": "build-start.json",
+      "sha256": "6b8a9d27716748b282900bd4f28c5012945eb90b42fd676966f4d2fe6559db63",
+      "bytes": 653
+    },
+    {
+      "original": "work/v13-evidence/rev12-final-build16-20261004/build-exit.json",
+      "copy": "build-exit.json",
+      "sha256": "b2932e0e73e5c892546d925844fbf7a8cdba35a884cbe2dcf0f921aed100b2f8",
+      "bytes": 482
+    },
+    {
+      "original": "work/v13-evidence/rev12-final-build16-20261004/source-inputs-before.json",
+      "copy": "source-inputs-before.json",
+      "sha256": "6d8643fd75e3283ae29c191134985486aa411b223f9bc7ae9d6eb87eb457d1e9",
+      "bytes": 51895
+    },
+    {
+      "original": "work/v13-evidence/rev12-final-build16-20261004/source-inputs-after.json",
+      "copy": "source-inputs-after.json",
+      "sha256": "6d8643fd75e3283ae29c191134985486aa411b223f9bc7ae9d6eb87eb457d1e9",
+      "bytes": 51895
+    },
+    {
+      "original": "work/v13-evidence/rev12-final-build16-20261004/build.log",
+      "copy": "build.log",
+      "sha256": "c5520daf2c385fdee92c8c39129da4e2bba6e7716771fecb1a50723c5ffd20fe",
+      "bytes": 42763
+    },
+    {
+      "original": "work/v13-evidence/rev12-final-build16-20261004/run-final-build.py",
+      "copy": "run-final-build.py",
+      "sha256": "c2806fe1808087a1d2c38c371dfb39207d432746488a7d8ef35f588cb3b1ac3d",
+      "bytes": 4626
+    }
+  ]
+}

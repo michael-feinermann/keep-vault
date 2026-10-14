@@ -1,0 +1,116 @@
+{
+  "originalPhase": 35,
+  "testId": "performance.rev12-workflow-1gib-xchacha-aes-auto",
+  "suite": "XChaChaOverAes",
+  "status": "PASS",
+  "actualPid": 24491,
+  "startedUtc": "2026-10-11T10:53:26.061481+00:00",
+  "completedUtc": "2026-10-11T11:02:46.253001+00:00",
+  "actualExitCode": 0,
+  "processWallSeconds": 560.1937160000089,
+  "testCaseSeconds": 559.973,
+  "testTimingSeconds": 559.9729182,
+  "setupSeconds": 0.9958807,
+  "entropyPreparationSeconds": 0.0833941,
+  "workflowWallSeconds": 558.822012,
+  "archiveAndEncryptSeconds": 268.7986397,
+  "sourceMiBPerSecondCompleteWorkflow": 1.8324260283433502,
+  "sourceMiBPerSecondArchiveAndEncrypt": 3.8095430882494896,
+  "outerWorkflowTimeline": [
+    {
+      "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+      "StartSeconds": 0,
+      "EndSeconds": 0.0085481,
+      "DurationSeconds": 0.0085481,
+      "workflowWallPercent": 0.0015296641536017375
+    },
+    {
+      "Phase": "archiveAndEncrypt",
+      "StartSeconds": 0.0085481,
+      "EndSeconds": 268.8116747,
+      "DurationSeconds": 268.80312660000004,
+      "workflowWallPercent": 48.1017427423743
+    },
+    {
+      "Phase": "supplementalContainerHash",
+      "StartSeconds": 268.8116747,
+      "EndSeconds": 269.3326496,
+      "DurationSeconds": 0.5209748999999988,
+      "workflowWallPercent": 0.09322734051499726
+    },
+    {
+      "Phase": "recoveryCreate",
+      "StartSeconds": 269.3326496,
+      "EndSeconds": 295.9541566,
+      "DurationSeconds": 26.62150699999995,
+      "workflowWallPercent": 4.7638615566918565
+    },
+    {
+      "Phase": "supplementalRecoveryHealthyVerification",
+      "StartSeconds": 295.9541566,
+      "EndSeconds": 307.1203002,
+      "DurationSeconds": 11.166143599999998,
+      "workflowWallPercent": 1.9981574383651872
+    },
+    {
+      "Phase": "decryptAndExtractForOriginalComparison",
+      "StartSeconds": 307.1203002,
+      "EndSeconds": 557.4004435,
+      "DurationSeconds": 250.28014330000008,
+      "workflowWallPercent": 44.787094625041384
+    },
+    {
+      "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+      "StartSeconds": 557.4004435,
+      "EndSeconds": 558.7201867,
+      "DurationSeconds": 1.319743199999948,
+      "workflowWallPercent": 0.23616521390713366
+    },
+    {
+      "Phase": "ownedResourcesAndFixtureCleanup",
+      "StartSeconds": 558.7201867,
+      "EndSeconds": 558.822012,
+      "DurationSeconds": 0.10182529999997314,
+      "workflowWallPercent": 0.018221418951545013
+    }
+  ],
+  "servicePhaseWallSeconds": {
+    "originalCreationSnapshot": 0.0076184,
+    "archiveAndEncrypt": 268.7986397,
+    "supplementalContainerHash": 0.5209665,
+    "recoveryCreate": 26.6214593,
+    "supplementalRecoveryHealthyVerification": 11.1661159,
+    "decryptAndExtractForOriginalComparison": 250.280119,
+    "originalComparisonAndIndependentHashTopologyCheck": 1.3197388,
+    "fixtureCleanup": 0.0854989
+  },
+  "managedProcessCpuSecondsThroughOriginalComparison": 130.193838,
+  "processAndObservedZpaqChildCpuSecondsThroughOriginalComparison": 635.3440056,
+  "receipt": {
+    "InputFiles": 3,
+    "InputDirectories": 5,
+    "InputBytes": 1073741824,
+    "CompressedPayloadBytesDuringCreation": 1074377316,
+    "ContainerBytes": 1074380242,
+    "RecoveryBytes": 163811328,
+    "InputManifestSha256": "ED999425AD4A5E30B53F2E132A9DC407E7BCE4F02F11FF608BF4E426D0DE8DBB",
+    "ContainerSha256": "CFCDAED50AE2D6E1386F172A201014B2C95A592ECA2A0C18D3E01A98FA53D94A",
+    "InitialCpuCeiling": 10,
+    "InitialThrottleReason": "minimum-work-window",
+    "OutputVolumeIdentity": "device:16777232"
+  },
+  "actualProfileArtifact": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/performance.rev12-workflow-1gib-xchacha-aes-auto-20261011T110246177-6ac22d6c6ce6434596dff0ac4dbf701f.json",
+    "sha256": "b6e9d7bb341efbfaa3d42f2c5d0ea4a307656bfbcdfb20c671dfe54ff816c192",
+    "bytes": 681948
+  },
+  "profileCopySha256": "b6e9d7bb341efbfaa3d42f2c5d0ea4a307656bfbcdfb20c671dfe54ff816c192",
+  "phaseReceiptPins": {
+    "start.json": "8e8f4c217794fc83bbeb3a93f4a80a9b060d7bdbf68e9e89db46a847333e8e21",
+    "terminal.json": "02564ab46ae293beaf572ba8e5530510248abca252b139abbb4512093ff7c450",
+    "run.log": "489cc9eab66142df4116c4340ed4f133594e0602ef6527446b57945394e18d96",
+    "test-results.json": "5c214805b0a8036f1d3d6f7775df5c3da667ad3dad23be54a0877d1311b912a1",
+    "test-timings.json": "084d8e9c83f8f87cd328d30e5cd0bd62998f7e3990ba97fc3122c69c03823b38",
+    "validated.json": "d1b64155edd9cfd5b5e51e42f478035fa50c6c595f7fa41d041c6d901581428c"
+  }
+}

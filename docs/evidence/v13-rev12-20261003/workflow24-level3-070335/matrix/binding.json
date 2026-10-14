@@ -1,0 +1,32 @@
+{
+  "bindingPath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/binding.ready-20261004T0707.json",
+  "bindingSha256": "b39aacda763897675469f261ba792a44ec45f27344d6e7b5741a4389ad03ded2",
+  "readyBinding": {
+    "schemaVersion": 1,
+    "status": "READY",
+    "compressionLevel": 3,
+    "build": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-20261004T070335Z",
+    "gitHead": "b41144e191d743aa4474cb3a9fe1e5c1c7c567ba",
+    "sourceInputsSha256": "de0b75d9e2f71247a58dc408ac5ea923660064cf4871d595c625722a03b81e04",
+    "productAssemblySha256": "082f6154d6aeecf922af4adf59821e863598e171e8a11a1d77079e2ad61ce994",
+    "testAssemblySha256": "b0bafeec394585bdd8d00679281ad706267cbb0f4d6713294abbf1c823e4768a",
+    "binaryInputsExpected": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/binary-inputs.expected-20261004T0707.json",
+      "sha256": "1f577c40a92576323061b80fe95b06e336a54bea3ef5c39784477fcdf960e9e9"
+    },
+    "buildMetadataExpected": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-level3-20261004/build-metadata.expected-20261004T0707.json",
+      "sha256": "c5f56ab07678c32d13b11d95d789f164cbb4e8142911d0f0fccd8f3b293f54c9"
+    },
+    "scriptSha256": {
+      "run-development.py": "86c3d5e66f6858c9a59e428e79779f4a441bcf55b87660670956d3583f4820a4",
+      "run-campaign.py": "790119b721e416ee01a9c532007bd302cf49a82983438e44c1a93d36c58cdb9b",
+      "workflow24-helpers.py": "c9a71f12cb49dce3e8a5f8136c7a450bebae7dad8558bcacf777fbac57e8eacd",
+      "run-workflow24-level3-pinned.py": "8914735a343403e62547209a6b3028f8bff65c535a0b3145ab3e083c9dc35777"
+    },
+    "predecessorMatrix": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-development-20261003/workflow-1gib-matrix-pinned-20261003T172229Z-c571f026",
+    "predecessorExecutionsSha256": "fce6e001dae0114b95f01a8232ecb0393ffc43a664b98a3f01f41d300d51fe0b",
+    "predecessorPlanSha256": "8478a6731225e471886ec61cfbd0eacb4d7411c4e393919c7087470565cda394"
+  },
+  "scope": "Fresh L3 source/resources, full managed/native/runtime inputs and public ZPAQ anchor; no release approval"
+}

@@ -1,0 +1,17 @@
+{
+  "testId": "performance.rev12-workflow-4kib-serpent-manual4",
+  "suite": "Serpent256",
+  "sourceBytes": 4096,
+  "requestedWorkers": 4,
+  "attempted": false,
+  "status": "NOT RUN",
+  "errors": [
+    {
+      "stage": "blocked-after-binding-or-cleanup-failure",
+      "type": "ValueError",
+      "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+    }
+  ],
+  "startedUtc": "2026-10-04T07:06:49.998552+00:00",
+  "completedUtc": "2026-10-04T07:06:49.998554+00:00"
+}

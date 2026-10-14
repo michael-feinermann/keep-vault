@@ -37,7 +37,21 @@ var smokeTests = new List<TestCase>
     new("smoke.native-snapshot-cleanup-identity", "native snapshot cleanup preserves a replacement directory", TestNativeSnapshotCleanupIdentityAsync, TestResource.Light, "Smoke", IsSmoke: true),
 };
 
-return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests).ConfigureAwait(false);
+// This requested macOS campaign processes at most 256 MiB per ordinary test,
+// plus the explicit 512-MiB Paranoia tree. A 1-GiB public extraction allowance
+// bounds both cases; production defaults and all KDF costs remain unchanged.
+using IDisposable testStoragePolicy = new ArchiveOperationPolicy(
+    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KeepVault", "Work"),
+    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    maxExtractedTotalBytes: 1L << 30, maxSingleFileBytes: 1L << 30).EnterScope();
+return await TestRunner.RunAsync(args, smokeTests, MacComprehensiveTests.AllTests
+    .Concat(EntropyRev9Tests.All)
+    .Concat(MacPhasePerformanceTests.All)
+    .Concat(OperationStoragePolicyTests.Tests)
+    .Concat(KdfHandoffFaultTests.Tests)
+    .Concat(NativeKeyHandoffTests.Tests)
+    .Concat(DownstreamHandoffFaultTests.Tests)
+    .Concat(GuiAuditTests.All).ToArray()).ConfigureAwait(false);
 
 static Task TestSha3Async()
 {
@@ -106,12 +120,12 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     (int scannerExit, string scannerOutput, _) = await RunProcessAsync(
         scannerBuilder,
         "--preflight",
-        "--version", "4.0.2",
-        "--build-number", "6").ConfigureAwait(false);
+        "--version", "5.0.3",
+        "--build-number", "15").ConfigureAwait(false);
     Require(scannerExit == 0, "QR-Scanner rejected valid release version/build arguments.");
     Require(
-        scannerOutput.Contains("preflight_version=4.0.2", StringComparison.Ordinal)
-            && scannerOutput.Contains("preflight_build=6", StringComparison.Ordinal)
+        scannerOutput.Contains("preflight_version=5.0.3", StringComparison.Ordinal)
+            && scannerOutput.Contains("preflight_build=15", StringComparison.Ordinal)
             && scannerOutput.Contains("preflight_single_instance=true", StringComparison.Ordinal),
         "QR-Scanner did not render the requested release metadata and single-instance policy in preflight.");
 
@@ -120,6 +134,28 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
     string installerBoundDeleteSourceText = await File.ReadAllTextAsync(installerBoundDeleteSource).ConfigureAwait(false);
     string installerBoundDeleteSelfTestSource = await File.ReadAllTextAsync(installerBoundDeleteSelfTest).ConfigureAwait(false);
     string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
+    string installationManifestVerifierSource = await File.ReadAllTextAsync(
+        Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier", "InstallationManifestVerifier.cs")).ConfigureAwait(false);
+    Require(keepVaultBuilderSource.Contains("build_version='22'", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"22\"", StringComparison.Ordinal)
+        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"22\")", StringComparison.Ordinal),
+        "The release builder and strict installation manifest/bundle build pins differ.");
+    foreach ((string version, string build) in new[]
+        { ("5.0.3", "21"), ("5.0.3", "23"), ("5.0.2", "22"), ("5.0.3", "invalid") })
+    {
+        (int mismatchedIdentityExit, _, _) = await RunProcessAsync(
+            keepVaultBuilder, "--version", version, "--build-number", build, "--preflight").ConfigureAwait(false);
+        Require(mismatchedIdentityExit == 64,
+            "The builder accepted metadata that cannot match its compiled installation verifier.");
+    }
+    (int conflictingModeExit, _, _) = await RunProcessAsync(
+        keepVaultBuilder, "--prerelease", "--release", "--preflight").ConfigureAwait(false);
+    Require(conflictingModeExit == 64,
+        "The builder accepted simultaneous provisional and complete release modes.");
+    (int unsignedPrereleaseExit, _, _) = await RunProcessAsync(
+        keepVaultBuilder, "--prerelease", "--notary-profile", "", "--preflight").ConfigureAwait(false);
+    Require(unsignedPrereleaseExit == 2,
+        "The provisional builder accepted a missing notarization method.");
     string portableBuilderSource = await File.ReadAllTextAsync(portableBuilder).ConfigureAwait(false);
     string releasePublishRenameSource = await File.ReadAllTextAsync(releasePublishRename).ConfigureAwait(false);
     string[] installerFailurePoints =

@@ -1,0 +1,17 @@
+{
+  "testId": "performance.rev12-workflow-4kib-standard-manual1",
+  "suite": "StandardCascade",
+  "sourceBytes": 4096,
+  "requestedWorkers": 1,
+  "attempted": false,
+  "status": "NOT RUN",
+  "errors": [
+    {
+      "stage": "blocked-after-binding-or-cleanup-failure",
+      "type": "ValueError",
+      "message": "Another test/SDK/ZPAQ or workflow administration process is live"
+    }
+  ],
+  "startedUtc": "2026-10-04T07:06:49.986733+00:00",
+  "completedUtc": "2026-10-04T07:06:49.986737+00:00"
+}

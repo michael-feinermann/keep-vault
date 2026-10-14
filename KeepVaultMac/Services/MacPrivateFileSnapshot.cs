@@ -55,7 +55,7 @@ internal sealed class MacPrivateFileSnapshot : IDisposable
         ArgumentNullException.ThrowIfNull(fileName);
         return CaptureCore(
             source,
-            MaximumSnapshotBytes,
+            Math.Min(MaximumSnapshotBytes, checked((ulong)ArchiveOperationPolicy.Current.MaxContainerBytes)),
             testFlags: 0,
             afterCopyBeforeSourceValidation: null,
             useTestExport: false);
@@ -114,6 +114,23 @@ internal sealed class MacPrivateFileSnapshot : IDisposable
         return Task.Run(() => Capture(sourcePath), cancellationToken);
     }
 
+    internal static Task<MacPrivateFileSnapshot> CaptureAsync(
+        string sourcePath,
+        CancellationToken cancellationToken,
+        long maximumBytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumBytes);
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.Run(() =>
+        {
+            string fullPath = Path.GetFullPath(sourcePath);
+            using FileStream source = MacSafeFileSystem.OpenReadNoSymlinks(fullPath);
+            _ = NativePathResolver.RequireCanonicalFilePath(source.SafeFileHandle, fullPath, "Sensitive input");
+            return CaptureCore(source, Math.Min(MaximumSnapshotBytes, checked((ulong)maximumBytes)),
+                testFlags: 0, afterCopyBeforeSourceValidation: null, useTestExport: false);
+        }, cancellationToken);
+    }
+
     public void Dispose()
     {
         Interlocked.Exchange(ref _stream, null)?.Dispose();
@@ -162,7 +179,7 @@ internal sealed class MacPrivateFileSnapshot : IDisposable
                     callbackContext = GCHandle.ToIntPtr(callbackHandle);
                 }
 
-                status = NativeChaChaPoly.CreateMacAnonymousSnapshotForTests(
+                status = NativeXChaChaPoly.CreateMacAnonymousSnapshotForTests(
                     sourceDescriptor,
                     maximumBytes,
                     testFlags,
@@ -175,7 +192,7 @@ internal sealed class MacPrivateFileSnapshot : IDisposable
             }
             else
             {
-                status = NativeChaChaPoly.CreateMacAnonymousSnapshot(
+                status = NativeXChaChaPoly.CreateMacAnonymousSnapshot(
                     sourceDescriptor,
                     maximumBytes,
                     out snapshotDescriptor,
@@ -299,7 +316,7 @@ internal sealed class MacPrivateFileSnapshot : IDisposable
     {
         if ((mappingAddress == 0) == (logicalSize == 0))
         {
-            _ = NativeChaChaPoly.ReleaseMacAnonymousSnapshot(
+            _ = NativeXChaChaPoly.ReleaseMacAnonymousSnapshot(
                 mappingAddress,
                 logicalSize,
                 out _);
@@ -583,7 +600,7 @@ internal sealed class MacPrivateFileSnapshot : IDisposable
         {
             try
             {
-                return NativeChaChaPoly.ReleaseMacAnonymousSnapshot(
+                return NativeXChaChaPoly.ReleaseMacAnonymousSnapshot(
                     unchecked((ulong)handle.ToInt64()),
                     LogicalLength,
                     out _) == SnapshotSuccess;

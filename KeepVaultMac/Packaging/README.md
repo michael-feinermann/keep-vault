@@ -45,7 +45,9 @@ Es gibt keine Netzwerk-, Kamera-, Mikrofon-, USB-, Bluetooth-, Apple-Events-,
 Debug-, JIT-, Unsigned-Memory- oder Library-Validation-Ausnahme. ZPAQ und das
 Argon2-Kommandozeilenwerkzeug erhalten keine zusaetzlichen Sandbox- oder
 Inherit-Entitlements. Fuer ZPAQ gelten ausserdem die restriktiven,
-operationsspezifischen Seatbelt-Profile und der root-eigene v12-Ausfuehrungsanker.
+operationsspezifischen Seatbelt-Profile und der root-eigene v13-Ausfuehrungsanker.
+
+Der aktuelle REV12-Quellstand zielt auf Keep Vault 5.0.3, Build 20 und Container v13. Der installierte ZPAQ-Anker liegt unter `/Library/Application Support/Keep Vault/v13`. Das getrennte Format der Release-Schlüsselhüllen und dessen Dateinamen `.v12.enc` bleiben unverändert; sie sind keine Containerformat-Kennungen. Finale Universal-/AOT-Binaries, Signierung, Notarisierung, Paketprüfung, Installation und reale GUI-Abnahme benötigen eigene Belege. Historische Prüfungen geben die neuen Bytes nicht frei. Den tatsächlichen Stand hält der [5.0.3-Releasebericht](../../docs/KEEP_VAULT_5_0_3_RELEASE_REPORT.md) fest.
 
 ## Private Release-Schluessel
 

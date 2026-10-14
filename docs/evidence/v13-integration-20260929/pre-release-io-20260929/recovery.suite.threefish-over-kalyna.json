@@ -1,0 +1,44 @@
+{
+  "command": [
+    "/opt/homebrew/bin/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-dev-trust-20260928/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "recovery.suite.threefish-over-kalyna",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x5EED0313"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 13.331475000013597,
+  "result": {
+    "schemaVersion": 3,
+    "head": "837e36cf1da2c6940c616348edaed4b03ff05bec",
+    "testInventoryHash": "d080f210e9893d523d0e16bb80d082bd75dfcc9ac3304ab383aa8c9f60e69874",
+    "platform": "macos",
+    "osArchitecture": "arm64",
+    "processArchitecture": "arm64",
+    "hardware": "10 logical CPUs, 16 GiB, macOS 26.6.2",
+    "budget": {
+      "maxWorkers": 1,
+      "cpuTokens": 9,
+      "memoryMiB": 9011,
+      "argonSlots": 2,
+      "zpaqSlots": 1
+    },
+    "tests": [
+      {
+        "id": "recovery.suite.threefish-over-kalyna",
+        "name": "KPAR2 v4 authenticates and rejects wrong credentials: StandardCascade",
+        "status": "PASS",
+        "seconds": 13.12,
+        "peakRssMiB": 2041,
+        "seed": "0x5EED0313",
+        "failure": null
+      }
+    ]
+  },
+  "log_sha256": "cab30eab63df8e9b1456e91e733e9abfe47078fc648a5bacb75b7158473ab5fd"
+}

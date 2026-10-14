@@ -1,0 +1,21 @@
+{
+  "startedUtc": "2026-10-04T10:16:11.308104+00:00",
+  "completedUtc": "2026-10-04T10:37:09.656685+00:00",
+  "command": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev11-release-b41144e/resume-harness/sdk/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-gui-final-20261004/build-20261004T082228Z/artifacts/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+    "--full",
+    "--parallel",
+    "1",
+    "--dump-key-sheets",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/rev12-full-current-20261004/public-key-sheets"
+  ],
+  "exitCode": 0,
+  "logSha256": "b15ffeb56068bffdd97d2dc2ce236027b756d38c960ac5a0fb8020fed3871c88",
+  "files": {
+    "test-results.json": "95831a375d66fb48376a1f3528a9d20913ba834a1eaf54efd13ece4f60cf05f8",
+    "test-timings.json": "7b39d457fb307242e2e4f690e1c95fa08d76cc86aeadfdd239ec3fe67a0f1401"
+  },
+  "sourceInputsSha256": "57533b7d826d3950ec03716b86419a9575721d92124fd0cd31afff71b79a576f",
+  "scope": "REV12 development evidence; no installed GUI or release approval."
+}
