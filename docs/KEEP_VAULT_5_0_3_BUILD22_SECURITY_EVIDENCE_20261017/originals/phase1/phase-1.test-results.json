@@ -1,0 +1,2889 @@
+{
+  "schemaVersion": 3,
+  "head": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "testInventoryHash": "3b3fb99acb9525e96351c65839f1eadd5c7408ef50d26f30c31fd02275059a96",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "infra.runner-invariants",
+      "name": "test runner reservation, inventory, peak-RSS and result-schema invariants",
+      "status": "PASS",
+      "seconds": 0.677,
+      "peakRssMiB": 76,
+      "seed": "0x6C6F1227",
+      "failure": null
+    },
+    {
+      "id": "smoke.sha3-512-fips",
+      "name": "SHA3-512 FIPS vector",
+      "status": "PASS",
+      "seconds": 0.005,
+      "peakRssMiB": 60,
+      "seed": "0x715BD140",
+      "failure": null
+    },
+    {
+      "id": "smoke.hmac-sha3-512",
+      "name": "HMAC-SHA3-512 vector",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 59,
+      "seed": "0x5C49D7A9",
+      "failure": null
+    },
+    {
+      "id": "smoke.descriptor-identity",
+      "name": "descriptor identity",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x6A4710D5",
+      "failure": null
+    },
+    {
+      "id": "smoke.symlink-rejection",
+      "name": "symlink rejection",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x1C1E5FE7",
+      "failure": null
+    },
+    {
+      "id": "smoke.archive-input-symlink",
+      "name": "archive-input symlink rejection",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 56,
+      "seed": "0x79EFCE1A",
+      "failure": null
+    },
+    {
+      "id": "smoke.archive-input-snapshot-location",
+      "name": "container-private archive-input snapshot",
+      "status": "PASS",
+      "seconds": 0.012,
+      "peakRssMiB": 60,
+      "seed": "0x670610F5",
+      "failure": null
+    },
+    {
+      "id": "smoke.archive-input-snapshot-races",
+      "name": "archive-input snapshot root and entry substitution rejection",
+      "status": "PASS",
+      "seconds": 0.048,
+      "peakRssMiB": 59,
+      "seed": "0x20FECD84",
+      "failure": null
+    },
+    {
+      "id": "smoke.archive-input-hardlink",
+      "name": "archive-input hard-link alias rejection",
+      "status": "PASS",
+      "seconds": 0.031,
+      "peakRssMiB": 64,
+      "seed": "0x7E769073",
+      "failure": null
+    },
+    {
+      "id": "smoke.overlapping-input-normalization",
+      "name": "overlapping archive-input normalization",
+      "status": "PASS",
+      "seconds": 0.011,
+      "peakRssMiB": 60,
+      "seed": "0x66E59A32",
+      "failure": null
+    },
+    {
+      "id": "smoke.trailing-separator-folder",
+      "name": "folder input with a trailing separator",
+      "status": "PASS",
+      "seconds": 0.759,
+      "peakRssMiB": 80,
+      "seed": "0x692C9783",
+      "failure": null
+    },
+    {
+      "id": "smoke.descriptor-bound-snapshot",
+      "name": "descriptor-bound private snapshot",
+      "status": "PASS",
+      "seconds": 0.265,
+      "peakRssMiB": 71,
+      "seed": "0x4594EA79",
+      "failure": null
+    },
+    {
+      "id": "smoke.private-snapshot-cleanup-identity",
+      "name": "private snapshot is anonymous and read-only",
+      "status": "PASS",
+      "seconds": 0.147,
+      "peakRssMiB": 71,
+      "seed": "0x1F4683B1",
+      "failure": null
+    },
+    {
+      "id": "smoke.private-snapshot-race-failclosed",
+      "name": "private snapshot rejects source mutation during copy",
+      "status": "PASS",
+      "seconds": 0.155,
+      "peakRssMiB": 74,
+      "seed": "0x463E37AA",
+      "failure": null
+    },
+    {
+      "id": "smoke.private-snapshot-resource-failures",
+      "name": "private snapshot serial/parallel equivalence, size and ENOSPC failures",
+      "status": "PASS",
+      "seconds": 0.157,
+      "peakRssMiB": 72,
+      "seed": "0x206BE6D1",
+      "failure": null
+    },
+    {
+      "id": "smoke.private-authenticated-snapshot",
+      "name": "private authenticated-input snapshot",
+      "status": "PASS",
+      "seconds": 0.158,
+      "peakRssMiB": 71,
+      "seed": "0x6FC9A726",
+      "failure": null
+    },
+    {
+      "id": "smoke.apple-signature-binding",
+      "name": "Apple signature framework binding",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 56,
+      "seed": "0x042FC1E9",
+      "failure": null
+    },
+    {
+      "id": "smoke.locked-secret-lifecycle",
+      "name": "locked secret buffer lifecycle",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 59,
+      "seed": "0x6C6F011B",
+      "failure": null
+    },
+    {
+      "id": "smoke.password-policy",
+      "name": "password policy",
+      "status": "PASS",
+      "seconds": 0.143,
+      "peakRssMiB": 148,
+      "seed": "0x1C6C7134",
+      "failure": null
+    },
+    {
+      "id": "smoke.release-companion-version",
+      "name": "release companion version plumbing",
+      "status": "PASS",
+      "seconds": 1.313,
+      "peakRssMiB": 81,
+      "seed": "0x598AEF6D",
+      "failure": null
+    },
+    {
+      "id": "smoke.native-atomic-publish",
+      "name": "native build atomic publish and hard-link isolation",
+      "status": "PASS",
+      "seconds": 0.5,
+      "peakRssMiB": 63,
+      "seed": "0x1BA2A8E8",
+      "failure": null
+    },
+    {
+      "id": "smoke.qr-atomic-publish",
+      "name": "QR distribution atomic publish and hard-link isolation",
+      "status": "PASS",
+      "seconds": 0.543,
+      "peakRssMiB": 63,
+      "seed": "0x375FEE5A",
+      "failure": null
+    },
+    {
+      "id": "smoke.release-atomic-publish",
+      "name": "release publish atomic exchange, exclusive create and identity binding",
+      "status": "PASS",
+      "seconds": 0.431,
+      "peakRssMiB": 63,
+      "seed": "0x028B52E3",
+      "failure": null
+    },
+    {
+      "id": "smoke.portable-rollback-binding",
+      "name": "portable publish rollback preserves substituted and linked objects",
+      "status": "PASS",
+      "seconds": 0.256,
+      "peakRssMiB": 63,
+      "seed": "0x09442B6F",
+      "failure": null
+    },
+    {
+      "id": "smoke.native-snapshot-cleanup-identity",
+      "name": "native snapshot cleanup preserves a replacement directory",
+      "status": "PASS",
+      "seconds": 0.079,
+      "peakRssMiB": 71,
+      "seed": "0x447D1B6A",
+      "failure": null
+    },
+    {
+      "id": "v13-header-canonical-fields",
+      "name": "strict Base64, duplicate/unknown fields and profile validation in both header APIs",
+      "status": "PASS",
+      "seconds": 0.022,
+      "peakRssMiB": 66,
+      "seed": "0x31FDAF65",
+      "failure": null
+    },
+    {
+      "id": "v13-std-catalog",
+      "name": "V13-STD-CATALOG: twelve suites, five AEADs and stable IDs",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x5A8C2914",
+      "failure": null
+    },
+    {
+      "id": "v13-std-layout",
+      "name": "V13-STD-LAYOUT: exact stage key/nonce offsets",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x5D534D1D",
+      "failure": null
+    },
+    {
+      "id": "v13-std-rolekeys",
+      "name": "V13-STD-ROLEKEYS: independent context and dual-PRF derivation",
+      "status": "PASS",
+      "seconds": 0.248,
+      "peakRssMiB": 71,
+      "seed": "0x376A62E1",
+      "failure": null
+    },
+    {
+      "id": "v13-std-tweak",
+      "name": "V13-STD-TWEAK: independent complete-nonce reference encoding",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 61,
+      "seed": "0x079CADDA",
+      "failure": null
+    },
+    {
+      "id": "v13-std-nonces-aad",
+      "name": "v13 nonce expansion and AAD at 64-bit archive indices",
+      "status": "PASS",
+      "seconds": 0.009,
+      "peakRssMiB": 61,
+      "seed": "0x6C51C8CC",
+      "failure": null
+    },
+    {
+      "id": "v13-std-composition",
+      "name": "V13-STD-COMPOSITION: independent inner CTR stages and outer native oracle",
+      "status": "PASS",
+      "seconds": 0.725,
+      "peakRssMiB": 73,
+      "seed": "0x66471EF0",
+      "failure": null
+    },
+    {
+      "id": "v13-std-default-api",
+      "name": "V13-STD-DEFAULT-API: public/internal defaults and explicit Kalyna",
+      "status": "PASS",
+      "seconds": 1.182,
+      "peakRssMiB": 184,
+      "seed": "0x22D85281",
+      "failure": null
+    },
+    {
+      "id": "v13-std-header",
+      "name": "V13-STD-HEADER: actual canonical writer header",
+      "status": "PASS",
+      "seconds": 0.765,
+      "peakRssMiB": 173,
+      "seed": "0x64085F82",
+      "failure": null
+    },
+    {
+      "id": "v13-std-framing",
+      "name": "V13-STD-FRAMING: short reads, full/partial chunks and ordered slots",
+      "status": "PASS",
+      "seconds": 2.397,
+      "peakRssMiB": 638,
+      "seed": "0x6436D752",
+      "failure": null
+    },
+    {
+      "id": "v13-std-nolegacy",
+      "name": "V13-STD-NOLEGACY: old versions, algorithms, KDF and nonce widths rejected",
+      "status": "PASS",
+      "seconds": 0.733,
+      "peakRssMiB": 173,
+      "seed": "0x7B839BA3",
+      "failure": null
+    },
+    {
+      "id": "v13-std-tamper",
+      "name": "V13-STD-TAMPER: global MAC AND and independently reached local tag failure",
+      "status": "PASS",
+      "seconds": 0.79,
+      "peakRssMiB": 177,
+      "seed": "0x3EFD8CCF",
+      "failure": null
+    },
+    {
+      "id": "v13-cascade-independent-composition",
+      "name": "Standard/Paranoia independent intermediate stages and identical libsodium/Go outer AEAD",
+      "status": "PASS",
+      "seconds": 1.326,
+      "peakRssMiB": 80,
+      "seed": "0x54BDE7CD",
+      "failure": null
+    },
+    {
+      "id": "v13-par8-header-auth",
+      "name": "Paranoia writer header, two global MAC gates and recomputed-global-MAC local tag rejection",
+      "status": "PASS",
+      "seconds": 1.258,
+      "peakRssMiB": 183,
+      "seed": "0x795A1291",
+      "failure": null
+    },
+    {
+      "id": "v13-par8-rolekeys",
+      "name": "Paranoia eight independent stage contexts, dual PRF values, MAC/recovery roles and tweak index",
+      "status": "PASS",
+      "seconds": 0.116,
+      "peakRssMiB": 71,
+      "seed": "0x0F1CD345",
+      "failure": null
+    },
+    {
+      "id": "v13-header-seeded-fuzz",
+      "name": "10,000 unique seeded canonical/malformed headers through both metadata consumers",
+      "status": "PASS",
+      "seconds": 0.583,
+      "peakRssMiB": 81,
+      "seed": "0x486CED6C",
+      "failure": null
+    },
+    {
+      "id": "v13-nonce-seeded-fuzz",
+      "name": "10,000 seeded ActivePrefix transcripts and malformed API boundaries",
+      "status": "PASS",
+      "seconds": 0.22,
+      "peakRssMiB": 74,
+      "seed": "0x3975982E",
+      "failure": null
+    },
+    {
+      "id": "fuzz.verified-input-10000",
+      "name": "10000 seeded locally sealed original states, mutations and guarded range oracles",
+      "status": "PASS",
+      "seconds": 117.72,
+      "peakRssMiB": 228,
+      "seed": "0x5C585ECF",
+      "failure": null
+    },
+    {
+      "id": "fuzz.verified-read-at-server-10000",
+      "name": "10000 seeded bounded read-at request frames with guarded response oracles",
+      "status": "PASS",
+      "seconds": 1.472,
+      "peakRssMiB": 72,
+      "seed": "0x69C67D63",
+      "failure": null
+    },
+    {
+      "id": "fuzz.recovery-streaming-10000",
+      "name": "10000 seeded canonical/hostile KPAR4 metadata streams with fragmented reads",
+      "status": "PASS",
+      "seconds": 5.634,
+      "peakRssMiB": 91,
+      "seed": "0x3EE69226",
+      "failure": null
+    },
+    {
+      "id": "crypto.hash-cleanup-regression",
+      "name": "SHA3/SHA512 reset, HMAC BC equivalence and owned-pad disposal",
+      "status": "PASS",
+      "seconds": 0.512,
+      "peakRssMiB": 64,
+      "seed": "0x5C2AD90E",
+      "failure": null
+    },
+    {
+      "id": "v13-nonce-vectors",
+      "name": "V13-NONCE-TRANSCRIPT: 84 independent Python vectors and 64-bit indices",
+      "status": "PASS",
+      "seconds": 0.009,
+      "peakRssMiB": 62,
+      "seed": "0x1A5D77FC",
+      "failure": null
+    },
+    {
+      "id": "v13-nonce-plan",
+      "name": "V13-NONCE-PLAN/SLICES: twelve catalog widths and eight-stage Paranoia",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 57,
+      "seed": "0x65F550FB",
+      "failure": null
+    },
+    {
+      "id": "v13-nonce-isolation",
+      "name": "V13-NONCE-BLOCK-ISOLATION/RESERVE: active input bits and all reserved bytes",
+      "status": "PASS",
+      "seconds": 0.152,
+      "peakRssMiB": 68,
+      "seed": "0x2B2B4D4E",
+      "failure": null
+    },
+    {
+      "id": "v13-nonce-capacity",
+      "name": "V13-NONCE-CAPACITY/FUTURE-B2: isolated trusted layouts up to ten blocks",
+      "status": "PASS",
+      "seconds": 0.011,
+      "peakRssMiB": 61,
+      "seed": "0x5D9D7A43",
+      "failure": null
+    },
+    {
+      "id": "v13-nonce-faults",
+      "name": "V13-NONCE-HASHCOUNT/FAULTS: exact jobs, overlap, cancellation and partial cleanup",
+      "status": "PASS",
+      "seconds": 0.008,
+      "peakRssMiB": 61,
+      "seed": "0x451EC2AA",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-finalization-golden",
+      "name": "REV9 isolated P1/P2 finalization and 320-byte XOR against frozen Python values",
+      "status": "PASS",
+      "seconds": 0.009,
+      "peakRssMiB": 61,
+      "seed": "0x270B7BD5",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-cache-equivalence",
+      "name": "REV9 4/16/64 KiB shuffle caches consume equivalent public streams",
+      "status": "PASS",
+      "seconds": 0.732,
+      "peakRssMiB": 79,
+      "seed": "0x196486D5",
+      "failure": null
+    },
+    {
+      "id": "crypto.v13-camellia-reference",
+      "name": "Camellia-256 KAT, independent CTR and full-width carry",
+      "status": "PASS",
+      "seconds": 1.021,
+      "peakRssMiB": 174,
+      "seed": "0x3042FAF4",
+      "failure": null
+    },
+    {
+      "id": "crypto.v13-serpent-reference",
+      "name": "Final Serpent-256 KAT, independent CTR and full-width carry",
+      "status": "PASS",
+      "seconds": 0.942,
+      "peakRssMiB": 167,
+      "seed": "0x73EBC3B2",
+      "failure": null
+    },
+    {
+      "id": "v13-usage-boundaries",
+      "name": "per-key payload/chunk/MAC limits independent of resource policy",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x20F05411",
+      "failure": null
+    },
+    {
+      "id": "v13-usage-writer-guard",
+      "name": "oversize public stream API fails before native loading, reads or output creation",
+      "status": "PASS",
+      "seconds": 0.005,
+      "peakRssMiB": 60,
+      "seed": "0x0E7E23A3",
+      "failure": null
+    },
+    {
+      "id": "v13-usage-reader-guard",
+      "name": "oversize canonical-header API fails before native loading or ciphertext reads",
+      "status": "PASS",
+      "seconds": 0.017,
+      "peakRssMiB": 63,
+      "seed": "0x0AF0592D",
+      "failure": null
+    },
+    {
+      "id": "v13-usage-model",
+      "name": "exact integer collision, interval and primitive budget arithmetic",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x2A4B5F75",
+      "failure": null
+    },
+    {
+      "id": "release.v13-paranoia-structure512",
+      "name": "v13 Paranoia 256 MiB tree plus 256 MiB file, production KDF, KPAR2 repair and full structural comparison",
+      "status": "PASS",
+      "seconds": 246.381,
+      "peakRssMiB": 2337,
+      "seed": "0x638B2805",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-domain-kats",
+      "name": "fixed local HMAC/Skein domain vectors from independent oracles",
+      "status": "PASS",
+      "seconds": 0.357,
+      "peakRssMiB": 71,
+      "seed": "0x35251204",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-state",
+      "name": "bound original input requires both global tags and revokes verifier view",
+      "status": "PASS",
+      "seconds": 0.729,
+      "peakRssMiB": 90,
+      "seed": "0x5B33119A",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-ranges",
+      "name": "unaligned authenticated ranges and exact disk record framing",
+      "status": "PASS",
+      "seconds": 0.422,
+      "peakRssMiB": 88,
+      "seed": "0x3AE2B334",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-descriptor-capture",
+      "name": "parallel multi-range captures retain descriptor ownership without buffered cursor races",
+      "status": "PASS",
+      "seconds": 2.679,
+      "peakRssMiB": 133,
+      "seed": "0x5DA42E7F",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-read-only-seal",
+      "name": "kernel read-only handles replace capture writers and reject substitution before unlink",
+      "status": "PASS",
+      "seconds": 0.64,
+      "peakRssMiB": 90,
+      "seed": "0x64983483",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-tamper",
+      "name": "original, index, truncation, extension and cross-operation replay rejection",
+      "status": "PASS",
+      "seconds": 1.177,
+      "peakRssMiB": 91,
+      "seed": "0x569C2CCF",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-private-copy",
+      "name": "verified private bytes survive later original mutation; reread fails",
+      "status": "PASS",
+      "seconds": 0.375,
+      "peakRssMiB": 88,
+      "seed": "0x73C65500",
+      "failure": null
+    },
+    {
+      "id": "io.verified-original",
+      "name": "plain original index avoids plaintext copy and rejects later source mutation",
+      "status": "PASS",
+      "seconds": 0.37,
+      "peakRssMiB": 88,
+      "seed": "0x0052D01E",
+      "failure": null
+    },
+    {
+      "id": "io.plain-manifest-rejection",
+      "name": "plain archive rejects either digest or changed bytes before lease and extraction publication",
+      "status": "PASS",
+      "seconds": 0.176,
+      "peakRssMiB": 74,
+      "seed": "0x53737B27",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-policy",
+      "name": "64-bit policy arithmetic, capacity and cancellation",
+      "status": "PASS",
+      "seconds": 0.017,
+      "peakRssMiB": 62,
+      "seed": "0x6E0BAB8B",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-parallel-lifetime",
+      "name": "independent sealed range readers join before key and full-buffer cleanup",
+      "status": "PASS",
+      "seconds": 1.26,
+      "peakRssMiB": 121,
+      "seed": "0x1CF9275B",
+      "failure": null
+    },
+    {
+      "id": "io.verified-input-cleanup-retry",
+      "name": "failed capture retains closed owners and retries cleanup before another capture",
+      "status": "PASS",
+      "seconds": 0.192,
+      "peakRssMiB": 85,
+      "seed": "0x0EC5BF0C",
+      "failure": null
+    },
+    {
+      "id": "recovery.streaming-metadata-canonical",
+      "name": "bounded KPAR4 canonical streaming preserves exact wire bytes",
+      "status": "PASS",
+      "seconds": 0.144,
+      "peakRssMiB": 71,
+      "seed": "0x162F4902",
+      "failure": null
+    },
+    {
+      "id": "recovery.streaming-metadata-negative",
+      "name": "streaming metadata rejects duplicate, oversized, truncated and noncanonical JSON",
+      "status": "PASS",
+      "seconds": 0.153,
+      "peakRssMiB": 71,
+      "seed": "0x07944586",
+      "failure": null
+    },
+    {
+      "id": "recovery.streaming-metadata-large-logical",
+      "name": "64-bit logical archive geometry with bounded disk-backed digest tables",
+      "status": "PASS",
+      "seconds": 0.677,
+      "peakRssMiB": 84,
+      "seed": "0x0F734E9D",
+      "failure": null
+    },
+    {
+      "id": "resources.shared-memory-budget",
+      "name": "nested reuse, aggregate contention, cancellation and live entropy accounting",
+      "status": "PASS",
+      "seconds": 0.006,
+      "peakRssMiB": 60,
+      "seed": "0x4F46CCBD",
+      "failure": null
+    },
+    {
+      "id": "resources.shared-runtime-budget",
+      "name": "unbounded wall/CPU/stall observations, manual cancellation and real failures",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 56,
+      "seed": "0x1355E05B",
+      "failure": null
+    },
+    {
+      "id": "v13-time-no-wall",
+      "name": "monotonic four-hour, day and multi-day observations have no deadline authority",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x463D60E2",
+      "failure": null
+    },
+    {
+      "id": "v13-time-no-cpu",
+      "name": "parent and child CPU beyond 32 hours remain observations",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x1A9DF2F0",
+      "failure": null
+    },
+    {
+      "id": "v13-time-no-stall-abort",
+      "name": "long stalls affect estimates without cancelling work",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x19304A86",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-counts",
+      "name": "disjoint sources aggregate absolute counts exactly once",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x48717D6A",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-order",
+      "name": "stale source, phase, operation and terminal messages cannot overwrite ownership",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x70150824",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-unknown",
+      "name": "unknown totals and KDF do not gain a fabricated ETA",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x06AF7A21",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-eta",
+      "name": "independent constant-rate example, EWMA, zero-work intervals and warmup",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x5835CC59",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-stale",
+      "name": "heartbeats do not refresh work, stalls recover without time abort",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x3AFF0E30",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-clock",
+      "name": "UTC jumps, resource pause, resume and invalid monotonic observations",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x1A9385DB",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-overlap",
+      "name": "mixed-unit phases and unknown future work have no invented overall duration",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x4E83A3C9",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-finish",
+      "name": "full data phase cannot authorize success before outer commit and cleanup",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x4F178439",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-bounds",
+      "name": "size seams, Int64 overflow, bounded sources and impossible counts",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 57,
+      "seed": "0x7E003431",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-equivalence",
+      "name": "twelve actual suite outputs remain byte-identical with a polling observer and a broken clock",
+      "status": "PASS",
+      "seconds": 2.826,
+      "peakRssMiB": 201,
+      "seed": "0x5098AED3",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-privacy",
+      "name": "progress DTO permits only public counters, identifiers, enums and durations",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x7807936D",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-perf",
+      "name": "hot updates allocate no per-message objects; polling storage remains bounded",
+      "status": "PASS",
+      "seconds": 0.046,
+      "peakRssMiB": 60,
+      "seed": "0x7F785FA2",
+      "failure": null
+    },
+    {
+      "id": "v13-golden-readonly",
+      "name": "independent verifier rejects missing, invalid and on-disk mutated fixtures without writing them",
+      "status": "PASS",
+      "seconds": 1.611,
+      "peakRssMiB": 68,
+      "seed": "0x699B6BE8",
+      "failure": null
+    },
+    {
+      "id": "v13-progress-native-ipc",
+      "name": "bounded native control framing, CPU-one grants, orderly close and invalid write cleanup",
+      "status": "PASS",
+      "seconds": 0.022,
+      "peakRssMiB": 63,
+      "seed": "0x701386B1",
+      "failure": null
+    },
+    {
+      "id": "v13-zpaq-bound-source",
+      "name": "bound original-source windows detect mutation without copying the source tree",
+      "status": "PASS",
+      "seconds": 0.012,
+      "peakRssMiB": 61,
+      "seed": "0x49CEFC0B",
+      "failure": null
+    },
+    {
+      "id": "v13-zpaq-cpu-one",
+      "name": "native CPU-one regular archive creation and extraction through bound original reads",
+      "status": "PASS",
+      "seconds": 9.619,
+      "peakRssMiB": 92,
+      "seed": "0x1F75AA8F",
+      "failure": null
+    },
+    {
+      "id": "v13-zpaq-phase-readiness",
+      "name": "native launch follows preparation and failure joins the stream owner",
+      "status": "PASS",
+      "seconds": 0.006,
+      "peakRssMiB": 57,
+      "seed": "0x6FE143A7",
+      "failure": null
+    },
+    {
+      "id": "v13-zpaq-owner-lifetime",
+      "name": "native ownership survives bounded cleanup while child or callbacks remain alive",
+      "status": "PASS",
+      "seconds": 0.191,
+      "peakRssMiB": 60,
+      "seed": "0x5CE5E246",
+      "failure": null
+    },
+    {
+      "id": "deletion.rev11-creation-binding",
+      "name": "pre-creation file/directory identities, topology, bounded inventory and final deletion authority",
+      "status": "PASS",
+      "seconds": 0.047,
+      "peakRssMiB": 63,
+      "seed": "0x488071B5",
+      "failure": null
+    },
+    {
+      "id": "fuzz.rev11-original-reader-10000",
+      "name": "10000 seeded fused original-reader cases with private-slice canaries",
+      "status": "PASS",
+      "seconds": 35.144,
+      "peakRssMiB": 143,
+      "seed": "0x55D68070",
+      "failure": null
+    },
+    {
+      "id": "fuzz.rev11-range-index-10000",
+      "name": "10000 seeded identical public records across RAM/file/migrated backends",
+      "status": "PASS",
+      "seconds": 66.795,
+      "peakRssMiB": 216,
+      "seed": "0x16289337",
+      "failure": null
+    },
+    {
+      "id": "io.rev11-input-fused",
+      "name": "V13-INPUT-FUSED: unchanged global transcript from one physical original pass",
+      "status": "PASS",
+      "seconds": 1.607,
+      "peakRssMiB": 178,
+      "seed": "0x5A114A8A",
+      "failure": null
+    },
+    {
+      "id": "io.rev11-index-ram-small",
+      "name": "V13-INDEX-RAM-SMALL: absent unused workspace and lazy resident records",
+      "status": "PASS",
+      "seconds": 0.151,
+      "peakRssMiB": 76,
+      "seed": "0x3508E102",
+      "failure": null
+    },
+    {
+      "id": "io.rev11-index-cache-boundary",
+      "name": "V13-INDEX-SPILL: actual 16-MiB shared cache threshold minus/at/plus one byte",
+      "status": "PASS",
+      "seconds": 0.089,
+      "peakRssMiB": 100,
+      "seed": "0x29EC24A0",
+      "failure": null
+    },
+    {
+      "id": "io.rev11-index-identical",
+      "name": "V13-INDEX-IDENTICAL: fixed public keys, one/two workers and RAM/file produce the same 204-byte records",
+      "status": "PASS",
+      "seconds": 1.066,
+      "peakRssMiB": 179,
+      "seed": "0x73F864DC",
+      "failure": null
+    },
+    {
+      "id": "io.rev11-index-spill",
+      "name": "V13-INDEX-SPILL/IDENTICAL: shared resident quota, exact migration and missing-volume rejection",
+      "status": "PASS",
+      "seconds": 0.023,
+      "peakRssMiB": 66,
+      "seed": "0x31CDE0D3",
+      "failure": null
+    },
+    {
+      "id": "io.rev11-header-binding",
+      "name": "V13-INPUT-HEADER-BIND: preflight header and stored tags cannot change during KDF",
+      "status": "PASS",
+      "seconds": 0.224,
+      "peakRssMiB": 85,
+      "seed": "0x6DDB86AD",
+      "failure": null
+    },
+    {
+      "id": "io.rev11-repair-erasures",
+      "name": "V13-REPAIR-ERASURES: frozen unreadable regions cannot grant normal authenticity or widen later",
+      "status": "PASS",
+      "seconds": 0.206,
+      "peakRssMiB": 78,
+      "seed": "0x02BF44C2",
+      "failure": null
+    },
+    {
+      "id": "io.rev11-repair-capability",
+      "name": "V13-REPAIR-CAPABILITY: local ciphertext seal cannot authorize normal consumption",
+      "status": "PASS",
+      "seconds": 0.153,
+      "peakRssMiB": 75,
+      "seed": "0x24516E95",
+      "failure": null
+    },
+    {
+      "id": "recovery.record-table-layout",
+      "name": "bounded record codecs and independent HMAC/Skein authentication",
+      "status": "PASS",
+      "seconds": 0.16,
+      "peakRssMiB": 76,
+      "seed": "0x43E7A4F6",
+      "failure": null
+    },
+    {
+      "id": "recovery.record-table-tamper",
+      "name": "dual tags, payload, replay, position, lengths and terminal failure",
+      "status": "PASS",
+      "seconds": 0.184,
+      "peakRssMiB": 76,
+      "seed": "0x2533AF65",
+      "failure": null
+    },
+    {
+      "id": "recovery.record-table-cleanup",
+      "name": "retryable all-member zeroing and cleanup after unlock failure",
+      "status": "PASS",
+      "seconds": 0.131,
+      "peakRssMiB": 71,
+      "seed": "0x61AB72C4",
+      "failure": null
+    },
+    {
+      "id": "recovery.record-table-budget",
+      "name": "shared metadata budget, nested scopes and release after disposal",
+      "status": "PASS",
+      "seconds": 0.142,
+      "peakRssMiB": 75,
+      "seed": "0x0AEE8096",
+      "failure": null
+    },
+    {
+      "id": "resources.cpu-worker-budget",
+      "name": "aggregate CPU reservations, cancellation and policy ceilings",
+      "status": "PASS",
+      "seconds": 0.009,
+      "peakRssMiB": 57,
+      "seed": "0x31D75AD2",
+      "failure": null
+    },
+    {
+      "id": "spec.no-legacy-source",
+      "name": "no legacy constructions in production source",
+      "status": "PASS",
+      "seconds": 0.194,
+      "peakRssMiB": 72,
+      "seed": "0x46E3679C",
+      "failure": null
+    },
+    {
+      "id": "spec.normative-v13-docs",
+      "name": "documentation matches the normative v13 specification",
+      "status": "PASS",
+      "seconds": 0.018,
+      "peakRssMiB": 62,
+      "seed": "0x0F485FE0",
+      "failure": null
+    },
+    {
+      "id": "spec.lockfile-runtimes",
+      "name": "lock files match the platform their project builds on",
+      "status": "PASS",
+      "seconds": 2.428,
+      "peakRssMiB": 77,
+      "seed": "0x6EF05EA9",
+      "failure": null
+    },
+    {
+      "id": "security.process-hardening",
+      "name": "macOS process hardening",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 57,
+      "seed": "0x66141EC7",
+      "failure": null
+    },
+    {
+      "id": "trust.native-tools",
+      "name": "signed native trust and tamper rejection",
+      "status": "PASS",
+      "seconds": 0.491,
+      "peakRssMiB": 77,
+      "seed": "0x650C7BF5",
+      "failure": null
+    },
+    {
+      "id": "packaging.macho-signature-closure",
+      "name": "every Mach-O in the release bundle carries a hybrid signature",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 57,
+      "seed": "0x561C0799",
+      "failure": null
+    },
+    {
+      "id": "packaging.companion-qr",
+      "name": "the companion QR scanner is checked against the pinned keys",
+      "status": "PASS",
+      "seconds": 0.173,
+      "peakRssMiB": 84,
+      "seed": "0x22DD2D73",
+      "failure": null
+    },
+    {
+      "id": "packaging.installer-lock-cleanup",
+      "name": "installer lock cleanup is noninteractive on a terminal and preserves changed objects",
+      "status": "PASS",
+      "seconds": 0.535,
+      "peakRssMiB": 63,
+      "seed": "0x1D1B9D2C",
+      "failure": null
+    },
+    {
+      "id": "crypto.kdf-primitives",
+      "name": "KDF primitives against independent second implementations",
+      "status": "PASS",
+      "seconds": 0.144,
+      "peakRssMiB": 71,
+      "seed": "0x713DD8DA",
+      "failure": null
+    },
+    {
+      "id": "zpaq.verified-read-at",
+      "name": "bounded duplex native archive reads, overflow and malformed request rejection",
+      "status": "PASS",
+      "seconds": 0.72,
+      "peakRssMiB": 69,
+      "seed": "0x323E7715",
+      "failure": null
+    },
+    {
+      "id": "zpaq.verified-staging-vm",
+      "name": "v13 private VM staging framing, bounds and irreversible read-only sealing",
+      "status": "PASS",
+      "seconds": 0.447,
+      "peakRssMiB": 63,
+      "seed": "0x0BF7C8D7",
+      "failure": null
+    },
+    {
+      "id": "policy.pin-creation",
+      "name": "creation PIN policy and weak-pattern rejection",
+      "status": "PASS",
+      "seconds": 0.016,
+      "peakRssMiB": 59,
+      "seed": "0x4CD636B3",
+      "failure": null
+    },
+    {
+      "id": "policy.password",
+      "name": "password policy and KEEPVAULT term rejection",
+      "status": "PASS",
+      "seconds": 0.147,
+      "peakRssMiB": 148,
+      "seed": "0x19202EEF",
+      "failure": null
+    },
+    {
+      "id": "kdf.properties",
+      "name": "KDF properties: credential binding, PMI range and round chaining",
+      "status": "PASS",
+      "seconds": 7.634,
+      "peakRssMiB": 1698,
+      "seed": "0x43423054",
+      "failure": null
+    },
+    {
+      "id": "kdf.peak-memory-and-header",
+      "name": "peak memory stays at one Argon2 matrix, and the header leaks nothing",
+      "status": "PASS",
+      "seconds": 6.665,
+      "peakRssMiB": 1539,
+      "seed": "0x6B8560CA",
+      "failure": null
+    },
+    {
+      "id": "crypto.primitive-vectors",
+      "name": "SHA3, Skein, Kalyna and Threefish reference vectors",
+      "status": "PASS",
+      "seconds": 0.478,
+      "peakRssMiB": 169,
+      "seed": "0x13733859",
+      "failure": null
+    },
+    {
+      "id": "security.skein-workspace-wipe",
+      "name": "optimized Skein workspace wiping clears complete arrays and preserves adjacent guards on both macOS slices",
+      "status": "PASS",
+      "seconds": 1.301,
+      "peakRssMiB": 64,
+      "seed": "0x6BC909E5",
+      "failure": null
+    },
+    {
+      "id": "crypto.mldsa87-interop",
+      "name": "ML-DSA-87 managed/reference interoperability",
+      "status": "PASS",
+      "seconds": 0.178,
+      "peakRssMiB": 64,
+      "seed": "0x70EEBFD9",
+      "failure": null
+    },
+    {
+      "id": "crypto.reference-differential",
+      "name": "randomised differential testing against every reference library",
+      "status": "PASS",
+      "seconds": 0.435,
+      "peakRssMiB": 74,
+      "seed": "0x1291DEE0",
+      "failure": null
+    },
+    {
+      "id": "crypto.v13-parallel-mac-kat",
+      "name": "v13 parallel MAC tree against an independent serial KAT",
+      "status": "PASS",
+      "seconds": 0.242,
+      "peakRssMiB": 94,
+      "seed": "0x3C0649EE",
+      "failure": null
+    },
+    {
+      "id": "crypto.aes-ctr-differential",
+      "name": "AES-256 Crypto\u002B\u002B CTR against independent platform AES over 256 MiB",
+      "status": "PASS",
+      "seconds": 0.641,
+      "peakRssMiB": 868,
+      "seed": "0x5D889400",
+      "failure": null
+    },
+    {
+      "id": "crypto.kalyna-fast-path-differential",
+      "name": "Kalyna-512/512 Crypto\u002B\u002B against independent Bouncy Castle over 256 MiB",
+      "status": "PASS",
+      "seconds": 19.247,
+      "peakRssMiB": 1323,
+      "seed": "0x40F38E26",
+      "failure": null
+    },
+    {
+      "id": "crypto.chacha20-fast-path-differential",
+      "name": "ChaCha20 worker split against the serial keystream over 256 MiB",
+      "status": "PASS",
+      "seconds": 1.798,
+      "peakRssMiB": 1067,
+      "seed": "0x4803646D",
+      "failure": null
+    },
+    {
+      "id": "crypto.xchacha20-poly1305-draft03",
+      "name": "XChaCha20-Poly1305 draft KAT, independent Crypto\u002B\u002B and 16 MiB worker differential",
+      "status": "PASS",
+      "seconds": 5.515,
+      "peakRssMiB": 1264,
+      "seed": "0x73D65E33",
+      "failure": null
+    },
+    {
+      "id": "keysheet.full-factor-print",
+      "name": "the key sheet prints every character of the factor",
+      "status": "PASS",
+      "seconds": 0.013,
+      "peakRssMiB": 58,
+      "seed": "0x6467C93C",
+      "failure": null
+    },
+    {
+      "id": "security.pipeline-worker-policy",
+      "name": "v13 staging slots and aggregate native permits obey independent CPU and memory bounds",
+      "status": "PASS",
+      "seconds": 0.006,
+      "peakRssMiB": 56,
+      "seed": "0x05EF788C",
+      "failure": null
+    },
+    {
+      "id": "security.pipeline-native-concurrency",
+      "name": "bounded native teams join on cancellation and release every concurrency permit",
+      "status": "PASS",
+      "seconds": 0.009,
+      "peakRssMiB": 57,
+      "seed": "0x6E949A5C",
+      "failure": null
+    },
+    {
+      "id": "security.secure-memory-unlock-accounting",
+      "name": "mlock rollback and failed munlock preserve exact secure-memory accounting",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 59,
+      "seed": "0x2958AF29",
+      "failure": null
+    },
+    {
+      "id": "security.composite-secret-cleanup",
+      "name": "composite secret owners erase all bytes, aggregate failures and retain failed locks for retry",
+      "status": "PASS",
+      "seconds": 0.008,
+      "peakRssMiB": 60,
+      "seed": "0x54A41E95",
+      "failure": null
+    },
+    {
+      "id": "security.production-secret-cleanup-faults",
+      "name": "early, middle and last unlock failures in v13 KDF and authenticator cleanup",
+      "status": "PASS",
+      "seconds": 0.157,
+      "peakRssMiB": 79,
+      "seed": "0x0E374B56",
+      "failure": null
+    },
+    {
+      "id": "security.container-worker-multifailure",
+      "name": "parallel container workers preserve every failure in deterministic worker order",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 56,
+      "seed": "0x7EA3B2E2",
+      "failure": null
+    },
+    {
+      "id": "security.authenticator-worker-multifailure",
+      "name": "parallel authenticator workers preserve every failure in deterministic leaf order",
+      "status": "PASS",
+      "seconds": 0.009,
+      "peakRssMiB": 60,
+      "seed": "0x2726B9CC",
+      "failure": null
+    },
+    {
+      "id": "security.extraction-parent-no-side-effects",
+      "name": "rejected extraction parents create no directory through missing or symlinked ancestors",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 56,
+      "seed": "0x15D1D912",
+      "failure": null
+    },
+    {
+      "id": "recovery.manifest-json-preflight",
+      "name": "KPAR2 JSON preflight enforces geometry, token, depth, string and list caps before materialization",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 57,
+      "seed": "0x3A5649A2",
+      "failure": null
+    },
+    {
+      "id": "zpaq.process-resource-limits",
+      "name": "ZPAQ has no product deadlines; explicit cancellation, RSS and process-count limits remain",
+      "status": "PASS",
+      "seconds": 0.791,
+      "peakRssMiB": 80,
+      "seed": "0x0A5565B9",
+      "failure": null
+    },
+    {
+      "id": "zpaq.fail-fast-error-preservation",
+      "name": "ZPAQ fail-fast preserves primary and cleanup failures",
+      "status": "PASS",
+      "seconds": 0.124,
+      "peakRssMiB": 68,
+      "seed": "0x1B4130E0",
+      "failure": null
+    },
+    {
+      "id": "zpaq.sync-consumer-fail-fast",
+      "name": "synchronous streaming-consumer failure kills and joins the ZPAQ process tree",
+      "status": "PASS",
+      "seconds": 0.14,
+      "peakRssMiB": 96,
+      "seed": "0x261FDCDC",
+      "failure": null
+    },
+    {
+      "id": "zpaq.native-hardening-selftests",
+      "name": "native ZPAQ rejects stdio, thread, semaphore, root and descriptor-output fault seams",
+      "status": "PASS",
+      "seconds": 0.288,
+      "peakRssMiB": 64,
+      "seed": "0x53A383E9",
+      "failure": null
+    },
+    {
+      "id": "zpaq.three-file-commit-binding",
+      "name": "ZPAQ archive and dual-manifest commit identity binding",
+      "status": "PASS",
+      "seconds": 0.481,
+      "peakRssMiB": 82,
+      "seed": "0x69D6F3A8",
+      "failure": null
+    },
+    {
+      "id": "packaging.keychain-secret-not-in-argv",
+      "name": "hybrid wrapping key never enters argv, logs, environment or a plaintext file",
+      "status": "PASS",
+      "seconds": 0.005,
+      "peakRssMiB": 57,
+      "seed": "0x72339C54",
+      "failure": null
+    },
+    {
+      "id": "packaging.usb-wrapping-key-input",
+      "name": "explicit USB key input rejects malformed, noncanonical, linked and nonprivate files",
+      "status": "PASS",
+      "seconds": 0.012,
+      "peakRssMiB": 60,
+      "seed": "0x57D03C6D",
+      "failure": null
+    },
+    {
+      "id": "packaging.hybrid-key-separation",
+      "name": "RSA and ML-DSA use independent Keychain identities, ACLs and v12 envelopes",
+      "status": "PASS",
+      "seconds": 72.306,
+      "peakRssMiB": 75,
+      "seed": "0x123E16C9",
+      "failure": null
+    },
+    {
+      "id": "packaging.private-directory-lease",
+      "name": "private directory lease rejects ACLs and replacement",
+      "status": "PASS",
+      "seconds": 0.056,
+      "peakRssMiB": 65,
+      "seed": "0x0CCAD17A",
+      "failure": null
+    },
+    {
+      "id": "kdf.argon2-equivalence",
+      "name": "Argon2id fixed 1 GiB profile and independent equivalence",
+      "status": "PASS",
+      "seconds": 5.999,
+      "peakRssMiB": 1317,
+      "seed": "0x0FFA7D29",
+      "failure": null
+    },
+    {
+      "id": "zpaq.seatbelt-runtime",
+      "name": "operation-specific Seatbelt policy, kernel canaries, lifecycle and inherited-FD gate",
+      "status": "PASS",
+      "seconds": 32.147,
+      "peakRssMiB": 93,
+      "seed": "0x770D2647",
+      "failure": null
+    },
+    {
+      "id": "zpaq.full-matrix",
+      "name": "ZPAQ levels, streaming, traversal and malformed corpus",
+      "status": "PASS",
+      "seconds": 22.728,
+      "peakRssMiB": 110,
+      "seed": "0x28071F02",
+      "failure": null
+    },
+    {
+      "id": "zpaq.free-space-descriptor",
+      "name": "ZPAQ free-space gate stays bound to the extraction descriptor",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 56,
+      "seed": "0x3AF8E944",
+      "failure": null
+    },
+    {
+      "id": "kdf.v13-master-factor-split",
+      "name": "v13 master KDF and 512/512 factor split mutation isolation",
+      "status": "PASS",
+      "seconds": 4.138,
+      "peakRssMiB": 1826,
+      "seed": "0x0EDA3424",
+      "failure": null
+    },
+    {
+      "id": "containers.v13-production-worker-equivalence",
+      "name": "all twelve production suites are byte-identical with one worker and production workers",
+      "status": "PASS",
+      "seconds": 12.541,
+      "peakRssMiB": 825,
+      "seed": "0x1092C8C7",
+      "failure": null
+    },
+    {
+      "id": "containers.v13-kpar2-roundtrip",
+      "name": "v13 container, ZPAQ extraction and KPAR2 round trip",
+      "status": "PASS",
+      "seconds": 28.09,
+      "peakRssMiB": 2196,
+      "seed": "0x1A33E2E8",
+      "failure": null
+    },
+    {
+      "id": "deletion.quarantine-symlink",
+      "name": "quarantine rollback object binding and symlink-safe directory traversal",
+      "status": "PASS",
+      "seconds": 0.031,
+      "peakRssMiB": 65,
+      "seed": "0x449A6CDE",
+      "failure": null
+    },
+    {
+      "id": "entropy.exception-safety",
+      "name": "GeneratedArchiveEntropy exception safety and leak prevention",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 60,
+      "seed": "0x418B1F03",
+      "failure": null
+    },
+    {
+      "id": "crypto.cascade-layering",
+      "name": "cascade layering: the outer layer alone reveals nothing",
+      "status": "PASS",
+      "seconds": 0.437,
+      "peakRssMiB": 72,
+      "seed": "0x67AF4807",
+      "failure": null
+    },
+    {
+      "id": "crypto.two-round-derivation",
+      "name": "two-round key derivation from one pool consumption",
+      "status": "PASS",
+      "seconds": 0.157,
+      "peakRssMiB": 72,
+      "seed": "0x65629F57",
+      "failure": null
+    },
+    {
+      "id": "crypto.unprepared-parameters",
+      "name": "salt and nonce for every single-round suite without prepared entropy",
+      "status": "PASS",
+      "seconds": 0.783,
+      "peakRssMiB": 75,
+      "seed": "0x14FE8D92",
+      "failure": null
+    },
+    {
+      "id": "crypto.per-chunk-nonces",
+      "name": "per-chunk nonces across a multi-chunk archive",
+      "status": "PASS",
+      "seconds": 46.399,
+      "peakRssMiB": 2495,
+      "seed": "0x2A8A8940",
+      "failure": null
+    },
+    {
+      "id": "crypto.mars-shacal-vectors",
+      "name": "AES, MARS, SHACAL-2 and Threefish vectors plus independent CTR behaviour",
+      "status": "PASS",
+      "seconds": 1.57,
+      "peakRssMiB": 118,
+      "seed": "0x5AB7492E",
+      "failure": null
+    },
+    {
+      "id": "deletion.secure-file-object-binding",
+      "name": "secure deletion destroys and deletes the same object",
+      "status": "PASS",
+      "seconds": 0.04,
+      "peakRssMiB": 63,
+      "seed": "0x32E9958B",
+      "failure": null
+    },
+    {
+      "id": "recovery.sidecar-transaction",
+      "name": "KPAR2 sidecar replacement survives a failure at every step",
+      "status": "PASS",
+      "seconds": 1.082,
+      "peakRssMiB": 95,
+      "seed": "0x6FFC8911",
+      "failure": null
+    },
+    {
+      "id": "recovery.kpar2-v4-adversarial",
+      "name": "KPAR2 v4 repair, authentication and transplantation rejection",
+      "status": "PASS",
+      "seconds": 17.584,
+      "peakRssMiB": 2197,
+      "seed": "0x41B1C272",
+      "failure": null
+    },
+    {
+      "id": "recovery.parallel-worker-equivalence",
+      "name": "KPAR2 parity and reconstruction are byte-identical with one and all production workers",
+      "status": "PASS",
+      "seconds": 0.092,
+      "peakRssMiB": 119,
+      "seed": "0x49A0FD77",
+      "failure": null
+    },
+    {
+      "id": "recovery.physical-eio-repair",
+      "name": "descriptor-bound KPAR2 repairs one physical EIO shard and rejects four",
+      "status": "PASS",
+      "seconds": 0.867,
+      "peakRssMiB": 94,
+      "seed": "0x4B97271F",
+      "failure": null
+    },
+    {
+      "id": "recovery.key-derivation-failure-cleanup",
+      "name": "KPAR2 child-key derivation zeroes every completed secret when either branch boundary fails",
+      "status": "PASS",
+      "seconds": 0.129,
+      "peakRssMiB": 71,
+      "seed": "0x05F2CF18",
+      "failure": null
+    },
+    {
+      "id": "recovery.parallel-copy-fail-fast",
+      "name": "KPAR2 parallel candidate copying cancels and joins sibling workers after the first failure",
+      "status": "PASS",
+      "seconds": 0.012,
+      "peakRssMiB": 64,
+      "seed": "0x5C6ED810",
+      "failure": null
+    },
+    {
+      "id": "recovery.parallel-copy-concurrency",
+      "name": "KPAR2 starts every configured copy worker before synchronous chunk work can monopolize the queue",
+      "status": "PASS",
+      "seconds": 0.016,
+      "peakRssMiB": 64,
+      "seed": "0x710873FC",
+      "failure": null
+    },
+    {
+      "id": "recovery.parallel-copy-scheduling-failure",
+      "name": "KPAR2 cancels and joins already-scheduled copy workers when later worker scheduling fails",
+      "status": "PASS",
+      "seconds": 0.008,
+      "peakRssMiB": 60,
+      "seed": "0x350D3AE0",
+      "failure": null
+    },
+    {
+      "id": "deletion.cryptographic-erase",
+      "name": "cryptographic erase ordering and hard-link refusal",
+      "status": "PASS",
+      "seconds": 7.187,
+      "peakRssMiB": 2216,
+      "seed": "0x672FC19D",
+      "failure": null
+    },
+    {
+      "id": "deletion.original-verification",
+      "name": "verified original deletion refuses on any mismatch",
+      "status": "PASS",
+      "seconds": 0.036,
+      "peakRssMiB": 63,
+      "seed": "0x5A90AC96",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.kalyna512-512",
+      "name": "v13 container roundtrip and manipulation rejection: Kalyna512_512",
+      "status": "PASS",
+      "seconds": 11.903,
+      "peakRssMiB": 1787,
+      "seed": "0x7537F63A",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.threefish1024",
+      "name": "v13 container roundtrip and manipulation rejection: Threefish1024",
+      "status": "PASS",
+      "seconds": 14.418,
+      "peakRssMiB": 1953,
+      "seed": "0x12C74A98",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.threefish-over-kalyna",
+      "name": "v13 container roundtrip and manipulation rejection: StandardCascade",
+      "status": "PASS",
+      "seconds": 11.084,
+      "peakRssMiB": 1412,
+      "seed": "0x5809545D",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.paranoia-cascade",
+      "name": "v13 container roundtrip and manipulation rejection: ParanoiaCascade",
+      "status": "PASS",
+      "seconds": 29.304,
+      "peakRssMiB": 2110,
+      "seed": "0x62C7D35F",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.chacha-over-aes",
+      "name": "v13 container roundtrip and manipulation rejection: XChaChaOverAes",
+      "status": "PASS",
+      "seconds": 15.802,
+      "peakRssMiB": 2183,
+      "seed": "0x33F1DC65",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.aes256",
+      "name": "v13 container roundtrip and manipulation rejection: Aes256",
+      "status": "PASS",
+      "seconds": 14.29,
+      "peakRssMiB": 2128,
+      "seed": "0x7BB136B1",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.mars448",
+      "name": "v13 container roundtrip and manipulation rejection: Mars448",
+      "status": "PASS",
+      "seconds": 13.159,
+      "peakRssMiB": 2218,
+      "seed": "0x794242A5",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.shacal2-512",
+      "name": "v13 container roundtrip and manipulation rejection: Shacal2_512",
+      "status": "PASS",
+      "seconds": 10.901,
+      "peakRssMiB": 1718,
+      "seed": "0x24909C44",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.chacha20-poly1305",
+      "name": "v13 container roundtrip and manipulation rejection: XChaCha20Poly1305",
+      "status": "PASS",
+      "seconds": 15.27,
+      "peakRssMiB": 2000,
+      "seed": "0x3B0860D2",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.mixed-cascade",
+      "name": "v13 container roundtrip and manipulation rejection: MixedCascade",
+      "status": "PASS",
+      "seconds": 15.368,
+      "peakRssMiB": 2156,
+      "seed": "0x47211DA1",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.camellia256",
+      "name": "v13 container roundtrip and manipulation rejection: Camellia256",
+      "status": "PASS",
+      "seconds": 16.196,
+      "peakRssMiB": 2245,
+      "seed": "0x0EA205B2",
+      "failure": null
+    },
+    {
+      "id": "containers.suite.serpent256",
+      "name": "v13 container roundtrip and manipulation rejection: Serpent256",
+      "status": "PASS",
+      "seconds": 11.689,
+      "peakRssMiB": 2047,
+      "seed": "0x7A76A672",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.threefish-over-kalyna",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: StandardCascade",
+      "status": "PASS",
+      "seconds": 11.763,
+      "peakRssMiB": 1823,
+      "seed": "0x0CAFBC5E",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.chacha-over-aes",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: XChaChaOverAes",
+      "status": "PASS",
+      "seconds": 11.667,
+      "peakRssMiB": 2184,
+      "seed": "0x7525C7A8",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.mixed-cascade",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: MixedCascade",
+      "status": "PASS",
+      "seconds": 10.354,
+      "peakRssMiB": 2188,
+      "seed": "0x43C0EC20",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.paranoia-cascade",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: ParanoiaCascade",
+      "status": "PASS",
+      "seconds": 26.97,
+      "peakRssMiB": 2212,
+      "seed": "0x219B6A63",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.threefish1024",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: Threefish1024",
+      "status": "PASS",
+      "seconds": 13.761,
+      "peakRssMiB": 2188,
+      "seed": "0x00F2D89F",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.kalyna512-512",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: Kalyna512_512",
+      "status": "PASS",
+      "seconds": 11.263,
+      "peakRssMiB": 2227,
+      "seed": "0x23C97777",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.shacal2-512",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: Shacal2_512",
+      "status": "PASS",
+      "seconds": 10.049,
+      "peakRssMiB": 2110,
+      "seed": "0x79E9A14E",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.mars448",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: Mars448",
+      "status": "PASS",
+      "seconds": 12.383,
+      "peakRssMiB": 1911,
+      "seed": "0x234E6248",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.aes256",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: Aes256",
+      "status": "PASS",
+      "seconds": 9.498,
+      "peakRssMiB": 1858,
+      "seed": "0x4B326A9F",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.camellia256",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: Camellia256",
+      "status": "PASS",
+      "seconds": 14.28,
+      "peakRssMiB": 2225,
+      "seed": "0x7C192DFD",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.serpent256",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: Serpent256",
+      "status": "PASS",
+      "seconds": 10.547,
+      "peakRssMiB": 2046,
+      "seed": "0x0A0473CC",
+      "failure": null
+    },
+    {
+      "id": "recovery.suite.chacha20-poly1305",
+      "name": "KPAR2 v4 authenticates and rejects wrong credentials: XChaCha20Poly1305",
+      "status": "PASS",
+      "seconds": 9.943,
+      "peakRssMiB": 2013,
+      "seed": "0x16F8AB7F",
+      "failure": null
+    },
+    {
+      "id": "gui.entropy-display",
+      "name": "GUI eleven-pool entropy display beyond the 1024 minimum",
+      "status": "PASS",
+      "seconds": 3.922,
+      "peakRssMiB": 130,
+      "seed": "0x34B23B41",
+      "failure": null
+    },
+    {
+      "id": "gui.encryption-toggle-target",
+      "name": "GUI encryption toggle and target normalization",
+      "status": "PASS",
+      "seconds": 0.374,
+      "peakRssMiB": 117,
+      "seed": "0x42481B88",
+      "failure": null
+    },
+    {
+      "id": "gui.folder-target",
+      "name": "GUI folder target lands beside the folder",
+      "status": "PASS",
+      "seconds": 0.368,
+      "peakRssMiB": 117,
+      "seed": "0x105A9F68",
+      "failure": null
+    },
+    {
+      "id": "gui.destination-folder-target",
+      "name": "GUI destination picker keeps the archive inside its retained folder",
+      "status": "PASS",
+      "seconds": 0.371,
+      "peakRssMiB": 116,
+      "seed": "0x76F41A15",
+      "failure": null
+    },
+    {
+      "id": "gui.archive-picker-filter-reset",
+      "name": "GUI archive picker does not poison the shared macOS folder panel",
+      "status": "PASS",
+      "seconds": 0.37,
+      "peakRssMiB": 116,
+      "seed": "0x5A871A3B",
+      "failure": null
+    },
+    {
+      "id": "gui.password-policy",
+      "name": "GUI password policy feedback",
+      "status": "PASS",
+      "seconds": 0.574,
+      "peakRssMiB": 219,
+      "seed": "0x791EEA92",
+      "failure": null
+    },
+    {
+      "id": "gui.credential-policy-boundary",
+      "name": "GUI creation pair policy and extraction without model evaluation in both languages",
+      "status": "PASS",
+      "seconds": 0.606,
+      "peakRssMiB": 227,
+      "seed": "0x7436B476",
+      "failure": null
+    },
+    {
+      "id": "gui.original-deletion-localization",
+      "name": "GUI verified-original-deletion localization",
+      "status": "PASS",
+      "seconds": 0.391,
+      "peakRssMiB": 120,
+      "seed": "0x5B31B23D",
+      "failure": null
+    },
+    {
+      "id": "gui.erase-completion-status",
+      "name": "GUI erase completion survives deferred text events and language changes",
+      "status": "PASS",
+      "seconds": 0.48,
+      "peakRssMiB": 122,
+      "seed": "0x5156AFEA",
+      "failure": null
+    },
+    {
+      "id": "gui.resource-policy",
+      "name": "GUI resource choices freeze validated per-operation limits in both languages",
+      "status": "PASS",
+      "seconds": 0.401,
+      "peakRssMiB": 123,
+      "seed": "0x24CACFBF",
+      "failure": null
+    },
+    {
+      "id": "gui.rev11-preference-restart",
+      "name": "Auto/manual preferences survive restart and obsolete time fields stay inactive",
+      "status": "PASS",
+      "seconds": 0.4,
+      "peakRssMiB": 123,
+      "seed": "0x484F4F58",
+      "failure": null
+    },
+    {
+      "id": "gui.rev11-progress",
+      "name": "real phase widgets, unknown work, DE/EN, cancellation and authoritative completion",
+      "status": "PASS",
+      "seconds": 0.411,
+      "peakRssMiB": 123,
+      "seed": "0x0EECF330",
+      "failure": null
+    },
+    {
+      "id": "gui.rev11-observer-isolation",
+      "name": "throwing progress presentation and observer cleanup cannot retain operation ownership",
+      "status": "PASS",
+      "seconds": 0.375,
+      "peakRssMiB": 118,
+      "seed": "0x1AA30881",
+      "failure": null
+    },
+    {
+      "id": "gui.control-inventory",
+      "name": "GUI reference control inventory",
+      "status": "PASS",
+      "seconds": 0.371,
+      "peakRssMiB": 116,
+      "seed": "0x0B00B2CA",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-normalization",
+      "name": "GUI 256-character factor normalization and field handling",
+      "status": "PASS",
+      "seconds": 0.366,
+      "peakRssMiB": 116,
+      "seed": "0x76CB7199",
+      "failure": null
+    },
+    {
+      "id": "gui.secret-clearing",
+      "name": "GUI secret clearing wipes password, PIN, and factors",
+      "status": "PASS",
+      "seconds": 0.38,
+      "peakRssMiB": 119,
+      "seed": "0x4399CABC",
+      "failure": null
+    },
+    {
+      "id": "gui.streaming-thread-boundary",
+      "name": "GUI streaming callbacks execute off-thread without accessing controls",
+      "status": "PASS",
+      "seconds": 0.375,
+      "peakRssMiB": 118,
+      "seed": "0x51F689E2",
+      "failure": null
+    },
+    {
+      "id": "gui.create-failure-secret-clearing",
+      "name": "GUI create handler wipes credentials after an adversarial failure",
+      "status": "PASS",
+      "seconds": 0.389,
+      "peakRssMiB": 123,
+      "seed": "0x5921474F",
+      "failure": null
+    },
+    {
+      "id": "gui.extract-list-failure-secret-clearing",
+      "name": "GUI extract/list handlers wipe credentials after adversarial failures",
+      "status": "PASS",
+      "seconds": 0.391,
+      "peakRssMiB": 126,
+      "seed": "0x085B4EEC",
+      "failure": null
+    },
+    {
+      "id": "gui.recovery-failure-secret-clearing",
+      "name": "GUI recovery handler wipes credentials after an adversarial failure",
+      "status": "PASS",
+      "seconds": 0.384,
+      "peakRssMiB": 123,
+      "seed": "0x73B9513B",
+      "failure": null
+    },
+    {
+      "id": "gui.kdf-entropy-localization",
+      "name": "GUI KDF and entropy profile description localization",
+      "status": "PASS",
+      "seconds": 0.385,
+      "peakRssMiB": 120,
+      "seed": "0x0A0A7D9D",
+      "failure": null
+    },
+    {
+      "id": "gui.cups-spool-warning-localization",
+      "name": "GUI warns about CUPS and printer spool persistence in both languages",
+      "status": "PASS",
+      "seconds": 0.411,
+      "peakRssMiB": 122,
+      "seed": "0x2A442B6E",
+      "failure": null
+    },
+    {
+      "id": "gui.failed-archive-preservation",
+      "name": "GUI downstream failure preserves committed path replacements",
+      "status": "PASS",
+      "seconds": 0.369,
+      "peakRssMiB": 117,
+      "seed": "0x45CE3FD8",
+      "failure": null
+    },
+    {
+      "id": "gui.verification-root-cleanup-identity",
+      "name": "GUI verification plaintext cleanup stays descriptor-bound",
+      "status": "PASS",
+      "seconds": 0.377,
+      "peakRssMiB": 117,
+      "seed": "0x094C8B32",
+      "failure": null
+    },
+    {
+      "id": "keysheet.pair-cleanup-identity",
+      "name": "key-sheet pair rollback preserves pathname replacements",
+      "status": "PASS",
+      "seconds": 0.467,
+      "peakRssMiB": 126,
+      "seed": "0x10751E60",
+      "failure": null
+    },
+    {
+      "id": "keysheet.cleanup-failure-visible",
+      "name": "key-sheet cleanup failures remain visible with the export failure",
+      "status": "PASS",
+      "seconds": 0.452,
+      "peakRssMiB": 128,
+      "seed": "0x1271A388",
+      "failure": null
+    },
+    {
+      "id": "keysheet.pair-atomic-commit",
+      "name": "key-sheet pair final gate rolls both outputs back safely",
+      "status": "PASS",
+      "seconds": 0.519,
+      "peakRssMiB": 128,
+      "seed": "0x026EED82",
+      "failure": null
+    },
+    {
+      "id": "gui.entropy-rev9-phases-cancel",
+      "name": "GUI REV9 single/dual phases, eleven counters and joined cancellation",
+      "status": "PASS",
+      "seconds": 8.372,
+      "peakRssMiB": 134,
+      "seed": "0x0AE62D52",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-live-capture-during-preparation",
+      "name": "GUI pointer events fill the independent live epoch during dual preparation and retain capture guards",
+      "status": "PASS",
+      "seconds": 3.471,
+      "peakRssMiB": 135,
+      "seed": "0x78CC38DE",
+      "failure": null
+    },
+    {
+      "id": "gui.operation-cancel-lifetime",
+      "name": "GUI operation cancellation stays separate from disposed window lifetime",
+      "status": "PASS",
+      "seconds": 0.376,
+      "peakRssMiB": 118,
+      "seed": "0x53DF32F9",
+      "failure": null
+    },
+    {
+      "id": "gui.full-creation-flow",
+      "name": "GUI full creation flow with mouse sampling and factor generation",
+      "status": "PASS",
+      "seconds": 3.68,
+      "peakRssMiB": 210,
+      "seed": "0x530AAD37",
+      "failure": null
+    },
+    {
+      "id": "factor.rev12-whitespace",
+      "name": "V13-FACTOR-WHITESPACE: pinned full UTF-16 whitespace set and identical locked factor bytes",
+      "status": "PASS",
+      "seconds": 0.009,
+      "peakRssMiB": 60,
+      "seed": "0x6A4307FF",
+      "failure": null
+    },
+    {
+      "id": "factor.rev12-boundaries",
+      "name": "V13-FACTOR-BOUNDARIES: complete payload and raw-text limits without partial decode",
+      "status": "PASS",
+      "seconds": 0.006,
+      "peakRssMiB": 60,
+      "seed": "0x71D1DFFF",
+      "failure": null
+    },
+    {
+      "id": "factor.rev12-invalid",
+      "name": "V13-FACTOR-INVALID: no labels, Unicode/OCR substitutes, NUL or malformed surrogates",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 56,
+      "seed": "0x43C1611F",
+      "failure": null
+    },
+    {
+      "id": "factor.rev12-password-pin",
+      "name": "V13-FACTOR-PASSWORD-PIN: formatting leaves password/PIN credential transcripts unchanged",
+      "status": "PASS",
+      "seconds": 0.218,
+      "peakRssMiB": 71,
+      "seed": "0x05FEBC14",
+      "failure": null
+    },
+    {
+      "id": "factor.rev12-allpaths",
+      "name": "V13-FACTOR-ALLPATHS: formatted factors decrypt, repair and retry the same v13 containers",
+      "status": "PASS",
+      "seconds": 1.687,
+      "peakRssMiB": 208,
+      "seed": "0x0260CB9E",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-clear-pending-paste",
+      "name": "V13-FACTOR-CLEAR-TRANSFER: actual deferred clipboard paste cannot repopulate an explicitly cleared empty field",
+      "status": "PASS",
+      "seconds": 0.412,
+      "peakRssMiB": 122,
+      "seed": "0x60936402",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-clear-undo",
+      "name": "V13-FACTOR-CLEAR-HISTORY: the actual clear-secrets action cannot resurrect accepted factors through undo or redo",
+      "status": "PASS",
+      "seconds": 0.434,
+      "peakRssMiB": 122,
+      "seed": "0x676CD0E6",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-paste",
+      "name": "V13-FACTOR-PASTE: actual clipboard event with 256/383/511-character factors in both fields",
+      "status": "PASS",
+      "seconds": 0.524,
+      "peakRssMiB": 126,
+      "seed": "0x0B40C5E0",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-atomic-nowrap",
+      "name": "V13-FACTOR-PRESENTATION-DIAGNOSIS: the same raw boundaries and drop with no soft wrapping for a controlled public comparison",
+      "status": "PASS",
+      "seconds": 0.81,
+      "peakRssMiB": 159,
+      "seed": "0x513D0289",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-atomic",
+      "name": "V13-FACTOR-BOUNDARIES/INVALID: atomic set-text, insertion and drop rejection preserves text and selection",
+      "status": "PASS",
+      "seconds": 0.812,
+      "peakRssMiB": 161,
+      "seed": "0x37853D86",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-layout-spaces-nowrap",
+      "name": "V13-FACTOR-MAXRAW-DIAGNOSIS: the same complete public raw input with no soft wrapping",
+      "status": "PASS",
+      "seconds": 0.456,
+      "peakRssMiB": 132,
+      "seed": "0x657C203E",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-layout-spaces",
+      "name": "V13-FACTOR-MAXRAW-LAYOUT: actual text input commits and lays out all 65,536 public raw characters",
+      "status": "PASS",
+      "seconds": 0.459,
+      "peakRssMiB": 132,
+      "seed": "0x22AA549E",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-edit-undo",
+      "name": "V13-FACTOR-EDIT-UNDO: actual text-input/selection editing and native undo/redo without rejected history",
+      "status": "PASS",
+      "seconds": 0.436,
+      "peakRssMiB": 122,
+      "seed": "0x7F1F4FBE",
+      "failure": null
+    },
+    {
+      "id": "gui.factor-rev12-editor-drop",
+      "name": "V13-FACTOR-EDITOR-DROP: actual editor target accepts full 383/511/CRLF raw input and rejects DEL/oversize atomically",
+      "status": "PASS",
+      "seconds": 0.456,
+      "peakRssMiB": 125,
+      "seed": "0x1A2ABA58",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-preflight-state",
+      "name": "V13-UI-PREFLIGHT-KEYSHEET/EXISTS/CANCEL/DOUBLECLICK and semantic binding",
+      "status": "PASS",
+      "seconds": 0.918,
+      "peakRssMiB": 209,
+      "seed": "0x42801508",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-extract-preflight",
+      "name": "V13-UI-PREFLIGHT-CANCEL: missing extract/list/recovery inputs retain the draft",
+      "status": "PASS",
+      "seconds": 0.641,
+      "peakRssMiB": 123,
+      "seed": "0x6429BE05",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-verification-cleanup",
+      "name": "REV12 actual create owner refuses success after plaintext cleanup failure and preserves both causes/committed objects",
+      "status": "PASS",
+      "seconds": 2.396,
+      "peakRssMiB": 251,
+      "seed": "0x67DAF5A1",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-kdf-minimum-preflight",
+      "name": "V13-UI-PREFLIGHT-RESOURCES: known 64-MiB KDF refusal retains the prepared draft",
+      "status": "PASS",
+      "seconds": 0.808,
+      "peakRssMiB": 201,
+      "seed": "0x27B43BAF",
+      "failure": null
+    },
+    {
+      "id": "container.rev12-kdf-minimum-preflight",
+      "name": "V13-UI-PREFLIGHT-RESOURCES: shared core refuses the public KDF minimum before output or entropy",
+      "status": "PASS",
+      "seconds": 0.588,
+      "peakRssMiB": 160,
+      "seed": "0x1A092EAA",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev12-consume-boundary",
+      "name": "V13-UI-CONSUME-BOUNDARY: owner records irreversible single/dual transfer before failures",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 59,
+      "seed": "0x1A7A61E9",
+      "failure": null
+    },
+    {
+      "id": "container.rev12-preflight-race",
+      "name": "V13-UI-PREFLIGHT-RACE: exclusive output, early collision preservation, late collision consumption",
+      "status": "PASS",
+      "seconds": 2.079,
+      "peakRssMiB": 1478,
+      "seed": "0x57DEA6BE",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-dispose-failure",
+      "name": "REV12 window teardown independently clears credentials and invalidates pending clipboard input after actual cleanup failures",
+      "status": "PASS",
+      "seconds": 0.682,
+      "peakRssMiB": 123,
+      "seed": "0x73048906",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-dispose-storage-ownership",
+      "name": "REV12 owned storage cleanup attempts independent leases, retains only failed owners for retry and waits for active operation ownership",
+      "status": "PASS",
+      "seconds": 0.637,
+      "peakRssMiB": 123,
+      "seed": "0x4BBD05DF",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-storage-transitions",
+      "name": "REV12 actual storage replacement, batch input, mismatch, native acquisition reentry and rejected acquisition preserve every owned item and retry failure",
+      "status": "PASS",
+      "seconds": 0.721,
+      "peakRssMiB": 138,
+      "seed": "0x334301B9",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-drop-storage-ownership",
+      "name": "REV12 actual DragOver/Drop events report provider Path faults, borrow before Drop, preserve drafts and independently retire consumed owners and aliases",
+      "status": "PASS",
+      "seconds": 4.223,
+      "peakRssMiB": 376,
+      "seed": "0x6BA9BCC2",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-storage-path-callbacks",
+      "name": "REV12 actual mismatch/Ensure callbacks preserve current owners; plain-URL transient Dispose invocation only, no native YES-grant proof",
+      "status": "PASS",
+      "seconds": 0.83,
+      "peakRssMiB": 164,
+      "seed": "0x4638F4D1",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-storage-path-events",
+      "name": "REV12 actual TextBox.Text events report Path/retirement faults, preserve retry owners and retain draft/hint/erase semantics",
+      "status": "PASS",
+      "seconds": 3.31,
+      "peakRssMiB": 222,
+      "seed": "0x132B5931",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-file-activation-ownership",
+      "name": "REV12 actual App activation handoff preserves accepted aliases, attempts all independent cleanup and retains failed owners across window loss",
+      "status": "PASS",
+      "seconds": 0.75,
+      "peakRssMiB": 133,
+      "seed": "0x08C423DA",
+      "failure": null
+    },
+    {
+      "id": "resources.rev12-adaptive-window",
+      "name": "REV12 accepted-window probes, loss rollback, no retry loop and fresh resource authority",
+      "status": "PASS",
+      "seconds": 0.016,
+      "peakRssMiB": 60,
+      "seed": "0x3D9E16AA",
+      "failure": null
+    },
+    {
+      "id": "resources.rev12-kdf-minimum-admission",
+      "name": "REV12 public KDF lower-bound admission is read-only, typed and KAT-aware",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 57,
+      "seed": "0x393EE6F8",
+      "failure": null
+    },
+    {
+      "id": "diagnostics.rev12-phase-bounds",
+      "name": "bounded, inert-by-default timing profile with nested async ownership and no secret-bearing schema",
+      "status": "PASS",
+      "seconds": 0.022,
+      "peakRssMiB": 60,
+      "seed": "0x5586CEC8",
+      "failure": null
+    },
+    {
+      "id": "diagnostics.rev12-phase-equivalence",
+      "name": "opt-in and failed observations preserve actual synthetic v13 output, repair and cleanup",
+      "status": "PASS",
+      "seconds": 2.293,
+      "peakRssMiB": 209,
+      "seed": "0x67DC330D",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-console-text",
+      "name": "REV12 approved DE/EN text, twelve-line console, retention and follow",
+      "status": "PASS",
+      "seconds": 7.277,
+      "peakRssMiB": 464,
+      "seed": "0x17C264B4",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-console-text-nowrap",
+      "name": "REV12 historical NoWrap/Disabled console control with identical public corpus and gates",
+      "status": "PASS",
+      "seconds": 7.127,
+      "peakRssMiB": 443,
+      "seed": "0x548CB00B",
+      "failure": null
+    },
+    {
+      "id": "gui.rev12-console-horizontal",
+      "name": "REV12 native horizontal console chrome, twelve text lines, progress and reading context",
+      "status": "PASS",
+      "seconds": 2.188,
+      "peakRssMiB": 131,
+      "seed": "0x41E50673",
+      "failure": null
+    },
+    {
+      "id": "security.pin-password-pair",
+      "name": "literal complete PIN/password pairing and pending validation",
+      "status": "PASS",
+      "seconds": 0.014,
+      "peakRssMiB": 59,
+      "seed": "0x19D1C183",
+      "failure": null
+    },
+    {
+      "id": "security.pin-local-dates",
+      "name": "local final dates, exact formats, leap years and versioned date bounds",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 57,
+      "seed": "0x4D9C8B96",
+      "failure": null
+    },
+    {
+      "id": "security.pin-pattern-monotonicity",
+      "name": "additional complete PIN patterns retain every sampled historical rejection",
+      "status": "PASS",
+      "seconds": 0.067,
+      "peakRssMiB": 66,
+      "seed": "0x43CE393E",
+      "failure": null
+    },
+    {
+      "id": "security.credential-encoding-only",
+      "name": "technical credential limits preserve raw input encoding under independent v13 domains",
+      "status": "PASS",
+      "seconds": 0.008,
+      "peakRssMiB": 68,
+      "seed": "0x6EFCC311",
+      "failure": null
+    },
+    {
+      "id": "credentials.static-fixture-provenance",
+      "name": "frozen v12 credential raw-byte and independent SHA3/Skein oracle vectors",
+      "status": "PASS",
+      "seconds": 0.029,
+      "peakRssMiB": 65,
+      "seed": "0x5542ED8C",
+      "failure": null
+    },
+    {
+      "id": "credentials.creation-still-rejects",
+      "name": "all frozen policy-incompatible credentials remain rejected for new archives",
+      "status": "PASS",
+      "seconds": 0.627,
+      "peakRssMiB": 166,
+      "seed": "0x06256B79",
+      "failure": null
+    },
+    {
+      "id": "credentials.read-empty",
+      "name": "V13-STD-NOLEGACY: genuine frozen v12 is refused by read and recovery: empty",
+      "status": "PASS",
+      "seconds": 0.048,
+      "peakRssMiB": 67,
+      "seed": "0x34B92D35",
+      "failure": null
+    },
+    {
+      "id": "credentials.read-short",
+      "name": "V13-STD-NOLEGACY: genuine frozen v12 is refused by read and recovery: short",
+      "status": "PASS",
+      "seconds": 0.048,
+      "peakRssMiB": 67,
+      "seed": "0x2352958E",
+      "failure": null
+    },
+    {
+      "id": "credentials.read-oversized-raw",
+      "name": "V13-STD-NOLEGACY: genuine frozen v12 is refused by read and recovery: oversized-raw",
+      "status": "PASS",
+      "seconds": 0.047,
+      "peakRssMiB": 67,
+      "seed": "0x51871616",
+      "failure": null
+    },
+    {
+      "id": "credentials.read-pin-substring",
+      "name": "V13-STD-NOLEGACY: genuine frozen v12 is refused by read and recovery: pin-substring",
+      "status": "PASS",
+      "seconds": 0.048,
+      "peakRssMiB": 67,
+      "seed": "0x0C997AB1",
+      "failure": null
+    },
+    {
+      "id": "credentials.read-date-2026-09-06",
+      "name": "V13-STD-NOLEGACY: genuine frozen v12 is refused by read and recovery: date-2026-09-06",
+      "status": "PASS",
+      "seconds": 0.048,
+      "peakRssMiB": 67,
+      "seed": "0x28DF86C0",
+      "failure": null
+    },
+    {
+      "id": "credentials.read-model-and-old-pattern",
+      "name": "V13-STD-NOLEGACY: genuine frozen v12 is refused by read and recovery: model-and-old-pattern",
+      "status": "PASS",
+      "seconds": 0.047,
+      "peakRssMiB": 67,
+      "seed": "0x0EE2DAD2",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-data",
+      "name": "offline model integrity, completeness and fail-closed resources",
+      "status": "PASS",
+      "seconds": 0.259,
+      "peakRssMiB": 220,
+      "seed": "0x648EA59B",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-phrases",
+      "name": "complete phrase, case, Unicode, morphology and unknown-rest models",
+      "status": "PASS",
+      "seconds": 0.44,
+      "peakRssMiB": 237,
+      "seed": "0x00878899",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-bip39",
+      "name": "independent BIP39 checksums and exact word-list search spaces",
+      "status": "PASS",
+      "seconds": 1.087,
+      "peakRssMiB": 245,
+      "seed": "0x3F2F99EC",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-boundaries",
+      "name": "old password rejections and monotone 128-bit model boundaries",
+      "status": "PASS",
+      "seconds": 0.819,
+      "peakRssMiB": 165,
+      "seed": "0x5A2B6060",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-isolation",
+      "name": "async isolation and creation-only model access",
+      "status": "PASS",
+      "seconds": 0.145,
+      "peakRssMiB": 149,
+      "seed": "0x3925525E",
+      "failure": null
+    },
+    {
+      "id": "security.password-model-bounded",
+      "name": "bounded evaluation at the 256-code-unit limit",
+      "status": "PASS",
+      "seconds": 0.818,
+      "peakRssMiB": 164,
+      "seed": "0x1AA97F11",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-golden",
+      "name": "REV9 frozen independent Python SHA3/SHA512 shuffle vectors",
+      "status": "PASS",
+      "seconds": 0.23,
+      "peakRssMiB": 76,
+      "seed": "0x454D266C",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-routing",
+      "name": "REV9 routing rejection, replacement, readiness and count commit",
+      "status": "PASS",
+      "seconds": 0.066,
+      "peakRssMiB": 70,
+      "seed": "0x1C5F7E0D",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-shuffle",
+      "name": "REV9 complete small permutations, 32/64-bit bounds and record replay",
+      "status": "PASS",
+      "seconds": 0.195,
+      "peakRssMiB": 74,
+      "seed": "0x1729E8BA",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-dual-composition",
+      "name": "REV9 all 15018 small dual-shuffle compositions including identity",
+      "status": "PASS",
+      "seconds": 0.048,
+      "peakRssMiB": 69,
+      "seed": "0x385E9790",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-suite-plans",
+      "name": "REV9 every single-round suite, direct roles and plan rejection",
+      "status": "PASS",
+      "seconds": 4.246,
+      "peakRssMiB": 81,
+      "seed": "0x60DAE5A5",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-output",
+      "name": "REV9 eleven-role XOR, single/dual plan, 320-byte basis and one-time consume",
+      "status": "PASS",
+      "seconds": 0.837,
+      "peakRssMiB": 78,
+      "seed": "0x1026A1A6",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-faults",
+      "name": "REV9 overflow, bounded locked memory, cleanup failure and retry ownership",
+      "status": "PASS",
+      "seconds": 0.354,
+      "peakRssMiB": 74,
+      "seed": "0x477471D6",
+      "failure": null
+    },
+    {
+      "id": "entropy.rev9-lifecycle",
+      "name": "REV9 detached epoch, cancellation, reset, RNG failure and full-capacity wipe",
+      "status": "PASS",
+      "seconds": 3.529,
+      "peakRssMiB": 81,
+      "seed": "0x1B1B2898",
+      "failure": null
+    },
+    {
+      "id": "resources.operation-storage-plan",
+      "name": "real additional writes, live shared volume ledger and lazy workspace",
+      "status": "PASS",
+      "seconds": 0.008,
+      "peakRssMiB": 60,
+      "seed": "0x1BD2EC93",
+      "failure": null
+    },
+    {
+      "id": "resources.rev11-auto-planner",
+      "name": "persistent Auto, phase slots, real OS observations and pressure hysteresis",
+      "status": "PASS",
+      "seconds": 0.002,
+      "peakRssMiB": 56,
+      "seed": "0x12066198",
+      "failure": null
+    },
+    {
+      "id": "resources.rev11-chunk-window",
+      "name": "small locked buffers, actual leases, short-read aggregation and exact chunk boundaries",
+      "status": "PASS",
+      "seconds": 0.073,
+      "peakRssMiB": 239,
+      "seed": "0x2ADC41BC",
+      "failure": null
+    },
+    {
+      "id": "zpaq.small-volume-capacity",
+      "name": "64 MiB plain and streaming extraction on private 256 MiB APFS, with real capacity exhaustion",
+      "status": "PASS",
+      "seconds": 7.519,
+      "peakRssMiB": 102,
+      "seed": "0x0A3855F4",
+      "failure": null
+    },
+    {
+      "id": "security.kdf-handoff-fault-matrix",
+      "name": "every suite rejects missing and 00/01/FF derived outputs before downstream key handoffs",
+      "status": "PASS",
+      "seconds": 2.892,
+      "peakRssMiB": 94,
+      "seed": "0x0E66B67C",
+      "failure": null
+    },
+    {
+      "id": "security.kdf-null-width-round-contracts",
+      "name": "null/default, shortened and misplaced round secrets fail before v13 derivation",
+      "status": "PASS",
+      "seconds": 0.149,
+      "peakRssMiB": 77,
+      "seed": "0x05305F24",
+      "failure": null
+    },
+    {
+      "id": "security.kdf-key-owner-contracts",
+      "name": "master and role owners reject null, disposed, zeroed and invalid-width material",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 60,
+      "seed": "0x689A5E6A",
+      "failure": null
+    },
+    {
+      "id": "security.kdf-handoff-destination-cleanup",
+      "name": "rejected credential, master and role handoffs erase the complete caller-owned output",
+      "status": "PASS",
+      "seconds": 0.263,
+      "peakRssMiB": 79,
+      "seed": "0x4C5AE1F8",
+      "failure": null
+    },
+    {
+      "id": "security.native-managed-null-contracts",
+      "name": "Actual managed null references fail before native dispatch",
+      "status": "PASS",
+      "seconds": 0.006,
+      "peakRssMiB": 61,
+      "seed": "0x285F17B7",
+      "failure": null
+    },
+    {
+      "id": "security.native-managed-width-contracts",
+      "name": "Managed key/nonce/tag widths and output capacities fail without output mutation",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 61,
+      "seed": "0x062CDD85",
+      "failure": null
+    },
+    {
+      "id": "crypto.native-constant-key-oracles",
+      "name": "Legitimate 00/01/FF keys: independent managed oracles, MARS composition and Botan KATs",
+      "status": "PASS",
+      "seconds": 0.818,
+      "peakRssMiB": 73,
+      "seed": "0x3759B634",
+      "failure": null
+    },
+    {
+      "id": "kdf.native-constant-argon-inputs",
+      "name": "Constant Argon2id inputs and optional NULL secret agree with independent 8 MiB KAT oracle",
+      "status": "PASS",
+      "seconds": 0.612,
+      "peakRssMiB": 112,
+      "seed": "0x16726A72",
+      "failure": null
+    },
+    {
+      "id": "security.downstream-suite-handoff-faults",
+      "name": "All 12 suite ownership/cipher handoffs reject missing and 00/01/FF material",
+      "status": "PASS",
+      "seconds": 0.88,
+      "peakRssMiB": 79,
+      "seed": "0x276CD788",
+      "failure": null
+    },
+    {
+      "id": "security.downstream-mac-handoff-faults",
+      "name": "Serial and parallel MAC tree handoffs reject missing and 00/01/FF material",
+      "status": "PASS",
+      "seconds": 0.312,
+      "peakRssMiB": 108,
+      "seed": "0x03812582",
+      "failure": null
+    },
+    {
+      "id": "security.downstream-recovery-handoff-faults",
+      "name": "Recovery parent/certification handoffs reject missing and 00/01/FF material",
+      "status": "PASS",
+      "seconds": 0.146,
+      "peakRssMiB": 72,
+      "seed": "0x7EA30478",
+      "failure": null
+    },
+    {
+      "id": "security.downstream-disposed-owner-faults",
+      "name": "Cleared owners reject reads after disposal and failed-unlock retry",
+      "status": "PASS",
+      "seconds": 0.143,
+      "peakRssMiB": 72,
+      "seed": "0x05F1F541",
+      "failure": null
+    },
+    {
+      "id": "security.downstream-null-width-contracts",
+      "name": "Owner APIs reject real null and default/truncated key material",
+      "status": "PASS",
+      "seconds": 0.151,
+      "peakRssMiB": 73,
+      "seed": "0x0925CF4D",
+      "failure": null
+    },
+    {
+      "id": "audit.fixed-cli-isolation",
+      "name": "release audit accepts only fixed case selectors without activating hooks",
+      "status": "PASS",
+      "seconds": 0.001,
+      "peakRssMiB": 56,
+      "seed": "0x32AA789A",
+      "failure": null
+    },
+    {
+      "id": "audit.passive-cpu-observer",
+      "name": "passive CPU grant observations preserve queueing/cancellation/ownership",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 56,
+      "seed": "0x66A35004",
+      "failure": null
+    },
+    {
+      "id": "audit.metadata-allowlist",
+      "name": "audit receipt has a bounded metadata-only schema and no release-verdict authority",
+      "status": "PASS",
+      "seconds": 0.025,
+      "peakRssMiB": 59,
+      "seed": "0x527CEB05",
+      "failure": null
+    },
+    {
+      "id": "audit.initialization-close-join",
+      "name": "actual window disposal joins slow public initialization before entropy reset and suppresses closed-window dialogs",
+      "status": "PASS",
+      "seconds": 0.632,
+      "peakRssMiB": 123,
+      "seed": "0x09E8D38B",
+      "failure": null
+    }
+  ]
+}

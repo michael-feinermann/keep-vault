@@ -1,0 +1,192 @@
+{
+  "schema": "keepvault.public-original-stdout-range-index.v1",
+  "records": [
+    {
+      "name": "kdf-handoff-matrix",
+      "originalStdoutFilePin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "sha256": "ed7f975b264642ba60e9cde37876cc45bc9c86f04279b8a449359cbf22752495",
+        "bytes": 1273083
+      },
+      "originalPhase1PrefixPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "scope": "Original prefix only, byte offset 0 through phase-1 Full319 summary inclusive; the official builder is continuing and its stdout may grow. This is not a finalized whole-log hash.",
+        "prefixBytes": 764469,
+        "prefixSha256": "4769e907820538139d7dd5c12759e26589f97077bee289888c4252e2aa904257",
+        "prefixReReadEqual": true,
+        "device": 16777232,
+        "inode": 58707460,
+        "originalSizeAtOpen": 1269253,
+        "originalSizeAfterPrefixReread": 1269253,
+        "summary": {
+          "line": 886,
+          "originalText": "319 macOS groups: 319 passed, 0 failed, 0 blocked.",
+          "exactLineSha256": "34af96a0325483b89d07bb7c779402e14762f26853d757352680b043a4cb7f63"
+        },
+        "lineNumberDefinition": "1-based LF-delimited binary readline records; embedded bare CR progress updates do not increment this line index. A universal-newline text reader may report a different display line number. Exact byte offsets/lengths/SHA256 are authoritative."
+      },
+      "lineNumberLfDelimitedOneBased": 863,
+      "byteOffset": 501373,
+      "exactLineBytesIncludingLf": 85643,
+      "exactLineSha256": "e0de9f71fb4c982318872cf0fe9f764a4f5d75bc45a3f2442c318b9cc71f628b",
+      "prefixBeforeJsonUtf8": "KDF_HANDOFF_MATRIX ",
+      "rawRecordStagePath": "originals/stdout-records/kdf-handoff-matrix.record.txt",
+      "jsonPayloadStagePath": "originals/stdout-records/kdf-handoff-matrix.json",
+      "jsonPayloadOffsetWithinOriginalLine": 19,
+      "jsonPayloadBytes": 85624,
+      "jsonPayloadSha256": "894bf49cb7787d2ee524261f5b4cdd703fe09e69f9af6049a78ee71f09ff7bc3",
+      "classification": "EXACT_UNREDACTED_ORIGINAL_STDOUT_LINE_AND_JSON_PAYLOAD_SLICE",
+      "fullStdoutCopied": false
+    },
+    {
+      "name": "suite-consumer-matrix",
+      "originalStdoutFilePin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "sha256": "ed7f975b264642ba60e9cde37876cc45bc9c86f04279b8a449359cbf22752495",
+        "bytes": 1273083
+      },
+      "originalPhase1PrefixPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "scope": "Original prefix only, byte offset 0 through phase-1 Full319 summary inclusive; the official builder is continuing and its stdout may grow. This is not a finalized whole-log hash.",
+        "prefixBytes": 764469,
+        "prefixSha256": "4769e907820538139d7dd5c12759e26589f97077bee289888c4252e2aa904257",
+        "prefixReReadEqual": true,
+        "device": 16777232,
+        "inode": 58707460,
+        "originalSizeAtOpen": 1269253,
+        "originalSizeAfterPrefixReread": 1269253,
+        "summary": {
+          "line": 886,
+          "originalText": "319 macOS groups: 319 passed, 0 failed, 0 blocked.",
+          "exactLineSha256": "34af96a0325483b89d07bb7c779402e14762f26853d757352680b043a4cb7f63"
+        },
+        "lineNumberDefinition": "1-based LF-delimited binary readline records; embedded bare CR progress updates do not increment this line index. A universal-newline text reader may report a different display line number. Exact byte offsets/lengths/SHA256 are authoritative."
+      },
+      "lineNumberLfDelimitedOneBased": 872,
+      "byteOffset": 587800,
+      "exactLineBytesIncludingLf": 141600,
+      "exactLineSha256": "a7002be96001daae0da54177180a98ffb0a854ebdd0e948ebb8e65d40b787369",
+      "prefixBeforeJsonUtf8": "handoff_fault_matrix=",
+      "rawRecordStagePath": "originals/stdout-records/suite-consumer-matrix.record.txt",
+      "jsonPayloadStagePath": "originals/stdout-records/suite-consumer-matrix.json",
+      "jsonPayloadOffsetWithinOriginalLine": 21,
+      "jsonPayloadBytes": 141579,
+      "jsonPayloadSha256": "a1bf730275aae31bf133978d6259e66b41a628a7601e951b0cb0967b9b0611e2",
+      "classification": "EXACT_UNREDACTED_ORIGINAL_STDOUT_LINE_AND_JSON_PAYLOAD_SLICE",
+      "fullStdoutCopied": false
+    },
+    {
+      "name": "mac-consumer-matrix",
+      "originalStdoutFilePin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "sha256": "ed7f975b264642ba60e9cde37876cc45bc9c86f04279b8a449359cbf22752495",
+        "bytes": 1273083
+      },
+      "originalPhase1PrefixPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "scope": "Original prefix only, byte offset 0 through phase-1 Full319 summary inclusive; the official builder is continuing and its stdout may grow. This is not a finalized whole-log hash.",
+        "prefixBytes": 764469,
+        "prefixSha256": "4769e907820538139d7dd5c12759e26589f97077bee289888c4252e2aa904257",
+        "prefixReReadEqual": true,
+        "device": 16777232,
+        "inode": 58707460,
+        "originalSizeAtOpen": 1269253,
+        "originalSizeAfterPrefixReread": 1269253,
+        "summary": {
+          "line": 886,
+          "originalText": "319 macOS groups: 319 passed, 0 failed, 0 blocked.",
+          "exactLineSha256": "34af96a0325483b89d07bb7c779402e14762f26853d757352680b043a4cb7f63"
+        },
+        "lineNumberDefinition": "1-based LF-delimited binary readline records; embedded bare CR progress updates do not increment this line index. A universal-newline text reader may report a different display line number. Exact byte offsets/lengths/SHA256 are authoritative."
+      },
+      "lineNumberLfDelimitedOneBased": 874,
+      "byteOffset": 729493,
+      "exactLineBytesIncludingLf": 26094,
+      "exactLineSha256": "39c5057610e1e1685f64c6e43bde65f6ef5cbeac549a718f45858f3a13db4342",
+      "prefixBeforeJsonUtf8": "handoff_fault_matrix=",
+      "rawRecordStagePath": "originals/stdout-records/mac-consumer-matrix.record.txt",
+      "jsonPayloadStagePath": "originals/stdout-records/mac-consumer-matrix.json",
+      "jsonPayloadOffsetWithinOriginalLine": 21,
+      "jsonPayloadBytes": 26073,
+      "jsonPayloadSha256": "8240b4d5228c4364e820920591ea7cd7146f80efd1ccf86639b501e5d4e8d038",
+      "classification": "EXACT_UNREDACTED_ORIGINAL_STDOUT_LINE_AND_JSON_PAYLOAD_SLICE",
+      "fullStdoutCopied": false
+    },
+    {
+      "name": "recovery-consumer-matrix",
+      "originalStdoutFilePin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "sha256": "ed7f975b264642ba60e9cde37876cc45bc9c86f04279b8a449359cbf22752495",
+        "bytes": 1273083
+      },
+      "originalPhase1PrefixPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "scope": "Original prefix only, byte offset 0 through phase-1 Full319 summary inclusive; the official builder is continuing and its stdout may grow. This is not a finalized whole-log hash.",
+        "prefixBytes": 764469,
+        "prefixSha256": "4769e907820538139d7dd5c12759e26589f97077bee289888c4252e2aa904257",
+        "prefixReReadEqual": true,
+        "device": 16777232,
+        "inode": 58707460,
+        "originalSizeAtOpen": 1269253,
+        "originalSizeAfterPrefixReread": 1269253,
+        "summary": {
+          "line": 886,
+          "originalText": "319 macOS groups: 319 passed, 0 failed, 0 blocked.",
+          "exactLineSha256": "34af96a0325483b89d07bb7c779402e14762f26853d757352680b043a4cb7f63"
+        },
+        "lineNumberDefinition": "1-based LF-delimited binary readline records; embedded bare CR progress updates do not increment this line index. A universal-newline text reader may report a different display line number. Exact byte offsets/lengths/SHA256 are authoritative."
+      },
+      "lineNumberLfDelimitedOneBased": 876,
+      "byteOffset": 755679,
+      "exactLineBytesIncludingLf": 7855,
+      "exactLineSha256": "0c59dda071c99613c15a84f39e48a4e5fb18fa6d07fbfba1486ee3d9bacacfe8",
+      "prefixBeforeJsonUtf8": "handoff_fault_matrix=",
+      "rawRecordStagePath": "originals/stdout-records/recovery-consumer-matrix.record.txt",
+      "jsonPayloadStagePath": "originals/stdout-records/recovery-consumer-matrix.json",
+      "jsonPayloadOffsetWithinOriginalLine": 21,
+      "jsonPayloadBytes": 7834,
+      "jsonPayloadSha256": "dc5efc4318da184f5793c6db7561efb47ef3fd9ea3ad399db96c3957e9d9a8e2",
+      "classification": "EXACT_UNREDACTED_ORIGINAL_STDOUT_LINE_AND_JSON_PAYLOAD_SLICE",
+      "fullStdoutCopied": false
+    },
+    {
+      "name": "owner-lifecycle",
+      "originalStdoutFilePin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "sha256": "ed7f975b264642ba60e9cde37876cc45bc9c86f04279b8a449359cbf22752495",
+        "bytes": 1273083
+      },
+      "originalPhase1PrefixPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+        "scope": "Original prefix only, byte offset 0 through phase-1 Full319 summary inclusive; the official builder is continuing and its stdout may grow. This is not a finalized whole-log hash.",
+        "prefixBytes": 764469,
+        "prefixSha256": "4769e907820538139d7dd5c12759e26589f97077bee289888c4252e2aa904257",
+        "prefixReReadEqual": true,
+        "device": 16777232,
+        "inode": 58707460,
+        "originalSizeAtOpen": 1269253,
+        "originalSizeAfterPrefixReread": 1269253,
+        "summary": {
+          "line": 886,
+          "originalText": "319 macOS groups: 319 passed, 0 failed, 0 blocked.",
+          "exactLineSha256": "34af96a0325483b89d07bb7c779402e14762f26853d757352680b043a4cb7f63"
+        },
+        "lineNumberDefinition": "1-based LF-delimited binary readline records; embedded bare CR progress updates do not increment this line index. A universal-newline text reader may report a different display line number. Exact byte offsets/lengths/SHA256 are authoritative."
+      },
+      "lineNumberLfDelimitedOneBased": 878,
+      "byteOffset": 763627,
+      "exactLineBytesIncludingLf": 217,
+      "exactLineSha256": "197f67245d8d1281e72f944de8d4d74891ee25214e0649be11f83304e8013c28",
+      "prefixBeforeJsonUtf8": "handoff_owner_lifecycle=",
+      "rawRecordStagePath": "originals/stdout-records/owner-lifecycle.record.txt",
+      "jsonPayloadStagePath": "originals/stdout-records/owner-lifecycle.json",
+      "jsonPayloadOffsetWithinOriginalLine": 24,
+      "jsonPayloadBytes": 193,
+      "jsonPayloadSha256": "4cb172e7ca87cda42b4df8a88c1a3031cb53002cd4a5f8e55bf7954ac5791bf0",
+      "classification": "EXACT_UNREDACTED_ORIGINAL_STDOUT_LINE_AND_JSON_PAYLOAD_SLICE",
+      "fullStdoutCopied": false
+    }
+  ],
+  "lineNumberDefinition": "1-based LF-delimited binary records. Embedded bare CR progress updates do not add LF lines. Byte offsets/lengths/hashes are authoritative.",
+  "fullBuilderStdoutIncluded": false
+}

@@ -1,0 +1,694 @@
+{
+  "schemaVersion": 1,
+  "kind": "readonly-derived-security-group-extraction-new-run",
+  "observedUtc": "2026-10-14T11:29:13.733430+00:00",
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "actualRun": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942",
+  "actualBuilderPid": 56395,
+  "actualWrapperPid": 28942,
+  "phase": "Original full phase 1 of the new official 49-phase release builder",
+  "originalPhaseProcess": {
+    "id": "FULL_SUITE",
+    "phaseNumber": 1,
+    "actualTestProcessExitCode": 0,
+    "originalPhaseLine": "1 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --full --parallel 1 --dump-key-sheets /private/tmp/keep-vault-release.wQBlZMEV/test-sheets.rMQTpK",
+    "originalPhaseLineSha256": "27b261e7bf63fa844f4f36f17f86a7f25d1a5d83616d12c49f45cbb22507e1e3"
+  },
+  "phase1Result": {
+    "groups": 319,
+    "passed": 319,
+    "failed": 0,
+    "blocked": 0,
+    "sourceHead": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d"
+  },
+  "overallReleaseApproval": false,
+  "wholeBuilderTerminalResult": "NOT ESTABLISHED BY THIS EXTRACTION; parent supervises ongoing official run",
+  "extractedGroups": [
+    {
+      "id": "security.kdf-handoff-fault-matrix",
+      "name": "every suite rejects missing and 00/01/FF derived outputs before downstream key handoffs",
+      "status": "PASS",
+      "seconds": 2.892,
+      "peakRssMiB": 94,
+      "seed": "0x0E66B67C",
+      "failure": null,
+      "preciseTimingSeconds": 2.8919578
+    },
+    {
+      "id": "security.kdf-null-width-round-contracts",
+      "name": "null/default, shortened and misplaced round secrets fail before v13 derivation",
+      "status": "PASS",
+      "seconds": 0.149,
+      "peakRssMiB": 77,
+      "seed": "0x05305F24",
+      "failure": null,
+      "preciseTimingSeconds": 0.1488917
+    },
+    {
+      "id": "security.kdf-key-owner-contracts",
+      "name": "master and role owners reject null, disposed, zeroed and invalid-width material",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 60,
+      "seed": "0x689A5E6A",
+      "failure": null,
+      "preciseTimingSeconds": 0.0043116
+    },
+    {
+      "id": "security.kdf-handoff-destination-cleanup",
+      "name": "rejected credential, master and role handoffs erase the complete caller-owned output",
+      "status": "PASS",
+      "seconds": 0.263,
+      "peakRssMiB": 79,
+      "seed": "0x4C5AE1F8",
+      "failure": null,
+      "preciseTimingSeconds": 0.263355
+    },
+    {
+      "id": "security.native-managed-null-contracts",
+      "name": "Actual managed null references fail before native dispatch",
+      "status": "PASS",
+      "seconds": 0.006,
+      "peakRssMiB": 61,
+      "seed": "0x285F17B7",
+      "failure": null,
+      "preciseTimingSeconds": 0.0055543
+    },
+    {
+      "id": "security.native-managed-width-contracts",
+      "name": "Managed key/nonce/tag widths and output capacities fail without output mutation",
+      "status": "PASS",
+      "seconds": 0.004,
+      "peakRssMiB": 61,
+      "seed": "0x062CDD85",
+      "failure": null,
+      "preciseTimingSeconds": 0.0037206
+    },
+    {
+      "id": "crypto.native-constant-key-oracles",
+      "name": "Legitimate 00/01/FF keys: independent managed oracles, MARS composition and Botan KATs",
+      "status": "PASS",
+      "seconds": 0.818,
+      "peakRssMiB": 73,
+      "seed": "0x3759B634",
+      "failure": null,
+      "preciseTimingSeconds": 0.8184416
+    },
+    {
+      "id": "kdf.native-constant-argon-inputs",
+      "name": "Constant Argon2id inputs and optional NULL secret agree with independent 8 MiB KAT oracle",
+      "status": "PASS",
+      "seconds": 0.612,
+      "peakRssMiB": 112,
+      "seed": "0x16726A72",
+      "failure": null,
+      "preciseTimingSeconds": 0.6123589
+    },
+    {
+      "id": "security.downstream-suite-handoff-faults",
+      "name": "All 12 suite ownership/cipher handoffs reject missing and 00/01/FF material",
+      "status": "PASS",
+      "seconds": 0.88,
+      "peakRssMiB": 79,
+      "seed": "0x276CD788",
+      "failure": null,
+      "preciseTimingSeconds": 0.8801039
+    },
+    {
+      "id": "security.downstream-mac-handoff-faults",
+      "name": "Serial and parallel MAC tree handoffs reject missing and 00/01/FF material",
+      "status": "PASS",
+      "seconds": 0.312,
+      "peakRssMiB": 108,
+      "seed": "0x03812582",
+      "failure": null,
+      "preciseTimingSeconds": 0.3115552
+    },
+    {
+      "id": "security.downstream-recovery-handoff-faults",
+      "name": "Recovery parent/certification handoffs reject missing and 00/01/FF material",
+      "status": "PASS",
+      "seconds": 0.146,
+      "peakRssMiB": 72,
+      "seed": "0x7EA30478",
+      "failure": null,
+      "preciseTimingSeconds": 0.1457197
+    },
+    {
+      "id": "security.downstream-disposed-owner-faults",
+      "name": "Cleared owners reject reads after disposal and failed-unlock retry",
+      "status": "PASS",
+      "seconds": 0.143,
+      "peakRssMiB": 72,
+      "seed": "0x05F1F541",
+      "failure": null,
+      "preciseTimingSeconds": 0.1431663
+    },
+    {
+      "id": "security.downstream-null-width-contracts",
+      "name": "Owner APIs reject real null and default/truncated key material",
+      "status": "PASS",
+      "seconds": 0.151,
+      "peakRssMiB": 73,
+      "seed": "0x0925CF4D",
+      "failure": null,
+      "preciseTimingSeconds": 0.1507524
+    },
+    {
+      "id": "security.composite-secret-cleanup",
+      "name": "composite secret owners erase all bytes, aggregate failures and retain failed locks for retry",
+      "status": "PASS",
+      "seconds": 0.008,
+      "peakRssMiB": 60,
+      "seed": "0x54A41E95",
+      "failure": null,
+      "preciseTimingSeconds": 0.0077282
+    },
+    {
+      "id": "security.production-secret-cleanup-faults",
+      "name": "early, middle and last unlock failures in v13 KDF and authenticator cleanup",
+      "status": "PASS",
+      "seconds": 0.157,
+      "peakRssMiB": 79,
+      "seed": "0x0E374B56",
+      "failure": null,
+      "preciseTimingSeconds": 0.1573712
+    },
+    {
+      "id": "security.secure-memory-unlock-accounting",
+      "name": "mlock rollback and failed munlock preserve exact secure-memory accounting",
+      "status": "PASS",
+      "seconds": 0.003,
+      "peakRssMiB": 59,
+      "seed": "0x2958AF29",
+      "failure": null,
+      "preciseTimingSeconds": 0.0031253
+    },
+    {
+      "id": "recovery.key-derivation-failure-cleanup",
+      "name": "KPAR2 child-key derivation zeroes every completed secret when either branch boundary fails",
+      "status": "PASS",
+      "seconds": 0.129,
+      "peakRssMiB": 71,
+      "seed": "0x05F2CF18",
+      "failure": null,
+      "preciseTimingSeconds": 0.1285562
+    }
+  ],
+  "runtimeKdfHandoffMatrix": {
+    "originLine": 863,
+    "originByteOffset": 501373,
+    "originExactLineBytes": 85643,
+    "originExactLineSha256": "e0de9f71fb4c982318872cf0fe9f764a4f5d75bc45a3f2442c318b9cc71f628b",
+    "lineHashIncludesOriginalNewline": true,
+    "runtimeRecordedStatus": "PASS",
+    "runtimeRecordedProfile": "internal-8-MiB-fault-injection-only",
+    "runtimeRecordedSuites": 12,
+    "runtimeRecordedBoundaries": 626,
+    "runtimeRecordedFaultCases": 2504,
+    "faults": [
+      "00",
+      "01",
+      "FF",
+      "missing-output"
+    ],
+    "casesPerFault": 626,
+    "suiteRows": [
+      {
+        "suite": "Kalyna512_512",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "Threefish1024",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "StandardCascade",
+        "boundaryCount": 63,
+        "caseCount": 252,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "ParanoiaCascade",
+        "boundaryCount": 95,
+        "caseCount": 380,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "XChaChaOverAes",
+        "boundaryCount": 51,
+        "caseCount": 204,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "Aes256",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "Mars448",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "Shacal2_512",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "XChaCha20Poly1305",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "MixedCascade",
+        "boundaryCount": 57,
+        "caseCount": 228,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "Camellia256",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      },
+      {
+        "suite": "Serpent256",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "faults": [
+          "00",
+          "01",
+          "FF",
+          "missing-output"
+        ],
+        "status": "PASS"
+      }
+    ],
+    "checkedAtExtraction": "New original runtime row totals, distinct boundary lists, four fault classes and suite totals agree."
+  },
+  "runtimeDownstreamConsumerMatrices": [
+    {
+      "testId": "security.downstream-suite-handoff-faults",
+      "originLine": 872,
+      "originByteOffset": 587800,
+      "originExactLineBytes": 141600,
+      "originExactLineSha256": "a7002be96001daae0da54177180a98ffb0a854ebdd0e948ebb8e65d40b787369",
+      "lineHashIncludesOriginalNewline": true,
+      "runtimeRecordedCases": 336,
+      "runtimeRecordedFaultCounts": {
+        "Missing": 84,
+        "Zero": 84,
+        "ByteOne": 84,
+        "AllBitsOne": 84
+      },
+      "runtimeRecordedContextCaseCounts": {
+        "Kalyna512_512": 16,
+        "Threefish1024": 16,
+        "StandardCascade": 44,
+        "ParanoiaCascade": 76,
+        "XChaChaOverAes": 28,
+        "Aes256": 20,
+        "Mars448": 20,
+        "Shacal2_512": 20,
+        "XChaCha20Poly1305": 20,
+        "MixedCascade": 36,
+        "Camellia256": 20,
+        "Serpent256": 20
+      },
+      "runtimeRecordedAssertionCounts": {
+        "InjectionHits": {
+          "1": 336
+        },
+        "NoCompletedResult": {
+          "True": 336
+        },
+        "CallerOwnedAliasesErased": {
+          "True": 336
+        },
+        "LockAllocationBaselineRestored": {
+          "True": 336
+        }
+      },
+      "runtimeNormalObservations": [
+        {
+          "Suite": "Kalyna512_512",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 4
+        },
+        {
+          "Suite": "Threefish1024",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 4
+        },
+        {
+          "Suite": "StandardCascade",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 11
+        },
+        {
+          "Suite": "ParanoiaCascade",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 19
+        },
+        {
+          "Suite": "XChaChaOverAes",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 7
+        },
+        {
+          "Suite": "Aes256",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 5
+        },
+        {
+          "Suite": "Mars448",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 5
+        },
+        {
+          "Suite": "Shacal2_512",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 5
+        },
+        {
+          "Suite": "XChaCha20Poly1305",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 5
+        },
+        {
+          "Suite": "MixedCascade",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 9
+        },
+        {
+          "Suite": "Camellia256",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 5
+        },
+        {
+          "Suite": "Serpent256",
+          "SuccessfulProductionChunk": true,
+          "observedBoundaryCount": 5
+        }
+      ],
+      "erasureObservationScopes": [
+        "Caller-owned arrays and successful/failed owner disposal; internal temporary spans are not retained"
+      ],
+      "originalScope": "Public synthetic fixtures; no key bytes or addresses; NULL producer failure and ABI NULL tests are distinct"
+    },
+    {
+      "testId": "security.downstream-mac-handoff-faults",
+      "originLine": 874,
+      "originByteOffset": 729493,
+      "originExactLineBytes": 26094,
+      "originExactLineSha256": "39c5057610e1e1685f64c6e43bde65f6ef5cbeac549a718f45858f3a13db4342",
+      "lineHashIncludesOriginalNewline": true,
+      "runtimeRecordedCases": 80,
+      "runtimeRecordedFaultCounts": {
+        "Missing": 20,
+        "Zero": 20,
+        "ByteOne": 20,
+        "AllBitsOne": 20
+      },
+      "runtimeRecordedContextCaseCounts": {
+        "MAC workers=1": 40,
+        "MAC workers=2": 40
+      },
+      "runtimeRecordedAssertionCounts": {
+        "InjectionHits": {
+          "1": 80
+        },
+        "NoCompletedResult": {
+          "True": 80
+        },
+        "CallerOwnedAliasesErased": {
+          "True": 80
+        },
+        "LockAllocationBaselineRestored": {
+          "True": 80
+        }
+      },
+      "runtimeNormalObservations": [
+        {
+          "Workers": 1,
+          "Leaves": 3,
+          "PeakActualCpuPermits": 1,
+          "SuccessfulProductionMac": true,
+          "observedBoundaryCount": 10
+        },
+        {
+          "Workers": 2,
+          "Leaves": 3,
+          "PeakActualCpuPermits": 2,
+          "SuccessfulProductionMac": true,
+          "observedBoundaryCount": 10
+        }
+      ],
+      "erasureObservationScopes": [
+        "Caller fixture erasure and lock accounting; private leaf/root spans are not retained"
+      ],
+      "originalScope": "Public synthetic fixtures; no key bytes or addresses; NULL producer failure and ABI NULL tests are distinct"
+    },
+    {
+      "testId": "security.downstream-recovery-handoff-faults",
+      "originLine": 876,
+      "originByteOffset": 755679,
+      "originExactLineBytes": 7855,
+      "originExactLineSha256": "0c59dda071c99613c15a84f39e48a4e5fb18fa6d07fbfba1486ee3d9bacacfe8",
+      "lineHashIncludesOriginalNewline": true,
+      "runtimeRecordedCases": 24,
+      "runtimeRecordedFaultCounts": {
+        "Missing": 6,
+        "Zero": 6,
+        "ByteOne": 6,
+        "AllBitsOne": 6
+      },
+      "runtimeRecordedContextCaseCounts": {
+        "KPAR2 certification": 24
+      },
+      "runtimeRecordedAssertionCounts": {
+        "InjectionHits": {
+          "1": 24
+        },
+        "NoCompletedResult": {
+          "True": 24
+        },
+        "CallerOwnedAliasesErased": {
+          "True": 24
+        },
+        "LockAllocationBaselineRestored": {
+          "True": 24
+        }
+      },
+      "runtimeNormalObservations": {
+        "observedBoundaryCount": 6
+      },
+      "erasureObservationScopes": [
+        "Actual AfterSha3/AfterSkein child array aliases plus caller parents"
+      ],
+      "originalScope": "Public synthetic fixtures; no key bytes or addresses; NULL producer failure and ABI NULL tests are distinct"
+    }
+  ],
+  "runtimeDownstreamTotalCases": 440,
+  "runtimeOwnerLifecycle": {
+    "originLine": 878,
+    "originByteOffset": 763627,
+    "originExactLineBytes": 217,
+    "originExactLineSha256": "197f67245d8d1281e72f944de8d4d74891ee25214e0649be11f83304e8013c28",
+    "lineHashIncludesOriginalNewline": true,
+    "originalRecordedObject": {
+      "OwnerTypes": [
+        "LockedSensitiveBuffer",
+        "SuiteKeyMaterial",
+        "RecoveryKeys"
+      ],
+      "SuccessAndFailedUnlockCases": 6,
+      "GettersClosed": true,
+      "ActualAliasesErased": true,
+      "LockAllocationBaselineRestored": true
+    }
+  },
+  "sourceEnumeratedCountsWithoutIndependentRuntimeCounter": [
+    {
+      "testId": "security.kdf-handoff-destination-cleanup",
+      "actualGroupStatus": "PASS",
+      "sourceEnumeratedDestinationCases": 48,
+      "calculation": "(3 SHA3 credential boundaries + 1 Skein credential + 1 interleaved master + 5 direct-role boundaries + 1 truncated stage role + 1 truncated global role) * 4 faults = 12 * 4 = 48",
+      "runtimeCounterEmitted": false,
+      "scope": "Whole new group passed and frozen source asserts selected-hit==1, complete caller output zero and lock baseline restored; 48 is source enumeration, not an independently emitted runtime counter."
+    }
+  ],
+  "limitations": [
+    "No new product test was executed by this extractor; all runtime data were freshly parsed from this new original run, not copied from the old Source122/run6997 summary.",
+    "319/319 PASS with original phase-process exit0 establishes phase1 only. It does not establish completion or approval of all49 phases, native ABI campaigns, real installed GUI, final512-after-GUI or public distribution.",
+    "The KDF matrix explicitly uses internal-8-MiB-fault-injection-only; production-cost KDF checks remain separate.",
+    "Missing/missing-output injects ArgumentNullException at an actual managed handoff. It does not place an actual NULL pointer at a native ABI boundary.",
+    "Actual managed null-reference contract group fails before native dispatch. This extraction does not establish the separate ARM64/x86_64 native NULL ABI results.",
+    "00 is repeated zero byte, 01 repeated byte0x01, FF repeated byte0xFF/all bits one. Positive primitive constant-key oracles remain separately PASS.",
+    "Only declared caller-visible aliases, owner lifecycle and lock bookkeeping are observed. Private internal spans, arbitrary pointer corruption, physical memory erasure and formal proof are outside these records.",
+    "No unreported subcase counters are fabricated. Destination48 is source enumeration with actual groupPASS.",
+    "Source-before manifest, pinned Git blob and current selected source files match. Whole-run source-after stability remains a later official-run gate.",
+    "Prior run6997 Source122 318/319 and its failure evidence remain historical and unchanged."
+  ],
+  "originalInputPins": {
+    "public-test-results/phase-1.test-results.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/public-test-results/phase-1.test-results.json",
+      "bytes": 85914,
+      "sha256": "b8e42eeeb90cc9fe63e88757ba6f1a05638733dbede33d3d8ae248daebce271b"
+    },
+    "public-test-results/phase-1.test-timings.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/public-test-results/phase-1.test-timings.json",
+      "bytes": 14230,
+      "sha256": "4d80057a999b6452114d60ae0850e190459f2dff10507fdd1dc51e978b97b3c4"
+    },
+    "phase-1-preservation.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/phase-1-preservation.json",
+      "bytes": 1056,
+      "sha256": "4dd65174ae807e3d33ecdce1b65a709126eb048f53cf36203d9f37ddb20c4b3f"
+    },
+    "builder-start.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder-start.json",
+      "bytes": 1040,
+      "sha256": "506dbb7313dff620f444b5761603e0df9d406b38eb4fabb87e8ef9e5e7f656d9"
+    },
+    "source-inputs-before.json": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/source-inputs-before.json",
+      "bytes": 88652,
+      "sha256": "0dcd3d704536a0d75d9bd5f31533ce726ac503b2f2ceccbe53c2d8872207f1c0"
+    }
+  },
+  "originalGrowingLogPrefixPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+    "scope": "Original prefix only, byte offset 0 through phase-1 Full319 summary inclusive; the official builder is continuing and its stdout may grow. This is not a finalized whole-log hash.",
+    "prefixBytes": 764469,
+    "prefixSha256": "4769e907820538139d7dd5c12759e26589f97077bee289888c4252e2aa904257",
+    "prefixReReadEqual": true,
+    "device": 16777232,
+    "inode": 58707460,
+    "originalSizeAtOpen": 1269253,
+    "originalSizeAfterPrefixReread": 1269253,
+    "summary": {
+      "line": 886,
+      "originalText": "319 macOS groups: 319 passed, 0 failed, 0 blocked.",
+      "exactLineSha256": "34af96a0325483b89d07bb7c779402e14762f26853d757352680b043a4cb7f63"
+    },
+    "lineNumberDefinition": "1-based LF-delimited binary readline records; embedded bare CR progress updates do not increment this line index. A universal-newline text reader may report a different display line number. Exact byte offsets/lengths/SHA256 are authoritative."
+  },
+  "sourcePins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KdfHandoffFaultTests.cs",
+      "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+      "bytes": 30920,
+      "sha256": "5d49b76da21601b76e00195e6388c3e73414a10f26d0e23e5d8370d7ca99f581",
+      "matchesOriginalBeforeManifest": true,
+      "matchesGitSourceBlob": true,
+      "matchesCurrentFileAtExtraction": true,
+      "afterRunSourceManifestChecked": false
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/DownstreamHandoffFaultTests.cs",
+      "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+      "bytes": 33304,
+      "sha256": "625a566cd66240786e098aaa393152bb5429df4f93657fbd3dce2a2912f2b7c8",
+      "matchesOriginalBeforeManifest": true,
+      "matchesGitSourceBlob": true,
+      "matchesCurrentFileAtExtraction": true,
+      "afterRunSourceManifestChecked": false
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/NativeKeyHandoffTests.cs",
+      "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+      "bytes": 32568,
+      "sha256": "8f6497e2c34c74a889bc9ff5f141db102f2ec1011ec84b51282eba3cd2bb6f0a",
+      "matchesOriginalBeforeManifest": true,
+      "matchesGitSourceBlob": true,
+      "matchesCurrentFileAtExtraction": true,
+      "afterRunSourceManifestChecked": false
+    }
+  ],
+  "originalSmallSnippetPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/readonly-security-groups-28942-0nfar5jl/original-small-runtime-snippets.log",
+    "bytes": 1897,
+    "sha256": "f400ae6df2cae0dda76850ba44b77bed873e274003d3a0cc6a24b185e8f25da0"
+  },
+  "sourceCleanupMethodExcerptPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/readonly-security-groups-28942-0nfar5jl/original-source-caller-output-cleanup-method.cs.txt",
+    "bytes": 3811,
+    "sha256": "640226922f2583a559f7be1706ca486a0484713fb3189ad01e4118985d719c1f"
+  }
+}

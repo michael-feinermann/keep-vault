@@ -1,0 +1,413 @@
+{
+  "schema": "keepvault.public-ba-security-runtime-summary.v1",
+  "createdUtc": "2026-10-17T13:58:36.268600+00:00",
+  "compiledSourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "runtimeTestDateUtc": "2026-10-14",
+  "originalPhase1PassedGroups": 319,
+  "selectedSecurityGroups": 17,
+  "securityGroupIds": [
+    "security.kdf-handoff-fault-matrix",
+    "security.kdf-null-width-round-contracts",
+    "security.kdf-key-owner-contracts",
+    "security.kdf-handoff-destination-cleanup",
+    "security.native-managed-null-contracts",
+    "security.native-managed-width-contracts",
+    "crypto.native-constant-key-oracles",
+    "kdf.native-constant-argon-inputs",
+    "security.downstream-suite-handoff-faults",
+    "security.downstream-mac-handoff-faults",
+    "security.downstream-recovery-handoff-faults",
+    "security.downstream-disposed-owner-faults",
+    "security.downstream-null-width-contracts",
+    "security.composite-secret-cleanup",
+    "security.production-secret-cleanup-faults",
+    "security.secure-memory-unlock-accounting",
+    "recovery.key-derivation-failure-cleanup"
+  ],
+  "runtimeKdf": {
+    "suites": 12,
+    "recordedBoundaries": 626,
+    "recordedFaultInjections": 2504,
+    "faultClasses": [
+      "00",
+      "01",
+      "FF",
+      "missing-output"
+    ],
+    "perFaultCases": 626,
+    "runtimeProfile": "internal-8-MiB-fault-injection-only",
+    "suiteRows": [
+      {
+        "suite": "Kalyna512_512",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "status": "PASS"
+      },
+      {
+        "suite": "Threefish1024",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "status": "PASS"
+      },
+      {
+        "suite": "StandardCascade",
+        "boundaryCount": 63,
+        "caseCount": 252,
+        "status": "PASS"
+      },
+      {
+        "suite": "ParanoiaCascade",
+        "boundaryCount": 95,
+        "caseCount": 380,
+        "status": "PASS"
+      },
+      {
+        "suite": "XChaChaOverAes",
+        "boundaryCount": 51,
+        "caseCount": 204,
+        "status": "PASS"
+      },
+      {
+        "suite": "Aes256",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "status": "PASS"
+      },
+      {
+        "suite": "Mars448",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "status": "PASS"
+      },
+      {
+        "suite": "Shacal2_512",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "status": "PASS"
+      },
+      {
+        "suite": "XChaCha20Poly1305",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "status": "PASS"
+      },
+      {
+        "suite": "MixedCascade",
+        "boundaryCount": 57,
+        "caseCount": 228,
+        "status": "PASS"
+      },
+      {
+        "suite": "Camellia256",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "status": "PASS"
+      },
+      {
+        "suite": "Serpent256",
+        "boundaryCount": 45,
+        "caseCount": 180,
+        "status": "PASS"
+      }
+    ],
+    "individual2504ReceiptObjectsPresent": false,
+    "granularity": "626 exact boundary names and four fault classes; observed per-suite/global runtime counters, not2504 individually serialized case receipts"
+  },
+  "runtimeConsumers": [
+    {
+      "testId": "security.downstream-suite-handoff-faults",
+      "record": "suite-consumer-matrix",
+      "recordedCaseObjects": 336,
+      "faultCounts": {
+        "Missing": 84,
+        "Zero": 84,
+        "ByteOne": 84,
+        "AllBitsOne": 84
+      },
+      "normal": [
+        {
+          "Suite": "Kalyna512_512",
+          "Boundaries": [
+            "v13/Kalyna-512/512-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/Kalyna-512/512-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/Kalyna-512/512-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "cipher/Kalyna512_512/standalone-consumer"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "Threefish1024",
+          "Boundaries": [
+            "v13/Threefish-1024-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/Threefish-1024-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/Threefish-1024-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "cipher/Threefish1024/standalone-consumer"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "StandardCascade",
+          "Boundaries": [
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(AES-256-CTR)))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(AES-256-CTR)))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(AES-256-CTR)))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(AES-256-CTR)))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Aes256",
+            "cipher/stage-0/Aes256/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(AES-256-CTR)))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-1/Kalyna512_512",
+            "cipher/stage-1/Kalyna512_512/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(AES-256-CTR)))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-2/Threefish1024",
+            "cipher/stage-2/Threefish1024/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(AES-256-CTR)))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-3/XChaCha20Poly1305",
+            "cipher/stage-3/XChaCha20Poly1305/aead-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "ParanoiaCascade",
+          "Boundaries": [
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Aes256",
+            "cipher/stage-0/Aes256/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-1/Mars448",
+            "cipher/stage-1/Mars448/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-2/Camellia256",
+            "cipher/stage-2/Camellia256/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-3/Serpent256",
+            "cipher/stage-3/Serpent256/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-4/Shacal2_512",
+            "cipher/stage-4/Shacal2_512/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-5/Kalyna512_512",
+            "cipher/stage-5/Kalyna512_512/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-6/Threefish1024",
+            "cipher/stage-6/Threefish1024/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(Kalyna-512/512-CTR(SHACAL-2-512-CTR(Serpent-256-CTR(Camellia-256-CTR(MARS-448-CTR(AES-256-CTR)))))))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-7/XChaCha20Poly1305",
+            "cipher/stage-7/XChaCha20Poly1305/aead-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "XChaChaOverAes",
+          "Boundaries": [
+            "v13/XChaCha20-Poly1305(AES-256-CTR)+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/XChaCha20-Poly1305(AES-256-CTR)+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/XChaCha20-Poly1305(AES-256-CTR)+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/XChaCha20-Poly1305(AES-256-CTR)+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Aes256",
+            "cipher/stage-0/Aes256/ctr-copy",
+            "v13/XChaCha20-Poly1305(AES-256-CTR)+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-1/XChaCha20Poly1305",
+            "cipher/stage-1/XChaCha20Poly1305/aead-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "Aes256",
+          "Boundaries": [
+            "v13/AES-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/AES-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/AES-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/AES-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Aes256",
+            "cipher/stage-0/Aes256/ctr-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "Mars448",
+          "Boundaries": [
+            "v13/MARS-448-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/MARS-448-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/MARS-448-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/MARS-448-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Mars448",
+            "cipher/stage-0/Mars448/ctr-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "Shacal2_512",
+          "Boundaries": [
+            "v13/SHACAL-2-512-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/SHACAL-2-512-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/SHACAL-2-512-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/SHACAL-2-512-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Shacal2_512",
+            "cipher/stage-0/Shacal2_512/ctr-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "XChaCha20Poly1305",
+          "Boundaries": [
+            "v13/XChaCha20-Poly1305+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/XChaCha20-Poly1305+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/XChaCha20-Poly1305+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/XChaCha20-Poly1305+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/XChaCha20Poly1305",
+            "cipher/stage-0/XChaCha20Poly1305/aead-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "MixedCascade",
+          "Boundaries": [
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(AES-256-CTR))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(AES-256-CTR))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(AES-256-CTR))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(AES-256-CTR))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Aes256",
+            "cipher/stage-0/Aes256/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(AES-256-CTR))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-1/Threefish1024",
+            "cipher/stage-1/Threefish1024/ctr-copy",
+            "v13/XChaCha20-Poly1305(Threefish-1024-CTR(AES-256-CTR))+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-2/XChaCha20Poly1305",
+            "cipher/stage-2/XChaCha20Poly1305/aead-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "Camellia256",
+          "Boundaries": [
+            "v13/Camellia-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/Camellia-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/Camellia-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/Camellia-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Camellia256",
+            "cipher/stage-0/Camellia256/ctr-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        },
+        {
+          "Suite": "Serpent256",
+          "Boundaries": [
+            "v13/Serpent-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/encryption",
+            "v13/Serpent-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/sha3-mac",
+            "v13/Serpent-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/skein-mac",
+            "v13/Serpent-256-CTR+HMAC-SHA3-512+Skein-MAC-1024/suite-copy/stage-0/Serpent256",
+            "cipher/stage-0/Serpent256/ctr-copy"
+          ],
+          "SuccessfulProductionChunk": true
+        }
+      ],
+      "allInjectionHitsExactlyOne": true,
+      "allNoCompletedResult": true,
+      "allCallerOwnedAliasesErased": true,
+      "allLockAllocationBaselineRestored": true,
+      "erasureScopes": [
+        "Caller-owned arrays and successful/failed owner disposal; internal temporary spans are not retained"
+      ]
+    },
+    {
+      "testId": "security.downstream-mac-handoff-faults",
+      "record": "mac-consumer-matrix",
+      "recordedCaseObjects": 80,
+      "faultCounts": {
+        "Missing": 20,
+        "Zero": 20,
+        "ByteOne": 20,
+        "AllBitsOne": 20
+      },
+      "normal": [
+        {
+          "Workers": 1,
+          "Leaves": 3,
+          "PeakActualCpuPermits": 1,
+          "Boundaries": [
+            "mac/tree/sha3-parent-consumer",
+            "mac/tree/skein-parent-consumer",
+            "mac/tree/sha3-leaf-derived",
+            "mac/tree/sha3-root-derived",
+            "mac/tree/skein-leaf-derived",
+            "mac/tree/skein-root-derived",
+            "mac/tree/sha3-root-consumer",
+            "mac/tree/skein-root-consumer",
+            "mac/tree/sha3-leaf-consumer",
+            "mac/tree/skein-leaf-consumer"
+          ],
+          "SuccessfulProductionMac": true
+        },
+        {
+          "Workers": 2,
+          "Leaves": 3,
+          "PeakActualCpuPermits": 2,
+          "Boundaries": [
+            "mac/tree/sha3-parent-consumer",
+            "mac/tree/skein-parent-consumer",
+            "mac/tree/sha3-leaf-derived",
+            "mac/tree/sha3-root-derived",
+            "mac/tree/skein-leaf-derived",
+            "mac/tree/skein-root-derived",
+            "mac/tree/sha3-root-consumer",
+            "mac/tree/skein-root-consumer",
+            "mac/tree/sha3-leaf-consumer",
+            "mac/tree/skein-leaf-consumer"
+          ],
+          "SuccessfulProductionMac": true
+        }
+      ],
+      "allInjectionHitsExactlyOne": true,
+      "allNoCompletedResult": true,
+      "allCallerOwnedAliasesErased": true,
+      "allLockAllocationBaselineRestored": true,
+      "erasureScopes": [
+        "Caller fixture erasure and lock accounting; private leaf/root spans are not retained"
+      ]
+    },
+    {
+      "testId": "security.downstream-recovery-handoff-faults",
+      "record": "recovery-consumer-matrix",
+      "recordedCaseObjects": 24,
+      "faultCounts": {
+        "Missing": 6,
+        "Zero": 6,
+        "ByteOne": 6,
+        "AllBitsOne": 6
+      },
+      "normal": {
+        "Boundaries": [
+          "recovery/parent/sha3-consumer",
+          "recovery/parent/skein-consumer",
+          "recovery/certification/sha3-output",
+          "recovery/certification/skein-output",
+          "recovery/certification/sha3-consumer",
+          "recovery/certification/skein-consumer"
+        ]
+      },
+      "allInjectionHitsExactlyOne": true,
+      "allNoCompletedResult": true,
+      "allCallerOwnedAliasesErased": true,
+      "allLockAllocationBaselineRestored": true,
+      "erasureScopes": [
+        "Actual AfterSha3/AfterSkein child array aliases plus caller parents"
+      ]
+    }
+  ],
+  "runtimeConsumerActualCaseObjects": 440,
+  "runtimeOwnerCases": 6,
+  "runtimeOwnerObject": {
+    "OwnerTypes": [
+      "LockedSensitiveBuffer",
+      "SuiteKeyMaterial",
+      "RecoveryKeys"
+    ],
+    "SuccessAndFailedUnlockCases": 6,
+    "GettersClosed": true,
+    "ActualAliasesErased": true,
+    "LockAllocationBaselineRestored": true
+  },
+  "sourceOnlyDestinationCleanupCases": {
+    "count": 48,
+    "actualGroupStatus": "PASS",
+    "independentRuntimeCounterEmitted": false,
+    "basis": [
+      {
+        "testId": "security.kdf-handoff-destination-cleanup",
+        "actualGroupStatus": "PASS",
+        "sourceEnumeratedDestinationCases": 48,
+        "calculation": "(3 SHA3 credential boundaries + 1 Skein credential + 1 interleaved master + 5 direct-role boundaries + 1 truncated stage role + 1 truncated global role) * 4 faults = 12 * 4 = 48",
+        "runtimeCounterEmitted": false,
+        "scope": "Whole new group passed and frozen source asserts selected-hit==1, complete caller output zero and lock baseline restored; 48 is source enumeration, not an independently emitted runtime counter."
+      }
+    ]
+  },
+  "originalStdoutPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+    "sha256": "ed7f975b264642ba60e9cde37876cc45bc9c86f04279b8a449359cbf22752495",
+    "bytes": 1273083
+  },
+  "recordIndexPath": "originals/stdout-records/record-index.json",
+  "overallReleaseApproval": false
+}

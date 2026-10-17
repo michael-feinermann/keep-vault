@@ -1,0 +1,1 @@
+handoff_owner_lifecycle={"OwnerTypes":["LockedSensitiveBuffer","SuiteKeyMaterial","RecoveryKeys"],"SuccessAndFailedUnlockCases":6,"GettersClosed":true,"ActualAliasesErased":true,"LockAllocationBaselineRestored":true}

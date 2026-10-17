@@ -1,0 +1,112 @@
+{
+  "schema": "keepvault.public-security-addendum-content-review.v1",
+  "reviewedUtc": "2026-10-17T13:58:36.289988+00:00",
+  "selectedFilesReviewed": [
+    {
+      "path": "derived/original-ba-extraction/security-groups-extraction.json",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "originals/phase1/phase-1.test-results.json",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "originals/phase1/phase-1.test-timings.json",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "originals/phase1/phase-1-preservation.json",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "originals/provenance/compiled-source-inputs-before.json",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "originals/phase1/selected-small-runtime-snippets.txt",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "source/caller-output-cleanup-method-excerpt.cs.txt",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "source/KdfHandoffFaultTests.cs.txt",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "source/DownstreamHandoffFaultTests.cs.txt",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "source/NativeKeyHandoffTests.cs.txt",
+      "reviewed": "all JSON keys/values or complete public source/snippet text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/kdf-handoff-matrix.record.txt",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/kdf-handoff-matrix.json",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/suite-consumer-matrix.record.txt",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/suite-consumer-matrix.json",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/mac-consumer-matrix.record.txt",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/mac-consumer-matrix.json",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/recovery-consumer-matrix.record.txt",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/recovery-consumer-matrix.json",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/owner-lifecycle.record.txt",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    },
+    {
+      "path": "originals/stdout-records/owner-lifecycle.json",
+      "reviewed": "complete structured runtime record, all JSON keys/values and literal text",
+      "findings": []
+    }
+  ],
+  "findings": [],
+  "fullBuilderStdoutCopied": false,
+  "privateSigningOrWrappingOrKeychainFilesRead": false,
+  "rawMouseEntropyOrScreenshotsCopied": false,
+  "scope": "All selected JSON keys/values, complete selected raw structured records and public source/snippet text; independent reviewer pending",
+  "overallReleaseApproval": false
+}

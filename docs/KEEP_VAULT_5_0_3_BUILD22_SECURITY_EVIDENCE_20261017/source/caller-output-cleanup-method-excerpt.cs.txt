@@ -1,0 +1,59 @@
+    private static Task TestCallerOutputCleanupAsync()
+    {
+        const string algorithm = EncryptionSuiteCatalog.StandardAlgorithm;
+        byte[] qs = Sequence(128, 11), qk = Sequence(128, 61), master = Sequence(128, 127);
+        byte[] salt = Sequence(64, 5), otherSalt = Sequence(64, 43);
+        byte[] context = SuiteKeySchedule.RoleContext(algorithm, 0, "AES-256", KeyRolePurpose.Encryption, 256);
+        string stage = $"v13/{algorithm}/stage-0/AES-256/{KeyRolePurpose.Encryption}";
+        string global = $"v13/{algorithm}/global-{KeyRolePurpose.Sha3Mac}/HMAC-SHA3-512";
+        var cases = new List<(string Boundary, int Width, Action<byte[]> Derive)>();
+        foreach (string half in new[] { "sha3-half-0", "sha3-half-1", "sha3-complete" })
+            cases.Add(($"v13/{algorithm}/credential/{half}", 128, output =>
+                V13MasterKdf.DeriveSha3CredentialHash(algorithm, Password, Pin, FactorA, FactorB, output)));
+        cases.Add(($"v13/{algorithm}/credential/skein-complete", 128, output =>
+            V13MasterKdf.DeriveSkeinCredentialHash(algorithm, Password, Pin, FactorA, FactorB, output)));
+        cases.Add(($"v13/{algorithm}/round-1/master-interleaved", 128, output =>
+            V13MasterKdf.DeriveRoundMaster(algorithm, 1, qs, qk, salt, otherSalt, default, FaultMemoryKiB, output)));
+        foreach (string suffix in new[] { "hkdf-half-0", "hkdf-half-1", "hkdf-complete", "skein-branch", "combined" })
+            cases.Add(($"v13/role/direct/{suffix}", 128, output =>
+                SuiteKeySchedule.DeriveRoleValue(master, context, output)));
+        cases.Add(($"{stage}/truncated", 32, output =>
+            SuiteKeySchedule.DeriveRoleKey(master, algorithm, 0, "AES-256", KeyRolePurpose.Encryption, output)));
+        cases.Add(($"{global}/truncated", 64, output =>
+            SuiteKeySchedule.DeriveGlobalKey(master, algorithm, "HMAC-SHA3-512", KeyRolePurpose.Sha3Mac, output)));
+        long beforeBytes = SecureMemory.LockedBytesForTests;
+        long beforeAllocations = SecureMemory.LockedAllocationsForTests;
+        using IDisposable memory = V13MasterKdf.UseMemoryCostForTests(FaultMemoryKiB);
+        try
+        {
+            foreach ((string boundary, int width, Action<byte[]> derive) in cases)
+            foreach (string fault in new[] { "00", "01", "FF", "missing-output" })
+            {
+                byte[] output = Enumerable.Repeat((byte)0xA6, width).ToArray();
+                int hit = 0;
+                using (DerivedSecretHandoff.UseMutationForTests((actual, material) =>
+                {
+                    if (actual != boundary) return;
+                    hit++;
+                    if (fault == "missing-output") throw new ArgumentNullException("injectedDerivedOutput");
+                    material.Fill(fault switch { "00" => (byte)0x00, "01" => (byte)0x01, _ => (byte)0xFF });
+                }))
+                {
+                    if (fault == "missing-output") Expect<ArgumentNullException>(() => derive(output));
+                    else Expect<CryptographicException>(() => derive(output));
+                }
+                Require(hit == 1, $"The caller-output fault did not reach the selected boundary: {boundary}.");
+                Require(output.All(value => value == 0), $"A rejected output retained caller-visible secret bytes: {boundary}.");
+            }
+        }
+        finally
+        {
+            foreach (byte[] buffer in new[] { qs, qk, master, salt, otherSalt, context })
+                CryptographicOperations.ZeroMemory(buffer);
+        }
+        Require(SecureMemory.LockedBytesForTests == beforeBytes
+            && SecureMemory.LockedAllocationsForTests == beforeAllocations,
+            "Rejected caller-output handoffs leaked locked buffers.");
+        return Task.CompletedTask;
+    }
+
