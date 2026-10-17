@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "recovery.physical-eio-repair",
+  "observedUtc": "2026-10-14T09:22:27.115539+00:00",
+  "originalInputs": {
+    "phase-6.test-results.json": {
+      "bytes": 717,
+      "sha256": "d7c358c744d4060d6415e7a5f154944a7072e406cdf1af4e1cf909a106f50492"
+    },
+    "phase-6.test-timings.json": {
+      "bytes": 47,
+      "sha256": "84caa325dd3c55217659bd1ff4b9a2c02394f963049d6b1ce665f1a71a12782f"
+    }
+  },
+  "originalPhase": 6,
+  "originalPhaseLine": "6 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --full --no-smoke --only recovery.physical-eio-repair --parallel 1",
+  "originalPhaseLineSha256": "2d6e1faff84bd5e95bd438cbf49a248d158696b6f712d48f8d2c8e8b4b954546",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

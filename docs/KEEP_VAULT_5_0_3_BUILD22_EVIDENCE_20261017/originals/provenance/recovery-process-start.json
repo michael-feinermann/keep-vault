@@ -1,0 +1,23 @@
+{
+  "startedUtc": "2026-10-17T11:05:31.014842+00:00",
+  "actualSupervisorPid": 63571,
+  "actualRecoveryPid": 63573,
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-worker.py",
+    "--execute"
+  ],
+  "workerScriptBinding": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-worker.py",
+    "sha256": "df476b0275029b9e7cb2ac863eb8278d8334adfc80db2466a4bfc4d9e26646cd",
+    "bytes": 15349
+  },
+  "supervisorScriptBinding": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-supervisor.py",
+    "sha256": "ea43dd29390d2a4b3330eed21d03d37ba6f1449e5bdfd444c26ce890bd12c941",
+    "bytes": 2198
+  }
+}

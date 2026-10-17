@@ -1,0 +1,18 @@
+{
+  "builderSha256": "99af27c3fc86ea88531c3dffe1b2ee3bf48266e1fbd5e7ec202f61b83e6fe54a",
+  "expectedPhaseCount": 49,
+  "fullReleaseGate": "PLANNED",
+  "launcherPid": 28942,
+  "launcherTerminal": null,
+  "oneGiBCompressionLevel": 3,
+  "privateContentReadCopiedOrHashed": false,
+  "publishMode": "release",
+  "requestedBuild": 22,
+  "scope": "Tracked public project/native/build inputs and explicit public signing pin; no private-material bytes.",
+  "sourceFileCount": 566,
+  "sourceHead": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "sourceMapSha256": "0dcd3d704536a0d75d9bd5f31533ce726ac503b2f2ceccbe53c2d8872207f1c0",
+  "sourceObservationScope": "Before/after the builder only; no continuous or BeforePhase proof.",
+  "startedUtc": "2026-10-14T08:05:59.076909+00:00",
+  "wrapperSha256": "95046b61b7fb3b1462cd1e20f92cc14782f31b2b8f2e442cb4ce2b4b529e0ac0"
+}

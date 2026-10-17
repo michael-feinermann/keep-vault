@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "testInventoryHash": "3b3fb99acb9525e96351c65839f1eadd5c7408ef50d26f30c31fd02275059a96",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.rev12-workflow-1gib-kalyna512-512-auto",
+      "name": "explicit public one-GiB production-KDF level-3 complete archive/KPAR2/original-compare workflow: kalyna512-512/auto",
+      "status": "PASS",
+      "seconds": 679.006,
+      "peakRssMiB": 1711,
+      "seed": "0x6709A7D3",
+      "failure": null
+    }
+  ]
+}

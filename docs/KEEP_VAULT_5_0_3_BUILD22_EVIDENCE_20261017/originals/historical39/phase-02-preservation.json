@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "containers.v13-production-worker-equivalence",
+  "observedUtc": "2026-10-14T09:21:56.837516+00:00",
+  "originalInputs": {
+    "phase-2.test-results.json": {
+      "bytes": 752,
+      "sha256": "bbb5ee65d7ccc119610ac140fdbf5f11ef6d303bca7fa9bbf85232e6d30352e5"
+    },
+    "phase-2.test-timings.json": {
+      "bytes": 64,
+      "sha256": "043d34749f8bbe1d4a67d61e2bb68aa97c3e64e0fbe4c78d8c23f30152d23e06"
+    }
+  },
+  "originalPhase": 2,
+  "originalPhaseLine": "2 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --full --no-smoke --only containers.v13-production-worker-equivalence --parallel 1",
+  "originalPhaseLineSha256": "79c0dd5c7db925912cdffd585036b15b90e32da17e6d95a132f5d713022169cf",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

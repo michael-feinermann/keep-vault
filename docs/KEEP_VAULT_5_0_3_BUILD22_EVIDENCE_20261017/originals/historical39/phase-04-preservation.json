@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "containers.v13-kpar2-roundtrip",
+  "observedUtc": "2026-10-14T09:22:24.080111+00:00",
+  "originalInputs": {
+    "phase-4.test-results.json": {
+      "bytes": 703,
+      "sha256": "eafc4b2193d1029c0b94251b6fd4d87cada6f8aabe7f46ce6b7c4f70941d3543"
+    },
+    "phase-4.test-timings.json": {
+      "bytes": 50,
+      "sha256": "16b8f981831b3567be9de7fa916bdfe2eff7a24dc86092ca542a589c0beab7ce"
+    }
+  },
+  "originalPhase": 4,
+  "originalPhaseLine": "4 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --full --no-smoke --only containers.v13-kpar2-roundtrip --parallel 1",
+  "originalPhaseLineSha256": "c5f3c4037d4726e3770ee9f67aead789bdf95d4185ac6a994a81ec1443794139",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

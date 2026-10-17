@@ -1,0 +1,25 @@
+{
+  "actualWrapperPid": 70677,
+  "actualRecoveryPid": 63573,
+  "status": "PASS",
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "mode": "LOCAL",
+  "localVerification": "PASS",
+  "publicationVerification": "NOT_RUN",
+  "commandReceiptCount": 126,
+  "startedAtUtc": "2026-10-17T13:29:44.019752+00:00",
+  "completedAtUtc": "2026-10-17T13:29:57.532785+00:00",
+  "legacyBuilderExit": "UNOBSERVED",
+  "coverageVerdict": "RECOVERED_CAMPAIGN_49_GATES_PASS",
+  "originalToRenamedByteIdentity": true,
+  "overallReleaseApproval": false,
+  "limitations": [
+    "No upload, publication, installation, native GUI, performance, Windows or external audit performed."
+  ],
+  "derivation": "Selected fields from hashed original7MB receipt, not copied in full",
+  "originalReceiptBinding": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/local-verify-recovered-20261017-4mf5ys0c/local-draft-receipt.json",
+    "sha256": "22db535733064b898afcf1346f77a0ab4429aa59a9f48e16cc523609be5b28fb",
+    "bytes": 7011018
+  }
+}

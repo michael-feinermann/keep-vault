@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "performance.rev12-workflow-1gib-paranoia-auto",
+  "observedUtc": "2026-10-14T11:38:15.358880+00:00",
+  "originalInputs": {
+    "phase-37.test-results.json": {
+      "bytes": 778,
+      "sha256": "6c866fec56c0b5950c6e686a1962416ca8d7a34b5656a94e15a0afb4fac3e060"
+    },
+    "phase-37.test-timings.json": {
+      "bytes": 66,
+      "sha256": "f6126a054310685770dfa5f5f3d52b158f3c0001f748c3ba5c45979279737da3"
+    }
+  },
+  "originalPhase": 37,
+  "originalPhaseLine": "37 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --performance --only performance.rev12-workflow-1gib-paranoia-auto --parallel 1",
+  "originalPhaseLineSha256": "567babbb2255fb845cc015dcc32fe3b6784feeacd21ab531a51ed930ae07edee",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

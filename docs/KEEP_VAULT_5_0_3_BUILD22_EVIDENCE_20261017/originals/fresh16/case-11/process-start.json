@@ -1,0 +1,15 @@
+{
+  "actualPid": 68203,
+  "argv": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T090448828623Z-80743/public-dotnet-sdk/dotnet",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-11/execution-harness/KeepVaultMac.Tests.dll",
+    "--performance",
+    "--only",
+    "performance.rev12-workflow-1gib-serpent-auto",
+    "--parallel",
+    "1"
+  ],
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "startedUtc": "2026-10-17T12:48:04.006915+00:00",
+  "testId": "performance.rev12-workflow-1gib-serpent-auto"
+}

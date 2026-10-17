@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "performance.cipher-suites",
+  "observedUtc": "2026-10-14T10:30:04.627623+00:00",
+  "originalInputs": {
+    "phase-8.test-results.json": {
+      "bytes": 727,
+      "sha256": "8f277002d183a6a777a2715c2a523ae7ad5a2eb3ff164710aa25a5aeb13e2a79"
+    },
+    "phase-8.test-timings.json": {
+      "bytes": 46,
+      "sha256": "4b01cf9e5bb7bb7c434f725bcf53f282009413138cd81e10856f7a158faa4ee3"
+    }
+  },
+  "originalPhase": 8,
+  "originalPhaseLine": "8 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --performance --only performance.cipher-suites --parallel 1",
+  "originalPhaseLineSha256": "4ac62cb5c6554b33bbfb70c94eb0030af9274e7e4f8c4c3d973170230e7cdc75",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

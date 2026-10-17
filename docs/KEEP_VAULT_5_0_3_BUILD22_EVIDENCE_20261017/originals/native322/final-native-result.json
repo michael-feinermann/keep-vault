@@ -1,0 +1,36 @@
+{
+  "architectures": [
+    {
+      "architecture": "arm64",
+      "checks": 161,
+      "elapsedSeconds": 2.998788999975659,
+      "exactProductLibraries": 9,
+      "pid": 70725,
+      "receipt": "native-null-arm64.json",
+      "receiptSha256": "b5ea91c204f259a4ce4f050894e12c6372e913e22dd2b3a85821bdce38d745f4",
+      "status": "PASS",
+      "unshippedReferenceLibraries": 1
+    },
+    {
+      "architecture": "x86_64",
+      "checks": 161,
+      "elapsedSeconds": 3.485871832992416,
+      "exactProductLibraries": 9,
+      "pid": 70765,
+      "receipt": "native-null-x86_64.json",
+      "receiptSha256": "766d97fc2c24c8277c525d26ad1757e5b0fdd8f0f79be7430f6c64e01fddd7f4",
+      "status": "PASS",
+      "unshippedReferenceLibraries": 1
+    }
+  ],
+  "completedUtc": "2026-10-17T13:29:52.320941+00:00",
+  "overallReleaseApproval": false,
+  "recoveredCampaignVerdict": "RECOVERED_CAMPAIGN_49_GATES_PASS",
+  "schema": "keepvault.recovered-build22-native-abi.v1",
+  "scope": "True NULL and ABI widths on exact final signed native product bytes; application-derived constant sequences and independent constant-key oracles are separate managed evidence.",
+  "sourceAndOriginalInputsStable": true,
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "status": "PASS",
+  "totalChecks": 322,
+  "wrapperPid": 70676
+}

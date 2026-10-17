@@ -1,0 +1,40 @@
+{
+  "scope": "ROOT_ACTUAL_POPEN_WAIT",
+  "actualWrapperPid": 70975,
+  "observerPid": 70974,
+  "startedUtc": "2026-10-17T13:31:48.222367+00:00",
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-supplemental-empty-key-abi22-recovered-v2.py",
+    "--execute",
+    "--campaign-receipt",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-campaign-result.json",
+    "--final-native-receipt",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/final-native-recovered-20261017-4mf5ys0c/final-native-result.json",
+    "--destination",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/supplemental-abi-recovered-20261017-4mf5ys0c"
+  ],
+  "runnerSha256": "6eb5e7fca710aec67a708e1cd3d3cbc72f70ff2b1787fddf70fd4166e6847efe",
+  "actualWrapperExitCode": 0,
+  "observedUtc": "2026-10-17T13:31:58.947750+00:00",
+  "outputPins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/native214-v2-wrapper.stdout.log",
+      "sha256": "e227c6c0869adb268e9ec5db57dbcb5414b94682c6c7e5d874d3c8362ad5434c",
+      "bytes": 213
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/native214-v2-wrapper.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/supplemental-abi-recovered-20261017-4mf5ys0c/supplemental-result.json",
+      "sha256": "0cfb97c9dcc89a0bbcf64a232232e76bbe78d4ac6d972480d65fb480172ed024",
+      "bytes": 8341
+    }
+  ]
+}

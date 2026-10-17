@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "performance.rev12-workflow-1gib-xchacha-aes-auto",
+  "observedUtc": "2026-10-14T11:17:13.203245+00:00",
+  "originalInputs": {
+    "phase-35.test-results.json": {
+      "bytes": 784,
+      "sha256": "adabcafafeec0e0ab3ad093e977862dcd48f7492ec09c298bd853ac88e4859d4"
+    },
+    "phase-35.test-timings.json": {
+      "bytes": 69,
+      "sha256": "7114195ecc97628091c146a3b689917a50d8020070f2e4d358166119657519c1"
+    }
+  },
+  "originalPhase": 35,
+  "originalPhaseLine": "35 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --performance --only performance.rev12-workflow-1gib-xchacha-aes-auto --parallel 1",
+  "originalPhaseLineSha256": "d2a91fe90a1646817125eb50206cc6fc80820051f5df2f3f3807fffe501a9dd1",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

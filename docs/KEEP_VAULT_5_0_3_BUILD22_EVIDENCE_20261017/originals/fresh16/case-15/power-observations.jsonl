@@ -1,0 +1,3 @@
+{"observedUtc": "2026-10-17T13:07:49.215378+00:00", "actualPmsetExitCode": 0, "ac": true, "text": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t80%; AC attached; not charging present: true\n", "stderr": ""}
+{"observedUtc": "2026-10-17T13:08:19.239902+00:00", "actualPmsetExitCode": 0, "ac": true, "text": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t80%; AC attached; not charging present: true\n", "stderr": ""}
+{"observedUtc": "2026-10-17T13:08:49.257141+00:00", "actualPmsetExitCode": 0, "ac": true, "text": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t80%; AC attached; not charging present: true\n", "stderr": ""}

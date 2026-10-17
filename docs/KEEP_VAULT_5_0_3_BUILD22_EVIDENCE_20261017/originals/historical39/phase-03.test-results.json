@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "testInventoryHash": "3b3fb99acb9525e96351c65839f1eadd5c7408ef50d26f30c31fd02275059a96",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "crypto.v13-parallel-mac-kat",
+      "name": "v13 parallel MAC tree against an independent serial KAT",
+      "status": "PASS",
+      "seconds": 0.26,
+      "peakRssMiB": 94,
+      "seed": "0x07ACC135",
+      "failure": null
+    }
+  ]
+}

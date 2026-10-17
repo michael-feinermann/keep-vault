@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "crypto.v13-parallel-mac-kat",
+  "observedUtc": "2026-10-14T09:21:57.848819+00:00",
+  "originalInputs": {
+    "phase-3.test-results.json": {
+      "bytes": 700,
+      "sha256": "ab799a3af3c49c51ad5fe5ab03ff96a2c4745f1e896503248b6a0ecd171cf5f2"
+    },
+    "phase-3.test-timings.json": {
+      "bytes": 46,
+      "sha256": "23130b41d1192d13e8258233b38bfaba16ced348b9f54bf459f93643792f6f90"
+    }
+  },
+  "originalPhase": 3,
+  "originalPhaseLine": "3 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --full --no-smoke --only crypto.v13-parallel-mac-kat --parallel 1",
+  "originalPhaseLineSha256": "8ace95971d702fb4eb837db0758be1486f3592f4def782972606898bd71fc641",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

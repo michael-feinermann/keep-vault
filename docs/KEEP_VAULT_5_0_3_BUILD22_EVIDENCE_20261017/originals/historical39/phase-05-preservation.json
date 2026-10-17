@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "recovery.parallel-worker-equivalence",
+  "observedUtc": "2026-10-14T09:22:25.089379+00:00",
+  "originalInputs": {
+    "phase-5.test-results.json": {
+      "bytes": 742,
+      "sha256": "ba451d99822408b2342473d6bc48f728ddcf5c1b155e498baaa5e2e884911547"
+    },
+    "phase-5.test-timings.json": {
+      "bytes": 55,
+      "sha256": "82668f7f509dd9866f707d4da6e397ea1e72183da786018729c80ec7c1159a16"
+    }
+  },
+  "originalPhase": 5,
+  "originalPhaseLine": "5 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --full --no-smoke --only recovery.parallel-worker-equivalence --parallel 1",
+  "originalPhaseLineSha256": "b698df808c95cc51fdc9251cfdc7f861c99006bb47febdda19d24898eb725ec6",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

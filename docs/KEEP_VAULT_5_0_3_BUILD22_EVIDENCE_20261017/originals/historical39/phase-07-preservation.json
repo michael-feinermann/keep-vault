@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "zpaq.full-matrix",
+  "observedUtc": "2026-10-14T09:22:49.282577+00:00",
+  "originalInputs": {
+    "phase-7.test-results.json": {
+      "bytes": 691,
+      "sha256": "dd766977cf43d62f21bde9cad8ca21076804479b3be79abde1de84abac0efad6"
+    },
+    "phase-7.test-timings.json": {
+      "bytes": 36,
+      "sha256": "434a504470cffaf5fa8815cc85b9cce6991db44fac4273004d97a1d3075157b9"
+    }
+  },
+  "originalPhase": 7,
+  "originalPhaseLine": "7 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --full --no-smoke --only zpaq.full-matrix --parallel 1",
+  "originalPhaseLineSha256": "469c85534e5a0c519db2a221cc0edf83cc0d82005a9030a7bb39098484f1db93",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}

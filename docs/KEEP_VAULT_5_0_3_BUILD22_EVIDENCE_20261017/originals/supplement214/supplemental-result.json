@@ -1,0 +1,212 @@
+{
+  "actualWrapperPid": 70975,
+  "checksPerArchitecture": 107,
+  "children": [
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 70988,
+      "architecture": "arm64",
+      "checks": 6,
+      "completedUtc": "2026-10-17T13:31:54.328496+00:00",
+      "elapsedSeconds": 0.16729520802618936,
+      "library": "aes",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "aa5b3acdf38bc9b6d6e282e2569e23bf243eae40bee16356ecd87a81c065b6ed"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 70989,
+      "architecture": "arm64",
+      "checks": 6,
+      "completedUtc": "2026-10-17T13:31:54.463644+00:00",
+      "elapsedSeconds": 0.13495429197791964,
+      "library": "mars",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "cb692448a34097c3a5fc03126fe10771e8eb8846f7fa36f192224bb2e57b6cc3"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 70990,
+      "architecture": "arm64",
+      "checks": 6,
+      "completedUtc": "2026-10-17T13:31:54.599942+00:00",
+      "elapsedSeconds": 0.1361220000544563,
+      "library": "shacal2",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "9df30bdff9e218ac5ce7fc0ebb5de69d319477dfbbb961a3fd9b1ef274426177"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 70991,
+      "architecture": "arm64",
+      "checks": 9,
+      "completedUtc": "2026-10-17T13:31:54.736036+00:00",
+      "elapsedSeconds": 0.1359001660021022,
+      "library": "kalyna",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "a6dc4d9973136ced6a40e669f565f233da4be043e79485075295dc5fe0687035"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 70992,
+      "architecture": "arm64",
+      "checks": 28,
+      "completedUtc": "2026-10-17T13:31:54.878988+00:00",
+      "elapsedSeconds": 0.14276462502311915,
+      "library": "threefish",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "aab6b5d8996eeee7a910dcebbfe1b9ac9c51dfdd4f6f9d4fb51168af5f1460d1"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 70995,
+      "architecture": "arm64",
+      "checks": 8,
+      "completedUtc": "2026-10-17T13:31:55.024100+00:00",
+      "elapsedSeconds": 0.14484929101308808,
+      "library": "camellia",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "4c0fe935eeaf0a3df0c899054e7df9007f7c0dfa236d4823a7d568b87a741d6a"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 70997,
+      "architecture": "arm64",
+      "checks": 8,
+      "completedUtc": "2026-10-17T13:31:55.189866+00:00",
+      "elapsedSeconds": 0.16554050002014264,
+      "library": "serpent",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "6f9281f7e500678aafc62ccb80b6511b3384d14e6c0007db41f39728fdaa0e63"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71001,
+      "architecture": "arm64",
+      "checks": 28,
+      "completedUtc": "2026-10-17T13:31:55.344785+00:00",
+      "elapsedSeconds": 0.1545953750028275,
+      "library": "xchacha",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "805ab879851dc20b73f82880d4255fde9f37bc9ed6d3224fcb01079e2636e920"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71004,
+      "architecture": "arm64",
+      "checks": 8,
+      "completedUtc": "2026-10-17T13:31:55.505729+00:00",
+      "elapsedSeconds": 0.160623540985398,
+      "library": "sha3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "66e957e27abc50c9527b6bae19ebe0b2890470491365f8a563e539ad2a2a330b"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71006,
+      "architecture": "x86_64",
+      "checks": 6,
+      "completedUtc": "2026-10-17T13:31:55.764609+00:00",
+      "elapsedSeconds": 0.25866012496408075,
+      "library": "aes",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "978cc98d83c34b82fe6d4cec944bc8a0ba07133f2b3ccbadafc7fa5876429c71"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71010,
+      "architecture": "x86_64",
+      "checks": 6,
+      "completedUtc": "2026-10-17T13:31:55.988798+00:00",
+      "elapsedSeconds": 0.2239835420041345,
+      "library": "mars",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "b76c90b09869d53c73ef41d4836488b474e729758a49a2c2ec92f41d543236bf"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71011,
+      "architecture": "x86_64",
+      "checks": 6,
+      "completedUtc": "2026-10-17T13:31:56.214057+00:00",
+      "elapsedSeconds": 0.22504695900715888,
+      "library": "shacal2",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "caced3c907ba34213aabfe38dfc7c928fd49866f9eccc7f8ec14737b45322f49"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71014,
+      "architecture": "x86_64",
+      "checks": 9,
+      "completedUtc": "2026-10-17T13:31:56.437216+00:00",
+      "elapsedSeconds": 0.22298279200913385,
+      "library": "kalyna",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "36ac4b4fee8fd468f1672e31c1f73521eaa3ec8a723481771513d072590ddf01"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71016,
+      "architecture": "x86_64",
+      "checks": 28,
+      "completedUtc": "2026-10-17T13:31:56.656546+00:00",
+      "elapsedSeconds": 0.21910970797762275,
+      "library": "threefish",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "267de2f2c42e416919792e1df85958499dfce756c296f8f84671dc33a0b1b27e"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71017,
+      "architecture": "x86_64",
+      "checks": 8,
+      "completedUtc": "2026-10-17T13:31:56.876546+00:00",
+      "elapsedSeconds": 0.2197154999594204,
+      "library": "camellia",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "dcc839f1a7d300638991e9543f59dcfda9fcd5b23601712d24f91a89cc0826a7"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71019,
+      "architecture": "x86_64",
+      "checks": 8,
+      "completedUtc": "2026-10-17T13:31:57.101499+00:00",
+      "elapsedSeconds": 0.22471170802600682,
+      "library": "serpent",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "2e0599ebd91082c3680ba03c15b95c1b8236543e0a6ba13e818a39c7ec9565e0"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71021,
+      "architecture": "x86_64",
+      "checks": 28,
+      "completedUtc": "2026-10-17T13:31:57.328474+00:00",
+      "elapsedSeconds": 0.22674483299488202,
+      "library": "xchacha",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "9fe22ad4a45db8dbb5f8b5cdbd00d27bce96d06b49b41234f3c6a6b1964c93a1"
+    },
+    {
+      "actualChildExitCode": 0,
+      "actualChildPid": 71022,
+      "architecture": "x86_64",
+      "checks": 8,
+      "completedUtc": "2026-10-17T13:31:57.549611+00:00",
+      "elapsedSeconds": 0.22088129102485254,
+      "library": "sha3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "b59e21bd3a29da75eed423477b8a57cf27d5a1a4520cfb69cc24f0d15b3c9385"
+    }
+  ],
+  "completedUtc": "2026-10-17T13:31:58.930390+00:00",
+  "original161HarnessUnchanged": true,
+  "overallReleaseApproval": false,
+  "schema": "keepvault.supplemental-empty-key-abi.v1",
+  "scope": "Separate real NULL/width and legitimate empty-input supplement; no arbitrary pointer or entropy guarantee.",
+  "sourceAndInputsStable": true,
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "status": "PASS"
+}

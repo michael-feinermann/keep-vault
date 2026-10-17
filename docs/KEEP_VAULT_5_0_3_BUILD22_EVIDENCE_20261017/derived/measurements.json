@@ -1,0 +1,842 @@
+{
+  "schema": "keepvault.public-curated-measurements.v1",
+  "rows": [
+    {
+      "label": "Standard",
+      "suite": "StandardCascade",
+      "testId": "performance.rev12-workflow-1gib-standard-auto",
+      "actualPid": 63603,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 306.1706553,
+      "extractSeconds": 316.5186556,
+      "workflowSeconds": 663.5552716,
+      "archiveMiBPerSecond": 3.3445399886433855,
+      "extractMiBPerSecond": 3.235196352198837,
+      "completeMiBPerSecond": 1.5432022678847481,
+      "setupSeconds": 1.1575786,
+      "preparationSeconds": 0.097407,
+      "recordedTestSecondsUnrounded": 665.0579234,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0081968,
+          "DurationSeconds": 0.0081968
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0081968,
+          "EndSeconds": 306.1829887,
+          "DurationSeconds": 306.1747919
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 306.1829887,
+          "EndSeconds": 306.7269228,
+          "DurationSeconds": 0.5439341000000013
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 306.7269228,
+          "EndSeconds": 334.0648779,
+          "DurationSeconds": 27.337955099999988
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 334.0648779,
+          "EndSeconds": 345.4474172,
+          "DurationSeconds": 11.382539300000019
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 345.4474172,
+          "EndSeconds": 661.9660974,
+          "DurationSeconds": 316.51868019999995
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 661.9660974,
+          "EndSeconds": 663.4653979,
+          "DurationSeconds": 1.499300500000004
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 663.4653979,
+          "EndSeconds": 663.5552716,
+          "DurationSeconds": 0.08987369999999828
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 25,
+      "maximumPowerObservationGapSeconds": 30.029461
+    },
+    {
+      "label": "XChaCha über AES",
+      "suite": "XChaChaOverAes",
+      "testId": "performance.rev12-workflow-1gib-xchacha-aes-auto",
+      "actualPid": 64318,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 384.7363657,
+      "extractSeconds": 348.7491285,
+      "workflowSeconds": 778.5811227,
+      "archiveMiBPerSecond": 2.66156280323776,
+      "extractMiBPerSecond": 2.9362080542088007,
+      "completeMiBPerSecond": 1.3152129818520708,
+      "setupSeconds": 1.162592,
+      "preparationSeconds": 0.1026586,
+      "recordedTestSecondsUnrounded": 779.9150507,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0091129,
+          "DurationSeconds": 0.0091129
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0091129,
+          "EndSeconds": 384.755762,
+          "DurationSeconds": 384.7466491
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 384.755762,
+          "EndSeconds": 385.2905407,
+          "DurationSeconds": 0.5347787000000039
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 385.2905407,
+          "EndSeconds": 415.499544,
+          "DurationSeconds": 30.209003300000006
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 415.499544,
+          "EndSeconds": 428.2570512,
+          "DurationSeconds": 12.757507199999964
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 428.2570512,
+          "EndSeconds": 777.0062611,
+          "DurationSeconds": 348.7492099
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 777.0062611,
+          "EndSeconds": 778.4965984,
+          "DurationSeconds": 1.4903373000000784
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 778.4965984,
+          "EndSeconds": 778.5811227,
+          "DurationSeconds": 0.08452429999999822
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 28,
+      "maximumPowerObservationGapSeconds": 30.032081
+    },
+    {
+      "label": "Mixed",
+      "suite": "MixedCascade",
+      "testId": "performance.rev12-workflow-1gib-mixed-auto",
+      "actualPid": 64833,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 288.8335429,
+      "extractSeconds": 253.347283,
+      "workflowSeconds": 582.9590067,
+      "archiveMiBPerSecond": 3.5452946001999828,
+      "extractMiBPerSecond": 4.04188269901438,
+      "completeMiBPerSecond": 1.7565557581769495,
+      "setupSeconds": 1.1932041,
+      "preparationSeconds": 0.0996835,
+      "recordedTestSecondsUnrounded": 584.3170452,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0088228,
+          "DurationSeconds": 0.0088228
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0088228,
+          "EndSeconds": 288.8514979,
+          "DurationSeconds": 288.8426751
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 288.8514979,
+          "EndSeconds": 289.378972,
+          "DurationSeconds": 0.5274740999999494
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 289.378972,
+          "EndSeconds": 316.7927825,
+          "DurationSeconds": 27.41381050000001
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 316.7927825,
+          "EndSeconds": 328.2147597,
+          "DurationSeconds": 11.421977200000015
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 328.2147597,
+          "EndSeconds": 581.5620536,
+          "DurationSeconds": 253.3472939
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 581.5620536,
+          "EndSeconds": 582.907193,
+          "DurationSeconds": 1.3451393999999937
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 582.907193,
+          "EndSeconds": 582.9590067,
+          "DurationSeconds": 0.051813700000025165
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.109018
+    },
+    {
+      "label": "Paranoia",
+      "suite": "ParanoiaCascade",
+      "testId": "performance.rev12-workflow-1gib-paranoia-auto",
+      "actualPid": 65377,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 288.7989885,
+      "extractSeconds": 259.8106785,
+      "workflowSeconds": 592.7824089,
+      "archiveMiBPerSecond": 3.545718789801094,
+      "extractMiBPerSecond": 3.9413314568592686,
+      "completeMiBPerSecond": 1.727446672886585,
+      "setupSeconds": 1.207565,
+      "preparationSeconds": 0.1097236,
+      "recordedTestSecondsUnrounded": 594.1633377,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0085367,
+          "DurationSeconds": 0.0085367
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0085367,
+          "EndSeconds": 288.8112242,
+          "DurationSeconds": 288.80268750000005
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 288.8112242,
+          "EndSeconds": 289.335989,
+          "DurationSeconds": 0.5247647999999572
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 289.335989,
+          "EndSeconds": 318.8336665,
+          "DurationSeconds": 29.49767750000001
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 318.8336665,
+          "EndSeconds": 331.5083547,
+          "DurationSeconds": 12.674688199999991
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 331.5083547,
+          "EndSeconds": 591.3190645,
+          "DurationSeconds": 259.8107098
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 591.3190645,
+          "EndSeconds": 592.6857606,
+          "DurationSeconds": 1.3666961000000128
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 592.6857606,
+          "EndSeconds": 592.7824089,
+          "DurationSeconds": 0.09664829999996982
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.026073
+    },
+    {
+      "label": "Threefish-1024",
+      "suite": "Threefish1024",
+      "testId": "performance.rev12-workflow-1gib-threefish1024-auto",
+      "actualPid": 65716,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 278.1248473,
+      "extractSeconds": 253.2617913,
+      "workflowSeconds": 573.2465728,
+      "archiveMiBPerSecond": 3.6817997742411706,
+      "extractMiBPerSecond": 4.04324708730748,
+      "completeMiBPerSecond": 1.78631682872226,
+      "setupSeconds": 1.0954837,
+      "preparationSeconds": 0.104117,
+      "recordedTestSecondsUnrounded": 574.8797103,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0084812,
+          "DurationSeconds": 0.0084812
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0084812,
+          "EndSeconds": 278.1374852,
+          "DurationSeconds": 278.129004
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 278.1374852,
+          "EndSeconds": 278.6852858,
+          "DurationSeconds": 0.5478005999999596
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 278.6852858,
+          "EndSeconds": 306.7357655,
+          "DurationSeconds": 28.05047970000004
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 306.7357655,
+          "EndSeconds": 318.5438961,
+          "DurationSeconds": 11.80813059999997
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 318.5438961,
+          "EndSeconds": 571.8057094,
+          "DurationSeconds": 253.26181329999997
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 571.8057094,
+          "EndSeconds": 573.1552117,
+          "DurationSeconds": 1.3495023000000401
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 573.1552117,
+          "EndSeconds": 573.2465728,
+          "DurationSeconds": 0.09136109999997188
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.021447
+    },
+    {
+      "label": "Kalyna-512/512",
+      "suite": "Kalyna512_512",
+      "testId": "performance.rev12-workflow-1gib-kalyna512-512-auto",
+      "actualPid": 66140,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 277.1650532,
+      "extractSeconds": 255.9292484,
+      "workflowSeconds": 574.5909735,
+      "archiveMiBPerSecond": 3.6945494685475015,
+      "extractMiBPerSecond": 4.001105799363571,
+      "completeMiBPerSecond": 1.7821372893530147,
+      "setupSeconds": 1.1203753,
+      "preparationSeconds": 0.0947363,
+      "recordedTestSecondsUnrounded": 576.2577192,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0087576,
+          "DurationSeconds": 0.0087576
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0087576,
+          "EndSeconds": 277.1776165,
+          "DurationSeconds": 277.1688589
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 277.1776165,
+          "EndSeconds": 277.700047,
+          "DurationSeconds": 0.5224304999999845
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 277.700047,
+          "EndSeconds": 305.4666319,
+          "DurationSeconds": 27.766584899999998
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 305.4666319,
+          "EndSeconds": 317.1370949,
+          "DurationSeconds": 11.67046300000004
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 317.1370949,
+          "EndSeconds": 573.066384,
+          "DurationSeconds": 255.92928909999995
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 573.066384,
+          "EndSeconds": 574.4781839,
+          "DurationSeconds": 1.4117999000000054
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 574.4781839,
+          "EndSeconds": 574.5909735,
+          "DurationSeconds": 0.1127896000000419
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.027797
+    },
+    {
+      "label": "SHACAL-2/512",
+      "suite": "Shacal2_512",
+      "testId": "performance.rev12-workflow-1gib-shacal2-512-auto",
+      "actualPid": 66799,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 279.8656349,
+      "extractSeconds": 250.9386351,
+      "workflowSeconds": 571.4856609,
+      "archiveMiBPerSecond": 3.658898672450049,
+      "extractMiBPerSecond": 4.0806789261124825,
+      "completeMiBPerSecond": 1.7918209853023455,
+      "setupSeconds": 1.1413108,
+      "preparationSeconds": 0.1153798,
+      "recordedTestSecondsUnrounded": 573.1070362,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0087327,
+          "DurationSeconds": 0.0087327
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0087327,
+          "EndSeconds": 279.8785785,
+          "DurationSeconds": 279.8698458
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 279.8785785,
+          "EndSeconds": 280.4024548,
+          "DurationSeconds": 0.5238762999999835
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 280.4024548,
+          "EndSeconds": 307.809164,
+          "DurationSeconds": 27.406709200000023
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 307.809164,
+          "EndSeconds": 319.1257806,
+          "DurationSeconds": 11.316616599999975
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 319.1257806,
+          "EndSeconds": 570.0644221,
+          "DurationSeconds": 250.93864150000002
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 570.0644221,
+          "EndSeconds": 571.4008289,
+          "DurationSeconds": 1.3364067999999634
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 571.4008289,
+          "EndSeconds": 571.4856609,
+          "DurationSeconds": 0.08483200000000579
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.021125
+    },
+    {
+      "label": "MARS-448",
+      "suite": "Mars448",
+      "testId": "performance.rev12-workflow-1gib-mars448-auto",
+      "actualPid": 67170,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 285.6635684,
+      "extractSeconds": 253.364932,
+      "workflowSeconds": 578.5236721,
+      "archiveMiBPerSecond": 3.5846363109423374,
+      "extractMiBPerSecond": 4.041601147865246,
+      "completeMiBPerSecond": 1.770022644506408,
+      "setupSeconds": 1.0609444,
+      "preparationSeconds": 0.1010862,
+      "recordedTestSecondsUnrounded": 580.0969734,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0083852,
+          "DurationSeconds": 0.0083852
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0083852,
+          "EndSeconds": 285.6766416,
+          "DurationSeconds": 285.66825639999996
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 285.6766416,
+          "EndSeconds": 286.1942246,
+          "DurationSeconds": 0.5175830000000019
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 286.1942246,
+          "EndSeconds": 312.7416189,
+          "DurationSeconds": 26.547394300000008
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 312.7416189,
+          "EndSeconds": 323.7077965,
+          "DurationSeconds": 10.96617759999998
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 323.7077965,
+          "EndSeconds": 577.0727694,
+          "DurationSeconds": 253.3649729
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 577.0727694,
+          "EndSeconds": 578.4305067,
+          "DurationSeconds": 1.3577373000000534
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 578.4305067,
+          "EndSeconds": 578.5236721,
+          "DurationSeconds": 0.0931653999999753
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.026182
+    },
+    {
+      "label": "AES-256",
+      "suite": "Aes256",
+      "testId": "performance.rev12-workflow-1gib-aes256-auto",
+      "actualPid": 67693,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 285.0733243,
+      "extractSeconds": 252.9169664,
+      "workflowSeconds": 577.7651781,
+      "archiveMiBPerSecond": 3.5920582976833795,
+      "extractMiBPerSecond": 4.048759616942804,
+      "completeMiBPerSecond": 1.7723463421029597,
+      "setupSeconds": 1.03493,
+      "preparationSeconds": 0.0948768,
+      "recordedTestSecondsUnrounded": 578.962366,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0084967,
+          "DurationSeconds": 0.0084967
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0084967,
+          "EndSeconds": 285.0859877,
+          "DurationSeconds": 285.07749099999995
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 285.0859877,
+          "EndSeconds": 285.6102212,
+          "DurationSeconds": 0.5242335000000367
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 285.6102212,
+          "EndSeconds": 312.3557819,
+          "DurationSeconds": 26.7455607
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 312.3557819,
+          "EndSeconds": 323.3520755,
+          "DurationSeconds": 10.996293600000001
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 323.3520755,
+          "EndSeconds": 576.2690594,
+          "DurationSeconds": 252.91698389999993
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 576.2690594,
+          "EndSeconds": 577.7136655,
+          "DurationSeconds": 1.444606100000101
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 577.7136655,
+          "EndSeconds": 577.7651781,
+          "DurationSeconds": 0.05151259999990998
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.024555
+    },
+    {
+      "label": "Camellia-256",
+      "suite": "Camellia256",
+      "testId": "performance.rev12-workflow-1gib-camellia-auto",
+      "actualPid": 67930,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 278.6088246,
+      "extractSeconds": 253.4231518,
+      "workflowSeconds": 573.2277094,
+      "archiveMiBPerSecond": 3.6754040417426177,
+      "extractMiBPerSecond": 4.04067265649089,
+      "completeMiBPerSecond": 1.7863756116601994,
+      "setupSeconds": 1.2284438,
+      "preparationSeconds": 0.0923893,
+      "recordedTestSecondsUnrounded": 574.9787452,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0086336,
+          "DurationSeconds": 0.0086336
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0086336,
+          "EndSeconds": 278.6197907,
+          "DurationSeconds": 278.6111571
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 278.6197907,
+          "EndSeconds": 279.1378303,
+          "DurationSeconds": 0.5180396000000087
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 279.1378303,
+          "EndSeconds": 306.7138103,
+          "DurationSeconds": 27.57597999999996
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 306.7138103,
+          "EndSeconds": 318.2333921,
+          "DurationSeconds": 11.519581800000026
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 318.2333921,
+          "EndSeconds": 571.6565556,
+          "DurationSeconds": 253.42316350000004
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 571.6565556,
+          "EndSeconds": 573.1153703,
+          "DurationSeconds": 1.458814699999948
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 573.1153703,
+          "EndSeconds": 573.2277094,
+          "DurationSeconds": 0.11233909999998559
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.028395
+    },
+    {
+      "label": "Serpent-256",
+      "suite": "Serpent256",
+      "testId": "performance.rev12-workflow-1gib-serpent-auto",
+      "actualPid": 68203,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 279.5421526,
+      "extractSeconds": 253.094432,
+      "workflowSeconds": 573.5668688,
+      "archiveMiBPerSecond": 3.6631326992221207,
+      "extractMiBPerSecond": 4.045920694138384,
+      "completeMiBPerSecond": 1.7853192987635134,
+      "setupSeconds": 1.1187392,
+      "preparationSeconds": 0.116459,
+      "recordedTestSecondsUnrounded": 575.1937139,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0084392,
+          "DurationSeconds": 0.0084392
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0084392,
+          "EndSeconds": 279.5532702,
+          "DurationSeconds": 279.544831
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 279.5532702,
+          "EndSeconds": 280.078267,
+          "DurationSeconds": 0.5249967999999967
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 280.078267,
+          "EndSeconds": 307.5808616,
+          "DurationSeconds": 27.50259460000001
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 307.5808616,
+          "EndSeconds": 318.9436811,
+          "DurationSeconds": 11.3628195
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 318.9436811,
+          "EndSeconds": 572.0381384,
+          "DurationSeconds": 253.0944573
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 572.0381384,
+          "EndSeconds": 573.4853292,
+          "DurationSeconds": 1.447190800000044
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 573.4853292,
+          "EndSeconds": 573.5668688,
+          "DurationSeconds": 0.08153959999992821
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.022211
+    },
+    {
+      "label": "XChaCha20-Poly1305",
+      "suite": "XChaCha20Poly1305",
+      "testId": "performance.rev12-workflow-1gib-xchacha20-poly1305-auto",
+      "actualPid": 68807,
+      "sourceBytes": 1073741824,
+      "archiveSeconds": 276.7262753,
+      "extractSeconds": 251.8967028,
+      "workflowSeconds": 570.0608912,
+      "archiveMiBPerSecond": 3.700407555769244,
+      "extractMiBPerSecond": 4.065158410640379,
+      "completeMiBPerSecond": 1.796299335399839,
+      "setupSeconds": 1.0612621,
+      "preparationSeconds": 0.0962987,
+      "recordedTestSecondsUnrounded": 571.6293559,
+      "outerWorkflowTimeline": [
+        {
+          "Phase": "memoryAdmissionAndOriginalCreationSnapshot",
+          "StartSeconds": 0,
+          "EndSeconds": 0.0084806,
+          "DurationSeconds": 0.0084806
+        },
+        {
+          "Phase": "archiveAndEncrypt",
+          "StartSeconds": 0.0084806,
+          "EndSeconds": 276.7370161,
+          "DurationSeconds": 276.7285355
+        },
+        {
+          "Phase": "supplementalContainerHash",
+          "StartSeconds": 276.7370161,
+          "EndSeconds": 277.274122,
+          "DurationSeconds": 0.5371058999999718
+        },
+        {
+          "Phase": "recoveryCreate",
+          "StartSeconds": 277.274122,
+          "EndSeconds": 305.0223881,
+          "DurationSeconds": 27.748266100000023
+        },
+        {
+          "Phase": "supplementalRecoveryHealthyVerification",
+          "StartSeconds": 305.0223881,
+          "EndSeconds": 316.5841738,
+          "DurationSeconds": 11.561785699999973
+        },
+        {
+          "Phase": "decryptAndExtractForOriginalComparison",
+          "StartSeconds": 316.5841738,
+          "EndSeconds": 568.4808889,
+          "DurationSeconds": 251.8967151
+        },
+        {
+          "Phase": "originalComparisonAndIndependentHashTopologyCheck",
+          "StartSeconds": 568.4808889,
+          "EndSeconds": 569.9824573,
+          "DurationSeconds": 1.5015683999999965
+        },
+        {
+          "Phase": "ownedResourcesAndFixtureCleanup",
+          "StartSeconds": 569.9824573,
+          "EndSeconds": 570.0608912,
+          "DurationSeconds": 0.07843390000005002
+        }
+      ],
+      "acAllObservedPoints": true,
+      "powerObservationCount": 22,
+      "maximumPowerObservationGapSeconds": 30.022023
+    }
+  ],
+  "compressionLevel": 3,
+  "sourceBytesPerSuite": 1073741824,
+  "repetitions": 1,
+  "warmups": 0,
+  "median": "NOT_APPLICABLE",
+  "eightMacrosAdditive": true,
+  "innerAggregatesNonAdditive": true,
+  "measurementScope": "MANAGED_RELEASE_HARNESS_AND_SIGNED_NATIVE_NOT_INSTALLED_AOT_GUI",
+  "overallReleaseApproval": false
+}

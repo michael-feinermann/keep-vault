@@ -1,0 +1,55 @@
+{
+  "scope": "ROOT_ACTUAL_POPEN_WAIT",
+  "actualWrapperPid": 70677,
+  "observerPid": 70675,
+  "startedUtc": "2026-10-17T13:29:37.108566+00:00",
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/verify-local-draft-build22-recovered.py",
+    "--execute",
+    "--local",
+    "--local-assets",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/github-final-six-assets",
+    "--verifier",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/dist/Keep Vault-macOS/Keep Vault Installer.app/Contents/MacOS/Keep Vault Release Verifier",
+    "--verifier-sha256",
+    "77dec7389862d78a171314e026d1229b1b9eff8a01effaca4825c39f2b794fc7",
+    "--campaign-receipt",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-campaign-result.json",
+    "--legacy-builder-stdout",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/build22-release-20261014T080556738893Z-28942/builder.stdout.log",
+    "--expectations",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/github-build22-actual-expectations.json",
+    "--expectations-sha256",
+    "0a5dbac082d8b33071dcb505ec291b6e7ee21ed0a8399a9d1c84cf2b6c6b0418",
+    "--destination",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/local-verify-recovered-20261017-4mf5ys0c",
+    "--max-extracted-bytes",
+    "536870912",
+    "--notary-id",
+    "8777af68-1722-4599-a4f0-e71924a7e3a2",
+    "--contract-manifest-bound-installer-entry"
+  ],
+  "actualWrapperExitCode": 0,
+  "observedUtc": "2026-10-17T13:29:57.644775+00:00",
+  "outputPins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/local-verify-wrapper.stdout.log",
+      "sha256": "141559399c01f13d099f8d3bd0ff9c11f8a569678a99bb0fe2b45fe1f7bd6d62",
+      "bytes": 235
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/local-verify-wrapper.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/local-verify-recovered-20261017-4mf5ys0c/local-draft-receipt.json",
+      "sha256": "22db535733064b898afcf1346f77a0ab4429aa59a9f48e16cc523609be5b28fb",
+      "bytes": 7011018
+    }
+  ]
+}

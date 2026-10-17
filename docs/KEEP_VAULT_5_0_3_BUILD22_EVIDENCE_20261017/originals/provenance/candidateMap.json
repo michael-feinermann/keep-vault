@@ -1,0 +1,782 @@
+{
+  "INSTALLATION.txt": {
+    "bytes": 2650,
+    "modeInt": 420,
+    "sha256": "a7b37417f435a4480d1acc55476576dca7926cfc706d1beee6d57a354811f31a"
+  },
+  "Keep Vault Installer.app/Contents/CodeResources": {
+    "bytes": 1758,
+    "modeInt": 384,
+    "sha256": "c8040e88ec398fa259c6e8a88452e652c7a32ae8f9511c13aa7332143e228f3f"
+  },
+  "Keep Vault Installer.app/Contents/Info.plist": {
+    "bytes": 913,
+    "modeInt": 384,
+    "sha256": "6c2fbefc23032599b0395c9209ff464130596c33bc87afddc4ff5bf7d2f7a2ae"
+  },
+  "Keep Vault Installer.app/Contents/MacOS/InstallerBoundDelete": {
+    "bytes": 102224,
+    "modeInt": 493,
+    "sha256": "4ba78b506d7db49516daa0ac0b2578567cfd4f156d4b56c7bf5c2dac7bebeda8"
+  },
+  "Keep Vault Installer.app/Contents/MacOS/Keep Vault Installer": {
+    "bytes": 323600,
+    "modeInt": 493,
+    "sha256": "094c658ccde1ba5b65ddca3d2c3064070d256250769c41320ac0419b77d5f2b9"
+  },
+  "Keep Vault Installer.app/Contents/MacOS/Keep Vault Release Verifier": {
+    "bytes": 15926032,
+    "modeInt": 493,
+    "sha256": "77dec7389862d78a171314e026d1229b1b9eff8a01effaca4825c39f2b794fc7"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/InstallerBoundDelete.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "893e71237e4331ac302b3f08fa1c8d4de4f8cd3271ed2de326f64af7269c7252"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/InstallerBoundDelete.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "1f724270f7d82ae6fe953041748a54b4915da9b964a257d8cbc34f6770959c91"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/InstallerBoundDelete.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "76c3253ba1353d8880f01778c9d7a29624c3baec0f9c578f81a281007e84947e"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/InstallerBoundDelete.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "485a6edfd98f5da96cde4e85b72b58cd08eff06a24c260e3b3ec85ff74e7cb83"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/InstallerBoundDelete.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "1a2d9ba33d7b1fea4a6562f2d9b2ddf45f5d5ee01f0f5aa7bcf4a2817d267f08"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/Keep Vault Release Verifier.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "4617d02be2385436294c88187090637279420952d7b7443769c35cff3784a584"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/Keep Vault Release Verifier.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "6081a5cb9cf5fb0f666eca570b740239d87f9cd95044f8f08404f634aee93eb2"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/Keep Vault Release Verifier.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "54e560c3bb01942220f92dea9dd40fc808e986377e3a94a3bdc4f559d5e714ce"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/Keep Vault Release Verifier.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "37c31c21b15dcfe66e617454a19fce9b12f607bf0e5240b3935c4dd73ad05c97"
+  },
+  "Keep Vault Installer.app/Contents/Resources/HybridSignatures/Keep Vault Release Verifier.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "1850bade7ad0ecb9f964f9b9dda28f7ea2768a8da4056a7a55f426b10510b164"
+  },
+  "Keep Vault Installer.app/Contents/Resources/tools/Install-KeepVault-macOS.sh": {
+    "bytes": 101063,
+    "modeInt": 493,
+    "sha256": "ca503a3e3ec6fcf2acc04067f5a362433b5f74ac3ac0f70496be823dab247747"
+  },
+  "Keep Vault Installer.app/Contents/Resources/tools/PackageRuntime-macOS.sh": {
+    "bytes": 6436,
+    "modeInt": 420,
+    "sha256": "35110ab122e31e639c051f5db8d2387f25499b097d5172964063c4bc73d2b80c"
+  },
+  "Keep Vault Installer.app/Contents/Resources/tools/Verify-KeepVault-macOS.sh": {
+    "bytes": 50470,
+    "modeInt": 493,
+    "sha256": "4f8d68a40f1a32d89afd6d6b0ef58ef696c9933aabe07cb08796171d4ef4bc3e"
+  },
+  "Keep Vault Installer.app/Contents/Resources/tools/Verify-QR-Scanner-macOS.sh": {
+    "bytes": 34226,
+    "modeInt": 493,
+    "sha256": "7c7a46eeb6632ddb29d21464f8e4c758246e873e9e990bc6019443efade4600a"
+  },
+  "Keep Vault Installer.app/Contents/Resources/tools/Verify-ReleasePairMetadata-macOS.sh": {
+    "bytes": 4146,
+    "modeInt": 493,
+    "sha256": "cecabbcccc295daba37f9db4312094723d0754062df4d508e21e194cb4f4dfa5"
+  },
+  "Keep Vault Installer.app/Contents/_CodeSignature/CodeResources": {
+    "bytes": 7507,
+    "modeInt": 384,
+    "sha256": "e4c412eafa9f07d58380e3dbc689162f440cc0e5a0f508227777bc6f2321d9ae"
+  },
+  "Keep Vault-macOS-universal.dSYMs/Keep Vault.dSYM/Contents/Info.plist": {
+    "bytes": 639,
+    "modeInt": 384,
+    "sha256": "ea0130ef0d74a7d8ec2f53b0b740b4db693dea4492ad11d358123fd603fe7278"
+  },
+  "Keep Vault-macOS-universal.dSYMs/Keep Vault.dSYM/Contents/Resources/DWARF/Keep Vault": {
+    "bytes": 56675433,
+    "modeInt": 384,
+    "sha256": "55aa5a8e0860837f87355d6f9197da549e0771922917b69074016a6c2734ad0d"
+  },
+  "Keep Vault-macOS-universal.dSYMs/Keep Vault.dSYM/Contents/Resources/Relocations/aarch64/Keep Vault.yml": {
+    "bytes": 483499,
+    "modeInt": 384,
+    "sha256": "758d84603d7729dc85d376bd577cb3d26260fbdfbf00fbe7cd174d86ce952f1f"
+  },
+  "Keep Vault-macOS-universal.zip": {
+    "bytes": 46565204,
+    "modeInt": 384,
+    "sha256": "b99d1472f9f0a1b3028924e03bb2847a4c931709a9a78df5fb2d141117f64f41"
+  },
+  "Keep Vault-macOS-universal.zip.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "e421e4dd1a97076822a920c8a7cf46d3a940f2817faddc572689f0cf14437fce"
+  },
+  "Keep Vault-macOS-universal.zip.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "382e1fda6ad052d73bc66980e63d08de9ba8c8fd566c3fe99435836f68195f01"
+  },
+  "Keep Vault-macOS-universal.zip.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "8c805ac202779d6c1a97bd841577d901c1be6846183c8a3d7155fa54f267564b"
+  },
+  "Keep Vault-macOS-universal.zip.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "99287956a89a7a89da4869205a97f79bc15faeb05c82672781c313ad74b1ef3c"
+  },
+  "Keep Vault-macOS-universal.zip.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "92b8e54aa7cde49fc4ab8b84af4f585e2f7069c2a365b92a06a213cf64fc1afd"
+  },
+  "Keep Vault.app.launcher.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "f3be7d33be6382a79fe6c718f6d44674bcc36c517fe9e0c2b18326d1c9f7dc00"
+  },
+  "Keep Vault.app.launcher.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "8a6019d2b147ac35979bffb36d1069ed8a34059a84d647d127b603497661dad1"
+  },
+  "Keep Vault.app.launcher.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "9f9c3d9dd2f5a378c1a10a4be303ebda5314d1b4c042e0ac02df0731210bfa9a"
+  },
+  "Keep Vault.app.launcher.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "b939237c9efd069e19905505947e325ad6050efa433cece63b11ce3fb00a6f83"
+  },
+  "Keep Vault.app.launcher.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "f9015263895bac18091e45836412e344b21c30f385177b040de5248f6aa900e9"
+  },
+  "Keep Vault.app/Contents/CodeResources": {
+    "bytes": 2346,
+    "modeInt": 384,
+    "sha256": "d74109d4a9295bb4e4f685faf34d5f2772871ac027a01d2e295614eb61e250bc"
+  },
+  "Keep Vault.app/Contents/Info.plist": {
+    "bytes": 4426,
+    "modeInt": 384,
+    "sha256": "ecf5af0fa2d1d1fff888ed0c100a58fdf8fcca66be27c67462df20cc3f7cdff0"
+  },
+  "Keep Vault.app/Contents/MacOS/Keep Vault": {
+    "bytes": 60534192,
+    "modeInt": 448,
+    "sha256": "a52e743157b1930c0a922a6e76230751801b6820c0b7e401ea766f6c4060e509"
+  },
+  "Keep Vault.app/Contents/MacOS/Keep Vault Launcher": {
+    "bytes": 452848,
+    "modeInt": 493,
+    "sha256": "d8d52fef3169f9ab09d4d0826cef2ca20ec434e1b18496ff45d318f1d4e89cbe"
+  },
+  "Keep Vault.app/Contents/MacOS/Keep Vault Supervisor": {
+    "bytes": 164160,
+    "modeInt": 493,
+    "sha256": "b56a0f87156561e56180e1a8b0330c6a1672cf4bce8fddfdbed4d52322c555cb"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/argon2": {
+    "bytes": 170400,
+    "modeInt": 493,
+    "sha256": "fe97fe57b03b2180cf3b2ec5bd9cb98d4529dc2e67fa75ec689c7d6e3b41734c"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib": {
+    "bytes": 329312,
+    "modeInt": 493,
+    "sha256": "0fbff45d7475261224699905f519c244e158163c34ecb645df066489d210453a"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib": {
+    "bytes": 152880,
+    "modeInt": 493,
+    "sha256": "8dfa704efd61b970b958af03e9b13dab09cea833722ac6702aa6907a8aaeedd1"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib": {
+    "bytes": 328944,
+    "modeInt": 493,
+    "sha256": "25781cf93e09bd1adbb671ab69cf10a8be9bcceb48bc8156d7b8d19890e7395e"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib": {
+    "bytes": 301520,
+    "modeInt": 493,
+    "sha256": "17165abe0c8eb0a5eb3324aafd8ac0e28237fde3a55cea4e9926017a15caf4fa"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib": {
+    "bytes": 294576,
+    "modeInt": 493,
+    "sha256": "163517daf665b5d34998a665411acc9477b1c16a279958d65ab9358a017cdb43"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib": {
+    "bytes": 295440,
+    "modeInt": 493,
+    "sha256": "bd2a150bccd59cc19a0b21f4e354f49e68bf53a799d18f890705f85b83f51c30"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib": {
+    "bytes": 294976,
+    "modeInt": 493,
+    "sha256": "44af8eaa414ee57784759c807a4350aa2d4d3aec16ce82aea8e141eb7de29874"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib": {
+    "bytes": 119472,
+    "modeInt": 493,
+    "sha256": "07efee4be96e7415c91efd4affb2d81dcab7f34777400a8d70395f31b8fb6279"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib": {
+    "bytes": 600016,
+    "modeInt": 493,
+    "sha256": "311fd4d7d0e387e3411e903fe50476be4899795e23de3d06a93190a0e0e40dbf"
+  },
+  "Keep Vault.app/Contents/MacOS/Native/zpaq": {
+    "bytes": 1053568,
+    "modeInt": 493,
+    "sha256": "14a13489bfb792fe2a689c9b131e04ab8320f1547d725d1f605e9a1691caf09f"
+  },
+  "Keep Vault.app/Contents/MacOS/libAvaloniaNative.dylib": {
+    "bytes": 1544480,
+    "modeInt": 448,
+    "sha256": "de6af5c6b551b6854b0d3beb26e44032d2dd77c6e3d0c64a57d6d042382961f7"
+  },
+  "Keep Vault.app/Contents/MacOS/libHarfBuzzSharp.dylib": {
+    "bytes": 2883328,
+    "modeInt": 448,
+    "sha256": "329544e8d21949df28f34fc01bf3fac77fcce19b4c4514254bdd832d1cd48b87"
+  },
+  "Keep Vault.app/Contents/MacOS/libSkiaSharp.dylib": {
+    "bytes": 15145296,
+    "modeInt": 448,
+    "sha256": "f03540ba672eb449aaf0d945ec76027727be248aea537ec4e1eb17bfa9fd1f28"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault Supervisor.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "0dbbad52cbf070802ea9dd1fca78f9d52c6033abc13bc40e486097ef190dc826"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault Supervisor.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "86772e97dd133616a9110f0290a8e5abbb5dfc990d3af89ad93611a346d33ae1"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault Supervisor.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "2324f8d57e23ffd83cdf4ada6a91ab422f4ae48a02302d65c238d4383ee1b2ce"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault Supervisor.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "ea9cc23863a01828eb23bddb66a54838e6c498f5252ab2030ecd1920d0488e95"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault Supervisor.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "edc4a64bec072186cd74d196bfb6962a9e6d7c3a50f06a2f965105f1c1080111"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "b9af380ff357a49d4a0b01992f327228f17e52d59bc670ff018ffe716e6c0bcb"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "a2a81acd6831cd9dff1a2adfb9176db7eed2f919ab7d1c2fe6ed9bd14ff17593"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "4cdd78093f313f68a5437ec3dec56ba4211eaf08f0ad9c4fe0dc1fb5159ba614"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "140190519c310a0da8aa39531be1b61257ea124b4a57d617a7935800ef4591e6"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Keep Vault.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "95de86a5411b88790e5e797bc35d1bed4ecab9dc7c11de292e6ab630cbb3ec7e"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/argon2.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "9e3b5d4d02bf7f6b0b19dd8403a24837af0a180de75d29a350fff76f60ccc9bb"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/argon2.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "ae2ddabacfb38ebe58de83644ebd65d1a3638c4de8f304390aac7f2f16c1e773"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/argon2.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "e2239d68c0a42c7350c4b38eb0e686b45e52ccff200437a35bd6adcdff67b7e6"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/argon2.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "dc65b831b59af6e5259f15fd1155d19cd22566e1105d8968085b4ba9eb0f4dcb"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/argon2.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "86b00be63b4a2905458320bf27a5e35352b85f41a59171d938de7e7203597e8f"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "94b16debf33845b4907339a19483ae06690e6d84624d4a24b90e1dd453766c96"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "df55340c51f7ca06ec26670a0d801436f4726b3ea20236f5b7060cb9548764d9"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "00a61aa00056c86c5ce49a13f4729e82c7bfe988e470dd6f9ce4b9878d0c222c"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "23025024c5a2849281851855bca2a8b6213505681c08bac77795cb99301ee94c"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "dec1d5a76cef73d75b87d79ec85287234cd6d6f00f98a84bd2a171bdf558a14a"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "ba4e009a8c6e337734e34f4462e2e227376552f87d5ea84aa6c0200233c6933d"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "6eb8fd6ad67e5003ea02c544ec6900db1fc475a89018407bc68bfbe56080ed08"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "3ed57acf7c11b6ac1952396e80184123fd4b53ee208804008522ffc5d67a54e0"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "5dfdf07a926088821bae02f21d17de3f43456bda6cba2bde579b9eedb31c51c0"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "9ef7f1ba9f9bb6c8625444c7933f8ac2ad1467999a54b4a5db912739dc2331ac"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "8652c085c9a0464ff3bddb42364220e6c1f5c130dd6ec9af19259a91a3653e1d"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "45d64ffed2d7f040bd34125bfca2fd097f75e08836d0118a464b110e372098e1"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "153878c0a0d239df1f955ae0f2182999918ed37fccac630fd0b469779966153d"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "c3166dda8fa3ad7053a51ad1754226052e388fce74c956464c14337c238862c9"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "ebb4881f53b66905b902bca03aa5e3b98b3ce3ee2136a361bb0552935df386d3"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "985751f707b2a4c8a891945828e0066691bf33555e3d4d9c866ba09fadb7c26e"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "e604e34834ad0b7a0f0886ad6f240aa9a1d4cc82f8560b61ff62d0052fce49d1"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "f9187840c03e0209468fd229fbf46d0a2d940f2c189e3a297426547ffca5a60a"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "503500669f891939c82303fccaf0ae60ff4052930acc29ec9017832e07257b9e"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "5216d78c4b9f52c7e21f87ae0deb307ef8ee0e39633547b2c7653275453f015d"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "87b11b467fad843f148ea5586dde51e57167eea3ff6bb149989e2fce947e4e6f"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "e6219c232534c635171b57dae66e20da58e8db76d43e6c36fea49dba7f83da3e"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "9f4e6baba0749482392ab519f868a0bc53c19d247529b82f98c02b824e9093ee"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "95a923053226ff9ceefc5ccd71724328c9149c632db1d6c73589b0782f27123d"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "a38c35d2090e3dde6f11a266faf9de7c7f18aa620082f6741b4aa298281b7084"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "62813b81aa2a8af65801b5ab16810f64bf0d3e84ebb6fce5f60fb5ac70631eb3"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "f220fcf0d7d5168b21124823b00c5701f26716b35ec90fe4035b24122597b897"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "201e2740cc3c3b201f3de018478685ec30b743a48587a6d77387d77e06d4dcd0"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "df4e42a87d978ec7da6479504a962af242b821cfcb20c72f02b752b5b563cc3f"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "e8f1cb533a5d98851d349260161f91234ad7441db5f503fd353b128662e4f813"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "3aa7a733c51f53943de747c501496df6be0b0daec5fb457d5c4295e6f9a71fd4"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "46a3278d5d06637b6162c8b91ad2c9101ffcd2c36437723b366e6d76c423ed67"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "f34391157968698a28a1d831538e261dda91434528548aec78a21d7f05fbe5e8"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "c998a8d2d12a7e67e56ba7ef210d97609e28bad5644e281db4ae4fbe3422a834"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "617971a793dcd121821473ede85f7d267912fc83b900d1eda4b0833c0d9f0cb3"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "fe80e91022e35aad56bcf090bd8ddaf7269175ebfcfe48d32cd4c52951e59908"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "601d3853737e01cf3c944bf41b0f9b496ee5e34e626573ae332fe2a786465c61"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "1a6348251f89411054f91b25b541d4bb2b30e71f072db87ba3126e3801be9514"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "d311c73d71f1ceb8e8fb477285bc4ab39b7f75d381273481a93a6f63485523d9"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "bc828079db2f97d761cb89a83e03d7e7e23f18b833dbcea729e9c215bc8243f8"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "cacfbd5549b96e7489b0c46350040398052a85dbd1e28825fe4af22c82f6da06"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "662789c5212b34ae4cde1110a9048a0985f208979865b2d32e0478769c481dad"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "92df646c152c459fb155b12c5dbd2b8b5fb4642398a32303b2c5f99412820fff"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "4bd614c296b83c2b600a94148776f1f9e0649e9999c3d1201ee9b0817b29991d"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "65971ab77de7372d2986ff1c748cae2eecf946afe2fd2b1ecad6ac1b439c481e"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "09e6fa18abd7a7c2f27eae0324947b6ed884dd4fc43193257768d28bd5489556"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "ccccdabbe504abe051070216987c98781472cfb7d9bfd8cf0b8b899c6010461e"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "00c8bfdcb284a1769280d8c7d9e8e0be37ccb92a8749b7f5f56899e795fc66b3"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "5523dc661359fec34a6b9e213093fb58499bc5058cfcd95e8ef1d49c65e706e5"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/Native/zpaq.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "f32750d1324573c5d1314833916483647c60cb4b7d9634598a4d2f1c6995d7c4"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "aa64515362cfdb07ffe1d8b08f956873f8f2465f4daf47355fe8645da99c3fdf"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "383b13b69607be47f678d87ba27c068e248e9eb5763fbb5ea130d40b3f54ffdf"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "d8673b052b9977bfd43dfed20876effc5c92336842c7217f6688349d010aaf5a"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "e332b63d253b20d81ecd50c82496e6cd6abc90b6cdf7ec1f14466673816bb554"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "5c9f758f606e534d8317a4fa5e925299754c806ac9797bf327b5dee39cb9278c"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "e1355b9ca5f05ddbb8b8385958a96b35bbd5ad311996d284589eae44bf74a124"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "ce166380b0239c51d6fba25e36552994a49c9c898db443381a998616ed842c96"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "b2d43156d4eaa3805f6ee751da0c398f464ff729a88ac064a03003c796d9ff6b"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "adcc122aff22733737b3145a18bd7ce0f55d413eb197bc02a02fd4a1033e4c25"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "5d0f570f825d012efdcdae5a240bb0d6251e6c390508944e1ceba207327afdef"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libSkiaSharp.dylib.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "50ddac82656a4308079beeee00098a14e4c926556048677a77a46a8dbc74f6ba"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libSkiaSharp.dylib.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "813d9a2247597ec7864b9d1977470e35e77a5a237637fa8b65c12fde585cdc10"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libSkiaSharp.dylib.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "10d4d0faa8f41cb5564ae71aa626663a476bd9e9f3546f5cba76c7bfab5c7278"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libSkiaSharp.dylib.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "65b2461396f5fec77a47ac17fc48443dca67159b5677bd94a0cc0cd5b7fc408e"
+  },
+  "Keep Vault.app/Contents/Resources/HybridSignatures/libSkiaSharp.dylib.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "3e5d165cabb0e3a300ba578ff9160a26db1cfec5849d9e8c72ff7c4c670d3d89"
+  },
+  "Keep Vault.app/Contents/Resources/KeepVault.icns": {
+    "bytes": 1083698,
+    "modeInt": 384,
+    "sha256": "f274c4857e059fd95427397af6dab45367ccb074dd28f018d87ec518dcdde254"
+  },
+  "Keep Vault.app/Contents/Resources/PASSWORD-MODEL-NOTICES.txt": {
+    "bytes": 72883,
+    "modeInt": 420,
+    "sha256": "47e917a325d5bc39bf669f53c727752070b383a41fb50e6bdf037826891f6871"
+  },
+  "Keep Vault.app/Contents/Resources/THIRD-PARTY-NOTICES.txt": {
+    "bytes": 397411,
+    "modeInt": 420,
+    "sha256": "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e"
+  },
+  "Keep Vault.app/Contents/_CodeSignature/CodeResources": {
+    "bytes": 34311,
+    "modeInt": 384,
+    "sha256": "7375c6744f2fefa23de3554ca15929d24e4e51a5acf5befa08db8dcb8ae50ab4"
+  },
+  "QR-Scanner.app.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "df01374b0fbbab9bccf3860c347be8b10368a9f583c6b7c80e2ec82ad2bd210d"
+  },
+  "QR-Scanner.app.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "711bc9f48c0fa817e9c9c1185e991541cd474f353d86b35f19811dbfb519c3d1"
+  },
+  "QR-Scanner.app.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "cd7e3f2d0dcea7970dfbf376793ca0a37c3a0b67f3c0fe0b6b15c831f6b707eb"
+  },
+  "QR-Scanner.app.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "fd2ef84bc33984ba65b613ca1fcd6916b83cfc3b6c805c984296ac062d2502e6"
+  },
+  "QR-Scanner.app.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "d5dbac544543090d2d48fc11a09763a6fd79ba430cf25ee9496789712dde7eb0"
+  },
+  "QR-Scanner.app/Contents/CodeResources": {
+    "bytes": 1674,
+    "modeInt": 384,
+    "sha256": "433fecac75691dec2015ee6aeadac49e5c6c2f1363e8090cf929e4654ed7dadd"
+  },
+  "QR-Scanner.app/Contents/Info.plist": {
+    "bytes": 1734,
+    "modeInt": 384,
+    "sha256": "955051ec61e3686586f4154540bb1754e7f0c7c465ff70a8c33e50b2269e123c"
+  },
+  "QR-Scanner.app/Contents/MacOS/QR-Scanner": {
+    "bytes": 584256,
+    "modeInt": 493,
+    "sha256": "7881d1e757f3df3db9afb57fd1def14e4d8857aaf74f47ad7368d88bb82b0bd4"
+  },
+  "QR-Scanner.app/Contents/PkgInfo": {
+    "bytes": 8,
+    "modeInt": 384,
+    "sha256": "82502191c9484b04d685374f9879a0066069c49b8acae7a04b01d38d07e8eca0"
+  },
+  "QR-Scanner.app/Contents/Resources/AppIcon.icns": {
+    "bytes": 987406,
+    "modeInt": 384,
+    "sha256": "a39cc5a165c918345159b4903ea43ef864b095748382e0142893ddfc84de636a"
+  },
+  "QR-Scanner.app/Contents/_CodeSignature/CodeResources": {
+    "bytes": 2446,
+    "modeInt": 384,
+    "sha256": "402241f265e6d8dd8c516be392575aaeafdce363cdd4c94a927d2cd465d363b4"
+  },
+  "installation-manifest.json": {
+    "bytes": 36873,
+    "modeInt": 384,
+    "sha256": "ac1c719f2f76f99c46c447f1d3122804b56ee6f81a069d616405bd0870882434"
+  },
+  "installation-manifest.json.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "3fb6fff4f9d3342362cf28f5dba708231c1d718309d6009c99f918a97b03a17b"
+  },
+  "installation-manifest.json.sha3": {
+    "bytes": 129,
+    "modeInt": 384,
+    "sha256": "bdcb4380d534bf61bc702b7d20910801e3826cb663c92ad1249a1f9c61ed46a0"
+  },
+  "installation-manifest.json.sha3.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "cb323ab304e9ebf5eea8f95c9807579fdae59c483b87d6fd346b95792c0ceb2a"
+  },
+  "installation-manifest.json.skein": {
+    "bytes": 257,
+    "modeInt": 384,
+    "sha256": "795222d1a55ab407eb593530b95e5bda51f795bc97a0746888106fb5157fd0cb"
+  },
+  "installation-manifest.json.skein.khsig": {
+    "bytes": 6547,
+    "modeInt": 384,
+    "sha256": "1e089578acf047faeddc4e80f845f3732e92df133d21fdd2c15b58fa092c813e"
+  }
+}

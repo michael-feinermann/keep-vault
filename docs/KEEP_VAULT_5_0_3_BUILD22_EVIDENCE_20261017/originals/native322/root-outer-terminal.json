@@ -1,0 +1,42 @@
+{
+  "scope": "ROOT_ACTUAL_POPEN_WAIT",
+  "actualWrapperPid": 70676,
+  "observerPid": 70674,
+  "startedUtc": "2026-10-17T13:29:37.097631+00:00",
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-final-native-build22-recovered-v2.py",
+    "--execute",
+    "--campaign-receipt",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-campaign-result.json",
+    "--destination",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/final-native-recovered-20261017-4mf5ys0c",
+    "--sha3-arm64",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Native/osx-arm64/libsha3_ref.dylib",
+    "--sha3-x86-64",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Native/osx-x64/libsha3_ref.dylib"
+  ],
+  "runnerSha256": "5454be2f231232d4aaba47f53c24ac01466c338e3e738359b53f4307a196ec29",
+  "actualWrapperExitCode": 0,
+  "observedUtc": "2026-10-17T13:29:52.330539+00:00",
+  "outputPins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/native322-v2-wrapper.stdout.log",
+      "sha256": "9b9ee8eb65eb29da968f5ea711a356d331b75879fcf080b831f84ad7b45d715d",
+      "bytes": 244
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/native322-v2-wrapper.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/final-native-recovered-20261017-4mf5ys0c/final-native-result.json",
+      "sha256": "cb43c48d8e04365df9d4a9b6d247eb40537af8fb07cbf6d7c543ee28b7169803",
+      "bytes": 1318
+    }
+  ]
+}

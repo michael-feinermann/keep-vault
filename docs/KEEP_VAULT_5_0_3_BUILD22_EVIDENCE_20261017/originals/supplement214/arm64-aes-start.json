@@ -1,0 +1,21 @@
+{
+  "actualChildPid": 70988,
+  "argv": [
+    "/usr/bin/arch",
+    "-arm64",
+    "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+    "-I",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-supplemental-empty-key-abi22-recovered-v2.py",
+    "--execute",
+    "--child",
+    "--arch",
+    "arm64",
+    "--library",
+    "aes",
+    "--native-dir",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/final-native-recovered-20261017-4mf5ys0c/arm64-native",
+    "--gate",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/supplemental-abi-recovered-20261017-4mf5ys0c/gate.json"
+  ],
+  "startedUtc": "2026-10-17T13:31:54.158603+00:00"
+}

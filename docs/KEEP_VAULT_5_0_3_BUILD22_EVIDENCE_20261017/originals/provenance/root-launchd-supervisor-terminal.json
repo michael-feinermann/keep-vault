@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "scope": "ACTUAL_OS_LAUNCHD_SUPERVISOR_TERMINAL_OBSERVATION",
+  "observedUtc": "2026-10-17T13:13:57.692067+00:00",
+  "job": "gui/501/de.michael-feinermann.keep-vault.recovery.20261017.1104",
+  "actualSupervisorPidFromStart": 63571,
+  "actualQueryExitCode": 0,
+  "actualLaunchdLastExitCode": 0,
+  "rawPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-launchd-completed-observation.txt",
+    "sha256": "a6596d9710f242a5afae03dd8ee5eba27665cb4847f4cd09b412cde24a396f79",
+    "bytes": 2172
+  },
+  "legacyBuilderExit": "UNOBSERVED",
+  "noPopenWaitForOldBuilderClaim": true
+}

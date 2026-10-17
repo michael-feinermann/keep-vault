@@ -1,0 +1,19 @@
+{
+  "expectedPhaseId": "performance.rev12-workflow-256mib-serpent-manual1",
+  "observedUtc": "2026-10-14T10:55:27.366115+00:00",
+  "originalInputs": {
+    "phase-32.test-results.json": {
+      "bytes": 764,
+      "sha256": "e7ea6b6a8dab6650164a64ed366b19647ef012cc73a5fe12d5c2d994dbb6ece8"
+    },
+    "phase-32.test-timings.json": {
+      "bytes": 69,
+      "sha256": "a2ec80d6f869ae9096c75e7b775b2fd6735e084b69611b6872cfa7cc520930db"
+    }
+  },
+  "originalPhase": 32,
+  "originalPhaseLine": "32 exit=0 run --project /Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj --artifacts-path /private/tmp/keep-vault-release.wQBlZMEV/artifacts/tests -c Release --no-build --no-restore --disable-build-servers -- --performance --only performance.rev12-workflow-256mib-serpent-manual1 --parallel 1",
+  "originalPhaseLineSha256": "b0d3b64fba00aef6c3c62b094d7c5fc1f7eb5643867f5813dd3bfd3d978510a8",
+  "originalTestProcessExitCode": 0,
+  "scope": "Copy after the original builder completed and published this phase; source is not monitored continuously."
+}
