@@ -1,0 +1,24 @@
+{
+  "actualPid": 16876,
+  "argv": [
+    "/usr/bin/git",
+    "-C",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna",
+    "diff",
+    "--check"
+  ],
+  "startedUtc": "2026-10-18T10:40:46.448996+00:00",
+  "completedUtc": "2026-10-18T10:40:46.485295+00:00",
+  "actualExitCode": 0,
+  "startReceiptError": null,
+  "stdout": {
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression/diff-check-final.stdout",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "stderr": {
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression/diff-check-final.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}

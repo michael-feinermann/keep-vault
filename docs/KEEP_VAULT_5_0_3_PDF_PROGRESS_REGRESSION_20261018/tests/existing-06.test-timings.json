@@ -1,0 +1,9 @@
+{
+  "gui.rev12-preflight-state": 0.7027606,
+  "gui.operation-cancel-lifetime": 0.3728325,
+  "keysheet.cleanup-failure-visible": 0.4439608,
+  "gui.key-sheet-operation-progress": 1.8319203,
+  "gui.rev11-progress": 0.4239542,
+  "keysheet.pair-cleanup-identity": 0.487489,
+  "gui.rev11-observer-isolation": 0.3759133
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "keepvault.test-sdk-fullmap-check.v1",
+  "status": "PASS",
+  "phase": "sdk-after",
+  "startedUtc": "2026-10-18T10:40:45.470939+00:00",
+  "completedUtc": "2026-10-18T10:40:46.428008+00:00",
+  "sdkRoot": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T090448828623Z-80743/public-dotnet-sdk",
+  "mapSha256": "20e6d08810eeb8018825d96c94cdc2684a6d96a7f3391ed4bf21f9fef1c20ed3",
+  "exactRegularFileCount": 4906,
+  "totalBytes": 669555620,
+  "dotnet": {
+    "bytes": 141392,
+    "sha256": "2ff302a3c5cecc4a371fd6482d2f5547c57d93eff9fe19919ef729a54f69ce04"
+  }
+}

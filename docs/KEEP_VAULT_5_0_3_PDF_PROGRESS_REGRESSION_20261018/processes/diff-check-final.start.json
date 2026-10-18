@@ -1,0 +1,12 @@
+{
+  "actualPid": 16876,
+  "argv": [
+    "/usr/bin/git",
+    "-C",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna",
+    "diff",
+    "--check"
+  ],
+  "startedUtc": "2026-10-18T10:40:46.448996+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression"
+}

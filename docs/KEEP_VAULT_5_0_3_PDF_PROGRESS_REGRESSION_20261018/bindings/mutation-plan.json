@@ -1,0 +1,17 @@
+{
+  "kind": "Intentional negative controls, not product failures",
+  "original": {
+    "sha256": "276d93ad1a6cd485857a5cc43b3f3929524863ad7c617a4553ad42b4d9dfb521",
+    "bytes": 102700
+  },
+  "mutants": {
+    "save": {
+      "sha256": "efbb86fc4ada4326b529281fb3503d8abf20b2ed341118e568feca8fcfc5fb40",
+      "bytes": 102662
+    },
+    "print": {
+      "sha256": "dc8f01b22c46d37c5e265907965259c8d1989bc17db28171f60fc6ea741c470a",
+      "bytes": 102662
+    }
+  }
+}

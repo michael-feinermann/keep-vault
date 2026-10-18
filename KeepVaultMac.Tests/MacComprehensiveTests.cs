@@ -232,6 +232,7 @@ internal static partial class MacComprehensiveTests
         .. FactorInputRev12GuiTests.Tests,
         .. FactorEditorDropRev12Tests.Tests,
         .. PreflightLifetimeRev12Tests.Tests,
+        .. KeySheetProgressTests.Tests,
         .. WindowDisposeRev12Tests.Tests,
         .. AdaptiveWindowRev12Tests.Tests,
         .. KdfAdmissionRev12Tests.Tests,

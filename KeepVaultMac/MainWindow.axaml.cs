@@ -39,7 +39,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private readonly IntegrityService _integrity = new();
     private readonly CryptographicEraseService _erase = new();
     private readonly RecoveryService _recovery = new();
-    private readonly MacKeySheetService _keySheets = new();
+    private readonly IMacKeySheetService _keySheets;
     private readonly IAppSettingsStore _settingsStore;
     private readonly ReleaseAuditSession? _releaseAudit;
     private readonly ReleaseAuditInitialization _releaseAuditInitialization = new();
@@ -76,10 +76,11 @@ public sealed partial class MainWindow : Window, IDisposable
     {
     }
 
-    internal MainWindow(IAppSettingsStore settingsStore)
+    internal MainWindow(IAppSettingsStore settingsStore, IMacKeySheetService? keySheets = null)
     {
         _lifetimeToken = _lifetime.Token;
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
+        _keySheets = keySheets ?? new MacKeySheetService();
         _releaseAudit = ReleaseAuditSession.Current;
         InitializeComponent();
         InitializeConsole();
@@ -1179,6 +1180,7 @@ public sealed partial class MainWindow : Window, IDisposable
             MarkKeySheetHandled(data);
             Log(string.Format(CultureInfo.CurrentCulture, T("keySheetTestPdfSavedLog"), firstPath));
             Log(string.Format(CultureInfo.CurrentCulture, T("keySheetTestPdfSavedLog"), secondPath));
+            MarkOperationSucceeded();
         }
         catch (OperationCanceledException) when (OperationToken.IsCancellationRequested) { }
         catch (ArchivePreflightException exception) { await WarnAsync(exception.Message); }
@@ -1235,6 +1237,7 @@ public sealed partial class MainWindow : Window, IDisposable
             RequireUnchangedKeySheetDraft(data, draftRevision);
             MarkKeySheetHandled(data);
             Log(string.Format(CultureInfo.CurrentCulture, T("keySheetPrintedLog"), selected));
+            MarkOperationSucceeded();
         }
         catch (OperationCanceledException) when (OperationToken.IsCancellationRequested) { }
         catch (ArchivePreflightException exception) { await WarnAsync(exception.Message); }

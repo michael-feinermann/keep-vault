@@ -26,17 +26,24 @@ internal sealed record MacKeySheetData(
 /// audited macOS KeySheetService. Security checks are intentionally not
 /// duplicated in the view layer.
 /// </summary>
-internal sealed class MacKeySheetService
+internal interface IMacKeySheetService
+{
+    void SaveExplicitTestPdf(MacKeySheetData data, string firstPath, string secondPath);
+    Task<IReadOnlyList<string>> GetPhysicalPrintersAsync(CancellationToken cancellationToken);
+    Task PrintAsync(MacKeySheetData data, string printer, CancellationToken cancellationToken);
+}
+
+internal sealed class MacKeySheetService : IMacKeySheetService
 {
     private readonly KeySheetService _service = new();
 
-    internal void SaveExplicitTestPdf(MacKeySheetData data, string firstPath, string secondPath)
+    public void SaveExplicitTestPdf(MacKeySheetData data, string firstPath, string secondPath)
     {
         ArgumentNullException.ThrowIfNull(data);
         _service.SaveTestPdf(data.ToServiceData(), firstPath, secondPath);
     }
 
-    internal async Task<IReadOnlyList<string>> GetPhysicalPrintersAsync(
+    public async Task<IReadOnlyList<string>> GetPhysicalPrintersAsync(
         CancellationToken cancellationToken)
     {
         IReadOnlyList<PhysicalPrinterDescriptor> printers = await _service
@@ -45,7 +52,7 @@ internal sealed class MacKeySheetService
         return printers.Select(printer => printer.Name).ToArray();
     }
 
-    internal async Task PrintAsync(
+    public async Task PrintAsync(
         MacKeySheetData data,
         string printer,
         CancellationToken cancellationToken)
