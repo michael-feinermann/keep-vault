@@ -250,8 +250,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "8.0.2",
+        "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA=="
       },
       "Tmds.DBus.Protocol": {
         "type": "Transitive",
@@ -267,7 +267,8 @@
           "Avalonia.Themes.Fluent": "[12.1.1, )",
           "BouncyCastle.Cryptography": "[2.6.2, )",
           "PDFsharp": "[6.2.4, )",
-          "QRCoder": "[1.8.0, )"
+          "QRCoder": "[1.8.0, )",
+          "System.Security.Cryptography.Pkcs": "[8.0.2, )"
         }
       }
     },
@@ -330,8 +331,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+        "resolved": "8.0.2",
+        "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA=="
       }
     }
   }

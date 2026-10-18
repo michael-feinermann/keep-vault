@@ -1,0 +1,18 @@
+{
+  "actualPid": 74877,
+  "argv": [
+    "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/tests/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "keysheet.cleanup-failure-visible",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x5BF975D9"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "continuation-check-7-keysheet.cleanup-failure-visible",
+  "startedUtc": "2026-10-18T10:57:14.899320+00:00"
+}

@@ -1,0 +1,9 @@
+{
+  "smoke.release-companion-version": 1.3550255,
+  "spec.no-legacy-source": 0.1428448,
+  "spec.lockfile-runtimes": 0.1126311,
+  "keysheet.cleanup-failure-visible": 0.4297132,
+  "packaging.hybrid-key-separation": 73.8841933,
+  "gui.key-sheet-operation-progress": 1.790527,
+  "keysheet.pair-cleanup-identity": 0.4274828
+}

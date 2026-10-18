@@ -1,0 +1,1310 @@
+{
+  "allMetadataContentHashesMatchReviewedLocks": true,
+  "allRawArchiveSha512MatchOwnSidecars": true,
+  "freshPrivateCache": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages",
+  "nativeAotRuntimePacks": [
+    {
+      "archive": {
+        "bytes": 25694998,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/microsoft.netcore.app.runtime.nativeaot.osx-arm64.10.0.13.nupkg",
+        "sha256": "b19c570edaac0662288f48e15196a9b84a5d0338f41463a3804b557702f885fe"
+      },
+      "nugetContentHash": "7mHT1O0D1MKqGxtvtjiVLVVgAaRdiP+PLbbNPiSWCFdsVCG8mUbpx+Mruxazs/3OWC1twJ8ArFzngD+RNAbUfw==",
+      "origin": "Runtime pack selected by verified SDK10.0.402; not an explicit packages.lock entry",
+      "package": "microsoft.netcore.app.runtime.nativeaot.osx-arm64",
+      "source": "https://api.nuget.org/v3/index.json",
+      "version": "10.0.13"
+    },
+    {
+      "archive": {
+        "bytes": 26379407,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-x64/10.0.13/microsoft.netcore.app.runtime.nativeaot.osx-x64.10.0.13.nupkg",
+        "sha256": "56c4c8e034eda25568896bafb163cd132199a4f3a8fc0bd5bb5a5fd00293be19"
+      },
+      "nugetContentHash": "cTnnOMAllkqfflZpyqWecCOdu8VZfo6Ssv/fXD4i2gK40WpEeCPiuuxGv/IDtXcINPtJ5LPAHLuDQMe/kqQi+w==",
+      "origin": "Runtime pack selected by verified SDK10.0.402; not an explicit packages.lock entry",
+      "package": "microsoft.netcore.app.runtime.nativeaot.osx-x64",
+      "source": "https://api.nuget.org/v3/index.json",
+      "version": "10.0.13"
+    }
+  ],
+  "nugetContentHashIsNotClaimedEqualToRawSignedArchiveHash": true,
+  "onlyConfiguredSource": "https://api.nuget.org/v3/index.json",
+  "packageCount": 40,
+  "packages": [
+    {
+      "lockContentHash": "o8pZ1oE9AQ6gklpGM0lnOBp/JlVH0J/0mYszBf0GsSAcEnzHNCLM9NnrPZwKu4j2q9oNbVHYzzEPkszQeuqaKw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia/12.1.1/.nupkg.metadata",
+        "sha256": "54f7cd6e72623b10af440c1cad00b2baa155c56b0f5189bd51011c3ca4e1b64f"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia",
+      "nupkg": {
+        "bytes": 10112805,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia/12.1.1/avalonia.12.1.1.nupkg",
+        "rawSha512Base64": "RTOt9hkSQwh/uSxAH3GcP2cIZeQZvWeXfcennBBjty1jq870zvnP5b+kAFRWXu8aRmd6KemOST9wfeXYOgZ3dw==",
+        "sha256": "193bf6ae8b90293acb72bca8a1d62e8e46b460a48527f5f1f18f629073d9d77d"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "l17nI3XVDN3oMnpjf2pnmJg0YTwK4m6NLsn/itAjDMdObTFxN77D5F1M9sRMSfViSY3KKcse1ROczwgoWLJsnA==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.angle.windows.natives/2.1.27548.20260419/.nupkg.metadata",
+        "sha256": "a92c1c5814cd02c41dafbffcc112502deba32ba1d02371125ec79592ea304cea"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Angle.Windows.Natives",
+      "nupkg": {
+        "bytes": 6123766,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.angle.windows.natives/2.1.27548.20260419/avalonia.angle.windows.natives.2.1.27548.20260419.nupkg",
+        "rawSha512Base64": "j3QyVAPEDkI4/jp3rEpbvi5Q4CwBRJLV0jO/QlRuDU8t7415herWcNxcjh7VZ6xTpTx4gZvz+unnBe4h86PdyA==",
+        "sha256": "76d67901097e9173d155efc4c2b7d2c8e3122f2c2e0415028eb0c88478a386f9"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "2.1.27548.20260419"
+    },
+    {
+      "lockContentHash": "qHDToxto1e3hci5YqbG9n0Ty8mlp3zBUN5wT66wKqaDVzXyQ0do3EnRILd4Ke9jpvsktaPpgE0YjEk7hornryQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.buildservices/11.3.2/.nupkg.metadata",
+        "sha256": "7ca8b53ff595917ecfb6829d2d6820b3bb97fc2c672e3caf266bb3fb3cea84a5"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.BuildServices",
+      "nupkg": {
+        "bytes": 68329,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.buildservices/11.3.2/avalonia.buildservices.11.3.2.nupkg",
+        "rawSha512Base64": "Iz+GjnSrkeVoGABK0Kp9C7bpeARN3PAGHjc62gahhGsXqC6Ux3erkHukhMGHPSIStH01OdJpTomkFfGvBHwwRQ==",
+        "sha256": "eb0c74ead8d229640e957d9ccdda7a5a1d27bb055aa71e6a7ffb3c423e707b8d"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "11.3.2"
+    },
+    {
+      "lockContentHash": "qZIw0njeXs1ziGJBz2WNduPI38zm9UqOksNrl2lALO2JkuzzMElYGQ3+4+Nl7VEnZSvmcbAZnOdvNYfnXGlOSw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.desktop/12.1.1/.nupkg.metadata",
+        "sha256": "1d6adbefdb2ac6335f670d9efd38897ac06f8220149420569f4658b91d7f2bca"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Desktop",
+      "nupkg": {
+        "bytes": 41808,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.desktop/12.1.1/avalonia.desktop.12.1.1.nupkg",
+        "rawSha512Base64": "769mHDVX7NPP2abBXXeXtJIwuQxWlJ2wSxnkyEY39BKtg37pWjTVRjK1ELtr2WgtNhYcxjmWoBaTjeEglT56EA==",
+        "sha256": "6fbcae9f07d3efe8413f35b7861f8f5fab3cb18a557c8a6e9bb4313e250d4000"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "V2d7OM1jybcl31KThdhf8XSl5SjQ6Ll/tXIfwQ00kMeWuPegRcOx8DLVpECHOOEKO9JZelXW0enuUu1D7Svikg==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.fonts.inter/12.1.1/.nupkg.metadata",
+        "sha256": "cff1d3c4c62a0a84a543e3985fb02c1f126d14af5e32b7169e3fb4839a0fac43"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Fonts.Inter",
+      "nupkg": {
+        "bytes": 1961535,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.fonts.inter/12.1.1/avalonia.fonts.inter.12.1.1.nupkg",
+        "rawSha512Base64": "6DvKwi/ZXqgRBRJ3a2QIzZDGR8voLbJy9SAoMridUzfxk7cYB3Ms4NIoqSPEUu4844VqkJBuY9q55i1afzDONg==",
+        "sha256": "9add330251e85b9b7ea13a6ee708b8dc842f656018b013f3b584a29ef7ce17d9"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "dMMW6vJGsaUD+3e5lA3dGYyNu+Tv/yl0sSrUQLlOQ2RVhmNLkybWdgebHx94lznV3RF9cRGUd9Q+J5XpJ7xfJw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.freedesktop/12.1.1/.nupkg.metadata",
+        "sha256": "359c09b561b0572ce71de1de25a7d69b9be939ec7ab1743e80a6ed1005ae5c7f"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.FreeDesktop",
+      "nupkg": {
+        "bytes": 216813,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.freedesktop/12.1.1/avalonia.freedesktop.12.1.1.nupkg",
+        "rawSha512Base64": "q7SHhz5JWbD5OO1jbhLKsrWH9BlH692ol7t6EXkXykh7daF+3SLNjDACPtr5UEqyquiw68FnhXd/d+HNvAq/Tw==",
+        "sha256": "c3ad45d5f03f459753db9c6d25645eb36484612d62c5cefdedc50e7d1bb8b663"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "BJ2oGBM6pSayLvjhliMPph4LYhPmzDCRjyXQ4jdttrK7cetTViyniW0gMVpNAPNjr4sn6rbN4EHiWknPQq2pLg==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.freedesktop.atspi/12.1.1/.nupkg.metadata",
+        "sha256": "b779745bd655cbdd5e2457432f6118600adf09a360b1f2a0fb360c4ec396759a"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.FreeDesktop.AtSpi",
+      "nupkg": {
+        "bytes": 422058,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.freedesktop.atspi/12.1.1/avalonia.freedesktop.atspi.12.1.1.nupkg",
+        "rawSha512Base64": "OcO44+5c+CtGFkeB1ul07M2kuh3PhZLTdq5U+y6H6ZssvezjWY7bMcmgZczrUjlgqsKes98hC8e9x3AYLz15Gw==",
+        "sha256": "73e076795e6ffe0660059aa3e19d507896c78323c911e9f2142bad890054c115"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "vgd/Fl4bIXgv3QtYk6WCd6iGAag4i3OOAozo6/DW3xPr5dWjpi1MmJaeE9MYoZBEDJ4egD0gfHz6nYhkDADz9g==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.harfbuzz/12.1.1/.nupkg.metadata",
+        "sha256": "07a3db3b3f6302e557b893e622d7004082b5f679b07a361a661df044333a2619"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.HarfBuzz",
+      "nupkg": {
+        "bytes": 48934,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.harfbuzz/12.1.1/avalonia.harfbuzz.12.1.1.nupkg",
+        "rawSha512Base64": "3B8SWkeygAq0KMT0rhQNbD8L1wuBzXdFAcTS/4/wOX2DdPM0dWvbyyYPNm4fl0Oq3ciOb2SKv9+36G62/uD8ow==",
+        "sha256": "ee50a1a9c8a6b042d62e5c772755611c9ab75740286798921ecb59ad3ec8b410"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "+iIeqFnh3/Z91hrQjlhpR6I72fV7q6zjAksQvenPblqgHvsF2PY63eXfBz7H7bmk0WHtuROiFQKLxx//AHInJQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.headless/12.1.1/.nupkg.metadata",
+        "sha256": "794af8b3ca4e88d487a0fcc4526e97ef6a076d36ce45103513c313dab8d45d8b"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Headless",
+      "nupkg": {
+        "bytes": 97121,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.headless/12.1.1/avalonia.headless.12.1.1.nupkg",
+        "rawSha512Base64": "KwrOdyV6Svk7bUreIZwu2y4dpgbWBASEH7wm2X3Uh5f9URkllhks+KnQHULNlbGdTlKvKSEsZ07UGZSXDwb0gw==",
+        "sha256": "29bb94f7af0ae7115754846ed9560a7458a7b8e4c3f6be3ffeeeac06abc862ef"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "jbgCUIhgQGD7d9mLN1oe4J8EpzDa0aY9PS77PZuRUDcNyr/V+vFNdyYXSJs3imrm0NOzTsCcFtK2NSXGDmJ1dw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.native/12.1.1/.nupkg.metadata",
+        "sha256": "f2962de9176e20c3e4ffb8d19bf8b2f730ea294a8fa30a071b9ab228fa5602c1"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Native",
+      "nupkg": {
+        "bytes": 690223,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.native/12.1.1/avalonia.native.12.1.1.nupkg",
+        "rawSha512Base64": "pOEP2Z1oaLcYztSHLhORUKWv7u3xkT3EMEdjSHa1QuUko1rZdh86tokiscIoIoeKIPOqNWlGYexgqUiP2gjlTw==",
+        "sha256": "d557d6177bc589f8018ae3352d5eafeace836e1d2e510f821cbdcfc66b569552"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "0u77tnOwJnHtVLu+WBY7T56fN9W8n7++Uq9kHW6J+bfv5y13WZUMVS+PBzoBe32taYvz/oSomDGO1V41AHaFcQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.remote.protocol/12.1.1/.nupkg.metadata",
+        "sha256": "6a4deecebc73f75c5629d83cae228440aca2d4bcad83ad019cd124c75776bce5"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Remote.Protocol",
+      "nupkg": {
+        "bytes": 149413,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.remote.protocol/12.1.1/avalonia.remote.protocol.12.1.1.nupkg",
+        "rawSha512Base64": "KmbSQcWTtmmF4h2W8v7dGcTifUoMHSbHqtipJaFV8I2G8Kq79pgD+lBUF5JM8CS9qO/blndYRgTWL99unUGRGg==",
+        "sha256": "130c7dc7b5ec56b9afdd9d9392a5734c04b19684a28cb7edae4601f582b93011"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "Q0jRMXb212RYIZNV7p6L/zWx8lyPck9dFFW+l86moeN4dNxHjPBdJS3nLdLvAd20Eno7JC4gwRa5Fewg52td8g==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.skia/12.1.1/.nupkg.metadata",
+        "sha256": "7ddfa3add0ea62757cc0d72fdc795aa3acce85721b8ab1b2ab131b8a2b8f3a5f"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Skia",
+      "nupkg": {
+        "bytes": 163289,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.skia/12.1.1/avalonia.skia.12.1.1.nupkg",
+        "rawSha512Base64": "ggwutbMkgwtNXXnEZf7zDajItt5aU24qHPxXkeiYW6/ASa7xmBGcpcUEpB9LqhAjv54IJDjnaJR2cjLxr/1WXw==",
+        "sha256": "f683dbe5f5dcdfde62cb8bee0cc75e3b9bec95d9f924796ca3627bda8bfa4f25"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "7vdtZsM9o8I8LpU9dyiB/Ah7WB8a5V3JHLsExe4T433ynn5x57F+DBskctZuNOxml8hbe1GmtNUNkBDsqSVKVg==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.themes.fluent/12.1.1/.nupkg.metadata",
+        "sha256": "a3bfec759fc147d1b0d0672add2a9f10711db6e391da50c42e5c4182e5039d43"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Themes.Fluent",
+      "nupkg": {
+        "bytes": 273275,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.themes.fluent/12.1.1/avalonia.themes.fluent.12.1.1.nupkg",
+        "rawSha512Base64": "V01oP1oCbN45N269bxEMx3QzX18RJ+2fgLW6s+ZccJTNNsq0jP5oz6ZtBVFCsEfWgZVgEyhn2BrS4SW5qoGmdw==",
+        "sha256": "627455e679f6efa8983fb3df6d7faef4adf1a43dd15f88cdf342b7aef1c46db4"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "W7FKmHqoyI09dlCnrt0T9QSLk92qVJwXEHPwMI4zIM09Q6H5NzKfvwoadwxIc8S5gydvFypop3DfKX8x9SILug==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.win32/12.1.1/.nupkg.metadata",
+        "sha256": "0e418aa712dc26a77cd6998e2323c3cbc2c9f54e389b00f716f891010a7d70c0"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.Win32",
+      "nupkg": {
+        "bytes": 769128,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.win32/12.1.1/avalonia.win32.12.1.1.nupkg",
+        "rawSha512Base64": "xAyrzYfqOprG3q0Vo40MHjLvsWMP3cyiblso5okQspMVAaZv+Rx92sM+7DBOZzUOEbcRc4vMJYzfwo+Dmwb/wg==",
+        "sha256": "e23ceb93fe69dff585ebf672688d3b4cbe0ee0733c3678da1e4ef51fb1fa194c"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "s7eRJO+QHTmuyGZ7ZClljdgOVTT2OhfEc+Hk5hTgsjI7y84uM5skTvnm+M+Qzlmr1Ru6MLeFUQaTlFA4Aea35Q==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.x11/12.1.1/.nupkg.metadata",
+        "sha256": "37488240ca08cbe60e75c23dd0b1b45a781499aa693b37ee323eb5d04bda1219"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Avalonia.X11",
+      "nupkg": {
+        "bytes": 388532,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/avalonia.x11/12.1.1/avalonia.x11.12.1.1.nupkg",
+        "rawSha512Base64": "nVxO0YFqiyERjJ+NraY6VGJLnufW2wLTopsIAAB1ZfD+J+SEKlCneRBAFHVtEz1vSe6XBNT1UVuJJTZoQ6LEAg==",
+        "sha256": "fc3dbe2c6ddf88e78aa6b155f3610cccda0a7f14977e1de90ef6fe333365e0a8"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "12.1.1"
+    },
+    {
+      "lockContentHash": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/bouncycastle.cryptography/2.6.2/.nupkg.metadata",
+        "sha256": "754c1d8b1b9f42b3186d8587792acca1c82179157eb670305571d5cc35785776"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "BouncyCastle.Cryptography",
+      "nupkg": {
+        "bytes": 8276422,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/bouncycastle.cryptography/2.6.2/bouncycastle.cryptography.2.6.2.nupkg",
+        "rawSha512Base64": "Thoy+Tfuu6E08cZkbAtVTtqhvEGWnexYFtEcPChZBuEGN3ET6mwcsLFhdJ/wiuitOd8FlWtiq+InTUswYPDa7w==",
+        "sha256": "623936fb1fd171579c706390390711282898cf2c759a5167852e5ab82208f8cb"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/Packaging/HybridSigner/packages.lock.json"
+        }
+      ],
+      "version": "2.6.2"
+    },
+    {
+      "lockContentHash": "NGZ2+ZVNPM+NdHB/asW0/ykWngyHWwcqjrbN2nDeH1B/aptPGlCUl8wkQ2cSJxw5fdWgdmIPmNuTPWpLwNVXWg==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp/8.3.1.3/.nupkg.metadata",
+        "sha256": "4f3b6c2996f80a34fc2ff2256911824e456771a5ce519315361a414dae25c43d"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "HarfBuzzSharp",
+      "nupkg": {
+        "bytes": 1038451,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp/8.3.1.3/harfbuzzsharp.8.3.1.3.nupkg",
+        "rawSha512Base64": "hJOzboi+7fyA4S8T47mG+x5VYMTI34bmcsHK0kpiP6Nq3JoagvVm/aN4T3otWJddECc+plt7yxGa/BJrEaRSyA==",
+        "sha256": "ffe644863a4eb3c078b4c3f0def0f2b90a861991c9116bf2dd668a31a0f09ab5"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "8.3.1.3"
+    },
+    {
+      "lockContentHash": "RI6A1LgmooU30+4QIyFt5rmBCzP0VzTR+587IJSGvYIsHHWlahFufihYxtraLfsIhW7I8dn6+xX+DZGygOPKWQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.linux/8.3.1.3/.nupkg.metadata",
+        "sha256": "63fc600045f92198662957b7389f7d53b5e34d436d755687f41eef76976ba47d"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "HarfBuzzSharp.NativeAssets.Linux",
+      "nupkg": {
+        "bytes": 13354097,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.linux/8.3.1.3/harfbuzzsharp.nativeassets.linux.8.3.1.3.nupkg",
+        "rawSha512Base64": "xBOkJE8fzwyt3Y4Dn36WMkzuRewJcKriP8Mkv0CogIxfz54rOGvlqSD5XjfMLuA6aNPdcJL7kJHBVeUqcprI1w==",
+        "sha256": "7de58e9daffc9dcbe6aeaec2c670dccefd5f69c576a68655e51f8ec82b687295"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "8.3.1.3"
+    },
+    {
+      "lockContentHash": "KPTq0xnslkI6nAo0jh3ptcQPJvZZr7MWYXa2jUe4SnHc9q+JlHElmNXp0sfFoiTgoCX7WOYpYsurypuH9Gehxw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.macos/8.3.1.3/.nupkg.metadata",
+        "sha256": "0eecc5fac33c0888d6b48897240ddd3fd8b029dec8a0d9f48e74cb3d98ce0374"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "HarfBuzzSharp.NativeAssets.macOS",
+      "nupkg": {
+        "bytes": 1358322,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.macos/8.3.1.3/harfbuzzsharp.nativeassets.macos.8.3.1.3.nupkg",
+        "rawSha512Base64": "ZCIuEE+UXMKEwI/Zj+qk27NVuSmQ63eFjUF5q26hEtHmoScZgHXpJ0dFBE/UHpn2kcTGihON39Q4xevbsFcWAg==",
+        "sha256": "e962ac27f8c5f691e7696710bda7b3739015e9f96edd7b0ec50b3b8b8046609b"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "8.3.1.3"
+    },
+    {
+      "lockContentHash": "w2QfdNm9Uz/sUa0B5D+OnVQhyq3G/fBq6ibQMdWBlQqqwh0g0/5j3RFvYqZAmRZ5+RzvjVe8o8SFFnWYUSkuxA==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.webassembly/8.3.1.3/.nupkg.metadata",
+        "sha256": "41b40ca684d74860df832bf3870a60224039963c6d766310ad9951c4dc23319a"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "HarfBuzzSharp.NativeAssets.WebAssembly",
+      "nupkg": {
+        "bytes": 13701386,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.webassembly/8.3.1.3/harfbuzzsharp.nativeassets.webassembly.8.3.1.3.nupkg",
+        "rawSha512Base64": "p5kdyZPkLvLhB4XUEZPN1zHAPBNejbTAnLSTo9NkpjSgf0erA1y2OtpB5kP/CJzUYfGrWERAL0zTDuzTrWiyAA==",
+        "sha256": "6ab06223cd9f5cf8c0a9fb6a9c6ed6737051cd9ebebca77b6f9f2f412589564d"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "8.3.1.3"
+    },
+    {
+      "lockContentHash": "bx8CE8Js+XGX8PUxAHCBDEORt5aaBYtMN4Hr9QFs57Xithh6yjUyYqksizH6eRDhJkwsGI+SXWmPmMm8lZC9Pw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.win32/8.3.1.3/.nupkg.metadata",
+        "sha256": "ce037a9577f0739531e8b70987eef718084b58680582e2f0375a3115a8b39ae1"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "HarfBuzzSharp.NativeAssets.Win32",
+      "nupkg": {
+        "bytes": 18498061,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.win32/8.3.1.3/harfbuzzsharp.nativeassets.win32.8.3.1.3.nupkg",
+        "rawSha512Base64": "FWqyRqea61CWcrEMEJofop5Zs60euXE6wzHi8RtrrEt6lry3Zaji2k0/WbtU1bZI6HCurk0iVDusoosXywRvzw==",
+        "sha256": "58d51098b595152c01293f71ed47614b3f53d8503bc226efc23b8f7b0ff7c943"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "8.3.1.3"
+    },
+    {
+      "lockContentHash": "NdNWGDiZ6eS/Mf/9+QHR91cj1K7Hy+PX9yrHI/zM7xFYuj9IWT2uxtB6sCHjrnxAeLV9fut1R6zHDUGKX6f9lQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microcom.runtime/0.11.6/.nupkg.metadata",
+        "sha256": "417db62c2ff5830ccaa4b694f48244a551abd1f727cbf51fd821891f44d047eb"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "MicroCom.Runtime",
+      "nupkg": {
+        "bytes": 39680,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microcom.runtime/0.11.6/microcom.runtime.0.11.6.nupkg",
+        "rawSha512Base64": "Y1fibjW9zDGhrbRY8euhJzAm4TiGW39wmM4M3ykTXDF/WK+gqMAVtkxbYxXOAsSWQTvBeL/XJpNdjTKvY/cywQ==",
+        "sha256": "453af6d34477b19bb2c62d17436e68c76a75915b7947509b1ff601b36d7e78d8"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "0.11.6"
+    },
+    {
+      "lockContentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.dotnet.ilcompiler/10.0.13/.nupkg.metadata",
+        "sha256": "85454f181afdbe51b2f594ea66ebda1a007e5beec378020b88f59af2785b06f6"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Microsoft.DotNet.ILCompiler",
+      "nupkg": {
+        "bytes": 94981,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.dotnet.ilcompiler/10.0.13/microsoft.dotnet.ilcompiler.10.0.13.nupkg",
+        "rawSha512Base64": "N0hYFEX3bcXO27yi2yJueXNm1ziCqjMSEAbbZwIvPR82tQjPVM8n2IpLED1Jq7ut8ZJlBvTUbn1JK+KYhILlQw==",
+        "sha256": "0d1a1d76813e3d99e880b379cc7f49259bb01c9cd8eacdcb209a12243e7c7a2c"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json"
+        }
+      ],
+      "version": "10.0.13"
+    },
+    {
+      "lockContentHash": "3iE7UF7MQkCv1cxzCahz+Y/guQbTqieyxyaWKhrRO91itI9cOKO76OHeQDahqG4MmW5umr3CcCvGmK92lWNlbg==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.2/.nupkg.metadata",
+        "sha256": "7afeba8a97e604eeefbfc5b61fc8ef8e17cd13ac7cdab9f432d17d9c8e430450"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "nupkg": {
+        "bytes": 278862,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.2/microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg",
+        "rawSha512Base64": "uhlg7xEKxzh6Kgbu/ALFnOV7D+WLPgzMt5scjyFQEFxdH0tl4O2V/1DXDygUKRfGpzW4P05UBrsdj53R+WNdfQ==",
+        "sha256": "51f2df1100245f10da54f0bb7e813f277155117777d4fbbab902214e27372606"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "8.0.2"
+    },
+    {
+      "lockContentHash": "dL0QGToTxggRLMYY4ZYX5AMwBb+byQBd/5dMiZE07Nv73o6I5Are3C7eQTh7K2+A4ct0PVISSr7TZANbiNb2yQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.extensions.logging.abstractions/8.0.3/.nupkg.metadata",
+        "sha256": "2761e9e5c34bcbeaedbd0f25a541b6465a694b55006a5d02de95d5f73e67ad83"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Microsoft.Extensions.Logging.Abstractions",
+      "nupkg": {
+        "bytes": 802188,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.extensions.logging.abstractions/8.0.3/microsoft.extensions.logging.abstractions.8.0.3.nupkg",
+        "rawSha512Base64": "5onsHiy50vr6n9n2q4YaCJWqmhy8n7N+ndhWyNFwkATrFFXmRXC1EBO+iLYOmuDET4+FOTLZzeqzPdtC/OwZmw==",
+        "sha256": "e4c498d5a13051b4577a148f1d8c3470167215c507e2392069b75dc61322bb74"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "8.0.3"
+    },
+    {
+      "lockContentHash": "40yrBMsLEcjixBR4G+FiUaBPvxXIPSKJ2OgSrbOZcmSDBda4Sb0k7BWrfDpIvn3IvvDzwOL/tEPa6gDQfh6aRw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.net.illink.tasks/10.0.13/.nupkg.metadata",
+        "sha256": "75f5de7c78ac99b49ba5632f7effa836b487c655f01322b735cc3a5f950da20c"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Microsoft.NET.ILLink.Tasks",
+      "nupkg": {
+        "bytes": 1535197,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.net.illink.tasks/10.0.13/microsoft.net.illink.tasks.10.0.13.nupkg",
+        "rawSha512Base64": "0X3X3VG/W+UmO9EiS88KlEQ8wppRe0bctvc5b6qu8tFBxRFfg/NBwriNeR7LMYa0AzNachpvtmkXHE6WyI5zJg==",
+        "sha256": "6e342eacd8c44c89a073ad3fa5e706381d8511d214cb2a9a694572f82dfbdfae"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json"
+        }
+      ],
+      "version": "10.0.13"
+    },
+    {
+      "lockContentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.win32.systemevents/6.0.0/.nupkg.metadata",
+        "sha256": "1afa604ffddcd8ddf7e4fca19f0f3e84ac64a6a183c8d98b32e7ddc06d3013b2"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Microsoft.Win32.SystemEvents",
+      "nupkg": {
+        "bytes": 157768,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.win32.systemevents/6.0.0/microsoft.win32.systemevents.6.0.0.nupkg",
+        "rawSha512Base64": "XidKzplsPrpjCZ7VEW+dw59p9oT3wediPCjDxzmIt1xn38ySmlCnYfAiLfJD3VQHIKbliOkd+nhPgb/Oeok4dQ==",
+        "sha256": "37d11565b979c35567332c065f26955b34fd961f3889a277683e3c848064d730"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "6.0.0"
+    },
+    {
+      "lockContentHash": "GhTr9F1uOYXHCIEOB5PXIgqn5a8WLsJL2m0eewTA0IvY1j6N4HGXHKKmEyB90/N6vrjmYamf41V9zbmdW2HY3g==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/pdfsharp/6.2.4/.nupkg.metadata",
+        "sha256": "c0a8c40b1c98f2311f4ea79eaf4b17fcd892f750079404998e82073257b2373a"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "PDFsharp",
+      "nupkg": {
+        "bytes": 4625326,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/pdfsharp/6.2.4/pdfsharp.6.2.4.nupkg",
+        "rawSha512Base64": "K1/qaAyYQxf4g57OGAS21RxDbi5nAX4TrWjt8RBwdTC2NAwO8vPFeGC0sfc1LvQsFitepCXFs6CGhanA1NRfDg==",
+        "sha256": "5647882339b327cbf6da9ea3f882efb335f8d602e6fd45323adf9e78da53cf67"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "6.2.4"
+    },
+    {
+      "lockContentHash": "RuvX3PEXU6pbY/I5ItAk800jm62r+YnoPLgyS2WTgwxkOnGkOfU9ORiipHUF0LkLyqM8rlroUCA319JjRYfRFQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/qrcoder/1.8.0/.nupkg.metadata",
+        "sha256": "fe5cedb1e3d11524c4cd8f1dc21c21fb6144ddfad22af7e686d52bb7e5592fc7"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "QRCoder",
+      "nupkg": {
+        "bytes": 1006754,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/qrcoder/1.8.0/qrcoder.1.8.0.nupkg",
+        "rawSha512Base64": "WVQOLFZ3S4aLzLPq/i+WedWLs6FzZ5SCefwC24JA5Gtn3Wz/vDjEQ+A94uJQsRPn270PFZZRRqM9dY94HJDXvg==",
+        "sha256": "52f39e145c5467f6dd7660ece886a689818321f831c9b13f092a4fcb2e433312"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "1.8.0"
+    },
+    {
+      "lockContentHash": "UlaKJbhvcFO/HC+zY5q3r07uGzwIGE5z49EeGj51mbIxu4XZBp87sr2IKi8lOb9eTO2e2M9tMOEpOtaqPzSoTA==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/runtime.osx-arm64.microsoft.dotnet.ilcompiler/10.0.13/.nupkg.metadata",
+        "sha256": "34ae01b8d26fd3e6a69a30ad3037f8d076646606c86c9f2fc0bc945fb80d2233"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "runtime.osx-arm64.Microsoft.DotNet.ILCompiler",
+      "nupkg": {
+        "bytes": 12376871,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/runtime.osx-arm64.microsoft.dotnet.ilcompiler/10.0.13/runtime.osx-arm64.microsoft.dotnet.ilcompiler.10.0.13.nupkg",
+        "rawSha512Base64": "yJ3xUvojbSbYV4H8r3e3COtAbOoawASogXeR3WLUJGc8GSEAeJagtuKrZy6aE9VqCupXU8Hqrb8hnK7gVzniZw==",
+        "sha256": "83229996bf6fb843d9384836b7102563229b9d59e89c7daf0f9e1bbf60d5b2ec"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json"
+        }
+      ],
+      "version": "10.0.13"
+    },
+    {
+      "lockContentHash": "tRiYgozS46av6ilf04bZTsi9+TPGsK95znWNdwqmFo7rY7Sygl/ittwGcf10VCYw2THlzReUHS1n2Y6VqMA6aQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/runtime.osx-x64.microsoft.dotnet.ilcompiler/10.0.13/.nupkg.metadata",
+        "sha256": "f6ffbf9043af520a0c2b4c800b1913adba01d15318897e806b468b0e2903dac1"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "runtime.osx-x64.Microsoft.DotNet.ILCompiler",
+      "nupkg": {
+        "bytes": 13643871,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/runtime.osx-x64.microsoft.dotnet.ilcompiler/10.0.13/runtime.osx-x64.microsoft.dotnet.ilcompiler.10.0.13.nupkg",
+        "rawSha512Base64": "RetqimPTPg/yCy+h+qswPCjOB9xl65i5HBgpsrM8HdvKoK9LAB2ZCnk8fVlwCmMKC5fyjo/ZpD4D1H2nGg3JSA==",
+        "sha256": "95536a86392ee26a223c56629534eabe49512f37142e92b01366ed563c4aef63"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json"
+        }
+      ],
+      "version": "10.0.13"
+    },
+    {
+      "lockContentHash": "53NOSUZ1Us+91Sm0uCkIivh/k7jOowRErZT2sIWwPFN9mLUvdxnE6rS4sWo4255+Rd2MWUSF+j0NMZHD6Cke+Q==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp/3.119.4/.nupkg.metadata",
+        "sha256": "42d3ab226c8dbfb8977a0abb0a2edb85e73f318d4e3f196a58f509c50c94e469"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "SkiaSharp",
+      "nupkg": {
+        "bytes": 8743679,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp/3.119.4/skiasharp.3.119.4.nupkg",
+        "rawSha512Base64": "cSkl+6zfvTTF18Brzlsq4ZxQYtz0AAqlfsLERrS2zWgnxYFTAn4cYJDsJk8Jl7NH9EWZlciMIdsJTE2SQMqVpQ==",
+        "sha256": "e32a449d31945c0b9d169eb5bc676e1e3f589aab69888e49d703fdc1c384c176"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "3.119.4"
+    },
+    {
+      "lockContentHash": "UAyVzbqNfZsZbKbzj68zXLyUyF/SbTKmzTfOO6qDu++dtIUMMTzPBe8oOuzU/DiewpfKoUUlOSsJmqWc6blxBw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.linux/3.119.4/.nupkg.metadata",
+        "sha256": "110fac95cfac0a869bb4adf71e7873ee9ddf591ef23022518fcb382fefe4e7b2"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "SkiaSharp.NativeAssets.Linux",
+      "nupkg": {
+        "bytes": 62908845,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.linux/3.119.4/skiasharp.nativeassets.linux.3.119.4.nupkg",
+        "rawSha512Base64": "+DnMNYJrhlrUUYBCehbi13l76DgZIzWq/PPc/aixEMoE188a6/XzAMStv4dUVGONR2/oxE6bMrOIViveDVWPcg==",
+        "sha256": "fae0554059b1107ef7888e46c20bdfb548401ef7a7a6f7391ad4fadc7432d50a"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "3.119.4"
+    },
+    {
+      "lockContentHash": "fgBOWEqbY012x7gMfJU4ezgz6dfhJb30Z6YdW35h85Zoe39+a8YNbAAwL29ihPfWoppg5AjvyKNzD1oCvlqWwA==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.macos/3.119.4/.nupkg.metadata",
+        "sha256": "0c85dd988cd8254e760338013afababad579bfab4bf555f8d59e289db3cbcf83"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "SkiaSharp.NativeAssets.macOS",
+      "nupkg": {
+        "bytes": 7056004,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.macos/3.119.4/skiasharp.nativeassets.macos.3.119.4.nupkg",
+        "rawSha512Base64": "UYhxM3U3o/ogRTDXAmW4/cyBvinejIhxtqIFJpgjcsxPVuIY5VLgxs83ePuOBfNBu7t/WehTF+w4EL5sdiBkDg==",
+        "sha256": "f7f2f539ce5bba337aa4a8d6eac25caf58cbdd12edf3f32ddcc98294e730cf2c"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "3.119.4"
+    },
+    {
+      "lockContentHash": "S1HOxtBbD4bYDtA2e9WH5TX+lxqRrTPvKjrjttRhxnHNNu7YY8VFo/LeCP7tNqoTA6PV+8vsvNbmRUEC2ip8RQ==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.webassembly/3.119.4/.nupkg.metadata",
+        "sha256": "5ab23daf2de64b41bfb18ce487ae17ae8a47f7931eab3067575176e7c62cd4ed"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "SkiaSharp.NativeAssets.WebAssembly",
+      "nupkg": {
+        "bytes": 70962354,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.webassembly/3.119.4/skiasharp.nativeassets.webassembly.3.119.4.nupkg",
+        "rawSha512Base64": "cpCijt2WNGNa0JjPg5SY0a1dQ37zq2ayK29MsmFkA9Lj0Fe/DcPZZTvOQTO0mjOW9JPbTaNQ/4uMHBFd1W4oUQ==",
+        "sha256": "c4b7ec581b05169bf9420efd188322fb908ce980df720fffa32c0d941e58dc9d"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "3.119.4"
+    },
+    {
+      "lockContentHash": "XOpbx/4CReO2wYsq2s6rbvdauc6dntG4Zv499sHGTJ87bwZaFXszFkwql3+FIZMc8kUPeaj3Mx2ezIJmo8a1Kg==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.win32/3.119.4/.nupkg.metadata",
+        "sha256": "648f4cb666bec90e9c747c6b6356dd842e13cafa93374451c65c6690ade32f3d"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "SkiaSharp.NativeAssets.Win32",
+      "nupkg": {
+        "bytes": 76963437,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.win32/3.119.4/skiasharp.nativeassets.win32.3.119.4.nupkg",
+        "rawSha512Base64": "RFv9fJMFUi44URCmcqQ/Fay/s2tcmFxa9UDbU0+ZzrOn3fkzogWH7gUnsU7fGxnLmxZ+eBvqJ1yis7d9mgJZzw==",
+        "sha256": "5a5698b1b4e1fdc9ffe9868df6874db5fa69f21a4de76ba71a01a542e9b43391"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "3.119.4"
+    },
+    {
+      "lockContentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/system.drawing.common/6.0.0/.nupkg.metadata",
+        "sha256": "29fa42a4eafcc7694c6dc3112ed5db2d397a1be9f460543471f1352afa420e38"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "System.Drawing.Common",
+      "nupkg": {
+        "bytes": 1114589,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/system.drawing.common/6.0.0/system.drawing.common.6.0.0.nupkg",
+        "rawSha512Base64": "1h8KPgHD6sFfE/wboEosfOTqyVZACy+qNh/sq9ODbUnVvTRPOYXuPZTNw/anK44H5CPNspZbT1yiIitd4ymI5A==",
+        "sha256": "ffd11a01b11e3a310b452319688992d4ef059947bc8f85ae154c3554eacfc80a"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "6.0.0"
+    },
+    {
+      "lockContentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/system.security.cryptography.pkcs/10.0.13/.nupkg.metadata",
+        "sha256": "28b997033f5d0d5a804d7fa440abe4b693a612b02ee16542634847ef1fc8d171"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "System.Security.Cryptography.Pkcs",
+      "nupkg": {
+        "bytes": 1147618,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/system.security.cryptography.pkcs/10.0.13/system.security.cryptography.pkcs.10.0.13.nupkg",
+        "rawSha512Base64": "KH692n1QlH41LGLCit1xASxg9QEky9VY8NODv6gzV/eUHFXVTvRDLJyssMGaMxS9WfIXyJnSLgxeI8P8+ddLig==",
+        "sha256": "54ed24578ead34b5b50d259084243432f11733e2754b8b196e799d3418d304a7"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/Packaging/HybridSigner/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/Packaging/HybridSigner/packages.lock.json"
+        }
+      ],
+      "version": "10.0.13"
+    },
+    {
+      "lockContentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/system.security.cryptography.pkcs/8.0.2/.nupkg.metadata",
+        "sha256": "738a1c925ff7f61d8de84518eff56d87c45d4347658e726ac31c68785bac947c"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "System.Security.Cryptography.Pkcs",
+      "nupkg": {
+        "bytes": 1081001,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/system.security.cryptography.pkcs/8.0.2/system.security.cryptography.pkcs.8.0.2.nupkg",
+        "rawSha512Base64": "b7bL+Ge4ysa+tTvMmCF4kH4dV9cHTchWUgWCWOwEpoUjEn0jS+YOsKelvrtdTEemF9w6qCJtgsPoNFntBkSsRg==",
+        "sha256": "372b652ceb0c34a77eff65381ef2435b9bc93e8261216cf5de711fc7d9ea7200"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-x64",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        },
+        {
+          "framework": "net10.0/osx-arm64",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "8.0.2"
+    },
+    {
+      "lockContentHash": "11YMr7FnAbL83bQmVxlhbIKHvSLxjO81D12Ej0QMSGXMDTxNA9MTOa4MQxx43nv5el/efuPHwzyrj6a5ha2gug==",
+      "metadata": {
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/tmds.dbus.protocol/0.94.1/.nupkg.metadata",
+        "sha256": "0dfbf78f063d1ba5d06ae2f5afe61e90e343a2b95ef13c5c3d890b8d63c9b070"
+      },
+      "metadataContentHashMatchesLock": true,
+      "name": "Tmds.DBus.Protocol",
+      "nupkg": {
+        "bytes": 656347,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/tmds.dbus.protocol/0.94.1/tmds.dbus.protocol.0.94.1.nupkg",
+        "rawSha512Base64": "l6HQm/Ny4TygH7dxUpTj9G9WoiIGCQuceI3zN2gXBrKhSz2Spb5Jlxb9pARJrSPbxySW65hIy9kq6u1XZGU5jA==",
+        "sha256": "4f71d06ac40e725ffbcf1b79853dd93218695a84f23d36fafc85f477a4c9580f"
+      },
+      "packageSource": "https://api.nuget.org/v3/index.json",
+      "rawArchiveSha512MatchesSidecar": true,
+      "references": [
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac/packages.lock.json"
+        },
+        {
+          "framework": "net10.0",
+          "lock": "KeepVaultMac.Tests/packages.lock.json"
+        }
+      ],
+      "version": "0.94.1"
+    }
+  ],
+  "restoresAreDependencyValidationNotReleaseApproval": true,
+  "schema": "keepvault.build23-new-package-provenance.v1"
+}

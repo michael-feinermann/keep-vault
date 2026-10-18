@@ -1,0 +1,282 @@
+{
+  "changedFileCount": 20,
+  "compileAndChecksAreNotInstalledReleaseApproval": true,
+  "files": [
+    {
+      "after": {
+        "bytes": 13476,
+        "sha256": "f11c2bcde7e096198e77bb8ef80121d79627433e35d75421e6fb9426c554b7dd"
+      },
+      "before": {
+        "bytes": 13476,
+        "sha256": "638862f286100dd89f0f8f2c10ea4f5754e5cf9f1a39bef99810a84401e7ce0b"
+      },
+      "path": "KeepVaultMac.ReleaseVerifier/InstallationManifestVerifier.cs"
+    },
+    {
+      "after": {
+        "bytes": 31191,
+        "sha256": "f2f98e2703e406ee4a10197d0cc85f80300cd8aaab31f074a9b780337f3b0320"
+      },
+      "before": {
+        "bytes": 31191,
+        "sha256": "30cdf4535c7a2c5d396f5b53c056141de15d696c17c3c3faecc2ea01f6b32889"
+      },
+      "path": "KeepVaultMac.ReleaseVerifier/Program.cs"
+    },
+    {
+      "after": {
+        "bytes": 105,
+        "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+      },
+      "before": {
+        "bytes": 105,
+        "sha256": "c39786ab1a147662bbe4db015f900165178875ec4a872ddae53bc0c90771ac34"
+      },
+      "path": "KeepVaultMac.ReleaseVerifier/global.json"
+    },
+    {
+      "after": {
+        "bytes": 2087,
+        "sha256": "4c672fd6b0180f0f51bc07d07ed5d2b9734e65e8a63875bea1328738782b08ac"
+      },
+      "before": {
+        "bytes": 2087,
+        "sha256": "dd7a30a838aecf6060b4fc28f84392a09d864290e6f5a0a596535b0a40ebeaf8"
+      },
+      "path": "KeepVaultMac.ReleaseVerifier/packages.lock.json"
+    },
+    {
+      "after": {
+        "bytes": 73838,
+        "sha256": "f6eaa8744144dbfa5b026ab6d1d1ad0301072c9f060256a41b61849eac623de4"
+      },
+      "before": {
+        "bytes": 73838,
+        "sha256": "ddcf5bf7e2c2466b7c9b3cf5e0a6a783dc29176ec4bc79f323e7cfaae125dd9e"
+      },
+      "path": "KeepVaultMac.Tests/HybridKeyProtectionTests.cs"
+    },
+    {
+      "after": {
+        "bytes": 59799,
+        "sha256": "c00efc92be642aaabb20b2a28d2c58ceb7001870b3fa81f394069e605f71e654"
+      },
+      "before": {
+        "bytes": 59799,
+        "sha256": "85f99e32416359d553107bdba5d35db533317b8df92f05ad97ae80e0685bafe8"
+      },
+      "path": "KeepVaultMac.Tests/Program.cs"
+    },
+    {
+      "after": {
+        "bytes": 33392,
+        "sha256": "37fe908eadbcf9494cfb88eb41c10943ab61f26b4cb77324390b007d49767d61"
+      },
+      "before": {
+        "bytes": 33207,
+        "sha256": "4b6ce5faa5b3aa596e49830d897ea8e458cea0b76b7078dc1374ed050bb79f40"
+      },
+      "path": "KeepVaultMac.Tests/SpecLintTests.cs"
+    },
+    {
+      "after": {
+        "bytes": 105,
+        "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+      },
+      "before": {
+        "bytes": 105,
+        "sha256": "c39786ab1a147662bbe4db015f900165178875ec4a872ddae53bc0c90771ac34"
+      },
+      "path": "KeepVaultMac.Tests/global.json"
+    },
+    {
+      "after": {
+        "bytes": 13464,
+        "sha256": "f0221be40f1d874f7d1da2dfcfe5770b097e708d35bc5d52efec421a1a892e6e"
+      },
+      "before": {
+        "bytes": 13404,
+        "sha256": "ee7fedf92179705de025536cdcf1cb6b5991aa69d457b26103b3e420b9957a24"
+      },
+      "path": "KeepVaultMac.Tests/packages.lock.json"
+    },
+    {
+      "after": {
+        "bytes": 12125,
+        "sha256": "82ac62c8557843399562e9b5daa8bbc2cfcde4aaf835a2a1aea6f0752363abfc"
+      },
+      "before": {
+        "bytes": 12040,
+        "sha256": "6659040b46734c697aec14b1b86d2c99b96dbd0ac7c0dc85e5429443addf8f9e"
+      },
+      "path": "KeepVaultMac/KeepVaultMac.csproj"
+    },
+    {
+      "after": {
+        "bytes": 1234,
+        "sha256": "38544895184090a4edcffcab7f87c1cb33edcc9dead9225556b956e6af261c6e"
+      },
+      "before": {
+        "bytes": 1234,
+        "sha256": "418db7c26af4c5f75f9b577bef2e795089c9cce57e8983d048ea84e599f70c89"
+      },
+      "path": "KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj"
+    },
+    {
+      "after": {
+        "bytes": 869,
+        "sha256": "fc40c8cd65abf0bbba995d2a3db679ae856d4417d3c3356f1448606fef959898"
+      },
+      "before": {
+        "bytes": 869,
+        "sha256": "445b25f57a3a97cadad21e7df8f0129d39b52eb921c87ea2335d7108a761ed03"
+      },
+      "path": "KeepVaultMac/Packaging/HybridSigner/packages.lock.json"
+    },
+    {
+      "after": {
+        "bytes": 7868,
+        "sha256": "d045ea8a4ecae02aa0f21815a27828cc96baf394b3b4bcf7c58a8b80b221b7aa"
+      },
+      "before": {
+        "bytes": 7868,
+        "sha256": "3d3f4fc0956a0b72726044f2e708da2724be356597b5d32d14ce444ef7a92379"
+      },
+      "path": "KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt"
+    },
+    {
+      "after": {
+        "bytes": 105,
+        "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+      },
+      "before": {
+        "bytes": 105,
+        "sha256": "c39786ab1a147662bbe4db015f900165178875ec4a872ddae53bc0c90771ac34"
+      },
+      "path": "KeepVaultMac/global.json"
+    },
+    {
+      "after": {
+        "bytes": 17282,
+        "sha256": "a5f328bf88412328a168232da570312ea48496bed20df5e8bf5a7a4cf79335ec"
+      },
+      "before": {
+        "bytes": 17192,
+        "sha256": "b111fbcd11fbf46df0e61164109cbd8bfb2c22b80ec79e4b4d1ea0ed7fe07de7"
+      },
+      "path": "KeepVaultMac/packages.lock.json"
+    },
+    {
+      "after": {
+        "bytes": 119652,
+        "sha256": "1d76d1b681ba4540822eaa52ab658498b3a52d875bb10e215960a5cf5aaf7e5e"
+      },
+      "before": {
+        "bytes": 119652,
+        "sha256": "99af27c3fc86ea88531c3dffe1b2ee3bf48266e1fbd5e7ec202f61b83e6fe54a"
+      },
+      "path": "tools/Build-KeepVault-macOS.sh"
+    },
+    {
+      "after": {
+        "bytes": 48191,
+        "sha256": "a5c262da45fe2294df4a82890944766087d686ec2f73f07323cb930fb54e8b80"
+      },
+      "before": {
+        "bytes": 48191,
+        "sha256": "fea290d471da194cebbf490e353b553e7f37acea679e4eacb4294c93a13d1427"
+      },
+      "path": "tools/Build-Portable-macOS.sh"
+    },
+    {
+      "after": {
+        "bytes": 9932,
+        "sha256": "7a5652b052bd099998ad48ad47c7a8d0b648d2bb469e4b0986bf3c8230ab82e0"
+      },
+      "before": {
+        "bytes": 9932,
+        "sha256": "bdf9b70f87b55d104e13cb29fea0a70ae8c0558c2ec9e3b01b0f32fa075ddf2e"
+      },
+      "path": "tools/Provision-VerifiedDotnet-macOS.sh"
+    },
+    {
+      "after": {
+        "bytes": 50470,
+        "sha256": "dd8d24655b920308e95a1a0bfc838168f8040e5d868a4b0a9af7e424bc7db3ab"
+      },
+      "before": {
+        "bytes": 50470,
+        "sha256": "4f8d68a40f1a32d89afd6d6b0ef58ef696c9933aabe07cb08796171d4ef4bc3e"
+      },
+      "path": "tools/Verify-KeepVault-macOS.sh"
+    },
+    {
+      "after": {
+        "bytes": 34226,
+        "sha256": "24e2ee957113bb8b32a80d67d68adea4b0c2b38528380a2e0383042c7859c91a"
+      },
+      "before": {
+        "bytes": 34226,
+        "sha256": "7c7a46eeb6632ddb29d21464f8e4c758246e873e9e990bc6019443efade4600a"
+      },
+      "path": "tools/Verify-QR-Scanner-macOS.sh"
+    }
+  ],
+  "observedUtc": "2026-10-18T10:57:35.445206+00:00",
+  "protectedFiles": [
+    "Directory.Build.targets",
+    "KalynaArchiver.Signing/packages.lock.json",
+    "KalynaArchiver.Tests/packages.lock.json",
+    "KalynaArchiver/packages.lock.json",
+    "KalynaReleaseVerifier/packages.lock.json",
+    "KalynaSigningTool/packages.lock.json",
+    "KeepVaultInstaller/packages.lock.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/FixtureBuilder.cs.txt",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/FixtureBuilder.csproj.txt",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/NuGet.Config.txt",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/PrivateKeepVault.csproj.txt",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/README.de.md",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/README.md",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/date-2026-09-06.kzpaq",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/date-2026-09-06.kzpaq.kpar2",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/empty.kzpaq",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/empty.kzpaq.kpar2",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/generator-policy-patch.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/manifest.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/model-and-old-pattern.kzpaq",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/model-and-old-pattern.kzpaq.kpar2",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/native-provenance.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/oversized-raw.kzpaq",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/oversized-raw.kzpaq.kpar2",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/package-provenance.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/pin-substring.kzpaq",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/pin-substring.kzpaq.kpar2",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/private-app-packages.lock.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/private-generator-packages.lock.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/short.kzpaq",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/short.kzpaq.kpar2",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/source-provenance.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/strict-restore-addendum.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/strict-restore-check.log.txt",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/strict-restore-check.sh.txt",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/verified-run.sh.txt",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/verified-source-after.json",
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/verified-source-before.json",
+    "QrCodeScannerWindows/packages.lock.json",
+    "QrCodeScannerWindows/packages.tests.lock.json",
+    "global.json",
+    "native/tests/camellia_serpent_reference/packages.lock.json",
+    "native/tests/claim_grain/packages.lock.json",
+    "native/tests/managed_executor/packages.lock.json",
+    "native/tests/native_benchmark/packages.lock.json"
+  ],
+  "protectedInputsUnchanged": true,
+  "schema": "keepvault.build23-reviewed-metadata-source-manifest.v1",
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+  "sourceDiff": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/metadata-source.diff",
+    "sha256": "e8d272105fb625267dcc5739c7093d2953301c1d8c1de2a85b5bc0f9244b3841"
+  },
+  "worktree": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna"
+}

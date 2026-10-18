@@ -1,0 +1,87 @@
+{
+  "files": {
+    "KeepVaultMac.ReleaseVerifier/InstallationManifestVerifier.cs": {
+      "bytes": 13476,
+      "sha256": "f11c2bcde7e096198e77bb8ef80121d79627433e35d75421e6fb9426c554b7dd"
+    },
+    "KeepVaultMac.ReleaseVerifier/Program.cs": {
+      "bytes": 31191,
+      "sha256": "f2f98e2703e406ee4a10197d0cc85f80300cd8aaab31f074a9b780337f3b0320"
+    },
+    "KeepVaultMac.ReleaseVerifier/global.json": {
+      "bytes": 105,
+      "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+    },
+    "KeepVaultMac.ReleaseVerifier/packages.lock.json": {
+      "bytes": 2087,
+      "sha256": "4c672fd6b0180f0f51bc07d07ed5d2b9734e65e8a63875bea1328738782b08ac"
+    },
+    "KeepVaultMac.Tests/HybridKeyProtectionTests.cs": {
+      "bytes": 73838,
+      "sha256": "f6eaa8744144dbfa5b026ab6d1d1ad0301072c9f060256a41b61849eac623de4"
+    },
+    "KeepVaultMac.Tests/Program.cs": {
+      "bytes": 59799,
+      "sha256": "c00efc92be642aaabb20b2a28d2c58ceb7001870b3fa81f394069e605f71e654"
+    },
+    "KeepVaultMac.Tests/SpecLintTests.cs": {
+      "bytes": 33392,
+      "sha256": "37fe908eadbcf9494cfb88eb41c10943ab61f26b4cb77324390b007d49767d61"
+    },
+    "KeepVaultMac.Tests/global.json": {
+      "bytes": 105,
+      "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+    },
+    "KeepVaultMac.Tests/packages.lock.json": {
+      "bytes": 13464,
+      "sha256": "f0221be40f1d874f7d1da2dfcfe5770b097e708d35bc5d52efec421a1a892e6e"
+    },
+    "KeepVaultMac/KeepVaultMac.csproj": {
+      "bytes": 12125,
+      "sha256": "82ac62c8557843399562e9b5daa8bbc2cfcde4aaf835a2a1aea6f0752363abfc"
+    },
+    "KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj": {
+      "bytes": 1234,
+      "sha256": "38544895184090a4edcffcab7f87c1cb33edcc9dead9225556b956e6af261c6e"
+    },
+    "KeepVaultMac/Packaging/HybridSigner/packages.lock.json": {
+      "bytes": 869,
+      "sha256": "fc40c8cd65abf0bbba995d2a3db679ae856d4417d3c3356f1448606fef959898"
+    },
+    "KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt": {
+      "bytes": 7868,
+      "sha256": "d045ea8a4ecae02aa0f21815a27828cc96baf394b3b4bcf7c58a8b80b221b7aa"
+    },
+    "KeepVaultMac/global.json": {
+      "bytes": 105,
+      "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+    },
+    "KeepVaultMac/packages.lock.json": {
+      "bytes": 17282,
+      "sha256": "a5f328bf88412328a168232da570312ea48496bed20df5e8bf5a7a4cf79335ec"
+    },
+    "tools/Build-KeepVault-macOS.sh": {
+      "bytes": 119652,
+      "sha256": "1d76d1b681ba4540822eaa52ab658498b3a52d875bb10e215960a5cf5aaf7e5e"
+    },
+    "tools/Build-Portable-macOS.sh": {
+      "bytes": 48191,
+      "sha256": "a5c262da45fe2294df4a82890944766087d686ec2f73f07323cb930fb54e8b80"
+    },
+    "tools/Provision-VerifiedDotnet-macOS.sh": {
+      "bytes": 9932,
+      "sha256": "7a5652b052bd099998ad48ad47c7a8d0b648d2bb469e4b0986bf3c8230ab82e0"
+    },
+    "tools/Verify-KeepVault-macOS.sh": {
+      "bytes": 50470,
+      "sha256": "dd8d24655b920308e95a1a0bfc838168f8040e5d868a4b0a9af7e424bc7db3ab"
+    },
+    "tools/Verify-QR-Scanner-macOS.sh": {
+      "bytes": 34226,
+      "sha256": "24e2ee957113bb8b32a80d67d68adea4b0c2b38528380a2e0383042c7859c91a"
+    }
+  },
+  "observedUtc": "2026-10-18T10:56:09.869078+00:00",
+  "scope": "First explicit changed-source hash map; observed after test compile while short checks are active, not a claimed before-build snapshot",
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d"
+}

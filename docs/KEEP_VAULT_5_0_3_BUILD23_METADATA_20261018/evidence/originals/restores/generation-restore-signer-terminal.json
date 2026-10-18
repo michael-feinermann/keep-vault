@@ -1,0 +1,35 @@
+{
+  "actualExitCode": 0,
+  "actualPid": 17607,
+  "actualWaitObserved": true,
+  "argv": [
+    "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+    "restore",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj",
+    "--artifacts-path",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/signer",
+    "--configfile",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/NuGet.Config",
+    "--force",
+    "--no-http-cache",
+    "--disable-build-servers",
+    "--nologo",
+    "--force-evaluate",
+    "-p:RestoreLockedMode=false"
+  ],
+  "captureOrStartFailure": null,
+  "completedUtc": "2026-10-18T10:48:02.784544+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "generation-restore-signer",
+  "startedUtc": "2026-10-18T10:48:02.052897+00:00",
+  "stderr": {
+    "bytes": 0,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/generation-restore-signer.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stdout": {
+    "bytes": 219,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/generation-restore-signer.stdout",
+    "sha256": "78f4add2710e2ae5f312f652518e7de4a236cc93e987f4f1243f176077fe0009"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "actualExitCode": 0,
+  "actualPid": 74871,
+  "actualWaitObserved": true,
+  "argv": [
+    "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/tests/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "keysheet.pair-cleanup-identity",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x5BF975D9"
+  ],
+  "captureOrStartFailure": null,
+  "completedUtc": "2026-10-18T10:57:14.896912+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "continuation-check-6-keysheet.pair-cleanup-identity",
+  "startedUtc": "2026-10-18T10:57:14.299553+00:00",
+  "stderr": {
+    "bytes": 0,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-6-keysheet.pair-cleanup-identity.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stdout": {
+    "bytes": 451,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-6-keysheet.pair-cleanup-identity.stdout",
+    "sha256": "8967a9636e1d0be488d822c3d7482352a8a2640e1ace76907480754c612a6076"
+  }
+}

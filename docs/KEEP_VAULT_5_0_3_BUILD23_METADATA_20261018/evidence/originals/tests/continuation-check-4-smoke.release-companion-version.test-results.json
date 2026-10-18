@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+  "testInventoryHash": "22f400f0fc1a5ef49488db90c92d48ae8526b9904481bf762ef878cf1ce0743f",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "smoke.release-companion-version",
+      "name": "release companion version plumbing",
+      "status": "PASS",
+      "seconds": 1.355,
+      "peakRssMiB": 82,
+      "seed": "0x5BF975D9",
+      "failure": null
+    }
+  ]
+}

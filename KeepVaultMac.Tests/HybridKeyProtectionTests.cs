@@ -566,7 +566,7 @@ internal static class HybridKeyProtectionTests
                     && protectionScript.Contains("hybrid_protection_tool_paths=verified", StringComparison.Ordinal),
                 "The provisioning script no longer enforces distinct services and accounts.");
             Require(
-                keepVaultBuildScript.Contains("build_version='22'", StringComparison.Ordinal)
+                keepVaultBuildScript.Contains("build_version='23'", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("marketing_version='5.0.3'", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("require_root_system_tool", StringComparison.Ordinal)
                     && HasIsolatedDotnetBuildPath(keepVaultBuildScript)
@@ -578,7 +578,7 @@ internal static class HybridKeyProtectionTests
                     && keepVaultBuildScript.Contains("notice_self_test_inplace_aba", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains("output_mutation_status", StringComparison.Ordinal)
                     && keepVaultBuildScript.Contains(
-                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
+                        "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02",
                         StringComparison.Ordinal),
                 "The macOS v13 release default or fixed system-tool gate regressed.");
             foreach (string lockedBuildScript in new[] { keepVaultBuildScript, portableBuildScript,
@@ -614,7 +614,7 @@ internal static class HybridKeyProtectionTests
                     && portableBuildScript.Contains("${portable_dir}/THIRD-PARTY-NOTICES.txt", StringComparison.Ordinal)
                     && portableBuildScript.Contains("zstat -f ${descriptor}", StringComparison.Ordinal)
                     && portableBuildScript.Contains(
-                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
+                        "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02",
                         StringComparison.Ordinal),
                 "The portable release build no longer uses a fresh verified SDK and private package cache.");
             Require(
@@ -689,7 +689,7 @@ internal static class HybridKeyProtectionTests
                     && keepVaultVerifierScript.Contains("sysopen -r -o nofollow", StringComparison.Ordinal)
                     && keepVaultVerifierScript.Contains("bound_verifier_notice_identity", StringComparison.Ordinal)
                     && keepVaultVerifierScript.Contains(
-                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
+                        "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02",
                         StringComparison.Ordinal)
                     && !keepVaultVerifierScript.Contains("${dotnet_command} restore", StringComparison.Ordinal)
                     && !keepVaultVerifierScript.Contains("${dotnet_command} build", StringComparison.Ordinal),
@@ -731,14 +731,14 @@ internal static class HybridKeyProtectionTests
                     && releaseVerifierSource.Contains("THIRD-PARTY-NOTICES.txt", StringComparison.Ordinal)
                     && releaseVerifierSource.Contains("portable root notice", StringComparison.Ordinal)
                     && releaseVerifierSource.Contains(
-                        "1A02EAD03198231BB35F2AA7576B9BE2EA79E153FDF22AB6E85B90FF8B710C3E",
+                        "3DEA0EE0CEFF0CB52C258B3BD11F67A03227BF713E576D0540C76C130C8A8A02",
                         StringComparison.Ordinal),
                 "The standalone release verifier lost its bound app/portable notice pin.");
             Require(
                 verifiedDotnetProvisioner.StartsWith("#!/bin/zsh -f\n", StringComparison.Ordinal)
-                    && verifiedDotnetProvisioner.Contains("sdk_version='10.0.400'", StringComparison.Ordinal)
+                    && verifiedDotnetProvisioner.Contains("sdk_version='10.0.402'", StringComparison.Ordinal)
                     && verifiedDotnetProvisioner.Contains(
-                        "e440e9a58d4ff7741c8342ac3e086fa9ee2dadc25e01c0449a88317a74cfbd63625b8092c3b2a131ae14b16ab3401e9cc470e578e4c65a72a0b5786bd2308cde",
+                        "ee0d379c144ebddef6efe851e1514883d1b695430d13b3fb13e8153f8476e1e5ac7abc42c08668471aaf4d738ff367cf53009845f94d224ba126febe74d00b75",
                         StringComparison.Ordinal)
                     && verifiedDotnetProvisioner.Contains("${env_path} -i", StringComparison.Ordinal)
                     && verifiedDotnetProvisioner.Contains("${curl_path} --disable", StringComparison.Ordinal)

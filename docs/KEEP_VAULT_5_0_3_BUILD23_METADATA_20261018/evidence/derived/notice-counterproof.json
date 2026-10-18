@@ -1,0 +1,21 @@
+{
+  "classification": "DERIVED_FROM_COPIED_ORIGINAL",
+  "exactUtf8ReplacementsForHistoricalCounterproof": [
+    {
+      "count": 1,
+      "from": "* System.Security.Cryptography.Pkcs 8.0.2",
+      "to": "* System.Security.Cryptography.Pkcs 8.0.1"
+    },
+    {
+      "count": 2,
+      "from": ".NET 10.0.13 NativeAOT runtime",
+      "to": ".NET 10.0.11 NativeAOT runtime"
+    }
+  ],
+  "historicalSha256Reproduced": "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
+  "input": "originals/notices/THIRD-PARTY-NOTICES-build23.txt",
+  "newBytes": 397411,
+  "newSha256": "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02",
+  "noProductRun": true,
+  "schema": "keepvault.public-build23-notice-counterproof.v1"
+}

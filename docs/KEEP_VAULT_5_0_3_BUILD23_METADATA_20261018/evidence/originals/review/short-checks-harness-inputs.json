@@ -1,0 +1,254 @@
+{
+  "Avalonia.Base.dll": {
+    "bytes": 2344448,
+    "sha256": "19596afa3c31f1643812b6bacf7dead04889e61c3b465714eb3e818b9ecb1bb3"
+  },
+  "Avalonia.Controls.dll": {
+    "bytes": 1341952,
+    "sha256": "5a2540f4e27a59a7390b13be11bfbac484773ee98843a08ef00ae442e4aafb0c"
+  },
+  "Avalonia.DesignerSupport.dll": {
+    "bytes": 214528,
+    "sha256": "a2bcc2ad2236015ee69d7fd7d47ea3448596620cc83b0562318688c39746cd59"
+  },
+  "Avalonia.Desktop.dll": {
+    "bytes": 15360,
+    "sha256": "12d0af0c34912242b4b66fe561dc6aa6b073dcd67427488573deedd721993b70"
+  },
+  "Avalonia.Dialogs.dll": {
+    "bytes": 242688,
+    "sha256": "b90af0559fa3eae9664e13649300da2e054636aef959b24df897f1a324d56824"
+  },
+  "Avalonia.Fonts.Inter.dll": {
+    "bytes": 1892864,
+    "sha256": "85a3a9f15fe255c60c0fb71f646fd8feebbee53cc80dad180c8bef6c35e540d6"
+  },
+  "Avalonia.FreeDesktop.AtSpi.dll": {
+    "bytes": 562688,
+    "sha256": "be8ef27f44ec61b0af1ea58d6a04c08c4ae05e3ecdcb0c852a0c536b80b981a3"
+  },
+  "Avalonia.FreeDesktop.dll": {
+    "bytes": 253952,
+    "sha256": "caf2505151490cc075f919613e78d6b962d35bf1f9965845b21659d2698ef57b"
+  },
+  "Avalonia.HarfBuzz.dll": {
+    "bytes": 22016,
+    "sha256": "7e896b33d3ba0c78347398d33112c6ca4dbd810a6f3b6caf22d3de3686332a40"
+  },
+  "Avalonia.Headless.dll": {
+    "bytes": 71680,
+    "sha256": "7a426851ca19375d02d976b626ac594e4d15ee8ad9bf74160526b73de6034117"
+  },
+  "Avalonia.Markup.Xaml.dll": {
+    "bytes": 74752,
+    "sha256": "3bc2fb3c368256a7ca328e82d6b1296779d459a19fe1ed8a306f0088748d2cc3"
+  },
+  "Avalonia.Markup.dll": {
+    "bytes": 45568,
+    "sha256": "061c8f2b9734f3befcf38f4b009b66190514c17c312ffd8db6fdbcbf45bffdc1"
+  },
+  "Avalonia.Metal.dll": {
+    "bytes": 15360,
+    "sha256": "79c7505aa2ac04564e4966d168d38ce60fc47982d8661a6ebcbf3eefc8061c22"
+  },
+  "Avalonia.MicroCom.dll": {
+    "bytes": 15360,
+    "sha256": "bd86aff78404bb8d09f38c3d7cc8f523df4b4a0af393291afd4e589512923689"
+  },
+  "Avalonia.Native.dll": {
+    "bytes": 350208,
+    "sha256": "1873d288024bda285b7d9b9d06ae69183fc421667e9bd44d8da0fe0fe54010f9"
+  },
+  "Avalonia.OpenGL.dll": {
+    "bytes": 128512,
+    "sha256": "60c753cc3f5d118deb82ff6131c99bb873153c081c05483f55406a7c3f60c3ad"
+  },
+  "Avalonia.Remote.Protocol.dll": {
+    "bytes": 75776,
+    "sha256": "e0f3ccd76a47210367e9b2d1127ef499fb82eb283612cbf388a590a5ddf7e71b"
+  },
+  "Avalonia.Skia.dll": {
+    "bytes": 125440,
+    "sha256": "9eb06b804efe57cacf6f60e8f451dabe2b5dd743d5b563ff51d6bab84476782e"
+  },
+  "Avalonia.Themes.Fluent.dll": {
+    "bytes": 733184,
+    "sha256": "43b9888e28f6f635a5926e3cc228b29282c825d7078a66dfc7dfa5a8041ec401"
+  },
+  "Avalonia.Vulkan.dll": {
+    "bytes": 190976,
+    "sha256": "790aad1467b5d6b48cabb5e6e68fb6e4960923998c9e67fba5758b44815da031"
+  },
+  "Avalonia.Win32.Automation.dll": {
+    "bytes": 123904,
+    "sha256": "b805d7fcaacff732fbc3951cfeeababc56a8cbe56b01ee6937daeeef5b4c4b42"
+  },
+  "Avalonia.Win32.dll": {
+    "bytes": 943104,
+    "sha256": "9d7fb93a2d0ed176341ff27396f1969933ca746f53595b55a9e39d411e190e09"
+  },
+  "Avalonia.X11.dll": {
+    "bytes": 407040,
+    "sha256": "a03ca44de21f07e286cc1a690fe12f40c6bfcc6d5c9dd1f71c5b433bb2b9aebd"
+  },
+  "Avalonia.dll": {
+    "bytes": 4096,
+    "sha256": "e373a92e9539efc989429b4cfd9ff8e898ca604ac1d283782168011f8978db6e"
+  },
+  "BouncyCastle.Cryptography.dll": {
+    "bytes": 4924576,
+    "sha256": "e5eeaf6d263c493619982fd3638e6135077311d08c961e1fe128f9107d29ebc6"
+  },
+  "Fixtures/V13Reference/pool_shuffle_rev9_public_vectors.json": {
+    "bytes": 10650,
+    "sha256": "531b54b99ac4e569583e96201ff47abf301a84dc34e2c6d8a5597d033c5ce863"
+  },
+  "HarfBuzzSharp.dll": {
+    "bytes": 122400,
+    "sha256": "55e72ac23263f8e12484f3435e02ec22fac9eff6e6d169bb0a8c246be6b99d29"
+  },
+  "Keep Vault.deps.json": {
+    "bytes": 19649,
+    "sha256": "d4d2e27d33f2d6f78bced6c3790ad5bd1a7793dc53f1a8ea3c137bcc5eb466bd"
+  },
+  "Keep Vault.dll": {
+    "bytes": 3057152,
+    "sha256": "5dd1261c4a1d0dbe19b4aa5c10acc55cc66c84f015a955098bfd5e569ddca047"
+  },
+  "Keep Vault.runtimeconfig.json": {
+    "bytes": 1942,
+    "sha256": "43b0e6a264d30596dc795e2315040fdfb8e1a8bc86dfd0e5c0642be20415eb66"
+  },
+  "KeepVaultMac.Tests.deps.json": {
+    "bytes": 21046,
+    "sha256": "1c2a7a1a24cad9d79943ca9d79573ac4135119b07f2258e9f112ff3956e27d12"
+  },
+  "KeepVaultMac.Tests.dll": {
+    "bytes": 1967616,
+    "sha256": "7391de210ed00a3c94eb33305ee845917a22c3fa3fa460156bdba4f8c7261d53"
+  },
+  "KeepVaultMac.Tests.runtimeconfig.json": {
+    "bytes": 330,
+    "sha256": "9950d4583cfc9a106857c0d5b8a75b53e8774852b57b80bc3823a74d44a4d87f"
+  },
+  "MicroCom.Runtime.dll": {
+    "bytes": 15360,
+    "sha256": "2538ec6f3c24e901a90e33c37788b9a4e4b6ae8158cab7328a00a00bb28eab9e"
+  },
+  "Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+    "bytes": 63768,
+    "sha256": "67fa4325000db017dc0c35829b416f024f042d24efb868bcf17a895ee6500a93"
+  },
+  "Microsoft.Extensions.Logging.Abstractions.dll": {
+    "bytes": 65288,
+    "sha256": "bb853130f5afaf335be7858d661f8212ec653835100f5a4e3aa2c66a4d4f685d"
+  },
+  "Microsoft.Win32.SystemEvents.dll": {
+    "bytes": 26224,
+    "sha256": "ca495bf6c86b7f092d624928101985a941532d149dcd8acfea170f8a53be8850"
+  },
+  "Native/libaes_ref.dylib": {
+    "bytes": 147968,
+    "sha256": "f0dad7807456ae59d5cc0b471933081a5aaa992c459f784b40858bff3d5de34f"
+  },
+  "Native/libargon2_ref.dylib": {
+    "bytes": 52880,
+    "sha256": "a5d20afe53cbbc6504f2b364ed28911d7e2d31a6b9a24ecaf7bdeac2034de039"
+  },
+  "Native/libcamellia_v13.dylib": {
+    "bytes": 147608,
+    "sha256": "2406ef353a627cbf3f1ef030d93ebe3ab11287e8cdf79b01f527b8af26ebef0e"
+  },
+  "Native/libkalyna_v13.dylib": {
+    "bytes": 136496,
+    "sha256": "e7a79b8d9989291ce77689ee4519d39e7c58e9653f0e10339385668bf74a5882"
+  },
+  "Native/libmars_ref.dylib": {
+    "bytes": 129520,
+    "sha256": "ffb679b0d6aff77af0ea40d069a6704ceb14446cf86e0f9abf55308c11608e71"
+  },
+  "Native/libserpent_v13.dylib": {
+    "bytes": 130392,
+    "sha256": "2ae8c5fcf8893d32b06b19087a80633eceb067da061bb30bda09509f8da1c751"
+  },
+  "Native/libshacal2_ref.dylib": {
+    "bytes": 129928,
+    "sha256": "9930e72e935b2d7edcb3e5de3d1ca5663b7cc2233fc7073a25ca9377163c5113"
+  },
+  "Native/libthreefish_ref.dylib": {
+    "bytes": 35768,
+    "sha256": "7899d0334c23d9f78423f19713c9bbe8dd6875255191711ce18e648c65cd87a6"
+  },
+  "Native/libxchachapoly_v13.dylib": {
+    "bytes": 271928,
+    "sha256": "7ce5062de2aadb34a66ce5fb6d7418765817576b5f5b6ed44a934d03808a099a"
+  },
+  "PdfSharp.BarCodes.dll": {
+    "bytes": 35840,
+    "sha256": "bafc4175afaef8629c6122cab01e90c8f8cdf72e2b957d328c42229d12d02fdd"
+  },
+  "PdfSharp.Charting.dll": {
+    "bytes": 88064,
+    "sha256": "fce1973d6474160e736112b215410244310f47983853fd5afd776086a7392469"
+  },
+  "PdfSharp.Cryptography.dll": {
+    "bytes": 15360,
+    "sha256": "25fc17414785592ca4cdc5efd93f2a9c245812a97cb66b986a63112f61552944"
+  },
+  "PdfSharp.Quality.dll": {
+    "bytes": 40448,
+    "sha256": "3f88ec2601d13607ec81a8f7cbc14bd710ff10e2730626ffece48c86098df0d1"
+  },
+  "PdfSharp.Shared.dll": {
+    "bytes": 23040,
+    "sha256": "4b21196cf18cb3b971ec02d1f66f2da0d98d77aa5ed5767754f5de2cf36cb737"
+  },
+  "PdfSharp.Snippets.dll": {
+    "bytes": 154624,
+    "sha256": "b8191aac4339b25dd54be0bc61206b873c69a4d0150ea9f16fdcecfc0f1907a4"
+  },
+  "PdfSharp.System.dll": {
+    "bytes": 8192,
+    "sha256": "5e8dc5ed655d223be9f9b5b3dfecadb607b00e695c34c60aac4e037af9e557e6"
+  },
+  "PdfSharp.WPFonts.dll": {
+    "bytes": 421376,
+    "sha256": "35a3ae0d7ee749e77a6db7c938ac2c41684d50a792b069e3a3723e9fdd6aafd3"
+  },
+  "PdfSharp.dll": {
+    "bytes": 794624,
+    "sha256": "1a77754d9b06c077f339eb33c0cdef28927ae8ee46ecca84e7874b15dabc85a1"
+  },
+  "QRCoder.dll": {
+    "bytes": 204288,
+    "sha256": "5cacb8e071ef6b355615e8cae1d02d94b9d191ec33db12a05d82099cddb16e9a"
+  },
+  "SkiaSharp.dll": {
+    "bytes": 489824,
+    "sha256": "aaaaa18c68ba1f3a3408b00dff28b11d5705198e17ba9d3aa59222bfd35407c8"
+  },
+  "System.Drawing.Common.dll": {
+    "bytes": 427112,
+    "sha256": "89ea595ccb1fd1384480c1e30bd487c92af5d06d3b06f295323eff601acd9019"
+  },
+  "System.Security.Cryptography.Pkcs.dll": {
+    "bytes": 266024,
+    "sha256": "f4fcece252af1532cfbc70fd89b2afd79f506ee6286f3558994ca41502714ea1"
+  },
+  "Tmds.DBus.Protocol.dll": {
+    "bytes": 232960,
+    "sha256": "60a1c5255731d8ac843cab53108be8ba1ed02759ce3db0da5b49939ebe97bd8a"
+  },
+  "libAvaloniaNative.dylib": {
+    "bytes": 1548640,
+    "sha256": "63cb5e2f3e375cc766dc70d01aacc69abe4892af2cd24d79680a28d237568581"
+  },
+  "libHarfBuzzSharp.dylib": {
+    "bytes": 2922800,
+    "sha256": "b2d7d39a46954b3d7310540bdf393f398ac4194ee029b995deeb1db0c161c43d"
+  },
+  "libSkiaSharp.dylib": {
+    "bytes": 15201456,
+    "sha256": "e09f07ae1df62ded475351f56d8dc8366cd679043f28b65d9dee597a5fd0da6c"
+  }
+}

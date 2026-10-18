@@ -555,7 +555,7 @@ require_notarization=0
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
 require_launcher_signature=0
 tool_path_self_test=0
-expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
+expected_signer_lock_sha256='FC40C8CD65ABF0BBBA995D2A3DB679AE856D4417D3C3356F1448606FEF959898'
 
 usage() {
   print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'
@@ -682,7 +682,7 @@ core=${app_path}/Contents/MacOS/Keep\ Vault
 supervisor=${app_path}/Contents/MacOS/Keep\ Vault\ Supervisor
 native_dir=${app_path}/Contents/MacOS/Native
 third_party_notices=${app_path}/Contents/Resources/THIRD-PARTY-NOTICES.txt
-expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
+expected_third_party_notices_sha256='3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02'
 third_party_notice_fd=-1
 if ! sysopen -r -o nofollow -u third_party_notice_fd ${third_party_notices}; then
   print -u2 'THIRD-PARTY-NOTICES.txt is missing or cannot be opened without following a symbolic link.'
@@ -719,7 +719,7 @@ for notice_marker in \
     'QRCoder 1.8.0' \
     'HarfBuzzSharp native assets 8.3.1.3 third-party notices' \
     'SkiaSharp native assets 3.119.4 third-party notices' \
-    '.NET 10.0.11 NativeAOT runtime third-party notices' \
+    '.NET 10.0.13 NativeAOT runtime third-party notices' \
     'SIL OPEN FONT LICENSE Version 1.1' \
     'Brian Gladman'; do
   sysseek -u ${third_party_notice_fd} -w start 0 || exit 1
@@ -1067,8 +1067,8 @@ elif [[ -f ${mldsa_public_key} ]]; then
   create_private_nuget_cache
   provision_verified_dotnet
   selected_sdk=$(run_dotnet_clean --version)
-  [[ ${selected_sdk} == '10.0.400' ]] || {
-    print -u2 'The managed hybrid verifier requires the reviewed official .NET SDK 10.0.400.'
+  [[ ${selected_sdk} == '10.0.402' ]] || {
+    print -u2 'The managed hybrid verifier requires the reviewed official .NET SDK 10.0.402.'
     exit 1
   }
   signer_dll=${private_dotnet_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll

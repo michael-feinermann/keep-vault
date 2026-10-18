@@ -1,0 +1,51 @@
+{
+  "actualReviewCompletionPid": 76071,
+  "changedFileCount": 20,
+  "completedUtc": "2026-10-18T11:06:15.245157+00:00",
+  "diff": {
+    "bytes": 39433,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/metadata-source.diff",
+    "sha256": "e8d272105fb625267dcc5739c7093d2953301c1d8c1de2a85b5bc0f9244b3841"
+  },
+  "freshProductTestsOrRestoresByReviewer": 0,
+  "githubOrGitWritesByReviewer": 0,
+  "historicalHelperFailuresRetained": true,
+  "keySheetVariantsWithinOneGroup": 24,
+  "lockPackages": 40,
+  "metadataRejectionExit64Count": 4,
+  "nativeAotRuntimeAdditionalPacks": 2,
+  "noticeInputs": 13,
+  "noticeReview": {
+    "bytes": 8719,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/notice-independent-review.json",
+    "sha256": "755036b7102a20283779f60716b808e63659ac6c261744eb71313b01a31d526e"
+  },
+  "originalPackageNoticeMemberCount": 8,
+  "outsideReviewScope": "Current metadata review does not grant complete release path approval, native/build/sign/notary/install/GUI/Final512 approval or old Build22 artifact identity. Phase46 selector concern was separately withdrawn by Root after locating the explicitly linked EntropyRev9PerformanceTests source and actual recovery PASS; this review does not claim a new full selector run.",
+  "overallReleaseApproval": false,
+  "protectedFileCount": 45,
+  "regularLockedRestores": 4,
+  "review": {
+    "bytes": 12029,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/independent-build23-metadata-review.json",
+    "sha256": "cc88ebcd47c971cdfcc0de0e2a993b19ef9fdcd6efb6423b7c2daf5c2a702e65"
+  },
+  "reviewerInternalAssumptionCorrection": "Initial reviewer allowlist spelled the project dependency KeepVaultMac instead of actual lock ID Keep Vault. Corrected in review tool only; original review source retained. No product finding or product changes arose.",
+  "schema": "keepvault.independent-build23-metadata-review-completion.v1",
+  "sdk402LiveMappedFileCount": 4906,
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+  "sourceBeforeBuildLimitationRetained": true,
+  "sourceManifest": {
+    "bytes": 10712,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/metadata-file-manifest.json",
+    "sha256": "c8323898e92be455e4fb88b45d193e479c104b35ad7c94e7ba8709273f9810e8"
+  },
+  "sourceScript": {
+    "bytes": 2828,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/close-review.py",
+    "sha256": "51226949e96a2337560ebd7ebc5e9f996a241235f02568062684226e841bd163"
+  },
+  "sourceUnchangedAtClose": true,
+  "status": "READ_ONLY_REVIEW_20_METADATA_FILES_NO_FINDING",
+  "targetedGroups": 8
+}

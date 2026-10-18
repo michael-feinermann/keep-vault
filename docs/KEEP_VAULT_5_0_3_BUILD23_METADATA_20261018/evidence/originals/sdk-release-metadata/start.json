@@ -1,0 +1,16 @@
+{
+  "schema": "keepvault.readonly-sdk-release-metadata-start.v1",
+  "observedUtc": "2026-10-18T10:36:29.784009+00:00",
+  "actualPid": 89255,
+  "argv": [
+    "/usr/bin/curl",
+    "--disable",
+    "--fail",
+    "--show-error",
+    "--silent",
+    "--proto",
+    "=https",
+    "--tlsv1.2",
+    "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json"
+  ]
+}

@@ -1,0 +1,243 @@
+{
+  "additionalNativeAotRuntimeArchivesChecked": 2,
+  "additionalProductTestsOrRestores": 0,
+  "apiCallsByReviewer": 0,
+  "changedFileCount": 20,
+  "changedFiles": {
+    "KeepVaultMac.ReleaseVerifier/InstallationManifestVerifier.cs": {
+      "bytes": 13476,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.ReleaseVerifier/InstallationManifestVerifier.cs",
+      "sha256": "f11c2bcde7e096198e77bb8ef80121d79627433e35d75421e6fb9426c554b7dd"
+    },
+    "KeepVaultMac.ReleaseVerifier/Program.cs": {
+      "bytes": 31191,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.ReleaseVerifier/Program.cs",
+      "sha256": "f2f98e2703e406ee4a10197d0cc85f80300cd8aaab31f074a9b780337f3b0320"
+    },
+    "KeepVaultMac.ReleaseVerifier/global.json": {
+      "bytes": 105,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.ReleaseVerifier/global.json",
+      "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+    },
+    "KeepVaultMac.ReleaseVerifier/packages.lock.json": {
+      "bytes": 2087,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.ReleaseVerifier/packages.lock.json",
+      "sha256": "4c672fd6b0180f0f51bc07d07ed5d2b9734e65e8a63875bea1328738782b08ac"
+    },
+    "KeepVaultMac.Tests/HybridKeyProtectionTests.cs": {
+      "bytes": 73838,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/HybridKeyProtectionTests.cs",
+      "sha256": "f6eaa8744144dbfa5b026ab6d1d1ad0301072c9f060256a41b61849eac623de4"
+    },
+    "KeepVaultMac.Tests/Program.cs": {
+      "bytes": 59799,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/Program.cs",
+      "sha256": "c00efc92be642aaabb20b2a28d2c58ceb7001870b3fa81f394069e605f71e654"
+    },
+    "KeepVaultMac.Tests/SpecLintTests.cs": {
+      "bytes": 33392,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/SpecLintTests.cs",
+      "sha256": "37fe908eadbcf9494cfb88eb41c10943ab61f26b4cb77324390b007d49767d61"
+    },
+    "KeepVaultMac.Tests/global.json": {
+      "bytes": 105,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/global.json",
+      "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+    },
+    "KeepVaultMac.Tests/packages.lock.json": {
+      "bytes": 13464,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/packages.lock.json",
+      "sha256": "f0221be40f1d874f7d1da2dfcfe5770b097e708d35bc5d52efec421a1a892e6e"
+    },
+    "KeepVaultMac/KeepVaultMac.csproj": {
+      "bytes": 12125,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/KeepVaultMac.csproj",
+      "sha256": "82ac62c8557843399562e9b5daa8bbc2cfcde4aaf835a2a1aea6f0752363abfc"
+    },
+    "KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj": {
+      "bytes": 1234,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj",
+      "sha256": "38544895184090a4edcffcab7f87c1cb33edcc9dead9225556b956e6af261c6e"
+    },
+    "KeepVaultMac/Packaging/HybridSigner/packages.lock.json": {
+      "bytes": 869,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/HybridSigner/packages.lock.json",
+      "sha256": "fc40c8cd65abf0bbba995d2a3db679ae856d4417d3c3356f1448606fef959898"
+    },
+    "KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt": {
+      "bytes": 7868,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt",
+      "sha256": "d045ea8a4ecae02aa0f21815a27828cc96baf394b3b4bcf7c58a8b80b221b7aa"
+    },
+    "KeepVaultMac/global.json": {
+      "bytes": 105,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/global.json",
+      "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+    },
+    "KeepVaultMac/packages.lock.json": {
+      "bytes": 17282,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/packages.lock.json",
+      "sha256": "a5f328bf88412328a168232da570312ea48496bed20df5e8bf5a7a4cf79335ec"
+    },
+    "tools/Build-KeepVault-macOS.sh": {
+      "bytes": 119652,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/tools/Build-KeepVault-macOS.sh",
+      "sha256": "1d76d1b681ba4540822eaa52ab658498b3a52d875bb10e215960a5cf5aaf7e5e"
+    },
+    "tools/Build-Portable-macOS.sh": {
+      "bytes": 48191,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/tools/Build-Portable-macOS.sh",
+      "sha256": "a5c262da45fe2294df4a82890944766087d686ec2f73f07323cb930fb54e8b80"
+    },
+    "tools/Provision-VerifiedDotnet-macOS.sh": {
+      "bytes": 9932,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/tools/Provision-VerifiedDotnet-macOS.sh",
+      "sha256": "7a5652b052bd099998ad48ad47c7a8d0b648d2bb469e4b0986bf3c8230ab82e0"
+    },
+    "tools/Verify-KeepVault-macOS.sh": {
+      "bytes": 50470,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/tools/Verify-KeepVault-macOS.sh",
+      "sha256": "dd8d24655b920308e95a1a0bfc838168f8040e5d868a4b0a9af7e424bc7db3ab"
+    },
+    "tools/Verify-QR-Scanner-macOS.sh": {
+      "bytes": 34226,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/tools/Verify-QR-Scanner-macOS.sh",
+      "sha256": "24e2ee957113bb8b32a80d67d68adea4b0c2b38528380a2e0383042c7859c91a"
+    }
+  },
+  "compileCommandsObserved": 3,
+  "completedUtc": "2026-10-18T11:04:38.931864+00:00",
+  "diff": {
+    "bytes": 39433,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/metadata-source.diff",
+    "sha256": "e8d272105fb625267dcc5739c7093d2953301c1d8c1de2a85b5bc0f9244b3841"
+  },
+  "generationRestoresObserved": 4,
+  "groups": [
+    {
+      "actualExitCode": 0,
+      "actualPid": 18188,
+      "id": "spec.lockfile-runtimes",
+      "seconds": 0.113
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 18194,
+      "id": "spec.no-legacy-source",
+      "seconds": 0.143
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 18199,
+      "id": "packaging.hybrid-key-separation",
+      "seconds": 73.884
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 74002,
+      "id": "smoke.release-companion-version",
+      "seconds": 1.355
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 74861,
+      "id": "gui.key-sheet-operation-progress",
+      "seconds": 1.791
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 74871,
+      "id": "keysheet.pair-cleanup-identity",
+      "seconds": 0.427
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 74877,
+      "id": "keysheet.cleanup-failure-visible",
+      "seconds": 0.43
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 74884,
+      "id": "keysheet.pair-atomic-commit",
+      "seconds": 0.484
+    }
+  ],
+  "keySheetInternalVariants": 24,
+  "lockSemanticDiff": {
+    "bytes": 12362,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/lock-semantic-diff.json",
+    "sha256": "d55232fa55062e71e98e76bbd75e2b3325eabe9cfc9925738fbadfc33465ada9"
+  },
+  "lockedRestoresObserved": 4,
+  "metadataNegativeExit64Count": 4,
+  "notice": {
+    "assemblyReviewPendingSupplement": true,
+    "newBytes": 397411,
+    "newHash": "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02",
+    "oldHashRejectedByExactNewHash": "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
+    "runtimeNoticeDescriptorGuardsUnchangedBySourceDiff": true
+  },
+  "nugetMetadataContentHashAndRawSignedArchiveSha512KeptDistinct": true,
+  "originalHelperFailureReceiptsPreserved": true,
+  "productReleaseApproval": false,
+  "productionShellChangesLimitedToExactReviewedLiteralSubstitutions": true,
+  "protectedBytesMatchBaseAndLive": true,
+  "protectedFileCount": 45,
+  "releaseRunnerSelectorReviewOutsideThis20FileScope": "Root/full318 investigate pre-existing phase46 selector; no full release-path approval from metadata review",
+  "reviewScript": {
+    "bytes": 14460,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/review.py",
+    "sha256": "f915401ee887a795a476bf048af6e6673ab7f40c0ea9a1018f80b03aea197c46"
+  },
+  "reviewerPid": 75920,
+  "schema": "keepvault.independent-build23-metadata-review.v1",
+  "sdk": {
+    "archive": {
+      "bytes": 230833757,
+      "path": "/private/tmp/keep-vault-official-sdk402-cti3v2ua/dotnet-sdk-10.0.402-osx-arm64.tar.gz",
+      "sha256": "ef081ec3907b30963ea2520c01d6a2001f78ab79b1546fdec82f0b52f210bfec",
+      "sha512": "ee0d379c144ebddef6efe851e1514883d1b695430d13b3fb13e8153f8476e1e5ac7abc42c08668471aaf4d738ff367cf53009845f94d224ba126febe74d00b75"
+    },
+    "fileCount": 4906,
+    "liveMapAndModesMatch": true,
+    "map": {
+      "bytes": 1091933,
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/sdk-file-map.json",
+      "sha256": "fa88383586175d507f4cb78614bf10758308b579a28119ec21631a170e802271"
+    },
+    "noNetworkByReviewer": true,
+    "officialMetadata": {
+      "bytes": 1100901,
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-sdk402-metadata-33ol6tm2/releases.json",
+      "sha256": "8ba714cf0020d35ff4a3cb163376df2f4ccaf8e6e1d7021fcb1bd7dd628299d2"
+    },
+    "runtime": "10.0.13",
+    "version": "10.0.402"
+  },
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+  "sourceBeforeLimitation": "First changed-source map was captured after initial compilation during first short-check run. The continuation has an explicit before map and unchanged after validation. This is not frozen-commit release build evidence.",
+  "sourceChangesByReviewer": 0,
+  "sourceManifest": {
+    "bytes": 10712,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/metadata-file-manifest.json",
+    "sha256": "c8323898e92be455e4fb88b45d193e479c104b35ad7c94e7ba8709273f9810e8"
+  },
+  "sourceReview": "Full 20-file diff read; shipping13 strictly separate from four legacy11 references, same strict locked/descriptor/owner/single-link/notice ABA/version rejection guards. No KDF/consume/cleanup/resource changes. Four fix-source bytes remain committed baseline.",
+  "startedUtc": "2026-10-18T11:04:36.556164+00:00",
+  "status": "INDEPENDENT_READ_ONLY_SOURCE_AND_EVIDENCE_REVIEW_NO_FINDING",
+  "summary": {
+    "bytes": 12929,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/checked-summary.json",
+    "sha256": "cce231228c204075172afad42782d3eb7e6767d06eecfc161d1166bbb6d5cdaa"
+  },
+  "targetedGroupCount": 8,
+  "trackedStateUnchanged": true,
+  "uniqueLockPackagesChecked": 40,
+  "verifiedBindings": {
+    "bytes": 80157,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/verified-bindings.json",
+    "sha256": "3207a1351ac0183bb3d28272f57aa61c4fc67df3d5cc3fa6bbdce6d77e3f23be"
+  },
+  "worktree": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna"
+}

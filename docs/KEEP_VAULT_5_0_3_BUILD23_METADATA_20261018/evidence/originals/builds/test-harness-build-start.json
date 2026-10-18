@@ -1,0 +1,20 @@
+{
+  "actualPid": 18115,
+  "argv": [
+    "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+    "build",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj",
+    "-c",
+    "Release",
+    "--no-restore",
+    "--no-incremental",
+    "--artifacts-path",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/tests",
+    "--disable-build-servers",
+    "-p:UseSharedCompilation=false",
+    "--nologo"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "test-harness-build",
+  "startedUtc": "2026-10-18T10:53:41.499289+00:00"
+}

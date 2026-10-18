@@ -1,0 +1,34 @@
+{
+  "actualExitCode": 0,
+  "actualPid": 73991,
+  "actualWaitObserved": true,
+  "argv": [
+    "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+    "build",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj",
+    "-c",
+    "Release",
+    "--no-restore",
+    "--no-incremental",
+    "--artifacts-path",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/signer",
+    "--disable-build-servers",
+    "-p:UseSharedCompilation=false",
+    "--nologo"
+  ],
+  "captureOrStartFailure": null,
+  "completedUtc": "2026-10-18T10:57:09.753964+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "compile-signer",
+  "startedUtc": "2026-10-18T10:57:08.318441+00:00",
+  "stderr": {
+    "bytes": 0,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/compile-signer.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stdout": {
+    "bytes": 281,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/compile-signer.stdout",
+    "sha256": "44fc9ad4c1916eaec82f4e721c539ee1fb1b069406cd12f8885ee623972ed390"
+  }
+}

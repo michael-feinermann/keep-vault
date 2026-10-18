@@ -1,0 +1,21 @@
+{
+  "basis": "Agent observed actual functions.write_stdin terminal tool results. This note does not claim a newly observed historical Popen.wait or retroactive zero exit.",
+  "classification": "DERIVED_OBSERVER_NOTE_NOT_AN_OS_POPEN_RECEIPT",
+  "documentedUtc": "2026-10-18T11:04:11.641329+00:00",
+  "observations": [
+    {
+      "actualOrchestratorPid": 18105,
+      "observedToolTerminalExitCode": 1,
+      "reason": "No matching test because --no-smoke excluded the explicitly requested Smoke ID",
+      "toolSessionId": 44992
+    },
+    {
+      "actualOrchestratorPid": 73982,
+      "observedToolTerminalExitCode": 1,
+      "reason": "Collector expected later version/build text for invalid; numeric guard correctly rejected it earlier",
+      "toolSessionId": 83862
+    }
+  ],
+  "originalFailuresPreserved": true,
+  "schema": "keepvault.documented-tool-terminal-observations.v1"
+}

@@ -1,0 +1,509 @@
+{
+  "schemaVersion": 1,
+  "status": "SELECTOR_REGISTRATION_CHECK_ONLY",
+  "actualTestsExecuted": 0,
+  "sourceWorktree": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna",
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+  "worktreeMayContainReviewedUncommittedBuild23Metadata": true,
+  "originalSchemaPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/one-gib-formatter22-prepared-ba9949ad/format-one-gib-build22.py",
+    "sha256": "683cd404f82ce5bb025c121bd298d1881bd58852c95df88ea44452ac1dc5051b",
+    "bytes": 48604
+  },
+  "sdkPreparationPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/result.json",
+    "sha256": "1df8bc3fcc58dfdeca6f9eb7c91303c0d58b05b89757304e0dfc31cd99a82c42",
+    "bytes": 10293
+  },
+  "sdkMapPin": {
+    "bytes": 1091933,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/sdk-file-map.json",
+    "sha256": "fa88383586175d507f4cb78614bf10758308b579a28119ec21631a170e802271"
+  },
+  "harnessMapPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/short-checks-harness-inputs.json",
+    "sha256": "91891dba223045dba08f734ce22b5a618ce3f6d7c18ed5deaf71156ecdc7e914",
+    "bytes": 8737
+  },
+  "inputsBefore": {
+    "sdk": {
+      "files": 4906,
+      "bytes": 669863778,
+      "allPinnedBytesMatched": true
+    },
+    "harness": {
+      "files": 63,
+      "bytes": 44548617,
+      "allPinnedBytesMatched": true
+    }
+  },
+  "inputsAfter": {
+    "sdk": {
+      "files": 4906,
+      "bytes": 669863778,
+      "allPinnedBytesMatched": true
+    },
+    "harness": {
+      "files": 63,
+      "bytes": 44548617,
+      "allPinnedBytesMatched": true
+    }
+  },
+  "sourcePins": {
+    "tools/Build-KeepVault-macOS.sh": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/tools/Build-KeepVault-macOS.sh",
+      "sha256": "1d76d1b681ba4540822eaa52ab658498b3a52d875bb10e215960a5cf5aaf7e5e",
+      "bytes": 119652
+    },
+    "KeepVaultMac.Tests/Program.cs": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/Program.cs",
+      "sha256": "c00efc92be642aaabb20b2a28d2c58ceb7001870b3fa81f394069e605f71e654",
+      "bytes": 59799
+    },
+    "KeepVaultMac.Tests/MacComprehensiveTests.cs": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs",
+      "sha256": "1b1e3a53c794ed38f4c087c498fbe5e95bb5d5370ab41fecf9f1b7ae6f4b4080",
+      "bytes": 328466
+    },
+    "KeepVaultMac.Tests/KeepVaultMac.Tests.csproj": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj",
+      "sha256": "89fded793c712d99020a681d1e7161d804675c681f36302053dff65756b6c1ac",
+      "bytes": 3080
+    },
+    "KalynaArchiver.Tests/EntropyRev9PerformanceTests.cs": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KalynaArchiver.Tests/EntropyRev9PerformanceTests.cs",
+      "sha256": "58ad971bf57bbef6cb5daf74cd887a10e16dc38c94d3e56f0761f56347a33735",
+      "bytes": 18207
+    },
+    "KeepVaultMac.Tests/MacPhasePerformanceTests.cs": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/MacPhasePerformanceTests.cs",
+      "sha256": "64971ede45cc2f668ed17b2bd636664db18724c39297acc4ba2741215d7c901e",
+      "bytes": 7721
+    },
+    "KeepVaultMac.Tests/Rev12ArchiveWorkflowPerformanceTests.cs": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/Rev12ArchiveWorkflowPerformanceTests.cs",
+      "sha256": "512086acefd7d6c2d19b2607274804a27821763825a665dcb865fd7153a407fe",
+      "bytes": 27673
+    },
+    "KeepVaultMac.Tests/TestDefinitions.cs": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/TestDefinitions.cs",
+      "sha256": "8f6cad4a8323a2f9b6cf2c3ddce773033df18904f3707ad6cc802d3c775788df",
+      "bytes": 57061
+    }
+  },
+  "inventoryProcess": {
+    "actualPid": 76050,
+    "actualWaitExitCode": 0,
+    "actualWaitObserved": true,
+    "startedUtc": "2026-10-18T11:05:52.092325+00:00",
+    "completedUtc": "2026-10-18T11:05:52.176058+00:00",
+    "argv": [
+      "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+      "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/tests/bin/KeepVaultMac.Tests/release_osx-arm64/KeepVaultMac.Tests.dll",
+      "--list"
+    ],
+    "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+    "stdout": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-selector-inventory-bx38z00p/inventory.stdout",
+      "sha256": "cb37fe0e27ce042cde2b4ecf10e0b01e7c9534e6c136d52bc8016fbde0ea7733",
+      "bytes": 57135
+    },
+    "stderr": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-selector-inventory-bx38z00p/inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "purpose": "LIST_ONLY_NO_TEST_EXECUTION"
+  },
+  "inventoryCount": 363,
+  "canonicalInventoryIdSha256": "22f400f0fc1a5ef49488db90c92d48ae8526b9904481bf762ef878cf1ce0743f",
+  "phases": [
+    {
+      "phase": 1,
+      "selector": "FULL_SUITE",
+      "inventoryMatchCount": 0,
+      "registered": true
+    },
+    {
+      "phase": 2,
+      "selector": "containers.v13-production-worker-equivalence",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 3,
+      "selector": "crypto.v13-parallel-mac-kat",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 4,
+      "selector": "containers.v13-kpar2-roundtrip",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 5,
+      "selector": "recovery.parallel-worker-equivalence",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 6,
+      "selector": "recovery.physical-eio-repair",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 7,
+      "selector": "zpaq.full-matrix",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 8,
+      "selector": "performance.cipher-suites",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 9,
+      "selector": "performance.rev12-stage-profile",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 10,
+      "selector": "performance.rev12-workflow-4kib-standard-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 11,
+      "selector": "performance.rev12-workflow-4kib-standard-manual1",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 12,
+      "selector": "performance.rev12-workflow-4kib-standard-manual4",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 13,
+      "selector": "performance.rev12-workflow-256mib-standard-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 14,
+      "selector": "performance.rev12-workflow-256mib-standard-manual1",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 15,
+      "selector": "performance.rev12-workflow-256mib-standard-manual4",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 16,
+      "selector": "performance.rev12-workflow-4kib-paranoia-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 17,
+      "selector": "performance.rev12-workflow-4kib-paranoia-manual1",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 18,
+      "selector": "performance.rev12-workflow-4kib-paranoia-manual4",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 19,
+      "selector": "performance.rev12-workflow-256mib-paranoia-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 20,
+      "selector": "performance.rev12-workflow-256mib-paranoia-manual1",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 21,
+      "selector": "performance.rev12-workflow-256mib-paranoia-manual4",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 22,
+      "selector": "performance.rev12-workflow-4kib-camellia-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 23,
+      "selector": "performance.rev12-workflow-4kib-camellia-manual1",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 24,
+      "selector": "performance.rev12-workflow-4kib-camellia-manual4",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 25,
+      "selector": "performance.rev12-workflow-256mib-camellia-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 26,
+      "selector": "performance.rev12-workflow-256mib-camellia-manual1",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 27,
+      "selector": "performance.rev12-workflow-256mib-camellia-manual4",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 28,
+      "selector": "performance.rev12-workflow-4kib-serpent-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 29,
+      "selector": "performance.rev12-workflow-4kib-serpent-manual1",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 30,
+      "selector": "performance.rev12-workflow-4kib-serpent-manual4",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 31,
+      "selector": "performance.rev12-workflow-256mib-serpent-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 32,
+      "selector": "performance.rev12-workflow-256mib-serpent-manual1",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 33,
+      "selector": "performance.rev12-workflow-256mib-serpent-manual4",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 34,
+      "selector": "performance.rev12-workflow-1gib-standard-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 35,
+      "selector": "performance.rev12-workflow-1gib-xchacha-aes-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 36,
+      "selector": "performance.rev12-workflow-1gib-mixed-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 37,
+      "selector": "performance.rev12-workflow-1gib-paranoia-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 38,
+      "selector": "performance.rev12-workflow-1gib-threefish1024-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 39,
+      "selector": "performance.rev12-workflow-1gib-kalyna512-512-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 40,
+      "selector": "performance.rev12-workflow-1gib-shacal2-512-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 41,
+      "selector": "performance.rev12-workflow-1gib-mars448-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 42,
+      "selector": "performance.rev12-workflow-1gib-aes256-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 43,
+      "selector": "performance.rev12-workflow-1gib-camellia-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 44,
+      "selector": "performance.rev12-workflow-1gib-serpent-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 45,
+      "selector": "performance.rev12-workflow-1gib-xchacha20-poly1305-auto",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 46,
+      "selector": "performance.entropy-rev9-phases",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 47,
+      "selector": "performance.mac-root-phases",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 48,
+      "selector": "performance.paranoia-256mib-e2e",
+      "inventoryMatchCount": 1,
+      "registered": true
+    },
+    {
+      "phase": 49,
+      "selector": "release.v13-paranoia-structure512",
+      "inventoryMatchCount": 1,
+      "registered": true
+    }
+  ],
+  "missingSelectors": [],
+  "historicalRecoveryPhase46to49": [
+    {
+      "logicalGate": 46,
+      "testId": "performance.entropy-rev9-phases",
+      "actualPid": 69126,
+      "actualWaitExitCode": 0,
+      "actualResultIds": [
+        "performance.entropy-rev9-phases"
+      ],
+      "actualResultStatuses": [
+        "PASS"
+      ],
+      "processPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-13/process-result.json",
+        "sha256": "fa604032301e08559ec40e548b0078ed6e95b45f1f93aa4c16be212f31dc3a72",
+        "bytes": 7964
+      },
+      "resultPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-13/result-original.json",
+        "sha256": "255ea7f014ae0cf9c0a0c6c52a25e07e59c81834ca58c530e11d26a5d4638b38",
+        "bytes": 718
+      }
+    },
+    {
+      "logicalGate": 47,
+      "testId": "performance.mac-root-phases",
+      "actualPid": 69151,
+      "actualWaitExitCode": 0,
+      "actualResultIds": [
+        "performance.mac-root-phases"
+      ],
+      "actualResultStatuses": [
+        "PASS"
+      ],
+      "processPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-14/process-result.json",
+        "sha256": "d0bd601f5360046c9b9e7b17d7e911882cd08cc64854c2a6aec7275ac046b424",
+        "bytes": 7956
+      },
+      "resultPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-14/result-original.json",
+        "sha256": "5b079ff35494c3b221f9b4cde9610bb7c1bd0d1a0644db88039a80c5d0634ab9",
+        "bytes": 700
+      }
+    },
+    {
+      "logicalGate": 48,
+      "testId": "performance.paranoia-256mib-e2e",
+      "actualPid": 69172,
+      "actualWaitExitCode": 0,
+      "actualResultIds": [
+        "performance.paranoia-256mib-e2e"
+      ],
+      "actualResultStatuses": [
+        "PASS"
+      ],
+      "processPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-15/process-result.json",
+        "sha256": "ed4ba4f9b828e966888c550e1d6d30a7787b4dd03a9e1b2c834ece799a2f252b",
+        "bytes": 7967
+      },
+      "resultPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-15/result-original.json",
+        "sha256": "d35caf93d4702fe0f6f64b1b50acbfb353628fb82b4b70cbdbe646b5832f1ad9",
+        "bytes": 720
+      }
+    },
+    {
+      "logicalGate": 49,
+      "testId": "release.v13-paranoia-structure512",
+      "actualPid": 69225,
+      "actualWaitExitCode": 0,
+      "actualResultIds": [
+        "release.v13-paranoia-structure512"
+      ],
+      "actualResultStatuses": [
+        "PASS"
+      ],
+      "processPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-16/process-result.json",
+        "sha256": "44b7078ec8e4832fcde1c3d1403abe6a246b687ffea7b5aef11dcae814ca11ba",
+        "bytes": 7984
+      },
+      "resultPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/cases/case-16/result-original.json",
+        "sha256": "b5daa45f6478fed34a60abd0b386c00d60931195fc20ec70bbaf7a7e3de1e56c",
+        "bytes": 760
+      }
+    }
+  ],
+  "importantCorrection": "performance.entropy-rev9-phases is genuinely registered via linked KalynaArchiver.Tests/EntropyRev9PerformanceTests.cs. gui.entropy-rev9-phases-cancel is a separate GUI regression and is not a replacement. Earlier limited-directory search was incomplete.",
+  "overallReleaseApproval": false
+}

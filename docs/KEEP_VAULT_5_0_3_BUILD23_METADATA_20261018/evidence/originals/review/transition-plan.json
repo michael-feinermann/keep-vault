@@ -1,0 +1,191 @@
+{
+  "evidenceRoot": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic",
+  "privateRoot": "/private/tmp/keep-vault-build23-dependencies-yp574gtl",
+  "productGateExecutionAuthorized": false,
+  "protectedInputs": {
+    "Directory.Build.targets": {
+      "bytes": 8785,
+      "sha256": "862ea4d061f0cecf88723d5c045d956def115e69af615b918faa708b9569a020"
+    },
+    "KalynaArchiver.Signing/packages.lock.json": {
+      "bytes": 885,
+      "sha256": "b4e5e64625d527827351da90a37a77376929f243b5e56055b44eaea6655aa1e6"
+    },
+    "KalynaArchiver.Tests/packages.lock.json": {
+      "bytes": 2134,
+      "sha256": "9ff6af13ae928485c153961fb12c573e4fb3d928553d64c106f770baec339241"
+    },
+    "KalynaArchiver/packages.lock.json": {
+      "bytes": 1931,
+      "sha256": "4a5f6e3f3d5cca999221afccf88ee1a76c64c94dd60f6df326fe855b17862d8f"
+    },
+    "KalynaReleaseVerifier/packages.lock.json": {
+      "bytes": 4159,
+      "sha256": "2b1beb0d5daffb6a23a5b8173e3dff6e153c502c76dc07902ed2202b063069ce"
+    },
+    "KalynaSigningTool/packages.lock.json": {
+      "bytes": 1081,
+      "sha256": "12bf7e3c203b93bbbe18e14c2852e39476894255ad84f96b14c3976f0d8d4711"
+    },
+    "KeepVaultInstaller/packages.lock.json": {
+      "bytes": 2104,
+      "sha256": "11f5d5699ee12c8dd32ad57dd0ea8082c0f58b59b1e2aca5cbf879d4f59188df"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/FixtureBuilder.cs.txt": {
+      "bytes": 7850,
+      "sha256": "bb47e8fbd9d4e67b3e33aaab45d7e8d8ede659c4c4617c2ffb57c549d9b48757"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/FixtureBuilder.csproj.txt": {
+      "bytes": 511,
+      "sha256": "9fa2410aca1552a2fb0bc49bcc5c8b96f6cf9118a9523e50ad20795f927ce5f3"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/NuGet.Config.txt": {
+      "bytes": 255,
+      "sha256": "2e5a7b827d632ebb08414b0bc2d3929f9e174d9625582a25fd5eb907738523d5"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/PrivateKeepVault.csproj.txt": {
+      "bytes": 7909,
+      "sha256": "71c985b4cb3a772a29848d6fc2d3a23fe10d36037104793b5d0b7d443bb1e7c7"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/README.de.md": {
+      "bytes": 9697,
+      "sha256": "60a8edbe39b97cbf35edfec9e05cf633db10278907207a01ccee00a8d54a7e0f"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/README.md": {
+      "bytes": 8065,
+      "sha256": "e53e47b2c93d7ff06227c3866f55aa10794f91c42e05cfebee3abeb2177fc8cb"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/date-2026-09-06.kzpaq": {
+      "bytes": 1553,
+      "sha256": "5329d44410b890309276ba9acadc69dc164e999cbb36efcc5b3c95df09c8b13b"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/date-2026-09-06.kzpaq.kpar2": {
+      "bytes": 139264,
+      "sha256": "dd7c38aac759cb07417cbe168b4d8bd51ec474e84b44744b7a15df26023d220c"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/empty.kzpaq": {
+      "bytes": 1563,
+      "sha256": "500766d12a3051b8fe3cd3cf406e9aae1d0eac0cc6894125515800c7a83b5497"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/empty.kzpaq.kpar2": {
+      "bytes": 139264,
+      "sha256": "4049e3dd982310b2f128e675aa19f4094c2ad02373a51d2fda13fc8f8a70b91a"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/generator-policy-patch.json": {
+      "bytes": 1001,
+      "sha256": "8e51b761446505e0df9ace40f5cfda66f6b1f60b97d12daec67f8e8d88bea96a"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/manifest.json": {
+      "bytes": 10919,
+      "sha256": "5fbfffb598b233953b5482eadc38b7e615ee7d31c1898cbe5faaca7c6dea6db5"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/model-and-old-pattern.kzpaq": {
+      "bytes": 1573,
+      "sha256": "d7bad4074b0742a6b2c11a9664c6b5c10cf65d9c95e0b4976d6ff80fa996f4ea"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/model-and-old-pattern.kzpaq.kpar2": {
+      "bytes": 139264,
+      "sha256": "6d6746d17dc92710c13be8755178ce23fb6e5e1c5adc78490ddf5b7b54653911"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/native-provenance.json": {
+      "bytes": 1689,
+      "sha256": "99cd3257f3e44fe0626ea5f21fe8ca80c4639df9b55b2f26950766a2e0e097d1"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/oversized-raw.kzpaq": {
+      "bytes": 1563,
+      "sha256": "0c5002f8b8236df31471fd196e21bd3046d358b60d5209371af190cfcbd614bf"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/oversized-raw.kzpaq.kpar2": {
+      "bytes": 139264,
+      "sha256": "ea0452dc5480c9fba6d725249d653a6db0eabb43e17a59f62befcae54b8c5b10"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/package-provenance.json": {
+      "bytes": 15768,
+      "sha256": "64e9b39433c54cf7c1ee4b5200c37d1e0f5b0dbe96aea68a5fdbbf28cdfd3eb1"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/pin-substring.kzpaq": {
+      "bytes": 2684,
+      "sha256": "bb126faf0ae99a486f576aedfce421afd0cd7784710358c7402e094150565167"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/pin-substring.kzpaq.kpar2": {
+      "bytes": 139264,
+      "sha256": "78cd537afd03c04df0d5e33112e4d2d198063c334aa6dfe26944dd6f54482865"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/private-app-packages.lock.json": {
+      "bytes": 15522,
+      "sha256": "3dc54287c79bb2457a7b3b6de382c1c085a747fdc396daf3e89d292d2d57e94c"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/private-generator-packages.lock.json": {
+      "bytes": 13047,
+      "sha256": "7a55d2066c0fe4845bb72ee9f39d16765891ec23045f178d6cf629dee6246072"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/short.kzpaq": {
+      "bytes": 1568,
+      "sha256": "53c122686adcc589f65825909e3df52c92819f74e49829d3435e48c49c475b7e"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/short.kzpaq.kpar2": {
+      "bytes": 139264,
+      "sha256": "8a9ccf7760436211f4db23d3b1af0d680ca3a6c49b027ee496e97da5654e2afb"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/source-provenance.json": {
+      "bytes": 3628,
+      "sha256": "d37aa2ef65d3f26cfe3c4103313789927b950ae9587f8be42657aeb30f5ad857"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/strict-restore-addendum.json": {
+      "bytes": 2011,
+      "sha256": "1911dce00784372cab447799a4d28b70f5313e40aebf9b78adae4e4901d4b1ef"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/strict-restore-check.log.txt": {
+      "bytes": 475,
+      "sha256": "f53a601e496102529b90029a49e0f135092aeaeb88444ed8ca745ad56649cfa7"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/strict-restore-check.sh.txt": {
+      "bytes": 1542,
+      "sha256": "9100a5d99246fa2ec84ffe5c32495971fd5fde9e5bfa1708fffd33d1081e4063"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/verified-run.sh.txt": {
+      "bytes": 2120,
+      "sha256": "cf2e50eaf3a95846d56775d97ff40ff0a356d7947c9b2c8186ee2fe060d92c57"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/verified-source-after.json": {
+      "bytes": 12819,
+      "sha256": "547572ecf0bd6d08147c866ffc16d7d719a6981172c977cd787d33bd47ada668"
+    },
+    "KeepVaultMac.Tests/Fixtures/CredentialCompatibility/verified-source-before.json": {
+      "bytes": 12819,
+      "sha256": "547572ecf0bd6d08147c866ffc16d7d719a6981172c977cd787d33bd47ada668"
+    },
+    "QrCodeScannerWindows/packages.lock.json": {
+      "bytes": 619,
+      "sha256": "f2f5f287928f536ffe0547ac08d40bd9e47101f1840cee3cc5e4a94171b4391e"
+    },
+    "QrCodeScannerWindows/packages.tests.lock.json": {
+      "bytes": 695,
+      "sha256": "7ded3bdeeb16b71b9f014f455bb3db529c9e684fdc6b9ffb35974bc09f9993e2"
+    },
+    "global.json": {
+      "bytes": 105,
+      "sha256": "4e7d5022b2a5a8d02bb951bb264a4c8613eabc332572a0af5f9743d23f23d84e"
+    },
+    "native/tests/camellia_serpent_reference/packages.lock.json": {
+      "bytes": 624,
+      "sha256": "ad967809d7e01a9bcbe06030d7528fdb72683472f255b6400d3064ec00de29c5"
+    },
+    "native/tests/claim_grain/packages.lock.json": {
+      "bytes": 375,
+      "sha256": "180d24a7cffae20790320fb40536a8fcff3a60ceb312973b9700ce714f1f2f0c"
+    },
+    "native/tests/managed_executor/packages.lock.json": {
+      "bytes": 375,
+      "sha256": "180d24a7cffae20790320fb40536a8fcff3a60ceb312973b9700ce714f1f2f0c"
+    },
+    "native/tests/native_benchmark/packages.lock.json": {
+      "bytes": 375,
+      "sha256": "180d24a7cffae20790320fb40536a8fcff3a60ceb312973b9700ce714f1f2f0c"
+    }
+  },
+  "sdkRoot": "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk",
+  "signingAuthorized": false,
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+  "worktree": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna"
+}

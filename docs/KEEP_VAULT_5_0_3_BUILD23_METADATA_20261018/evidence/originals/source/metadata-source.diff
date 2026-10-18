@@ -1,0 +1,719 @@
+diff --git a/KeepVaultMac.ReleaseVerifier/InstallationManifestVerifier.cs b/KeepVaultMac.ReleaseVerifier/InstallationManifestVerifier.cs
+index 808e9a2..b18e89d 100644
+--- a/KeepVaultMac.ReleaseVerifier/InstallationManifestVerifier.cs
++++ b/KeepVaultMac.ReleaseVerifier/InstallationManifestVerifier.cs
+@@ -31,7 +31,7 @@ internal static class InstallationManifestVerifier
+             new JsonDocumentOptions { AllowTrailingCommas = false, CommentHandling = JsonCommentHandling.Disallow, MaxDepth = 8 });
+         Dictionary<string, JsonElement> document = Object(json.RootElement, ["schemaVersion", "version", "build", "entries"]);
+         if (!document["schemaVersion"].TryGetInt32(out int schema) || schema != 1
+-            || document["version"].GetString() != "5.0.3" || document["build"].GetString() != "22")
++            || document["version"].GetString() != "5.0.3" || document["build"].GetString() != "23")
+             throw new InvalidDataException("The installation manifest has an unsupported schema, version or build.");
+         JsonElement entries = document["entries"];
+         if (entries.ValueKind != JsonValueKind.Array || entries.GetArrayLength() is < 1 or > MaximumEntries)
+@@ -155,7 +155,7 @@ internal static class InstallationManifestVerifier
+                 throw new InvalidDataException("Duplicate or malformed app property-list key.");
+         }
+         foreach ((string key, string value) in new[] {
+-                     ("CFBundleIdentifier", identifier), ("CFBundleShortVersionString", "5.0.3"), ("CFBundleVersion", "22") })
++                     ("CFBundleIdentifier", identifier), ("CFBundleShortVersionString", "5.0.3"), ("CFBundleVersion", "23") })
+         {
+             if (!values.TryGetValue(key, out XElement? actual) || actual.Name != "string" || actual.HasElements || actual.Value != value)
+                 throw new InvalidDataException("App metadata does not match the installation manifest: " + key);
+diff --git a/KeepVaultMac.ReleaseVerifier/Program.cs b/KeepVaultMac.ReleaseVerifier/Program.cs
+index 2ee9008..ab540da 100644
+--- a/KeepVaultMac.ReleaseVerifier/Program.cs
++++ b/KeepVaultMac.ReleaseVerifier/Program.cs
+@@ -152,7 +152,7 @@ static void VerifyPasswordModelNotice(string bundleDirectory)
+ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
+ {
+     const string ExpectedThirdPartyNoticesSha256 =
+-        "1A02EAD03198231BB35F2AA7576B9BE2EA79E153FDF22AB6E85B90FF8B710C3E";
++        "3DEA0EE0CEFF0CB52C258B3BD11F67A03227BF713E576D0540C76C130C8A8A02";
+     bool isAppBundle = string.Equals(Path.GetExtension(directory), ".app", StringComparison.OrdinalIgnoreCase);
+     bool isKeepVaultBundle = isAppBundle
+         && File.Exists(Path.Combine(directory, "Contents", "MacOS", "Keep Vault"));
+@@ -230,7 +230,7 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
+             "QRCoder 1.8.0",
+             "HarfBuzzSharp native assets 8.3.1.3 third-party notices",
+             "SkiaSharp native assets 3.119.4 third-party notices",
+-            ".NET 10.0.11 NativeAOT runtime third-party notices",
++            ".NET 10.0.13 NativeAOT runtime third-party notices",
+             "SIL OPEN FONT LICENSE Version 1.1",
+             "Brian Gladman",
+         ];
+diff --git a/KeepVaultMac.ReleaseVerifier/global.json b/KeepVaultMac.ReleaseVerifier/global.json
+index 8aaa898..e8a91cb 100644
+--- a/KeepVaultMac.ReleaseVerifier/global.json
++++ b/KeepVaultMac.ReleaseVerifier/global.json
+@@ -1,6 +1,6 @@
+ {
+   "sdk": {
+-    "version": "10.0.400",
++    "version": "10.0.402",
+     "rollForward": "disable",
+     "allowPrerelease": false
+   }
+diff --git a/KeepVaultMac.ReleaseVerifier/packages.lock.json b/KeepVaultMac.ReleaseVerifier/packages.lock.json
+index b1a7fa2..cd14dbe 100644
+--- a/KeepVaultMac.ReleaseVerifier/packages.lock.json
++++ b/KeepVaultMac.ReleaseVerifier/packages.lock.json
+@@ -10,47 +10,47 @@
+       },
+       "Microsoft.DotNet.ILCompiler": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g=="
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw=="
+       },
+       "Microsoft.NET.ILLink.Tasks": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "IBf7lbovvjGWVWXZX5cJ/cO0WXbId0Zq4BuSeT94mGZuOAP66oMeH9PTBZ9Jpp3Jb6jtK0qm/NyUbPRo1gC/wQ=="
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "40yrBMsLEcjixBR4G+FiUaBPvxXIPSKJ2OgSrbOZcmSDBda4Sb0k7BWrfDpIvn3IvvDzwOL/tEPa6gDQfh6aRw=="
+       }
+     },
+     "net10.0/osx-arm64": {
+       "Microsoft.DotNet.ILCompiler": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+         "dependencies": {
+-          "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.11"
++          "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.13"
+         }
+       },
+       "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": {
+         "type": "Transitive",
+-        "resolved": "10.0.11",
+-        "contentHash": "4cxybmyqJI3zZIKkNM1Ft0aq6Q4q6b4SJ11Np5j9lrHHurfheI66dUshpZD/UEMjMqAdg9O03AABAYLYSUzwyw=="
++        "resolved": "10.0.13",
++        "contentHash": "UlaKJbhvcFO/HC+zY5q3r07uGzwIGE5z49EeGj51mbIxu4XZBp87sr2IKi8lOb9eTO2e2M9tMOEpOtaqPzSoTA=="
+       }
+     },
+     "net10.0/osx-x64": {
+       "Microsoft.DotNet.ILCompiler": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+         "dependencies": {
+-          "runtime.osx-x64.Microsoft.DotNet.ILCompiler": "10.0.11"
++          "runtime.osx-x64.Microsoft.DotNet.ILCompiler": "10.0.13"
+         }
+       },
+       "runtime.osx-x64.Microsoft.DotNet.ILCompiler": {
+         "type": "Transitive",
+-        "resolved": "10.0.11",
+-        "contentHash": "Nf7MRJg0HZ4G7icNbW8T49O/9UU6x8XoUPffkk3Uh+r+mDAUFHkhIptUc0wDdIRrouJrLt0IJp0LiaQJUB7DbA=="
++        "resolved": "10.0.13",
++        "contentHash": "tRiYgozS46av6ilf04bZTsi9+TPGsK95znWNdwqmFo7rY7Sygl/ittwGcf10VCYw2THlzReUHS1n2Y6VqMA6aQ=="
+       }
+     }
+   }
+diff --git a/KeepVaultMac.Tests/HybridKeyProtectionTests.cs b/KeepVaultMac.Tests/HybridKeyProtectionTests.cs
+index 6683bc6..21647b4 100644
+--- a/KeepVaultMac.Tests/HybridKeyProtectionTests.cs
++++ b/KeepVaultMac.Tests/HybridKeyProtectionTests.cs
+@@ -566,7 +566,7 @@ internal static class HybridKeyProtectionTests
+                     && protectionScript.Contains("hybrid_protection_tool_paths=verified", StringComparison.Ordinal),
+                 "The provisioning script no longer enforces distinct services and accounts.");
+             Require(
+-                keepVaultBuildScript.Contains("build_version='22'", StringComparison.Ordinal)
++                keepVaultBuildScript.Contains("build_version='23'", StringComparison.Ordinal)
+                     && keepVaultBuildScript.Contains("marketing_version='5.0.3'", StringComparison.Ordinal)
+                     && keepVaultBuildScript.Contains("require_root_system_tool", StringComparison.Ordinal)
+                     && HasIsolatedDotnetBuildPath(keepVaultBuildScript)
+@@ -578,7 +578,7 @@ internal static class HybridKeyProtectionTests
+                     && keepVaultBuildScript.Contains("notice_self_test_inplace_aba", StringComparison.Ordinal)
+                     && keepVaultBuildScript.Contains("output_mutation_status", StringComparison.Ordinal)
+                     && keepVaultBuildScript.Contains(
+-                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
++                        "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02",
+                         StringComparison.Ordinal),
+                 "The macOS v13 release default or fixed system-tool gate regressed.");
+             foreach (string lockedBuildScript in new[] { keepVaultBuildScript, portableBuildScript,
+@@ -614,7 +614,7 @@ internal static class HybridKeyProtectionTests
+                     && portableBuildScript.Contains("${portable_dir}/THIRD-PARTY-NOTICES.txt", StringComparison.Ordinal)
+                     && portableBuildScript.Contains("zstat -f ${descriptor}", StringComparison.Ordinal)
+                     && portableBuildScript.Contains(
+-                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
++                        "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02",
+                         StringComparison.Ordinal),
+                 "The portable release build no longer uses a fresh verified SDK and private package cache.");
+             Require(
+@@ -689,7 +689,7 @@ internal static class HybridKeyProtectionTests
+                     && keepVaultVerifierScript.Contains("sysopen -r -o nofollow", StringComparison.Ordinal)
+                     && keepVaultVerifierScript.Contains("bound_verifier_notice_identity", StringComparison.Ordinal)
+                     && keepVaultVerifierScript.Contains(
+-                        "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
++                        "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02",
+                         StringComparison.Ordinal)
+                     && !keepVaultVerifierScript.Contains("${dotnet_command} restore", StringComparison.Ordinal)
+                     && !keepVaultVerifierScript.Contains("${dotnet_command} build", StringComparison.Ordinal),
+@@ -731,14 +731,14 @@ internal static class HybridKeyProtectionTests
+                     && releaseVerifierSource.Contains("THIRD-PARTY-NOTICES.txt", StringComparison.Ordinal)
+                     && releaseVerifierSource.Contains("portable root notice", StringComparison.Ordinal)
+                     && releaseVerifierSource.Contains(
+-                        "1A02EAD03198231BB35F2AA7576B9BE2EA79E153FDF22AB6E85B90FF8B710C3E",
++                        "3DEA0EE0CEFF0CB52C258B3BD11F67A03227BF713E576D0540C76C130C8A8A02",
+                         StringComparison.Ordinal),
+                 "The standalone release verifier lost its bound app/portable notice pin.");
+             Require(
+                 verifiedDotnetProvisioner.StartsWith("#!/bin/zsh -f\n", StringComparison.Ordinal)
+-                    && verifiedDotnetProvisioner.Contains("sdk_version='10.0.400'", StringComparison.Ordinal)
++                    && verifiedDotnetProvisioner.Contains("sdk_version='10.0.402'", StringComparison.Ordinal)
+                     && verifiedDotnetProvisioner.Contains(
+-                        "e440e9a58d4ff7741c8342ac3e086fa9ee2dadc25e01c0449a88317a74cfbd63625b8092c3b2a131ae14b16ab3401e9cc470e578e4c65a72a0b5786bd2308cde",
++                        "ee0d379c144ebddef6efe851e1514883d1b695430d13b3fb13e8153f8476e1e5ac7abc42c08668471aaf4d738ff367cf53009845f94d224ba126febe74d00b75",
+                         StringComparison.Ordinal)
+                     && verifiedDotnetProvisioner.Contains("${env_path} -i", StringComparison.Ordinal)
+                     && verifiedDotnetProvisioner.Contains("${curl_path} --disable", StringComparison.Ordinal)
+diff --git a/KeepVaultMac.Tests/Program.cs b/KeepVaultMac.Tests/Program.cs
+index b704652..33036d3 100644
+--- a/KeepVaultMac.Tests/Program.cs
++++ b/KeepVaultMac.Tests/Program.cs
+@@ -136,12 +136,12 @@ static async Task TestReleaseCompanionVersionPlumbingAsync()
+     string keepVaultBuilderSource = await File.ReadAllTextAsync(keepVaultBuilder).ConfigureAwait(false);
+     string installationManifestVerifierSource = await File.ReadAllTextAsync(
+         Path.Combine(repositoryRoot, "KeepVaultMac.ReleaseVerifier", "InstallationManifestVerifier.cs")).ConfigureAwait(false);
+-    Require(keepVaultBuilderSource.Contains("build_version='22'", StringComparison.Ordinal)
+-        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"22\"", StringComparison.Ordinal)
+-        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"22\")", StringComparison.Ordinal),
++    Require(keepVaultBuilderSource.Contains("build_version='23'", StringComparison.Ordinal)
++        && installationManifestVerifierSource.Contains("document[\"build\"].GetString() != \"23\"", StringComparison.Ordinal)
++        && installationManifestVerifierSource.Contains("(\"CFBundleVersion\", \"23\")", StringComparison.Ordinal),
+         "The release builder and strict installation manifest/bundle build pins differ.");
+     foreach ((string version, string build) in new[]
+-        { ("5.0.3", "21"), ("5.0.3", "23"), ("5.0.2", "22"), ("5.0.3", "invalid") })
++        { ("5.0.3", "22"), ("5.0.3", "24"), ("5.0.2", "23"), ("5.0.3", "invalid") })
+     {
+         (int mismatchedIdentityExit, _, _) = await RunProcessAsync(
+             keepVaultBuilder, "--version", version, "--build-number", build, "--preflight").ConfigureAwait(false);
+diff --git a/KeepVaultMac.Tests/SpecLintTests.cs b/KeepVaultMac.Tests/SpecLintTests.cs
+index 3435004..56196ae 100644
+--- a/KeepVaultMac.Tests/SpecLintTests.cs
++++ b/KeepVaultMac.Tests/SpecLintTests.cs
+@@ -26,7 +26,9 @@ internal static class SpecLintTests
+         string? IlLinkVersion,
+         string LockFileName = "packages.lock.json");
+ 
+-    private const string NativeAotPackVersion = "10.0.11";
++    private const string NativeAotPackVersion = "10.0.13";
++    // Frozen, nonshipping reference harnesses are not rebuilt by this macOS release.
++    private const string LegacyReferenceIlLinkVersion = "10.0.11";
+ 
+     /// <summary>
+     /// Constructions that must not exist in shipping source at all.
+@@ -187,10 +189,10 @@ internal static class SpecLintTests
+             new("QrCodeScannerWindows", "QrScanner.Tests.csproj", "net10.0-windows10.0.19041", ["win-x64"], null, null, "packages.tests.lock.json"),
+             // Test-only harnesses retain the inherited Windows RID plus the
+             // explicit macOS reference-run RID. Neither is a shipping graph.
+-            new("native/tests/camellia_serpent_reference", "CipherReference.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
+-            new("native/tests/claim_grain", "ClaimGrain.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
+-            new("native/tests/managed_executor", "ManagedExecutor.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
+-            new("native/tests/native_benchmark", "NativeBenchmark.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
++            new("native/tests/camellia_serpent_reference", "CipherReference.csproj", "net10.0", ["osx-arm64", "win-x64"], null, LegacyReferenceIlLinkVersion),
++            new("native/tests/claim_grain", "ClaimGrain.csproj", "net10.0", ["osx-arm64", "win-x64"], null, LegacyReferenceIlLinkVersion),
++            new("native/tests/managed_executor", "ManagedExecutor.csproj", "net10.0", ["osx-arm64", "win-x64"], null, LegacyReferenceIlLinkVersion),
++            new("native/tests/native_benchmark", "NativeBenchmark.csproj", "net10.0", ["osx-arm64", "win-x64"], null, LegacyReferenceIlLinkVersion),
+         ];
+ 
+         var violations = new List<string>();
+@@ -282,7 +284,7 @@ internal static class SpecLintTests
+             {
+                 using JsonDocument document = JsonDocument.Parse(RepositoryLayout.ReadText(path));
+                 JsonElement sdk = document.RootElement.GetProperty("sdk");
+-                string expectedSdk = relativePath == "global.json" ? "10.0.401" : "10.0.400";
++                string expectedSdk = relativePath == "global.json" ? "10.0.401" : "10.0.402";
+                 if (sdk.GetProperty("version").GetString() != expectedSdk
+                     || sdk.GetProperty("rollForward").GetString() != expectedRollForward
+                     || sdk.GetProperty("allowPrerelease").ValueKind != JsonValueKind.False)
+diff --git a/KeepVaultMac.Tests/global.json b/KeepVaultMac.Tests/global.json
+index 8aaa898..e8a91cb 100644
+--- a/KeepVaultMac.Tests/global.json
++++ b/KeepVaultMac.Tests/global.json
+@@ -1,6 +1,6 @@
+ {
+   "sdk": {
+-    "version": "10.0.400",
++    "version": "10.0.402",
+     "rollForward": "disable",
+     "allowPrerelease": false
+   }
+diff --git a/KeepVaultMac.Tests/packages.lock.json b/KeepVaultMac.Tests/packages.lock.json
+index bfcd116..67157a6 100644
+--- a/KeepVaultMac.Tests/packages.lock.json
++++ b/KeepVaultMac.Tests/packages.lock.json
+@@ -250,8 +250,8 @@
+       },
+       "System.Security.Cryptography.Pkcs": {
+         "type": "Transitive",
+-        "resolved": "8.0.1",
+-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
++        "resolved": "8.0.2",
++        "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA=="
+       },
+       "Tmds.DBus.Protocol": {
+         "type": "Transitive",
+@@ -267,7 +267,8 @@
+           "Avalonia.Themes.Fluent": "[12.1.1, )",
+           "BouncyCastle.Cryptography": "[2.6.2, )",
+           "PDFsharp": "[6.2.4, )",
+-          "QRCoder": "[1.8.0, )"
++          "QRCoder": "[1.8.0, )",
++          "System.Security.Cryptography.Pkcs": "[8.0.2, )"
+         }
+       }
+     },
+@@ -330,8 +331,8 @@
+       },
+       "System.Security.Cryptography.Pkcs": {
+         "type": "Transitive",
+-        "resolved": "8.0.1",
+-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
++        "resolved": "8.0.2",
++        "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA=="
+       }
+     }
+   }
+diff --git a/KeepVaultMac/KeepVaultMac.csproj b/KeepVaultMac/KeepVaultMac.csproj
+index 93a199d..89c8bf1 100644
+--- a/KeepVaultMac/KeepVaultMac.csproj
++++ b/KeepVaultMac/KeepVaultMac.csproj
+@@ -69,6 +69,7 @@
+     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+     <PackageReference Include="PDFsharp" Version="6.2.4" />
++    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
+     <PackageReference Include="QRCoder" Version="1.8.0" />
+   </ItemGroup>
+ 
+diff --git a/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj b/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj
+index 7f644ed..dbe16ca 100644
+--- a/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj
++++ b/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj
+@@ -12,7 +12,7 @@
+ 
+   <ItemGroup>
+     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.11" />
++    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+   </ItemGroup>
+ 
+   <ItemGroup>
+diff --git a/KeepVaultMac/Packaging/HybridSigner/packages.lock.json b/KeepVaultMac/Packaging/HybridSigner/packages.lock.json
+index 264de77..da5e7a0 100644
+--- a/KeepVaultMac/Packaging/HybridSigner/packages.lock.json
++++ b/KeepVaultMac/Packaging/HybridSigner/packages.lock.json
+@@ -10,17 +10,17 @@
+       },
+       "System.Security.Cryptography.Pkcs": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "8IV+rI3xN/Mkq9MsSX7VZTv9T9Wt+tyhHLwBX9VNZBk8m8kknEs1JeTSjI2x9M2L/fSja+c2WSE5n5Yy0GXdoQ=="
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw=="
+       }
+     },
+     "net10.0/osx-arm64": {
+       "System.Security.Cryptography.Pkcs": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "8IV+rI3xN/Mkq9MsSX7VZTv9T9Wt+tyhHLwBX9VNZBk8m8kknEs1JeTSjI2x9M2L/fSja+c2WSE5n5Yy0GXdoQ=="
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw=="
+       }
+     }
+   }
+diff --git a/KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt b/KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt
+index 6ce3c20..5957cb8 100644
+--- a/KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt
++++ b/KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt
+@@ -20,7 +20,7 @@ Components covered by the common MIT licence below
+   Copyright Tom Deseyn
+ * Microsoft.Extensions.DependencyInjection.Abstractions 8.0.2
+ * Microsoft.Extensions.Logging.Abstractions 8.0.3
+-* System.Security.Cryptography.Pkcs 8.0.1
++* System.Security.Cryptography.Pkcs 8.0.2
+   Copyright .NET Foundation and Contributors
+ 
+ MIT License
+diff --git a/KeepVaultMac/global.json b/KeepVaultMac/global.json
+index 8aaa898..e8a91cb 100644
+--- a/KeepVaultMac/global.json
++++ b/KeepVaultMac/global.json
+@@ -1,6 +1,6 @@
+ {
+   "sdk": {
+-    "version": "10.0.400",
++    "version": "10.0.402",
+     "rollForward": "disable",
+     "allowPrerelease": false
+   }
+diff --git a/KeepVaultMac/packages.lock.json b/KeepVaultMac/packages.lock.json
+index 24f05de..d8193e9 100644
+--- a/KeepVaultMac/packages.lock.json
++++ b/KeepVaultMac/packages.lock.json
+@@ -53,15 +53,15 @@
+       },
+       "Microsoft.DotNet.ILCompiler": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g=="
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw=="
+       },
+       "Microsoft.NET.ILLink.Tasks": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "IBf7lbovvjGWVWXZX5cJ/cO0WXbId0Zq4BuSeT94mGZuOAP66oMeH9PTBZ9Jpp3Jb6jtK0qm/NyUbPRo1gC/wQ=="
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "40yrBMsLEcjixBR4G+FiUaBPvxXIPSKJ2OgSrbOZcmSDBda4Sb0k7BWrfDpIvn3IvvDzwOL/tEPa6gDQfh6aRw=="
+       },
+       "PDFsharp": {
+         "type": "Direct",
+@@ -82,6 +82,12 @@
+           "System.Drawing.Common": "6.0.0"
+         }
+       },
++      "System.Security.Cryptography.Pkcs": {
++        "type": "Direct",
++        "requested": "[8.0.2, )",
++        "resolved": "8.0.2",
++        "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA=="
++      },
+       "Avalonia.Angle.Windows.Natives": {
+         "type": "Transitive",
+         "resolved": "2.1.27548.20260419",
+@@ -256,11 +262,6 @@
+           "Microsoft.Win32.SystemEvents": "6.0.0"
+         }
+       },
+-      "System.Security.Cryptography.Pkcs": {
+-        "type": "Transitive",
+-        "resolved": "8.0.1",
+-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+-      },
+       "Tmds.DBus.Protocol": {
+         "type": "Transitive",
+         "resolved": "0.94.1",
+@@ -270,13 +271,19 @@
+     "net10.0/osx-arm64": {
+       "Microsoft.DotNet.ILCompiler": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+         "dependencies": {
+-          "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.11"
++          "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.13"
+         }
+       },
++      "System.Security.Cryptography.Pkcs": {
++        "type": "Direct",
++        "requested": "[8.0.2, )",
++        "resolved": "8.0.2",
++        "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA=="
++      },
+       "Avalonia.Angle.Windows.Natives": {
+         "type": "Transitive",
+         "resolved": "2.1.27548.20260419",
+@@ -312,8 +319,8 @@
+       },
+       "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": {
+         "type": "Transitive",
+-        "resolved": "10.0.11",
+-        "contentHash": "4cxybmyqJI3zZIKkNM1Ft0aq6Q4q6b4SJ11Np5j9lrHHurfheI66dUshpZD/UEMjMqAdg9O03AABAYLYSUzwyw=="
++        "resolved": "10.0.13",
++        "contentHash": "UlaKJbhvcFO/HC+zY5q3r07uGzwIGE5z49EeGj51mbIxu4XZBp87sr2IKi8lOb9eTO2e2M9tMOEpOtaqPzSoTA=="
+       },
+       "SkiaSharp.NativeAssets.Linux": {
+         "type": "Transitive",
+@@ -337,23 +344,24 @@
+         "dependencies": {
+           "Microsoft.Win32.SystemEvents": "6.0.0"
+         }
+-      },
+-      "System.Security.Cryptography.Pkcs": {
+-        "type": "Transitive",
+-        "resolved": "8.0.1",
+-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+       }
+     },
+     "net10.0/osx-x64": {
+       "Microsoft.DotNet.ILCompiler": {
+         "type": "Direct",
+-        "requested": "[10.0.11, )",
+-        "resolved": "10.0.11",
+-        "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
++        "requested": "[10.0.13, )",
++        "resolved": "10.0.13",
++        "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+         "dependencies": {
+-          "runtime.osx-x64.Microsoft.DotNet.ILCompiler": "10.0.11"
++          "runtime.osx-x64.Microsoft.DotNet.ILCompiler": "10.0.13"
+         }
+       },
++      "System.Security.Cryptography.Pkcs": {
++        "type": "Direct",
++        "requested": "[8.0.2, )",
++        "resolved": "8.0.2",
++        "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA=="
++      },
+       "Avalonia.Angle.Windows.Natives": {
+         "type": "Transitive",
+         "resolved": "2.1.27548.20260419",
+@@ -389,8 +397,8 @@
+       },
+       "runtime.osx-x64.Microsoft.DotNet.ILCompiler": {
+         "type": "Transitive",
+-        "resolved": "10.0.11",
+-        "contentHash": "Nf7MRJg0HZ4G7icNbW8T49O/9UU6x8XoUPffkk3Uh+r+mDAUFHkhIptUc0wDdIRrouJrLt0IJp0LiaQJUB7DbA=="
++        "resolved": "10.0.13",
++        "contentHash": "tRiYgozS46av6ilf04bZTsi9+TPGsK95znWNdwqmFo7rY7Sygl/ittwGcf10VCYw2THlzReUHS1n2Y6VqMA6aQ=="
+       },
+       "SkiaSharp.NativeAssets.Linux": {
+         "type": "Transitive",
+@@ -414,11 +422,6 @@
+         "dependencies": {
+           "Microsoft.Win32.SystemEvents": "6.0.0"
+         }
+-      },
+-      "System.Security.Cryptography.Pkcs": {
+-        "type": "Transitive",
+-        "resolved": "8.0.1",
+-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
+       }
+     }
+   }
+diff --git a/tools/Build-KeepVault-macOS.sh b/tools/Build-KeepVault-macOS.sh
+index fade11f..99c76f1 100755
+--- a/tools/Build-KeepVault-macOS.sh
++++ b/tools/Build-KeepVault-macOS.sh
+@@ -460,7 +460,7 @@ core_identifier='de.michael-feinermann.keep-vault.core'
+ configuration='Release'
+ architecture='universal'
+ marketing_version='5.0.3'
+-build_version='22'
++build_version='23'
+ preflight_only=0
+ tool_path_self_test=0
+ notice_binding_self_test=0
+@@ -487,9 +487,9 @@ pfx_wrapping_key_file=${KEEPVAULT_PFX_WRAPPING_KEY_FILE:-}
+ 
+ mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${packaging_dir}/Keys/mldsa87-public.key}
+ dotnet_command=''
+-expected_main_lock_sha256='B111FBCD11FBF46DF0E61164109CBD8BFB2C22B80EC79E4B4D1EA0ED7FE07DE7'
+-expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
+-expected_tests_lock_sha256='EE7FEDF92179705DE025536CDCF1CB6B5991AA69D457B26103B3E420B9957A24'
++expected_main_lock_sha256='A5F328BF88412328A168232DA570312EA48496BED20DF5E8BF5A7A4CF79335EC'
++expected_signer_lock_sha256='FC40C8CD65ABF0BBBA995D2A3DB679AE856D4417D3C3356F1448606FEF959898'
++expected_tests_lock_sha256='F0221BE40F1D874F7D1DA2DFCFE5770B097E708D35BC5D52EFEC421A1A892E6E'
+ 
+ usage() {
+   print -u2 'Usage: Build-KeepVault-macOS.sh [--architecture universal|arm64] [--identity HASH_OR_NAME]'
+@@ -609,8 +609,8 @@ if [[ ! ${marketing_version} =~ '^[0-9]+([.][0-9]+){1,2}$' || ! ${build_version}
+   print -u2 'Version values must be numeric (for example 1.0.0 and build 1).'
+   exit 64
+ fi
+-if [[ ${marketing_version} != '5.0.3' || ${build_version} != '22' ]]; then
+-  print -u2 'RELEASE GATE: this source pins Keep Vault 5.0.3 build 22; other version/build pairs require a matching reviewed installation verifier.'
++if [[ ${marketing_version} != '5.0.3' || ${build_version} != '23' ]]; then
++  print -u2 'RELEASE GATE: this source pins Keep Vault 5.0.3 build 23; other version/build pairs require a matching reviewed installation verifier.'
+   exit 64
+ fi
+ if [[ -L ${repo_root} || -L ${mac_project} || -L ${packaging_dir} ]]; then
+@@ -809,8 +809,8 @@ if [[ ! -x ${dotnet_command} || -L ${dotnet_command} ]]; then
+   exit 1
+ fi
+ selected_sdk=$(cd ${mac_project} && run_dotnet_clean --version)
+-if [[ ${selected_sdk} != '10.0.400' ]]; then
+-  print -u2 'Keep Vault release builds require the reviewed official .NET SDK 10.0.400.'
++if [[ ${selected_sdk} != '10.0.402' ]]; then
++  print -u2 'Keep Vault release builds require the reviewed official .NET SDK 10.0.402.'
+   exit 1
+ fi
+ 
+@@ -983,7 +983,7 @@ expected_lock_hashes=(
+   ${expected_main_lock_sha256}
+   ${expected_signer_lock_sha256}
+   ${expected_tests_lock_sha256}
+-  DD7A30A838AECF6060B4FC28F84392A09D864290E6F5A0A596535B0A40EBEAF8
++  4C672FD6B0180F0F51BC07D07ED5D2B9734E65E8A63875BEA1328738782B08AC
+ )
+ verify_reviewed_locks() {
+   local lock_index lock_file expected_lock_hash actual_lock_hash
+@@ -1255,15 +1255,15 @@ ditto ${merged_publish} ${macos_dir}
+ # covered by Apple's CodeResources seal and Keep Vault's detached manifests.
+ third_party_header=${packaging_dir}/ThirdPartyNoticesHeader.txt
+ third_party_notices=${resources_dir}/THIRD-PARTY-NOTICES.txt
+-expected_third_party_header_sha256='3d3f4fc0956a0b72726044f2e708da2724be356597b5d32d14ce444ef7a92379'
+-expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
++expected_third_party_header_sha256='d045ea8a4ecae02aa0f21815a27828cc96baf394b3b4bcf7c58a8b80b221b7aa'
++expected_third_party_notices_sha256='3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02'
+ create_bound_notice_output ${third_party_notices}
+ copy_pinned_notice_source 'reviewed third-party-notice header' \
+   ${third_party_header} ${expected_third_party_header_sha256} 0
+ 
+-nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.11
++nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13
+ if [[ ! -d ${nativeaot_notice_root} ]]; then
+-  nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-x64/10.0.11
++  nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-x64/10.0.13
+ fi
+ append_pinned_notice 'Crypto++ 8.9.0' \
+   ${repo_root}/external/cryptopp/License.txt \
+@@ -1295,10 +1295,10 @@ append_pinned_notice 'SkiaSharp native assets 3.119.4 licence' \
+ append_pinned_notice 'SkiaSharp native assets 3.119.4 third-party notices' \
+   ${private_nuget_packages}/skiasharp.nativeassets.macos/3.119.4/THIRD-PARTY-NOTICES.txt \
+   21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5
+-append_pinned_notice '.NET 10.0.11 NativeAOT runtime licence' \
++append_pinned_notice '.NET 10.0.13 NativeAOT runtime licence' \
+   ${nativeaot_notice_root}/LICENSE.TXT \
+   cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310
+-append_pinned_notice '.NET 10.0.11 NativeAOT runtime third-party notices' \
++append_pinned_notice '.NET 10.0.13 NativeAOT runtime third-party notices' \
+   ${nativeaot_notice_root}/THIRD-PARTY-NOTICES.TXT \
+   66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54
+ 
+diff --git a/tools/Build-Portable-macOS.sh b/tools/Build-Portable-macOS.sh
+index 21dccac..382ee85 100755
+--- a/tools/Build-Portable-macOS.sh
++++ b/tools/Build-Portable-macOS.sh
+@@ -144,7 +144,7 @@ if ! zmodload zsh/system || ! zmodload -F zsh/stat b:zstat; then
+   exit 2
+ fi
+ 
+-expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
++expected_third_party_notices_sha256='3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02'
+ 
+ portable_notice_fd_identity() {
+   local descriptor=$1
+@@ -589,8 +589,8 @@ require_private_nuget_cache_identity || {
+   exit 2
+ }
+ selected_sdk=$(cd ${mac_project} && run_dotnet_clean --version)
+-if [[ ${selected_sdk} != '10.0.400' ]]; then
+-  print -u2 'Portable release builds require the reviewed official .NET SDK 10.0.400.'
++if [[ ${selected_sdk} != '10.0.402' ]]; then
++  print -u2 'Portable release builds require the reviewed official .NET SDK 10.0.402.'
+   exit 2
+ fi
+ 
+@@ -727,7 +727,7 @@ publish_exclusively() {
+ # Locks are reviewed independently of restoring them. ForceEvaluate must stay
+ # disabled; otherwise NuGet silently overrides locked mode on older SDKs.
+ portable_lock_files=(${repo_root}/KeepVaultMac.ReleaseVerifier/packages.lock.json ${packaging_dir}/HybridSigner/packages.lock.json)
+-portable_lock_hashes=(dd7a30a838aecf6060b4fc28f84392a09d864290e6f5a0a596535b0a40ebeaf8 b07635b8b5cf158644267cbb99e6483d6f947f37d3b9918b4ff39407eb6ba5eb)
++portable_lock_hashes=(4c672fd6b0180f0f51bc07d07ed5d2b9734e65e8a63875bea1328738782b08ac fc40c8cd65abf0bbba995d2a3db679ae856d4417d3c3356f1448606fef959898)
+ verify_portable_locks() {
+   local lock_index lock_file
+   for (( lock_index = 1; lock_index <= ${#portable_lock_files}; lock_index++ )); do
+diff --git a/tools/Provision-VerifiedDotnet-macOS.sh b/tools/Provision-VerifiedDotnet-macOS.sh
+index 1daf9b1..ac31c41 100755
+--- a/tools/Provision-VerifiedDotnet-macOS.sh
++++ b/tools/Provision-VerifiedDotnet-macOS.sh
+@@ -13,9 +13,9 @@ unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
+ # the exact Microsoft archive whose SHA-512 is pinned in Microsoft's .NET 10
+ # release metadata, verifies it before extraction, and creates a fresh private
+ # SDK tree for one build invocation.
+-sdk_version='10.0.400'
+-sdk_url='https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.400/dotnet-sdk-10.0.400-osx-arm64.tar.gz'
+-sdk_sha512='e440e9a58d4ff7741c8342ac3e086fa9ee2dadc25e01c0449a88317a74cfbd63625b8092c3b2a131ae14b16ab3401e9cc470e578e4c65a72a0b5786bd2308cde'
++sdk_version='10.0.402'
++sdk_url='https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-osx-arm64.tar.gz'
++sdk_sha512='ee0d379c144ebddef6efe851e1514883d1b695430d13b3fb13e8153f8476e1e5ac7abc42c08668471aaf4d738ff367cf53009845f94d224ba126febe74d00b75'
+ private_temp_parent=/private/tmp
+ default_archive=${private_temp_parent}/keep-vault-dotnet-sdk-${sdk_version}-osx-arm64-${EUID}.tar.gz
+ 
+diff --git a/tools/Verify-KeepVault-macOS.sh b/tools/Verify-KeepVault-macOS.sh
+index 2ae51f6..c5e7a5b 100755
+--- a/tools/Verify-KeepVault-macOS.sh
++++ b/tools/Verify-KeepVault-macOS.sh
+@@ -555,7 +555,7 @@ require_notarization=0
+ mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
+ require_launcher_signature=0
+ tool_path_self_test=0
+-expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
++expected_signer_lock_sha256='FC40C8CD65ABF0BBBA995D2A3DB679AE856D4417D3C3356F1448606FEF959898'
+ 
+ usage() {
+   print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'
+@@ -682,7 +682,7 @@ core=${app_path}/Contents/MacOS/Keep\ Vault
+ supervisor=${app_path}/Contents/MacOS/Keep\ Vault\ Supervisor
+ native_dir=${app_path}/Contents/MacOS/Native
+ third_party_notices=${app_path}/Contents/Resources/THIRD-PARTY-NOTICES.txt
+-expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
++expected_third_party_notices_sha256='3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02'
+ third_party_notice_fd=-1
+ if ! sysopen -r -o nofollow -u third_party_notice_fd ${third_party_notices}; then
+   print -u2 'THIRD-PARTY-NOTICES.txt is missing or cannot be opened without following a symbolic link.'
+@@ -719,7 +719,7 @@ for notice_marker in \
+     'QRCoder 1.8.0' \
+     'HarfBuzzSharp native assets 8.3.1.3 third-party notices' \
+     'SkiaSharp native assets 3.119.4 third-party notices' \
+-    '.NET 10.0.11 NativeAOT runtime third-party notices' \
++    '.NET 10.0.13 NativeAOT runtime third-party notices' \
+     'SIL OPEN FONT LICENSE Version 1.1' \
+     'Brian Gladman'; do
+   sysseek -u ${third_party_notice_fd} -w start 0 || exit 1
+@@ -1067,8 +1067,8 @@ elif [[ -f ${mldsa_public_key} ]]; then
+   create_private_nuget_cache
+   provision_verified_dotnet
+   selected_sdk=$(run_dotnet_clean --version)
+-  [[ ${selected_sdk} == '10.0.400' ]] || {
+-    print -u2 'The managed hybrid verifier requires the reviewed official .NET SDK 10.0.400.'
++  [[ ${selected_sdk} == '10.0.402' ]] || {
++    print -u2 'The managed hybrid verifier requires the reviewed official .NET SDK 10.0.402.'
+     exit 1
+   }
+   signer_dll=${private_dotnet_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll
+diff --git a/tools/Verify-QR-Scanner-macOS.sh b/tools/Verify-QR-Scanner-macOS.sh
+index 02480b8..e2c538b 100755
+--- a/tools/Verify-QR-Scanner-macOS.sh
++++ b/tools/Verify-QR-Scanner-macOS.sh
+@@ -505,7 +505,7 @@ require_notarization=0
+ allow_pre_notarization=0
+ tool_path_self_test=0
+ mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
+-expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
++expected_signer_lock_sha256='FC40C8CD65ABF0BBBA995D2A3DB679AE856D4417D3C3356F1448606FEF959898'
+ 
+ usage() {
+   print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'
+@@ -737,8 +737,8 @@ elif [[ -f ${mldsa_public_key} ]]; then
+   create_private_nuget_cache
+   provision_verified_dotnet
+   selected_sdk=$(run_dotnet_clean --version)
+-  [[ ${selected_sdk} == '10.0.400' ]] || {
+-    print -u2 'The managed hybrid verifier requires the reviewed official .NET SDK 10.0.400.'
++  [[ ${selected_sdk} == '10.0.402' ]] || {
++    print -u2 'The managed hybrid verifier requires the reviewed official .NET SDK 10.0.402.'
+     exit 1
+   }
+   signer_dll=${private_dotnet_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll

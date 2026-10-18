@@ -1,0 +1,9 @@
+# Keep Vault 5.0.3 Build 23: SDK- und Abhängigkeitskorrektur
+
+Dieser Quellstand aktualisiert die macOS-Werkzeuge auf das verifizierte Microsoft-SDK 10.0.402 und die NativeAOT-Laufzeit 10.0.13. Die App erhält System.Security.Cryptography.Pkcs 8.0.2, der Signer 10.0.13. Microsoft nennt diese Versionen als Korrektur für die [PKCS-Sicherheitslücke](https://github.com/dotnet/runtime/issues/135703). Die Laufzeitversion ist in den [offiziellen Release-Metadaten](https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json) belegt. Eine konkret ausnutzbare Keep-Vault-Eingaberoute wird hier nicht behauptet.
+
+Vier neue Mac-Paketlocks wurden kontrolliert erzeugt und anschließend mit vier gesperrten Restores geprüft. Acht gezielte Testgruppen und drei verwaltete Kompilierungen bestanden; vier falsche Versions- und Buildangaben wurden abgewiesen. Der PDF-Statusfix bestand erneut mit 24 internen Deutsch-/Englisch-Varianten. Die 45 geschützten Windows-, Referenz- und Fixturedateien blieben unverändert.
+
+Der [Originalexport](evidence/README.md) erhält die genauen Dateipins, tatsächlichen Prozessbelege, zwei historischen Hilfsskriptfehler und die Grenzen der Quellbindung. Die Dateien unter evidence wurden unverändert übernommen. Ihr [Prüfsummenmanifest](evidence/SHA256SUMS) umfasst genau diesen eingefrorenen Export. Der [unabhängige Review](review/review-completion.json) bestätigt den begrenzten 20-Dateien-Diff einschließlich Paket- und Lizenzbytes. Alle 49 geplanten Builderphasen wurden zusätzlich gegen das tatsächliche neue Testinventar [abgeglichen](review/builder-flow-selector-crosscheck.json); dabei wurden keine Produkttests gestartet.
+
+Die eigentliche Universal-App für Build 23, ihre Release-Signaturen, Notarisierung, Installation, vollständigen GUI-Prüfungen, neuen 1-GiB-Messungen mit Kompressionsstufe 3 und der letzte Strukturtest stehen aus. Gesamtfreigabe und stabile Veröffentlichung sind noch nicht erteilt.

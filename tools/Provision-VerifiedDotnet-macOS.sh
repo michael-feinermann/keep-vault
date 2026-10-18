@@ -13,9 +13,9 @@ unset ZDOTDIR ENV BASH_ENV CDPATH PERL5OPT PERL5LIB PYTHONHOME PYTHONPATH \
 # the exact Microsoft archive whose SHA-512 is pinned in Microsoft's .NET 10
 # release metadata, verifies it before extraction, and creates a fresh private
 # SDK tree for one build invocation.
-sdk_version='10.0.400'
-sdk_url='https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.400/dotnet-sdk-10.0.400-osx-arm64.tar.gz'
-sdk_sha512='e440e9a58d4ff7741c8342ac3e086fa9ee2dadc25e01c0449a88317a74cfbd63625b8092c3b2a131ae14b16ab3401e9cc470e578e4c65a72a0b5786bd2308cde'
+sdk_version='10.0.402'
+sdk_url='https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-osx-arm64.tar.gz'
+sdk_sha512='ee0d379c144ebddef6efe851e1514883d1b695430d13b3fb13e8153f8476e1e5ac7abc42c08668471aaf4d738ff367cf53009845f94d224ba126febe74d00b75'
 private_temp_parent=/private/tmp
 default_archive=${private_temp_parent}/keep-vault-dotnet-sdk-${sdk_version}-osx-arm64-${EUID}.tar.gz
 

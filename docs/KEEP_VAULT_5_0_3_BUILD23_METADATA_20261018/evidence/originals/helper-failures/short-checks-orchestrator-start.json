@@ -1,0 +1,20 @@
+{
+  "actualOrchestratorPid": 18105,
+  "groups": [
+    "spec.lockfile-runtimes",
+    "spec.no-legacy-source",
+    "packaging.hybrid-key-separation",
+    "smoke.release-companion-version",
+    "gui.key-sheet-operation-progress",
+    "keysheet.pair-cleanup-identity",
+    "keysheet.cleanup-failure-visible",
+    "keysheet.pair-atomic-commit"
+  ],
+  "installedGuiOrReleaseApproval": false,
+  "source": {
+    "bytes": 2412,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/run-short-checks.py",
+    "sha256": "988fffb5ed1e7b640b819442e4f27492afc2a4b88ead340af69f10b22ab554a6"
+  },
+  "startedUtc": "2026-10-18T10:53:41.497725+00:00"
+}

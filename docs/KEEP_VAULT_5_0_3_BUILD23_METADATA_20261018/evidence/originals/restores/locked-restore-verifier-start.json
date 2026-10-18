@@ -1,0 +1,21 @@
+{
+  "actualPid": 17804,
+  "argv": [
+    "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+    "restore",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.ReleaseVerifier/KeepVaultMac.ReleaseVerifier.csproj",
+    "--artifacts-path",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/verifier",
+    "--configfile",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/NuGet.Config",
+    "--force",
+    "--no-http-cache",
+    "--disable-build-servers",
+    "--nologo",
+    "--locked-mode",
+    "-p:RestoreForceEvaluate=false"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "locked-restore-verifier",
+  "startedUtc": "2026-10-18T10:49:30.078387+00:00"
+}

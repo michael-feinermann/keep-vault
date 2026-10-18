@@ -1,0 +1,35 @@
+{
+  "actualExitCode": 0,
+  "actualPid": 17804,
+  "actualWaitObserved": true,
+  "argv": [
+    "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+    "restore",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.ReleaseVerifier/KeepVaultMac.ReleaseVerifier.csproj",
+    "--artifacts-path",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/verifier",
+    "--configfile",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/NuGet.Config",
+    "--force",
+    "--no-http-cache",
+    "--disable-build-servers",
+    "--nologo",
+    "--locked-mode",
+    "-p:RestoreForceEvaluate=false"
+  ],
+  "captureOrStartFailure": null,
+  "completedUtc": "2026-10-18T10:49:30.438072+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "locked-restore-verifier",
+  "startedUtc": "2026-10-18T10:49:30.078387+00:00",
+  "stderr": {
+    "bytes": 0,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-verifier.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stdout": {
+    "bytes": 214,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-verifier.stdout",
+    "sha256": "f3eda360a0a42f0e03228d3656aa0e6056172e373bdf2f5546ebc6d917224f4f"
+  }
+}

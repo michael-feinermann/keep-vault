@@ -152,7 +152,7 @@ static void VerifyPasswordModelNotice(string bundleDirectory)
 static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
 {
     const string ExpectedThirdPartyNoticesSha256 =
-        "1A02EAD03198231BB35F2AA7576B9BE2EA79E153FDF22AB6E85B90FF8B710C3E";
+        "3DEA0EE0CEFF0CB52C258B3BD11F67A03227BF713E576D0540C76C130C8A8A02";
     bool isAppBundle = string.Equals(Path.GetExtension(directory), ".app", StringComparison.OrdinalIgnoreCase);
     bool isKeepVaultBundle = isAppBundle
         && File.Exists(Path.Combine(directory, "Contents", "MacOS", "Keep Vault"));
@@ -230,7 +230,7 @@ static void VerifyDirectory(string directory, HybridSignaturePolicy policy)
             "QRCoder 1.8.0",
             "HarfBuzzSharp native assets 8.3.1.3 third-party notices",
             "SkiaSharp native assets 3.119.4 third-party notices",
-            ".NET 10.0.11 NativeAOT runtime third-party notices",
+            ".NET 10.0.13 NativeAOT runtime third-party notices",
             "SIL OPEN FONT LICENSE Version 1.1",
             "Brian Gladman",
         ];

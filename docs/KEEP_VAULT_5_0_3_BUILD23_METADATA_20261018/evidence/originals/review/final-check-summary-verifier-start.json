@@ -1,0 +1,10 @@
+{
+  "actualPid": 75427,
+  "argv": [
+    "/usr/bin/python3",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/finalize-check-summary.py"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "final-check-summary-verifier",
+  "startedUtc": "2026-10-18T10:59:09.959099+00:00"
+}

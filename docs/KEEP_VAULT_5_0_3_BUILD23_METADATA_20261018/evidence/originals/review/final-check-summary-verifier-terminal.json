@@ -1,0 +1,24 @@
+{
+  "actualExitCode": 0,
+  "actualPid": 75427,
+  "actualWaitObserved": true,
+  "argv": [
+    "/usr/bin/python3",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/finalize-check-summary.py"
+  ],
+  "captureOrStartFailure": null,
+  "completedUtc": "2026-10-18T10:59:10.064699+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "final-check-summary-verifier",
+  "startedUtc": "2026-10-18T10:59:09.959099+00:00",
+  "stderr": {
+    "bytes": 0,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/final-check-summary-verifier.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stdout": {
+    "bytes": 81,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/final-check-summary-verifier.stdout",
+    "sha256": "e7f3eb0a72ea6395a156018b676d853515ea9930a265a55fa4a1f3b3b6d73768"
+  }
+}

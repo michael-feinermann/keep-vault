@@ -1,0 +1,176 @@
+{
+  "descriptorAndAbaSourceUnchanged": true,
+  "inputs": [
+    {
+      "bytes": 7868,
+      "device": 16777232,
+      "inode": 60366011,
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt",
+      "sha256": "d045ea8a4ecae02aa0f21815a27828cc96baf394b3b4bcf7c58a8b80b221b7aa"
+    },
+    {
+      "bytes": 4032,
+      "declaredSha256": "78e4010b682cb94187fe0b57e50116d0ba271ef81104d1ddb35c80c3d81e3169",
+      "device": 16777232,
+      "inode": 60369848,
+      "label": "Crypto++ 8.9.0",
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/external/cryptopp/License.txt",
+      "sha256": "78e4010b682cb94187fe0b57e50116d0ba271ef81104d1ddb35c80c3d81e3169"
+    },
+    {
+      "bytes": 2741,
+      "declaredSha256": "927b5feda84f7a7f2063998b124829182967f54b954db2c3569e8bd07958bf07",
+      "device": 16777232,
+      "inode": 60370620,
+      "label": "ZPAQ and libdivsufsort-lite",
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/external/zpaq/COPYING",
+      "sha256": "927b5feda84f7a7f2063998b124829182967f54b954db2c3569e8bd07958bf07"
+    },
+    {
+      "bytes": 18195,
+      "declaredSha256": "e01fc30f00792a2bb95136ebe7dd7d01baab62e719ed26ae1b08a3b6b114fdad",
+      "device": 16777232,
+      "inode": 60370527,
+      "label": "Argon2 reference implementation",
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/external/phc-winner-argon2/LICENSE",
+      "sha256": "e01fc30f00792a2bb95136ebe7dd7d01baab62e719ed26ae1b08a3b6b114fdad"
+    },
+    {
+      "bytes": 381,
+      "declaredSha256": "83504f283bf6b5d1ee3ede4d73eba3e2d620f507183a3915e3fbca7d574cb04a",
+      "device": 16777232,
+      "inode": 60369647,
+      "label": "ML-DSA reference implementation used by release tooling",
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/external/ML-DSA-reference/LICENSE",
+      "sha256": "83504f283bf6b5d1ee3ede4d73eba3e2d620f507183a3915e3fbca7d574cb04a"
+    },
+    {
+      "bytes": 1133,
+      "declaredSha256": "afc1653b666b64a2386b7b9b914406904f45c20b9571765d8c1121b513313179",
+      "device": 16777232,
+      "inode": 60390620,
+      "label": "BouncyCastle.Cryptography 2.6.2",
+      "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/bouncycastle.cryptography/2.6.2/LICENSE.md",
+      "sha256": "afc1653b666b64a2386b7b9b914406904f45c20b9571765d8c1121b513313179"
+    },
+    {
+      "bytes": 1147,
+      "declaredSha256": "fde71b40fff47192a02738042cb39fa780635daa00827771bec65366ccd1e46d",
+      "device": 16777232,
+      "inode": 60390634,
+      "label": "QRCoder 1.8.0",
+      "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/qrcoder/1.8.0/LICENSE.txt",
+      "sha256": "fde71b40fff47192a02738042cb39fa780635daa00827771bec65366ccd1e46d"
+    },
+    {
+      "bytes": 1129,
+      "declaredSha256": "89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938",
+      "device": 16777232,
+      "inode": 60390693,
+      "label": "HarfBuzzSharp native assets 8.3.1.3 licence",
+      "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.macos/8.3.1.3/LICENSE.txt",
+      "sha256": "89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938"
+    },
+    {
+      "bytes": 139775,
+      "declaredSha256": "21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5",
+      "device": 16777232,
+      "inode": 60390694,
+      "label": "HarfBuzzSharp native assets 8.3.1.3 third-party notices",
+      "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.macos/8.3.1.3/THIRD-PARTY-NOTICES.txt",
+      "sha256": "21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5"
+    },
+    {
+      "bytes": 1129,
+      "declaredSha256": "89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938",
+      "device": 16777232,
+      "inode": 60391016,
+      "label": "SkiaSharp native assets 3.119.4 licence",
+      "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.macos/3.119.4/LICENSE.txt",
+      "sha256": "89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938"
+    },
+    {
+      "bytes": 139775,
+      "declaredSha256": "21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5",
+      "device": 16777232,
+      "inode": 60391018,
+      "label": "SkiaSharp native assets 3.119.4 third-party notices",
+      "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.macos/3.119.4/THIRD-PARTY-NOTICES.txt",
+      "sha256": "21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5"
+    },
+    {
+      "bytes": 1116,
+      "declaredSha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+      "device": 16777232,
+      "inode": 60392994,
+      "label": ".NET 10.0.13 NativeAOT runtime licence",
+      "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/LICENSE.TXT",
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "bytes": 76623,
+      "declaredSha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+      "device": 16777232,
+      "inode": 60393001,
+      "label": ".NET 10.0.13 NativeAOT runtime third-party notices",
+      "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/THIRD-PARTY-NOTICES.TXT",
+      "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+    }
+  ],
+  "newAssembly": {
+    "bytes": 397411,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/THIRD-PARTY-NOTICES-build23.txt",
+    "sha256": "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02"
+  },
+  "newBuilderExecutionPending": true,
+  "newHeader": {
+    "bytes": 7868,
+    "device": 16777232,
+    "inode": 60366011,
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt",
+    "sha256": "d045ea8a4ecae02aa0f21815a27828cc96baf394b3b4bcf7c58a8b80b221b7aa"
+  },
+  "oldAssemblyReproducedExactly": true,
+  "oldExactAssemblySha256": "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
+  "runtime13IndividualLicenseHashesUnchanged": true,
+  "runtime13LicencePairs": [
+    {
+      "arm64": {
+        "bytes": 1116,
+        "device": 16777232,
+        "inode": 60392994,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/LICENSE.TXT",
+        "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+      },
+      "byteIdentical": true,
+      "name": "LICENSE.TXT",
+      "x64": {
+        "bytes": 1116,
+        "device": 16777232,
+        "inode": 60392299,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-x64/10.0.13/LICENSE.TXT",
+        "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+      }
+    },
+    {
+      "arm64": {
+        "bytes": 76623,
+        "device": 16777232,
+        "inode": 60393001,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/THIRD-PARTY-NOTICES.TXT",
+        "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+      },
+      "byteIdentical": true,
+      "name": "THIRD-PARTY-NOTICES.TXT",
+      "x64": {
+        "bytes": 76623,
+        "device": 16777232,
+        "inode": 60392306,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-x64/10.0.13/THIRD-PARTY-NOTICES.TXT",
+        "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+      }
+    }
+  ],
+  "schema": "keepvault.build23-notice-assembly-review.v1",
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d"
+}

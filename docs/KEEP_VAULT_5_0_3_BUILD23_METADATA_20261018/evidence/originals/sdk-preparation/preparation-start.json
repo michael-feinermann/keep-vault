@@ -1,0 +1,16 @@
+{
+  "actualPreparationPid": 89614,
+  "plan": {
+    "bytes": 1329,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/preparation-plan.json",
+    "sha256": "e69d2910a8f014fe5bc591090d51dd385973a26f611dd5141be3caf64d3f8081"
+  },
+  "productBuildOrRestore": false,
+  "runnerSource": {
+    "bytes": 6387,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/prepare-official-sdk402.py",
+    "sha256": "d1eb9b0e9156671bb2125dee2c7c749a6a7f01b5091a713ff98d646e94667a87"
+  },
+  "schema": "keepvault.sdk402-preparation-start.v1",
+  "startedUtc": "2026-10-18T10:39:51.482637+00:00"
+}

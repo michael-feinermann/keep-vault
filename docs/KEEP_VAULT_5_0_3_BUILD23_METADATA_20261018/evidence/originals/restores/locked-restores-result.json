@@ -1,0 +1,147 @@
+{
+  "commands": [
+    {
+      "actualExitCode": 0,
+      "actualPid": 17795,
+      "actualWaitObserved": true,
+      "argv": [
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+        "restore",
+        "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/KeepVaultMac.csproj",
+        "--artifacts-path",
+        "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/app",
+        "--configfile",
+        "/private/tmp/keep-vault-build23-dependencies-yp574gtl/NuGet.Config",
+        "--force",
+        "--no-http-cache",
+        "--disable-build-servers",
+        "--nologo",
+        "--locked-mode",
+        "-p:RestoreForceEvaluate=false"
+      ],
+      "captureOrStartFailure": null,
+      "completedUtc": "2026-10-18T10:49:29.309437+00:00",
+      "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+      "label": "locked-restore-app",
+      "startedUtc": "2026-10-18T10:49:28.665074+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-app.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 182,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-app.stdout",
+        "sha256": "f5272c24f8183a123aa24dcee07bb568501df18f8ec41a430bd8bd52e53a6954"
+      }
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 17797,
+      "actualWaitObserved": true,
+      "argv": [
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+        "restore",
+        "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj",
+        "--artifacts-path",
+        "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/signer",
+        "--configfile",
+        "/private/tmp/keep-vault-build23-dependencies-yp574gtl/NuGet.Config",
+        "--force",
+        "--no-http-cache",
+        "--disable-build-servers",
+        "--nologo",
+        "--locked-mode",
+        "-p:RestoreForceEvaluate=false"
+      ],
+      "captureOrStartFailure": null,
+      "completedUtc": "2026-10-18T10:49:29.655028+00:00",
+      "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+      "label": "locked-restore-signer",
+      "startedUtc": "2026-10-18T10:49:29.311538+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-signer.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 218,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-signer.stdout",
+        "sha256": "252b0eb842c77a5ce303909f47785f54bd6a5cb7a9659c8b5fc8dc2b21309e42"
+      }
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 17800,
+      "actualWaitObserved": true,
+      "argv": [
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+        "restore",
+        "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/KeepVaultMac.Tests.csproj",
+        "--artifacts-path",
+        "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/tests",
+        "--configfile",
+        "/private/tmp/keep-vault-build23-dependencies-yp574gtl/NuGet.Config",
+        "--force",
+        "--no-http-cache",
+        "--disable-build-servers",
+        "--nologo",
+        "--locked-mode",
+        "-p:RestoreForceEvaluate=false"
+      ],
+      "captureOrStartFailure": null,
+      "completedUtc": "2026-10-18T10:49:30.076461+00:00",
+      "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+      "label": "locked-restore-tests",
+      "startedUtc": "2026-10-18T10:49:29.656978+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-tests.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 326,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-tests.stdout",
+        "sha256": "6bef0f577c1207ac5518928440c08492394b4fdfed0e97bdd380920dbc81409f"
+      }
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 17804,
+      "actualWaitObserved": true,
+      "argv": [
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+        "restore",
+        "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.ReleaseVerifier/KeepVaultMac.ReleaseVerifier.csproj",
+        "--artifacts-path",
+        "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/verifier",
+        "--configfile",
+        "/private/tmp/keep-vault-build23-dependencies-yp574gtl/NuGet.Config",
+        "--force",
+        "--no-http-cache",
+        "--disable-build-servers",
+        "--nologo",
+        "--locked-mode",
+        "-p:RestoreForceEvaluate=false"
+      ],
+      "captureOrStartFailure": null,
+      "completedUtc": "2026-10-18T10:49:30.438072+00:00",
+      "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+      "label": "locked-restore-verifier",
+      "startedUtc": "2026-10-18T10:49:30.078387+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-verifier.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 214,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/locked-restore-verifier.stdout",
+        "sha256": "f3eda360a0a42f0e03228d3656aa0e6056172e373bdf2f5546ebc6d917224f4f"
+      }
+    }
+  ],
+  "completedUtc": "2026-10-18T10:49:30.438447+00:00",
+  "productReleaseApproval": false,
+  "status": "PASS"
+}

@@ -505,7 +505,7 @@ require_notarization=0
 allow_pre_notarization=0
 tool_path_self_test=0
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${repo_root}/KeepVaultMac/Packaging/Keys/mldsa87-public.key}
-expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
+expected_signer_lock_sha256='FC40C8CD65ABF0BBBA995D2A3DB679AE856D4417D3C3356F1448606FEF959898'
 
 usage() {
   print -u2 'Package mode: --package-root ABSROOT must be the first option; only signed release installation is accepted.'
@@ -737,8 +737,8 @@ elif [[ -f ${mldsa_public_key} ]]; then
   create_private_nuget_cache
   provision_verified_dotnet
   selected_sdk=$(run_dotnet_clean --version)
-  [[ ${selected_sdk} == '10.0.400' ]] || {
-    print -u2 'The managed hybrid verifier requires the reviewed official .NET SDK 10.0.400.'
+  [[ ${selected_sdk} == '10.0.402' ]] || {
+    print -u2 'The managed hybrid verifier requires the reviewed official .NET SDK 10.0.402.'
     exit 1
   }
   signer_dll=${private_dotnet_artifacts}/bin/KeepVaultMac.HybridSigner/release/KeepVaultMac.HybridSigner.dll

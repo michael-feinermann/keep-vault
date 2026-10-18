@@ -144,7 +144,7 @@ if ! zmodload zsh/system || ! zmodload -F zsh/stat b:zstat; then
   exit 2
 fi
 
-expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
+expected_third_party_notices_sha256='3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02'
 
 portable_notice_fd_identity() {
   local descriptor=$1
@@ -589,8 +589,8 @@ require_private_nuget_cache_identity || {
   exit 2
 }
 selected_sdk=$(cd ${mac_project} && run_dotnet_clean --version)
-if [[ ${selected_sdk} != '10.0.400' ]]; then
-  print -u2 'Portable release builds require the reviewed official .NET SDK 10.0.400.'
+if [[ ${selected_sdk} != '10.0.402' ]]; then
+  print -u2 'Portable release builds require the reviewed official .NET SDK 10.0.402.'
   exit 2
 fi
 
@@ -727,7 +727,7 @@ publish_exclusively() {
 # Locks are reviewed independently of restoring them. ForceEvaluate must stay
 # disabled; otherwise NuGet silently overrides locked mode on older SDKs.
 portable_lock_files=(${repo_root}/KeepVaultMac.ReleaseVerifier/packages.lock.json ${packaging_dir}/HybridSigner/packages.lock.json)
-portable_lock_hashes=(dd7a30a838aecf6060b4fc28f84392a09d864290e6f5a0a596535b0a40ebeaf8 b07635b8b5cf158644267cbb99e6483d6f947f37d3b9918b4ff39407eb6ba5eb)
+portable_lock_hashes=(4c672fd6b0180f0f51bc07d07ed5d2b9734e65e8a63875bea1328738782b08ac fc40c8cd65abf0bbba995d2a3db679ae856d4417d3c3356f1448606fef959898)
 verify_portable_locks() {
   local lock_index lock_file
   for (( lock_index = 1; lock_index <= ${#portable_lock_files}; lock_index++ )); do

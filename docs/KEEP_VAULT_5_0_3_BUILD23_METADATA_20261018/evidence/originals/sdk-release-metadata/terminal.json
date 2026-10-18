@@ -1,0 +1,22 @@
+{
+  "schema": "keepvault.readonly-sdk-release-metadata-terminal.v1",
+  "observedUtc": "2026-10-18T10:36:30.004793+00:00",
+  "actualPid": 89255,
+  "actualExitCode": 0,
+  "actualWaitObserved": true,
+  "releases.json": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-sdk402-metadata-33ol6tm2/releases.json",
+    "bytes": 1100901,
+    "sha256": "8ba714cf0020d35ff4a3cb163376df2f4ccaf8e6e1d7021fcb1bd7dd628299d2"
+  },
+  "curl.stderr": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-sdk402-metadata-33ol6tm2/curl.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "start.json": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-sdk402-metadata-33ol6tm2/start.json",
+    "bytes": 378,
+    "sha256": "2d433b8f34f6a13f5501d5a37b58d8d20bb1b5c5c4dba0cc7d271845b8accbfc"
+  }
+}

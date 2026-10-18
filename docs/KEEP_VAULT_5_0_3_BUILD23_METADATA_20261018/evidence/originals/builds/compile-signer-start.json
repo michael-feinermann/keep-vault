@@ -1,0 +1,20 @@
+{
+  "actualPid": 73991,
+  "argv": [
+    "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+    "build",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/HybridSigner/KeepVaultMac.HybridSigner.csproj",
+    "-c",
+    "Release",
+    "--no-restore",
+    "--no-incremental",
+    "--artifacts-path",
+    "/private/tmp/keep-vault-build23-dependencies-yp574gtl/artifacts/signer",
+    "--disable-build-servers",
+    "-p:UseSharedCompilation=false",
+    "--nologo"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "compile-signer",
+  "startedUtc": "2026-10-18T10:57:08.318441+00:00"
+}

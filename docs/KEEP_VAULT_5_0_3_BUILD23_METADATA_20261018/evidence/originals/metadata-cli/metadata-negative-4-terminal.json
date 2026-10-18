@@ -1,0 +1,30 @@
+{
+  "actualExitCode": 64,
+  "actualPid": 75051,
+  "actualWaitObserved": true,
+  "argv": [
+    "/bin/zsh",
+    "-f",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/tools/Build-KeepVault-macOS.sh",
+    "--version",
+    "5.0.3",
+    "--build-number",
+    "invalid",
+    "--preflight"
+  ],
+  "captureOrStartFailure": null,
+  "completedUtc": "2026-10-18T10:57:16.532761+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "metadata-negative-4",
+  "startedUtc": "2026-10-18T10:57:16.449445+00:00",
+  "stderr": {
+    "bytes": 64,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/metadata-negative-4.stderr",
+    "sha256": "2c58cf479434c9216072b2ea897cfa0146a79cc2658c1ca6909f2e2307977d63"
+  },
+  "stdout": {
+    "bytes": 0,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/metadata-negative-4.stdout",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

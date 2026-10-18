@@ -1,0 +1,10 @@
+{
+  "allFilesUtf8": true,
+  "classification": "SELF_REVIEW_NOT_INDEPENDENT_AUDIT",
+  "findings": [],
+  "rawLogsCopied": false,
+  "schema": "keepvault.public-build23-metadata-export-privacy.v1",
+  "scope": "Exact copied bytes plus specific key/factor patterns and explicit no rawlog/program/PDF/image selection",
+  "sdkOrCacheCopied": false,
+  "secretFilesRead": false
+}

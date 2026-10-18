@@ -460,7 +460,7 @@ core_identifier='de.michael-feinermann.keep-vault.core'
 configuration='Release'
 architecture='universal'
 marketing_version='5.0.3'
-build_version='22'
+build_version='23'
 preflight_only=0
 tool_path_self_test=0
 notice_binding_self_test=0
@@ -487,9 +487,9 @@ pfx_wrapping_key_file=${KEEPVAULT_PFX_WRAPPING_KEY_FILE:-}
 
 mldsa_public_key=${KEEPVAULT_MLDSA_PUBLIC_KEY:-${packaging_dir}/Keys/mldsa87-public.key}
 dotnet_command=''
-expected_main_lock_sha256='B111FBCD11FBF46DF0E61164109CBD8BFB2C22B80EC79E4B4D1EA0ED7FE07DE7'
-expected_signer_lock_sha256='445B25F57A3A97CADAD21E7DF8F0129D39B52EB921C87EA2335D7108A761ED03'
-expected_tests_lock_sha256='EE7FEDF92179705DE025536CDCF1CB6B5991AA69D457B26103B3E420B9957A24'
+expected_main_lock_sha256='A5F328BF88412328A168232DA570312EA48496BED20DF5E8BF5A7A4CF79335EC'
+expected_signer_lock_sha256='FC40C8CD65ABF0BBBA995D2A3DB679AE856D4417D3C3356F1448606FEF959898'
+expected_tests_lock_sha256='F0221BE40F1D874F7D1DA2DFCFE5770B097E708D35BC5D52EFEC421A1A892E6E'
 
 usage() {
   print -u2 'Usage: Build-KeepVault-macOS.sh [--architecture universal|arm64] [--identity HASH_OR_NAME]'
@@ -609,8 +609,8 @@ if [[ ! ${marketing_version} =~ '^[0-9]+([.][0-9]+){1,2}$' || ! ${build_version}
   print -u2 'Version values must be numeric (for example 1.0.0 and build 1).'
   exit 64
 fi
-if [[ ${marketing_version} != '5.0.3' || ${build_version} != '22' ]]; then
-  print -u2 'RELEASE GATE: this source pins Keep Vault 5.0.3 build 22; other version/build pairs require a matching reviewed installation verifier.'
+if [[ ${marketing_version} != '5.0.3' || ${build_version} != '23' ]]; then
+  print -u2 'RELEASE GATE: this source pins Keep Vault 5.0.3 build 23; other version/build pairs require a matching reviewed installation verifier.'
   exit 64
 fi
 if [[ -L ${repo_root} || -L ${mac_project} || -L ${packaging_dir} ]]; then
@@ -809,8 +809,8 @@ if [[ ! -x ${dotnet_command} || -L ${dotnet_command} ]]; then
   exit 1
 fi
 selected_sdk=$(cd ${mac_project} && run_dotnet_clean --version)
-if [[ ${selected_sdk} != '10.0.400' ]]; then
-  print -u2 'Keep Vault release builds require the reviewed official .NET SDK 10.0.400.'
+if [[ ${selected_sdk} != '10.0.402' ]]; then
+  print -u2 'Keep Vault release builds require the reviewed official .NET SDK 10.0.402.'
   exit 1
 fi
 
@@ -983,7 +983,7 @@ expected_lock_hashes=(
   ${expected_main_lock_sha256}
   ${expected_signer_lock_sha256}
   ${expected_tests_lock_sha256}
-  DD7A30A838AECF6060B4FC28F84392A09D864290E6F5A0A596535B0A40EBEAF8
+  4C672FD6B0180F0F51BC07D07ED5D2B9734E65E8A63875BEA1328738782B08AC
 )
 verify_reviewed_locks() {
   local lock_index lock_file expected_lock_hash actual_lock_hash
@@ -1255,15 +1255,15 @@ ditto ${merged_publish} ${macos_dir}
 # covered by Apple's CodeResources seal and Keep Vault's detached manifests.
 third_party_header=${packaging_dir}/ThirdPartyNoticesHeader.txt
 third_party_notices=${resources_dir}/THIRD-PARTY-NOTICES.txt
-expected_third_party_header_sha256='3d3f4fc0956a0b72726044f2e708da2724be356597b5d32d14ce444ef7a92379'
-expected_third_party_notices_sha256='1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e'
+expected_third_party_header_sha256='d045ea8a4ecae02aa0f21815a27828cc96baf394b3b4bcf7c58a8b80b221b7aa'
+expected_third_party_notices_sha256='3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02'
 create_bound_notice_output ${third_party_notices}
 copy_pinned_notice_source 'reviewed third-party-notice header' \
   ${third_party_header} ${expected_third_party_header_sha256} 0
 
-nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.11
+nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13
 if [[ ! -d ${nativeaot_notice_root} ]]; then
-  nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-x64/10.0.11
+  nativeaot_notice_root=${private_nuget_packages}/microsoft.netcore.app.runtime.nativeaot.osx-x64/10.0.13
 fi
 append_pinned_notice 'Crypto++ 8.9.0' \
   ${repo_root}/external/cryptopp/License.txt \
@@ -1295,10 +1295,10 @@ append_pinned_notice 'SkiaSharp native assets 3.119.4 licence' \
 append_pinned_notice 'SkiaSharp native assets 3.119.4 third-party notices' \
   ${private_nuget_packages}/skiasharp.nativeassets.macos/3.119.4/THIRD-PARTY-NOTICES.txt \
   21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5
-append_pinned_notice '.NET 10.0.11 NativeAOT runtime licence' \
+append_pinned_notice '.NET 10.0.13 NativeAOT runtime licence' \
   ${nativeaot_notice_root}/LICENSE.TXT \
   cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310
-append_pinned_notice '.NET 10.0.11 NativeAOT runtime third-party notices' \
+append_pinned_notice '.NET 10.0.13 NativeAOT runtime third-party notices' \
   ${nativeaot_notice_root}/THIRD-PARTY-NOTICES.TXT \
   66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54
 

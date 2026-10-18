@@ -1,0 +1,29 @@
+{
+  "actualPid": 76071,
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/close-review.py"
+  ],
+  "startedUtc": "2026-10-18T11:06:14.784120+00:00",
+  "scriptBinding": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/close-review.py",
+    "bytes": 2828,
+    "sha256": "51226949e96a2337560ebd7ebc5e9f996a241235f02568062684226e841bd163"
+  },
+  "completedUtc": "2026-10-18T11:06:15.267577+00:00",
+  "actualExitCode": 0,
+  "actualWaitObserved": true,
+  "stdout": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/close.stdout",
+    "bytes": 293,
+    "sha256": "7c4e6f22f263d0de8f99a01636ed72adc140d7212a5e4e765dd37984f46a90f5"
+  },
+  "stderr": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/close.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

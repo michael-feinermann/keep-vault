@@ -1,0 +1,22 @@
+{
+  "actualOrchestratorPid": 73982,
+  "groups": [
+    "smoke.release-companion-version",
+    "gui.key-sheet-operation-progress",
+    "keysheet.pair-cleanup-identity",
+    "keysheet.cleanup-failure-visible",
+    "keysheet.pair-atomic-commit"
+  ],
+  "initialSelectorFailurePreserved": {
+    "bytes": 7962,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/short-checks-failure.json",
+    "sha256": "6a1cd508658f880861c8ec4c53accefec358e5c867dbbbb1d034e9cb2c093650"
+  },
+  "installedGuiOrReleaseApproval": false,
+  "source": {
+    "bytes": 3255,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/run-short-checks-continuation.py",
+    "sha256": "e14a8d1a0b363c9335da2538a7a2e6c189717fdfcf6d4181d3ac99bad5619731"
+  },
+  "startedUtc": "2026-10-18T10:57:08.316746+00:00"
+}

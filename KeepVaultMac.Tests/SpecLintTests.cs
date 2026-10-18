@@ -26,7 +26,9 @@ internal static class SpecLintTests
         string? IlLinkVersion,
         string LockFileName = "packages.lock.json");
 
-    private const string NativeAotPackVersion = "10.0.11";
+    private const string NativeAotPackVersion = "10.0.13";
+    // Frozen, nonshipping reference harnesses are not rebuilt by this macOS release.
+    private const string LegacyReferenceIlLinkVersion = "10.0.11";
 
     /// <summary>
     /// Constructions that must not exist in shipping source at all.
@@ -187,10 +189,10 @@ internal static class SpecLintTests
             new("QrCodeScannerWindows", "QrScanner.Tests.csproj", "net10.0-windows10.0.19041", ["win-x64"], null, null, "packages.tests.lock.json"),
             // Test-only harnesses retain the inherited Windows RID plus the
             // explicit macOS reference-run RID. Neither is a shipping graph.
-            new("native/tests/camellia_serpent_reference", "CipherReference.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
-            new("native/tests/claim_grain", "ClaimGrain.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
-            new("native/tests/managed_executor", "ManagedExecutor.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
-            new("native/tests/native_benchmark", "NativeBenchmark.csproj", "net10.0", ["osx-arm64", "win-x64"], null, NativeAotPackVersion),
+            new("native/tests/camellia_serpent_reference", "CipherReference.csproj", "net10.0", ["osx-arm64", "win-x64"], null, LegacyReferenceIlLinkVersion),
+            new("native/tests/claim_grain", "ClaimGrain.csproj", "net10.0", ["osx-arm64", "win-x64"], null, LegacyReferenceIlLinkVersion),
+            new("native/tests/managed_executor", "ManagedExecutor.csproj", "net10.0", ["osx-arm64", "win-x64"], null, LegacyReferenceIlLinkVersion),
+            new("native/tests/native_benchmark", "NativeBenchmark.csproj", "net10.0", ["osx-arm64", "win-x64"], null, LegacyReferenceIlLinkVersion),
         ];
 
         var violations = new List<string>();
@@ -282,7 +284,7 @@ internal static class SpecLintTests
             {
                 using JsonDocument document = JsonDocument.Parse(RepositoryLayout.ReadText(path));
                 JsonElement sdk = document.RootElement.GetProperty("sdk");
-                string expectedSdk = relativePath == "global.json" ? "10.0.401" : "10.0.400";
+                string expectedSdk = relativePath == "global.json" ? "10.0.401" : "10.0.402";
                 if (sdk.GetProperty("version").GetString() != expectedSdk
                     || sdk.GetProperty("rollForward").GetString() != expectedRollForward
                     || sdk.GetProperty("allowPrerelease").ValueKind != JsonValueKind.False)

@@ -1,0 +1,16 @@
+{
+  "actualPid": 76071,
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/close-review.py"
+  ],
+  "startedUtc": "2026-10-18T11:06:14.784120+00:00",
+  "scriptBinding": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/close-review.py",
+    "bytes": 2828,
+    "sha256": "51226949e96a2337560ebd7ebc5e9f996a241235f02568062684226e841bd163"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "actualPid": 75051,
+  "argv": [
+    "/bin/zsh",
+    "-f",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/tools/Build-KeepVault-macOS.sh",
+    "--version",
+    "5.0.3",
+    "--build-number",
+    "invalid",
+    "--preflight"
+  ],
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac",
+  "label": "metadata-negative-4",
+  "startedUtc": "2026-10-18T10:57:16.449445+00:00"
+}

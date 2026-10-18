@@ -1,0 +1,20 @@
+{
+  "schema": "keepvault.official-sdk402-preparation-plan.v1",
+  "status": "PREPARATION_ONLY",
+  "productChanges": false,
+  "originalProvisioner": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/tools/Provision-VerifiedDotnet-macOS.sh",
+    "sha256": "bdf9b70f87b55d104e13cb29fea0a70ae8c0558c2ec9e3b01b0f32fa075ddf2e"
+  },
+  "newProvisioner": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/Provision-VerifiedDotnet-10.0.402-macOS.sh",
+    "sha256": "7a5652b052bd099998ad48ad47c7a8d0b648d2bb469e4b0986bf3c8230ab82e0"
+  },
+  "exactChangedConstantCount": 3,
+  "allOtherSourceBytesUnchanged": true,
+  "metadataTerminal": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-sdk402-metadata-33ol6tm2/terminal.json",
+  "privateNamespace": "/private/tmp/keep-vault-official-sdk402-cti3v2ua",
+  "archivePath": "/private/tmp/keep-vault-official-sdk402-cti3v2ua/dotnet-sdk-10.0.402-osx-arm64.tar.gz",
+  "sdkRoot": "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk",
+  "archiveSha512": "ee0d379c144ebddef6efe851e1514883d1b695430d13b3fb13e8153f8476e1e5ac7abc42c08668471aaf4d738ff367cf53009845f94d224ba126febe74d00b75"
+}

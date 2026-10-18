@@ -1,0 +1,189 @@
+{
+  "archiveMemberCopyCount": 8,
+  "completedUtc": "2026-10-18T11:05:25.298095+00:00",
+  "descriptorOwnerSingleLinkHashAbaFinalizerSourceUnchanged": true,
+  "freshProductNoticeGateTestByReviewer": false,
+  "inputCount": 13,
+  "inputs": [
+    {
+      "baseUnchanged": false,
+      "headerIntentionalChange": true,
+      "input": {
+        "bytes": 7868,
+        "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt",
+        "sha256": "d045ea8a4ecae02aa0f21815a27828cc96baf394b3b4bcf7c58a8b80b221b7aa"
+      },
+      "trackedBaseSource": "KeepVaultMac/Packaging/ThirdPartyNoticesHeader.txt"
+    },
+    {
+      "baseUnchanged": true,
+      "headerIntentionalChange": false,
+      "input": {
+        "bytes": 4032,
+        "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/external/cryptopp/License.txt",
+        "sha256": "78e4010b682cb94187fe0b57e50116d0ba271ef81104d1ddb35c80c3d81e3169"
+      },
+      "trackedBaseSource": "external/cryptopp/License.txt"
+    },
+    {
+      "baseUnchanged": true,
+      "headerIntentionalChange": false,
+      "input": {
+        "bytes": 2741,
+        "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/external/zpaq/COPYING",
+        "sha256": "927b5feda84f7a7f2063998b124829182967f54b954db2c3569e8bd07958bf07"
+      },
+      "trackedBaseSource": "external/zpaq/COPYING"
+    },
+    {
+      "baseUnchanged": true,
+      "headerIntentionalChange": false,
+      "input": {
+        "bytes": 18195,
+        "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/external/phc-winner-argon2/LICENSE",
+        "sha256": "e01fc30f00792a2bb95136ebe7dd7d01baab62e719ed26ae1b08a3b6b114fdad"
+      },
+      "trackedBaseSource": "external/phc-winner-argon2/LICENSE"
+    },
+    {
+      "baseUnchanged": true,
+      "headerIntentionalChange": false,
+      "input": {
+        "bytes": 381,
+        "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/external/ML-DSA-reference/LICENSE",
+        "sha256": "83504f283bf6b5d1ee3ede4d73eba3e2d620f507183a3915e3fbca7d574cb04a"
+      },
+      "trackedBaseSource": "external/ML-DSA-reference/LICENSE"
+    },
+    {
+      "archiveMemberByteIdentical": true,
+      "input": {
+        "bytes": 1133,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/bouncycastle.cryptography/2.6.2/LICENSE.md",
+        "sha256": "afc1653b666b64a2386b7b9b914406904f45c20b9571765d8c1121b513313179"
+      },
+      "member": "LICENSE.md",
+      "sourceArchive": {
+        "bytes": 8276422,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/bouncycastle.cryptography/2.6.2/bouncycastle.cryptography.2.6.2.nupkg",
+        "sha256": "623936fb1fd171579c706390390711282898cf2c759a5167852e5ab82208f8cb"
+      }
+    },
+    {
+      "archiveMemberByteIdentical": true,
+      "input": {
+        "bytes": 1147,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/qrcoder/1.8.0/LICENSE.txt",
+        "sha256": "fde71b40fff47192a02738042cb39fa780635daa00827771bec65366ccd1e46d"
+      },
+      "member": "LICENSE.txt",
+      "sourceArchive": {
+        "bytes": 1006754,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/qrcoder/1.8.0/qrcoder.1.8.0.nupkg",
+        "sha256": "52f39e145c5467f6dd7660ece886a689818321f831c9b13f092a4fcb2e433312"
+      }
+    },
+    {
+      "archiveMemberByteIdentical": true,
+      "input": {
+        "bytes": 1129,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.macos/8.3.1.3/LICENSE.txt",
+        "sha256": "89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938"
+      },
+      "member": "LICENSE.txt",
+      "sourceArchive": {
+        "bytes": 1358322,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.macos/8.3.1.3/harfbuzzsharp.nativeassets.macos.8.3.1.3.nupkg",
+        "sha256": "e962ac27f8c5f691e7696710bda7b3739015e9f96edd7b0ec50b3b8b8046609b"
+      }
+    },
+    {
+      "archiveMemberByteIdentical": true,
+      "input": {
+        "bytes": 139775,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.macos/8.3.1.3/THIRD-PARTY-NOTICES.txt",
+        "sha256": "21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5"
+      },
+      "member": "THIRD-PARTY-NOTICES.txt",
+      "sourceArchive": {
+        "bytes": 1358322,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/harfbuzzsharp.nativeassets.macos/8.3.1.3/harfbuzzsharp.nativeassets.macos.8.3.1.3.nupkg",
+        "sha256": "e962ac27f8c5f691e7696710bda7b3739015e9f96edd7b0ec50b3b8b8046609b"
+      }
+    },
+    {
+      "archiveMemberByteIdentical": true,
+      "input": {
+        "bytes": 1129,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.macos/3.119.4/LICENSE.txt",
+        "sha256": "89101e35a8c66fd4d6dffc1763259161d35cb564c169714ec227a768c89f2938"
+      },
+      "member": "LICENSE.txt",
+      "sourceArchive": {
+        "bytes": 7056004,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.macos/3.119.4/skiasharp.nativeassets.macos.3.119.4.nupkg",
+        "sha256": "f7f2f539ce5bba337aa4a8d6eac25caf58cbdd12edf3f32ddcc98294e730cf2c"
+      }
+    },
+    {
+      "archiveMemberByteIdentical": true,
+      "input": {
+        "bytes": 139775,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.macos/3.119.4/THIRD-PARTY-NOTICES.txt",
+        "sha256": "21504c46c4c58aa64c1055bd2dcbc5f9a136b4b8c412ed3cc6740e22c5b127f5"
+      },
+      "member": "THIRD-PARTY-NOTICES.txt",
+      "sourceArchive": {
+        "bytes": 7056004,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/skiasharp.nativeassets.macos/3.119.4/skiasharp.nativeassets.macos.3.119.4.nupkg",
+        "sha256": "f7f2f539ce5bba337aa4a8d6eac25caf58cbdd12edf3f32ddcc98294e730cf2c"
+      }
+    },
+    {
+      "archiveMemberByteIdentical": true,
+      "input": {
+        "bytes": 1116,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/LICENSE.TXT",
+        "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+      },
+      "member": "LICENSE.TXT",
+      "sourceArchive": {
+        "bytes": 25694998,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/microsoft.netcore.app.runtime.nativeaot.osx-arm64.10.0.13.nupkg",
+        "sha256": "b19c570edaac0662288f48e15196a9b84a5d0338f41463a3804b557702f885fe"
+      }
+    },
+    {
+      "archiveMemberByteIdentical": true,
+      "input": {
+        "bytes": 76623,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/THIRD-PARTY-NOTICES.TXT",
+        "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+      },
+      "member": "THIRD-PARTY-NOTICES.TXT",
+      "sourceArchive": {
+        "bytes": 25694998,
+        "path": "/private/tmp/keep-vault-build23-dependencies-yp574gtl/packages/microsoft.netcore.app.runtime.nativeaot.osx-arm64/10.0.13/microsoft.netcore.app.runtime.nativeaot.osx-arm64.10.0.13.nupkg",
+        "sha256": "b19c570edaac0662288f48e15196a9b84a5d0338f41463a3804b557702f885fe"
+      }
+    }
+  ],
+  "newAssembly": {
+    "bytes": 397411,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/THIRD-PARTY-NOTICES-build23.txt",
+    "sha256": "3dea0ee0ceff0cb52c258b3bd11f67a03227bf713e576d0540c76c130c8a8a02"
+  },
+  "oldAssemblyReproducedSha256": "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
+  "oldBytesDifferFromNewExactWholeFilePin": true,
+  "reviewScript": {
+    "bytes": 3644,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-build23-metadata-review-6p6xt5kl/review-notice.py",
+    "sha256": "71378a0e5d1ca89f252ad5d85da1cdb881cfd1d43c6a190e4291df74ff6fd72e"
+  },
+  "reviewerPid": 76024,
+  "runtime13ArmAndIntelLicencePairsByteIdentical": true,
+  "schema": "keepvault.independent-build23-notice-review.v1",
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+  "sourceChangesByReviewer": 0,
+  "status": "READ_ONLY_ASSEMBLY_ORIGINAL_ARCHIVE_BYTES_PASS"
+}

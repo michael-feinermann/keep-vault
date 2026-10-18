@@ -1,0 +1,146 @@
+{
+  "actualUncommittedFileManifest": "originals/review/metadata-file-manifest.json",
+  "classification": "DERIVED_NOT_A_NEW_TEST_EXECUTION",
+  "intentionalDependencyGenerationRestoreCount": 4,
+  "lockedRestoreCount": 4,
+  "managedBuildCount": 3,
+  "metadataRejectionCount": 4,
+  "metadataRejectionExit": 64,
+  "originalHelperFailuresRetained": 2,
+  "overallReleaseApproval": false,
+  "passedGroups": [
+    {
+      "actualTestPid": 18188,
+      "actualWaitExitCode": 0,
+      "id": "spec.lockfile-runtimes",
+      "result": {
+        "bytes": 694,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/short-check-1-spec.lockfile-runtimes.test-results.json",
+        "sha256": "b34925fa1ae873f13e19b7d272c8bf4f3c2f35474fecbe3015fa6e517cf14f7d"
+      },
+      "seconds": 0.113,
+      "terminal": {
+        "bytes": 1386,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/short-check-1-spec.lockfile-runtimes-terminal.json",
+        "sha256": "672552a04ca21a10a28522f23a4f01712f229e93506d540e910ff91b3eba5b09"
+      }
+    },
+    {
+      "actualTestPid": 18194,
+      "actualWaitExitCode": 0,
+      "id": "spec.no-legacy-source",
+      "result": {
+        "bytes": 684,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/short-check-2-spec.no-legacy-source.test-results.json",
+        "sha256": "db2b1584ce7815961ed72f50349afe567281c3fd0a5875b384e02fe564f3d589"
+      },
+      "seconds": 0.143,
+      "terminal": {
+        "bytes": 1382,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/short-check-2-spec.no-legacy-source-terminal.json",
+        "sha256": "75a881ee2cc160f74a5124a8436b6ad6c8c41c3535e7c73e987efe669a2556d7"
+      }
+    },
+    {
+      "actualTestPid": 18199,
+      "actualWaitExitCode": 0,
+      "id": "packaging.hybrid-key-separation",
+      "result": {
+        "bytes": 725,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/short-check-3-packaging.hybrid-key-separation.test-results.json",
+        "sha256": "613293328775af0474f60a004c7115211332e0e1b08df587e3696790f94e640e"
+      },
+      "seconds": 73.884,
+      "terminal": {
+        "bytes": 1422,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/short-check-3-packaging.hybrid-key-separation-terminal.json",
+        "sha256": "5f7f743e7f00998a0221a3747f20017820cdedf1f199a2ff369ec83e5e6840a6"
+      }
+    },
+    {
+      "actualTestPid": 74002,
+      "actualWaitExitCode": 0,
+      "id": "smoke.release-companion-version",
+      "result": {
+        "bytes": 684,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-4-smoke.release-companion-version.test-results.json",
+        "sha256": "1511368827ced110d0f532d8eeb201891cad7cfd1e096a5cc0ced39b07810af8"
+      },
+      "seconds": 1.355,
+      "terminal": {
+        "bytes": 1425,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-4-smoke.release-companion-version-terminal.json",
+        "sha256": "2a1d625ababf329d700b0232a15fb4002802b9f616428bc857f4ba431fb18209"
+      }
+    },
+    {
+      "actualTestPid": 74861,
+      "actualWaitExitCode": 0,
+      "id": "gui.key-sheet-operation-progress",
+      "result": {
+        "bytes": 763,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-5-gui.key-sheet-operation-progress.test-results.json",
+        "sha256": "50a0d13e4a75d8192cc7ebbbeab6362e00b459bff1be702538f019a02559cee3"
+      },
+      "seconds": 1.791,
+      "terminal": {
+        "bytes": 1447,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-5-gui.key-sheet-operation-progress-terminal.json",
+        "sha256": "62b71dbc91b20984753b422d7b4063977e7b3cb65b752899117ddca18b97dd08"
+      }
+    },
+    {
+      "actualTestPid": 74871,
+      "actualWaitExitCode": 0,
+      "id": "keysheet.pair-cleanup-identity",
+      "result": {
+        "bytes": 705,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-6-keysheet.pair-cleanup-identity.test-results.json",
+        "sha256": "484d4f55dd919379ea432a7f04ff20f91b9fc8c72dc8b72166c0ee8ae3ecff3f"
+      },
+      "seconds": 0.427,
+      "terminal": {
+        "bytes": 1439,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-6-keysheet.pair-cleanup-identity-terminal.json",
+        "sha256": "2557835ed2858ca47f882f016ee84050c6eeae298cfd73c303668b2d851cc731"
+      }
+    },
+    {
+      "actualTestPid": 74877,
+      "actualWaitExitCode": 0,
+      "id": "keysheet.cleanup-failure-visible",
+      "result": {
+        "bytes": 716,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-7-keysheet.cleanup-failure-visible.test-results.json",
+        "sha256": "9b9755bcb6776d4994d89fef4bb261e6ed663715f13f99797abbebf62c8ea621"
+      },
+      "seconds": 0.43,
+      "terminal": {
+        "bytes": 1447,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-7-keysheet.cleanup-failure-visible-terminal.json",
+        "sha256": "9ed91f5090f4577e0d4ce3eff04aa62039f2c3b9ec24550c56685c2eae8370fb"
+      }
+    },
+    {
+      "actualTestPid": 74884,
+      "actualWaitExitCode": 0,
+      "id": "keysheet.pair-atomic-commit",
+      "result": {
+        "bytes": 703,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-8-keysheet.pair-atomic-commit.test-results.json",
+        "sha256": "cfba3161f55fdea217a96f289c5484d1edaeae7639a49cd1272d078edeb5f86e"
+      },
+      "seconds": 0.484,
+      "terminal": {
+        "bytes": 1427,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/build23-metadata-transition-lj2qwwic/continuation-check-8-keysheet.pair-atomic-commit-terminal.json",
+        "sha256": "35f0c53379641fa58e301b97f5c0e0671702ba9a77de867b5d11e374f055b400"
+      }
+    }
+  ],
+  "schema": "keepvault.public-build23-targeted-checks-overview.v1",
+  "sourceBase": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+  "summaryVerifierExit": 0,
+  "summaryVerifierIsNotRetroactiveWrapperPass": true,
+  "summaryVerifierPid": 75427
+}

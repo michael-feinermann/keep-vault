@@ -1,0 +1,364 @@
+[
+  {
+    "framework": "net10.0",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "40yrBMsLEcjixBR4G+FiUaBPvxXIPSKJ2OgSrbOZcmSDBda4Sb0k7BWrfDpIvn3IvvDzwOL/tEPa6gDQfh6aRw==",
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "IBf7lbovvjGWVWXZX5cJ/cO0WXbId0Zq4BuSeT94mGZuOAP66oMeH9PTBZ9Jpp3Jb6jtK0qm/NyUbPRo1gC/wQ==",
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "Microsoft.NET.ILLink.Tasks"
+  },
+  {
+    "framework": "net10.0",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA==",
+      "requested": "[8.0.2, )",
+      "resolved": "8.0.2",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "resolved": "8.0.1",
+      "type": "Transitive"
+    },
+    "package": "System.Security.Cryptography.Pkcs"
+  },
+  {
+    "framework": "net10.0/osx-arm64",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+      "dependencies": {
+        "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.13"
+      },
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
+      "dependencies": {
+        "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.11"
+      },
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0/osx-arm64",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA==",
+      "requested": "[8.0.2, )",
+      "resolved": "8.0.2",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "resolved": "8.0.1",
+      "type": "Transitive"
+    },
+    "package": "System.Security.Cryptography.Pkcs"
+  },
+  {
+    "framework": "net10.0/osx-arm64",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "UlaKJbhvcFO/HC+zY5q3r07uGzwIGE5z49EeGj51mbIxu4XZBp87sr2IKi8lOb9eTO2e2M9tMOEpOtaqPzSoTA==",
+      "resolved": "10.0.13",
+      "type": "Transitive"
+    },
+    "old": {
+      "contentHash": "4cxybmyqJI3zZIKkNM1Ft0aq6Q4q6b4SJ11Np5j9lrHHurfheI66dUshpZD/UEMjMqAdg9O03AABAYLYSUzwyw==",
+      "resolved": "10.0.11",
+      "type": "Transitive"
+    },
+    "package": "runtime.osx-arm64.Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0/osx-x64",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+      "dependencies": {
+        "runtime.osx-x64.Microsoft.DotNet.ILCompiler": "10.0.13"
+      },
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
+      "dependencies": {
+        "runtime.osx-x64.Microsoft.DotNet.ILCompiler": "10.0.11"
+      },
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0/osx-x64",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA==",
+      "requested": "[8.0.2, )",
+      "resolved": "8.0.2",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "resolved": "8.0.1",
+      "type": "Transitive"
+    },
+    "package": "System.Security.Cryptography.Pkcs"
+  },
+  {
+    "framework": "net10.0/osx-x64",
+    "lock": "KeepVaultMac/packages.lock.json",
+    "new": {
+      "contentHash": "tRiYgozS46av6ilf04bZTsi9+TPGsK95znWNdwqmFo7rY7Sygl/ittwGcf10VCYw2THlzReUHS1n2Y6VqMA6aQ==",
+      "resolved": "10.0.13",
+      "type": "Transitive"
+    },
+    "old": {
+      "contentHash": "Nf7MRJg0HZ4G7icNbW8T49O/9UU6x8XoUPffkk3Uh+r+mDAUFHkhIptUc0wDdIRrouJrLt0IJp0LiaQJUB7DbA==",
+      "resolved": "10.0.11",
+      "type": "Transitive"
+    },
+    "package": "runtime.osx-x64.Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0",
+    "lock": "KeepVaultMac.Tests/packages.lock.json",
+    "new": {
+      "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA==",
+      "resolved": "8.0.2",
+      "type": "Transitive"
+    },
+    "old": {
+      "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "resolved": "8.0.1",
+      "type": "Transitive"
+    },
+    "package": "System.Security.Cryptography.Pkcs"
+  },
+  {
+    "framework": "net10.0",
+    "lock": "KeepVaultMac.Tests/packages.lock.json",
+    "new": {
+      "dependencies": {
+        "Avalonia": "[12.1.1, )",
+        "Avalonia.Desktop": "[12.1.1, )",
+        "Avalonia.Fonts.Inter": "[12.1.1, )",
+        "Avalonia.Themes.Fluent": "[12.1.1, )",
+        "BouncyCastle.Cryptography": "[2.6.2, )",
+        "PDFsharp": "[6.2.4, )",
+        "QRCoder": "[1.8.0, )",
+        "System.Security.Cryptography.Pkcs": "[8.0.2, )"
+      },
+      "type": "Project"
+    },
+    "old": {
+      "dependencies": {
+        "Avalonia": "[12.1.1, )",
+        "Avalonia.Desktop": "[12.1.1, )",
+        "Avalonia.Fonts.Inter": "[12.1.1, )",
+        "Avalonia.Themes.Fluent": "[12.1.1, )",
+        "BouncyCastle.Cryptography": "[2.6.2, )",
+        "PDFsharp": "[6.2.4, )",
+        "QRCoder": "[1.8.0, )"
+      },
+      "type": "Project"
+    },
+    "package": "Keep Vault"
+  },
+  {
+    "framework": "net10.0/osx-arm64",
+    "lock": "KeepVaultMac.Tests/packages.lock.json",
+    "new": {
+      "contentHash": "VWACYq0JGxi9sw3TonSSV4B2MfhYk5nhgOtp9wbrt5NFOtUetFqHkMZylcCwPX+117cBJH5EnIzIy6X4OKn/kA==",
+      "resolved": "8.0.2",
+      "type": "Transitive"
+    },
+    "old": {
+      "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "resolved": "8.0.1",
+      "type": "Transitive"
+    },
+    "package": "System.Security.Cryptography.Pkcs"
+  },
+  {
+    "framework": "net10.0",
+    "lock": "KeepVaultMac/Packaging/HybridSigner/packages.lock.json",
+    "new": {
+      "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw==",
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "8IV+rI3xN/Mkq9MsSX7VZTv9T9Wt+tyhHLwBX9VNZBk8m8kknEs1JeTSjI2x9M2L/fSja+c2WSE5n5Yy0GXdoQ==",
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "System.Security.Cryptography.Pkcs"
+  },
+  {
+    "framework": "net10.0/osx-arm64",
+    "lock": "KeepVaultMac/Packaging/HybridSigner/packages.lock.json",
+    "new": {
+      "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw==",
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "8IV+rI3xN/Mkq9MsSX7VZTv9T9Wt+tyhHLwBX9VNZBk8m8kknEs1JeTSjI2x9M2L/fSja+c2WSE5n5Yy0GXdoQ==",
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "System.Security.Cryptography.Pkcs"
+  },
+  {
+    "framework": "net10.0",
+    "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json",
+    "new": {
+      "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0",
+    "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json",
+    "new": {
+      "contentHash": "40yrBMsLEcjixBR4G+FiUaBPvxXIPSKJ2OgSrbOZcmSDBda4Sb0k7BWrfDpIvn3IvvDzwOL/tEPa6gDQfh6aRw==",
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "IBf7lbovvjGWVWXZX5cJ/cO0WXbId0Zq4BuSeT94mGZuOAP66oMeH9PTBZ9Jpp3Jb6jtK0qm/NyUbPRo1gC/wQ==",
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "Microsoft.NET.ILLink.Tasks"
+  },
+  {
+    "framework": "net10.0/osx-arm64",
+    "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json",
+    "new": {
+      "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+      "dependencies": {
+        "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.13"
+      },
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
+      "dependencies": {
+        "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.11"
+      },
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0/osx-arm64",
+    "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json",
+    "new": {
+      "contentHash": "UlaKJbhvcFO/HC+zY5q3r07uGzwIGE5z49EeGj51mbIxu4XZBp87sr2IKi8lOb9eTO2e2M9tMOEpOtaqPzSoTA==",
+      "resolved": "10.0.13",
+      "type": "Transitive"
+    },
+    "old": {
+      "contentHash": "4cxybmyqJI3zZIKkNM1Ft0aq6Q4q6b4SJ11Np5j9lrHHurfheI66dUshpZD/UEMjMqAdg9O03AABAYLYSUzwyw==",
+      "resolved": "10.0.11",
+      "type": "Transitive"
+    },
+    "package": "runtime.osx-arm64.Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0/osx-x64",
+    "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json",
+    "new": {
+      "contentHash": "MnT222WlxhelguLZTQx9soBHKW7TeY6A9YUwVaprjUd+ARlhLAkfsXGFNX9w6kRq89/yxUcAQ/lzvmgndSFfOw==",
+      "dependencies": {
+        "runtime.osx-x64.Microsoft.DotNet.ILCompiler": "10.0.13"
+      },
+      "requested": "[10.0.13, )",
+      "resolved": "10.0.13",
+      "type": "Direct"
+    },
+    "old": {
+      "contentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
+      "dependencies": {
+        "runtime.osx-x64.Microsoft.DotNet.ILCompiler": "10.0.11"
+      },
+      "requested": "[10.0.11, )",
+      "resolved": "10.0.11",
+      "type": "Direct"
+    },
+    "package": "Microsoft.DotNet.ILCompiler"
+  },
+  {
+    "framework": "net10.0/osx-x64",
+    "lock": "KeepVaultMac.ReleaseVerifier/packages.lock.json",
+    "new": {
+      "contentHash": "tRiYgozS46av6ilf04bZTsi9+TPGsK95znWNdwqmFo7rY7Sygl/ittwGcf10VCYw2THlzReUHS1n2Y6VqMA6aQ==",
+      "resolved": "10.0.13",
+      "type": "Transitive"
+    },
+    "old": {
+      "contentHash": "Nf7MRJg0HZ4G7icNbW8T49O/9UU6x8XoUPffkk3Uh+r+mDAUFHkhIptUc0wDdIRrouJrLt0IJp0LiaQJUB7DbA==",
+      "resolved": "10.0.11",
+      "type": "Transitive"
+    },
+    "package": "runtime.osx-x64.Microsoft.DotNet.ILCompiler"
+  }
+]
