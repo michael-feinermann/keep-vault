@@ -1,0 +1,1126 @@
+{
+  "schema": "keepvault.public-evidence-content-review.v1",
+  "createdUtc": "2026-10-18T10:49:10.460996+00:00",
+  "scope": "LOCAL_SELECTED_METADATA_LITERAL_BYTE_AND_TARGETED_CONTENT_REVIEW",
+  "selectedByteIdenticalCopies": 179,
+  "allSelectedOriginalBeforeAfterPinsEqual": true,
+  "targetedFindings": [],
+  "utf8FilesCheckedBeforeThisReview": 185,
+  "files": [
+    {
+      "file": "ORIGIN-MANIFEST.json",
+      "bytes": 101975,
+      "sha256": "cc836dc5a16c4ec5463a65ae45c63fdebd87c0ace1ed0ab34753d8316c4a7db4",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "PDF-STATUS-DEFECT-ADDENDUM.de.md",
+      "bytes": 4415,
+      "sha256": "60ac7d1fdce9fa3c737821f8248d9abac9d2c8a775748a238917d5c90135c673",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "README.de.md",
+      "bytes": 6217,
+      "sha256": "2911926339c936b2bfcc6496458dfae6b0787714aeaa8550aa8704cafbde1cb2",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "SCOPE.json",
+      "bytes": 3383,
+      "sha256": "2e5f4f4d424157beb01b95e893d7476e975a7c8be3b80aad57d6be237186ce53",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/FILE-MANIFEST.json",
+      "bytes": 12082,
+      "sha256": "5fafe3789276d9ab9977118118009c1ad8e94fef32e5d4fe2a7226bf690393e8",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/ORIGIN-MANIFEST.json",
+      "bytes": 17603,
+      "sha256": "1e55fa75f066ddc37a29d5f14406ab1ff560f2c98204ca7d783e6e75cc7f6543",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/README.de.md",
+      "bytes": 3008,
+      "sha256": "d38d7e0c8902e91276109eea4312033905666283fbdf7742b0a8dba5ec1df095",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/bindings/existing-tests-result.json",
+      "bytes": 9228,
+      "sha256": "83e0d5499681229f4e8a81caf12fccbac72f126daf4ff4c2e0bf892a106473ac",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/bindings/mutation-plan.json",
+      "bytes": 465,
+      "sha256": "85fab298d9de7fa067d9d7d9dbed9df6c25ef8fbd57120f7e49d6b414a3dbef8",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/bindings/mutation-result.json",
+      "bytes": 8129,
+      "sha256": "d43eba525fccabcd174650762ae2f9ed9115390d377064dd6cdf0c4c247125be",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/bindings/sdk-after.json",
+      "bytes": 647,
+      "sha256": "fd3b6a7e3b5e8cd8a6e9826f4657a4025539a5496aa9411176aaa0d776cd3adb",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/bindings/sdk-before.json",
+      "bytes": 648,
+      "sha256": "f07b700acc2764fe26a00d968e1a2cff6bf1545c264b95d741d353370711d04a",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/build-official-01.start.json",
+      "bytes": 1060,
+      "sha256": "d0642bc7d791277428421b26025c5c2739139b08f51a276882d40a5a52ed34ae",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/build-official-01.terminal.json",
+      "bytes": 1560,
+      "sha256": "8f919f9aa9fcec817340e7da111d64bfd50637e1170662e000e0495bc1f8a115",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/diff-check-final.start.json",
+      "bytes": 322,
+      "sha256": "e94e571dca2bcfc9d9d7a807f728e7830cf8a9c4c657ebbfd8893163c5a909c4",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/diff-check-final.terminal.json",
+      "bytes": 817,
+      "sha256": "2608f6bb54f10b6353b3742c446820108ce5d3f20cec4d8500085c3242e3c15c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-01.start.json",
+      "bytes": 892,
+      "sha256": "f408842cc32b98e020f63534192ffd17462959eec9e463ea6f8e4339bb324191",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-01.terminal.json",
+      "bytes": 1379,
+      "sha256": "06ee4de3df72e6dff5a73ad486a4bc3cd6d74d30a0040d070cfbf3a2292edde0",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-02.start.json",
+      "bytes": 902,
+      "sha256": "d6927e53839afa1d2bdade582e24623cbdc5eb654bc4ce5665af369ae63f4d6e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-02.terminal.json",
+      "bytes": 1389,
+      "sha256": "72f47647d09a24bcf6760fec41b938205b44053160e037227ed04cebf25a9dfd",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-03.start.json",
+      "bytes": 899,
+      "sha256": "15cee8b63e5685a76f405071e8124da83e42cdbd04e8c9687ac9c8f19366e524",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-03.terminal.json",
+      "bytes": 1386,
+      "sha256": "acb190d2762aefb60066d363d22f2ca2657d7059df171c1dd40d9f6ab480d292",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-04.start.json",
+      "bytes": 903,
+      "sha256": "308d01e872c4286b5baf57c5aeb379ac49fa8a522c11ae5f0e4b99e3c2663d96",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-04.terminal.json",
+      "bytes": 1390,
+      "sha256": "58edad4d2d2b3a02acba7b3123091a98e74083703cde0b99e88e9397f3edb9fc",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-05.start.json",
+      "bytes": 904,
+      "sha256": "a4ea5f2beaae1c58c6c92357cad89f25f4ad0b9955e2272199d8d93688599c61",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-05.terminal.json",
+      "bytes": 1391,
+      "sha256": "6f271c049ee0bb59112c2cc11c5c03fb03263db5c38a84d314752a96254703de",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-06.start.json",
+      "bytes": 906,
+      "sha256": "2686fb49be78d44e5044b2d4ef21c0d1606424cf985d518ec8c581c7eac6b47c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-06.terminal.json",
+      "bytes": 1393,
+      "sha256": "45ace215317d69262053772a435547fc26b30880553c65f4bcc51b4349005367",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-07.start.json",
+      "bytes": 901,
+      "sha256": "6ee8caaad9b15c180d2e50cfff0b646b59ac7465b27585af52ee0fbb469d329f",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-07.terminal.json",
+      "bytes": 1388,
+      "sha256": "222a441e7ed6386fc319e6b4694023c2843a3906297127fcd178bbcdc26b1521",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-tests-controller.start.json",
+      "bytes": 350,
+      "sha256": "3e2304e1a7eb331d4d2acd7b9a7c7c2d6ea7c346de6f7a6493040d55753e8cf0",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/existing-tests-controller.terminal.json",
+      "bytes": 867,
+      "sha256": "b80107f8061a8995c46144e1063609409dd9b98d508f4012a1390053c8cb98f2",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/final-build.start.json",
+      "bytes": 957,
+      "sha256": "25141d699c55621233ea2c5573858fb8618e3badefb5b97fc0a7b4e056e1ef79",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/final-build.terminal.json",
+      "bytes": 1445,
+      "sha256": "da8bc5300e623b952b7051e99b3be2bbfe674e2ed3000a5576b74b08810d746d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/final-regression.start.json",
+      "bytes": 905,
+      "sha256": "62ffe074269501f63fdd4ed212603bdbe01148962b9ddea0c79408948a13bd51",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/final-regression.terminal.json",
+      "bytes": 1402,
+      "sha256": "dd8ecd346fb0914062701aa842548fc9cfb9ae74c64a72fc577d1862414f971c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutant-build-print.start.json",
+      "bytes": 959,
+      "sha256": "4ced672335a03af79476bbab68c3fade7c6f8131f65439f2796c441b0d63f655",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutant-build-print.terminal.json",
+      "bytes": 1461,
+      "sha256": "30b756f86afdd3133b66173da9ed1ec76bb08b707f17e88e739913befb672d49",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutant-build-save.start.json",
+      "bytes": 959,
+      "sha256": "1b226253c28177fd12c01281134f138e29551f00a67fd6cf389e5c80f21d2ed1",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutant-build-save.terminal.json",
+      "bytes": 1459,
+      "sha256": "e8252d3d7ffbe71e7cb03c9720c282b409746406d2822322d35160d0cb028ae5",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutant-print.start.json",
+      "bytes": 906,
+      "sha256": "3e9a6f21a31170561b45dae1de9c54c705e1d31c8a6105b9c82465e900f57db6",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutant-print.terminal.json",
+      "bytes": 1396,
+      "sha256": "a53082f1a065c95f3016851d64e03be9afb474f38bbddaac77a61cb88bdea054",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutant-save.start.json",
+      "bytes": 906,
+      "sha256": "d873b69b1b76e7472cb7b9ce19ea1f2c9853b7e8b51d29be53636f24fa301568",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutant-save.terminal.json",
+      "bytes": 1394,
+      "sha256": "8429418638686c4f0e230adfdbc7f273e7cfb129f41e91f0036fc87f2aaf68db",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutation-controller.start.json",
+      "bytes": 366,
+      "sha256": "15960f5d6dfa3c1533a63ec13d303be25fc0d96b3c7777019fa4fee72927732d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/mutation-controller.terminal.json",
+      "bytes": 871,
+      "sha256": "c763f6ac6ba8c22b79101ae5287534e36a27580f15f7df573110e60ad57dc582",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/regression-01.start.json",
+      "bytes": 850,
+      "sha256": "8b30d9da53a1d3ff75cb987db9e21434536c6ab9620dd7011469ccf15182facf",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/regression-01.terminal.json",
+      "bytes": 1341,
+      "sha256": "438a59780aaaee158db27613849defc2bfae549810fa8b9b5923ee52587b6441",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/sdk-after.start.json",
+      "bytes": 365,
+      "sha256": "7ca428f7a722684094a36056b5383d2d25b9ded058198fa3228f2ac597135ad4",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/sdk-after.terminal.json",
+      "bytes": 848,
+      "sha256": "6167c1e522b3bd810926f84c0bfd57d4a9aa538782c9d36b5191eeac71f8798d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/sdk-before.start.json",
+      "bytes": 366,
+      "sha256": "d5e97edfc4a87d8fce8b8780c33c0468b99c36b34e827951a6acb186ef5f54c5",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/processes/sdk-before.terminal.json",
+      "bytes": 851,
+      "sha256": "6b3a9ab1f118e61ca4658d278a7665f9303b33db607af938cdd650df26c29de5",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/result.json",
+      "bytes": 16419,
+      "sha256": "40c25301a54cac359d2f60b0e3d867e261dc52a0f384e6c90f781d16a9945032",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/source-file-pins.json",
+      "bytes": 2447,
+      "sha256": "2085b842cb74ee709bb4968bd67d195938255eb63703dc4b8ef7470f1bdfe7e5",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-01.test-results.json",
+      "bytes": 720,
+      "sha256": "6c09aead8bc0e3983bf539c5faba2c272ed7598f567f147f216836f5478ce068",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-01.test-timings.json",
+      "bytes": 86,
+      "sha256": "9981baaf385d36b9b0ed5781fbbb75c9d5d021b2decab69ea576e2deaf386c21",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-02.test-results.json",
+      "bytes": 733,
+      "sha256": "fffe89128985c9469266f6ea5f9b28a73cf66e639a5987d2311905102a74eb0f",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-02.test-timings.json",
+      "bytes": 131,
+      "sha256": "e096ba08bedc58743ab5442f01490fcd40a0db72396087d11b10f5efb36feaa7",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-03.test-results.json",
+      "bytes": 717,
+      "sha256": "65afd87e023fe25d22ff4b0b2bdca46d27f2e893eb116a292971243841abeece",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-03.test-timings.json",
+      "bytes": 173,
+      "sha256": "3b0c95593059755464d116e5367ee0e34aa9dca63d9593d4121b497271c741ed",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-04.test-results.json",
+      "bytes": 720,
+      "sha256": "9509d0ded3f8e4c91afccaa5f7f7e7b2d254c70ca0ba1f33aac39659f8cdb3a1",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-04.test-timings.json",
+      "bytes": 219,
+      "sha256": "769bff91c3b74f42377807a24be50f052e1179bca01ef7816c2bf5500b5061ef",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-05.test-results.json",
+      "bytes": 705,
+      "sha256": "0033a48258f3926096ac724432cbd893dbbf5d3b354da10c99440b757729822c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-05.test-timings.json",
+      "bytes": 265,
+      "sha256": "111b0982bd32329c43e6f642fbc8305aca88ea8696be28d593d97a043ce29331",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-06.test-results.json",
+      "bytes": 717,
+      "sha256": "485cf757143fe6255f161e9452fb0fbcc0770a3c434a91a44dd3e71edcd2b6dc",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-06.test-timings.json",
+      "bytes": 314,
+      "sha256": "ea26c33155341bd27b8198003616cd1f1ab42ab67ae5e7943deb7d3f5d414598",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-07.test-results.json",
+      "bytes": 703,
+      "sha256": "3df3afe9ecfc28955922af60943f9493330059260075f83d5226a091dba228bc",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/existing-07.test-timings.json",
+      "bytes": 358,
+      "sha256": "89597e49e7a68591e3c8accbe6d9cdd25f936486c7b8e347fa446c96fc9b7df4",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/final-regression.test-results.json",
+      "bytes": 763,
+      "sha256": "01d4e726f29150ff78f86b14e86a7649039a86a5daae438bbe5c96fa89d8b372",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/final-regression.test-timings.json",
+      "bytes": 357,
+      "sha256": "cbc40288ccea2bbd43083d7df5781f5e70dc0e293bf4749b9e905e1a3f44ca11",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/mutant-print.test-results.json",
+      "bytes": 2028,
+      "sha256": "50f029a314cbe5ee90e78e5280bf9a650ad8626ebaf27223d43d0a6aa6e52ff7",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/mutant-print.test-timings.json",
+      "bytes": 358,
+      "sha256": "89597e49e7a68591e3c8accbe6d9cdd25f936486c7b8e347fa446c96fc9b7df4",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/mutant-save.test-results.json",
+      "bytes": 2027,
+      "sha256": "1873e0b5f5b1540b47eeebc211ed3cdf62d3ffc86eda654ceda58bc65eea7400",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/mutant-save.test-timings.json",
+      "bytes": 358,
+      "sha256": "10fdd4a2bc08ddad597fc361dbffa98f5a3989935efa50373d721c652e8a7954",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/regression-01.test-results.json",
+      "bytes": 763,
+      "sha256": "6765f81bb297ddd5e2e3e06ca150109cfda71655334c83b8ef2022e604c74f8a",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "corrective-source-regression/tests/regression-01.test-timings.json",
+      "bytes": 51,
+      "sha256": "6e40078d8d12c5539a9de395e1fa07e624f8865139ace826545ca89a20c22311",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "dependency-source/app-packages.lock.json",
+      "bytes": 17192,
+      "sha256": "b111fbcd11fbf46df0e61164109cbd8bfb2c22b80ec79e4b4d1ea0ed7fe07de7",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "dependency-source/signer-packages.lock.json",
+      "bytes": 869,
+      "sha256": "445b25f57a3a97cadad21e7df8f0129d39b52eb921c87ea2335d7108a761ed03",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "derived/DEPENDENCY-SECURITY-STATUS-20261018.json",
+      "bytes": 6192,
+      "sha256": "3d4af0762410b8386d08e02216a8a355fbb7861f5c7b81eb3c68ee0de9906938",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "derived/PDF-STATUS-DEFECT-ADDENDUM.json",
+      "bytes": 2157,
+      "sha256": "0a40f64a2f22445cdd9e7495047c38bdb0d6ecd48066305ab4edc511d698e91e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "derived/TWO-FUNCTIONAL-CASE-TIMES.json",
+      "bytes": 4854,
+      "sha256": "45ba69bcbb1eb863c1185010f94dbd5cc00a1855f5a4b8e8fa5e43f401e0eacf",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/ORIGIN-MANIFEST.json",
+      "bytes": 27316,
+      "sha256": "451a9083ff0eb984eea4f4266930b5602ba6989836436ebc758891cd99d14d81",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/README.de.md",
+      "bytes": 6605,
+      "sha256": "4ea740928d2e2718b3cb4383d76a8dcbf8190796a36ebac95a6f8c481f938ac0",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/SCOPE.json",
+      "bytes": 1859,
+      "sha256": "24e22fc52911d335894e33f829d01c95d45d33dca1dde5d5e20a0c3bde941bbd",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/derived/operation-times.json",
+      "bytes": 2455,
+      "sha256": "6884ab81b37b720b1101ad03a7e2263856efefb88f9ee6bc73c357b5772ee44d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/audit-runner/start.json",
+      "bytes": 778,
+      "sha256": "5fac7fa78b2a512802d6a1a8a7b2ef0ccec2281b18c2b1a749f59cbc7ad183a2",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/audit-runner/terminal.json",
+      "bytes": 937,
+      "sha256": "de9a2fca3c2dd8cdc9d172369a290fec97bb9619fb8be0154ad4e727f099346a",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/binding-manifest.original.json",
+      "bytes": 20896,
+      "sha256": "63203a6b95edfdbd137162f2debb22ed4ff6fe1bce30d5d5bfa7361731d1720c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/installed-after.json",
+      "bytes": 23861,
+      "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/installed-before.json",
+      "bytes": 23861,
+      "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/launch-start.json",
+      "bytes": 2312,
+      "sha256": "20b99b3e8a6cac062b47c850fda58b8f0c80abf4649fd79ac28ed41e8226d147",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/launcher-terminal.json",
+      "bytes": 1765,
+      "sha256": "e4896c624d8e1d02db41fa0cbca5671a0ddfcce7f2f8d0a4811fb8c96658b66f",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/root-independent-tree-comparison.json",
+      "bytes": 2254,
+      "sha256": "31bb79c79b6e0b219c4ccfaabe412b8c4d2df6f68e80783550c5f4818c2b64f2",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/root-pdf-visual-review.json",
+      "bytes": 3004,
+      "sha256": "aa9b0c22f5ce95ca52afedbe681c114c5c95561d1f4f6986e6a834c1e6c0c17e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/root-ui-observation.json",
+      "bytes": 8156,
+      "sha256": "97c4f96584547c0d6efdd78b21b571f68f2f80c877e46a6c36d59659c0762405",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/source-bindings.json",
+      "bytes": 3191,
+      "sha256": "fb8590e75069c24a0f40dd678a4aa6093f892cd21c28c30260a7a1610a0e969d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/case/ui-evidence-manifest.json",
+      "bytes": 1654,
+      "sha256": "956d018542cc4acf699a5a2268277bc505bfb2974e22a8cf4cec41d1e320c9f9",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/SHA256SUMS.txt",
+      "bytes": 704,
+      "sha256": "08f0acbc7be61be599daf7a832ace571d7cf8b9d1c5b9caa7b6275452e6ff255",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/collection-receipt.json",
+      "bytes": 9623,
+      "sha256": "c2a74f5a3c465110439b95f7f6bcfbd6e20eb029bf0077e5f0e3b6adafd06759",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/operation-001-generate.json",
+      "bytes": 14064,
+      "sha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/operation-002-create.json",
+      "bytes": 304631,
+      "sha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/operation-003-extract.json",
+      "bytes": 66647,
+      "sha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/ui-001.json",
+      "bytes": 8156,
+      "sha256": "97c4f96584547c0d6efdd78b21b571f68f2f80c877e46a6c36d59659c0762405",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/ui-002.json",
+      "bytes": 2254,
+      "sha256": "31bb79c79b6e0b219c4ccfaabe412b8c4d2df6f68e80783550c5f4818c2b64f2",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/ui-003.json",
+      "bytes": 3004,
+      "sha256": "aa9b0c22f5ce95ca52afedbe681c114c5c95561d1f4f6986e6a834c1e6c0c17e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collection/ui-evidence-manifest.original.json",
+      "bytes": 1654,
+      "sha256": "956d018542cc4acf699a5a2268277bc505bfb2974e22a8cf4cec41d1e320c9f9",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collector/collector-outer-start.json",
+      "bytes": 1274,
+      "sha256": "43a3591997496310fb31d1803bd132f1b089a5c8ca9c4dbdc3a064e64aa055bd",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/collector/collector-outer-terminal.json",
+      "bytes": 2470,
+      "sha256": "34f9472ee1ddd21fe8717206d9b63579e857082dbd65afdf25920a002e8ee552",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/operations/operation-001-generate.json",
+      "bytes": 14064,
+      "sha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/operations/operation-002-create.json",
+      "bytes": 304631,
+      "sha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/operations/operation-003-extract.json",
+      "bytes": 66647,
+      "sha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-layout/render-receipt.json",
+      "bytes": 4130,
+      "sha256": "e22ff58ad3085d2a35e90835fad36beb69f7b993f637ebb9e8319137300d7008",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/analysis-start.json",
+      "bytes": 1471,
+      "sha256": "f978e9f6f1c36758dcd66c15257cbdf9c853d1ad433742e60a30e9cd69dbc817",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/native-compile-terminal.json",
+      "bytes": 1327,
+      "sha256": "5014bd20756edb32d8777a782a93ba8ace4a1da74c2706f83a3506ae0e5dda11",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/pdf-pair-qa-result.json",
+      "bytes": 11796,
+      "sha256": "bd95f8ff3d582579c87792f3e7f61d318713854a2a9125bef743cb83d9f0593d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/root-outer-terminal.json",
+      "bytes": 2438,
+      "sha256": "1d676660e3980d61ee6486f48a2644e2998b2201b11d3321c135128b5f918315",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/text-a-page1-start.json",
+      "bytes": 230,
+      "sha256": "6d0266acd38fb35d9a5abf93428c6214c994fd0ff5e40e9f95619cde3a02fef1",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/text-a-page1-terminal.json",
+      "bytes": 703,
+      "sha256": "9605d5dff13f38ffc931b47765a801fdb1c940bdc9630de200879aaa57c37602",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/text-a-page2-start.json",
+      "bytes": 230,
+      "sha256": "a7bcc2da6417daa5d70fb81da8cfeb941a9f7c0e27143313c3bd021f7ceb73d5",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/text-a-page2-terminal.json",
+      "bytes": 703,
+      "sha256": "89a1062657149a1e51092a080b23c488a5f6dafdd692f6908a63c5cd230585e5",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/text-b-page1-start.json",
+      "bytes": 230,
+      "sha256": "52d5a3c2f1cb20604a3f0b0a6c0920ac8eed9568670e8d2b9826c310ff37e692",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/text-b-page1-terminal.json",
+      "bytes": 703,
+      "sha256": "068a5f9113d749c2903c44cf14a68501a6aca96d8573bbfd1c859690514ea1fd",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/text-b-page2-start.json",
+      "bytes": 230,
+      "sha256": "bf98bd090e37402048f202403e2677f949a025e90b1ad5eca65c1d8269c9216d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/text-b-page2-terminal.json",
+      "bytes": 703,
+      "sha256": "ed1800a8ff86528d64b80f4413e76eaf690d110c452831d87752649628a873bc",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/tool-PREPARATION.json",
+      "bytes": 3149,
+      "sha256": "0d5d07b6821e5f7e0c6fb2d454b6e3f839f49da44f3cb029dca7e598a90ba82f",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/tool-tool-lock.json",
+      "bytes": 2088,
+      "sha256": "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/vision-pdf-qr-start.json",
+      "bytes": 283,
+      "sha256": "cd2fcd5efc4715d0a648cfead19b68fcf4678251af48593c420af60c457b7fd2",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-qa/vision-pdf-qr-terminal.json",
+      "bytes": 757,
+      "sha256": "6d42a40512623d353e18afe1bc820a35f90ec65212447898d55444f10b9acd28",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-redundancy/a-start.json",
+      "bytes": 655,
+      "sha256": "a0b32032f4b1c7f68539cc3f61a020f1f7ff448b8db7954765f9bdb3145d7e32",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-redundancy/a-terminal.json",
+      "bytes": 760,
+      "sha256": "9615767c368843c3877a8d325885fa39780447e1a04c6cdaba0514ce553e135c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-redundancy/b-start.json",
+      "bytes": 655,
+      "sha256": "490af9500e17f4853b3c901fa2cf9997c4a3fe0e27189e4a00d4beb631226604",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-redundancy/b-terminal.json",
+      "bytes": 760,
+      "sha256": "c34e60966886625babda92ffa1e28bbd50a85be3ce9546e3e43103619e4ea794",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-redundancy/campaign-start.json",
+      "bytes": 2384,
+      "sha256": "099c8c90accfafe22adeb0e7f947eff1f27e9cd7e177c549ed7ddf758b4caf88",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-redundancy/narrow-original-qa-review.json",
+      "bytes": 1043,
+      "sha256": "c8df75f57c069e4371b72f813c18f4e87ee3b805f21fff5aa50bf37ac92eceb0",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/pdf-redundancy/redundancy-result.json",
+      "bytes": 7055,
+      "sha256": "9b04face06e4b451cffc85a15cad627713fdc0948a493eeef6a48005d8aec612",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia/originals/review/independent-paranoia-review.json",
+      "bytes": 8338,
+      "sha256": "c20849ed5966bbe2b3f90095881caca93a9c71307d561814c71b705bfda00fc7",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/paranoia-independent-review.json",
+      "bytes": 37295,
+      "sha256": "516cfcbec112b7bae13cee48dde9bb4e8d3e1bdfacfe2678676eb9a5be93b52c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/README.de.md",
+      "bytes": 1559,
+      "sha256": "c26051bffed498ee48b8586232a6c6fe0f883d36fad27b9265bd12d87bc4ceff",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/audit-runner-outer/start.json",
+      "bytes": 1010,
+      "sha256": "1c3247de4eb1004ffad539ce6790cde0f653fce14e08d0145bbff76be994ecda",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/audit-runner-outer/terminal.json",
+      "bytes": 1122,
+      "sha256": "e7b747751ee9babb39d4a2247d367cdfa4f3629d0d567fb39a9de986adc641bc",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/binding-manifest.original.json",
+      "bytes": 20896,
+      "sha256": "63203a6b95edfdbd137162f2debb22ed4ff6fe1bce30d5d5bfa7361731d1720c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/installed-after.json",
+      "bytes": 23861,
+      "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/installed-before.json",
+      "bytes": 23861,
+      "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/launch-start.json",
+      "bytes": 2312,
+      "sha256": "12ba26948d1bc2bc971ae226bfd5bf36712e72ed8b67316da6f7d309c0aebccc",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/launcher-terminal.json",
+      "bytes": 1765,
+      "sha256": "8c9cd401669b986bcf1deb578a49ac9042d05d63aa77d3beb8c9406f5bc1492f",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/root-independent-tree-comparison.json",
+      "bytes": 2078,
+      "sha256": "95db00d4eb2fe79466f299aae9f2cec4894d46d6864d1934bc3d27825f770e6e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/root-pdf-progress-status-defect.json",
+      "bytes": 1783,
+      "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/root-pdf-visual-review.json",
+      "bytes": 2859,
+      "sha256": "dbeb2d8c94a0d49ab7906dc6f65f8f34a531dc1b4cdd34af95d11c9bca86617e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/root-ui-observation.json",
+      "bytes": 5476,
+      "sha256": "a5bc7d5aa92813378cdbe7d6a3838438fc8e4289bbffc18995c527d469d377b1",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/source-bindings.json",
+      "bytes": 3191,
+      "sha256": "fb8590e75069c24a0f40dd678a4aa6093f892cd21c28c30260a7a1610a0e969d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/case/ui-evidence-manifest.json",
+      "bytes": 2038,
+      "sha256": "63a124709b2c2c83d8ac2911180ae0f74aa28b8d74cdc5da444cf52469527e94",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/SHA256SUMS.txt",
+      "bytes": 782,
+      "sha256": "35b92817c7a9fc1b59b17bdb5810bd422168d81adaf9964be0b0ae50de38a6c9",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/collection-receipt.json",
+      "bytes": 10455,
+      "sha256": "a7b3fdd52564308fd9ff000c79c8764a62126867639835cb9fad327bed11eac2",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/operation-001-generate.json",
+      "bytes": 12557,
+      "sha256": "1c9d8e985b39f40fc37d4ee8de5a075ab7db5116f8bb04c17fe3b583c8ff8506",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/operation-002-create.json",
+      "bytes": 298324,
+      "sha256": "ab4fce0ce3229519871fa1731edfe04cc887efdf06807753ec943b66d90a8943",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/operation-003-extract.json",
+      "bytes": 62458,
+      "sha256": "d020b76af5ff8fd1c1c96257f5231c04554ae574bbed1ded39213f433e6e335d",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/ui-001.json",
+      "bytes": 5476,
+      "sha256": "a5bc7d5aa92813378cdbe7d6a3838438fc8e4289bbffc18995c527d469d377b1",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/ui-002.json",
+      "bytes": 2078,
+      "sha256": "95db00d4eb2fe79466f299aae9f2cec4894d46d6864d1934bc3d27825f770e6e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/ui-003.json",
+      "bytes": 2859,
+      "sha256": "dbeb2d8c94a0d49ab7906dc6f65f8f34a531dc1b4cdd34af95d11c9bca86617e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/ui-004.json",
+      "bytes": 1783,
+      "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collection/ui-evidence-manifest.original.json",
+      "bytes": 2038,
+      "sha256": "63a124709b2c2c83d8ac2911180ae0f74aa28b8d74cdc5da444cf52469527e94",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collector-outer/start.json",
+      "bytes": 1047,
+      "sha256": "cecc70a42cea8e0f91e45ab3f8290ca0d5a84c5647cc6f88519150b5ad15f86e",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/collector-outer/terminal.json",
+      "bytes": 2314,
+      "sha256": "e13a264b4e59fede3249d8acf05f80244e98555332c4482ad3f562172b828e4c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/analysis-start.json",
+      "bytes": 1471,
+      "sha256": "fc7077fe6ae26a71c501b95910b7ca1c3a161f8d43ecddf554644587e7d52f11",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/pdf-pair-qa-result.json",
+      "bytes": 11794,
+      "sha256": "b654fd38460116430676f7ba9395cbb0a13faa14392807f88e7624774be748e4",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/text-a-page1-start.json",
+      "bytes": 230,
+      "sha256": "90b6155ecf42e1d6e520bfec5843e9ef7bfdeeed6521310a687d0ce084d1e360",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/text-a-page1-terminal.json",
+      "bytes": 703,
+      "sha256": "bc4584a905b4eea2acba925019f9247fb122c85065b909abeb690565d3c63249",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/text-a-page2-start.json",
+      "bytes": 230,
+      "sha256": "02dcf12de6bf33413c600b0734c2f44ffa803838c6431913714e678614fb9d02",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/text-a-page2-terminal.json",
+      "bytes": 702,
+      "sha256": "0e1f7b47bd83c306b8303f88064356c54c56db9deb843ec08339ae517155e46c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/text-b-page1-start.json",
+      "bytes": 230,
+      "sha256": "0adccc5f0e30073aecc63d1f1233ce501a4b201e583ff5fc2b6b0348ff464cbc",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/text-b-page1-terminal.json",
+      "bytes": 703,
+      "sha256": "46a2c5d08b05256c719cf16df0f82a06c44492e5ef552a4968f4c905785c2fcc",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/text-b-page2-start.json",
+      "bytes": 230,
+      "sha256": "44b444907711d070e89113ff6f56992714de3af7f85b6d769ce7f02ea516dd66",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/text-b-page2-terminal.json",
+      "bytes": 702,
+      "sha256": "63c8e934073d62d462c73593f811c7db03adb5f95e0ed78a43116a227d1ea3e7",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/vision-pdf-qr-start.json",
+      "bytes": 283,
+      "sha256": "f61b4307de34213c9663edc0d5530083454256cd02b3730ea466675e31e76847",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa/vision-pdf-qr-terminal.json",
+      "bytes": 757,
+      "sha256": "ccbc9dfb255f0186f930a25e502214f3c8876ca23c334e5ccdfe5ba5788b1372",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa-outer/driver-safe-stdout.json",
+      "bytes": 720,
+      "sha256": "d4a372b9effd8b4bd426bda65c477efae4b9bfa60b4ee851f1cffc5cfd5d9a37",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa-outer/root-outer-start.json",
+      "bytes": 2764,
+      "sha256": "7d5d5a46128effec9a072b73626a8dfa72152c3c4e4eab0ac9f589aa8f456d6c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/pdf-qa-outer/root-outer-terminal.json",
+      "bytes": 2090,
+      "sha256": "038b5b59c5c067e4d884241448ee4997f466f1e8ac163c10ae3b190d5e2f5ace",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/render-metadata/a-render-start.json",
+      "bytes": 1047,
+      "sha256": "ae3abb9625543e78b1a8e54af8ecad7b44807524d284500b1c1ff6076789503c",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/render-metadata/a-render-terminal.json",
+      "bytes": 717,
+      "sha256": "2ae55060587b42ab3baeb62e212b585f7be4ebbe373a7683e376cc16a2320799",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/render-metadata/b-render-start.json",
+      "bytes": 1047,
+      "sha256": "5abf28be20a83939510ce0a2e9f4ade1b784c432f35f5d0d8ed49ea53a588d78",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/render-metadata/b-render-terminal.json",
+      "bytes": 717,
+      "sha256": "5f2afbce5a115902ddefc78d0eea4db9b676a85afd62a61e6d9c07632c003b5f",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/render-metadata/render-manifest.json",
+      "bytes": 5799,
+      "sha256": "7d0c5782f32f8d55a8a94d20c84eceb36dc847824e31155e7b2eef442cf09406",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "profiles/standard/originals/review/independent-standard-functional-case-review.json",
+      "bytes": 27108,
+      "sha256": "e6c630fc311098dd3feb14f046bb1699cfa633b150beceb86a319e63d1b4acbb",
+      "utf8Roundtrip": true
+    },
+    {
+      "file": "sdk-preparation/result.json",
+      "bytes": 10293,
+      "sha256": "1df8bc3fcc58dfdeca6f9eb7c91303c0d58b05b89757304e0dfc31cd99a82c42",
+      "utf8Roundtrip": true
+    }
+  ],
+  "rawPdfsImagesLogsMouseRecordsPrivateMaterialProgramsCopied": false,
+  "independentReview": "PENDING_ROOT_AND_OTHER_AGENT",
+  "arbitrarySecretDetectionGuarantee": false,
+  "stagePublication": "NONE_LOCAL_ONLY",
+  "overallReleaseApproval": false
+}

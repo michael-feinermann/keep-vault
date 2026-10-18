@@ -1,0 +1,21 @@
+{
+  "scope": "INDEPENDENT_COLLECTOR_ACTUAL_POPEN_START",
+  "observerPid": 87040,
+  "actualCollectorPid": 87041,
+  "startedUtc": "2026-10-18T10:05:05.072966+00:00",
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-installed-audit22-recovered.py",
+    "--collect",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051",
+    "--ui-manifest",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/ui-evidence-manifest.json",
+    "--ui-manifest-sha256",
+    "956d018542cc4acf699a5a2268277bc505bfb2974e22a8cf4cec41d1e320c9f9"
+  ],
+  "toolSha256": "86068af12ec357a3de6fe7adf95ed2ae22748e7a98b8f4ffc419c93640d285ad",
+  "rootUiManifestSha256": "956d018542cc4acf699a5a2268277bc505bfb2974e22a8cf4cec41d1e320c9f9"
+}

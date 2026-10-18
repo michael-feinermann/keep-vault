@@ -1,0 +1,67 @@
+{
+  "schema": "keepvault.two-installed-build22-public-gui-evidence-scope.v1",
+  "createdUtc": "2026-10-18T10:42:37.410173+00:00",
+  "status": "TWO_FUNCTIONAL_PROFILES_WITH_OPEN_GUI_DEFECT_NO_OVERALL_RELEASE",
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "version": "5.0.3",
+  "build": 22,
+  "compiledCoreSha256": "a52e743157b1930c0a922a6e76230751801b6820c0b7e401ea766f6c4060e509",
+  "positiveInstalledProfilesIncluded": [
+    "profile-standard",
+    "profile-paranoia"
+  ],
+  "positiveInstalledProfilesIncludedCount": 2,
+  "positiveInstalledProfilesRequiredCount": 5,
+  "negativeInstalledCasesIncludedCount": 0,
+  "negativeInstalledCasesRequiredCount": 10,
+  "sourceBytesPerFunctionalCase": 268435456,
+  "compressionLevel": 3,
+  "knownGuiDefect": "SUCCESSFUL_PDF_EXPORT_DISPLAYED_CANCELLED_ZERO_PERCENT",
+  "knownGuiDefectStatus": "OPEN_CORRECTIVE_BUILD_REQUIRED",
+  "knownGuiDefectOriginalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-progress-status-defect.json",
+    "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+    "bytes": 1783
+  },
+  "correctiveBuildPlanned": 23,
+  "correctiveBuild23CompletedSignedNotarizedInstalledOrApproved": "NOT_PROVEN_BY_THIS_PACKAGE",
+  "fullGuiCampaign": "PENDING",
+  "finalStructure512AfterAllGui": "PENDING",
+  "currentBuild22ScannerCamera": "PENDING",
+  "physicalPrintOrPaper": "NOT_CLAIMED",
+  "windowsValidation": "NOT_RUN_BY_THIS_PACKAGE",
+  "physicalMultiTiBValidation": "NOT_RUN_BY_THIS_PACKAGE",
+  "externalIndependentSecurityAudit": "NOT_CLAIMED",
+  "rawPdfsImagesMouseRecordsProgramsPrivateKeysOrPrivateKeyStoragePathsIncluded": false,
+  "selfContainedCentralLiveProofArchive": false,
+  "publication": "NONE_LOCAL_STAGE_ONLY",
+  "stableReleaseApproval": "NOT_GRANTED",
+  "overallReleaseApproval": false,
+  "currentDependencyAdvisories": [
+    "GHSA-846f-f764-76mx",
+    "GHSA-2fmv-rv2c-59x7"
+  ],
+  "currentDependencySecuritySummary": "derived/DEPENDENCY-SECURITY-STATUS-20261018.json",
+  "frozenBuild22AppPkcs": "8.0.1",
+  "frozenBuild22SignerPkcs": "10.0.11",
+  "plannedBuild23Targets": {
+    "sdk": "10.0.402",
+    "runtime": "10.0.13",
+    "appPkcs": "8.0.2",
+    "signerPkcs": "10.0.13"
+  },
+  "concreteKeepVaultExploitOrKdfIssueProven": false,
+  "sdkPreparedDoesNotRetroactivelyRepairBuild22": true,
+  "targetedManagedCodeRegression": "EVIDENCE_INCLUDED_8_UNIQUE_PASS_GROUPS_24_HANDLER_VARIANTS_2_EXPECTED_MUTATION_FAILS_NOT_RELEASE_APPROVAL",
+  "targetedRegressionOriginalResultPin": {
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/docs/KEEP_VAULT_5_0_3_PDF_PROGRESS_REGRESSION_20261018/result.json",
+    "sha256": "40c25301a54cac359d2f60b0e3d867e261dc52a0f384e6c90f781d16a9945032",
+    "bytes": 16419
+  },
+  "officialSdkPreparationOriginalResultPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/result.json",
+    "sha256": "1df8bc3fcc58dfdeca6f9eb7c91303c0d58b05b89757304e0dfc31cd99a82c42",
+    "bytes": 10293
+  },
+  "runtimeDependencyProductUpdateBuild23": "STARTING_AS_REPORTED_BY_ROOT_NOT_APPROVED_OR_PROVEN_COMPLETE"
+}

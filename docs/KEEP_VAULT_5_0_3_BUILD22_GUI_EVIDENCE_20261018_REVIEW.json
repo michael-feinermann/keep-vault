@@ -1,0 +1,177 @@
+{
+  "actualReviewerPid": 73941,
+  "allStageAndOriginalPinsUnchangedBeforeAfter": true,
+  "completedUtc": "2026-10-18T10:56:22.624554+00:00",
+  "correctiveSource": {
+    "allFourTestedFilesMatchImmutableLocalCommit": [
+      {
+        "bytes": 102700,
+        "path": "KeepVaultMac/MainWindow.axaml.cs",
+        "sha256": "276d93ad1a6cd485857a5cc43b3f3929524863ad7c617a4553ad42b4d9dfb521"
+      },
+      {
+        "bytes": 2465,
+        "path": "KeepVaultMac/Gui/MacKeySheetService.cs",
+        "sha256": "9f1b876c28811f3022904d33c2cdd9b213b237d7004290c581e0c103714e8695"
+      },
+      {
+        "bytes": 11868,
+        "path": "KeepVaultMac.Tests/KeySheetProgressTests.cs",
+        "sha256": "ff30c3de0a580848e432a1f84ec20e60ba66339448532c5af74cf88769349a1b"
+      },
+      {
+        "bytes": 328466,
+        "path": "KeepVaultMac.Tests/MacComprehensiveTests.cs",
+        "sha256": "1b1e3a53c794ed38f4c087c498fbe5e95bb5d5370ab41fecf9f1b7ae6f4b4080"
+      }
+    ],
+    "anonymousReadbackOriginalResult": {
+      "bytes": 2133,
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/anonymous-gui-fix-commit-0ek03d6y/result.json",
+      "sha256": "e58b70b016c736f1d53392881662ec35d78552e0d25ef9995aacd921088ad411"
+    },
+    "anonymousReadbackScope": "Separately verified cached original Root receipts for four files: regression README, manifest, result, and MainWindow source; not four separately anonymously fetched fix-source files. No new anonymous transport request by this reviewer.",
+    "commit": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+    "expectedMutantExit1Labels": [
+      "mutant-save",
+      "mutant-print"
+    ],
+    "handlerVariantsInsideOneGroup": 24,
+    "originalActualProcessReceipts": 20,
+    "originalRunnerHeadIsBaseBAOnly": true,
+    "sourceRegressionUniqueGroups": 8,
+    "stageDoesNotClaimItsOwnRemotePublication": true
+  },
+  "countsVerified": {
+    "negativeIncluded": 0,
+    "negativeRequired": 10,
+    "positiveIncluded": 2,
+    "positiveRequired": 5
+  },
+  "dependencies": {
+    "build22AppPkcs": "8.0.1",
+    "build22SignerPkcs": "10.0.11",
+    "independentlyReadPrimaryAdvisories": [
+      {
+        "api": "SignedCms.CheckSignature",
+        "patchedRelevantVersions": [
+          "8.0.2",
+          "10.0.13"
+        ],
+        "platforms": [
+          "Windows",
+          "Linux",
+          "macOS"
+        ],
+        "published": "2026-10-13",
+        "url": "https://github.com/dotnet/runtime/security/advisories/GHSA-846f-f764-76mx"
+      },
+      {
+        "api": "EnvelopedCms.Decode",
+        "patchedRelevantVersions": [
+          "8.0.2",
+          "10.0.13"
+        ],
+        "platforms": [
+          "Windows"
+        ],
+        "published": "2026-10-13",
+        "url": "https://github.com/dotnet/runtime/security/advisories/GHSA-2fmv-rv2c-59x7"
+      }
+    ],
+    "locksMatchCompiledSourceMap": true,
+    "noConcreteKeepVaultExploitOrKdfVulnerabilityInferred": true,
+    "warningsStillOpen": true
+  },
+  "functionalScope": "Two historical installed Build22 macOS256MiB/C3 functional observations. No whole normalGUI acceptance, no current camera/paper/physical printer proof, no automatic Generate actor inference. Native/managed security proofs remain separate. N=1 per profile and overlapping inner timing sums cannot be added.",
+  "literalCorrectiveRegressionSubstageFiles": 72,
+  "literalOriginalCopies": 179,
+  "literalParanoiaSubstageFiles": 57,
+  "manifestEntries": 188,
+  "newProductTests": 0,
+  "newPublicUploads": 0,
+  "openDefect": "Successful Standard22 PDF export displayed Cancelled/0%; BA success-marker source cause is separate from actual physical printing. No retrospective Paranoia screen claim.",
+  "overallReleaseApproval": false,
+  "privacyLimits": "Targeted full UTF8/structured key/value review; no arbitrary-secret-detection guarantee. No raw PDFs/images/log files/programs/private keys/private-key paths or raw factors found.",
+  "privacyScan": {
+    "allUtf8Files": 189,
+    "jsonFiles": 180,
+    "jsonStringsAndKeys": 53506,
+    "numericByteArrays": 0,
+    "raw256HexValues": 0
+  },
+  "profiles": [
+    {
+      "actualCorePid": 87094,
+      "operation": "generate",
+      "originalSha256": "1c9d8e985b39f40fc37d4ee8de5a075ab7db5116f8bb04c17fe3b583c8ff8506",
+      "outcome": "success",
+      "profile": "standard"
+    },
+    {
+      "actualCorePid": 87094,
+      "operation": "create",
+      "originalSha256": "ab4fce0ce3229519871fa1731edfe04cc887efdf06807753ec943b66d90a8943",
+      "outcome": "success",
+      "profile": "standard"
+    },
+    {
+      "actualCorePid": 87094,
+      "operation": "extract",
+      "originalSha256": "d020b76af5ff8fd1c1c96257f5231c04554ae574bbed1ded39213f433e6e335d",
+      "outcome": "success",
+      "profile": "standard"
+    },
+    {
+      "actualCorePid": 84645,
+      "operation": "generate",
+      "originalSha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+      "outcome": "success",
+      "profile": "paranoia"
+    },
+    {
+      "actualCorePid": 84645,
+      "operation": "create",
+      "originalSha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+      "outcome": "success",
+      "profile": "paranoia"
+    },
+    {
+      "actualCorePid": 84645,
+      "operation": "extract",
+      "originalSha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+      "outcome": "success",
+      "profile": "paranoia"
+    }
+  ],
+  "reviewSource": {
+    "bytes": 13236,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/readonly-two-gui-stage-review-55bbjxmh/review.py",
+    "sha256": "d03a2a62966342bdd54e54d32ce250118a414b0ca65a52f3d361e35598f9f891"
+  },
+  "schema": "keepvault.independent-two-gui-public-stage-review.v1",
+  "sdk402": {
+    "newSdkOrProductExecutionByThisReviewer": false,
+    "originalReceiptPin": {
+      "bytes": 10293,
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-two-build22-gui-profiles-evidence-cr3wg4i8/sdk-preparation/result.json",
+      "sha256": "1df8bc3fcc58dfdeca6f9eb7c91303c0d58b05b89757304e0dfc31cd99a82c42"
+    },
+    "originalStatus": "SDK_PREPARED_NOT_PRODUCT_TESTED",
+    "product23CompletionOrReleaseNotProven": true
+  },
+  "sourceGitOrGithubMutations": 0,
+  "stageFiles": 189,
+  "stageMutations": 0,
+  "stageRoot": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-two-build22-gui-profiles-evidence-cr3wg4i8",
+  "stageSha256Sums": {
+    "bytes": 23525,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-two-build22-gui-profiles-evidence-cr3wg4i8/SHA256SUMS",
+    "sha256": "06a41fef99e744308c1c1587e0e4a1a69e212006f50d54877b93e59707d9b129"
+  },
+  "startedUtc": "2026-10-18T10:56:22.472420+00:00",
+  "status": "INDEPENDENT_READ_ONLY_STAGE_REVIEW_NO_FINDING",
+  "targetedPrivacyFindings": [],
+  "totalStageBytes": 1942717,
+  "webUse": "Read-only primary advisory pages only; no new release/GitHub-API mutation."
+}

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "kind": "ROOT_INDEPENDENT_POST_OPERATION_PUBLIC_TREE_SHA256_COMPARISON",
+  "actualObserverPid": 86153,
+  "startedUtc": "2026-10-18T09:55:16.689770+00:00",
+  "completedUtc": "2026-10-18T09:55:16.966373+00:00",
+  "sourceRoot": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture",
+  "outputRoot": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/extracted-public-fixture/public-fixture",
+  "source": {
+    "directories": [
+      ".hidden",
+      ".hidden/Unicode_Grüße_日本_🙂",
+      "empty",
+      "empty/nested",
+      "empty/nested/still empty"
+    ],
+    "files": {
+      ".hidden/Unicode_Grüße_日本_🙂/small.txt": {
+        "bytes": 50,
+        "sha256": "8940adaca6ba2a53e9a69d829edf37f203f2dd5bee8e783f44f62c86b851334a"
+      },
+      "empty-file.bin": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "payload.bin": {
+        "bytes": 268435406,
+        "sha256": "ad0021c2770e73fb3a2e94722372e4ce7a4a1c8f143ff912e1997b629c33da69"
+      }
+    },
+    "totalBytes": 268435456
+  },
+  "output": {
+    "directories": [
+      ".hidden",
+      ".hidden/Unicode_Grüße_日本_🙂",
+      "empty",
+      "empty/nested",
+      "empty/nested/still empty"
+    ],
+    "files": {
+      ".hidden/Unicode_Grüße_日本_🙂/small.txt": {
+        "bytes": 50,
+        "sha256": "8940adaca6ba2a53e9a69d829edf37f203f2dd5bee8e783f44f62c86b851334a"
+      },
+      "empty-file.bin": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "payload.bin": {
+        "bytes": 268435406,
+        "sha256": "ad0021c2770e73fb3a2e94722372e4ce7a4a1c8f143ff912e1997b629c33da69"
+      }
+    },
+    "totalBytes": 268435456
+  },
+  "outerExtractionEntries": [
+    "public-fixture"
+  ],
+  "allRelativeDirectoryNamesEqual": true,
+  "allRelativeFileNamesSizesAndSha256Equal": true,
+  "status": "PASS",
+  "scope": "Independent post-operation equality; pre-operation preservation is separately asserted only by the original installed product receipt.",
+  "overallReleaseApproval": false
+}

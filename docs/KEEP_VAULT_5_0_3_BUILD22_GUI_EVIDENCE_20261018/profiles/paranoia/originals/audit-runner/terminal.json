@@ -1,0 +1,24 @@
+{
+  "actualRunnerPid": 84594,
+  "actualRunnerExitCode": 0,
+  "observerPid": 84593,
+  "startedUtc": "2026-10-18T09:32:05.503950+00:00",
+  "observedUtc": "2026-10-18T10:03:37.613731+00:00",
+  "startOrStreamError": null,
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-installed-audit22-recovered.py",
+    "--start",
+    "profile",
+    "--label",
+    "profile-paranoia",
+    "--bindings",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-audit-bindings.json",
+    "--bindings-sha256",
+    "63203a6b95edfdbd137162f2debb22ed4ff6fe1bce30d5d5bfa7361731d1720c"
+  ],
+  "guiApproval": "NOT_GRANTED_BY_RUNNER_EXIT"
+}

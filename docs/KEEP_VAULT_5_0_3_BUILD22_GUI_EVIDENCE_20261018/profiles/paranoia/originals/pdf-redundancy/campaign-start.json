@@ -1,0 +1,52 @@
+{
+  "schema": "keepvault.public-pdf-left-qr-redundancy-start.v1",
+  "actualControllerPid": 86218,
+  "startedUtc": "2026-10-18T09:56:19.450332+00:00",
+  "pdfPinsBefore": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+      "bytes": 106827
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+      "bytes": 106926
+    }
+  },
+  "genericBinaryPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/final-pdf-public-20260929-corrected/scan-file",
+    "sha256": "be54ab14e1130f7b04fb98946fda5271ee02391e076f8364732087c5e38b7802",
+    "bytes": 170952
+  },
+  "currentSourceReviewPins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/tools/scan-file.swift",
+      "sha256": "55a39c262ac9ceb0e38c364878760a63042eae66f857ed6fa06b59cd09cc8c74",
+      "bytes": 6882
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/Sources/CodeArbiter.swift",
+      "sha256": "ce2e68f47664e0ac65812944b376b7ee640e1efb01c5022feeba30b18b057400",
+      "bytes": 6821
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/Sources/PayloadInspector.swift",
+      "sha256": "165deca9ce9bfe587a93be526b7ffdc507ce839b2b3cc59fc18e5bc8f5b75d06",
+      "bytes": 4633
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/Sources/Localization.swift",
+      "sha256": "bbdfc122180516ce5ddc23ebdd8015c408c9f0ee2eb146227108a342acb7534c",
+      "bytes": 8699
+    }
+  ],
+  "historicalBinaryCurrentSourceCompilationBinding": "NOT_NEWLY_PROVEN",
+  "qaPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/pdf-pair-qa-result.json",
+    "sha256": "bd95f8ff3d582579c87792f3e7f61d318713854a2a9125bef743cb83d9f0593d",
+    "bytes": 11796
+  },
+  "productOrGuiProcesses": false,
+  "pdfsCreated": false
+}

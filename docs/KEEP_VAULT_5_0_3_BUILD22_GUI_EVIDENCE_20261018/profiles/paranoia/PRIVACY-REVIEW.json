@@ -1,0 +1,373 @@
+{
+  "schema": "keepvault.public-evidence-content-review.v1",
+  "createdUtc": "2026-10-18T10:14:52.526533+00:00",
+  "scope": "LOCAL_LITERAL_METADATA_ONLY_REVIEW",
+  "selectedOriginalCopies": 51,
+  "everySelectedCopyByteIdentical": true,
+  "everySelectedOriginalPinBeforeAfterEqual": true,
+  "utf8FileCountBeforeThisReview": 55,
+  "files": [
+    {
+      "file": "originals/case/launch-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/launcher-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/installed-before.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/installed-after.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/source-bindings.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/binding-manifest.original.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/ui-evidence-manifest.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/root-ui-observation.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/root-independent-tree-comparison.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/case/root-pdf-visual-review.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/review/independent-paranoia-review.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collector/collector-outer-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collector/collector-outer-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/audit-runner/start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/audit-runner/terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/SHA256SUMS.txt",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/collection-receipt.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/operation-001-generate.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/operation-002-create.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/operation-003-extract.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/ui-001.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/ui-002.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/ui-003.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/collection/ui-evidence-manifest.original.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/operations/operation-001-generate.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/operations/operation-002-create.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/operations/operation-003-extract.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/analysis-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/pdf-pair-qa-result.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/vision-pdf-qr-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/vision-pdf-qr-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/text-a-page1-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/text-a-page1-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/text-a-page2-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/text-a-page2-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/text-b-page1-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/text-b-page1-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/text-b-page2-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/text-b-page2-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/root-outer-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/tool-tool-lock.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/tool-PREPARATION.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-qa/native-compile-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-layout/render-receipt.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-redundancy/campaign-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-redundancy/a-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-redundancy/a-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-redundancy/b-start.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-redundancy/b-terminal.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-redundancy/redundancy-result.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    },
+    {
+      "file": "originals/pdf-redundancy/narrow-original-qa-review.json",
+      "utf8Roundtrip": true,
+      "contiguousHex256Absent": true,
+      "privateKeyMaterialAndPathsAbsent": true,
+      "rawCredentialFieldAbsent": true
+    }
+  ],
+  "rawPdfsImagesLogsMouseRecordsAndProgramsCopied": false,
+  "privateKeyPathsAndMaterialDetected": false,
+  "scopeDoesNotClaimArbitrarySecretDetection": true,
+  "independentSecondReview": "PENDING",
+  "overallReleaseApproval": false
+}

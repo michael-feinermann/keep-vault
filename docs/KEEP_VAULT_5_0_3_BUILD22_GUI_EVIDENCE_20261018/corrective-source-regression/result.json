@@ -1,0 +1,410 @@
+{
+  "actualProcessReceipts": [
+    {
+      "actualPid": 89280,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:37:10.509447+00:00",
+      "expectedExitCode": 0,
+      "label": "build-official-01",
+      "publicStart": "processes/build-official-01.start.json",
+      "publicTerminal": "processes/build-official-01.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:36:47.193624+00:00"
+    },
+    {
+      "actualPid": 89405,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:37:46.529826+00:00",
+      "expectedExitCode": 0,
+      "label": "regression-01",
+      "publicStart": "processes/regression-01.start.json",
+      "publicTerminal": "processes/regression-01.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:37:44.477220+00:00"
+    },
+    {
+      "actualPid": 89503,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:38:44.694772+00:00",
+      "expectedExitCode": 0,
+      "label": "existing-01",
+      "publicStart": "processes/existing-01.start.json",
+      "publicTerminal": "processes/existing-01.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:38:43.955697+00:00"
+    },
+    {
+      "actualPid": 89509,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:38:45.283239+00:00",
+      "expectedExitCode": 0,
+      "label": "existing-02",
+      "publicStart": "processes/existing-02.start.json",
+      "publicTerminal": "processes/existing-02.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:38:44.712360+00:00"
+    },
+    {
+      "actualPid": 89518,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:38:46.177403+00:00",
+      "expectedExitCode": 0,
+      "label": "existing-03",
+      "publicStart": "processes/existing-03.start.json",
+      "publicTerminal": "processes/existing-03.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:38:45.300791+00:00"
+    },
+    {
+      "actualPid": 89524,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:38:46.760184+00:00",
+      "expectedExitCode": 0,
+      "label": "existing-04",
+      "publicStart": "processes/existing-04.start.json",
+      "publicTerminal": "processes/existing-04.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:38:46.195025+00:00"
+    },
+    {
+      "actualPid": 89530,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:38:47.515605+00:00",
+      "expectedExitCode": 0,
+      "label": "existing-05",
+      "publicStart": "processes/existing-05.start.json",
+      "publicTerminal": "processes/existing-05.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:38:46.777590+00:00"
+    },
+    {
+      "actualPid": 89548,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:38:48.181053+00:00",
+      "expectedExitCode": 0,
+      "label": "existing-06",
+      "publicStart": "processes/existing-06.start.json",
+      "publicTerminal": "processes/existing-06.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:38:47.533974+00:00"
+    },
+    {
+      "actualPid": 89554,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:38:48.901033+00:00",
+      "expectedExitCode": 0,
+      "label": "existing-07",
+      "publicStart": "processes/existing-07.start.json",
+      "publicTerminal": "processes/existing-07.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:38:48.198758+00:00"
+    },
+    {
+      "actualPid": 89501,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:38:48.907057+00:00",
+      "expectedExitCode": 0,
+      "label": "existing-tests-controller",
+      "publicStart": "processes/existing-tests-controller.start.json",
+      "publicTerminal": "processes/existing-tests-controller.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:38:43.926401+00:00"
+    },
+    {
+      "actualPid": 89613,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:40:01.356993+00:00",
+      "expectedExitCode": 0,
+      "label": "mutant-build-save",
+      "publicStart": "processes/mutant-build-save.start.json",
+      "publicTerminal": "processes/mutant-build-save.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:39:50.240160+00:00"
+    },
+    {
+      "actualPid": 92529,
+      "actualWaitExitCode": 1,
+      "completedUtc": "2026-10-18T10:40:02.559350+00:00",
+      "expectedExitCode": 1,
+      "label": "mutant-save",
+      "publicStart": "processes/mutant-save.start.json",
+      "publicTerminal": "processes/mutant-save.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:40:01.398089+00:00"
+    },
+    {
+      "actualPid": 93560,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:40:12.533614+00:00",
+      "expectedExitCode": 0,
+      "label": "mutant-build-print",
+      "publicStart": "processes/mutant-build-print.start.json",
+      "publicTerminal": "processes/mutant-build-print.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:40:02.578259+00:00"
+    },
+    {
+      "actualPid": 99460,
+      "actualWaitExitCode": 1,
+      "completedUtc": "2026-10-18T10:40:13.856659+00:00",
+      "expectedExitCode": 1,
+      "label": "mutant-print",
+      "publicStart": "processes/mutant-print.start.json",
+      "publicTerminal": "processes/mutant-print.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:40:12.553173+00:00"
+    },
+    {
+      "actualPid": 772,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:40:21.429879+00:00",
+      "expectedExitCode": 0,
+      "label": "final-build",
+      "publicStart": "processes/final-build.start.json",
+      "publicTerminal": "processes/final-build.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:40:13.875413+00:00"
+    },
+    {
+      "actualPid": 5008,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:40:23.428196+00:00",
+      "expectedExitCode": 0,
+      "label": "final-regression",
+      "publicStart": "processes/final-regression.start.json",
+      "publicTerminal": "processes/final-regression.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:40:21.449839+00:00"
+    },
+    {
+      "actualPid": 89611,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:40:23.435375+00:00",
+      "expectedExitCode": 0,
+      "label": "mutation-controller",
+      "publicStart": "processes/mutation-controller.start.json",
+      "publicTerminal": "processes/mutation-controller.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:39:50.206908+00:00"
+    },
+    {
+      "actualPid": 89215,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:35:54.679680+00:00",
+      "expectedExitCode": 0,
+      "label": "sdk-before",
+      "publicStart": "processes/sdk-before.start.json",
+      "publicTerminal": "processes/sdk-before.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:35:53.634401+00:00"
+    },
+    {
+      "actualPid": 16873,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:40:46.430915+00:00",
+      "expectedExitCode": 0,
+      "label": "sdk-after",
+      "publicStart": "processes/sdk-after.start.json",
+      "publicTerminal": "processes/sdk-after.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:40:45.452832+00:00"
+    },
+    {
+      "actualPid": 16876,
+      "actualWaitExitCode": 0,
+      "completedUtc": "2026-10-18T10:40:46.485295+00:00",
+      "expectedExitCode": 0,
+      "label": "diff-check-final",
+      "publicStart": "processes/diff-check-final.start.json",
+      "publicTerminal": "processes/diff-check-final.terminal.json",
+      "rawLogsSha256BoundButNotCopied": true,
+      "startedUtc": "2026-10-18T10:40:46.448996+00:00"
+    }
+  ],
+  "additionalExistingGroupCount": 7,
+  "baseHead": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "combinationMeaning": "2 languages x 2 button paths x 6 outcomes, enforced within one returning PASS group; not 24 independent result receipts. Two positive group runs exercise the same 24 unique combinations twice.",
+  "fixAndTestsWereUncommitted": true,
+  "frameworkScope": "macOS arm64 managed Avalonia.Headless; actual routed button handlers, confirmations and real PDF pair export. Controlled async print-service boundary; no physical printer, paper, camera or installed signed app test.",
+  "handlerCombinationsInsideNewGroup": 24,
+  "intentionalSourceMutations": "Only one new success marker removed in each compiled negative control. Both actual regression processes exit1 at corresponding de/save/success or de/print/success assertion. Original file restored exactly, final build and final regression both actual exit0. Negative controls are preserved, not product-test failures hidden.",
+  "knownUnresolvedWarnings": [
+    {
+      "advisory": "https://github.com/advisories/GHSA-2fmv-rv2c-59x7",
+      "package": "System.Security.Cryptography.Pkcs",
+      "version": "8.0.1",
+      "warning": "NU1902"
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-846f-f764-76mx",
+      "package": "System.Security.Cryptography.Pkcs",
+      "version": "8.0.1",
+      "warning": "NU1903"
+    }
+  ],
+  "newRegressionGroup": "gui.key-sheet-operation-progress",
+  "newRegressionOutcomes": [
+    "success",
+    "declined confirmation",
+    "output failure",
+    "stale draft after output",
+    "unexpected OperationCanceledException without token cancellation",
+    "actual token cancellation for print / picker cancellation for save"
+  ],
+  "noActualCredentialFactorOrMouseRecordsIncluded": true,
+  "noSigningOrPrivateKeyMaterialRead": true,
+  "notPerformed": [
+    "AOT/native Universal release build",
+    "new Build23 version/signing/notarization/installation",
+    "installed native GUI completion",
+    "full release suite or fresh 1-GiB benchmarks",
+    "GitHub publication or overall release approval"
+  ],
+  "overallReleaseApproval": false,
+  "priorRejectedSetup": "Earlier Homebrew attempts were retained under ignored work/pdf-progress-regression: SDK resolver155, then NU1403 from different Homebrew library-packs. Not counted as successful builds. Official SDK + fresh cache restored unchanged product/test locks successfully. No prior failed evidence overwritten.",
+  "productionChange": "Only Save/Print completed-success markers after output, unchanged-draft check, key-sheet binding and success log. Small internal instance service contract permits headless print boundary testing; public default constructor retains the same concrete real service.",
+  "recordedUtc": "2026-10-18T10:43:20.941790+00:00",
+  "schema": "keepvault.pdf-progress-regression-evidence.v1",
+  "sdk": {
+    "dotnet": {
+      "bytes": 141392,
+      "sha256": "2ff302a3c5cecc4a371fd6482d2f5547c57d93eff9fe19919ef729a54f69ce04"
+    },
+    "exactFilesVerifiedBeforeAfter": 4906,
+    "forceEvaluate": false,
+    "freshNugetCache": "Ignored work/pdf-progress-regression/official-packages",
+    "fullMapSha256": "20e6d08810eeb8018825d96c94cdc2684a6d96a7f3391ed4bf21f9fef1c20ed3",
+    "isolatedResolver": "Ignored work/pdf-progress-regression/global.json selects exact existing SDK400; tracked product global.json unchanged.",
+    "lockedRestore": true,
+    "packageOrigins": [
+      {
+        "contentHashIsNotRawArchiveSha512": true,
+        "lockVerifiedMetadataContentHash": "yloFUsIQOzspIsn2cDHrbgikKaWHAZspzj0EWxnWJJpFC89IBW64OXgCECsrrnzGWQvy1iLX9r5/R4zBf7Am3g==",
+        "nugetSource": "https://api.nuget.org/v3/index.json",
+        "package": "microsoft.dotnet.ilcompiler",
+        "rawArchiveBytes": 94749,
+        "rawArchiveSha256": "da108b2e633101c25b0df6a7a0c6023614f24b92f4bfb0eb2c0814e678a0c871",
+        "version": "10.0.11"
+      },
+      {
+        "contentHashIsNotRawArchiveSha512": true,
+        "lockVerifiedMetadataContentHash": "IBf7lbovvjGWVWXZX5cJ/cO0WXbId0Zq4BuSeT94mGZuOAP66oMeH9PTBZ9Jpp3Jb6jtK0qm/NyUbPRo1gC/wQ==",
+        "nugetSource": "https://api.nuget.org/v3/index.json",
+        "package": "microsoft.net.illink.tasks",
+        "rawArchiveBytes": 1533276,
+        "rawArchiveSha256": "28ee7ccf5c4bdfe67823c8e0ea62232174f61e224d77e7c6ef5caa1413ac0a76",
+        "version": "10.0.11"
+      }
+    ],
+    "productLockBypass": false,
+    "totalBytes": 669555620,
+    "version": "10.0.400"
+  },
+  "sourceAndPackageLockFilesUnchangedExceptFourDeclaredFixTestFiles": true,
+  "sourceIdentityExplanation": "Runner head BA identifies only the unchanged base commit. The four exact uncommitted fix/test file hashes in source-file-pins.json identify tested changes; no new release source commit is asserted.",
+  "status": "TARGETED_MANAGED_REGRESSION_PASS_NOT_RELEASE_APPROVAL",
+  "tests": [
+    {
+      "id": "gui.key-sheet-operation-progress",
+      "intentionalNegativeControl": false,
+      "label": "regression-01",
+      "peakRssMiB": 228,
+      "publicResult": "tests/regression-01.test-results.json",
+      "seconds": 1.832,
+      "status": "PASS"
+    },
+    {
+      "id": "gui.rev11-progress",
+      "intentionalNegativeControl": false,
+      "label": "existing-01",
+      "peakRssMiB": 120,
+      "publicResult": "tests/existing-01.test-results.json",
+      "seconds": 0.424,
+      "status": "PASS"
+    },
+    {
+      "id": "gui.rev11-observer-isolation",
+      "intentionalNegativeControl": false,
+      "label": "existing-02",
+      "peakRssMiB": 119,
+      "publicResult": "tests/existing-02.test-results.json",
+      "seconds": 0.376,
+      "status": "PASS"
+    },
+    {
+      "id": "gui.rev12-preflight-state",
+      "intentionalNegativeControl": false,
+      "label": "existing-03",
+      "peakRssMiB": 203,
+      "publicResult": "tests/existing-03.test-results.json",
+      "seconds": 0.703,
+      "status": "PASS"
+    },
+    {
+      "id": "gui.operation-cancel-lifetime",
+      "intentionalNegativeControl": false,
+      "label": "existing-04",
+      "peakRssMiB": 119,
+      "publicResult": "tests/existing-04.test-results.json",
+      "seconds": 0.373,
+      "status": "PASS"
+    },
+    {
+      "id": "keysheet.pair-cleanup-identity",
+      "intentionalNegativeControl": false,
+      "label": "existing-05",
+      "peakRssMiB": 124,
+      "publicResult": "tests/existing-05.test-results.json",
+      "seconds": 0.487,
+      "status": "PASS"
+    },
+    {
+      "id": "keysheet.cleanup-failure-visible",
+      "intentionalNegativeControl": false,
+      "label": "existing-06",
+      "peakRssMiB": 124,
+      "publicResult": "tests/existing-06.test-results.json",
+      "seconds": 0.444,
+      "status": "PASS"
+    },
+    {
+      "id": "keysheet.pair-atomic-commit",
+      "intentionalNegativeControl": false,
+      "label": "existing-07",
+      "peakRssMiB": 127,
+      "publicResult": "tests/existing-07.test-results.json",
+      "seconds": 0.491,
+      "status": "PASS"
+    },
+    {
+      "id": "gui.key-sheet-operation-progress",
+      "intentionalNegativeControl": true,
+      "label": "mutant-save",
+      "peakRssMiB": 222,
+      "publicResult": "tests/mutant-save.test-results.json",
+      "seconds": 0.916,
+      "status": "FAIL"
+    },
+    {
+      "id": "gui.key-sheet-operation-progress",
+      "intentionalNegativeControl": true,
+      "label": "mutant-print",
+      "peakRssMiB": 223,
+      "publicResult": "tests/mutant-print.test-results.json",
+      "seconds": 1.083,
+      "status": "FAIL"
+    },
+    {
+      "id": "gui.key-sheet-operation-progress",
+      "intentionalNegativeControl": false,
+      "label": "final-regression",
+      "peakRssMiB": 229,
+      "publicResult": "tests/final-regression.test-results.json",
+      "seconds": 1.759,
+      "status": "PASS"
+    }
+  ],
+  "uniquePassingGroups": 8,
+  "version": "5.0.3",
+  "warningsAssessment": "Unchanged dependency warnings remain unremediated in this focused code fix. A successful restore/test does not resolve them; SDK/dependency update is separately coordinated."
+}

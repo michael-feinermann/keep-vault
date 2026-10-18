@@ -1,0 +1,12 @@
+{
+  "actualPid": 89611,
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "check-regression-sensitivity.py"
+  ],
+  "startedUtc": "2026-10-18T10:39:50.206908+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression"
+}

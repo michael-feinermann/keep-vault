@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "kind": "ROOT_VISUAL_REVIEW_OF_FOUR_ACTUALLY_RENDERED_PUBLIC_GUI_PDF_PAGES",
+  "recordedUtc": "2026-10-18T09:56:42.463512+00:00",
+  "actualRecorderPid": 86232,
+  "reviewOrigin": "Root inspected all four view_image outputs in this turn",
+  "renderReceiptPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/render-receipt.json",
+    "bytes": 4130,
+    "sha256": "e22ff58ad3085d2a35e90835fad36beb69f7b993f637ebb9e8319137300d7008"
+  },
+  "reviewedImagePins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-A-1.png",
+      "bytes": 216926,
+      "sha256": "36c1f1b371a5eca7c20dc8c53468ca758a55f62f35e5417085b60758d03e30b7"
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-A-2.png",
+      "bytes": 206473,
+      "sha256": "4b0eb2ca3171f8341d87b958768a54ef71a2d87ef8951ba4f16a38aab95d4be8"
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-B-1.png",
+      "bytes": 214496,
+      "sha256": "b1ddec57403549cd2a244f2b866fa106789ee210c34b7139c55d09545915aadc"
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-B-2.png",
+      "bytes": 206473,
+      "sha256": "4b0eb2ca3171f8341d87b958768a54ef71a2d87ef8951ba4f16a38aab95d4be8"
+    }
+  ],
+  "automaticQaResultPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/pdf-pair-qa-result.json",
+    "bytes": 11796,
+    "sha256": "bd95f8ff3d582579c87792f3e7f61d318713854a2a9125bef743cb83d9f0593d"
+  },
+  "observations": [
+    "Both first pages identify5.0.3 and separate factorA/B; full eight-stage Paranoia name and archive filename/path wrap visibly without overlap.",
+    "Three complete handwriting lines appear on each first page; PIN-not-to-enter notice visible.",
+    "Full grouped factor text and two distinct visually separated QR positions per first page; white quiet zones visible. Exact payload equality is attributed only to separate actual automated QR/text analysis.",
+    "Both second pages show readable public installation guidance and projectQR; no clipped text or overlapping blocks observed.",
+    "All four page borders and bottom text visible in rendered images."
+  ],
+  "status": "ROOT_VISUAL_LAYOUT_PASS",
+  "physicalCameraOrPaper": "NOT_TESTED",
+  "overallReleaseApproval": false
+}

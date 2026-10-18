@@ -1,0 +1,229 @@
+{
+  "actualPreparationPid": 89614,
+  "archive": {
+    "bytes": 230833757,
+    "path": "/private/tmp/keep-vault-official-sdk402-cti3v2ua/dotnet-sdk-10.0.402-osx-arm64.tar.gz",
+    "sha256": "ef081ec3907b30963ea2520c01d6a2001f78ab79b1546fdec82f0b52f210bfec",
+    "sha512": "ee0d379c144ebddef6efe851e1514883d1b695430d13b3fb13e8153f8476e1e5ac7abc42c08668471aaf4d738ff367cf53009845f94d224ba126febe74d00b75"
+  },
+  "commands": [
+    {
+      "actualExitCode": 0,
+      "actualPid": 89620,
+      "actualWaitObserved": true,
+      "argv": [
+        "/bin/zsh",
+        "-f",
+        "-n",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/Provision-VerifiedDotnet-10.0.402-macOS.sh"
+      ],
+      "completedUtc": "2026-10-18T10:39:51.491368+00:00",
+      "cwd": null,
+      "label": "syntax",
+      "startReceiptFailureClass": null,
+      "startedUtc": "2026-10-18T10:39:51.484575+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/syntax.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/syntax.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "waitFailureClass": null
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 89627,
+      "actualWaitObserved": true,
+      "argv": [
+        "/bin/zsh",
+        "-f",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/Provision-VerifiedDotnet-10.0.402-macOS.sh",
+        "--tool-path-self-test"
+      ],
+      "completedUtc": "2026-10-18T10:39:51.555962+00:00",
+      "cwd": null,
+      "label": "tool-path-gate",
+      "startReceiptFailureClass": null,
+      "startedUtc": "2026-10-18T10:39:51.492854+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/tool-path-gate.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 36,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/tool-path-gate.stdout",
+        "sha256": "2e3b990cfb183bb52dcb272ddca8db672b63484b96f727186916bf662da09d85"
+      },
+      "waitFailureClass": null
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 89675,
+      "actualWaitObserved": true,
+      "argv": [
+        "/usr/bin/curl",
+        "--disable",
+        "--fail",
+        "--location",
+        "--silent",
+        "--show-error",
+        "--proto",
+        "=https",
+        "--proto-redir",
+        "=https",
+        "--tlsv1.2",
+        "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-osx-arm64.tar.gz"
+      ],
+      "completedUtc": "2026-10-18T10:39:53.819490+00:00",
+      "cwd": null,
+      "label": "official-archive-download",
+      "startReceiptFailureClass": null,
+      "startedUtc": "2026-10-18T10:39:51.558019+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/official-archive-download.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 230833757,
+        "path": "/private/tmp/keep-vault-official-sdk402-cti3v2ua/dotnet-sdk-10.0.402-osx-arm64.tar.gz",
+        "sha256": "ef081ec3907b30963ea2520c01d6a2001f78ab79b1546fdec82f0b52f210bfec"
+      },
+      "waitFailureClass": null
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 89678,
+      "actualWaitObserved": true,
+      "argv": [
+        "/bin/zsh",
+        "-f",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/Provision-VerifiedDotnet-10.0.402-macOS.sh",
+        "--target",
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk",
+        "--archive",
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/dotnet-sdk-10.0.402-osx-arm64.tar.gz"
+      ],
+      "completedUtc": "2026-10-18T10:40:34.101538+00:00",
+      "cwd": null,
+      "label": "strict-provision",
+      "startReceiptFailureClass": null,
+      "startedUtc": "2026-10-18T10:39:54.263914+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/strict-provision.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 60,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/strict-provision.stdout",
+        "sha256": "1b8855665536499ec5774a75ca5b1a69e4879d97284d1789ad1bdb236ef05665"
+      },
+      "waitFailureClass": null
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 16843,
+      "actualWaitObserved": true,
+      "argv": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet"
+      ],
+      "completedUtc": "2026-10-18T10:40:34.119317+00:00",
+      "cwd": null,
+      "label": "microsoft-host-codesign-verify",
+      "startReceiptFailureClass": null,
+      "startedUtc": "2026-10-18T10:40:34.109099+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/microsoft-host-codesign-verify.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/microsoft-host-codesign-verify.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "waitFailureClass": null
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 16845,
+      "actualWaitObserved": true,
+      "argv": [
+        "/usr/bin/codesign",
+        "-dv",
+        "--verbose=4",
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet"
+      ],
+      "completedUtc": "2026-10-18T10:40:34.131138+00:00",
+      "cwd": null,
+      "label": "microsoft-host-codesign-display",
+      "startReceiptFailureClass": null,
+      "startedUtc": "2026-10-18T10:40:34.120621+00:00",
+      "stderr": {
+        "bytes": 1102,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/microsoft-host-codesign-display.stderr",
+        "sha256": "bcb5d37cf41289c47c663d15d023af50246fbc8793d7b8b0f04a9a060d2e586b"
+      },
+      "stdout": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/microsoft-host-codesign-display.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "waitFailureClass": null
+    },
+    {
+      "actualExitCode": 0,
+      "actualPid": 16847,
+      "actualWaitObserved": true,
+      "argv": [
+        "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk/dotnet",
+        "--version"
+      ],
+      "completedUtc": "2026-10-18T10:40:34.746483+00:00",
+      "cwd": "/private/tmp/keep-vault-official-sdk402-cti3v2ua",
+      "label": "isolated-sdk-version",
+      "startReceiptFailureClass": null,
+      "startedUtc": "2026-10-18T10:40:34.135449+00:00",
+      "stderr": {
+        "bytes": 0,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/isolated-sdk-version.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 9,
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/isolated-sdk-version.stdout",
+        "sha256": "44ea2595bc5a7acabc030531952071226aa70862fd008ed7327d752b39c8513c"
+      },
+      "waitFailureClass": null
+    }
+  ],
+  "completedUtc": "2026-10-18T10:40:35.620287+00:00",
+  "microsoftDeveloperIdVerified": true,
+  "onlyThreeLocalConstantChanges": true,
+  "overallReleaseApproval": false,
+  "productBuilds": 0,
+  "productLocksChanged": false,
+  "restores": 0,
+  "runtimeVersion": "10.0.13",
+  "schema": "keepvault.official-sdk402-preparation-result.v1",
+  "sdkFileCount": 4906,
+  "sdkFileMap": {
+    "bytes": 1091933,
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/sdk-file-map.json",
+    "sha256": "fa88383586175d507f4cb78614bf10758308b579a28119ec21631a170e802271"
+  },
+  "sdkRoot": "/private/tmp/keep-vault-official-sdk402-cti3v2ua/sdk",
+  "sdkVersion": "10.0.402",
+  "sourceProvisionerUnchanged": true,
+  "status": "SDK_PREPARED_NOT_PRODUCT_TESTED",
+  "teamIdentifier": "UBF8T346G9"
+}

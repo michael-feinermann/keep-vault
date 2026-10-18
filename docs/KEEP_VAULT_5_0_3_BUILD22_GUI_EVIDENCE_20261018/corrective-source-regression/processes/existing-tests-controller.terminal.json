@@ -1,0 +1,24 @@
+{
+  "actualPid": 89501,
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "run-targeted.py"
+  ],
+  "startedUtc": "2026-10-18T10:38:43.926401+00:00",
+  "completedUtc": "2026-10-18T10:38:48.907057+00:00",
+  "actualExitCode": 0,
+  "startReceiptError": null,
+  "stdout": {
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression/existing-tests-controller.stdout",
+    "sha256": "9320539b34d8b739a5f12e5981ed94d71a6dc307a588f09b9bd159cbf5673994",
+    "bytes": 12246
+  },
+  "stderr": {
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression/existing-tests-controller.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}

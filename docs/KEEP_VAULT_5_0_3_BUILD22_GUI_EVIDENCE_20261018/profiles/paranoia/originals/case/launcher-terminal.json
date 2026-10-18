@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "scope": "ACTUAL_INSTALLED_LAUNCHER_TERMINATION_CAPTURE_ONLY",
+  "actualLauncherPid": 84645,
+  "actualExitCode": 0,
+  "completedUtc": "2026-10-18T10:03:37.392291+00:00",
+  "launchStartPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/launch-start.json",
+    "sha256": "20b99b3e8a6cac062b47c850fda58b8f0c80abf4649fd79ac28ed41e8226d147",
+    "bytes": 2312
+  },
+  "stdoutPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/launcher.stdout.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "stderrPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/launcher.stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "guiApproval": "NOT_GRANTED",
+  "installedAfterPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/installed-after.json",
+    "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+    "bytes": 23861
+  },
+  "installedBeforeAfterByteBindingsEqual": true
+}

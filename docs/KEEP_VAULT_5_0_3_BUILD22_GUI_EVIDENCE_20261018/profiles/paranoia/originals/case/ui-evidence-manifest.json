@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "caseDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051",
+  "actualLauncherPid": 84645,
+  "publicTestDataOnly": true,
+  "noNonpublicCredentialsFactorsOrMouseRecords": true,
+  "auditWorkRoot": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17",
+  "evidencePins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-ui-observation.json",
+      "sha256": "97c4f96584547c0d6efdd78b21b571f68f2f80c877e46a6c36d59659c0762405",
+      "bytes": 8156
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-independent-tree-comparison.json",
+      "sha256": "31bb79c79b6e0b219c4ccfaabe412b8c4d2df6f68e80783550c5f4818c2b64f2",
+      "bytes": 2254
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-pdf-visual-review.json",
+      "sha256": "aa9b0c22f5ce95ca52afedbe681c114c5c95561d1f4f6986e6a834c1e6c0c17e",
+      "bytes": 3004
+    }
+  ]
+}

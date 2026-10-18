@@ -1,0 +1,38 @@
+{
+  "scope": "INDEPENDENT_COLLECTOR_ACTUAL_POPEN_WAIT",
+  "observerPid": 87040,
+  "actualCollectorPid": 87041,
+  "actualCollectorExitCode": 0,
+  "startedUtc": "2026-10-18T10:05:05.072966+00:00",
+  "observedUtc": "2026-10-18T10:05:05.122874+00:00",
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-installed-audit22-recovered.py",
+    "--collect",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051",
+    "--ui-manifest",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/ui-evidence-manifest.json",
+    "--ui-manifest-sha256",
+    "956d018542cc4acf699a5a2268277bc505bfb2974e22a8cf4cec41d1e320c9f9"
+  ],
+  "startReceiptFailureClass": null,
+  "stdoutPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collector-independent-run-xjtt_b_f/collector.stdout.log",
+    "sha256": "f640f669f0dcf9d428a046788216008ab6637adb0aa955606ea95e77b67f264f",
+    "bytes": 332
+  },
+  "stderrPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collector-independent-run-xjtt_b_f/collector.stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "overallReleaseApproval": false,
+  "collectionReceiptPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/collection-receipt.json",
+    "sha256": "c2a74f5a3c465110439b95f7f6bcfbd6e20eb029bf0077e5f0e3b6adafd06759",
+    "bytes": 9623
+  }
+}

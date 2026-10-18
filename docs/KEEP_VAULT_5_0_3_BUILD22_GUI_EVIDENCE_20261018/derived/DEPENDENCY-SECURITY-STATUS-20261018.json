@@ -1,0 +1,164 @@
+{
+  "schema": "keepvault.public-build22-dependency-security-status.v1",
+  "classification": "DERIVED_PRIMARY_SOURCE_AND_FROZEN_LOCKFILE_SUMMARY_NOT_NEW_RESTORE_RECEIPT",
+  "primaryPagesReadUtc": "2026-10-18T10:46:17.968693+00:00",
+  "advisories": [
+    {
+      "id": "GHSA-846f-f764-76mx",
+      "cve": "CVE-2026-84008",
+      "published": "2026-10-13",
+      "url": "https://github.com/dotnet/runtime/security/advisories/GHSA-846f-f764-76mx",
+      "package": "System.Security.Cryptography.Pkcs",
+      "affectedRelevantVersions": [
+        "8.0.1",
+        "10.0.11"
+      ],
+      "fixedRelevantBranches": [
+        "8.0.2",
+        "10.0.13"
+      ],
+      "microsoftDescribedApi": "SignedCms.CheckSignature",
+      "microsoftAffectedPlatforms": [
+        "Windows",
+        "Linux",
+        "macOS"
+      ],
+      "kind": "Denial of service",
+      "keepVaultSpecificExploitRouteEstablished": false
+    },
+    {
+      "id": "GHSA-2fmv-rv2c-59x7",
+      "cve": "CVE-2026-70162",
+      "published": "2026-10-13",
+      "url": "https://github.com/dotnet/runtime/security/advisories/GHSA-2fmv-rv2c-59x7",
+      "package": "System.Security.Cryptography.Pkcs",
+      "affectedRelevantVersions": [
+        "8.0.1",
+        "10.0.11"
+      ],
+      "fixedRelevantBranches": [
+        "8.0.2",
+        "10.0.13"
+      ],
+      "microsoftDescribedApi": "EnvelopedCms.Decode",
+      "microsoftAffectedPlatforms": [
+        "Windows"
+      ],
+      "kind": "Denial of service",
+      "keepVaultSpecificExploitRouteEstablished": false
+    }
+  ],
+  "compiledSourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "frozenBuild22SourceLockfiles": [
+    {
+      "sourcePin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/packages.lock.json",
+        "sha256": "b111fbcd11fbf46df0e61164109cbd8bfb2c22b80ec79e4b4d1ea0ed7fe07de7",
+        "bytes": 17192
+      },
+      "preservedRelativePath": "dependency-source/app-packages.lock.json",
+      "matchesCompiledSourceMap": true,
+      "pkcsResolved": [
+        {
+          "target": "net10.0",
+          "dependencyType": "Transitive",
+          "resolved": "8.0.1"
+        },
+        {
+          "target": "net10.0/osx-arm64",
+          "dependencyType": "Transitive",
+          "resolved": "8.0.1"
+        },
+        {
+          "target": "net10.0/osx-x64",
+          "dependencyType": "Transitive",
+          "resolved": "8.0.1"
+        }
+      ]
+    },
+    {
+      "sourcePin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/HybridSigner/packages.lock.json",
+        "sha256": "445b25f57a3a97cadad21e7df8f0129d39b52eb921c87ea2335d7108a761ed03",
+        "bytes": 869
+      },
+      "preservedRelativePath": "dependency-source/signer-packages.lock.json",
+      "matchesCompiledSourceMap": true,
+      "pkcsResolved": [
+        {
+          "target": "net10.0",
+          "dependencyType": "Direct",
+          "resolved": "10.0.11"
+        },
+        {
+          "target": "net10.0/osx-arm64",
+          "dependencyType": "Direct",
+          "resolved": "10.0.11"
+        }
+      ]
+    }
+  ],
+  "lockedRestoreAdvisoryWarningStatus": {
+    "origin": "Actual public targeted-regression result knownUnresolvedWarnings: NU1902 and NU1903 for Pkcs8.0.1",
+    "originalResultPin": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/docs/KEEP_VAULT_5_0_3_PDF_PROGRESS_REGRESSION_20261018/result.json",
+      "sha256": "40c25301a54cac359d2f60b0e3d867e261dc52a0f384e6c90f781d16a9945032",
+      "bytes": 16419
+    },
+    "rawRestoreLogIncluded": false
+  },
+  "officialReleaseMetadata": {
+    "url": "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json",
+    "readUtc": "2026-10-18T10:46:17.968693+00:00",
+    "releaseDate": "2026-10-13",
+    "runtimeVersion": "10.0.13",
+    "sdkVersion": "10.0.402",
+    "securityRelease": true
+  },
+  "plannedBuild23Targets": {
+    "sdk": "10.0.402",
+    "runtime": "10.0.13",
+    "appPkcs": "8.0.2",
+    "signerPkcs": "10.0.13"
+  },
+  "sdkPreparation": "Actual original SDK_PREPARED_NOT_PRODUCT_TESTED receipt now included; stage builder did not re-run provisioning or codesign",
+  "productPackageRuntimePatchAndRegressionTests": "OPEN_NOT_PROVEN_BY_THIS_PACKAGE",
+  "concreteKeepVaultUntrustedInputExploitRoute": "NOT_ESTABLISHED",
+  "kdfSecurityVulnerability": "NOT_ESTABLISHED",
+  "historicalBuild22RepairedBySdkPreparation": false,
+  "correctedBuild23BuiltSignedNotarizedInstalledOrApproved": false,
+  "overallReleaseApproval": false,
+  "actualPublicRegressionExport": {
+    "resultPin": {
+      "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/docs/KEEP_VAULT_5_0_3_PDF_PROGRESS_REGRESSION_20261018/result.json",
+      "sha256": "40c25301a54cac359d2f60b0e3d867e261dc52a0f384e6c90f781d16a9945032",
+      "bytes": 16419
+    },
+    "preservedRelativePath": "corrective-source-regression/result.json",
+    "status": "TARGETED_MANAGED_REGRESSION_PASS_NOT_RELEASE_APPROVAL",
+    "uniquePassingGroups": 8,
+    "additionalExistingGroups": 7,
+    "handlerCombinations": 24,
+    "actualProcessReceipts": 20,
+    "intentionalMutationControls": "Two expected test FAILs, not a claim every test invocation passed",
+    "testedSourceIdentity": "Four exact fix/test file pins; original result records uncommitted tested changes over base BA",
+    "rootReportedSubsequentLocalCommit": "5f3b982ea59f589d041f6ceb247185586ce3ff1d",
+    "remotePublicationVerifiedByThisStageBuilder": false,
+    "oldPkcsWarningsRemain": true,
+    "notInstalledBuild23Proof": true
+  },
+  "officialSdkPreparationReceipt": {
+    "originalPin": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/official-sdk402-preparation-kbjr7nzy/result.json",
+      "sha256": "1df8bc3fcc58dfdeca6f9eb7c91303c0d58b05b89757304e0dfc31cd99a82c42",
+      "bytes": 10293
+    },
+    "preservedRelativePath": "sdk-preparation/result.json",
+    "status": "SDK_PREPARED_NOT_PRODUCT_TESTED",
+    "sdkVersion": "10.0.402",
+    "runtimeVersion": "10.0.13",
+    "microsoftDeveloperIdVerifiedAsRecorded": true,
+    "productBuilds": 0,
+    "restores": 0
+  }
+}

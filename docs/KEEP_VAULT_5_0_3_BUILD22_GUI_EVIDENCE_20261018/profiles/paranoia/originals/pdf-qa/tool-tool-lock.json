@@ -1,0 +1,40 @@
+{
+  "schema": "keepvault.readonly-pdf-qa-tool-lock.v1",
+  "createdUtc": "2026-10-18T09:50:48.664462+00:00",
+  "driver": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/check-public-pdf-pair.py",
+    "sha256": "22f6ed53eceab3d824496a9836ac924bd05450f00db188eb939af5994f658f45",
+    "bytes": 15339
+  },
+  "tools": {
+    "nativeAnalyzer": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/PdfQrReadOnly",
+      "sha256": "d036c29e5f4d74f06aa19f2d8dfd4c27444b25ae03bb0c264dae1f9b2365cb6a",
+      "bytes": 121584
+    },
+    "nativeAnalyzerSource": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/PdfQrReadOnly.swift",
+      "sha256": "0bf62cbf4f9adf6f2bfbc674d1b34c8c18c6196fb9158fa0a8ff7dc8d6dcb3dd",
+      "bytes": 7829
+    },
+    "pdftotext": {
+      "path": "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftotext",
+      "sha256": "c3eb5a97db48fcaeae84433b98fdf34c70a5502af3709a74475ca4aed29acb03",
+      "bytes": 110680
+    },
+    "canonicalPython": {
+      "path": "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+      "sha256": "54f31dd7440a150d5ad7ec4c51d19658b3b5c8b047969bcae09948b8990346ba",
+      "bytes": 18058560
+    }
+  },
+  "runtimeFrameworks": [
+    "macOS CoreGraphics (in-memory PDF rendering)",
+    "macOS Vision (QR detection and decoding)",
+    "macOS CryptoKit (SHA-256)",
+    "Foundation",
+    "Poppler pdftotext and its installed linked runtime"
+  ],
+  "runtimeDependencyScope": "Named operating-system and Poppler runtime dependencies; this is not a hermetic full-system-library byte audit.",
+  "expectedInputs": "Two explicitly acknowledged public GUI-test PDFs with independently supplied exact SHA-256 pins; no current PDF has been opened during preparation."
+}

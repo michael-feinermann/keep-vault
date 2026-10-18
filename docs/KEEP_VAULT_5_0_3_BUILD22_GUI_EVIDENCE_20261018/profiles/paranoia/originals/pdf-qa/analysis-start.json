@@ -1,0 +1,29 @@
+{
+  "schema": "keepvault.readonly-public-pdf-qa-start.v1",
+  "actualDriverPid": 86015,
+  "startedUtc": "2026-10-18T09:51:47.897036+00:00",
+  "publicTestInputsExplicitlyAcknowledged": true,
+  "inputPinsBefore": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+      "bytes": 106827
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+      "bytes": 106926
+    }
+  },
+  "toolLockPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/tool-lock.json",
+    "sha256": "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+    "bytes": 2088
+  },
+  "driverPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/check-public-pdf-pair.py",
+    "sha256": "22f6ed53eceab3d824496a9836ac924bd05450f00db188eb939af5994f658f45",
+    "bytes": 15339
+  },
+  "visualReview": "ROOT_REQUIRED_NOT_PERFORMED"
+}

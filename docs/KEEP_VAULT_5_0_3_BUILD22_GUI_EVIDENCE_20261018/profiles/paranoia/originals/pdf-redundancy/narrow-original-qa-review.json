@@ -1,0 +1,23 @@
+{
+  "schema": "keepvault.narrow-existing-pdf-qa-review.v1",
+  "status": "NARROW_CONTRACT_PASS",
+  "qaOriginalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/pdf-pair-qa-result.json",
+    "sha256": "bd95f8ff3d582579c87792f3e7f61d318713854a2a9125bef743cb83d9f0593d",
+    "bytes": 11796
+  },
+  "driverPidAsReportedByRoot": 86015,
+  "driverActualWaitExitAsReportedByRoot": 0,
+  "independentDriverOuterReceiptRechecked": false,
+  "pdfPinsEqual": true,
+  "sourceToolPinChecks": true,
+  "twoPdfsEachTwoA4Pages": true,
+  "eachFirstPageTwoIdentical256HexMatchingVisibleText": true,
+  "factorHashesDifferent": true,
+  "eachPage2PublicProjectQrAndNoFactor": true,
+  "fiveActualAnalyzerChildrenZeroExitInOriginal": true,
+  "visualReview": "NOT_REPERFORMED_BY_THIS_AGENT_ROOT_SEPARATE",
+  "cameraOrInstalledBuild22ScannerClaim": false,
+  "rawFactorsIncluded": false,
+  "overallReleaseApproval": false
+}

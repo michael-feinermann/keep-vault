@@ -1,0 +1,337 @@
+{
+  "schema": "keepvault.readonly-public-pdf-pair-qa.v1",
+  "status": "PDF_QR_AND_TEXT_PASS_VISUAL_PENDING",
+  "actualDriverPid": 86015,
+  "startedUtc": "2026-10-18T09:51:47.897486+00:00",
+  "inputsBefore": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+      "bytes": 106827
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+      "bytes": 106926
+    }
+  },
+  "toolLockPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/tool-lock.json",
+    "sha256": "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+    "bytes": 2088
+  },
+  "driverPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/check-public-pdf-pair.py",
+    "sha256": "22f6ed53eceab3d824496a9836ac924bd05450f00db188eb939af5994f658f45",
+    "bytes": 15339
+  },
+  "rawFactorsIncluded": false,
+  "visualLayoutReview": "ROOT_REQUIRED_NOT_PERFORMED",
+  "physicalCameraOrPaper": "NOT_TESTED",
+  "overallReleaseApproval": false,
+  "nativeAnalysis": {
+    "actualAnalyzerPid": 86016,
+    "cameraOrPaperClaim": false,
+    "factorHashesDifferent": true,
+    "pdfs": [
+      {
+        "canonicalUppercaseFactorSha256": "7b4aef5236e83f279c18d14dd98315bb91702b3a7475b8e65eeb0ff2ebac05da",
+        "decodedFactorLength": 256,
+        "pages": [
+          {
+            "a4": true,
+            "barcodeBoundingBoxes": [
+              {
+                "height": 0.049754585960880726,
+                "width": 0.07104064129572252,
+                "x": 0.5128387119057966,
+                "y": 0.36140223352661394
+              },
+              {
+                "height": 0.049754585960880726,
+                "width": 0.07104064129572246,
+                "x": 0.41610352448137095,
+                "y": 0.36140223352661394
+              }
+            ],
+            "factorHex256": true,
+            "factorQrCount": 2,
+            "heightPoints": 841.89,
+            "page": 1,
+            "publicProjectQrExact": false,
+            "qrCount": 2,
+            "renderDpi": 200,
+            "renderHeightPixels": 2339,
+            "renderWidthPixels": 1654,
+            "rotationDegrees": 0,
+            "twoFactorQrsIdentical": true,
+            "widthPoints": 595.2760000000001
+          },
+          {
+            "a4": true,
+            "barcodeBoundingBoxes": [
+              {
+                "height": 0.04431674234782501,
+                "width": 0.06298363165526755,
+                "x": 0.3519067914194755,
+                "y": 0.5598520814684427
+              }
+            ],
+            "factorHex256": false,
+            "factorQrCount": 0,
+            "heightPoints": 841.89,
+            "page": 2,
+            "publicProjectQrExact": true,
+            "qrCount": 1,
+            "renderDpi": 200,
+            "renderHeightPixels": 2339,
+            "renderWidthPixels": 1654,
+            "rotationDegrees": 0,
+            "twoFactorQrsIdentical": false,
+            "widthPoints": 595.2760000000001
+          }
+        ],
+        "payloadsExposed": false,
+        "pdfBytes": 106827,
+        "pdfSha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+        "role": "A"
+      },
+      {
+        "canonicalUppercaseFactorSha256": "dbf929d28cf1328ce1f954c779462d1ebd38c2902cedbe3b01d07fad59c0cc05",
+        "decodedFactorLength": 256,
+        "pages": [
+          {
+            "a4": true,
+            "barcodeBoundingBoxes": [
+              {
+                "height": 0.049754585960880726,
+                "width": 0.07104064129572252,
+                "x": 0.5128387119057966,
+                "y": 0.36140223352661394
+              },
+              {
+                "height": 0.049754585960880726,
+                "width": 0.07104064129572246,
+                "x": 0.41610352448137095,
+                "y": 0.36140223352661394
+              }
+            ],
+            "factorHex256": true,
+            "factorQrCount": 2,
+            "heightPoints": 841.89,
+            "page": 1,
+            "publicProjectQrExact": false,
+            "qrCount": 2,
+            "renderDpi": 200,
+            "renderHeightPixels": 2339,
+            "renderWidthPixels": 1654,
+            "rotationDegrees": 0,
+            "twoFactorQrsIdentical": true,
+            "widthPoints": 595.2760000000001
+          },
+          {
+            "a4": true,
+            "barcodeBoundingBoxes": [
+              {
+                "height": 0.04431674234782501,
+                "width": 0.06298363165526755,
+                "x": 0.3519067914194755,
+                "y": 0.5598520814684427
+              }
+            ],
+            "factorHex256": false,
+            "factorQrCount": 0,
+            "heightPoints": 841.89,
+            "page": 2,
+            "publicProjectQrExact": true,
+            "qrCount": 1,
+            "renderDpi": 200,
+            "renderHeightPixels": 2339,
+            "renderWidthPixels": 1654,
+            "rotationDegrees": 0,
+            "twoFactorQrsIdentical": false,
+            "widthPoints": 595.2760000000001
+          }
+        ],
+        "payloadsExposed": false,
+        "pdfBytes": 106926,
+        "pdfSha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+        "role": "B"
+      }
+    ],
+    "rawFactorsIncluded": false,
+    "schema": "keepvault.readonly-pdf-qr-native.v1",
+    "status": "PASS",
+    "totalFactorQrs": 4,
+    "totalPublicProjectQrs": 2,
+    "visualLayoutReview": "NOT_PERFORMED_ROOT_REQUIRED"
+  },
+  "textChecks": [
+    {
+      "role": "A",
+      "language": "de",
+      "visibleFactorLength": 256,
+      "canonicalUppercaseVisibleFactorSha256": "7b4aef5236e83f279c18d14dd98315bb91702b3a7475b8e65eeb0ff2ebac05da",
+      "visibleFactorMatchesBothQrs": true,
+      "page2ContainsNoOwnFactor": true,
+      "page2PublicGuidancePresent": true
+    },
+    {
+      "role": "B",
+      "language": "de",
+      "visibleFactorLength": 256,
+      "canonicalUppercaseVisibleFactorSha256": "dbf929d28cf1328ce1f954c779462d1ebd38c2902cedbe3b01d07fad59c0cc05",
+      "visibleFactorMatchesBothQrs": true,
+      "page2ContainsNoOwnFactor": true,
+      "page2PublicGuidancePresent": true
+    }
+  ],
+  "factorHashesDifferent": true,
+  "allVisibleFactorsHex256": true,
+  "eachFactorMatchesTwoQrs": true,
+  "eachGuidancePageHasOnlyPublicProjectQr": true,
+  "page2ContainsNeitherFactor": true,
+  "inputsAfter": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+      "bytes": 106827
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+      "bytes": 106926
+    }
+  },
+  "pdfPinsBeforeAfterEqual": true,
+  "toolPinsBeforeAfterEqual": true,
+  "completedUtc": "2026-10-18T09:51:48.323498+00:00",
+  "actualAnalyzerChildren": [
+    {
+      "label": "vision-pdf-qr",
+      "actualPid": 86016,
+      "actualExitCode": 0,
+      "startedUtc": "2026-10-18T09:51:47.897494+00:00",
+      "completedUtc": "2026-10-18T09:51:48.242628+00:00",
+      "timedOut": false,
+      "argv": [
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/PdfQrReadOnly",
+        "3",
+        "4"
+      ],
+      "stdoutBytes": 2707,
+      "stdoutSha256": "a1240f0b6f87ef5b49d50780802859e45719e254710012b9cfe7ac06debfdeb3",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "startReceiptFailureClass": null,
+      "captureFailureClass": null,
+      "abortWaitFailureClass": null,
+      "streamCaptureComplete": true
+    },
+    {
+      "label": "text-a-page1",
+      "actualPid": 86018,
+      "actualExitCode": 0,
+      "startedUtc": "2026-10-18T09:51:48.243022+00:00",
+      "completedUtc": "2026-10-18T09:51:48.272517+00:00",
+      "timedOut": false,
+      "argv": [
+        "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftotext",
+        "-f",
+        "1",
+        "-l",
+        "1",
+        "-layout",
+        "/dev/fd/3",
+        "-"
+      ],
+      "stdoutBytes": 1208,
+      "stdoutSha256": "6326abedaf75f770ae6db6c65904e4a1ff3c5d4816c8d294e979ee42c9a45536",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "startReceiptFailureClass": null,
+      "captureFailureClass": null,
+      "abortWaitFailureClass": null,
+      "streamCaptureComplete": true
+    },
+    {
+      "label": "text-a-page2",
+      "actualPid": 86020,
+      "actualExitCode": 0,
+      "startedUtc": "2026-10-18T09:51:48.272830+00:00",
+      "completedUtc": "2026-10-18T09:51:48.285968+00:00",
+      "timedOut": false,
+      "argv": [
+        "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftotext",
+        "-f",
+        "2",
+        "-l",
+        "2",
+        "-layout",
+        "/dev/fd/3",
+        "-"
+      ],
+      "stdoutBytes": 1016,
+      "stdoutSha256": "7d48781ced0164ad3cb576a03eec38ab0e6622c72a0a77252123ccfb945986d9",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "startReceiptFailureClass": null,
+      "captureFailureClass": null,
+      "abortWaitFailureClass": null,
+      "streamCaptureComplete": true
+    },
+    {
+      "label": "text-b-page1",
+      "actualPid": 86021,
+      "actualExitCode": 0,
+      "startedUtc": "2026-10-18T09:51:48.286450+00:00",
+      "completedUtc": "2026-10-18T09:51:48.301631+00:00",
+      "timedOut": false,
+      "argv": [
+        "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftotext",
+        "-f",
+        "1",
+        "-l",
+        "1",
+        "-layout",
+        "/dev/fd/4",
+        "-"
+      ],
+      "stdoutBytes": 1208,
+      "stdoutSha256": "1bbf720e8490f170c0c6a3fefe1e592a7ad0be7ffdad3a7c718d961e325115a7",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "startReceiptFailureClass": null,
+      "captureFailureClass": null,
+      "abortWaitFailureClass": null,
+      "streamCaptureComplete": true
+    },
+    {
+      "label": "text-b-page2",
+      "actualPid": 86022,
+      "actualExitCode": 0,
+      "startedUtc": "2026-10-18T09:51:48.301876+00:00",
+      "completedUtc": "2026-10-18T09:51:48.314862+00:00",
+      "timedOut": false,
+      "argv": [
+        "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftotext",
+        "-f",
+        "2",
+        "-l",
+        "2",
+        "-layout",
+        "/dev/fd/4",
+        "-"
+      ],
+      "stdoutBytes": 1016,
+      "stdoutSha256": "7d48781ced0164ad3cb576a03eec38ab0e6622c72a0a77252123ccfb945986d9",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "startReceiptFailureClass": null,
+      "captureFailureClass": null,
+      "abortWaitFailureClass": null,
+      "streamCaptureComplete": true
+    }
+  ],
+  "actualDriverExitMustBeObservedByCaller": true
+}

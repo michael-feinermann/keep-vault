@@ -1,0 +1,26 @@
+{
+  "actualRendererPid": 88435,
+  "startedUtc": "2026-10-18T10:25:12.369405+00:00",
+  "argv": [
+    "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftoppm",
+    "-f",
+    "1",
+    "-l",
+    "2",
+    "-png",
+    "-r",
+    "144",
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/B"
+  ],
+  "pdfPinBefore": {
+    "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+    "sha256": "aab8165a8bb574e320a4699d73698d3d24778a2138eb8e1a9d893783ea0e59c1",
+    "bytes": 104723
+  },
+  "rendererPin": {
+    "path": "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftoppm",
+    "sha256": "23cfa13bea9fb2501744b62b738f91732588157a0569dd15fc4cc4aa93055ba0",
+    "bytes": 93040
+  }
+}

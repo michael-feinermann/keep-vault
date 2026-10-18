@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "recordedUtc": "2026-10-18T10:04:18.315369+00:00",
+  "status": "ROOT_ACTUAL_PROFILE_OBSERVATION_COMPLETE_PENDING_INDEPENDENT_RECEIPT_REVIEW",
+  "actualLauncherPid": 84645,
+  "caseDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051",
+  "auditWorkRoot": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17",
+  "publicTestDataOnly": true,
+  "noNonpublicCredentialsFactorsOrMouseRecords": true,
+  "humanEntropyReady": true,
+  "complete": true,
+  "additionalObservedSequence": [
+    "User replied Paranoia ready to actual mouse-entropy request. First subsequent Root AX observation already showed both generated factors, Ready/source-pools-consumed, and completed progress. Root did not click Generate and did not directly observe its click actor.",
+    "Root captured both complete256hex public audit factors in ephemeral CUA variables. No values are recorded in this observation.",
+    "First actual Create click opened normal archive-parent permission picker. Root cancelled it and confirmed warning; same factorA/B/password/PIN and prepared-status remained visible.",
+    "Root retried Create, navigated normal picker to exact audit WorkRoot, confirmed it, observed missing-key-sheet warning, confirmed warning. Same factorA/B/password/PIN and prepared-status remained.",
+    "Root switched to Extract and natively pasted the current generated public factors into A/B. Both full256hex values matched their generated counterparts; both256/256 labels were visibly green in displayed screenshot.",
+    "Root returned to Archive, normal SaveTestPDF dialog showed exact WorkRoot and public-fixture-key-sheets-test-export.pdf. Root clickedSave and explicitly confirmed controlled-test-export warning. UI then showed key sheets handled for exact archive/suite/factor pair.",
+    "Root clicked Create once after sheet approval. Actual UI disabled Create controls, enabledCancel and entered key derivation. Subsequent actual phase progress was1of2steps. Archive completion not yet observed.",
+    "Root observed normal successful Archive+KPAR2 completion dialog, confirmedOK; all Create password/PIN/factor fields then empty.",
+    "Root switched to Extract; previously pasted current public factors and public password/PIN remained exact. Root clickedExtract and confirmed exact current audit archive directory in normal native permission picker.",
+    "Root observed real key derivation then decrypt/extract phase with32MiBof64.06MiB, dynamic phase ETA and unknown global ETA.",
+    "Root opened console during operation, actual log scrollbar initially806; set scrollbar0. AX text-selection method unsupported; selection retention was NOT established.",
+    "Root observed normal extract-success dialog, confirmedOK; actual Extract password/PIN/A/B all empty and counts0/256. Console remained at scrollbar0 through completion; arbitrary selection/follow/pruning not established.",
+    "Root collapsed console, scrolled Extract to154.5 and actually focused empty factorB editor. Async human CmdZ request is pending; no Undo result claimed."
+  ],
+  "actualPdfPaths": [
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf"
+  ],
+  "independentTreeComparisonPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-independent-tree-comparison.json",
+    "bytes": 2254,
+    "sha256": "31bb79c79b6e0b219c4ccfaabe412b8c4d2df6f68e80783550c5f4818c2b64f2"
+  },
+  "pdfVisualReviewPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-pdf-visual-review.json",
+    "bytes": 3004,
+    "sha256": "aa9b0c22f5ce95ca52afedbe681c114c5c95561d1f4f6986e6a834c1e6c0c17e"
+  },
+  "pdfQrRedundancyPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/redundancy-result.json",
+    "bytes": 7055,
+    "sha256": "9b04face06e4b451cffc85a15cad627713fdc0948a493eeef6a48005d8aec612"
+  },
+  "functionalOperationsObservedSuccessful": true,
+  "humanUndoAfterCleanup": {
+    "userReplyExact": "Ja, bleibt leer bei 0 / 256",
+    "question": "One real CmdZ in focused empty factorB after successful Extract cleanup",
+    "actualRootAfterReplyAX": "FactorB empty, count0/256, editor focused; FactorA/password/PIN also empty",
+    "scope": "Post-operation undo cannot restore cleared factor in this observed user keyboard path; no general physical RAM erasure claim."
+  },
+  "normalQuit": "Root sent normal CmdQ through actual CUA app binding; no forcekill; original runner then observed actual launcher exit0.",
+  "initialObservations": [
+    "Fresh audited installed process opened with public fixture and compression 3.",
+    "Selected suite observed in AX as full eight-stage Paranoia cascade before Generate.",
+    "Integrity check passed in UI.",
+    "Generate remains disabled; latest observed total mouse-event count196. No Generate/PDF/Create/Extract performed.",
+    "Root scrolled Create panel to expose pool counters and Generate.",
+    "Initial warning acknowledgement not observed by Root."
+  ],
+  "launcherTerminalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/launcher-terminal.json",
+    "sha256": "e4896c624d8e1d02db41fa0cbca5671a0ddfcce7f2f8d0a4811fb8c96658b66f",
+    "bytes": 1765
+  },
+  "installedAfterPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/installed-after.json",
+    "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+    "bytes": 23861
+  },
+  "installedBeforeAfterByteBindingsEqual": true,
+  "overallReleaseApproval": false,
+  "remainingWholeGuiChecks": "This single Paranoia profile and specific observed subchecks do not replace other profiles/faultcases or all normalGUI gates.",
+  "actualRootObserverFiles": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/gui-root-observer-paranoia-20261018T093205Z/start.json",
+      "sha256": "5fac7fa78b2a512802d6a1a8a7b2ef0ccec2281b18c2b1a749f59cbc7ad183a2",
+      "bytes": 778
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/gui-root-observer-paranoia-20261018T093205Z/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/gui-root-observer-paranoia-20261018T093205Z/stdout.log",
+      "sha256": "72801f1e181cf210a259f479c64e5b87eef0f5584f3e67e3731b5876e9816c68",
+      "bytes": 867
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/gui-root-observer-paranoia-20261018T093205Z/terminal.json",
+      "sha256": "de9a2fca3c2dd8cdc9d172369a290fec97bb9619fb8be0154ad4e727f099346a",
+      "bytes": 937
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+# Keep Vault 5.0.3 Build 22: zwei installierte Funktionsprofile, offene GUI-Freigabe
+
+Status: TWO_FUNCTIONAL_PROFILES_WITH_OPEN_GUI_DEFECT / NO_OVERALL_RELEASE. Prominent offen bleibt der [bestätigte PDF-Fortschrittsfehler](PDF-STATUS-DEFECT-ADDENDUM.de.md): eine erfolgreiche Standard-Test-PDF-Ausgabe zeigte Cancelled/0%. Ein fertig getesteter, signierter, notarisierter oder installierter Produktbuild 23 wird nicht nachgewiesen. Der separat ergänzte gezielte Managed-Quellcodefix ist davon zu unterscheiden. Keine stabile Freigabe und keine Gesamtfreigabe.
+
+Zusätzlich ist der [aktuelle Abhängigkeits-Sicherheitsstand](PDF-STATUS-DEFECT-ADDENDUM.de.md#aktueller-abhängigkeitsstand-geprüft-am-18-oktober-2026) offen dokumentiert: neue Microsoft-PKCS-Advisories betreffen die eingefrorenen App-/Signer-Paketversionen. Der geplante Build 23 soll SDK 10.0.402, Runtime 10.0.13 und korrigierte PKCS-Versionen erhalten. SDK-Vorbereitung und ein gezielter Managed-Quellcode-Regressionsexport sind getrennt belegt; das Abhängigkeits-/Runtime-Produktupdate, seine vollständigen Tests und neue Freigaben sind nicht als abgeschlossen nachgewiesen. Keine konkrete Keep-Vault-Eingaberoute oder KDF-Lücke wird daraus abgeleitet.
+
+Enthalten sind genau 2 von 5 positiven installierten Build 22-Profilfällen, Standard und Paranoia, jeweils ein realer funktionaler Lauf am 18. Oktober 2026 mit 256 MiB öffentlichen synthetischen Quelldaten und Kompressionsstufe 3. Enthalten sind 0 von 10 negativen neuen installierten Build 22-GUI-Faultfällen. Die übrigen positiven Profile, die zehn Faultfälle, die vollständigen normalen GUI-Prüfungen, die aktuelle Build 22-Scannerkamera und der letzte Structure512-Lauf nach sämtlichen GUI-Prüfungen sind hier nicht fertig. Frühere Managed-/native Sicherheits- und Performancekampagnen sind davon getrennte Nachweise und werden nicht zu diesen fünfzehn GUI-Fällen umetikettiert.
+
+Kompilierter Quellcommit: ba9949ad1b93a89f75dd8078414371d1a1b7ad0d. AOT-Core-SHA256: a52e743157b1930c0a922a6e76230751801b6820c0b7e401ea766f6c4060e509. Beide Fälle bleiben historisch an Build 22 gebunden. Die unveränderte [bereits unabhängig geprüfte Paranoia-Stufe](profiles/paranoia/README.de.md) ist vollständig bytegleich eingebettet, einschließlich ihrer damaligen Scope- und Herkunftsdateien. Spätere Erkenntnisse stehen im neuen obersten Scope und Defektaddendum; historische Originale wurden nicht umgeschrieben. Die [Standard-Sammlung](profiles/standard/README.de.md) ergänzt Originale und ihren unabhängigen Review mit ausdrücklich offenem Statusfehler.
+
+## Tatsächlich gemessene Operationsintervalle
+
+| Profil | Operation | Handler gesamt(s) | gemessene Dialoge(s) | ausgewiesene Arbeit(s) | Prozess-CPU(s) |
+|---|---|---:|---:|---:|---:|
+| Standard | generate | 0.010983125 | 0.000000000 | 0.010954167 | 0.034205000 |
+| Standard | create | 131.256544875 | 94.506198667 | 36.750327625 | 49.869791000 |
+| Standard | extract | 143.306012000 | 107.090890416 | 36.215117209 | 23.096838000 |
+| Paranoia | generate | 0.021307458 | 0.000000000 | 0.020772125 | 0.065075000 |
+| Paranoia | create | 156.806304333 | 115.187298583 | 41.618991833 | 80.267275000 |
+| Paranoia | extract | 48.536746834 | 15.083059542 | 33.453681667 | 19.898474000 |
+
+Quelle ist [die abgeleitete Projektion mit Originalpins](derived/TWO-FUNCTIONAL-CASE-TIMES.json). N=1 je Profil; dies sind Funktionsläufe und keine wiederholten kontrollierten Geschwindigkeitsbenchmarks. Die menschliche Entropiesammlung und Vorabdialoge sind nicht vollständig im Handlertimer enthalten. Die Arbeit zieht nur gemessene Anwendungsdialoge ab; Picker- oder andere Bedienwartezeiten können verbleiben. Prozess-CPU ist von Wandzeit verschieden. KDF-Branches, Cipher-, ZPAQ-, Pipe-, MAC-, KPAR2-, Queue- und Joinintervalle überlappen; deren Summen sind keine additive Gesamtzeit. Quelldatenbytes und komprimierte Cipherbytes sind unterschiedliche Durchsatzbasen.
+
+Die drei jeweiligen Originaloperationen sowie der Produkt- und Rootbaumvergleich stimmen auf drei Dateien, fünf Unterverzeichnisse und 268435456 Quelldatenbytes überein, einschließlich leerer, verschachtelter, versteckter und Unicodepfade. Der neue Paketbauer hat die großen Dateien nicht nochmals gehasht oder Produktoperationen wiederholt. Der jeweilige Generate-Akteur wurde von Root nicht direkt beobachtet; bereits erzeugte Faktoren nach einer menschlichen Bereit-Meldung beweisen für sich weder eine automatische Auslösung noch einen bestimmten Akteur. Die ursprünglichen Beobachtungsgrenzen bleiben erhalten.
+
+Die getrennten PDF-QA-/Outer-Wait-/Render-/Root-Layoutmetadaten betreffen ausschließlich die tatsächlich exportierten öffentlichen Testzettel. Roh-PDFs, PNGs, Faktoren, Passwort-/PIN-Werte, Maus-/RNG-Rohdaten, private Schlüssel oder Schlüsselcontainerpfade, Programme und Rohlogs sind nicht enthalten. Öffentliche PDF-/Bildpfade und Hashverweise sind zulässige Herkunftsmetadaten, keine Behauptung, diese Dateien würden öffentlich mitgeliefert. Die frühere Software-QR-Verdeckung bei Paranoia ersetzt weder aktuelle Kamera noch beschädigtes Papier; acht Arbiterannahmen derselben Detection sind keine acht unabhängig dekodierten Kameraframes.
+
+ORIGIN-MANIFEST.json pinnt jede bytegleiche Übernahme. Originale und neue abgeleitete Zusammenfassungen sind ausdrücklich getrennt. SHA256SUMS pinnt sämtliche Dateien der neuen Stufe. Dies ist eine kuratierte öffentliche Teilmenge und kein vollständig eigenständiges Archiv des zentralen Live-Proofs oder aller Systembibliotheken. Es gibt keine Windows-, physische Multi-TiB-, Druck- oder externe Auditfreigabe. Die Paketvorbereitung war ausschließlich lokal; sie führte keine Git-/GitHub-Schreibaktion und keine Produkt-/GUI-Prüfung aus. Bestehende Releases und Originale bleiben unverändert.
+
+Die spätere [Quellcode-Regression](corrective-source-regression/README.de.md) und [SDK-Vorbereitung](sdk-preparation/result.json) sind unveränderte getrennte Originalexporte. Acht gezielt bestandene Testgruppen und zwei erwartete Mutanten-FAILs bedeuten keine neue installierte GUI-Freigabe. Der installierte Build 22 und seine offenen Fehlerbelege bleiben unverändert.

@@ -1,0 +1,21 @@
+{
+  "label": "vision-pdf-qr",
+  "actualPid": 88423,
+  "actualExitCode": 0,
+  "startedUtc": "2026-10-18T10:25:11.584586+00:00",
+  "completedUtc": "2026-10-18T10:25:11.872797+00:00",
+  "timedOut": false,
+  "argv": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/PdfQrReadOnly",
+    "3",
+    "4"
+  ],
+  "stdoutBytes": 2707,
+  "stdoutSha256": "fb33697fb3fe7c1fbd81fe9905a7f5cfa8f10ed045ada150b32ecd22cdca929e",
+  "stderrBytes": 0,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "startReceiptFailureClass": null,
+  "captureFailureClass": null,
+  "abortWaitFailureClass": null,
+  "streamCaptureComplete": true
+}

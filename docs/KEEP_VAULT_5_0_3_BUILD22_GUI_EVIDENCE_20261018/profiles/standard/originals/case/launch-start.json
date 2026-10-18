@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "scope": "ACTUAL_INSTALLED_LAUNCHER_START_NO_GUI_VERDICT",
+  "caseId": "profile",
+  "labelAnnotation": "profile-standard",
+  "caseDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d",
+  "sourceHead": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "version": "5.0.3",
+  "buildNumber": 22,
+  "installedBeforePin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/installed-before.json",
+    "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+    "bytes": 23861
+  },
+  "sourceBindingsPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/source-bindings.json",
+    "sha256": "fb8590e75069c24a0f40dd678a4aa6093f892cd21c28c30260a7a1610a0e969d",
+    "bytes": 3191
+  },
+  "preservedBindingManifestPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/binding-manifest.original.json",
+    "sha256": "63203a6b95edfdbd137162f2debb22ed4ff6fe1bce30d5d5bfa7361731d1720c",
+    "bytes": 20896
+  },
+  "actualRunnerPid": 87086,
+  "actualLauncherPid": 87094,
+  "startedUtc": "2026-10-18T10:05:45.463051+00:00",
+  "argv": [
+    "/Applications/Keep Vault.app/Contents/MacOS/Keep Vault Launcher",
+    "--release-audit",
+    "profile"
+  ],
+  "environmentKeysOnly": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "LOGNAME",
+    "PATH",
+    "TMPDIR",
+    "USER",
+    "__CF_USER_TEXT_ENCODING"
+  ],
+  "environmentAuditOptions": "NONE",
+  "actualEntropyOrCredentialInjection": "NONE",
+  "pidSemantics": "Source launcher POSIX_SPAWN_SETEXEC retains PID for real core; each receipt must independently match this PID/core/plist",
+  "guiApproval": "NOT_GRANTED"
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "keepvault.pdf-qa-tool-preparation.v1",
+  "status": "READY_FOR_ROOT_EXECUTION_NO_PDFS_ANALYZED",
+  "createdUtc": "2026-10-18T09:50:48.676066+00:00",
+  "toolRoot": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt",
+  "driver": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/check-public-pdf-pair.py",
+    "sha256": "22f6ed53eceab3d824496a9836ac924bd05450f00db188eb939af5994f658f45",
+    "bytes": 15339
+  },
+  "lock": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/tool-lock.json",
+    "sha256": "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+    "bytes": 2088
+  },
+  "native": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/PdfQrReadOnly",
+    "sha256": "d036c29e5f4d74f06aa19f2d8dfd4c27444b25ae03bb0c264dae1f9b2365cb6a",
+    "bytes": 121584
+  },
+  "swiftSource": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/PdfQrReadOnly.swift",
+    "sha256": "0bf62cbf4f9adf6f2bfbc674d1b34c8c18c6196fb9158fa0a8ff7dc8d6dcb3dd",
+    "bytes": 7829
+  },
+  "readme": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/README.de.md",
+    "sha256": "3302af05a60a20ac2f4eedf638b8d73a85a401c85f29cb088db4566084228bc9",
+    "bytes": 5155
+  },
+  "pureFixtureReceipt": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/preparation/pure-fixture-review.json",
+    "sha256": "4b3c4e435d18a0ee5ba02dd3230837ee35d58b76f906ce1b34c73ace3bf0eabe",
+    "bytes": 5226
+  },
+  "nativeSelfTestReceipt": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/preparation/native-pure-self-test-terminal.json",
+    "sha256": "cece02e5a4749619d1248f54e6381dfaa3e04c21c50dbf574e73791f6afe5219",
+    "bytes": 569
+  },
+  "actualCompileReceipt": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/preparation/compile-native-v3-terminal.json",
+    "sha256": "5014bd20756edb32d8777a782a93ba8ace4a1da74c2706f83a3506ae0e5dda11",
+    "bytes": 1327
+  },
+  "independentReviewer": "/root/build22_release_runner: narrow source review, initial P2 fixed; no current concrete source blocker",
+  "pdfInputsRead": false,
+  "pdfFilesCreated": false,
+  "productGuiProcessesStarted": false,
+  "visualReview": "ROOT_REQUIRED_NOT_PERFORMED"
+}

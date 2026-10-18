@@ -1,0 +1,142 @@
+{
+  "schema": "keepvault.independent-installed-profile-case-review.v1",
+  "status": "SINGLE_PARANOIA_FUNCTIONAL_EVIDENCE_CONSISTENT",
+  "completedUtc": "2026-10-18T10:06:39.718185+00:00",
+  "sourceHead": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "version": "5.0.3",
+  "build": 22,
+  "caseDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051",
+  "labelAnnotation": "profile-paranoia",
+  "actualLauncherCorePid": 84645,
+  "actualLauncherExitCode": 0,
+  "actualAuditRunnerPid": 84594,
+  "actualAuditRunnerExitCode": 0,
+  "actualCollectorPid": 87041,
+  "actualCollectorObservedExitCode": 0,
+  "collectorOuterTerminalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collector-independent-run-xjtt_b_f/collector-outer-terminal.json",
+    "sha256": "34f9472ee1ddd21fe8717206d9b63579e857082dbd65afdf25920a002e8ee552",
+    "bytes": 2470
+  },
+  "collectionReceiptPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/collection-receipt.json",
+    "sha256": "c2a74f5a3c465110439b95f7f6bcfbd6e20eb029bf0077e5f0e3b6adafd06759",
+    "bytes": 9623
+  },
+  "rootUiManifestPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/ui-evidence-manifest.json",
+    "sha256": "956d018542cc4acf699a5a2268277bc505bfb2974e22a8cf4cec41d1e320c9f9",
+    "bytes": 1654
+  },
+  "rootObservationPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-ui-observation.json",
+    "sha256": "97c4f96584547c0d6efdd78b21b571f68f2f80c877e46a6c36d59659c0762405",
+    "bytes": 8156
+  },
+  "operations": [
+    {
+      "operation": "generate",
+      "originalPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-001-generate.json",
+        "sha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+        "bytes": 14064
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/operation-001-generate.json",
+        "sha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+        "bytes": 14064
+      },
+      "outcome": "success",
+      "startedUtc": "2026-10-18T09:45:55.136953Z",
+      "terminalUtc": "2026-10-18T09:45:55.158702Z",
+      "handlerWallSeconds": 0.021307458,
+      "applicationDialogWallSeconds": 0,
+      "workWallSecondsExcludingApplicationDialogs": 0.020772125,
+      "activeCpuWorkersAfterJoin": 0,
+      "activeNativeCallbacksAfterJoin": 0,
+      "reservedBytesAfter": 0,
+      "lockedBytesAfter": 98304,
+      "productOriginalComparison": null
+    },
+    {
+      "operation": "create",
+      "originalPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-002-create.json",
+        "sha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+        "bytes": 304631
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/operation-002-create.json",
+        "sha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+        "bytes": 304631
+      },
+      "outcome": "success",
+      "startedUtc": "2026-10-18T09:49:33.359293Z",
+      "terminalUtc": "2026-10-18T09:52:10.16764Z",
+      "handlerWallSeconds": 156.806304333,
+      "applicationDialogWallSeconds": 115.187298583,
+      "workWallSecondsExcludingApplicationDialogs": 41.618991832999995,
+      "activeCpuWorkersAfterJoin": 0,
+      "activeNativeCallbacksAfterJoin": 0,
+      "reservedBytesAfter": 0,
+      "lockedBytesAfter": 622592,
+      "productOriginalComparison": null
+    },
+    {
+      "operation": "extract",
+      "originalPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-003-extract.json",
+        "sha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+        "bytes": 66647
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/operation-003-extract.json",
+        "sha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+        "bytes": 66647
+      },
+      "outcome": "success",
+      "startedUtc": "2026-10-18T09:52:26.744364Z",
+      "terminalUtc": "2026-10-18T09:53:15.280944Z",
+      "handlerWallSeconds": 48.536746834,
+      "applicationDialogWallSeconds": 15.083059542,
+      "workWallSecondsExcludingApplicationDialogs": 33.453681667,
+      "activeCpuWorkersAfterJoin": 0,
+      "activeNativeCallbacksAfterJoin": 0,
+      "reservedBytesAfter": 0,
+      "lockedBytesAfter": 622592,
+      "productOriginalComparison": true
+    }
+  ],
+  "originalAndPreservedReceiptBytesEqual": true,
+  "allPidBuildCorePlistAndChronologyBindingsMatch": true,
+  "allThreeOperationsSuccessfulWithNoFaultOrOutstandingWorker": true,
+  "allCollectedUiBytesAndChecksumEntriesMatch": true,
+  "collectedChecksumEntries": 8,
+  "installedBeforeAfterMapsByteIdentical": true,
+  "suiteEvidence": "Root separately observed the full eight-stage Paranoia suite before generation; receipt phase aggregates show all seven named cipher stages plus AEAD. Label alone is not suite proof.",
+  "treeEvidence": {
+    "rootComparisonPin": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-independent-tree-comparison.json",
+      "sha256": "31bb79c79b6e0b219c4ccfaabe412b8c4d2df6f68e80783550c5f4818c2b64f2",
+      "bytes": 2254
+    },
+    "productOriginalComparison": true,
+    "sourceBytes": 268435456,
+    "files": 3,
+    "subdirectories": 5,
+    "reviewerRepeatedTreeHashing": false
+  },
+  "humanUndoEvidence": "User confirmation and subsequent Root AX observation report empty 0/256 after one CmdZ; this reviewer did not observe the keyboard directly.",
+  "limitations": [
+    "Generate click actor and initial warning acknowledgement were not directly observed by Root; completed receipts cannot establish that actor.",
+    "Human entropy readiness is reported by the user/Root, not independently witnessed by this reviewer.",
+    "Timing excludes measured application dialogs only; nested phase and worker sums overlap and are not an additive benchmark.",
+    "Nonzero locked bytes while the application remained alive do not establish full physical-memory erasure or, by themselves, a leak.",
+    "Specific single-profile evidence does not replace the other profiles, ten fault cases, the full ordinary GUI gates, or the final Structure512 run."
+  ],
+  "collectorInterpretation": "EVIDENCE_PRESERVED_UNASSESSED; this independent review does not grant aggregate GUI approval.",
+  "guiApproval": "NOT_GRANTED_AGGREGATE",
+  "overallReleaseApproval": false,
+  "newProductOperationsByReviewer": 0,
+  "newGuiActionsByReviewer": 0
+}

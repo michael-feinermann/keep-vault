@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "head": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "testInventoryHash": "22f400f0fc1a5ef49488db90c92d48ae8526b9904481bf762ef878cf1ce0743f",
+  "platform": "macos",
+  "osArchitecture": "arm64",
+  "processArchitecture": "arm64",
+  "hardware": "10 logical CPUs, 16 GiB, macOS 27.0.1",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 9,
+    "memoryMiB": 9011,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "gui.key-sheet-operation-progress",
+      "name": "key-sheet button completion distinguishes export/print success, failure, stale drafts and cancellation in DE/EN",
+      "status": "FAIL",
+      "seconds": 0.916,
+      "peakRssMiB": 222,
+      "seed": "0x0503C0DE",
+      "failure": "InvalidOperationException: de/save/success: wrong terminal progress state.\n   at MacComprehensiveTests.Require(Boolean condition, String message) in /Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/MacComprehensiveTests.cs:line 5254\n   at KeySheetProgressTests.Require(Boolean value, String message) in /Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/KeySheetProgressTests.cs:line 23\n   at KeySheetProgressTests.Run(MainWindow initial) in /Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/KeySheetProgressTests.cs:line 117\n   at MacGuiTests.\u003C\u003Ec__DisplayClass5_0.\u003CEnsureUiThread\u003Eb__0() in /Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/MacGuiTests.cs:line 130\n--- End of stack trace from previous location ---\n   at MacGuiTests.RunOnUiThread(Action\u00601 body) in /Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/MacGuiTests.cs:line 179\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList\u00601 allTests, String testId, UInt32 seed, Boolean performanceRequested) in /Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/TestScheduler.cs:line 1477"
+    }
+  ]
+}

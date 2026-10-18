@@ -1,0 +1,40 @@
+{
+  "schema": "keepvault.standard-public-pdf-qa-actual-outer-terminal.v1",
+  "actualOuterPid": 88421,
+  "actualDriverPid": 88422,
+  "actualDriverWaitExitCode": 0,
+  "startedUtc": "2026-10-18T10:25:11.543990+00:00",
+  "completedUtc": "2026-10-18T10:25:12.033857+00:00",
+  "captureFailureClass": null,
+  "stdoutSha256": "7a91050e6e2339b6b668aea1487d82ed50d941feef5ef84cef0a5ddfb99ef97a",
+  "stdoutBytes": 690,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrBytes": 0,
+  "outerStartPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-standard-pdf-qa-outer-20261018-x0bawp7i/root-outer-start.json",
+    "sha256": "7d5d5a46128effec9a072b73626a8dfa72152c3c4e4eab0ac9f589aa8f456d6c",
+    "bytes": 2764
+  },
+  "inputPdfPinsAfter": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "9363526230a38f66b411d029aab0fe497059597b5c69bebc4a590678f34b85bc",
+      "bytes": 104597
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "aab8165a8bb574e320a4699d73698d3d24778a2138eb8e1a9d893783ea0e59c1",
+      "bytes": 104723
+    }
+  },
+  "driverPinAfter": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/check-public-pdf-pair.py",
+    "sha256": "22f6ed53eceab3d824496a9836ac924bd05450f00db188eb939af5994f658f45",
+    "bytes": 15339
+  },
+  "toolLockPinAfter": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/tool-lock.json",
+    "sha256": "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+    "bytes": 2088
+  }
+}

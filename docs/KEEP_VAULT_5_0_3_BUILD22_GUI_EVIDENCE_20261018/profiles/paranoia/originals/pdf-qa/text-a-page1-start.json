@@ -1,0 +1,14 @@
+{
+  "actualPid": 86018,
+  "startedUtc": "2026-10-18T09:51:48.243022+00:00",
+  "argv": [
+    "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftotext",
+    "-f",
+    "1",
+    "-l",
+    "1",
+    "-layout",
+    "/dev/fd/3",
+    "-"
+  ]
+}

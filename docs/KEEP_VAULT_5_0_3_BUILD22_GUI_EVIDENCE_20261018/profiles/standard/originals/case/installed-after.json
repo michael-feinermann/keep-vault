@@ -1,0 +1,566 @@
+{
+  "protectedInstalledZpaqFileBindings": {
+    "executable": {
+      "path": "/Library/Application Support/Keep Vault/v13/zpaq",
+      "sha256": "14a13489bfb792fe2a689c9b131e04ab8320f1547d725d1f605e9a1691caf09f",
+      "bytes": 1053568,
+      "uid": 0,
+      "gid": 0,
+      "mode": 365
+    },
+    ".sha3": {
+      "path": "/Library/Application Support/Keep Vault/v13/zpaq.sha3",
+      "sha256": "ccccdabbe504abe051070216987c98781472cfb7d9bfd8cf0b8b899c6010461e",
+      "bytes": 129,
+      "uid": 0,
+      "gid": 0,
+      "mode": 292
+    },
+    ".skein": {
+      "path": "/Library/Application Support/Keep Vault/v13/zpaq.skein",
+      "sha256": "5523dc661359fec34a6b9e213093fb58499bc5058cfcd95e8ef1d49c65e706e5",
+      "bytes": 257,
+      "uid": 0,
+      "gid": 0,
+      "mode": 292
+    },
+    ".khsig": {
+      "path": "/Library/Application Support/Keep Vault/v13/zpaq.khsig",
+      "sha256": "09e6fa18abd7a7c2f27eae0324947b6ed884dd4fc43193257768d28bd5489556",
+      "bytes": 6547,
+      "uid": 0,
+      "gid": 0,
+      "mode": 292
+    },
+    ".sha3.khsig": {
+      "path": "/Library/Application Support/Keep Vault/v13/zpaq.sha3.khsig",
+      "sha256": "00c8bfdcb284a1769280d8c7d9e8e0be37ccb92a8749b7f5f56899e795fc66b3",
+      "bytes": 6547,
+      "uid": 0,
+      "gid": 0,
+      "mode": 292
+    },
+    ".skein.khsig": {
+      "path": "/Library/Application Support/Keep Vault/v13/zpaq.skein.khsig",
+      "sha256": "f32750d1324573c5d1314833916483647c60cb4b7d9634598a4d2f1c6995d7c4",
+      "bytes": 6547,
+      "uid": 0,
+      "gid": 0,
+      "mode": 292
+    }
+  },
+  "protectedZpaqParentMetadata": [
+    {
+      "path": "/",
+      "uid": 0,
+      "gid": 0,
+      "mode": 493
+    },
+    {
+      "path": "/Library",
+      "uid": 0,
+      "gid": 0,
+      "mode": 493
+    },
+    {
+      "path": "/Library/Application Support",
+      "uid": 0,
+      "gid": 80,
+      "mode": 493
+    },
+    {
+      "path": "/Library/Application Support/Keep Vault",
+      "uid": 0,
+      "gid": 0,
+      "mode": 493
+    },
+    {
+      "path": "/Library/Application Support/Keep Vault/v13",
+      "uid": 0,
+      "gid": 0,
+      "mode": 493
+    }
+  ],
+  "appFiles": {
+    "Contents/CodeResources": {
+      "sha256": "d74109d4a9295bb4e4f685faf34d5f2772871ac027a01d2e295614eb61e250bc",
+      "bytes": 2346
+    },
+    "Contents/Info.plist": {
+      "sha256": "ecf5af0fa2d1d1fff888ed0c100a58fdf8fcca66be27c67462df20cc3f7cdff0",
+      "bytes": 4426
+    },
+    "Contents/MacOS/Keep Vault": {
+      "sha256": "a52e743157b1930c0a922a6e76230751801b6820c0b7e401ea766f6c4060e509",
+      "bytes": 60534192
+    },
+    "Contents/MacOS/Keep Vault Launcher": {
+      "sha256": "d8d52fef3169f9ab09d4d0826cef2ca20ec434e1b18496ff45d318f1d4e89cbe",
+      "bytes": 452848
+    },
+    "Contents/MacOS/Keep Vault Supervisor": {
+      "sha256": "b56a0f87156561e56180e1a8b0330c6a1672cf4bce8fddfdbed4d52322c555cb",
+      "bytes": 164160
+    },
+    "Contents/MacOS/Native/argon2": {
+      "sha256": "fe97fe57b03b2180cf3b2ec5bd9cb98d4529dc2e67fa75ec689c7d6e3b41734c",
+      "bytes": 170400
+    },
+    "Contents/MacOS/Native/libaes_ref.dylib": {
+      "sha256": "0fbff45d7475261224699905f519c244e158163c34ecb645df066489d210453a",
+      "bytes": 329312
+    },
+    "Contents/MacOS/Native/libargon2_ref.dylib": {
+      "sha256": "8dfa704efd61b970b958af03e9b13dab09cea833722ac6702aa6907a8aaeedd1",
+      "bytes": 152880
+    },
+    "Contents/MacOS/Native/libcamellia_v13.dylib": {
+      "sha256": "25781cf93e09bd1adbb671ab69cf10a8be9bcceb48bc8156d7b8d19890e7395e",
+      "bytes": 328944
+    },
+    "Contents/MacOS/Native/libkalyna_v13.dylib": {
+      "sha256": "17165abe0c8eb0a5eb3324aafd8ac0e28237fde3a55cea4e9926017a15caf4fa",
+      "bytes": 301520
+    },
+    "Contents/MacOS/Native/libmars_ref.dylib": {
+      "sha256": "163517daf665b5d34998a665411acc9477b1c16a279958d65ab9358a017cdb43",
+      "bytes": 294576
+    },
+    "Contents/MacOS/Native/libserpent_v13.dylib": {
+      "sha256": "bd2a150bccd59cc19a0b21f4e354f49e68bf53a799d18f890705f85b83f51c30",
+      "bytes": 295440
+    },
+    "Contents/MacOS/Native/libshacal2_ref.dylib": {
+      "sha256": "44af8eaa414ee57784759c807a4350aa2d4d3aec16ce82aea8e141eb7de29874",
+      "bytes": 294976
+    },
+    "Contents/MacOS/Native/libthreefish_ref.dylib": {
+      "sha256": "07efee4be96e7415c91efd4affb2d81dcab7f34777400a8d70395f31b8fb6279",
+      "bytes": 119472
+    },
+    "Contents/MacOS/Native/libxchachapoly_v13.dylib": {
+      "sha256": "311fd4d7d0e387e3411e903fe50476be4899795e23de3d06a93190a0e0e40dbf",
+      "bytes": 600016
+    },
+    "Contents/MacOS/Native/zpaq": {
+      "sha256": "14a13489bfb792fe2a689c9b131e04ab8320f1547d725d1f605e9a1691caf09f",
+      "bytes": 1053568
+    },
+    "Contents/MacOS/libAvaloniaNative.dylib": {
+      "sha256": "de6af5c6b551b6854b0d3beb26e44032d2dd77c6e3d0c64a57d6d042382961f7",
+      "bytes": 1544480
+    },
+    "Contents/MacOS/libHarfBuzzSharp.dylib": {
+      "sha256": "329544e8d21949df28f34fc01bf3fac77fcce19b4c4514254bdd832d1cd48b87",
+      "bytes": 2883328
+    },
+    "Contents/MacOS/libSkiaSharp.dylib": {
+      "sha256": "f03540ba672eb449aaf0d945ec76027727be248aea537ec4e1eb17bfa9fd1f28",
+      "bytes": 15145296
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault Supervisor.khsig": {
+      "sha256": "0dbbad52cbf070802ea9dd1fca78f9d52c6033abc13bc40e486097ef190dc826",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault Supervisor.sha3": {
+      "sha256": "86772e97dd133616a9110f0290a8e5abbb5dfc990d3af89ad93611a346d33ae1",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault Supervisor.sha3.khsig": {
+      "sha256": "2324f8d57e23ffd83cdf4ada6a91ab422f4ae48a02302d65c238d4383ee1b2ce",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault Supervisor.skein": {
+      "sha256": "ea9cc23863a01828eb23bddb66a54838e6c498f5252ab2030ecd1920d0488e95",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault Supervisor.skein.khsig": {
+      "sha256": "edc4a64bec072186cd74d196bfb6962a9e6d7c3a50f06a2f965105f1c1080111",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault.khsig": {
+      "sha256": "b9af380ff357a49d4a0b01992f327228f17e52d59bc670ff018ffe716e6c0bcb",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault.sha3": {
+      "sha256": "a2a81acd6831cd9dff1a2adfb9176db7eed2f919ab7d1c2fe6ed9bd14ff17593",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault.sha3.khsig": {
+      "sha256": "4cdd78093f313f68a5437ec3dec56ba4211eaf08f0ad9c4fe0dc1fb5159ba614",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault.skein": {
+      "sha256": "140190519c310a0da8aa39531be1b61257ea124b4a57d617a7935800ef4591e6",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Keep Vault.skein.khsig": {
+      "sha256": "95de86a5411b88790e5e797bc35d1bed4ecab9dc7c11de292e6ab630cbb3ec7e",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/argon2.khsig": {
+      "sha256": "9e3b5d4d02bf7f6b0b19dd8403a24837af0a180de75d29a350fff76f60ccc9bb",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/argon2.sha3": {
+      "sha256": "ae2ddabacfb38ebe58de83644ebd65d1a3638c4de8f304390aac7f2f16c1e773",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/argon2.sha3.khsig": {
+      "sha256": "e2239d68c0a42c7350c4b38eb0e686b45e52ccff200437a35bd6adcdff67b7e6",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/argon2.skein": {
+      "sha256": "dc65b831b59af6e5259f15fd1155d19cd22566e1105d8968085b4ba9eb0f4dcb",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/argon2.skein.khsig": {
+      "sha256": "86b00be63b4a2905458320bf27a5e35352b85f41a59171d938de7e7203597e8f",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.khsig": {
+      "sha256": "94b16debf33845b4907339a19483ae06690e6d84624d4a24b90e1dd453766c96",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.sha3": {
+      "sha256": "df55340c51f7ca06ec26670a0d801436f4726b3ea20236f5b7060cb9548764d9",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.sha3.khsig": {
+      "sha256": "00a61aa00056c86c5ce49a13f4729e82c7bfe988e470dd6f9ce4b9878d0c222c",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.skein": {
+      "sha256": "23025024c5a2849281851855bca2a8b6213505681c08bac77795cb99301ee94c",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libaes_ref.dylib.skein.khsig": {
+      "sha256": "dec1d5a76cef73d75b87d79ec85287234cd6d6f00f98a84bd2a171bdf558a14a",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.khsig": {
+      "sha256": "ba4e009a8c6e337734e34f4462e2e227376552f87d5ea84aa6c0200233c6933d",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.sha3": {
+      "sha256": "6eb8fd6ad67e5003ea02c544ec6900db1fc475a89018407bc68bfbe56080ed08",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.sha3.khsig": {
+      "sha256": "3ed57acf7c11b6ac1952396e80184123fd4b53ee208804008522ffc5d67a54e0",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.skein": {
+      "sha256": "5dfdf07a926088821bae02f21d17de3f43456bda6cba2bde579b9eedb31c51c0",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libargon2_ref.dylib.skein.khsig": {
+      "sha256": "9ef7f1ba9f9bb6c8625444c7933f8ac2ad1467999a54b4a5db912739dc2331ac",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.khsig": {
+      "sha256": "8652c085c9a0464ff3bddb42364220e6c1f5c130dd6ec9af19259a91a3653e1d",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.sha3": {
+      "sha256": "45d64ffed2d7f040bd34125bfca2fd097f75e08836d0118a464b110e372098e1",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.sha3.khsig": {
+      "sha256": "153878c0a0d239df1f955ae0f2182999918ed37fccac630fd0b469779966153d",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.skein": {
+      "sha256": "c3166dda8fa3ad7053a51ad1754226052e388fce74c956464c14337c238862c9",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libcamellia_v13.dylib.skein.khsig": {
+      "sha256": "ebb4881f53b66905b902bca03aa5e3b98b3ce3ee2136a361bb0552935df386d3",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.khsig": {
+      "sha256": "985751f707b2a4c8a891945828e0066691bf33555e3d4d9c866ba09fadb7c26e",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.sha3": {
+      "sha256": "e604e34834ad0b7a0f0886ad6f240aa9a1d4cc82f8560b61ff62d0052fce49d1",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.sha3.khsig": {
+      "sha256": "f9187840c03e0209468fd229fbf46d0a2d940f2c189e3a297426547ffca5a60a",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.skein": {
+      "sha256": "503500669f891939c82303fccaf0ae60ff4052930acc29ec9017832e07257b9e",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libkalyna_v13.dylib.skein.khsig": {
+      "sha256": "5216d78c4b9f52c7e21f87ae0deb307ef8ee0e39633547b2c7653275453f015d",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.khsig": {
+      "sha256": "87b11b467fad843f148ea5586dde51e57167eea3ff6bb149989e2fce947e4e6f",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.sha3": {
+      "sha256": "e6219c232534c635171b57dae66e20da58e8db76d43e6c36fea49dba7f83da3e",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.sha3.khsig": {
+      "sha256": "9f4e6baba0749482392ab519f868a0bc53c19d247529b82f98c02b824e9093ee",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.skein": {
+      "sha256": "95a923053226ff9ceefc5ccd71724328c9149c632db1d6c73589b0782f27123d",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libmars_ref.dylib.skein.khsig": {
+      "sha256": "a38c35d2090e3dde6f11a266faf9de7c7f18aa620082f6741b4aa298281b7084",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.khsig": {
+      "sha256": "62813b81aa2a8af65801b5ab16810f64bf0d3e84ebb6fce5f60fb5ac70631eb3",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.sha3": {
+      "sha256": "f220fcf0d7d5168b21124823b00c5701f26716b35ec90fe4035b24122597b897",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.sha3.khsig": {
+      "sha256": "201e2740cc3c3b201f3de018478685ec30b743a48587a6d77387d77e06d4dcd0",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.skein": {
+      "sha256": "df4e42a87d978ec7da6479504a962af242b821cfcb20c72f02b752b5b563cc3f",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libserpent_v13.dylib.skein.khsig": {
+      "sha256": "e8f1cb533a5d98851d349260161f91234ad7441db5f503fd353b128662e4f813",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.khsig": {
+      "sha256": "3aa7a733c51f53943de747c501496df6be0b0daec5fb457d5c4295e6f9a71fd4",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.sha3": {
+      "sha256": "46a3278d5d06637b6162c8b91ad2c9101ffcd2c36437723b366e6d76c423ed67",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.sha3.khsig": {
+      "sha256": "f34391157968698a28a1d831538e261dda91434528548aec78a21d7f05fbe5e8",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.skein": {
+      "sha256": "c998a8d2d12a7e67e56ba7ef210d97609e28bad5644e281db4ae4fbe3422a834",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libshacal2_ref.dylib.skein.khsig": {
+      "sha256": "617971a793dcd121821473ede85f7d267912fc83b900d1eda4b0833c0d9f0cb3",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.khsig": {
+      "sha256": "fe80e91022e35aad56bcf090bd8ddaf7269175ebfcfe48d32cd4c52951e59908",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.sha3": {
+      "sha256": "601d3853737e01cf3c944bf41b0f9b496ee5e34e626573ae332fe2a786465c61",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.sha3.khsig": {
+      "sha256": "1a6348251f89411054f91b25b541d4bb2b30e71f072db87ba3126e3801be9514",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.skein": {
+      "sha256": "d311c73d71f1ceb8e8fb477285bc4ab39b7f75d381273481a93a6f63485523d9",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libthreefish_ref.dylib.skein.khsig": {
+      "sha256": "bc828079db2f97d761cb89a83e03d7e7e23f18b833dbcea729e9c215bc8243f8",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.khsig": {
+      "sha256": "cacfbd5549b96e7489b0c46350040398052a85dbd1e28825fe4af22c82f6da06",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.sha3": {
+      "sha256": "662789c5212b34ae4cde1110a9048a0985f208979865b2d32e0478769c481dad",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.sha3.khsig": {
+      "sha256": "92df646c152c459fb155b12c5dbd2b8b5fb4642398a32303b2c5f99412820fff",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.skein": {
+      "sha256": "4bd614c296b83c2b600a94148776f1f9e0649e9999c3d1201ee9b0817b29991d",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/libxchachapoly_v13.dylib.skein.khsig": {
+      "sha256": "65971ab77de7372d2986ff1c748cae2eecf946afe2fd2b1ecad6ac1b439c481e",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/zpaq.khsig": {
+      "sha256": "09e6fa18abd7a7c2f27eae0324947b6ed884dd4fc43193257768d28bd5489556",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/zpaq.sha3": {
+      "sha256": "ccccdabbe504abe051070216987c98781472cfb7d9bfd8cf0b8b899c6010461e",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/Native/zpaq.sha3.khsig": {
+      "sha256": "00c8bfdcb284a1769280d8c7d9e8e0be37ccb92a8749b7f5f56899e795fc66b3",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/Native/zpaq.skein": {
+      "sha256": "5523dc661359fec34a6b9e213093fb58499bc5058cfcd95e8ef1d49c65e706e5",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/Native/zpaq.skein.khsig": {
+      "sha256": "f32750d1324573c5d1314833916483647c60cb4b7d9634598a4d2f1c6995d7c4",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.khsig": {
+      "sha256": "aa64515362cfdb07ffe1d8b08f956873f8f2465f4daf47355fe8645da99c3fdf",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.sha3": {
+      "sha256": "383b13b69607be47f678d87ba27c068e248e9eb5763fbb5ea130d40b3f54ffdf",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.sha3.khsig": {
+      "sha256": "d8673b052b9977bfd43dfed20876effc5c92336842c7217f6688349d010aaf5a",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.skein": {
+      "sha256": "e332b63d253b20d81ecd50c82496e6cd6abc90b6cdf7ec1f14466673816bb554",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/libAvaloniaNative.dylib.skein.khsig": {
+      "sha256": "5c9f758f606e534d8317a4fa5e925299754c806ac9797bf327b5dee39cb9278c",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.khsig": {
+      "sha256": "e1355b9ca5f05ddbb8b8385958a96b35bbd5ad311996d284589eae44bf74a124",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.sha3": {
+      "sha256": "ce166380b0239c51d6fba25e36552994a49c9c898db443381a998616ed842c96",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.sha3.khsig": {
+      "sha256": "b2d43156d4eaa3805f6ee751da0c398f464ff729a88ac064a03003c796d9ff6b",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.skein": {
+      "sha256": "adcc122aff22733737b3145a18bd7ce0f55d413eb197bc02a02fd4a1033e4c25",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/libHarfBuzzSharp.dylib.skein.khsig": {
+      "sha256": "5d0f570f825d012efdcdae5a240bb0d6251e6c390508944e1ceba207327afdef",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libSkiaSharp.dylib.khsig": {
+      "sha256": "50ddac82656a4308079beeee00098a14e4c926556048677a77a46a8dbc74f6ba",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libSkiaSharp.dylib.sha3": {
+      "sha256": "813d9a2247597ec7864b9d1977470e35e77a5a237637fa8b65c12fde585cdc10",
+      "bytes": 129
+    },
+    "Contents/Resources/HybridSignatures/libSkiaSharp.dylib.sha3.khsig": {
+      "sha256": "10d4d0faa8f41cb5564ae71aa626663a476bd9e9f3546f5cba76c7bfab5c7278",
+      "bytes": 6547
+    },
+    "Contents/Resources/HybridSignatures/libSkiaSharp.dylib.skein": {
+      "sha256": "65b2461396f5fec77a47ac17fc48443dca67159b5677bd94a0cc0cd5b7fc408e",
+      "bytes": 257
+    },
+    "Contents/Resources/HybridSignatures/libSkiaSharp.dylib.skein.khsig": {
+      "sha256": "3e5d165cabb0e3a300ba578ff9160a26db1cfec5849d9e8c72ff7c4c670d3d89",
+      "bytes": 6547
+    },
+    "Contents/Resources/KeepVault.icns": {
+      "sha256": "f274c4857e059fd95427397af6dab45367ccb074dd28f018d87ec518dcdde254",
+      "bytes": 1083698
+    },
+    "Contents/Resources/PASSWORD-MODEL-NOTICES.txt": {
+      "sha256": "47e917a325d5bc39bf669f53c727752070b383a41fb50e6bdf037826891f6871",
+      "bytes": 72883
+    },
+    "Contents/Resources/THIRD-PARTY-NOTICES.txt": {
+      "sha256": "1a02ead03198231bb35f2aa7576b9be2ea79e153fdf22ab6e85b90ff8b710c3e",
+      "bytes": 397411
+    },
+    "Contents/_CodeSignature/CodeResources": {
+      "sha256": "7375c6744f2fefa23de3554ca15929d24e4e51a5acf5befa08db8dcb8ae50ab4",
+      "bytes": 34311
+    }
+  },
+  "launcherSidecar": {
+    "path": "/Applications/Keep Vault.app.launcher.khsig",
+    "sha256": "f3be7d33be6382a79fe6c718f6d44674bcc36c517fe9e0c2b18326d1c9f7dc00",
+    "bytes": 6547
+  },
+  "sourceResolvedSealedNativeFiles": {
+    "zpaq": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/zpaq",
+      "sha256": "14a13489bfb792fe2a689c9b131e04ab8320f1547d725d1f605e9a1691caf09f",
+      "bytes": 1053568
+    },
+    "libkalyna_v13.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libkalyna_v13.dylib",
+      "sha256": "17165abe0c8eb0a5eb3324aafd8ac0e28237fde3a55cea4e9926017a15caf4fa",
+      "bytes": 301520
+    },
+    "libthreefish_ref.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libthreefish_ref.dylib",
+      "sha256": "07efee4be96e7415c91efd4affb2d81dcab7f34777400a8d70395f31b8fb6279",
+      "bytes": 119472
+    },
+    "libmars_ref.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libmars_ref.dylib",
+      "sha256": "163517daf665b5d34998a665411acc9477b1c16a279958d65ab9358a017cdb43",
+      "bytes": 294576
+    },
+    "libcamellia_v13.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libcamellia_v13.dylib",
+      "sha256": "25781cf93e09bd1adbb671ab69cf10a8be9bcceb48bc8156d7b8d19890e7395e",
+      "bytes": 328944
+    },
+    "libserpent_v13.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libserpent_v13.dylib",
+      "sha256": "bd2a150bccd59cc19a0b21f4e354f49e68bf53a799d18f890705f85b83f51c30",
+      "bytes": 295440
+    },
+    "libshacal2_ref.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libshacal2_ref.dylib",
+      "sha256": "44af8eaa414ee57784759c807a4350aa2d4d3aec16ce82aea8e141eb7de29874",
+      "bytes": 294976
+    },
+    "libaes_ref.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libaes_ref.dylib",
+      "sha256": "0fbff45d7475261224699905f519c244e158163c34ecb645df066489d210453a",
+      "bytes": 329312
+    },
+    "libxchachapoly_v13.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libxchachapoly_v13.dylib",
+      "sha256": "311fd4d7d0e387e3411e903fe50476be4899795e23de3d06a93190a0e0e40dbf",
+      "bytes": 600016
+    },
+    "libargon2_ref.dylib": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/libargon2_ref.dylib",
+      "sha256": "8dfa704efd61b970b958af03e9b13dab09cea833722ac6702aa6907a8aaeedd1",
+      "bytes": 152880
+    },
+    "argon2": {
+      "path": "/Applications/Keep Vault.app/Contents/MacOS/Native/argon2",
+      "sha256": "fe97fe57b03b2180cf3b2ec5bd9cb98d4529dc2e67fa75ec689c7d6e3b41734c",
+      "bytes": 170400
+    }
+  },
+  "infoPlistPin": {
+    "path": "/Applications/Keep Vault.app/Contents/Info.plist",
+    "sha256": "ecf5af0fa2d1d1fff888ed0c100a58fdf8fcca66be27c67462df20cc3f7cdff0",
+    "bytes": 4426
+  },
+  "nativeBindingScope": "Exact final installed/reference file-byte binding and source resolver paths; no independent runtime-loaded-image, Apple, hybrid or GUI-verdict claim"
+}

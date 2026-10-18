@@ -1,0 +1,18 @@
+{
+  "role": "B",
+  "actualPid": 86220,
+  "actualWaitExitCode": 0,
+  "startedUtc": "2026-10-18T09:56:19.643602+00:00",
+  "completedUtc": "2026-10-18T09:56:19.789462+00:00",
+  "argv": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/final-pdf-public-20260929-corrected/scan-file",
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf"
+  ],
+  "stdoutBytes": 459,
+  "stdoutSha256": "ce5e69d1f57516a3f70d8ec816fd982d3ac34f5456217a4bf3be4ad043e136c7",
+  "stderrBytes": 0,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "timedOut": false,
+  "captureFailureClass": null,
+  "streamCaptureComplete": true
+}

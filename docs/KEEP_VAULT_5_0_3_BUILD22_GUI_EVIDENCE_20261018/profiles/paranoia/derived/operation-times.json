@@ -1,0 +1,55 @@
+{
+  "schema": "keepvault.single-paranoia-profile-timing-summary.v1",
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "sourceBytes": 268435456,
+  "compressionLevel": 3,
+  "rows": [
+    {
+      "operation": "generate",
+      "handlerWallSeconds": 0.021307458,
+      "measuredApplicationDialogWallSeconds": 0,
+      "workWallSecondsExcludingApplicationDialogs": 0.020772125,
+      "processCpuSeconds": 0.06507500000000022,
+      "sourceBytes": null,
+      "sourceMiBPerWorkSecond": null,
+      "originalReceiptPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-001-generate.json",
+        "sha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+        "bytes": 14064
+      }
+    },
+    {
+      "operation": "create",
+      "handlerWallSeconds": 156.806304333,
+      "measuredApplicationDialogWallSeconds": 115.187298583,
+      "workWallSecondsExcludingApplicationDialogs": 41.618991832999995,
+      "processCpuSeconds": 80.267275,
+      "sourceBytes": 268435456,
+      "sourceMiBPerWorkSecond": 6.151037993116781,
+      "originalReceiptPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-002-create.json",
+        "sha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+        "bytes": 304631
+      }
+    },
+    {
+      "operation": "extract",
+      "handlerWallSeconds": 48.536746834,
+      "measuredApplicationDialogWallSeconds": 15.083059542,
+      "workWallSecondsExcludingApplicationDialogs": 33.453681667,
+      "processCpuSeconds": 19.898473999999993,
+      "sourceBytes": 268435456,
+      "sourceMiBPerWorkSecond": 7.652371495258421,
+      "originalReceiptPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-003-extract.json",
+        "sha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+        "bytes": 66647
+      }
+    }
+  ],
+  "cipherPhaseProcessedBytesPerStageCreateAndExtract": 67170331,
+  "sourceRateInterpretation": "Source MiB divided by one observed GUI work interval, excluding measured ShowAsync dialogs only; not cipher throughput or a comparative benchmark.",
+  "overlappingPhaseSumsAdditive": false,
+  "humanEntropyPdfExportAndPreflightTimeIncluded": false,
+  "overallReleaseApproval": false
+}

@@ -1,0 +1,52 @@
+{
+  "schema": "keepvault.standard-public-pdf-qa-actual-outer-start.v1",
+  "actualOuterPid": 88421,
+  "actualDriverPid": 88422,
+  "startedUtc": "2026-10-18T10:25:11.543990+00:00",
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/check-public-pdf-pair.py",
+    "--execute",
+    "--public-test-inputs",
+    "--pdf-a",
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+    "--pdf-b",
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+    "--pdf-a-sha256",
+    "9363526230a38f66b411d029aab0fe497059597b5c69bebc4a590678f34b85bc",
+    "--pdf-b-sha256",
+    "aab8165a8bb574e320a4699d73698d3d24778a2138eb8e1a9d893783ea0e59c1",
+    "--driver-sha256",
+    "22f6ed53eceab3d824496a9836ac924bd05450f00db188eb939af5994f658f45",
+    "--lock-sha256",
+    "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+    "--out",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-standard-gui"
+  ],
+  "driverPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/check-public-pdf-pair.py",
+    "sha256": "22f6ed53eceab3d824496a9836ac924bd05450f00db188eb939af5994f658f45",
+    "bytes": 15339
+  },
+  "toolLockPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/tool-lock.json",
+    "sha256": "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+    "bytes": 2088
+  },
+  "inputPdfPinsBefore": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "9363526230a38f66b411d029aab0fe497059597b5c69bebc4a590678f34b85bc",
+      "bytes": 104597
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "aab8165a8bb574e320a4699d73698d3d24778a2138eb8e1a9d893783ea0e59c1",
+      "bytes": 104723
+    }
+  },
+  "publicTestsExplicitlyRequestedByRoot": true
+}

@@ -1,0 +1,411 @@
+{
+  "allCopiedOriginalBytesEqual": true,
+  "copies": [
+    {
+      "bytes": 1060,
+      "originalPath": "work/pdf-progress-regression/build-official-01.start.json",
+      "publicPath": "processes/build-official-01.start.json",
+      "sha256": "d0642bc7d791277428421b26025c5c2739139b08f51a276882d40a5a52ed34ae"
+    },
+    {
+      "bytes": 1560,
+      "originalPath": "work/pdf-progress-regression/build-official-01.terminal.json",
+      "publicPath": "processes/build-official-01.terminal.json",
+      "sha256": "8f919f9aa9fcec817340e7da111d64bfd50637e1170662e000e0495bc1f8a115"
+    },
+    {
+      "bytes": 850,
+      "originalPath": "work/pdf-progress-regression/regression-01.start.json",
+      "publicPath": "processes/regression-01.start.json",
+      "sha256": "8b30d9da53a1d3ff75cb987db9e21434536c6ab9620dd7011469ccf15182facf"
+    },
+    {
+      "bytes": 1341,
+      "originalPath": "work/pdf-progress-regression/regression-01.terminal.json",
+      "publicPath": "processes/regression-01.terminal.json",
+      "sha256": "438a59780aaaee158db27613849defc2bfae549810fa8b9b5923ee52587b6441"
+    },
+    {
+      "bytes": 892,
+      "originalPath": "work/pdf-progress-regression/existing-01.start.json",
+      "publicPath": "processes/existing-01.start.json",
+      "sha256": "f408842cc32b98e020f63534192ffd17462959eec9e463ea6f8e4339bb324191"
+    },
+    {
+      "bytes": 1379,
+      "originalPath": "work/pdf-progress-regression/existing-01.terminal.json",
+      "publicPath": "processes/existing-01.terminal.json",
+      "sha256": "06ee4de3df72e6dff5a73ad486a4bc3cd6d74d30a0040d070cfbf3a2292edde0"
+    },
+    {
+      "bytes": 902,
+      "originalPath": "work/pdf-progress-regression/existing-02.start.json",
+      "publicPath": "processes/existing-02.start.json",
+      "sha256": "d6927e53839afa1d2bdade582e24623cbdc5eb654bc4ce5665af369ae63f4d6e"
+    },
+    {
+      "bytes": 1389,
+      "originalPath": "work/pdf-progress-regression/existing-02.terminal.json",
+      "publicPath": "processes/existing-02.terminal.json",
+      "sha256": "72f47647d09a24bcf6760fec41b938205b44053160e037227ed04cebf25a9dfd"
+    },
+    {
+      "bytes": 899,
+      "originalPath": "work/pdf-progress-regression/existing-03.start.json",
+      "publicPath": "processes/existing-03.start.json",
+      "sha256": "15cee8b63e5685a76f405071e8124da83e42cdbd04e8c9687ac9c8f19366e524"
+    },
+    {
+      "bytes": 1386,
+      "originalPath": "work/pdf-progress-regression/existing-03.terminal.json",
+      "publicPath": "processes/existing-03.terminal.json",
+      "sha256": "acb190d2762aefb60066d363d22f2ca2657d7059df171c1dd40d9f6ab480d292"
+    },
+    {
+      "bytes": 903,
+      "originalPath": "work/pdf-progress-regression/existing-04.start.json",
+      "publicPath": "processes/existing-04.start.json",
+      "sha256": "308d01e872c4286b5baf57c5aeb379ac49fa8a522c11ae5f0e4b99e3c2663d96"
+    },
+    {
+      "bytes": 1390,
+      "originalPath": "work/pdf-progress-regression/existing-04.terminal.json",
+      "publicPath": "processes/existing-04.terminal.json",
+      "sha256": "58edad4d2d2b3a02acba7b3123091a98e74083703cde0b99e88e9397f3edb9fc"
+    },
+    {
+      "bytes": 904,
+      "originalPath": "work/pdf-progress-regression/existing-05.start.json",
+      "publicPath": "processes/existing-05.start.json",
+      "sha256": "a4ea5f2beaae1c58c6c92357cad89f25f4ad0b9955e2272199d8d93688599c61"
+    },
+    {
+      "bytes": 1391,
+      "originalPath": "work/pdf-progress-regression/existing-05.terminal.json",
+      "publicPath": "processes/existing-05.terminal.json",
+      "sha256": "6f271c049ee0bb59112c2cc11c5c03fb03263db5c38a84d314752a96254703de"
+    },
+    {
+      "bytes": 906,
+      "originalPath": "work/pdf-progress-regression/existing-06.start.json",
+      "publicPath": "processes/existing-06.start.json",
+      "sha256": "2686fb49be78d44e5044b2d4ef21c0d1606424cf985d518ec8c581c7eac6b47c"
+    },
+    {
+      "bytes": 1393,
+      "originalPath": "work/pdf-progress-regression/existing-06.terminal.json",
+      "publicPath": "processes/existing-06.terminal.json",
+      "sha256": "45ace215317d69262053772a435547fc26b30880553c65f4bcc51b4349005367"
+    },
+    {
+      "bytes": 901,
+      "originalPath": "work/pdf-progress-regression/existing-07.start.json",
+      "publicPath": "processes/existing-07.start.json",
+      "sha256": "6ee8caaad9b15c180d2e50cfff0b646b59ac7465b27585af52ee0fbb469d329f"
+    },
+    {
+      "bytes": 1388,
+      "originalPath": "work/pdf-progress-regression/existing-07.terminal.json",
+      "publicPath": "processes/existing-07.terminal.json",
+      "sha256": "222a441e7ed6386fc319e6b4694023c2843a3906297127fcd178bbcdc26b1521"
+    },
+    {
+      "bytes": 350,
+      "originalPath": "work/pdf-progress-regression/existing-tests-controller.start.json",
+      "publicPath": "processes/existing-tests-controller.start.json",
+      "sha256": "3e2304e1a7eb331d4d2acd7b9a7c7c2d6ea7c346de6f7a6493040d55753e8cf0"
+    },
+    {
+      "bytes": 867,
+      "originalPath": "work/pdf-progress-regression/existing-tests-controller.terminal.json",
+      "publicPath": "processes/existing-tests-controller.terminal.json",
+      "sha256": "b80107f8061a8995c46144e1063609409dd9b98d508f4012a1390053c8cb98f2"
+    },
+    {
+      "bytes": 959,
+      "originalPath": "work/pdf-progress-regression/mutant-build-save.start.json",
+      "publicPath": "processes/mutant-build-save.start.json",
+      "sha256": "1b226253c28177fd12c01281134f138e29551f00a67fd6cf389e5c80f21d2ed1"
+    },
+    {
+      "bytes": 1459,
+      "originalPath": "work/pdf-progress-regression/mutant-build-save.terminal.json",
+      "publicPath": "processes/mutant-build-save.terminal.json",
+      "sha256": "e8252d3d7ffbe71e7cb03c9720c282b409746406d2822322d35160d0cb028ae5"
+    },
+    {
+      "bytes": 906,
+      "originalPath": "work/pdf-progress-regression/mutant-save.start.json",
+      "publicPath": "processes/mutant-save.start.json",
+      "sha256": "d873b69b1b76e7472cb7b9ce19ea1f2c9853b7e8b51d29be53636f24fa301568"
+    },
+    {
+      "bytes": 1394,
+      "originalPath": "work/pdf-progress-regression/mutant-save.terminal.json",
+      "publicPath": "processes/mutant-save.terminal.json",
+      "sha256": "8429418638686c4f0e230adfdbc7f273e7cfb129f41e91f0036fc87f2aaf68db"
+    },
+    {
+      "bytes": 959,
+      "originalPath": "work/pdf-progress-regression/mutant-build-print.start.json",
+      "publicPath": "processes/mutant-build-print.start.json",
+      "sha256": "4ced672335a03af79476bbab68c3fade7c6f8131f65439f2796c441b0d63f655"
+    },
+    {
+      "bytes": 1461,
+      "originalPath": "work/pdf-progress-regression/mutant-build-print.terminal.json",
+      "publicPath": "processes/mutant-build-print.terminal.json",
+      "sha256": "30b756f86afdd3133b66173da9ed1ec76bb08b707f17e88e739913befb672d49"
+    },
+    {
+      "bytes": 906,
+      "originalPath": "work/pdf-progress-regression/mutant-print.start.json",
+      "publicPath": "processes/mutant-print.start.json",
+      "sha256": "3e9a6f21a31170561b45dae1de9c54c705e1d31c8a6105b9c82465e900f57db6"
+    },
+    {
+      "bytes": 1396,
+      "originalPath": "work/pdf-progress-regression/mutant-print.terminal.json",
+      "publicPath": "processes/mutant-print.terminal.json",
+      "sha256": "a53082f1a065c95f3016851d64e03be9afb474f38bbddaac77a61cb88bdea054"
+    },
+    {
+      "bytes": 957,
+      "originalPath": "work/pdf-progress-regression/final-build.start.json",
+      "publicPath": "processes/final-build.start.json",
+      "sha256": "25141d699c55621233ea2c5573858fb8618e3badefb5b97fc0a7b4e056e1ef79"
+    },
+    {
+      "bytes": 1445,
+      "originalPath": "work/pdf-progress-regression/final-build.terminal.json",
+      "publicPath": "processes/final-build.terminal.json",
+      "sha256": "da8bc5300e623b952b7051e99b3be2bbfe674e2ed3000a5576b74b08810d746d"
+    },
+    {
+      "bytes": 905,
+      "originalPath": "work/pdf-progress-regression/final-regression.start.json",
+      "publicPath": "processes/final-regression.start.json",
+      "sha256": "62ffe074269501f63fdd4ed212603bdbe01148962b9ddea0c79408948a13bd51"
+    },
+    {
+      "bytes": 1402,
+      "originalPath": "work/pdf-progress-regression/final-regression.terminal.json",
+      "publicPath": "processes/final-regression.terminal.json",
+      "sha256": "dd8ecd346fb0914062701aa842548fc9cfb9ae74c64a72fc577d1862414f971c"
+    },
+    {
+      "bytes": 366,
+      "originalPath": "work/pdf-progress-regression/mutation-controller.start.json",
+      "publicPath": "processes/mutation-controller.start.json",
+      "sha256": "15960f5d6dfa3c1533a63ec13d303be25fc0d96b3c7777019fa4fee72927732d"
+    },
+    {
+      "bytes": 871,
+      "originalPath": "work/pdf-progress-regression/mutation-controller.terminal.json",
+      "publicPath": "processes/mutation-controller.terminal.json",
+      "sha256": "c763f6ac6ba8c22b79101ae5287534e36a27580f15f7df573110e60ad57dc582"
+    },
+    {
+      "bytes": 366,
+      "originalPath": "work/pdf-progress-regression/sdk-before.start.json",
+      "publicPath": "processes/sdk-before.start.json",
+      "sha256": "d5e97edfc4a87d8fce8b8780c33c0468b99c36b34e827951a6acb186ef5f54c5"
+    },
+    {
+      "bytes": 851,
+      "originalPath": "work/pdf-progress-regression/sdk-before.terminal.json",
+      "publicPath": "processes/sdk-before.terminal.json",
+      "sha256": "6b3a9ab1f118e61ca4658d278a7665f9303b33db607af938cdd650df26c29de5"
+    },
+    {
+      "bytes": 365,
+      "originalPath": "work/pdf-progress-regression/sdk-after.start.json",
+      "publicPath": "processes/sdk-after.start.json",
+      "sha256": "7ca428f7a722684094a36056b5383d2d25b9ded058198fa3228f2ac597135ad4"
+    },
+    {
+      "bytes": 848,
+      "originalPath": "work/pdf-progress-regression/sdk-after.terminal.json",
+      "publicPath": "processes/sdk-after.terminal.json",
+      "sha256": "6167c1e522b3bd810926f84c0bfd57d4a9aa538782c9d36b5191eeac71f8798d"
+    },
+    {
+      "bytes": 322,
+      "originalPath": "work/pdf-progress-regression/diff-check-final.start.json",
+      "publicPath": "processes/diff-check-final.start.json",
+      "sha256": "e94e571dca2bcfc9d9d7a807f728e7830cf8a9c4c657ebbfd8893163c5a909c4"
+    },
+    {
+      "bytes": 817,
+      "originalPath": "work/pdf-progress-regression/diff-check-final.terminal.json",
+      "publicPath": "processes/diff-check-final.terminal.json",
+      "sha256": "2608f6bb54f10b6353b3742c446820108ce5d3f20cec4d8500085c3242e3c15c"
+    },
+    {
+      "bytes": 763,
+      "originalPath": "work/pdf-progress-regression/regression-01.test-results.json",
+      "publicPath": "tests/regression-01.test-results.json",
+      "sha256": "6765f81bb297ddd5e2e3e06ca150109cfda71655334c83b8ef2022e604c74f8a"
+    },
+    {
+      "bytes": 51,
+      "originalPath": "work/pdf-progress-regression/regression-01.test-timings.json",
+      "publicPath": "tests/regression-01.test-timings.json",
+      "sha256": "6e40078d8d12c5539a9de395e1fa07e624f8865139ace826545ca89a20c22311"
+    },
+    {
+      "bytes": 720,
+      "originalPath": "work/pdf-progress-regression/existing-01.test-results.json",
+      "publicPath": "tests/existing-01.test-results.json",
+      "sha256": "6c09aead8bc0e3983bf539c5faba2c272ed7598f567f147f216836f5478ce068"
+    },
+    {
+      "bytes": 86,
+      "originalPath": "work/pdf-progress-regression/existing-01.test-timings.json",
+      "publicPath": "tests/existing-01.test-timings.json",
+      "sha256": "9981baaf385d36b9b0ed5781fbbb75c9d5d021b2decab69ea576e2deaf386c21"
+    },
+    {
+      "bytes": 733,
+      "originalPath": "work/pdf-progress-regression/existing-02.test-results.json",
+      "publicPath": "tests/existing-02.test-results.json",
+      "sha256": "fffe89128985c9469266f6ea5f9b28a73cf66e639a5987d2311905102a74eb0f"
+    },
+    {
+      "bytes": 131,
+      "originalPath": "work/pdf-progress-regression/existing-02.test-timings.json",
+      "publicPath": "tests/existing-02.test-timings.json",
+      "sha256": "e096ba08bedc58743ab5442f01490fcd40a0db72396087d11b10f5efb36feaa7"
+    },
+    {
+      "bytes": 717,
+      "originalPath": "work/pdf-progress-regression/existing-03.test-results.json",
+      "publicPath": "tests/existing-03.test-results.json",
+      "sha256": "65afd87e023fe25d22ff4b0b2bdca46d27f2e893eb116a292971243841abeece"
+    },
+    {
+      "bytes": 173,
+      "originalPath": "work/pdf-progress-regression/existing-03.test-timings.json",
+      "publicPath": "tests/existing-03.test-timings.json",
+      "sha256": "3b0c95593059755464d116e5367ee0e34aa9dca63d9593d4121b497271c741ed"
+    },
+    {
+      "bytes": 720,
+      "originalPath": "work/pdf-progress-regression/existing-04.test-results.json",
+      "publicPath": "tests/existing-04.test-results.json",
+      "sha256": "9509d0ded3f8e4c91afccaa5f7f7e7b2d254c70ca0ba1f33aac39659f8cdb3a1"
+    },
+    {
+      "bytes": 219,
+      "originalPath": "work/pdf-progress-regression/existing-04.test-timings.json",
+      "publicPath": "tests/existing-04.test-timings.json",
+      "sha256": "769bff91c3b74f42377807a24be50f052e1179bca01ef7816c2bf5500b5061ef"
+    },
+    {
+      "bytes": 705,
+      "originalPath": "work/pdf-progress-regression/existing-05.test-results.json",
+      "publicPath": "tests/existing-05.test-results.json",
+      "sha256": "0033a48258f3926096ac724432cbd893dbbf5d3b354da10c99440b757729822c"
+    },
+    {
+      "bytes": 265,
+      "originalPath": "work/pdf-progress-regression/existing-05.test-timings.json",
+      "publicPath": "tests/existing-05.test-timings.json",
+      "sha256": "111b0982bd32329c43e6f642fbc8305aca88ea8696be28d593d97a043ce29331"
+    },
+    {
+      "bytes": 717,
+      "originalPath": "work/pdf-progress-regression/existing-06.test-results.json",
+      "publicPath": "tests/existing-06.test-results.json",
+      "sha256": "485cf757143fe6255f161e9452fb0fbcc0770a3c434a91a44dd3e71edcd2b6dc"
+    },
+    {
+      "bytes": 314,
+      "originalPath": "work/pdf-progress-regression/existing-06.test-timings.json",
+      "publicPath": "tests/existing-06.test-timings.json",
+      "sha256": "ea26c33155341bd27b8198003616cd1f1ab42ab67ae5e7943deb7d3f5d414598"
+    },
+    {
+      "bytes": 703,
+      "originalPath": "work/pdf-progress-regression/existing-07.test-results.json",
+      "publicPath": "tests/existing-07.test-results.json",
+      "sha256": "3df3afe9ecfc28955922af60943f9493330059260075f83d5226a091dba228bc"
+    },
+    {
+      "bytes": 358,
+      "originalPath": "work/pdf-progress-regression/existing-07.test-timings.json",
+      "publicPath": "tests/existing-07.test-timings.json",
+      "sha256": "89597e49e7a68591e3c8accbe6d9cdd25f936486c7b8e347fa446c96fc9b7df4"
+    },
+    {
+      "bytes": 2027,
+      "originalPath": "work/pdf-progress-regression/mutant-save.test-results.json",
+      "publicPath": "tests/mutant-save.test-results.json",
+      "sha256": "1873e0b5f5b1540b47eeebc211ed3cdf62d3ffc86eda654ceda58bc65eea7400"
+    },
+    {
+      "bytes": 358,
+      "originalPath": "work/pdf-progress-regression/mutant-save.test-timings.json",
+      "publicPath": "tests/mutant-save.test-timings.json",
+      "sha256": "10fdd4a2bc08ddad597fc361dbffa98f5a3989935efa50373d721c652e8a7954"
+    },
+    {
+      "bytes": 2028,
+      "originalPath": "work/pdf-progress-regression/mutant-print.test-results.json",
+      "publicPath": "tests/mutant-print.test-results.json",
+      "sha256": "50f029a314cbe5ee90e78e5280bf9a650ad8626ebaf27223d43d0a6aa6e52ff7"
+    },
+    {
+      "bytes": 358,
+      "originalPath": "work/pdf-progress-regression/mutant-print.test-timings.json",
+      "publicPath": "tests/mutant-print.test-timings.json",
+      "sha256": "89597e49e7a68591e3c8accbe6d9cdd25f936486c7b8e347fa446c96fc9b7df4"
+    },
+    {
+      "bytes": 763,
+      "originalPath": "work/pdf-progress-regression/final-regression.test-results.json",
+      "publicPath": "tests/final-regression.test-results.json",
+      "sha256": "01d4e726f29150ff78f86b14e86a7649039a86a5daae438bbe5c96fa89d8b372"
+    },
+    {
+      "bytes": 357,
+      "originalPath": "work/pdf-progress-regression/final-regression.test-timings.json",
+      "publicPath": "tests/final-regression.test-timings.json",
+      "sha256": "cbc40288ccea2bbd43083d7df5781f5e70dc0e293bf4749b9e905e1a3f44ca11"
+    },
+    {
+      "bytes": 648,
+      "originalPath": "work/pdf-progress-regression/sdk-before.json",
+      "publicPath": "bindings/sdk-before.json",
+      "sha256": "f07b700acc2764fe26a00d968e1a2cff6bf1545c264b95d741d353370711d04a"
+    },
+    {
+      "bytes": 647,
+      "originalPath": "work/pdf-progress-regression/sdk-after.json",
+      "publicPath": "bindings/sdk-after.json",
+      "sha256": "fd3b6a7e3b5e8cd8a6e9826f4657a4025539a5496aa9411176aaa0d776cd3adb"
+    },
+    {
+      "bytes": 465,
+      "originalPath": "work/pdf-progress-regression/mutation-plan.json",
+      "publicPath": "bindings/mutation-plan.json",
+      "sha256": "85fab298d9de7fa067d9d7d9dbed9df6c25ef8fbd57120f7e49d6b414a3dbef8"
+    },
+    {
+      "bytes": 8129,
+      "originalPath": "work/pdf-progress-regression/mutation-result.json",
+      "publicPath": "bindings/mutation-result.json",
+      "sha256": "d43eba525fccabcd174650762ae2f9ed9115390d377064dd6cdf0c4c247125be"
+    },
+    {
+      "bytes": 9228,
+      "originalPath": "work/pdf-progress-regression/existing-tests-result.json",
+      "publicPath": "bindings/existing-tests-result.json",
+      "sha256": "83e0d5499681229f4e8a81caf12fccbac72f126daf4ff4c2e0bf892a106473ac"
+    }
+  ],
+  "nugetPackageCacheNotCopied": true,
+  "originalSdkFullMapNotCopied": true,
+  "rawStdoutStderrFilesNotCopied": "Actual terminal receipts bind retained raw logs by SHA256; logs stay in ignored local evidence. No claim of portable full log replay.",
+  "schema": "keepvault.literal-test-receipt-copies.v1"
+}

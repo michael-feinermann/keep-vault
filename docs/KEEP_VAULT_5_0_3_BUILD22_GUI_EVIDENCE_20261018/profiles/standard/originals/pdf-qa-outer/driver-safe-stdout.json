@@ -1,0 +1,12 @@
+{
+  "status": "PDF_QR_AND_TEXT_PASS_VISUAL_PENDING",
+  "evidenceDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-standard-gui",
+  "actualDriverPid": 88422,
+  "resultPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-standard-gui/pdf-pair-qa-result.json",
+    "sha256": "b654fd38460116430676f7ba9395cbb0a13faa14392807f88e7624774be748e4",
+    "bytes": 11794
+  },
+  "rawFactorsIncluded": false,
+  "visualLayoutReview": "ROOT_REQUIRED_NOT_PERFORMED"
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "keepvault.public-gui-pdf-progress-defect-addendum.v1",
+  "createdUtc": "2026-10-18T10:42:37.410173+00:00",
+  "classification": "DERIVED_SUMMARY_NOT_NEW_RUNTIME_RECEIPT",
+  "originalConfirmedDefectPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-progress-status-defect.json",
+    "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+    "bytes": 1783
+  },
+  "preservedOriginalRelativePath": "profiles/standard/originals/case/root-pdf-progress-status-defect.json",
+  "observedInInstalledBuild": 22,
+  "observedActualLauncherPid": 87094,
+  "directlyObservedCase": "profile-standard",
+  "observedBehavior": "Normal successful English public PDF export approved the exact key-sheet draft but progress showed Cancelled / 0% without cancellation input.",
+  "pdfCorruptionOrCryptographicFailureProven": false,
+  "reviewedSourceCause": "BA SaveKeySheet_Click and PrintKeySheet_Click omit MarkOperationSucceeded on successful output; the protected tracker maps no-success to cancelled.",
+  "runtimeObservationScope": "Source also covers Print; this package does not claim a physical print observation or retrospectively invent a Paranoia screen observation.",
+  "plannedCorrectionBuild": 23,
+  "correctionBuildTestSigningInstallationAndGuiEvidenceIncluded": false,
+  "sourceFixOrRegressionTestsGrantedPassByThisPackage": false,
+  "oldBuild22SourceAndOriginalEvidenceModified": false,
+  "overallReleaseApproval": false,
+  "targetedManagedCodeRegressionEvidenceIncluded": true,
+  "targetedManagedCodeRegressionStatus": "TARGETED_MANAGED_REGRESSION_PASS_NOT_RELEASE_APPROVAL",
+  "targetedRegressionOriginalResultPin": {
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/docs/KEEP_VAULT_5_0_3_PDF_PROGRESS_REGRESSION_20261018/result.json",
+    "sha256": "40c25301a54cac359d2f60b0e3d867e261dc52a0f384e6c90f781d16a9945032",
+    "bytes": 16419
+  },
+  "sourceRegressionVerdictAttributedToOriginalExportOnly": true
+}

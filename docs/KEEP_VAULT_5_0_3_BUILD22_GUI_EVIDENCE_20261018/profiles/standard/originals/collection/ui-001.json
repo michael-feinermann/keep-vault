@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "recordedUtc": "2026-10-18T10:27:19.932459+00:00",
+  "status": "ACTUAL_FUNCTIONAL_PROFILE_EVIDENCE_COMPLETE_WITH_KNOWN_GUI_STATUS_DEFECT",
+  "caseDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d",
+  "actualLauncherPid": 87094,
+  "actualRunnerPid": 87086,
+  "auditWorkRoot": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e",
+  "publicTestDataOnly": true,
+  "noNonpublicCredentialsFactorsOrMouseRecords": true,
+  "observationsChronological": [
+    "Root bound only after runner reported actual launcher start.",
+    "Root directly observed public-test-data warning, clicked actualOK and observed completed fixture initialization.",
+    "Root opened suite dropdown. Direct AX click of first entry did not visibly commit; Home+Return in open menu then committed Standard.",
+    "Actual selected suite before Generate: Standard: XChaCha20-Poly1305(Threefish1024(Kalyna512/512(AES256(Data)))); compression3, encrypted, deleteOriginalsOff.",
+    "Both generated factor fields empty. Fresh mouse status initially total1. Generate disabled.",
+    "Root exposed generator at Create scroll488 and requested actual user movements until enabled, explicitly leaveGenerateunclicked. No Generate/PDF/Create/Extract action performed.",
+    "After user Standard-ready reply, first Root AX showed generation already completed. Root did not click Generate. Optional actor question pending.",
+    "Root captured both complete256hex public factors in ephemeral CUA variables. SwitchedDEtoEN; exact factor/password/PIN preservation and correct English password/PIN help observed.",
+    "Root pasted both current factors natively into ExtractA/B. ReturnedArchive; normal currentWorkRoot foldergrant, Save, Continue yielded two English testPDFs and exact handled sheet binding.",
+    "After PDF success new progress wrongly showed Cancelled/0%. Separately pinned confirmed defect, no overall GUI approval.",
+    "Root switchedENtoDEtoEN after PDF approval. Factors/password/PIN/current path/prepared state and handled sheet binding retained.",
+    "Root clickedCreate once. Actual Inventory, normal Archive+KPAR2 success dialog, OK; all Create credential/factor fields then empty.",
+    "Root selectedExtract, verified prefilled public credentials and factors exact, clickedExtract and confirmed currentWorkRoot folder. Actual keyderivation and normal extract-success dialog observed.",
+    "After ExtractOK all credentials/factors empty, counts0/256, Completed100%, Cancel disabled. No repeated humanUndo on same unchanged cleanup path.",
+    "Root normalCmdQ; actualLauncher87094 exit0 and runner87086 wait0; installedBefore/Afterbyteequal."
+  ],
+  "complete": true,
+  "launcherTerminalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/launcher-terminal.json",
+    "bytes": 1765,
+    "sha256": "8c9cd401669b986bcf1deb578a49ac9042d05d63aa77d3beb8c9406f5bc1492f"
+  },
+  "independentTreeComparisonPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-independent-tree-comparison.json",
+    "bytes": 2078,
+    "sha256": "95db00d4eb2fe79466f299aae9f2cec4894d46d6864d1934bc3d27825f770e6e"
+  },
+  "confirmedGuiDefectPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-progress-status-defect.json",
+    "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+    "bytes": 1783
+  },
+  "functionalOperationsObservedSuccessful": true,
+  "normalQuit": "ACTUAL_LAUNCHER0_AND_RUNNER0",
+  "pdfVisualReviewPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-visual-review.json",
+    "sha256": "dbeb2d8c94a0d49ab7906dc6f65f8f34a531dc1b4cdd34af95d11c9bca86617e",
+    "bytes": 2859
+  },
+  "overallReleaseApproval": false,
+  "limitations": [
+    "Generate actor not directly observed by Root; optional user clarification pending. No repeated generation inferred.",
+    "Language switch changed audit windowtitle to normal KeepVault; actual case remains bound by original PID/command/receipts and restricted public WorkRoot.",
+    "Successful testPDF produced wrong Cancelled progress label, explicitly retained as confirmed defect requiring correctivebuild.",
+    "This historicalBuild22 evidence does not grant final correctedBuild23 GUI approval."
+  ],
+  "rootObserverTerminalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/gui-root-observer-standard-20261018-ece8w_3g/terminal.json",
+    "sha256": "e7b747751ee9babb39d4a2247d367cdfa4f3629d0d567fb39a9de986adc641bc",
+    "bytes": 1122
+  }
+}

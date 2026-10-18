@@ -1,0 +1,32 @@
+{
+  "actualPid": 89530,
+  "argv": [
+    "/usr/bin/env",
+    "KEEPVAULT_TEST_REPOSITORY_ROOT=/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna",
+    "DOTNET_CLI_HOME=/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression/official-home",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T090448828623Z-80743/public-dotnet-sdk/dotnet",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/bin/Release/net10.0/osx-arm64/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "keysheet.pair-cleanup-identity",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x503C0DE"
+  ],
+  "startedUtc": "2026-10-18T10:38:46.777590+00:00",
+  "completedUtc": "2026-10-18T10:38:47.515605+00:00",
+  "actualExitCode": 0,
+  "startReceiptError": null,
+  "stdout": {
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression/existing-05.stdout",
+    "sha256": "c7851698a4046ccfc908a52d65afcc379004656b0626bb542cc32e176284de6f",
+    "bytes": 451
+  },
+  "stderr": {
+    "path": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression/existing-05.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}

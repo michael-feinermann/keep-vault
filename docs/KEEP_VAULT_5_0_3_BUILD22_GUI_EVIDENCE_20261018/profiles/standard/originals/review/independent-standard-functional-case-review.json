@@ -1,0 +1,446 @@
+{
+  "schema": "keepvault.independent-installed-standard-functional-case-review.v1",
+  "status": "EVIDENCE_INTEGRITY_PASS_WITH_CONFIRMED_GUI_STATUS_DEFECT",
+  "createdUtc": "2026-10-18T10:38:50.735604+00:00",
+  "caseDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d",
+  "collectionReceiptPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/collection-receipt.json",
+    "sha256": "a7b3fdd52564308fd9ff000c79c8764a62126867639835cb9fad327bed11eac2",
+    "bytes": 10455
+  },
+  "actualCollectorPid": 88574,
+  "actualCollectorWaitExitCode": 0,
+  "actualAuditRunnerPid": 87086,
+  "actualAuditRunnerWaitExitCode": 0,
+  "actualLauncherCorePid": 87094,
+  "actualLauncherWaitExitCode": 0,
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "compiledCoreSha256": "a52e743157b1930c0a922a6e76230751801b6820c0b7e401ea766f6c4060e509",
+  "version": "5.0.3",
+  "build": 22,
+  "actualOriginalOperationCount": 3,
+  "literalPreservedOriginalCopyCount": 7,
+  "copyChecks": [
+    {
+      "originalPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/operation-001-generate.json",
+        "sha256": "1c9d8e985b39f40fc37d4ee8de5a075ab7db5116f8bb04c17fe3b583c8ff8506",
+        "bytes": 12557
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-001-generate.json",
+        "sha256": "1c9d8e985b39f40fc37d4ee8de5a075ab7db5116f8bb04c17fe3b583c8ff8506",
+        "bytes": 12557
+      },
+      "literalOriginalBeforeCopyAfterEqual": true
+    },
+    {
+      "originalPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/operation-002-create.json",
+        "sha256": "ab4fce0ce3229519871fa1731edfe04cc887efdf06807753ec943b66d90a8943",
+        "bytes": 298324
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-002-create.json",
+        "sha256": "ab4fce0ce3229519871fa1731edfe04cc887efdf06807753ec943b66d90a8943",
+        "bytes": 298324
+      },
+      "literalOriginalBeforeCopyAfterEqual": true
+    },
+    {
+      "originalPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/operation-003-extract.json",
+        "sha256": "d020b76af5ff8fd1c1c96257f5231c04554ae574bbed1ded39213f433e6e335d",
+        "bytes": 62458
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-003-extract.json",
+        "sha256": "d020b76af5ff8fd1c1c96257f5231c04554ae574bbed1ded39213f433e6e335d",
+        "bytes": 62458
+      },
+      "literalOriginalBeforeCopyAfterEqual": true
+    },
+    {
+      "originalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-ui-observation.json",
+        "sha256": "a5bc7d5aa92813378cdbe7d6a3838438fc8e4289bbffc18995c527d469d377b1",
+        "bytes": 5476
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-001.json",
+        "sha256": "a5bc7d5aa92813378cdbe7d6a3838438fc8e4289bbffc18995c527d469d377b1",
+        "bytes": 5476
+      },
+      "literalOriginalBeforeCopyAfterEqual": true
+    },
+    {
+      "originalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-independent-tree-comparison.json",
+        "sha256": "95db00d4eb2fe79466f299aae9f2cec4894d46d6864d1934bc3d27825f770e6e",
+        "bytes": 2078
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-002.json",
+        "sha256": "95db00d4eb2fe79466f299aae9f2cec4894d46d6864d1934bc3d27825f770e6e",
+        "bytes": 2078
+      },
+      "literalOriginalBeforeCopyAfterEqual": true
+    },
+    {
+      "originalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-visual-review.json",
+        "sha256": "dbeb2d8c94a0d49ab7906dc6f65f8f34a531dc1b4cdd34af95d11c9bca86617e",
+        "bytes": 2859
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-003.json",
+        "sha256": "dbeb2d8c94a0d49ab7906dc6f65f8f34a531dc1b4cdd34af95d11c9bca86617e",
+        "bytes": 2859
+      },
+      "literalOriginalBeforeCopyAfterEqual": true
+    },
+    {
+      "originalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-progress-status-defect.json",
+        "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+        "bytes": 1783
+      },
+      "preservedPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-004.json",
+        "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+        "bytes": 1783
+      },
+      "literalOriginalBeforeCopyAfterEqual": true
+    }
+  ],
+  "operationObservations": [
+    {
+      "sequence": 1,
+      "operation": "generate",
+      "outcome": "success",
+      "handlerWallSeconds": 0.010983125,
+      "applicationDialogWallSeconds": 0,
+      "workWallSecondsExcludingApplicationDialogs": 0.010954167,
+      "processCpuSeconds": 0.03420500000000004,
+      "activeCpuWorkersAfterJoin": 0
+    },
+    {
+      "sequence": 2,
+      "operation": "create",
+      "outcome": "success",
+      "handlerWallSeconds": 131.256544875,
+      "applicationDialogWallSeconds": 94.506198667,
+      "workWallSecondsExcludingApplicationDialogs": 36.75032762499998,
+      "processCpuSeconds": 49.86979099999999,
+      "activeCpuWorkersAfterJoin": 0
+    },
+    {
+      "sequence": 3,
+      "operation": "extract",
+      "outcome": "success",
+      "handlerWallSeconds": 143.306012,
+      "applicationDialogWallSeconds": 107.090890416,
+      "workWallSecondsExcludingApplicationDialogs": 36.21511720900001,
+      "processCpuSeconds": 23.096838000000005,
+      "activeCpuWorkersAfterJoin": 0
+    }
+  ],
+  "sourceBytes": 268435456,
+  "standardFourStageProfileSignatureObserved": true,
+  "productOriginalComparison": true,
+  "rootIndependentTreeMetadataEqualsProductManifest": true,
+  "treeFiles": 3,
+  "treeSubdirectories": 5,
+  "treeTotalBytes": 268435456,
+  "largeTreeBytesRehashedByThisReview": false,
+  "englishActualPdfPairQaAndOuterWaitVerified": true,
+  "pdfDriverPid": 88422,
+  "pdfDriverActualWaitExitCode": 0,
+  "fourExistingRenderedImagePinsVerified": true,
+  "visualLayoutReperformedByReviewer": false,
+  "rootVisualLayoutObservationVerifiedAsSeparateSource": true,
+  "knownGuiDefectPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-progress-status-defect.json",
+    "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+    "bytes": 1783
+  },
+  "knownGuiDefect": "OPEN_SUCCESSFUL_PDF_EXPORT_SHOWN_CANCELLED_ZERO_PERCENT_CORRECTIVE_BUILD_REQUIRED",
+  "generateActor": "NOT_DIRECTLY_OBSERVED_OPTIONAL_USER_CLARIFICATION_PENDING",
+  "functionalDataPathEvidence": "SUCCESSFUL_GENERATE_CREATE_EXTRACT_THIS_256MIB_C3_CASE",
+  "allGuiPass": false,
+  "correctedBuild23Approval": false,
+  "installedBundleLiveBytesRehashedByThisReview": false,
+  "targetedMetadataPrivacyFindings": [],
+  "reviewInputPins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/collection-receipt.json",
+      "sha256": "a7b3fdd52564308fd9ff000c79c8764a62126867639835cb9fad327bed11eac2",
+      "bytes": 10455
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/SHA256SUMS",
+      "sha256": "35b92817c7a9fc1b59b17bdb5810bd422168d81adaf9964be0b0ae50de38a6c9",
+      "bytes": 782
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-001-generate.json",
+      "sha256": "1c9d8e985b39f40fc37d4ee8de5a075ab7db5116f8bb04c17fe3b583c8ff8506",
+      "bytes": 12557
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-002-create.json",
+      "sha256": "ab4fce0ce3229519871fa1731edfe04cc887efdf06807753ec943b66d90a8943",
+      "bytes": 298324
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-003-extract.json",
+      "sha256": "d020b76af5ff8fd1c1c96257f5231c04554ae574bbed1ded39213f433e6e335d",
+      "bytes": 62458
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-001.json",
+      "sha256": "a5bc7d5aa92813378cdbe7d6a3838438fc8e4289bbffc18995c527d469d377b1",
+      "bytes": 5476
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-002.json",
+      "sha256": "95db00d4eb2fe79466f299aae9f2cec4894d46d6864d1934bc3d27825f770e6e",
+      "bytes": 2078
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-003.json",
+      "sha256": "dbeb2d8c94a0d49ab7906dc6f65f8f34a531dc1b4cdd34af95d11c9bca86617e",
+      "bytes": 2859
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-004.json",
+      "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+      "bytes": 1783
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/ui-evidence-manifest.original.json",
+      "sha256": "63a124709b2c2c83d8ac2911180ae0f74aa28b8d74cdc5da444cf52469527e94",
+      "bytes": 2038
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/launch-start.json",
+      "sha256": "12ba26948d1bc2bc971ae226bfd5bf36712e72ed8b67316da6f7d309c0aebccc",
+      "bytes": 2312
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/launcher-terminal.json",
+      "sha256": "8c9cd401669b986bcf1deb578a49ac9042d05d63aa77d3beb8c9406f5bc1492f",
+      "bytes": 1765
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/installed-before.json",
+      "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+      "bytes": 23861
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/installed-after.json",
+      "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+      "bytes": 23861
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/source-bindings.json",
+      "sha256": "fb8590e75069c24a0f40dd678a4aa6093f892cd21c28c30260a7a1610a0e969d",
+      "bytes": 3191
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/binding-manifest.original.json",
+      "sha256": "63203a6b95edfdbd137162f2debb22ed4ff6fe1bce30d5d5bfa7361731d1720c",
+      "bytes": 20896
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/ui-evidence-manifest.json",
+      "sha256": "63a124709b2c2c83d8ac2911180ae0f74aa28b8d74cdc5da444cf52469527e94",
+      "bytes": 2038
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-campaign-result.json",
+      "sha256": "2411fbadcc532614a66c1188e3d07978872bba101d07da37a281165b229c903a",
+      "bytes": 10034
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-process-start.json",
+      "sha256": "0b4bbe101b4567b5c1ce6b03b4b91ebf044b15ec7aefcf2d4490d0064839ec56",
+      "bytes": 1017
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-process-terminal.json",
+      "sha256": "2fcd9fcf41d0b0aecccbef1503fdb1cd68a577c703b6a4cea2710d50a4ac2dda",
+      "bytes": 150
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/sourceMap.json",
+      "sha256": "0dcd3d704536a0d75d9bd5f31533ce726ac503b2f2ceccbe53c2d8872207f1c0",
+      "bytes": 88652
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-installed-audit22-recovered.py",
+      "sha256": "86068af12ec357a3de6fe7adf95ed2ae22748e7a98b8f4ffc419c93640d285ad",
+      "bytes": 27367
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Gui/ReleaseAuditSession.cs",
+      "sha256": "41626c5a371dc404e31254f31eef12f3324552051cf64b9b0cb2ce7c22b258c3",
+      "bytes": 37290
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Gui/MainWindow.ReleaseAudit.cs",
+      "sha256": "75d6cfdf35e54563847ca9e499ea93fa10365d11d1bc8aa8330852ed8202e00e",
+      "bytes": 8072
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Program.cs",
+      "sha256": "a0c04e5aa44fe8a724ae14f76e9512275af80557b70556da39a06a9c1eabd35a",
+      "bytes": 1973
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Packaging/Launcher.swift",
+      "sha256": "a2de1ebc4d05931f6b4e77aa3c8ac04124501790fff508014a6378dd9e6f5429",
+      "bytes": 36086
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Services/MacIntegrityService.cs",
+      "sha256": "e3afa5e21d62621c4d8bbf924d4c476f0ff187373a34787b4782dce4dd1d47c5",
+      "bytes": 34629
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Services/MacZpaqRootAnchor.cs",
+      "sha256": "5dbf75dcd988e82bdbca0bbecfabfa24d6603b1c0b54da65c1ea9f31120238fa",
+      "bytes": 7261
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/docs/KEEP_VAULT_5_0_3_RELEASE_AUDIT_MODE_REVIEW.md",
+      "sha256": "6a35114cf03b93f365dc16289688a97c4ad39e7203ee84b658f8a2191e742f9c",
+      "bytes": 9290
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collector-root-outer-g381x8oe/terminal.json",
+      "sha256": "e13a264b4e59fede3249d8acf05f80244e98555332c4482ad3f562172b828e4c",
+      "bytes": 2314
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collector-root-outer-g381x8oe/start.json",
+      "sha256": "cecc70a42cea8e0f91e45ab3f8290ca0d5a84c5647cc6f88519150b5ad15f86e",
+      "bytes": 1047
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collector-root-outer-g381x8oe/stdout.log",
+      "sha256": "0d87ea358d1beb01818dd6ff6823e24fd065ed3bd79bc37a76108a39a4a3899b",
+      "bytes": 332
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collector-root-outer-g381x8oe/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/operation-001-generate.json",
+      "sha256": "1c9d8e985b39f40fc37d4ee8de5a075ab7db5116f8bb04c17fe3b583c8ff8506",
+      "bytes": 12557
+    },
+    {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/operation-002-create.json",
+      "sha256": "ab4fce0ce3229519871fa1731edfe04cc887efdf06807753ec943b66d90a8943",
+      "bytes": 298324
+    },
+    {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/operation-003-extract.json",
+      "sha256": "d020b76af5ff8fd1c1c96257f5231c04554ae574bbed1ded39213f433e6e335d",
+      "bytes": 62458
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-ui-observation.json",
+      "sha256": "a5bc7d5aa92813378cdbe7d6a3838438fc8e4289bbffc18995c527d469d377b1",
+      "bytes": 5476
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-independent-tree-comparison.json",
+      "sha256": "95db00d4eb2fe79466f299aae9f2cec4894d46d6864d1934bc3d27825f770e6e",
+      "bytes": 2078
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-visual-review.json",
+      "sha256": "dbeb2d8c94a0d49ab7906dc6f65f8f34a531dc1b4cdd34af95d11c9bca86617e",
+      "bytes": 2859
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-progress-status-defect.json",
+      "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+      "bytes": 1783
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/gui-root-observer-standard-20261018-ece8w_3g/terminal.json",
+      "sha256": "e7b747751ee9babb39d4a2247d367cdfa4f3629d0d567fb39a9de986adc641bc",
+      "bytes": 1122
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/MainWindow.axaml.cs",
+      "sha256": "70ff0ea1b453a53e2bc0b71032e121eb4eccaac61f526c09badbaa9c6f53c0d3",
+      "bytes": 102532
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Gui/MainWindow.Progress.cs",
+      "sha256": "af53a32640da6952842f2de7f16a046661e30d85b4cb92607f581ffbe6588e1a",
+      "bytes": 10152
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/render-manifest.json",
+      "sha256": "7d0c5782f32f8d55a8a94d20c84eceb36dc847824e31155e7b2eef442cf09406",
+      "bytes": 5799
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-standard-gui/pdf-pair-qa-result.json",
+      "sha256": "b654fd38460116430676f7ba9395cbb0a13faa14392807f88e7624774be748e4",
+      "bytes": 11794
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-standard-pdf-qa-outer-20261018-x0bawp7i/root-outer-terminal.json",
+      "sha256": "038b5b59c5c067e4d884241448ee4997f466f1e8ac163c10ae3b190d5e2f5ace",
+      "bytes": 2090
+    },
+    {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "9363526230a38f66b411d029aab0fe497059597b5c69bebc4a590678f34b85bc",
+      "bytes": 104597
+    },
+    {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "aab8165a8bb574e320a4699d73698d3d24778a2138eb8e1a9d893783ea0e59c1",
+      "bytes": 104723
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/A-1.png",
+      "sha256": "e83cebc552bb69fa6ed14b3485d101734423ae4ea02c245c376d5a7157aa5e1d",
+      "bytes": 198121
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/A-2.png",
+      "sha256": "d1a4911ba5bded1262504e061e0f2c66c15357da7dc8b945f978209944d14f75",
+      "bytes": 196181
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/B-1.png",
+      "sha256": "44a2a5be9062e19a9da2d2cc6d5bce2c570387a3840bc028026980ee2c67c47b",
+      "bytes": 197191
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/B-2.png",
+      "sha256": "d1a4911ba5bded1262504e061e0f2c66c15357da7dc8b945f978209944d14f75",
+      "bytes": 196181
+    }
+  ],
+  "reviewerProductGuiNativeOrPdfAnalysisProcessesStarted": false,
+  "originalEdits": false,
+  "timingInterpretation": "One functional GUI case, measured dialog waits separate; inner intervals overlap and are not additive totals.",
+  "scopeLimits": [
+    "Source BA and historical Build22 only.",
+    "Known GUI PDF-progress defect remains open.",
+    "No other profiles/faults/finalStructure512/overall release granted.",
+    "No physical camera/paper/printing,Windows/multiTiB or external-audit claim."
+  ],
+  "overallReleaseApproval": false
+}

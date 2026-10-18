@@ -1,0 +1,45 @@
+{
+  "actualObserverPid": 86014,
+  "actualDriverPid": 86015,
+  "startedUtc": "2026-10-18T09:51:47.842206+00:00",
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/check-public-pdf-pair.py",
+    "--execute",
+    "--public-test-inputs",
+    "--pdf-a",
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+    "--pdf-b",
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+    "--pdf-a-sha256",
+    "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+    "--pdf-b-sha256",
+    "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+    "--driver-sha256",
+    "22f6ed53eceab3d824496a9836ac924bd05450f00db188eb939af5994f658f45",
+    "--lock-sha256",
+    "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+    "--out",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui"
+  ],
+  "actualDriverExitCode": 0,
+  "completedUtc": "2026-10-18T09:51:48.327920+00:00",
+  "stdout": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-pdf-qa-outer-20261018-pqoqk8m5/stdout.log",
+    "bytes": 686,
+    "sha256": "dce4d370c88f1fb6e36f28c96e3dc87781fe44821e88a670b44b2dfbf45dfcd5"
+  },
+  "stderr": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-pdf-qa-outer-20261018-pqoqk8m5/stderr.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "result": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/pdf-pair-qa-result.json",
+    "bytes": 11796,
+    "sha256": "bd95f8ff3d582579c87792f3e7f61d318713854a2a9125bef743cb83d9f0593d"
+  }
+}

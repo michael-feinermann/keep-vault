@@ -1,0 +1,7 @@
+# Standard Build 22: abgeschlossener Funktionspfad mit offenem GUI-Statusfehler
+
+Diese unveränderten Originalmetadaten belegen einen tatsächlichen installierten Standard-Fall am 18. Oktober 2026 mit 256 MiB und Kompressionsstufe 3. Generate/Create/Extract meldeten Erfolg; Rootbaumvergleich und Produktvergleich stimmen überein. Launcher/Core 87094, Auditrunner 87086, Collector 88574 und PDF-Driver 88422 sind jeweils mit tatsächlichen separaten Wait-Exit0-Belegen gebunden.
+
+Der neue unabhängige Review meldet ausdrücklich `EVIDENCE_INTEGRITY_PASS_WITH_CONFIRMED_GUI_STATUS_DEFECT`. Das ist kein vollständiges GUI-PASS. Erfolgreiche PDF-Ausgabe wurde als Cancelled/0% angezeigt. Der Defekt bleibt offen; ein fertig getesteter, signierter, notarisierter oder installierter Produktbuild 23 wird durch diesen historischen Fall nicht nachgewiesen. Die spätere gezielte Managed-Quellprüfung liegt getrennt unter corrective-source-regression vor. Der Akteur des Generate-Klicks wurde von Root nicht direkt beobachtet. Die übrigen Grenzen stehen im Rootbeobachtungsoriginal und im [Defektaddendum](../../PDF-STATUS-DEFECT-ADDENDUM.de.md).
+
+Die englische PDF-Analyse und vier Render-Metadatensätze sind enthalten; PDFs, Bilder, Rohfaktoren und Textlogs sind nicht enthalten. Die tatsächliche visuelle Betrachtung der vier Seiten stammt getrennt von Root. Kein aktueller Scanner-Kamera-, Papier- oder physischer Drucknachweis. Herkunfts- und Inputpins sind Metadaten; nicht alle transitiven Quellen/Programme/Systembibliotheken sind im Paket archiviert.

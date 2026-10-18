@@ -1,0 +1,50 @@
+{
+  "sourceHead": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "reviewedSourcePins": {
+    "KeepVaultMac/Gui/ReleaseAuditSession.cs": "41626c5a371dc404e31254f31eef12f3324552051cf64b9b0cb2ce7c22b258c3",
+    "KeepVaultMac/Gui/MainWindow.ReleaseAudit.cs": "75d6cfdf35e54563847ca9e499ea93fa10365d11d1bc8aa8330852ed8202e00e",
+    "KeepVaultMac/Program.cs": "a0c04e5aa44fe8a724ae14f76e9512275af80557b70556da39a06a9c1eabd35a",
+    "KeepVaultMac/Packaging/Launcher.swift": "a2de1ebc4d05931f6b4e77aa3c8ac04124501790fff508014a6378dd9e6f5429",
+    "KeepVaultMac/Services/MacIntegrityService.cs": "e3afa5e21d62621c4d8bbf924d4c476f0ff187373a34787b4782dce4dd1d47c5",
+    "KeepVaultMac/Services/MacZpaqRootAnchor.cs": "5dbf75dcd988e82bdbca0bbecfabfa24d6603b1c0b54da65c1ea9f31120238fa",
+    "docs/KEEP_VAULT_5_0_3_RELEASE_AUDIT_MODE_REVIEW.md": "6a35114cf03b93f365dc16289688a97c4ad39e7203ee84b658f8a2191e742f9c"
+  },
+  "actualRecoveredCoverageRolePins": {
+    "campaign_result": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-campaign-result.json",
+      "sha256": "2411fbadcc532614a66c1188e3d07978872bba101d07da37a281165b229c903a",
+      "bytes": 10034
+    },
+    "campaign_start": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-process-start.json",
+      "sha256": "0b4bbe101b4567b5c1ce6b03b4b91ebf044b15ec7aefcf2d4490d0064839ec56",
+      "bytes": 1017
+    },
+    "campaign_terminal": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-process-terminal.json",
+      "sha256": "2fcd9fcf41d0b0aecccbef1503fdb1cd68a577c703b6a4cea2710d50a4ac2dda",
+      "bytes": 150
+    },
+    "source_before": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/sourceMap.json",
+      "sha256": "0dcd3d704536a0d75d9bd5f31533ce726ac503b2f2ceccbe53c2d8872207f1c0",
+      "bytes": 88652
+    },
+    "source_after": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/sourceMap.json",
+      "sha256": "0dcd3d704536a0d75d9bd5f31533ce726ac503b2f2ceccbe53c2d8872207f1c0",
+      "bytes": 88652
+    },
+    "runner_source": {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-installed-audit22-recovered.py",
+      "sha256": "86068af12ec357a3de6fe7adf95ed2ae22748e7a98b8f4ffc419c93640d285ad",
+      "bytes": 27367
+    }
+  },
+  "bindingManifestOriginalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-audit-bindings.json",
+    "sha256": "63203a6b95edfdbd137162f2debb22ed4ff6fe1bce30d5d5bfa7361731d1720c",
+    "bytes": 20896
+  },
+  "normalLauncherSignatureAndStartupChecks": "Remain active; runner does not bypass or independently confer them"
+}

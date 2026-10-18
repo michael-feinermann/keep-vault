@@ -1,0 +1,65 @@
+{
+  "baseHead": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "productAndTestLocksUnchanged": {
+    "KeepVaultMac.Tests/packages.lock.json": {
+      "bytes": 13404,
+      "path": "KeepVaultMac.Tests/packages.lock.json",
+      "sha256": "ee7fedf92179705de025536cdcf1cb6b5991aa69d457b26103b3e420b9957a24"
+    },
+    "KeepVaultMac/packages.lock.json": {
+      "bytes": 17192,
+      "path": "KeepVaultMac/packages.lock.json",
+      "sha256": "b111fbcd11fbf46df0e61164109cbd8bfb2c22b80ec79e4b4d1ea0ed7fe07de7"
+    },
+    "global.json": {
+      "bytes": 105,
+      "path": "global.json",
+      "sha256": "4e7d5022b2a5a8d02bb951bb264a4c8613eabc332572a0af5f9743d23f23d84e"
+    }
+  },
+  "sourceCommitForFix": "NOT_COMMITTED_AT_TEST_TIME",
+  "testInventoryHash": "22f400f0fc1a5ef49488db90c92d48ae8526b9904481bf762ef878cf1ce0743f",
+  "trackedSourceCleanClaim": false,
+  "workingFilePins": [
+    {
+      "baseFileSha256": "70ff0ea1b453a53e2bc0b71032e121eb4eccaac61f526c09badbaa9c6f53c0d3",
+      "newFile": false,
+      "repositoryPath": "KeepVaultMac/MainWindow.axaml.cs",
+      "uncommittedWorkingFile": {
+        "bytes": 102700,
+        "path": "KeepVaultMac/MainWindow.axaml.cs",
+        "sha256": "276d93ad1a6cd485857a5cc43b3f3929524863ad7c617a4553ad42b4d9dfb521"
+      }
+    },
+    {
+      "baseFileSha256": "aad5c918ff834ba7b83f36e4875029a73c7e7cf8e577859ca3a5a67760ebe17a",
+      "newFile": false,
+      "repositoryPath": "KeepVaultMac/Gui/MacKeySheetService.cs",
+      "uncommittedWorkingFile": {
+        "bytes": 2465,
+        "path": "KeepVaultMac/Gui/MacKeySheetService.cs",
+        "sha256": "9f1b876c28811f3022904d33c2cdd9b213b237d7004290c581e0c103714e8695"
+      }
+    },
+    {
+      "baseFileSha256": null,
+      "newFile": true,
+      "repositoryPath": "KeepVaultMac.Tests/KeySheetProgressTests.cs",
+      "uncommittedWorkingFile": {
+        "bytes": 11868,
+        "path": "KeepVaultMac.Tests/KeySheetProgressTests.cs",
+        "sha256": "ff30c3de0a580848e432a1f84ec20e60ba66339448532c5af74cf88769349a1b"
+      }
+    },
+    {
+      "baseFileSha256": "cd3d3a5affef3d4bbbdc7f0752c11f090389f47454b66ad56b9a1113ac5ce69c",
+      "newFile": false,
+      "repositoryPath": "KeepVaultMac.Tests/MacComprehensiveTests.cs",
+      "uncommittedWorkingFile": {
+        "bytes": 328466,
+        "path": "KeepVaultMac.Tests/MacComprehensiveTests.cs",
+        "sha256": "1b1e3a53c794ed38f4c087c498fbe5e95bb5d5370ab41fecf9f1b7ae6f4b4080"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "actualPid": 86220,
+  "startedUtc": "2026-10-18T09:56:19.643602+00:00",
+  "argv": [
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/final-pdf-public-20260929-corrected/scan-file",
+    "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf"
+  ],
+  "inputPin": {
+    "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+    "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+    "bytes": 106926
+  }
+}

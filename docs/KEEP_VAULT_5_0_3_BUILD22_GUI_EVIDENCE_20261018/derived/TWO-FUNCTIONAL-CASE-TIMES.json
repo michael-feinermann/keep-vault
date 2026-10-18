@@ -1,0 +1,95 @@
+{
+  "schema": "keepvault.two-functional-gui-case-times.v1",
+  "classification": "DERIVED_PROJECTION_OF_BYTE_PRESERVED_ORIGINALS",
+  "cases": 2,
+  "sourceMiBPerCase": 256,
+  "compressionLevel": 3,
+  "rows": [
+    {
+      "profile": "Standard",
+      "operation": "generate",
+      "sourceOriginalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-001-generate.json",
+        "sha256": "1c9d8e985b39f40fc37d4ee8de5a075ab7db5116f8bb04c17fe3b583c8ff8506",
+        "bytes": 12557
+      },
+      "handlerWallSeconds": 0.010983125,
+      "applicationDialogWallSeconds": 0,
+      "workWallSecondsExcludingApplicationDialogs": 0.010954167,
+      "processCpuSeconds": 0.03420500000000004,
+      "sourceMiBPerWorkSecond": null
+    },
+    {
+      "profile": "Standard",
+      "operation": "create",
+      "sourceOriginalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-002-create.json",
+        "sha256": "ab4fce0ce3229519871fa1731edfe04cc887efdf06807753ec943b66d90a8943",
+        "bytes": 298324
+      },
+      "handlerWallSeconds": 131.256544875,
+      "applicationDialogWallSeconds": 94.506198667,
+      "workWallSecondsExcludingApplicationDialogs": 36.75032762499998,
+      "processCpuSeconds": 49.86979099999999,
+      "sourceMiBPerWorkSecond": 6.965924293579685
+    },
+    {
+      "profile": "Standard",
+      "operation": "extract",
+      "sourceOriginalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/operation-003-extract.json",
+        "sha256": "d020b76af5ff8fd1c1c96257f5231c04554ae574bbed1ded39213f433e6e335d",
+        "bytes": 62458
+      },
+      "handlerWallSeconds": 143.306012,
+      "applicationDialogWallSeconds": 107.090890416,
+      "workWallSecondsExcludingApplicationDialogs": 36.21511720900001,
+      "processCpuSeconds": 23.096838000000005,
+      "sourceMiBPerWorkSecond": 7.068871226416467
+    },
+    {
+      "profile": "Paranoia",
+      "operation": "generate",
+      "sourceOriginalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-paranoia-profile-evidence-iwrq12ej/originals/operations/operation-001-generate.json",
+        "sha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+        "bytes": 14064
+      },
+      "handlerWallSeconds": 0.021307458,
+      "applicationDialogWallSeconds": 0,
+      "workWallSecondsExcludingApplicationDialogs": 0.020772125,
+      "processCpuSeconds": 0.06507500000000022,
+      "sourceMiBPerWorkSecond": null
+    },
+    {
+      "profile": "Paranoia",
+      "operation": "create",
+      "sourceOriginalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-paranoia-profile-evidence-iwrq12ej/originals/operations/operation-002-create.json",
+        "sha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+        "bytes": 304631
+      },
+      "handlerWallSeconds": 156.806304333,
+      "applicationDialogWallSeconds": 115.187298583,
+      "workWallSecondsExcludingApplicationDialogs": 41.618991832999995,
+      "processCpuSeconds": 80.267275,
+      "sourceMiBPerWorkSecond": 6.151037993116781
+    },
+    {
+      "profile": "Paranoia",
+      "operation": "extract",
+      "sourceOriginalPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-paranoia-profile-evidence-iwrq12ej/originals/operations/operation-003-extract.json",
+        "sha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+        "bytes": 66647
+      },
+      "handlerWallSeconds": 48.536746834,
+      "applicationDialogWallSeconds": 15.083059542,
+      "workWallSecondsExcludingApplicationDialogs": 33.453681667,
+      "processCpuSeconds": 19.898473999999993,
+      "sourceMiBPerWorkSecond": 7.652371495258421
+    }
+  ],
+  "interpretation": "One functional observation per suite. Timers exclude only measured application dialogs; not controlled benchmark repetitions. Inner phases overlap and are not additive totals. Generate has no source-data throughput.",
+  "overallReleaseApproval": false
+}

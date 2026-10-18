@@ -1,0 +1,35 @@
+{
+  "actualObserverPid": 88573,
+  "actualCollectorPid": 88574,
+  "argv": [
+    "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/recovery-tools/run-installed-audit22-recovered.py",
+    "--collect",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d",
+    "--ui-manifest",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/ui-evidence-manifest.json",
+    "--ui-manifest-sha256",
+    "63a124709b2c2c83d8ac2911180ae0f74aa28b8d74cdc5da444cf52469527e94"
+  ],
+  "startedUtc": "2026-10-18T10:27:45.230406+00:00",
+  "actualCollectorExitCode": 0,
+  "completedUtc": "2026-10-18T10:27:45.283478+00:00",
+  "stdout": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collector-root-outer-g381x8oe/stdout.log",
+    "bytes": 332,
+    "sha256": "0d87ea358d1beb01818dd6ff6823e24fd065ed3bd79bc37a76108a39a4a3899b"
+  },
+  "stderr": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collector-root-outer-g381x8oe/stderr.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "collectionReceipt": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/collected-public-evidence/collection-receipt.json",
+    "bytes": 10455,
+    "sha256": "a7b3fdd52564308fd9ff000c79c8764a62126867639835cb9fad327bed11eac2"
+  }
+}

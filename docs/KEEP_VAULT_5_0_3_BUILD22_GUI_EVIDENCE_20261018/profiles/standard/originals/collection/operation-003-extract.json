@@ -1,0 +1,2305 @@
+{
+  "schemaVersion": 1,
+  "caseId": "profile",
+  "sequence": 3,
+  "operation": "extract",
+  "startedUtc": "2026-10-18T10:19:25.859811Z",
+  "terminalUtc": "2026-10-18T10:21:49.165392Z",
+  "process": {
+    "productVersion": "5.0.3",
+    "bundleBuild": 22,
+    "processId": 87094,
+    "processArchitecture": "Arm64",
+    "coreSha256": "A52E743157B1930C0A922A6E76230751801B6820C0B7E401EA766F6C4060E509",
+    "infoPlistSha256": "ECF5AF0FA2D1D1FFF888ED0C100A58FDF8FCCA66BE27C67462DF20CC3F7CDFF0"
+  },
+  "publicFixture": {
+    "identifier": "REV12-public-mixed-256MiB-v1",
+    "sourceBytes": 268435456,
+    "files": 3,
+    "directories": 5,
+    "manifestSha256": "C506C5A423939ACE693CCC390E7FF84AC66C1E19E941948D7096345C95267D67"
+  },
+  "outcome": "success",
+  "observationAvailable": true,
+  "handlerWallSeconds": 143.306012,
+  "applicationDialogWallSeconds": 107.090890416,
+  "workWallSecondsExcludingApplicationDialogs": 36.21511720900001,
+  "processCpuSeconds": 23.096838000000005,
+  "requestedCpuWorkers": 0,
+  "initialCpuCeiling": 10,
+  "lockedBytesBefore": 638976,
+  "lockedBytesAfter": 638976,
+  "reservedBytesBefore": 0,
+  "reservedBytesAfter": 0,
+  "activeCpuWorkersAfterJoin": 0,
+  "phaseProfile": {
+    "schemaVersion": 2,
+    "observationAvailable": true,
+    "timelineCapacity": 4096,
+    "omittedTimelineEntries": 0,
+    "aggregates": [
+      {
+        "phase": "ArchiveEncryption",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ArchiveDecryption",
+        "calls": 1,
+        "wallSecondsSum": 23.741605708,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PayloadEncryption",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PayloadDecryption",
+        "calls": 1,
+        "wallSecondsSum": 21.813335417,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CredentialSha3",
+        "calls": 1,
+        "wallSecondsSum": 9.5292E-05,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CredentialSkein",
+        "calls": 1,
+        "wallSecondsSum": 8.9084E-05,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "KdfPmiDerivation",
+        "calls": 1,
+        "wallSecondsSum": 2.9042E-05,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "KdfRound1",
+        "calls": 1,
+        "wallSecondsSum": 1.670038708,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "KdfRound2",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "Argon2Sha3Round1",
+        "calls": 1,
+        "wallSecondsSum": 0.999910833,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "Argon2SkeinRound1",
+        "calls": 1,
+        "wallSecondsSum": 0.669941916,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "Argon2Sha3Round2",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "Argon2SkeinRound2",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "KeySchedule",
+        "calls": 1,
+        "wallSecondsSum": 0.000156042,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ChunkNonce",
+        "calls": 5,
+        "wallSecondsSum": 2.2667E-05,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CpuPermitWait",
+        "calls": 7,
+        "wallSecondsSum": 7.7376E-05,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ResourceObservation",
+        "calls": 4,
+        "wallSecondsSum": 0.00021775,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ResourcePlanning",
+        "calls": 4,
+        "wallSecondsSum": 3.1209E-05,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "WindowDecision",
+        "calls": 4,
+        "wallSecondsSum": 0.000293417,
+        "publicBytesSum": 67170331
+      },
+      {
+        "phase": "CipherAes",
+        "calls": 5,
+        "wallSecondsSum": 0.0021555,
+        "publicBytesSum": 67170331
+      },
+      {
+        "phase": "CipherMars",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherCamellia",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherSerpent",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherShacal2",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherKalyna",
+        "calls": 5,
+        "wallSecondsSum": 0.070199168,
+        "publicBytesSum": 67170331
+      },
+      {
+        "phase": "CipherThreefish",
+        "calls": 5,
+        "wallSecondsSum": 0.040799666,
+        "publicBytesSum": 67170331
+      },
+      {
+        "phase": "AeadEncryptAndTag",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "AeadVerifyAndDecrypt",
+        "calls": 5,
+        "wallSecondsSum": 0.045577082,
+        "publicBytesSum": 67170331
+      },
+      {
+        "phase": "GlobalAuthentication",
+        "calls": 1,
+        "wallSecondsSum": 0.194041,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PayloadRead",
+        "calls": 6,
+        "wallSecondsSum": 0.2974225,
+        "publicBytesSum": 67170411
+      },
+      {
+        "phase": "PayloadWrite",
+        "calls": 5,
+        "wallSecondsSum": 21.348746124,
+        "publicBytesSum": 67170331
+      },
+      {
+        "phase": "ZpaqArchive",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqExtract",
+        "calls": 1,
+        "wallSecondsSum": 29.863893916,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqList",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqNativeExitWait",
+        "calls": 1,
+        "wallSecondsSum": 27.828490167,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqPipeConsumer",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqPipeProducer",
+        "calls": 1,
+        "wallSecondsSum": 21.813518625,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PipeRead",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PipeWrite",
+        "calls": 5,
+        "wallSecondsSum": 21.348707709,
+        "publicBytesSum": 67170331
+      },
+      {
+        "phase": "RecoveryOutputWrite",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "RecoveryCreate",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "RecoveryVerifyRepair",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "RecoveryMatchOriginal",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "OriginalTreeComparison",
+        "calls": 1,
+        "wallSecondsSum": 0.227645208,
+        "publicBytesSum": 268435456
+      },
+      {
+        "phase": "FinalOutputCommit",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "VerifiedGlobalBinding",
+        "calls": 1,
+        "wallSecondsSum": 1.864930083,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "LocalRangeTags",
+        "calls": 130,
+        "wallSecondsSum": 0.470697868,
+        "publicBytesSum": 134344752
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "calls": 105,
+        "wallSecondsSum": 0.236410003,
+        "publicBytesSum": 108130352
+      }
+    ],
+    "timeline": [
+      {
+        "phase": "ZpaqExtract",
+        "startSeconds": 6.121810917,
+        "durationSeconds": 29.863893916,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ArchiveDecryption",
+        "startSeconds": 6.14845025,
+        "durationSeconds": 23.741605708,
+        "publicBytes": 0
+      },
+      {
+        "phase": "VerifiedGlobalBinding",
+        "startSeconds": 6.148653625,
+        "durationSeconds": 1.864930083,
+        "publicBytes": 0
+      },
+      {
+        "phase": "CredentialSha3",
+        "startSeconds": 6.149011958,
+        "durationSeconds": 9.5292E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "CredentialSkein",
+        "startSeconds": 6.149139333,
+        "durationSeconds": 8.9084E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "KdfPmiDerivation",
+        "startSeconds": 6.149229333,
+        "durationSeconds": 2.9042E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "KdfRound1",
+        "startSeconds": 6.149264667,
+        "durationSeconds": 1.670038708,
+        "publicBytes": 0
+      },
+      {
+        "phase": "CpuPermitWait",
+        "startSeconds": 6.149347,
+        "durationSeconds": 8.542E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "Argon2Sha3Round1",
+        "startSeconds": 6.14935625,
+        "durationSeconds": 0.999910833,
+        "publicBytes": 0
+      },
+      {
+        "phase": "CpuPermitWait",
+        "startSeconds": 7.149305125,
+        "durationSeconds": 2.6292E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "Argon2SkeinRound1",
+        "startSeconds": 7.149331792,
+        "durationSeconds": 0.669941916,
+        "publicBytes": 0
+      },
+      {
+        "phase": "KeySchedule",
+        "startSeconds": 7.819310583,
+        "durationSeconds": 0.000156042,
+        "publicBytes": 0
+      },
+      {
+        "phase": "GlobalAuthentication",
+        "startSeconds": 7.81948425,
+        "durationSeconds": 0.194041,
+        "publicBytes": 0
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.820061875,
+        "durationSeconds": 0.003747833,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.822741542,
+        "durationSeconds": 0.003539916,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.827188125,
+        "durationSeconds": 0.003690458,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.827217583,
+        "durationSeconds": 0.003692459,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.831577458,
+        "durationSeconds": 0.003576209,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.831615208,
+        "durationSeconds": 0.003536542,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.835815042,
+        "durationSeconds": 0.00376425,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.835848958,
+        "durationSeconds": 0.003752959,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.840275542,
+        "durationSeconds": 0.003572708,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.840303125,
+        "durationSeconds": 0.0035635,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.844544583,
+        "durationSeconds": 0.003784125,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.8446225,
+        "durationSeconds": 0.003795375,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.85635425,
+        "durationSeconds": 0.003603583,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.856465458,
+        "durationSeconds": 0.003595584,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.860753917,
+        "durationSeconds": 0.003692875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.860794375,
+        "durationSeconds": 0.003756417,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.865269458,
+        "durationSeconds": 0.003568084,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.865303083,
+        "durationSeconds": 0.003589084,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.869684542,
+        "durationSeconds": 0.00366025,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.869686792,
+        "durationSeconds": 0.00363625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.874072958,
+        "durationSeconds": 0.003603292,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.874093833,
+        "durationSeconds": 0.003521125,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.88583125,
+        "durationSeconds": 0.003832333,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.885872125,
+        "durationSeconds": 0.003776667,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.89043125,
+        "durationSeconds": 0.0036035,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.890466667,
+        "durationSeconds": 0.003602166,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.894781833,
+        "durationSeconds": 0.003798167,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.894863958,
+        "durationSeconds": 0.003748375,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.899373542,
+        "durationSeconds": 0.00362425,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.899394792,
+        "durationSeconds": 0.003646583,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.90375625,
+        "durationSeconds": 0.0036625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.903799708,
+        "durationSeconds": 0.003610959,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.915664625,
+        "durationSeconds": 0.003551958,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.915701542,
+        "durationSeconds": 0.003617541,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.920023167,
+        "durationSeconds": 0.003585583,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.9200575,
+        "durationSeconds": 0.003657833,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.924435625,
+        "durationSeconds": 0.00365475,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.924467917,
+        "durationSeconds": 0.003620625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.928798375,
+        "durationSeconds": 0.003660708,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.928842542,
+        "durationSeconds": 0.003699416,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.933294542,
+        "durationSeconds": 0.003826708,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.933323417,
+        "durationSeconds": 0.003718666,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.944813,
+        "durationSeconds": 0.003715083,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.944854542,
+        "durationSeconds": 0.003709541,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.949241875,
+        "durationSeconds": 0.003751375,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.949318375,
+        "durationSeconds": 0.003591083,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.953711958,
+        "durationSeconds": 0.003745209,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.953747667,
+        "durationSeconds": 0.003682458,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.958206167,
+        "durationSeconds": 0.0035825,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.958252417,
+        "durationSeconds": 0.003544166,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.962519167,
+        "durationSeconds": 0.00373225,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.96254825,
+        "durationSeconds": 0.003670708,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.974630167,
+        "durationSeconds": 0.003563166,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.974661167,
+        "durationSeconds": 0.003542166,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.97901225,
+        "durationSeconds": 0.003779542,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.979026792,
+        "durationSeconds": 0.003694958,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.98356225,
+        "durationSeconds": 0.00356525,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.983594625,
+        "durationSeconds": 0.003693333,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.9880185,
+        "durationSeconds": 0.003669,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.988045708,
+        "durationSeconds": 0.003580917,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.99233075,
+        "durationSeconds": 0.003594208,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 7.99246175,
+        "durationSeconds": 0.003571958,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.004208833,
+        "durationSeconds": 0.003624625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.004241167,
+        "durationSeconds": 0.003849583,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.00847,
+        "durationSeconds": 0.000220875,
+        "publicBytes": 63512
+      },
+      {
+        "phase": "ZpaqPipeProducer",
+        "startSeconds": 8.076547042,
+        "durationSeconds": 21.813518625,
+        "publicBytes": 0
+      },
+      {
+        "phase": "PayloadDecryption",
+        "startSeconds": 8.076578208,
+        "durationSeconds": 21.813335417,
+        "publicBytes": 0
+      },
+      {
+        "phase": "WindowDecision",
+        "startSeconds": 8.076592417,
+        "durationSeconds": 8.75E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ResourceObservation",
+        "startSeconds": 8.076592833,
+        "durationSeconds": 5.6709E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ResourcePlanning",
+        "startSeconds": 8.076654625,
+        "durationSeconds": 6.67E-07,
+        "publicBytes": 0
+      },
+      {
+        "phase": "PayloadRead",
+        "startSeconds": 8.076829667,
+        "durationSeconds": 0.071099583,
+        "publicBytes": 16777232
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.076923333,
+        "durationSeconds": 0.003751375,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.076923667,
+        "durationSeconds": 0.00374775,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "ZpaqNativeExitWait",
+        "startSeconds": 8.07693325,
+        "durationSeconds": 27.828490167,
+        "publicBytes": 0
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.080730292,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.08088625,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.08089975,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.081033292,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.081046792,
+        "durationSeconds": 4.16E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.081197,
+        "durationSeconds": 4.17E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.081212208,
+        "durationSeconds": 4.17E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.081387542,
+        "durationSeconds": 5.83E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.081458208,
+        "durationSeconds": 0.003477167,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.081458375,
+        "durationSeconds": 0.003474625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.084997083,
+        "durationSeconds": 4.59E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.085460458,
+        "durationSeconds": 5.42E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.085546292,
+        "durationSeconds": 0.003687875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.085546542,
+        "durationSeconds": 0.003685833,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.089274917,
+        "durationSeconds": 5.41E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.08989975,
+        "durationSeconds": 2.92E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.089982833,
+        "durationSeconds": 0.003562417,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.089982958,
+        "durationSeconds": 0.003561292,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.0936475,
+        "durationSeconds": 0.003629083,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.093647542,
+        "durationSeconds": 0.003627916,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.097313875,
+        "durationSeconds": 4.17E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.098364667,
+        "durationSeconds": 5.41E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.098447792,
+        "durationSeconds": 0.003558208,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.098448042,
+        "durationSeconds": 0.003557208,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.102121208,
+        "durationSeconds": 0.003635292,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.102121292,
+        "durationSeconds": 0.003633916,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.105892875,
+        "durationSeconds": 0.003566542,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.105892958,
+        "durationSeconds": 0.003565584,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.109555125,
+        "durationSeconds": 0.003537875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.10955525,
+        "durationSeconds": 0.003536875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.113128917,
+        "durationSeconds": 5E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.115187167,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.115276333,
+        "durationSeconds": 0.00359675,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.115276417,
+        "durationSeconds": 0.003596041,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.118955625,
+        "durationSeconds": 0.003660583,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.118955708,
+        "durationSeconds": 0.003659209,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.122744292,
+        "durationSeconds": 0.003603875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.122744417,
+        "durationSeconds": 0.003602875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.126443417,
+        "durationSeconds": 0.003597625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.126443458,
+        "durationSeconds": 0.003596417,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.13014575,
+        "durationSeconds": 0.003532833,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.130145833,
+        "durationSeconds": 0.003532167,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.1337715,
+        "durationSeconds": 0.003556958,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.133771583,
+        "durationSeconds": 0.003556292,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.137421875,
+        "durationSeconds": 0.003856167,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.137422083,
+        "durationSeconds": 0.003855084,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.1413845,
+        "durationSeconds": 0.003747167,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 8.141384583,
+        "durationSeconds": 0.003745917,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.145167583,
+        "durationSeconds": 4.59E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 8.14792475,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "CpuPermitWait",
+        "startSeconds": 8.19506,
+        "durationSeconds": 1.2833E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ChunkNonce",
+        "startSeconds": 8.195109708,
+        "durationSeconds": 4.625E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "AeadVerifyAndDecrypt",
+        "startSeconds": 8.19511975,
+        "durationSeconds": 0.006912625,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherAes",
+        "startSeconds": 8.202423708,
+        "durationSeconds": 0.000339459,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherKalyna",
+        "startSeconds": 8.202774917,
+        "durationSeconds": 0.010794125,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherThreefish",
+        "startSeconds": 8.21359175,
+        "durationSeconds": 0.0059875,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PayloadWrite",
+        "startSeconds": 8.219597125,
+        "durationSeconds": 0.894389208,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PipeWrite",
+        "startSeconds": 8.219600125,
+        "durationSeconds": 0.8943805,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "WindowDecision",
+        "startSeconds": 9.114425542,
+        "durationSeconds": 9.9875E-05,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "ResourceObservation",
+        "startSeconds": 9.114427625,
+        "durationSeconds": 8.0792E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ResourcePlanning",
+        "startSeconds": 9.114508708,
+        "durationSeconds": 1.2959E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "PayloadRead",
+        "startSeconds": 9.114525958,
+        "durationSeconds": 0.064386417,
+        "publicBytes": 16777232
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.114553458,
+        "durationSeconds": 6.25E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.114649458,
+        "durationSeconds": 0.003675917,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.114649792,
+        "durationSeconds": 0.003674875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.118482333,
+        "durationSeconds": 0.003639667,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.118482833,
+        "durationSeconds": 0.003637209,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.122258208,
+        "durationSeconds": 0.004490167,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.122258417,
+        "durationSeconds": 0.004487708,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.126948542,
+        "durationSeconds": 0.004816041,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.12694875,
+        "durationSeconds": 0.004813083,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.13190225,
+        "durationSeconds": 0.00414025,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.131902417,
+        "durationSeconds": 0.00413625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.13629775,
+        "durationSeconds": 0.003951417,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.136298292,
+        "durationSeconds": 0.003948791,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.140388708,
+        "durationSeconds": 0.003697584,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.140388875,
+        "durationSeconds": 0.003696042,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.144197708,
+        "durationSeconds": 0.003889459,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.144198042,
+        "durationSeconds": 0.003887208,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.148214458,
+        "durationSeconds": 0.003595125,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.148214583,
+        "durationSeconds": 0.003593292,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.151923417,
+        "durationSeconds": 0.004062375,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.151923792,
+        "durationSeconds": 0.004056208,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.156217083,
+        "durationSeconds": 0.003760042,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.156220292,
+        "durationSeconds": 0.003755708,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.16008625,
+        "durationSeconds": 0.003662167,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.160086375,
+        "durationSeconds": 0.00366,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.16398375,
+        "durationSeconds": 0.003586625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.163983917,
+        "durationSeconds": 0.003585458,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.167656708,
+        "durationSeconds": 0.003591084,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.167656792,
+        "durationSeconds": 0.003589416,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.171351708,
+        "durationSeconds": 0.003917042,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.17135175,
+        "durationSeconds": 0.003915208,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.175378542,
+        "durationSeconds": 0.003513166,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.175378667,
+        "durationSeconds": 0.003511583,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "PayloadRead",
+        "startSeconds": 9.179112417,
+        "durationSeconds": 0.105267625,
+        "publicBytes": 16777232
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.179126042,
+        "durationSeconds": 3.33E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.179138875,
+        "durationSeconds": 4.17E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.179235083,
+        "durationSeconds": 2.92E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.17924875,
+        "durationSeconds": 4.17E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.179410458,
+        "durationSeconds": 4.59E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.179426167,
+        "durationSeconds": 4.16E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.179724542,
+        "durationSeconds": 3.75E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.179744083,
+        "durationSeconds": 3.75E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.17996975,
+        "durationSeconds": 4.17E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.180041833,
+        "durationSeconds": 0.003808125,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.180041917,
+        "durationSeconds": 0.003807583,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.183865417,
+        "durationSeconds": 4.16E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.184661333,
+        "durationSeconds": 3.75E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.18474625,
+        "durationSeconds": 0.00356125,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.184746333,
+        "durationSeconds": 0.003560084,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.188341875,
+        "durationSeconds": 4.17E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.190706292,
+        "durationSeconds": 5.83E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.190845333,
+        "durationSeconds": 0.003750417,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.190845875,
+        "durationSeconds": 0.003748458,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.194700375,
+        "durationSeconds": 0.003837042,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.194700417,
+        "durationSeconds": 0.003835958,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.198574667,
+        "durationSeconds": 4.16E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.2008545,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.200949583,
+        "durationSeconds": 0.0035545,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.200949708,
+        "durationSeconds": 0.003552709,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.204611333,
+        "durationSeconds": 0.003742917,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.204611458,
+        "durationSeconds": 0.003740042,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.208527125,
+        "durationSeconds": 0.0034885,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.208527292,
+        "durationSeconds": 0.003487375,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.212124958,
+        "durationSeconds": 0.003532584,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.212125083,
+        "durationSeconds": 0.003531584,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.215684833,
+        "durationSeconds": 4.17E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.221086708,
+        "durationSeconds": 4.59E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.221172458,
+        "durationSeconds": 0.003779209,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.221172583,
+        "durationSeconds": 0.00377675,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.225123917,
+        "durationSeconds": 0.003659791,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.225123958,
+        "durationSeconds": 0.003658209,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.228897625,
+        "durationSeconds": 0.003650667,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.228897833,
+        "durationSeconds": 0.003649625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.23264575,
+        "durationSeconds": 0.003555708,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.232645917,
+        "durationSeconds": 0.003554833,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.236304583,
+        "durationSeconds": 0.003608834,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.236304667,
+        "durationSeconds": 0.003607916,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.240014375,
+        "durationSeconds": 0.003648375,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.240014542,
+        "durationSeconds": 0.003647041,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.243762375,
+        "durationSeconds": 0.003732667,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.2437625,
+        "durationSeconds": 0.003731042,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.24762875,
+        "durationSeconds": 0.003500875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 9.247628792,
+        "durationSeconds": 0.003500083,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.251169875,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 9.284357875,
+        "durationSeconds": 7.08E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "CpuPermitWait",
+        "startSeconds": 9.285902833,
+        "durationSeconds": 6.542E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "CpuPermitWait",
+        "startSeconds": 9.285918125,
+        "durationSeconds": 8.917E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ChunkNonce",
+        "startSeconds": 9.285926375,
+        "durationSeconds": 4.875E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ChunkNonce",
+        "startSeconds": 9.285939083,
+        "durationSeconds": 3.417E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "AeadVerifyAndDecrypt",
+        "startSeconds": 9.285949167,
+        "durationSeconds": 0.01470125,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "AeadVerifyAndDecrypt",
+        "startSeconds": 9.285949792,
+        "durationSeconds": 0.012470791,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherAes",
+        "startSeconds": 9.299069583,
+        "durationSeconds": 0.000713459,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherKalyna",
+        "startSeconds": 9.299792458,
+        "durationSeconds": 0.02253825,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherAes",
+        "startSeconds": 9.301006625,
+        "durationSeconds": 0.000584208,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherKalyna",
+        "startSeconds": 9.301601833,
+        "durationSeconds": 0.020687292,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherThreefish",
+        "startSeconds": 9.322307958,
+        "durationSeconds": 0.012176667,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherThreefish",
+        "startSeconds": 9.322331917,
+        "durationSeconds": 0.013138125,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PayloadWrite",
+        "startSeconds": 9.335483542,
+        "durationSeconds": 6.746062208,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PipeWrite",
+        "startSeconds": 9.335485375,
+        "durationSeconds": 6.746055,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PayloadWrite",
+        "startSeconds": 16.082027417,
+        "durationSeconds": 6.750486125,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PipeWrite",
+        "startSeconds": 16.082032625,
+        "durationSeconds": 6.7504755,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "WindowDecision",
+        "startSeconds": 22.832748833,
+        "durationSeconds": 6.15E-05,
+        "publicBytes": 33554432
+      },
+      {
+        "phase": "ResourceObservation",
+        "startSeconds": 22.832750292,
+        "durationSeconds": 4.2916E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ResourcePlanning",
+        "startSeconds": 22.832793375,
+        "durationSeconds": 1.3125E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "PayloadRead",
+        "startSeconds": 22.832810875,
+        "durationSeconds": 0.056602708,
+        "publicBytes": 16777232
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.832841042,
+        "durationSeconds": 6.66E-07,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.832938083,
+        "durationSeconds": 0.003562417,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.832938292,
+        "durationSeconds": 0.003560875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.836637625,
+        "durationSeconds": 0.003596,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.836637667,
+        "durationSeconds": 0.003595125,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.840327542,
+        "durationSeconds": 0.003534666,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.840327708,
+        "durationSeconds": 0.003533625,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.843965417,
+        "durationSeconds": 0.003839083,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.843965458,
+        "durationSeconds": 0.003835584,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.848009875,
+        "durationSeconds": 0.003598833,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.848010417,
+        "durationSeconds": 0.003597333,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.851701,
+        "durationSeconds": 0.003571208,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.851701167,
+        "durationSeconds": 0.003569333,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.855492875,
+        "durationSeconds": 0.003536292,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.855492958,
+        "durationSeconds": 0.003535584,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.859133375,
+        "durationSeconds": 0.003585458,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.8591335,
+        "durationSeconds": 0.003584083,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.862817083,
+        "durationSeconds": 0.003757875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.86281725,
+        "durationSeconds": 0.0037565,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.866712958,
+        "durationSeconds": 0.003538917,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.866713042,
+        "durationSeconds": 0.003536708,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.870369583,
+        "durationSeconds": 0.003605,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.870369667,
+        "durationSeconds": 0.003604,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.874071208,
+        "durationSeconds": 0.003500334,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.874071375,
+        "durationSeconds": 0.003499458,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.877660417,
+        "durationSeconds": 0.003822416,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.877660458,
+        "durationSeconds": 0.003819875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.881841333,
+        "durationSeconds": 0.003536834,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.881841833,
+        "durationSeconds": 0.003534875,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.885488917,
+        "durationSeconds": 0.003617083,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.885489,
+        "durationSeconds": 0.00361525,
+        "publicBytes": 1048576
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.8891725,
+        "durationSeconds": 0.000231917,
+        "publicBytes": 63512
+      },
+      {
+        "phase": "LocalRangeTags",
+        "startSeconds": 22.889172542,
+        "durationSeconds": 0.000231208,
+        "publicBytes": 63512
+      },
+      {
+        "phase": "PayloadRead",
+        "startSeconds": 22.889415458,
+        "durationSeconds": 1.9875E-05,
+        "publicBytes": 61483
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "startSeconds": 22.889429042,
+        "durationSeconds": 4.58E-07,
+        "publicBytes": 63512
+      },
+      {
+        "phase": "CpuPermitWait",
+        "startSeconds": 22.889443458,
+        "durationSeconds": 6.875E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "CpuPermitWait",
+        "startSeconds": 22.889455583,
+        "durationSeconds": 7.375E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ChunkNonce",
+        "startSeconds": 22.889466917,
+        "durationSeconds": 3.625E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ChunkNonce",
+        "startSeconds": 22.889467,
+        "durationSeconds": 6.125E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "AeadVerifyAndDecrypt",
+        "startSeconds": 22.889474792,
+        "durationSeconds": 0.000164166,
+        "publicBytes": 61467
+      },
+      {
+        "phase": "AeadVerifyAndDecrypt",
+        "startSeconds": 22.889475208,
+        "durationSeconds": 0.01132825,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherAes",
+        "startSeconds": 22.889646417,
+        "durationSeconds": 9.583E-06,
+        "publicBytes": 61467
+      },
+      {
+        "phase": "CipherKalyna",
+        "startSeconds": 22.889658333,
+        "durationSeconds": 0.000214209,
+        "publicBytes": 61467
+      },
+      {
+        "phase": "CipherThreefish",
+        "startSeconds": 22.889874667,
+        "durationSeconds": 0.000125958,
+        "publicBytes": 61467
+      },
+      {
+        "phase": "CipherAes",
+        "startSeconds": 22.901171667,
+        "durationSeconds": 0.000508791,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherKalyna",
+        "startSeconds": 22.901690083,
+        "durationSeconds": 0.015965292,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "CipherThreefish",
+        "startSeconds": 22.917671792,
+        "durationSeconds": 0.009371416,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PayloadWrite",
+        "startSeconds": 22.927058875,
+        "durationSeconds": 6.957798833,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PipeWrite",
+        "startSeconds": 22.927060292,
+        "durationSeconds": 6.957790125,
+        "publicBytes": 16777216
+      },
+      {
+        "phase": "PayloadWrite",
+        "startSeconds": 29.885110875,
+        "durationSeconds": 9.75E-06,
+        "publicBytes": 61467
+      },
+      {
+        "phase": "PipeWrite",
+        "startSeconds": 29.885113083,
+        "durationSeconds": 6.584E-06,
+        "publicBytes": 61467
+      },
+      {
+        "phase": "WindowDecision",
+        "startSeconds": 29.885124458,
+        "durationSeconds": 4.4542E-05,
+        "publicBytes": 16838683
+      },
+      {
+        "phase": "ResourceObservation",
+        "startSeconds": 29.885126,
+        "durationSeconds": 3.7333E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "ResourcePlanning",
+        "startSeconds": 29.8851635,
+        "durationSeconds": 4.458E-06,
+        "publicBytes": 0
+      },
+      {
+        "phase": "PayloadRead",
+        "startSeconds": 29.887530125,
+        "durationSeconds": 4.6292E-05,
+        "publicBytes": 0
+      },
+      {
+        "phase": "OriginalTreeComparison",
+        "startSeconds": 35.9857635,
+        "durationSeconds": 0.227645208,
+        "publicBytes": 268435456
+      }
+    ],
+    "windowDecisions": [
+      {
+        "atSeconds": 8.076655375,
+        "previousSlots": 1,
+        "requestedSlots": 1,
+        "resolvedSlots": 1,
+        "admittedSlotCeiling": 5,
+        "activeChunks": 0,
+        "completeBatch": false,
+        "publicBytes": 0,
+        "publicRateBytesPerSecond": 0,
+        "rateValid": false,
+        "reason": "InitialCold",
+        "acceptedSlots": 1,
+        "probeSlots": 0,
+        "rejectedSlots": 0
+      },
+      {
+        "atSeconds": 9.11452175,
+        "previousSlots": 1,
+        "requestedSlots": 2,
+        "resolvedSlots": 2,
+        "admittedSlotCeiling": 4,
+        "activeChunks": 1,
+        "completeBatch": true,
+        "publicBytes": 16777216,
+        "publicRateBytesPerSecond": 16166989.738907008,
+        "rateValid": true,
+        "reason": "ProvenLongStreamStart",
+        "acceptedSlots": 2,
+        "probeSlots": 0,
+        "rejectedSlots": 0
+      },
+      {
+        "atSeconds": 22.832806583,
+        "previousSlots": 2,
+        "requestedSlots": 2,
+        "resolvedSlots": 2,
+        "admittedSlotCeiling": 2,
+        "activeChunks": 2,
+        "completeBatch": true,
+        "publicBytes": 33554432,
+        "publicRateBytesPerSecond": 2445975.09133672,
+        "rateValid": true,
+        "reason": "Retained",
+        "acceptedSlots": 2,
+        "probeSlots": 0,
+        "rejectedSlots": 0
+      },
+      {
+        "atSeconds": 29.885168083,
+        "previousSlots": 2,
+        "requestedSlots": 2,
+        "resolvedSlots": 1,
+        "admittedSlotCeiling": 1,
+        "activeChunks": 2,
+        "completeBatch": false,
+        "publicBytes": 16838683,
+        "publicRateBytesPerSecond": 2387682.073756872,
+        "rateValid": true,
+        "reason": "ResourceBound",
+        "acceptedSlots": 1,
+        "probeSlots": 0,
+        "rejectedSlots": 0
+      }
+    ],
+    "omittedWindowDecisions": 0,
+    "interpretation": "Monotonic wall intervals. Nested phases and parallel workers overlap. Aggregate sums are neither CPU time nor additive workflow duration. Bytes identify each interval\u0027s public processed-byte basis and can count the same bytes in several phases. Timeline retains its first bounded entries; aggregates include later completed intervals."
+  },
+  "nativeScheduling": {
+    "batches": 21,
+    "completedCallbacks": 126,
+    "activeCallbacks": 0,
+    "peakActiveCallbacks": 10,
+    "minimumGrant": 1,
+    "maximumGrant": 10,
+    "submissionToCallbackSecondsSum": 0.015981995,
+    "callbackWallSecondsSum": 0.837407036,
+    "callerJoinWallSecondsSum": 0.1581435,
+    "observationAvailable": true,
+    "note": "Submission-to-callback includes handle allocation, submission and observer locking. Callback intervals overlap; their sums are not operation walltime or CPU time. Join includes useful callback work. No executor callbacks is possible for an inline single-worker native path."
+  },
+  "cpuReservations": {
+    "admissions": 571,
+    "releases": 571,
+    "peakReservedWorkers": 10,
+    "minimumGrant": 1,
+    "maximumGrant": 10,
+    "minimumObservedCeiling": 10,
+    "acquisitionWallSecondsSum": 0.007658628,
+    "observationAvailable": true,
+    "interpretation": "Acquisition intervals include allocator/topology work; parallel intervals overlap. Peak reservations include other concurrently active in-process leases. No CPU-time or starvation guarantee is inferred from these aggregates."
+  },
+  "globalMacWallSecondsSum": {
+    "KeyPreparation": 5.2708E-05,
+    "RootInitialization": 8.875E-06,
+    "InputRead": 0.138228875,
+    "LeafBatches": 0.047686375,
+    "OrderedRoot": 5.7666E-05,
+    "FinalTags": 1.166E-06,
+    "Cleanup": 0.000498915
+  },
+  "entropyPhases": [],
+  "omittedEntropyPhases": 0,
+  "controlledFaultTriggers": 0,
+  "unexpectedFaultResult": false,
+  "factorPublished": false,
+  "expectedControlledFaultObserved": false,
+  "pendingCleanupBeforeRetry": 0,
+  "cleanupRetrySucceeded": null,
+  "productOriginalComparison": true,
+  "interpretation": "Native AOT GUI diagnostic observations, not an overall release verdict. Fixture preparation and human entropy collection precede operation timing. Work wall excludes measured application dialogs but may include unmeasured file-picker/user waits; overlapping phase/queue/join sums are not CPU or end-to-end walltime. Fault cases use public canonical records and simulated adapter failures, not evidence of human mouse capture or an actual Apple RNG/mlock hardware failure. Source bytes and compressed/cipher phase bytes are distinct throughput bases."
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "caseDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d",
+  "actualLauncherPid": 87094,
+  "publicTestDataOnly": true,
+  "noNonpublicCredentialsFactorsOrMouseRecords": true,
+  "auditWorkRoot": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e",
+  "evidencePins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-ui-observation.json",
+      "sha256": "a5bc7d5aa92813378cdbe7d6a3838438fc8e4289bbffc18995c527d469d377b1",
+      "bytes": 5476
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-independent-tree-comparison.json",
+      "sha256": "95db00d4eb2fe79466f299aae9f2cec4894d46d6864d1934bc3d27825f770e6e",
+      "bytes": 2078
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-visual-review.json",
+      "sha256": "dbeb2d8c94a0d49ab7906dc6f65f8f34a531dc1b4cdd34af95d11c9bca86617e",
+      "bytes": 2859
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d/root-pdf-progress-status-defect.json",
+      "sha256": "80c6b9b2d880dfbe3ae99ee85d3f982b86863066fdefc74267a56a3980b1e4b5",
+      "bytes": 1783
+    }
+  ]
+}

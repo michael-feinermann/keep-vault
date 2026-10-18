@@ -1,0 +1,20 @@
+{
+  "actualPid": 89524,
+  "argv": [
+    "/usr/bin/env",
+    "KEEPVAULT_TEST_REPOSITORY_ROOT=/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna",
+    "DOTNET_CLI_HOME=/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression/official-home",
+    "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/kdf-handoff-release-20261012T053059Z/build21-prerelease-20261012T090448828623Z-80743/public-dotnet-sdk/dotnet",
+    "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/KeepVaultMac.Tests/bin/Release/net10.0/osx-arm64/KeepVaultMac.Tests.dll",
+    "--full",
+    "--no-smoke",
+    "--only",
+    "gui.operation-cancel-lifetime",
+    "--parallel",
+    "1",
+    "--seed",
+    "0x503C0DE"
+  ],
+  "startedUtc": "2026-10-18T10:38:46.195025+00:00",
+  "cwd": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna/work/pdf-progress-regression"
+}

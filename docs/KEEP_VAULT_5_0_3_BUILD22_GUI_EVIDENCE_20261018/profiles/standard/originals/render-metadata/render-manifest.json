@@ -1,0 +1,117 @@
+{
+  "schema": "keepvault.public-standard-pdf-render.v1",
+  "status": "RENDERED_ROOT_VISUAL_REVIEW_PENDING",
+  "dpi": 144,
+  "actualControllerPid": 88421,
+  "sourceQaResultPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-standard-gui/pdf-pair-qa-result.json",
+    "sha256": "b654fd38460116430676f7ba9395cbb0a13faa14392807f88e7624774be748e4",
+    "bytes": 11794
+  },
+  "actualQaOuterTerminalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-standard-pdf-qa-outer-20261018-x0bawp7i/root-outer-terminal.json",
+    "sha256": "038b5b59c5c067e4d884241448ee4997f466f1e8ac163c10ae3b190d5e2f5ace",
+    "bytes": 2090
+  },
+  "inputPdfPinsBefore": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "9363526230a38f66b411d029aab0fe497059597b5c69bebc4a590678f34b85bc",
+      "bytes": 104597
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "aab8165a8bb574e320a4699d73698d3d24778a2138eb8e1a9d893783ea0e59c1",
+      "bytes": 104723
+    }
+  },
+  "inputPdfPinsAfter": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "9363526230a38f66b411d029aab0fe497059597b5c69bebc4a590678f34b85bc",
+      "bytes": 104597
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "aab8165a8bb574e320a4699d73698d3d24778a2138eb8e1a9d893783ea0e59c1",
+      "bytes": 104723
+    }
+  },
+  "pdfPinsEqual": true,
+  "rendererPinBefore": {
+    "path": "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftoppm",
+    "sha256": "23cfa13bea9fb2501744b62b738f91732588157a0569dd15fc4cc4aa93055ba0",
+    "bytes": 93040
+  },
+  "rendererPinAfter": {
+    "path": "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftoppm",
+    "sha256": "23cfa13bea9fb2501744b62b738f91732588157a0569dd15fc4cc4aa93055ba0",
+    "bytes": 93040
+  },
+  "renders": [
+    {
+      "role": "A",
+      "actualRendererPid": 88429,
+      "actualWaitExitCode": 0,
+      "startedUtc": "2026-10-18T10:25:12.035490+00:00",
+      "completedUtc": "2026-10-18T10:25:12.368781+00:00",
+      "captureFailureClass": null,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pdfPinAfter": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+        "sha256": "9363526230a38f66b411d029aab0fe497059597b5c69bebc4a590678f34b85bc",
+        "bytes": 104597
+      },
+      "images": [
+        {
+          "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/A-1.png",
+          "sha256": "e83cebc552bb69fa6ed14b3485d101734423ae4ea02c245c376d5a7157aa5e1d",
+          "bytes": 198121
+        },
+        {
+          "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/A-2.png",
+          "sha256": "d1a4911ba5bded1262504e061e0f2c66c15357da7dc8b945f978209944d14f75",
+          "bytes": 196181
+        }
+      ]
+    },
+    {
+      "role": "B",
+      "actualRendererPid": 88435,
+      "actualWaitExitCode": 0,
+      "startedUtc": "2026-10-18T10:25:12.369405+00:00",
+      "completedUtc": "2026-10-18T10:25:12.685108+00:00",
+      "captureFailureClass": null,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pdfPinAfter": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+        "sha256": "aab8165a8bb574e320a4699d73698d3d24778a2138eb8e1a9d893783ea0e59c1",
+        "bytes": 104723
+      },
+      "images": [
+        {
+          "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/B-1.png",
+          "sha256": "44a2a5be9062e19a9da2d2cc6d5bce2c570387a3840bc028026980ee2c67c47b",
+          "bytes": 197191
+        },
+        {
+          "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-standard-pdf-render-144dpi-r4w0_vyc/B-2.png",
+          "sha256": "d1a4911ba5bded1262504e061e0f2c66c15357da7dc8b945f978209944d14f75",
+          "bytes": 196181
+        }
+      ]
+    }
+  ],
+  "newPdfsCreated": false,
+  "productOrGuiProcessesStarted": false,
+  "rawFactorsPrintedOrTextLogsSaved": false,
+  "imagePrivacy": "Explicit public synthetic GUI-test factors are visible in private ignored page PNGs for Root layout review only.",
+  "visualLayoutVerdict": "NOT_PERFORMED_BY_THIS_AGENT",
+  "overallReleaseApproval": false
+}

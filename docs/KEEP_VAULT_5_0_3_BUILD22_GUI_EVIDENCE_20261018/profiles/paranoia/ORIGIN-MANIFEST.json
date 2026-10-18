@@ -1,0 +1,418 @@
+{
+  "schema": "keepvault.public-evidence-origin-manifest.v1",
+  "createdUtc": "2026-10-18T10:14:52.526533+00:00",
+  "sourceCommit": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "copies": [
+    {
+      "stageRelativePath": "originals/case/launch-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/launch-start.json",
+      "sha256": "20b99b3e8a6cac062b47c850fda58b8f0c80abf4649fd79ac28ed41e8226d147",
+      "bytes": 2312,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/launcher-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/launcher-terminal.json",
+      "sha256": "e4896c624d8e1d02db41fa0cbca5671a0ddfcce7f2f8d0a4811fb8c96658b66f",
+      "bytes": 1765,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/installed-before.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/installed-before.json",
+      "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+      "bytes": 23861,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/installed-after.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/installed-after.json",
+      "sha256": "eee6657156a158247122e8c18841c74fadfa7312555bf74554b80ee37fef4eee",
+      "bytes": 23861,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/source-bindings.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/source-bindings.json",
+      "sha256": "fb8590e75069c24a0f40dd678a4aa6093f892cd21c28c30260a7a1610a0e969d",
+      "bytes": 3191,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/binding-manifest.original.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/binding-manifest.original.json",
+      "sha256": "63203a6b95edfdbd137162f2debb22ed4ff6fe1bce30d5d5bfa7361731d1720c",
+      "bytes": 20896,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/ui-evidence-manifest.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/ui-evidence-manifest.json",
+      "sha256": "956d018542cc4acf699a5a2268277bc505bfb2974e22a8cf4cec41d1e320c9f9",
+      "bytes": 1654,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/root-ui-observation.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-ui-observation.json",
+      "sha256": "97c4f96584547c0d6efdd78b21b571f68f2f80c877e46a6c36d59659c0762405",
+      "bytes": 8156,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/root-independent-tree-comparison.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-independent-tree-comparison.json",
+      "sha256": "31bb79c79b6e0b219c4ccfaabe412b8c4d2df6f68e80783550c5f4818c2b64f2",
+      "bytes": 2254,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/case/root-pdf-visual-review.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/root-pdf-visual-review.json",
+      "sha256": "aa9b0c22f5ce95ca52afedbe681c114c5c95561d1f4f6986e6a834c1e6c0c17e",
+      "bytes": 3004,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/review/independent-paranoia-review.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/independent-case-review-8t66lygx/independent-paranoia-review.json",
+      "sha256": "c20849ed5966bbe2b3f90095881caca93a9c71307d561814c71b705bfda00fc7",
+      "bytes": 8338,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collector/collector-outer-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collector-independent-run-xjtt_b_f/collector-outer-start.json",
+      "sha256": "43a3591997496310fb31d1803bd132f1b089a5c8ca9c4dbdc3a064e64aa055bd",
+      "bytes": 1274,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collector/collector-outer-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collector-independent-run-xjtt_b_f/collector-outer-terminal.json",
+      "sha256": "34f9472ee1ddd21fe8717206d9b63579e857082dbd65afdf25920a002e8ee552",
+      "bytes": 2470,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/audit-runner/start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/gui-root-observer-paranoia-20261018T093205Z/start.json",
+      "sha256": "5fac7fa78b2a512802d6a1a8a7b2ef0ccec2281b18c2b1a749f59cbc7ad183a2",
+      "bytes": 778,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/audit-runner/terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/gui-root-observer-paranoia-20261018T093205Z/terminal.json",
+      "sha256": "de9a2fca3c2dd8cdc9d172369a290fec97bb9619fb8be0154ad4e727f099346a",
+      "bytes": 937,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/SHA256SUMS.txt",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/SHA256SUMS",
+      "sha256": "08f0acbc7be61be599daf7a832ace571d7cf8b9d1c5b9caa7b6275452e6ff255",
+      "bytes": 704,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/collection-receipt.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/collection-receipt.json",
+      "sha256": "c2a74f5a3c465110439b95f7f6bcfbd6e20eb029bf0077e5f0e3b6adafd06759",
+      "bytes": 9623,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/operation-001-generate.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/operation-001-generate.json",
+      "sha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+      "bytes": 14064,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/operation-002-create.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/operation-002-create.json",
+      "sha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+      "bytes": 304631,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/operation-003-extract.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/operation-003-extract.json",
+      "sha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+      "bytes": 66647,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/ui-001.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/ui-001.json",
+      "sha256": "97c4f96584547c0d6efdd78b21b571f68f2f80c877e46a6c36d59659c0762405",
+      "bytes": 8156,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/ui-002.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/ui-002.json",
+      "sha256": "31bb79c79b6e0b219c4ccfaabe412b8c4d2df6f68e80783550c5f4818c2b64f2",
+      "bytes": 2254,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/ui-003.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/ui-003.json",
+      "sha256": "aa9b0c22f5ce95ca52afedbe681c114c5c95561d1f4f6986e6a834c1e6c0c17e",
+      "bytes": 3004,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/collection/ui-evidence-manifest.original.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-paranoia-20261018T093211922199Z-84594-a41fc1c31051/collected-public-evidence/ui-evidence-manifest.original.json",
+      "sha256": "956d018542cc4acf699a5a2268277bc505bfb2974e22a8cf4cec41d1e320c9f9",
+      "bytes": 1654,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/operations/operation-001-generate.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-001-generate.json",
+      "sha256": "99ebf453a5c692cd1caae8521a8e8561f3c41ffcf76c1e09ea8299dce46aef0d",
+      "bytes": 14064,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/operations/operation-002-create.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-002-create.json",
+      "sha256": "a5fd61ee232a0b187ac4b326d0476e467676ec5a999d57dab612bbd4481e1bc3",
+      "bytes": 304631,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/operations/operation-003-extract.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/operation-003-extract.json",
+      "sha256": "0c30c8968b39b2cafcb871e489b81765a86ba0c90fb92b1d27173a9b9215c537",
+      "bytes": 66647,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/analysis-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/analysis-start.json",
+      "sha256": "f978e9f6f1c36758dcd66c15257cbdf9c853d1ad433742e60a30e9cd69dbc817",
+      "bytes": 1471,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/pdf-pair-qa-result.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/pdf-pair-qa-result.json",
+      "sha256": "bd95f8ff3d582579c87792f3e7f61d318713854a2a9125bef743cb83d9f0593d",
+      "bytes": 11796,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/vision-pdf-qr-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/vision-pdf-qr-start.json",
+      "sha256": "cd2fcd5efc4715d0a648cfead19b68fcf4678251af48593c420af60c457b7fd2",
+      "bytes": 283,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/vision-pdf-qr-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/vision-pdf-qr-terminal.json",
+      "sha256": "6d42a40512623d353e18afe1bc820a35f90ec65212447898d55444f10b9acd28",
+      "bytes": 757,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/text-a-page1-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/text-a-page1-start.json",
+      "sha256": "6d0266acd38fb35d9a5abf93428c6214c994fd0ff5e40e9f95619cde3a02fef1",
+      "bytes": 230,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/text-a-page1-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/text-a-page1-terminal.json",
+      "sha256": "9605d5dff13f38ffc931b47765a801fdb1c940bdc9630de200879aaa57c37602",
+      "bytes": 703,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/text-a-page2-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/text-a-page2-start.json",
+      "sha256": "a7bcc2da6417daa5d70fb81da8cfeb941a9f7c0e27143313c3bd021f7ceb73d5",
+      "bytes": 230,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/text-a-page2-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/text-a-page2-terminal.json",
+      "sha256": "89a1062657149a1e51092a080b23c488a5f6dafdd692f6908a63c5cd230585e5",
+      "bytes": 703,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/text-b-page1-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/text-b-page1-start.json",
+      "sha256": "52d5a3c2f1cb20604a3f0b0a6c0920ac8eed9568670e8d2b9826c310ff37e692",
+      "bytes": 230,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/text-b-page1-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/text-b-page1-terminal.json",
+      "sha256": "068a5f9113d749c2903c44cf14a68501a6aca96d8573bbfd1c859690514ea1fd",
+      "bytes": 703,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/text-b-page2-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/text-b-page2-start.json",
+      "sha256": "bf98bd090e37402048f202403e2677f949a025e90b1ad5eca65c1d8269c9216d",
+      "bytes": 230,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/text-b-page2-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/text-b-page2-terminal.json",
+      "sha256": "ed1800a8ff86528d64b80f4413e76eaf690d110c452831d87752649628a873bc",
+      "bytes": 703,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/root-outer-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-pdf-qa-outer-20261018-pqoqk8m5/root-outer-terminal.json",
+      "sha256": "1d676660e3980d61ee6486f48a2644e2998b2201b11d3321c135128b5f918315",
+      "bytes": 2438,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/tool-tool-lock.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/tool-lock.json",
+      "sha256": "c87937c4e7be8f160c0558ec63615ce5e8ba92faa2ff499fc201c202ee1a171f",
+      "bytes": 2088,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/tool-PREPARATION.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/PREPARATION.json",
+      "sha256": "0d5d07b6821e5f7e0c6fb2d454b6e3f839f49da44f3cb029dca7e598a90ba82f",
+      "bytes": 3149,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-qa/native-compile-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/preparation/compile-native-v3-terminal.json",
+      "sha256": "5014bd20756edb32d8777a782a93ba8ace4a1da74c2706f83a3506ae0e5dda11",
+      "bytes": 1327,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-layout/render-receipt.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/render-receipt.json",
+      "sha256": "e22ff58ad3085d2a35e90835fad36beb69f7b993f637ebb9e8319137300d7008",
+      "bytes": 4130,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-redundancy/campaign-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/campaign-start.json",
+      "sha256": "099c8c90accfafe22adeb0e7f947eff1f27e9cd7e177c549ed7ddf758b4caf88",
+      "bytes": 2384,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-redundancy/a-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/a-start.json",
+      "sha256": "a0b32032f4b1c7f68539cc3f61a020f1f7ff448b8db7954765f9bdb3145d7e32",
+      "bytes": 655,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-redundancy/a-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/a-terminal.json",
+      "sha256": "9615767c368843c3877a8d325885fa39780447e1a04c6cdaba0514ce553e135c",
+      "bytes": 760,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-redundancy/b-start.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/b-start.json",
+      "sha256": "490af9500e17f4853b3c901fa2cf9997c4a3fe0e27189e4a00d4beb631226604",
+      "bytes": 655,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-redundancy/b-terminal.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/b-terminal.json",
+      "sha256": "c34e60966886625babda92ffa1e28bbd50a85be3ce9546e3e43103619e4ea794",
+      "bytes": 760,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-redundancy/redundancy-result.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/redundancy-result.json",
+      "sha256": "9b04face06e4b451cffc85a15cad627713fdc0948a493eeef6a48005d8aec612",
+      "bytes": 7055,
+      "byteIdentical": true
+    },
+    {
+      "stageRelativePath": "originals/pdf-redundancy/narrow-original-qa-review.json",
+      "classification": "BYTE_IDENTICAL_PUBLIC_METADATA_RECEIPT",
+      "originalSourcePath": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/narrow-original-qa-review.json",
+      "sha256": "c8df75f57c069e4371b72f813c18f4e87ee3b805f21fff5aa50bf37ac92eceb0",
+      "bytes": 1043,
+      "byteIdentical": true
+    }
+  ],
+  "originalBytesModified": false,
+  "status": "ONE_CURRENT_PROFILE_ONLY_NO_OVERALL_RELEASE",
+  "overallReleaseApproval": false
+}

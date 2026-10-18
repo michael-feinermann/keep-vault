@@ -1,0 +1,26 @@
+{
+  "label": "text-b-page2",
+  "actualPid": 88428,
+  "actualExitCode": 0,
+  "startedUtc": "2026-10-18T10:25:12.010559+00:00",
+  "completedUtc": "2026-10-18T10:25:12.022541+00:00",
+  "timedOut": false,
+  "argv": [
+    "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftotext",
+    "-f",
+    "2",
+    "-l",
+    "2",
+    "-layout",
+    "/dev/fd/4",
+    "-"
+  ],
+  "stdoutBytes": 904,
+  "stdoutSha256": "464e1d83745c8653bf926f75d82e1051ebb48ce3bdc67716f167b958c3cba70d",
+  "stderrBytes": 0,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "startReceiptFailureClass": null,
+  "captureFailureClass": null,
+  "abortWaitFailureClass": null,
+  "streamCaptureComplete": true
+}

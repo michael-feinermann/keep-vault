@@ -1,0 +1,516 @@
+{
+  "schemaVersion": 1,
+  "caseId": "profile",
+  "sequence": 1,
+  "operation": "generate",
+  "startedUtc": "2026-10-18T10:11:47.714304Z",
+  "terminalUtc": "2026-10-18T10:11:47.725597Z",
+  "process": {
+    "productVersion": "5.0.3",
+    "bundleBuild": 22,
+    "processId": 87094,
+    "processArchitecture": "Arm64",
+    "coreSha256": "A52E743157B1930C0A922A6E76230751801B6820C0B7E401EA766F6C4060E509",
+    "infoPlistSha256": "ECF5AF0FA2D1D1FFF888ED0C100A58FDF8FCCA66BE27C67462DF20CC3F7CDFF0"
+  },
+  "publicFixture": {
+    "identifier": "REV12-public-mixed-256MiB-v1",
+    "sourceBytes": 268435456,
+    "files": 3,
+    "directories": 5,
+    "manifestSha256": "C506C5A423939ACE693CCC390E7FF84AC66C1E19E941948D7096345C95267D67"
+  },
+  "outcome": "success",
+  "observationAvailable": true,
+  "handlerWallSeconds": 0.010983125,
+  "applicationDialogWallSeconds": 0,
+  "workWallSecondsExcludingApplicationDialogs": 0.010954167,
+  "processCpuSeconds": 0.03420500000000004,
+  "requestedCpuWorkers": 0,
+  "initialCpuCeiling": 10,
+  "lockedBytesBefore": 3031040,
+  "lockedBytesAfter": 65536,
+  "reservedBytesBefore": 0,
+  "reservedBytesAfter": 0,
+  "activeCpuWorkersAfterJoin": 0,
+  "phaseProfile": {
+    "schemaVersion": 2,
+    "observationAvailable": true,
+    "timelineCapacity": 4096,
+    "omittedTimelineEntries": 0,
+    "aggregates": [
+      {
+        "phase": "ArchiveEncryption",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ArchiveDecryption",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PayloadEncryption",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PayloadDecryption",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CredentialSha3",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CredentialSkein",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "KdfPmiDerivation",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "KdfRound1",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "KdfRound2",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "Argon2Sha3Round1",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "Argon2SkeinRound1",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "Argon2Sha3Round2",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "Argon2SkeinRound2",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "KeySchedule",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ChunkNonce",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CpuPermitWait",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ResourceObservation",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ResourcePlanning",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "WindowDecision",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherAes",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherMars",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherCamellia",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherSerpent",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherShacal2",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherKalyna",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "CipherThreefish",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "AeadEncryptAndTag",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "AeadVerifyAndDecrypt",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "GlobalAuthentication",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PayloadRead",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PayloadWrite",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqArchive",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqExtract",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqList",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqNativeExitWait",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqPipeConsumer",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "ZpaqPipeProducer",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PipeRead",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "PipeWrite",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "RecoveryOutputWrite",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "RecoveryCreate",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "RecoveryVerifyRepair",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "RecoveryMatchOriginal",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "OriginalTreeComparison",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "FinalOutputCommit",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "VerifiedGlobalBinding",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "LocalRangeTags",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      },
+      {
+        "phase": "LocalRangeVerification",
+        "calls": 0,
+        "wallSecondsSum": 0,
+        "publicBytesSum": 0
+      }
+    ],
+    "timeline": [],
+    "windowDecisions": [],
+    "omittedWindowDecisions": 0,
+    "interpretation": "Monotonic wall intervals. Nested phases and parallel workers overlap. Aggregate sums are neither CPU time nor additive workflow duration. Bytes identify each interval\u0027s public processed-byte basis and can count the same bytes in several phases. Timeline retains its first bounded entries; aggregates include later completed intervals."
+  },
+  "nativeScheduling": {
+    "batches": 0,
+    "completedCallbacks": 0,
+    "activeCallbacks": 0,
+    "peakActiveCallbacks": 0,
+    "minimumGrant": 0,
+    "maximumGrant": 0,
+    "submissionToCallbackSecondsSum": 0,
+    "callbackWallSecondsSum": 0,
+    "callerJoinWallSecondsSum": 0,
+    "observationAvailable": true,
+    "note": "Submission-to-callback includes handle allocation, submission and observer locking. Callback intervals overlap; their sums are not operation walltime or CPU time. Join includes useful callback work. No executor callbacks is possible for an inline single-worker native path."
+  },
+  "cpuReservations": {
+    "admissions": 11,
+    "releases": 11,
+    "peakReservedWorkers": 10,
+    "minimumGrant": 1,
+    "maximumGrant": 1,
+    "minimumObservedCeiling": 10,
+    "acquisitionWallSecondsSum": 0.000263666,
+    "observationAvailable": true,
+    "interpretation": "Acquisition intervals include allocator/topology work; parallel intervals overlap. Peak reservations include other concurrently active in-process leases. No CPU-time or starvation guarantee is inferred from these aggregates."
+  },
+  "globalMacWallSecondsSum": {
+    "KeyPreparation": 0,
+    "RootInitialization": 0,
+    "InputRead": 0,
+    "LeafBatches": 0,
+    "OrderedRoot": 0,
+    "FinalTags": 0,
+    "Cleanup": 0
+  },
+  "entropyPhases": [
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.0002855
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.00038275
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.000421708
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.000437166
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.00047225
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.000507416
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.000546708
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.00054825
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.000567041
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.000594916
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.000613875
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.000628416
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.000658083
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.000724791
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.000726916
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.000727125
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.000764125
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.000780166
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.001457041
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.001601166
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.005515166
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.005528416
+    },
+    {
+      "phase": "shuffle1",
+      "atSeconds": 0.00554575
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.005548041
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.005555125
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.005665875
+    },
+    {
+      "phase": "sha3",
+      "atSeconds": 0.005702166
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.006350625
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.0066765
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.007561083
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.007637291
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.007688791
+    },
+    {
+      "phase": "cleanup",
+      "atSeconds": 0.008399583
+    },
+    {
+      "phase": "before-publication",
+      "atSeconds": 0.008488583
+    }
+  ],
+  "omittedEntropyPhases": 0,
+  "controlledFaultTriggers": 0,
+  "unexpectedFaultResult": false,
+  "factorPublished": true,
+  "expectedControlledFaultObserved": false,
+  "pendingCleanupBeforeRetry": 0,
+  "cleanupRetrySucceeded": null,
+  "productOriginalComparison": null,
+  "interpretation": "Native AOT GUI diagnostic observations, not an overall release verdict. Fixture preparation and human entropy collection precede operation timing. Work wall excludes measured application dialogs but may include unmeasured file-picker/user waits; overlapping phase/queue/join sums are not CPU or end-to-end walltime. Fault cases use public canonical records and simulated adapter failures, not evidence of human mouse capture or an actual Apple RNG/mlock hardware failure. Source bytes and compressed/cipher phase bytes are distinct throughput bases."
+}

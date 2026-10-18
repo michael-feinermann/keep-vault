@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "actualObserverPid": 85991,
+  "renderer": {
+    "path": "/opt/homebrew/Cellar/poppler/26.04.0/bin/pdftoppm",
+    "bytes": 93040,
+    "sha256": "23cfa13bea9fb2501744b62b738f91732588157a0569dd15fc4cc4aa93055ba0"
+  },
+  "rows": [
+    {
+      "label": "A",
+      "pdfBefore": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+        "bytes": 106827,
+        "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d"
+      },
+      "argv": [
+        "/opt/homebrew/bin/pdftoppm",
+        "-png",
+        "-r",
+        "144",
+        "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-A"
+      ],
+      "startedUtc": "2026-10-18T09:51:08.474456+00:00",
+      "actualPid": 85992,
+      "actualExitCode": 0,
+      "completedUtc": "2026-10-18T09:51:08.940864+00:00",
+      "pdfAfter": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+        "bytes": 106827,
+        "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d"
+      },
+      "unchanged": true
+    },
+    {
+      "label": "B",
+      "pdfBefore": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+        "bytes": 106926,
+        "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494"
+      },
+      "argv": [
+        "/opt/homebrew/bin/pdftoppm",
+        "-png",
+        "-r",
+        "144",
+        "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+        "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-B"
+      ],
+      "startedUtc": "2026-10-18T09:51:08.478936+00:00",
+      "actualPid": 85993,
+      "actualExitCode": 0,
+      "completedUtc": "2026-10-18T09:51:08.941048+00:00",
+      "pdfAfter": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+        "bytes": 106926,
+        "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494"
+      },
+      "unchanged": true
+    }
+  ],
+  "imagePins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-A-1.png",
+      "bytes": 216926,
+      "sha256": "36c1f1b371a5eca7c20dc8c53468ca758a55f62f35e5417085b60758d03e30b7"
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-A-2.png",
+      "bytes": 206473,
+      "sha256": "4b0eb2ca3171f8341d87b958768a54ef71a2d87ef8951ba4f16a38aab95d4be8"
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-B-1.png",
+      "bytes": 214496,
+      "sha256": "b1ddec57403549cd2a244f2b866fa106789ee210c34b7139c55d09545915aadc"
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/root-visual-pdf-20261018-sdh3mayt/factor-B-2.png",
+      "bytes": 206473,
+      "sha256": "4b0eb2ca3171f8341d87b958768a54ef71a2d87ef8951ba4f16a38aab95d4be8"
+    }
+  ],
+  "status": "RENDERED_UNASSESSED"
+}

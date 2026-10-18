@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "recordedUtc": "2026-10-18T10:26:29.264922+00:00",
+  "status": "CONFIRMED_GUI_DEFECT_OPEN_CORRECTIVE_BUILD_REQUIRED",
+  "sourceHead": "ba9949ad1b93a89f75dd8078414371d1a1b7ad0d",
+  "installedVersion": "5.0.3",
+  "installedBuild": 22,
+  "actualLauncherPid": 87094,
+  "caseDirectory": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/installed-native-audit-cases22/profile-standard-20261018T100545461545Z-87086-47aa70721a2d",
+  "observed": "Successful normal English SaveTestPDF+Continue set exact KeySheetHandled but new progress was Cancelled/0%; no cancellation clicked.",
+  "rootEvidenceKind": "Actual CUA AX observations in this turn; no stored screenshot or pixel hash claimed.",
+  "sourceCause": "SaveKeySheet_Click and PrintKeySheet_Click omit MarkOperationSucceeded after successful sheet completion. New protected tracker without success maps to Cancelled.",
+  "sourcePins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/MainWindow.axaml.cs",
+      "bytes": 102532,
+      "sha256": "70ff0ea1b453a53e2bc0b71032e121eb4eccaac61f526c09badbaa9c6f53c0d3"
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/KeepVaultMac/Gui/MainWindow.Progress.cs",
+      "bytes": 10152,
+      "sha256": "af53a32640da6952842f2de7f16a046661e30d85b4cb92607f581ffbe6588e1a"
+    }
+  ],
+  "cryptographicOrPdfCorruptionProven": false,
+  "observedDraftAndSheetApprovalRetained": true,
+  "correctiveWorktree": "/Users/michael/.codex/worktrees/keepvault-pdf-progress/Kalyna",
+  "correctiveBranch": "codex/keep-vault-pdf-progress-success",
+  "plannedBuildNumber": 23,
+  "oldBuild22SourceAndEvidenceRemainUnchanged": true,
+  "overallReleaseApproval": false
+}

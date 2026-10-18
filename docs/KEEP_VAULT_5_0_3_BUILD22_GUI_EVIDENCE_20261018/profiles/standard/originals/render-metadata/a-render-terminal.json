@@ -1,0 +1,17 @@
+{
+  "role": "A",
+  "actualRendererPid": 88429,
+  "actualWaitExitCode": 0,
+  "startedUtc": "2026-10-18T10:25:12.035490+00:00",
+  "completedUtc": "2026-10-18T10:25:12.368781+00:00",
+  "captureFailureClass": null,
+  "stdoutBytes": 0,
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrBytes": 0,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "pdfPinAfter": {
+    "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-af89cd1cd21f475daaa25f1559f12d0e/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+    "sha256": "9363526230a38f66b411d029aab0fe497059597b5c69bebc4a590678f34b85bc",
+    "bytes": 104597
+  }
+}

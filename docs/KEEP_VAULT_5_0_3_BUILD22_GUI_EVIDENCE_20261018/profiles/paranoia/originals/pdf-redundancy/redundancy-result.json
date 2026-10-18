@@ -1,0 +1,143 @@
+{
+  "schema": "keepvault.public-pdf-left-qr-redundancy.v1",
+  "status": "PASS",
+  "actualControllerPid": 86218,
+  "actualControllerExitMustBeObservedByCaller": true,
+  "startedUtc": "2026-10-18T09:56:19.450332+00:00",
+  "completedUtc": "2026-10-18T09:56:19.798299+00:00",
+  "pdfPinsBefore": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+      "bytes": 106827
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+      "bytes": 106926
+    }
+  },
+  "pdfPinsAfter": {
+    "A": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+      "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+      "bytes": 106827
+    },
+    "B": {
+      "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+      "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+      "bytes": 106926
+    }
+  },
+  "pdfPinsBeforeAfterEqual": true,
+  "genericBinaryPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/final-pdf-public-20260929-corrected/scan-file",
+    "sha256": "be54ab14e1130f7b04fb98946fda5271ee02391e076f8364732087c5e38b7802",
+    "bytes": 170952
+  },
+  "pythonPin": {
+    "path": "/Users/michael/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "sha256": "54f31dd7440a150d5ad7ec4c51d19658b3b5c8b047969bcae09948b8990346ba",
+    "bytes": 18058560
+  },
+  "currentSourceReviewPins": [
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/tools/scan-file.swift",
+      "sha256": "55a39c262ac9ceb0e38c364878760a63042eae66f857ed6fa06b59cd09cc8c74",
+      "bytes": 6882
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/Sources/CodeArbiter.swift",
+      "sha256": "ce2e68f47664e0ac65812944b376b7ee640e1efb01c5022feeba30b18b057400",
+      "bytes": 6821
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/Sources/PayloadInspector.swift",
+      "sha256": "165deca9ce9bfe587a93be526b7ffdc507ce839b2b3cc59fc18e5bc8f5b75d06",
+      "bytes": 4633
+    },
+    {
+      "path": "/Users/michael/Developer/GPT-Codex/Kalyna/QrCodeScanner/Sources/Localization.swift",
+      "sha256": "bbdfc122180516ce5ddc23ebdd8015c408c9f0ee2eb146227108a342acb7534c",
+      "bytes": 8699
+    }
+  ],
+  "historicalBinaryCurrentSourceCompilationBinding": "NOT_NEWLY_PROVEN",
+  "qaOriginalPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/pdf-qr-qa-prepared-2boa24pt/analysis-20261018-public-gui/pdf-pair-qa-result.json",
+    "sha256": "bd95f8ff3d582579c87792f3e7f61d318713854a2a9125bef743cb83d9f0593d",
+    "bytes": 11796
+  },
+  "narrowQaReviewPin": {
+    "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/narrow-original-qa-review.json",
+    "sha256": "c8df75f57c069e4371b72f813c18f4e87ee3b805f21fff5aa50bf37ac92eceb0",
+    "bytes": 1043
+  },
+  "cases": [
+    {
+      "role": "A",
+      "status": "SOFTWARE_LEFT_QR_OBSCURED_REDUNDANCY_PASS",
+      "actualPid": 86219,
+      "actualWaitExitCode": 0,
+      "pdfPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-A.pdf",
+        "sha256": "ca0d57034a94b8bed7285f30d6d04192d6794cb9996df1cc1b52f204d0ded95d",
+        "bytes": 106827
+      },
+      "intactReadableQrs": 2,
+      "intactDistinctPayloads": 1,
+      "decodedPayloadCharacters": 256,
+      "afterLeftQrObscuredReadableQrs": 1,
+      "singleRemainingCodeRepeatedAdmissionCount": 8,
+      "sameContentAsIntactSheet": true,
+      "rawPayloadExposed": false,
+      "safeOriginalStdoutPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/a.stdout.log",
+        "sha256": "ce5e69d1f57516a3f70d8ec816fd982d3ac34f5456217a4bf3be4ad043e136c7",
+        "bytes": 459
+      },
+      "terminalReceiptPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/a-terminal.json",
+        "sha256": "9615767c368843c3877a8d325885fa39780447e1a04c6cdaba0514ce553e135c",
+        "bytes": 760
+      }
+    },
+    {
+      "role": "B",
+      "status": "SOFTWARE_LEFT_QR_OBSCURED_REDUNDANCY_PASS",
+      "actualPid": 86220,
+      "actualWaitExitCode": 0,
+      "pdfPin": {
+        "path": "/Users/michael/Library/Application Support/Keep Vault Release Audit-bf2688637d1e4e95a7c19abbba370b17/public-fixture-key-sheets-test-export-Faktor-B.pdf",
+        "sha256": "95c7d0b26af71efc0e7395d70b6d719a553397d0cf1c241905da74104cc0a494",
+        "bytes": 106926
+      },
+      "intactReadableQrs": 2,
+      "intactDistinctPayloads": 1,
+      "decodedPayloadCharacters": 256,
+      "afterLeftQrObscuredReadableQrs": 1,
+      "singleRemainingCodeRepeatedAdmissionCount": 8,
+      "sameContentAsIntactSheet": true,
+      "rawPayloadExposed": false,
+      "safeOriginalStdoutPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/b.stdout.log",
+        "sha256": "ce5e69d1f57516a3f70d8ec816fd982d3ac34f5456217a4bf3be4ad043e136c7",
+        "bytes": 459
+      },
+      "terminalReceiptPin": {
+        "path": "/Users/michael/Developer/GPT-Codex/Kalyna/work/v13-evidence/full-release-build22-20261012T212447Z/resume-20261017-4mf5ys0c/public-pdf-left-qr-redundancy-q5e2q5tk/b-terminal.json",
+        "sha256": "c34e60966886625babda92ffa1e28bbd50a85be3ce9546e3e43103619e4ea794",
+        "bytes": 760
+      }
+    }
+  ],
+  "failureClassOnly": null,
+  "postCheckFailureClassOnly": null,
+  "rawFactorsIncluded": false,
+  "createdOrChangedPdfs": false,
+  "productOrGuiProcessesStarted": false,
+  "actualCameraTest": "NOT_PERFORMED",
+  "installedBuild22ScannerClaim": false,
+  "scope": "Existing historical generic scan-file, in-memory software masking of left QR on page1; no physical damage/camera equivalence claim. A fixed remaining detection is admitted eight times, not eight separately decoded camera frames.",
+  "overallReleaseApproval": false
+}
