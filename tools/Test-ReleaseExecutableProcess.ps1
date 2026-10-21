@@ -8,7 +8,7 @@ $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $helper = Join-Path $PSScriptRoot 'Invoke-ReleaseExecutable.ps1'
 $helperHash = (Get-FileHash -LiteralPath $helper -Algorithm SHA256).Hash
 . $helper
-$dotnet = (Get-Command $DotnetPath -CommandType Application -ErrorAction Stop).Source
+$dotnet = (Get-Command $DotnetPath -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $evidence = Join-Path $root ('work\release-executable-process-' + [Guid]::NewGuid().ToString('N'))
 $fixture = Join-Path $evidence 'synthetic WinExe Grüße'
 [IO.Directory]::CreateDirectory($fixture) | Out-Null

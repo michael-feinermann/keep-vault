@@ -26,7 +26,7 @@ if errorlevel 1 exit /b 1
 REM Analyze every translation unit even if an earlier one fails. Keep the
 REM aggregate failure exit code so incomplete coverage can never look green.
 REM /c is mandatory: this task never links or replaces a shipped native tool.
-set "ANALYZE=/nologo /c /analyze /W4 /sdl /GS"
+set "ANALYZE=/nologo /c /analyze /W4 /sdl /GS /DNOMINMAX"
 set "ANALYSIS_FAILED="
 
 cl %ANALYZE% /DNOJIT /EHsc /std:c++17 /Fobuild-analysis\zpaq.obj /analyze:log build-analysis\zpaq.xml external\zpaq\zpaq.cpp

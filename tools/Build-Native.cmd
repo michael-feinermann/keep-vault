@@ -40,7 +40,7 @@ REM looked.
 set "NATIVEOBJ=work\native-objects"
 if not exist "%NATIVEOBJ%" mkdir "%NATIVEOBJ%"
 
-set "HARDEN_COMPILE=/O2 /MT /GS /sdl /guard:cf /Fo%NATIVEOBJ%\"
+set "HARDEN_COMPILE=/O2 /MT /GS /sdl /guard:cf /DNOMINMAX /Fo%NATIVEOBJ%\"
 set "HARDEN_LINK=/link /guard:cf /CETCOMPAT"
 
 cl %HARDEN_COMPILE% /std:c++17 /DNOJIT /EHsc /Fe"%NATIVEOUTPUT%\zpaq.exe" external\zpaq\zpaq.cpp external\zpaq\libzpaq.cpp advapi32.lib %HARDEN_LINK%

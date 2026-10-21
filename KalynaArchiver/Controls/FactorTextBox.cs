@@ -2,6 +2,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using KalynaArchiver.Services;
+using DataFormats = System.Windows.DataFormats;
+using DataObject = System.Windows.DataObject;
+using DragDropEffects = System.Windows.DragDropEffects;
+using DragEventArgs = System.Windows.DragEventArgs;
+using DragEventHandler = System.Windows.DragEventHandler;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace KalynaArchiver.Controls;
 

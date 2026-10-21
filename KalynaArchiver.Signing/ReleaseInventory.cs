@@ -66,7 +66,7 @@ public sealed class VerifiedReleaseInventory : IDisposable
             inventoryStream.Position = 0;
             Document = JsonSerializer.Deserialize<ReleaseInventoryDocument>(inventoryStream)
                 ?? throw new InvalidDataException("The release inventory is empty.");
-            if (Document.Product != "Keep Vault" || Document.Version != "5.0.2" || Document.Runtime != "win-x64"
+            if (Document.Product != "Keep Vault" || Document.Version != typeof(VerifiedReleaseInventory).Assembly.GetName().Version?.ToString(3) || Document.Runtime != "win-x64"
                 || Document.Files is null || Document.Files.Length is < 1 or > 4094)
                 throw new InvalidDataException("The package product, version, architecture, or inventory does not match this installer.");
 

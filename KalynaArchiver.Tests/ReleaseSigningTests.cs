@@ -87,11 +87,30 @@ internal static class ReleaseSigningTests
                     new FileInfo(Path.Combine(packageRoot, name)).Length,
                     Convert.ToHexString(SHA512.HashData(File.ReadAllBytes(Path.Combine(packageRoot, name)))))).ToArray();
                 string inventoryPath = Path.Combine(packageRoot, VerifiedReleaseInventory.InventoryName);
-                File.WriteAllText(inventoryPath, JsonSerializer.Serialize(new ReleaseInventoryDocument("Keep Vault", "5.0.3", "win-x64", entries)));
-                ReleaseSigningOperations.SignFile(inventoryPath, loaded, envelopePath, wrappingPath, publicPath,
-                    referencePath, false,
-                    Convert.ToHexString(rsaPins.Sha256), Convert.ToHexString(rsaPins.Sha3_512), Convert.ToHexString(rsaPins.Skein1024),
-                    Convert.ToHexString(mldsaPins.Sha256), Convert.ToHexString(mldsaPins.Sha3_512), Convert.ToHexString(mldsaPins.Skein1024));
+                void WriteSignedInventory(string version)
+                {
+                    File.WriteAllText(inventoryPath, JsonSerializer.Serialize(new ReleaseInventoryDocument("Keep Vault", version, "win-x64", entries)));
+                    ReleaseSigningOperations.SignFile(inventoryPath, loaded, envelopePath, wrappingPath, publicPath,
+                        referencePath, false,
+                        Convert.ToHexString(rsaPins.Sha256), Convert.ToHexString(rsaPins.Sha3_512), Convert.ToHexString(rsaPins.Skein1024),
+                        Convert.ToHexString(mldsaPins.Sha256), Convert.ToHexString(mldsaPins.Sha3_512), Convert.ToHexString(mldsaPins.Skein1024));
+                }
+                foreach (string mismatchingVersion in new[] { "5.0.2", "5.0.4" })
+                {
+                    WriteSignedInventory(mismatchingVersion);
+                    if (!HybridSignatureService.VerifyFile(inventoryPath, inventoryPath + ".khsig", policy).IsTrusted)
+                        throw new Exception("The mismatching-version fixture must have an authentic release signature.");
+                    try
+                    {
+                        using var unexpected = new VerifiedReleaseInventory(packageRoot, policy);
+                        throw new Exception($"An authentic package for version {mismatchingVersion} was accepted by this installer.");
+                    }
+                    catch (InvalidDataException ex) when (ex.Message == "The package product, version, architecture, or inventory does not match this installer.")
+                    {
+                        // Both rollback and future-version packages fail the product-version boundary.
+                    }
+                }
+                WriteSignedInventory("5.0.3");
                 string copiedRoot = Path.Combine(root, "synthetic-installed-copy");
                 using (var verified = new VerifiedReleaseInventory(packageRoot, policy))
                 {

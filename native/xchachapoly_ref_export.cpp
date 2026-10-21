@@ -2089,7 +2089,7 @@ extern "C" KEEPVAULT_EXPORT int keepvault_test_xchacha20poly1305_v13_cryptopp_en
     try {
         CryptoPP::XChaCha20Poly1305::Encryption cipher;
         cipher.SetKeyWithIV(key, key_length, nonce, nonce_length);
-        cipher.EncryptAndAuthenticate(output, tag, tag_length, nonce, nonce_length,
+        cipher.EncryptAndAuthenticate(output, tag, tag_length, nonce, static_cast<int>(nonce_length),
             aad, aad_length, input, length);
         return 0;
     } catch (...) { return 5; }
@@ -2108,7 +2108,7 @@ extern "C" KEEPVAULT_EXPORT int keepvault_test_xchacha20poly1305_v13_cryptopp_de
     try {
         CryptoPP::XChaCha20Poly1305::Decryption cipher;
         cipher.SetKeyWithIV(key, key_length, nonce, nonce_length);
-        return cipher.DecryptAndVerify(output, tag, tag_length, nonce, nonce_length,
+        return cipher.DecryptAndVerify(output, tag, tag_length, nonce, static_cast<int>(nonce_length),
             aad, aad_length, input, length) ? 0 : 6;
     } catch (...) { return 5; }
 }
