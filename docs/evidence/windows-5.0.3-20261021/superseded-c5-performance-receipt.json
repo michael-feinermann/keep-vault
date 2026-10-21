@@ -1,0 +1,17 @@
+{
+  "Number": 1,
+  "Id": "performance.cipher-suites",
+  "State": "FAIL",
+  "ExitCode": 1,
+  "StartedUtc": "2026-10-21T20:10:28.3362382Z",
+  "CompletedUtc": "2026-10-21T20:38:12.8785288Z",
+  "Seconds": 1664.5121552,
+  "TimedOut": false,
+  "ResultFresh": true,
+  "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\results.json",
+  "ResultsSha256": "C39388C4D72B0EA099A567E22B2ECD72EA24D28944DB08096F98B43BBF88BD1B",
+  "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\stdout.log",
+  "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\stderr.log",
+  "Error": "System.Management.Automation.RuntimeException: Actual process exit or exact fresh single-group results did not PASS.",
+  "CleanupPassed": true
+}

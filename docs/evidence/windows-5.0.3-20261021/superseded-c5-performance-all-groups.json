@@ -1,0 +1,258 @@
+{
+  "State": "FAIL",
+  "Name": "Performance",
+  "RunPurpose": "Final",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "SourceManifestSha256": "DA6445706CFCFEED0F9A2097CBA08E8572F19DF05548D707A19FD96B0D689940",
+  "SourcePreservationScope": "Manifest-covered committed source inputs, HEAD and original source-manifest bytes; allowed output-slot membership is not inventoried.",
+  "Groups": [
+    {
+      "Number": 1,
+      "Id": "performance.cipher-suites",
+      "State": "FAIL",
+      "ExitCode": 1,
+      "StartedUtc": "2026-10-21T20:10:28.3362382Z",
+      "CompletedUtc": "2026-10-21T20:38:12.8785288Z",
+      "Seconds": 1664.5121552,
+      "TimedOut": false,
+      "ResultFresh": true,
+      "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\results.json",
+      "ResultsSha256": "C39388C4D72B0EA099A567E22B2ECD72EA24D28944DB08096F98B43BBF88BD1B",
+      "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\stdout.log",
+      "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\stderr.log",
+      "Error": "System.Management.Automation.RuntimeException: Actual process exit or exact fresh single-group results did not PASS.",
+      "CleanupPassed": true
+    },
+    {
+      "Number": 2,
+      "Id": "release.paranoia-256mib-level5",
+      "State": "PASS",
+      "ExitCode": 0,
+      "StartedUtc": "2026-10-21T20:38:12.8854562Z",
+      "CompletedUtc": "2026-10-21T20:43:38.5511488Z",
+      "Seconds": 325.6617212,
+      "TimedOut": false,
+      "ResultFresh": true,
+      "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\results.json",
+      "ResultsSha256": "6B0EA563E0938987CDB9249A4B423BEF088BD6B335F4881B714CAD2B9424B09A",
+      "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\stdout.log",
+      "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\stderr.log",
+      "Error": null,
+      "CleanupPassed": true
+    },
+    {
+      "Number": 3,
+      "Id": "performance.entropy-rev9-phases",
+      "State": "PASS",
+      "ExitCode": 0,
+      "StartedUtc": "2026-10-21T20:43:38.5559958Z",
+      "CompletedUtc": "2026-10-21T20:49:32.1061999Z",
+      "Seconds": 353.5463054,
+      "TimedOut": false,
+      "ResultFresh": true,
+      "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\results.json",
+      "ResultsSha256": "93456E733013B65958F2023880C9EC00298FDAE3AED424A0A2077243BD06D076",
+      "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\stdout.log",
+      "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\stderr.log",
+      "Error": null,
+      "CleanupPassed": true
+    },
+    {
+      "Number": 4,
+      "Id": "release.paranoia-complex-tree-level5-repair",
+      "State": "PASS",
+      "ExitCode": 0,
+      "StartedUtc": "2026-10-21T20:49:32.1105673Z",
+      "CompletedUtc": "2026-10-21T20:54:44.9321650Z",
+      "Seconds": 312.8182059,
+      "TimedOut": false,
+      "ResultFresh": true,
+      "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\results.json",
+      "ResultsSha256": "27379E9001FF340A5632FAFDCEF7823A573C87FA9EE41CF411C8054429ABE4C1",
+      "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\stdout.log",
+      "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\stderr.log",
+      "Error": null,
+      "CleanupPassed": true
+    }
+  ],
+  "HistoricalComparison": "NOT_RUN",
+  "IndependentWindowsNativeHistoricalBenchmark": "NOT_RUN",
+  "HistoricalComparisonScope": "An unset KEEPVAULT_PERF_BASELINE means no historical regression comparison. Current scalar/parallel and Auto scaling invariants still run. No current result is relabeled as an independent baseline.",
+  "Error": null,
+  "Preservation": {
+    "Source": true,
+    "TwelveAssets": true,
+    "CompiledTestInputs": true,
+    "Manifest": true,
+    "HandlesReleased": true,
+    "Errors": []
+  },
+  "Evidence": [
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\invocation.json",
+      "Sha256": "D134B4CA1FFDB8C3D46C80182C686A1121B991BB486B01A6F1018C01478AD5B5"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\progress.json",
+      "Sha256": "087CF997AF1864B94C20A43E1355CBD2010843D94E500B5A217C63CB65713435"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\receipt.json",
+      "Sha256": "087CF997AF1864B94C20A43E1355CBD2010843D94E500B5A217C63CB65713435"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\results.json",
+      "Sha256": "C39388C4D72B0EA099A567E22B2ECD72EA24D28944DB08096F98B43BBF88BD1B"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\stderr.log",
+      "Sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\stdout.log",
+      "Sha256": "27E3F94ED4989A666ADADEB0252CADD1C0128069AF40193B9953601BF3B6C83F"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\timings.json",
+      "Sha256": "44136FA355B3678A1146AD16F7E8649E94FB4FC21FE77E8310C060F61CAAFF8A"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\invocation.json",
+      "Sha256": "DE07A2576945F5E1F86345E36BB5BBF354059573B5C25A7198DD9F41DC1484D2"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\progress.json",
+      "Sha256": "04C4EFFAD2ECC1AFCEF6DE4B7F92F291025761FC6F38EB4CC8C5DD0085F7EB23"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\receipt.json",
+      "Sha256": "04C4EFFAD2ECC1AFCEF6DE4B7F92F291025761FC6F38EB4CC8C5DD0085F7EB23"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\results.json",
+      "Sha256": "6B0EA563E0938987CDB9249A4B423BEF088BD6B335F4881B714CAD2B9424B09A"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\stderr.log",
+      "Sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\stdout.log",
+      "Sha256": "4CD4954D5DA4604F1EC651FAD1D47A0BDF3D36F76540F4114D7F7B9496FB9638"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\02-paranoia-256mib\\timings.json",
+      "Sha256": "44956C6888860E0B5ADFF7FC262F2E9404E8C3EABF8B0BA3D42CD72C1C53F369"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\entropy-rev9-phase-performance.json",
+      "Sha256": "EA57082DC8CADA56AA334CFAA7CD40E0D74E70CFFEA0952CC92767F69CB084C0"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\invocation.json",
+      "Sha256": "4DFC320BE98350D10871D51448E0CB0B5B0C5960FF0A42A505D847D20E76F235"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\progress.json",
+      "Sha256": "5B77F96BE4D3BA0CC7B33A8F664DA484307F31688DBF1CF4E6BA8752D166C8FC"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\receipt.json",
+      "Sha256": "5B77F96BE4D3BA0CC7B33A8F664DA484307F31688DBF1CF4E6BA8752D166C8FC"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\results.json",
+      "Sha256": "93456E733013B65958F2023880C9EC00298FDAE3AED424A0A2077243BD06D076"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\stderr.log",
+      "Sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\stdout.log",
+      "Sha256": "1000F852E88F979A63FFA06CFC4657E50C0D64CC5AB0AAEC349197E83DE6B019"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\03-entropy-rev9-phases\\timings.json",
+      "Sha256": "18957E50E413DA14412DDB1988E35347B27202FD8D92E5590627FB5AE21FA75A"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\invocation.json",
+      "Sha256": "A9F38C3B4DCA14689A8EDA06A62CE386E4E13FA87E92A2A1C9B5A71AEE69FB1C"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\progress.json",
+      "Sha256": "36F30DF91BF8922305403AD9961E3887DD0D3A603AEF62CF456EAD5708F2E1E0"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\receipt.json",
+      "Sha256": "36F30DF91BF8922305403AD9961E3887DD0D3A603AEF62CF456EAD5708F2E1E0"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\results.json",
+      "Sha256": "27379E9001FF340A5632FAFDCEF7823A573C87FA9EE41CF411C8054429ABE4C1"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\stderr.log",
+      "Sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\stdout.log",
+      "Sha256": "0DA69222B6AD4DE8A6D99A92C91F1AEA106AF33DD68CC3A72F5CC5436BA564CD"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\04-complex-tree-last\\timings.json",
+      "Sha256": "146AF268D5E432941E054B5B5CD301A93DE6E18E980C7E9096E4335609B2C02F"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\assets-after.json",
+      "Sha256": "1B84D73AC88CA6FBC0C5D4A9544DF1AA4945940DC08F35C9BD45F9A675258195"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\assets-before.json",
+      "Sha256": "1B84D73AC88CA6FBC0C5D4A9544DF1AA4945940DC08F35C9BD45F9A675258195"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\host-idle-observation-before.json",
+      "Sha256": "284A866C02CDBBFF576F3D5AED0E1C541475F498DA82E10940BD074250B98046"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\host-processes-before.json",
+      "Sha256": "1C1A805D1A3D57996B4A8B622116E66892DC07A0F01A9B9BED723ABBB8CDCDFF"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\preservation.json",
+      "Sha256": "3D3F1C9EA946269DCD8D499E5698C2E2FB360514AA82C766F3B77A0F69CF2D40"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\previous-results-preserved-before-run.json",
+      "Sha256": "0146145C73164A155F257C2412BFD22DE77172078E7E1BB0FDEA89A3B5157CDA"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\progress.json",
+      "Sha256": "36F30DF91BF8922305403AD9961E3887DD0D3A603AEF62CF456EAD5708F2E1E0"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\provenance.json",
+      "Sha256": "A37C2A427A3987B666340055F4F1AFEBC845556768AB995EAA3136F7521EAB2E"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\source-after.json",
+      "Sha256": "66A6288726FA46F73DE4372904025262A085C4EFA52516A31725552C8953652A"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\source-before.json",
+      "Sha256": "66A6288726FA46F73DE4372904025262A085C4EFA52516A31725552C8953652A"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\tests-after.json",
+      "Sha256": "2C407E53927685362CC1C7EC5FD54364D07265A9310F7C7D375F9AF7510DB4BA"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\tests-before.json",
+      "Sha256": "2C407E53927685362CC1C7EC5FD54364D07265A9310F7C7D375F9AF7510DB4BA"
+    }
+  ],
+  "CompletedUtc": "2026-10-21T20:54:50.5939651Z"
+}

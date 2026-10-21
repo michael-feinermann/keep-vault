@@ -8,7 +8,7 @@ internal static class AdaptiveWindowRev12Tests
         new("resources.rev12-adaptive-window", "REV12 accepted-window probes, loss rollback, no retry loop and fresh resource authority", RunAsync, TestResource.Light, "Resources"),
     ];
 
-    private static Task RunAsync()
+    internal static Task RunAsync()
     {
         VerifyMeasuredFeedback();
         var auto = new ResourcePreferences();
@@ -76,10 +76,13 @@ internal static class AdaptiveWindowRev12Tests
         int current = 2;
         void Reset(int slots = 2) { state = default; current = slots; state.ApplyResolvedWindow(slots); }
         AdaptiveWindowDecision Step(string scenario, double rate, bool complete = true, bool allowProbe = true,
-            ResourceObservation? observation = null, ResourcePreferences? preferences = null, long? readyBytes = null)
+            ResourceObservation? observation = null, ResourcePreferences? preferences = null, long? readyBytes = null,
+            bool unknownHorizon = false)
         {
             int previous = current;
-            AdaptiveWindowDecision decision = state.Observe(current, rate, complete, allowProbe);
+            long completedBytes = (long)current * (16L << 20);
+            AdaptiveWindowDecision decision = state.Observe(current, completedBytes, completedBytes / rate,
+                complete, allowProbe, unknownHorizon ? null : readyBytes ?? ready.ReadyBytes);
             ResolvedOperationPlan plan = ResourcePlanner.Resolve(preferences ?? auto, observation ?? normal,
                 ready with { PreviousSlots = current, RequestedSlots = decision.RequestedSlots, ReadyBytes = readyBytes ?? ready.ReadyBytes });
             current = plan.ActiveSlots;
@@ -87,7 +90,8 @@ internal static class AdaptiveWindowRev12Tests
             trace.Add(new { scenario, previous, requested = decision.RequestedSlots, resolved = current,
                 rate = double.IsFinite(rate) ? rate : 0, rateValid = double.IsFinite(rate) && rate > 0,
                 complete, decision = decision.Reason.ToString(), state.AcceptedSlots, state.ProbeSlots,
-                state.RejectedSlots, state.AcceptedRate, plan.MaximumAdmittedSlots });
+                state.RejectedSlots, state.AcceptedRate, state.EstimatedSetupSeconds,
+                state.ExplorationCreditSeconds, unknownHorizon, plan.MaximumAdmittedSlots });
             Require(current <= plan.MaximumAdmittedSlots, "Feedback exceeded fresh admission authority.");
             return decision;
         }
@@ -171,24 +175,80 @@ internal static class AdaptiveWindowRev12Tests
         Reset(1);
         for (int index = 0; index < 16; index++)
         {
-            Step("unknown-ready-work", 400, allowProbe: false, readyBytes: 0);
-            Require(current == 1 && state.IsCold && state.AcceptedRate == 0,
-                "Unproven future non-seekable work or a cold first batch created an optional larger window.");
+            Step("unknown-ready-work", 400, allowProbe: false, readyBytes: 0, unknownHorizon: true);
+            Require(current == 1 && state.ProbeSlots == 0,
+                "Unproven future non-seekable work created an optional larger window.");
         }
+        Require(!state.IsCold && state.AcceptedRate == 400,
+            "An unknown horizon permanently prevented a mature baseline from completed work.");
         Reset(1);
-        Step("cold-start", 100, allowProbe: false);
-        Require(current == 1 && state.AcceptedRate == 0 && state.IsCold,
+        const double mib = 1024 * 1024;
+        Step("cold-start", 100 * mib, allowProbe: false, unknownHorizon: true);
+        Require(current == 1 && state.AcceptedRate == 0 && !state.IsCold,
             "The cold initial batch was assigned a mature accepted-window rate.");
-        AdaptiveWindowDecision startup = state.RequestProvenLongStreamStart();
-        ResolvedOperationPlan startPlan = ResourcePlanner.Resolve(auto, normal,
-            ready with { RequestedSlots = startup.RequestedSlots, PreviousSlots = 1 });
-        current = startPlan.ActiveSlots; state.ApplyResolvedWindow(current);
-        Require(startup.Reason == AdaptiveWindowReason.ProvenLongStreamStart && current == 2
-            && !state.IsCold && state.AcceptedRate == 0,
-            "The first proven longer-stream policy window reused the cold one-slot rate or skipped admission.");
-        Step("cold-start-two", 400); Step("cold-start-two", 402);
-        Require(Step("cold-start-two", 400).Reason == AdaptiveWindowReason.ProbeStarted && state.AcceptedRate == 400,
-            "Two slots did not establish their own complete-batch rate before a larger probe.");
+        Step("warm-one", 400 * mib); Step("warm-one", 400 * mib);
+        Require(Step("warm-one", 400 * mib).Reason == AdaptiveWindowReason.ProbeDeferredSetupCost
+            && current == 1 && state.AcceptedRate == 400 * mib
+            && Math.Abs(state.EstimatedSetupSeconds - 0.12) < 0.000001,
+            "A cold one-slot cost granted an unmeasured second slot or was lost from finite-work amortization.");
+        Require(Step("long-stream-repays-setup", 400 * mib, readyBytes: 8L << 30).Reason == AdaptiveWindowReason.ProbeStarted
+            && current == 2 && state.AcceptedSlots == 1 && state.AcceptedRate == 400 * mib,
+            "Concrete long work could not justify an adjacent probe against the retained mature one-slot rate.");
+        Require(Step("one-to-two-loss", 340 * mib, readyBytes: 8L << 30).Reason == AdaptiveWindowReason.ProbeRejectedLoss
+            && current == 1 && state.RejectedSlots == 2 && state.AcceptedRate == 400 * mib,
+            "A slower second slot could not roll back to the measured one-slot baseline.");
+        for (int index = 0; index < 16; index++)
+            Require(Step("one-to-two-no-retry", 400 * mib, readyBytes: 8L << 30).RequestedSlots == 1,
+                "A rejected second slot was repeatedly funded by the same cold-start observation.");
+
+        Reset(1);
+        Step("long-profitable-cold", 100 * mib, readyBytes: 8L << 30);
+        Step("long-profitable-warm", 400 * mib, readyBytes: 8L << 30);
+        Step("long-profitable-warm", 400 * mib, readyBytes: 8L << 30);
+        Require(Step("long-profitable-warm", 400 * mib, readyBytes: 8L << 30).Reason == AdaptiveWindowReason.ProbeStarted
+            && state.EstimatedSetupSeconds > 0, "A positive setup estimate disabled all long-stream probing.");
+        Require(Step("long-profitable-probe", 390 * mib, readyBytes: 8L << 30).Reason == AdaptiveWindowReason.ProbePending,
+            "A mildly slower cold candidate bypassed or prematurely failed its unchanged loss boundary.");
+        Step("long-profitable-probe", 440 * mib, readyBytes: 8L << 30);
+        Require(Step("long-profitable-probe", 440 * mib, readyBytes: 8L << 30).Reason == AdaptiveWindowReason.ProbeAccepted
+            && current == 2 && state.EstimatedSetupSeconds > 0,
+            "Enough concrete work could not accept a profitable adjacent window with nonzero estimated setup cost.");
+
+        Reset(1);
+        Step("observed-expensive-cold-one", 70 * mib, readyBytes: 192L << 20);
+        Step("observed-warm-one", 650 * mib, readyBytes: 192L << 20);
+        Step("observed-warm-one", 650 * mib, readyBytes: 192L << 20);
+        Require(Step("observed-warm-one", 650 * mib, readyBytes: 192L << 20).Reason == AdaptiveWindowReason.ProbeDeferredSetupCost
+            && current == 1 && state.EstimatedSetupSeconds > 0.20,
+            "The observed expensive cold-slot regime started an unamortized second-slot allocation for a finite tail.");
+
+        Reset(); Step("finite-tail", 400); Step("finite-tail", 400);
+        Require(Step("finite-tail", 400, readyBytes: 144L << 20).Reason == AdaptiveWindowReason.ProbeDeferredWork
+            && current == 2 && state.ProbeSlots == 0,
+            "A finite tail started a probe without candidate samples and rollback work.");
+        Reset(1);
+        Step("cheap-setup", 400 * mib); Step("cheap-setup", 400 * mib); Step("cheap-setup", 400 * mib);
+        Require(Step("cheap-setup", 400 * mib).Reason == AdaptiveWindowReason.ProbeStarted && current == 2,
+            "Measured cheap setup was replaced by a fixed one-slot policy.");
+        Step("profitable-two", 390 * mib); Step("profitable-two", 440 * mib);
+        Require(Step("profitable-two", 440 * mib).Reason == AdaptiveWindowReason.ProbeAccepted && current == 2
+            && state.EstimatedSetupSeconds > 0,
+            "A profitable probe could not replace the one-slot baseline or update its setup estimate from actual growth.");
+
+        Reset(1);
+        Step("unknown-cold-cost", 100 * mib, unknownHorizon: true);
+        for (int index = 0; index < 3; index++) Step("unknown-earns-work", 400 * mib, unknownHorizon: true);
+        Require(current == 1 && state.AcceptedRate == 400 * mib,
+            "An unknown horizon invented future payback or lost its mature baseline.");
+        int earnedBatches = 0;
+        while (state.ProbeSlots == 0 && earnedBatches++ < 128)
+            Step("unknown-earns-work", 400 * mib, unknownHorizon: true);
+        Require(current == 2 && earnedBatches < 128,
+            "An unknown horizon permanently disabled an exploratory probe funded by completed public work.");
+        Step("unknown-profitable-two", 440 * mib, unknownHorizon: true);
+        Step("unknown-profitable-two", 440 * mib, unknownHorizon: true);
+        Require(Step("unknown-profitable-two", 440 * mib, unknownHorizon: true).Reason == AdaptiveWindowReason.ProbeAccepted,
+            "Unknown-horizon feedback could not accept a profitable completed probe within fresh ready-work admission.");
 
         foreach (string authority in new[] { "cpu", "queue", "pressure", "ram", "remaining-work" })
         {
@@ -255,7 +315,8 @@ internal static class AdaptiveWindowRev12Tests
             "Pipeline-only observation added cipher timers or lost closed resource boundaries.");
         Require(!OperationPhaseProfile.IsEnabledForTests, "A disposed window trace remained active.");
     }
-    private static void Require(bool value, string message) => MacComprehensiveTests.Require(value, message);
+    private static void Require(bool value, string message)
+    { if (!value) throw new InvalidOperationException(message); }
     private static void Expect<T>(Action action) where T : Exception
     { try { action(); } catch (T) { return; } throw new InvalidOperationException("Expected adaptive planner refusal was not raised."); }
 }

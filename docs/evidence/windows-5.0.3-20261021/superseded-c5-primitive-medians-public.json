@@ -1,0 +1,32 @@
+{
+  "Scope": "Derived public view of prior rejected c5 candidate primitive medians; never an overall PASS or released historical baseline",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "OriginalExactPrivatePayloadSha256": "6E819FEF434E99B64082CE6375AA5CE928BA7963C77F1FB032CE33EC1731B817",
+  "Redaction": "Stable host identity hash omitted; measurement host and all twelve actual primitive medians retained",
+  "Measurements": {
+    "schemaVersion": 2,
+    "host": {
+      "operatingSystem": "Microsoft Windows 10.0.26300",
+      "operatingSystemVersion": "10.0.26300.0",
+      "operatingSystemBuild": "Microsoft Windows 10.0.26300",
+      "osArchitecture": "X64",
+      "processArchitecture": "X64",
+      "logicalProcessors": 32,
+      "cpuDescriptor": "13th Gen Intel(R) Core(TM) i9-13900K"
+    },
+    "ratesMiBPerSecond": {
+      "Kalyna512_512": 2579.0930256690276,
+      "Threefish1024": 3050.953303729552,
+      "StandardCascade": 1045.6743190148113,
+      "ParanoiaCascade": 20.002733654842377,
+      "XChaChaOverAes": 1997.5654670869878,
+      "Aes256": 4186.823934240696,
+      "Mars448": 2172.990408284526,
+      "Shacal2_512": 3505.595944463692,
+      "XChaCha20Poly1305": 2087.612871764302,
+      "MixedCascade": 1341.9568036685744,
+      "Camellia256": 20.777430749594348,
+      "Serpent256": 1607.6069953511271
+    }
+  }
+}

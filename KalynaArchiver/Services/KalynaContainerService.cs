@@ -1197,7 +1197,7 @@ public sealed partial class KalynaContainerService
     // Auto and fixed diagnostic requests pay the same fresh resource observation
     // and pure planning work. Feedback requests never confer allocation authority.
     private static int ResolveNextChunkWindow(Stream input, ref AdaptiveChunkWindow feedback, int current,
-        int active = 0, long batchBytes = 0, double rate = 0, bool initial = false)
+        int active = 0, long batchBytes = 0, double seconds = 0, bool initial = false)
     {
         using var decisionProfile = OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.WindowDecision, batchBytes);
         ArchiveOperationPolicy policy = ArchiveOperationPolicy.Current;
@@ -1205,11 +1205,10 @@ public sealed partial class KalynaContainerService
         // read-ahead source, retain one slot and use native block parallelism.
         long ready = input.CanSeek ? Math.Max(0, input.Length - input.Position) : 0;
         bool completeBatch = !initial && active == current && batchBytes == (long)current * BufferSize;
+        double rate = seconds > 0 && double.IsFinite(seconds) ? batchBytes / seconds : 0;
         AdaptiveWindowDecision decision = initial ? new(current, AdaptiveWindowReason.InitialCold)
-            : feedback.Observe(current, rate, completeBatch, input.CanSeek);
-        if (!initial && completeBatch && ready > BufferSize && feedback.IsCold
-            && decision.Reason != AdaptiveWindowReason.InvalidRate)
-            decision = feedback.RequestProvenLongStreamStart();
+            : feedback.Observe(current, batchBytes, seconds, completeBatch, ready > BufferSize,
+                input.CanSeek ? ready : null);
         int? requested = PipelineWorkerOverride.Value ?? decision.RequestedSlots;
         ResourceObservation observation;
         using (OperationPhaseProfile.Measure(OperationPhaseProfile.Phase.ResourceObservation))
@@ -1242,6 +1241,7 @@ public sealed partial class KalynaContainerService
         using OperationProgressSource? progress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.Encryption,
             ProgressUnit.Bytes, knownPayload, knownPayload.HasValue ? ProgressTotalOrigin.KnownInput : ProgressTotalOrigin.Unknown);
         AdaptiveChunkWindow feedback = default;
+        long batchStarted = Stopwatch.GetTimestamp();
         int workerCount = ResolveNextChunkWindow(plaintext, ref feedback, 1, initial: true);
         long prefixBytes = ciphertext.CanSeek ? ciphertext.Position : 0;
         long maximumContainerBytes = ArchiveOperationPolicy.Current.MaxContainerBytes;
@@ -1255,7 +1255,6 @@ public sealed partial class KalynaContainerService
             long expectedWriteIndex = 0;
             while (true)
             {
-                long batchStarted = Stopwatch.GetTimestamp();
                 long batchBytes = 0;
                 int active = 0;
                 for (; active < workerCount; active++)
@@ -1336,8 +1335,12 @@ public sealed partial class KalynaContainerService
                     expectedWriteIndex = checked(expectedWriteIndex + 1);
                 }
                 double seconds = Stopwatch.GetElapsedTime(batchStarted).TotalSeconds;
-                double rate = seconds > 0 ? batchBytes / seconds : 0;
-                int nextWindow = ResolveNextChunkWindow(plaintext, ref feedback, workerCount, active, batchBytes, rate);
+                // Charge this joined boundary's observation/planning and slot
+                // resize/disposal to the next completed batch, not an unmeasured
+                // gap between throughput samples. The workflow timer separately
+                // includes final cleanup, KDF and global authentication.
+                batchStarted = Stopwatch.GetTimestamp();
+                int nextWindow = ResolveNextChunkWindow(plaintext, ref feedback, workerCount, active, batchBytes, seconds);
                 if (nextWindow < workerCount)
                     for (int index = nextWindow; index < slots.Length; index++)
                     {
@@ -1445,6 +1448,7 @@ public sealed partial class KalynaContainerService
         using OperationProgressSource? progress = OperationProgressTracker.Current?.BeginPhase(OperationPhase.Extraction,
             ProgressUnit.Bytes, knownPayload, knownPayload.HasValue ? ProgressTotalOrigin.KnownInput : ProgressTotalOrigin.Unknown, passId: 2);
         AdaptiveChunkWindow feedback = default;
+        long batchStarted = Stopwatch.GetTimestamp();
         int workerCount = ResolveNextChunkWindow(ciphertext, ref feedback, 1, initial: true);
         var slots = new ContainerChunkSlot[workerCount];
         Exception? operationFailure = null;
@@ -1454,7 +1458,6 @@ public sealed partial class KalynaContainerService
             long expectedWriteIndex = 0;
             while (true)
             {
-                long batchStarted = Stopwatch.GetTimestamp();
                 long batchBytes = 0;
                 int active = 0;
                 for (; active < workerCount; active++)
@@ -1534,8 +1537,8 @@ public sealed partial class KalynaContainerService
                     expectedWriteIndex = checked(expectedWriteIndex + 1);
                 }
                 double seconds = Stopwatch.GetElapsedTime(batchStarted).TotalSeconds;
-                double rate = seconds > 0 ? batchBytes / seconds : 0;
-                int nextWindow = ResolveNextChunkWindow(ciphertext, ref feedback, workerCount, active, batchBytes, rate);
+                batchStarted = Stopwatch.GetTimestamp();
+                int nextWindow = ResolveNextChunkWindow(ciphertext, ref feedback, workerCount, active, batchBytes, seconds);
                 if (nextWindow < workerCount)
                     for (int index = nextWindow; index < slots.Length; index++)
                     {

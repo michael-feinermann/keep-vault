@@ -1,0 +1,26 @@
+{
+  "Scope": "Historical rejected c5 candidate; not final release performance evidence",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "State": "FAIL",
+  "Group": "performance.cipher-suites",
+  "RequiredMinimumFraction": 0.9,
+  "ActualFraction": 0.8204682024240957,
+  "ActualMediansMiBPerSecond": {
+    "Auto": 156.1398520257743,
+    "1": 190.3057931610937,
+    "2": 176.6351934031171,
+    "3": 157.28246376098375,
+    "4": 139.71743022969983,
+    "5": 127.04439114645503,
+    "6": 118.10319986779824,
+    "8": 101.30141051530009,
+    "10": 85.26613225230089,
+    "12": 73.13464934563915,
+    "16": 61.26044074733431
+  },
+  "Failure": "InvalidOperationException: The adaptive production Auto pipeline reaches only 156,1 MiB/s while 1 reaches 190,3 MiB/s. Revisit the actual resource planner and joined-boundary growth.\r\n   at CipherSuitePerformanceTests.RunPipelineSlotScalingAsync() in C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\KalynaArchiver.Tests\\CipherSuitePerformanceTests.cs:line 561\r\n   at CipherSuitePerformanceTests.Run() in C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\KalynaArchiver.Tests\\CipherSuitePerformanceTests.cs:line 188\r\n   at Program.<>c__DisplayClass0_0.<<Main>$>b__110() in C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\KalynaArchiver.Tests\\Program.cs:line 258\r\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList`1 allTests, String testId, UInt32 seed) in C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\KalynaArchiver.Tests\\TestScheduler.cs:line 1082",
+  "OriginalStdoutSha256": "27E3F94ED4989A666ADADEB0252CADD1C0128069AF40193B9953601BF3B6C83F",
+  "ActualResultsSha256": "C39388C4D72B0EA099A567E22B2ECD72EA24D28944DB08096F98B43BBF88BD1B",
+  "ActualReceiptSha256": "087CF997AF1864B94C20A43E1355CBD2010843D94E500B5A217C63CB65713435",
+  "Publication": "BLOCKED; correct production planner and repeat final gates with a new source commit"
+}

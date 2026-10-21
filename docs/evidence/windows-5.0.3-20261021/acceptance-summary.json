@@ -1,0 +1,11 @@
+{
+  "State": "PASS",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "RunPurpose": "Final",
+  "ProductVersion": "5.0.3",
+  "Cases": 40,
+  "ExecutableInvocations": 81,
+  "Scope": "Actual awaited signed verifier/setup processes and shortcut-free isolated test copy; no desktop, camera, printing, normal user installation, trust or antivirus changes.",
+  "Error": null,
+  "CompletedUtc": "2026-10-21T19:57:39.9758880Z"
+}

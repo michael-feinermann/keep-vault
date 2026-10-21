@@ -1,0 +1,107 @@
+{
+  "State": "LOCAL_ARTIFACTS_ACCEPTED_NOT_PUBLISHED",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "AcceptanceEvidence": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\package-acceptance-20261021T195411Z-ab2bfdc6d9ac426da581a0b9d6ce5da1",
+  "AcceptanceSummarySha256": "AD3144145E0E4CEF05AD16B2CADB5936B1B381A62D1721C2C5A3582B9D0C3695",
+  "AssetCount": 12,
+  "Assets": [
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip",
+      "OriginalName": "Keep Vault-portable-win-x64.zip",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault-portable-win-x64.zip",
+      "Size": 296584383,
+      "Sha256": "25056074E5DAAF065F16DFD91B554D6688D1D58533CF77D91A86AEFCD7FB9722",
+      "Sha512": "D1A5F88A1335E92D3EEDB8E77C4FAD7F09F74B1EF31747BC3D43F1AE90C62977EEC36E58242AD65312674EAAF9590EDACC099E8416C7AD7B410DCD4E39DC749D"
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.khsig",
+      "OriginalName": "Keep Vault-portable-win-x64.zip.khsig",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault-portable-win-x64.zip.khsig",
+      "Size": 6573,
+      "Sha256": "EE3EF9CD87482F07A474A81AE114E8224736D5D8581AA1CA87F14A68EE433840",
+      "Sha512": "8585A5BCD89D188A8646014894C0BD017C978EB3349743A4289B018E0A37704868D8C919574FDC6C4F03D574980879012B162CA9D40387754361C1BABF3B87BC"
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.sha3",
+      "OriginalName": "Keep Vault-portable-win-x64.zip.sha3",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault-portable-win-x64.zip.sha3",
+      "Size": 128,
+      "Sha256": "E7AA462696DE784F73C0F106208063B7E96A0B3EE1A9571A98C84668BF3E4262",
+      "Sha512": "1A0103EF736EEA0538D692A92FB40F4864482CDFC910C71B8EE64E89988CFCDF5751004E10DAC4BF7FCC536DF85B19F37E9D7B2FCB92689F7BE27B786E198FBE"
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.sha3.khsig",
+      "OriginalName": "Keep Vault-portable-win-x64.zip.sha3.khsig",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault-portable-win-x64.zip.sha3.khsig",
+      "Size": 6573,
+      "Sha256": "F26331F52F7BDA4929AC1BAD846B588CB8CFEBA8EBDEBB922FEF096B7A3DEB05",
+      "Sha512": "ED92A09B2321E1C4900A4FA11939B14558CB0242F030B5CB9E0715AE1EE617CC172B4987DE6725A023442C404DAFEB4F3312B5F54D4502B57507E2D519F958F7"
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.skein",
+      "OriginalName": "Keep Vault-portable-win-x64.zip.skein",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault-portable-win-x64.zip.skein",
+      "Size": 256,
+      "Sha256": "85F745D44BC0A3FCE37AF2FC63D326FAF538F19488BA3F65322F716E7A0D8F0E",
+      "Sha512": "9EB652139172FDE2BA0FC4AC7E6DF22AE00A4978F027E4ED0493CF186C4021EC545AE6DE3EFA6AD7448F3EE3A4656F9CA164CF2CF2A249620E59BDA27CB640A6"
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.skein.khsig",
+      "OriginalName": "Keep Vault-portable-win-x64.zip.skein.khsig",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault-portable-win-x64.zip.skein.khsig",
+      "Size": 6573,
+      "Sha256": "D37C595BC7965581BD1C05F2E7896E1100AD504524FD0B9052C8A0109FC0D592",
+      "Sha512": "A3CFEA146B5FF98BDC7FF06FC3829F217A99D9375D7B2BAC67CA103955DEE27ED4B10D7B595231DE8668E73DE3521FC7582BB6EA4F65CE37F1F90054B5F21884"
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe",
+      "OriginalName": "Keep Vault Release Verifier-win-x64.exe",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault Release Verifier-win-x64.exe",
+      "Size": 181634464,
+      "Sha256": "D83362A556FFEB42C316F20D33729F7B34748C509CBC01BE91655E8ED9AC9E8C",
+      "Sha512": "483A9AB9CF05FF59F0114B3FBFE38D99D5175439B050C727BFA5A81ACDC6BF9218D1333806BFDECB3D79DA7662BD84FE605EBC282CA7BBADA4BDB4F62E0F201B"
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.khsig",
+      "OriginalName": "Keep Vault Release Verifier-win-x64.exe.khsig",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault Release Verifier-win-x64.exe.khsig",
+      "Size": 6573,
+      "Sha256": "AF50F1FA069C6D4497FE6BF46832E5193D7783349B6B83F68A527DC43F46D470",
+      "Sha512": "AA6B753BF3587E629476694062CB1BA1DD9A3D0B94C31F256C2134F490D4B0CBB90EF9A77C5C32619709A3B0C49C0CE0C3912422878B4553B3008B6CFAC47AEA"
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.sha3",
+      "OriginalName": "Keep Vault Release Verifier-win-x64.exe.sha3",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault Release Verifier-win-x64.exe.sha3",
+      "Size": 128,
+      "Sha256": "CD97711C5C5C5FE1A0D92DA8740410A6BE94C753A2538070F78CB2CBB2D17EF8",
+      "Sha512": "FCA196E1A5AC4B16BB28B308E2D132C55C17C28DCC60FC69021A7FEFAD40251DA3343721200F6E6890354C96C62E4334105A5CFDBE79E4B02E6404349B75544A"
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.sha3.khsig",
+      "OriginalName": "Keep Vault Release Verifier-win-x64.exe.sha3.khsig",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault Release Verifier-win-x64.exe.sha3.khsig",
+      "Size": 6573,
+      "Sha256": "42576D4D3DE869F8B4BA2DA0E33A9C908D13367033F6C52FAE9DF4FFE9CBBF10",
+      "Sha512": "4FCEBF9FF091F00C88CEC8EC3C26FCE418F31DC6CC56AD457AB669108D7F0339C52B5241364A47181652DBC28F99B4AF3C104FEFC3A4E6B9D9D35C47A3D7C5BF"
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.skein",
+      "OriginalName": "Keep Vault Release Verifier-win-x64.exe.skein",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault Release Verifier-win-x64.exe.skein",
+      "Size": 256,
+      "Sha256": "B2F31BAB373339681EFC8F243C671CA0696B7DA0B4FE4D98BAC35B20C970C1AF",
+      "Sha512": "18A37A074354D1CC1ECE258685B045899ACBE6B65CA366B6E85EB25F65FF2F2007AF1B3FA525DDAF076F43A695EA8EA81A4ED6A4CCCB06B6B4FAD0926A95150E"
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.skein.khsig",
+      "OriginalName": "Keep Vault Release Verifier-win-x64.exe.skein.khsig",
+      "Source": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\dist\\Keep Vault Release Verifier-win-x64.exe.skein.khsig",
+      "Size": 6573,
+      "Sha256": "0F2F720EA39BD49B12565CC38F336DAF25904E1AC9DD9F5D74D1AE6A9FA17E4C",
+      "Sha512": "24796B6A279C270BFB16A39BE2BA0145DD2EC883173F52890D499FD6BA874EBD101C0BF86C8E889A6344952B1F346E4078350E83464880D546A93A1E37A553A0"
+    }
+  ],
+  "CreatedUtc": "2026-10-21T19:58:34.6093172Z"
+}

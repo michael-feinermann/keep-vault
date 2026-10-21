@@ -1,0 +1,16 @@
+{
+  "Scope": "Prior rejected candidate primitive-only same-machine comparison; not a released-version or native historical benchmark",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "SourceGroupOverallState": "FAIL",
+  "Failure": "Auto reached 82.0% of the best fixed pipeline window, below 90%",
+  "PrimitiveCompletion": "All 12 primitive medians plus scalar/parallel/hardware checks completed before the separate pipeline failure",
+  "Line": 24,
+  "BaselinePayloadSha256": "6E819FEF434E99B64082CE6375AA5CE928BA7963C77F1FB032CE33EC1731B817",
+  "StdoutSha256": "27E3F94ED4989A666ADADEB0252CADD1C0128069AF40193B9953601BF3B6C83F",
+  "ResultsSha256": "C39388C4D72B0EA099A567E22B2ECD72EA24D28944DB08096F98B43BBF88BD1B",
+  "TestDllSha256": "73D7E4E5B7A21DCB5F059D75B3E503D47D87D2E686BDAE1BDDA79F21D64E727C",
+  "MaximumAllowedPrimitiveRegression": 0.25,
+  "ApprovedReleasedWindowsBaseline": "NOT_RUN",
+  "IndependentNativeHistoricalBenchmark": "NOT_RUN",
+  "MachineIdentity": "Kept in private ignored exact baseline; omitted from public evidence"
+}

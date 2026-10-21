@@ -6,6 +6,9 @@ internal static class PipelineWorkerPolicyTests
 {
     public static async Task RunAsync()
     {
+        // Exercise the shared pure feedback/controller regressions inside the
+        // existing Windows group; the stable test inventory remains unchanged.
+        await AdaptiveWindowRev12Tests.RunAsync();
         await RunPolicyAsync();
         await RunNativeConcurrencyAsync();
         await RunOverrideScopesAsync();

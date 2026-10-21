@@ -65,6 +65,7 @@ internal enum AdaptiveWindowReason
     InitialCold, ProvenLongStreamStart, Retained, IncompleteBatch, ProbeStarted, ProbePending, ProbeAccepted,
     ProbeRejectedLoss, ProbeRejectedNoBenefit, RejectedWindowHeld, InvalidRate,
     ThroughputRegression, ResourceBound, FixedRequest,
+    ProbeDeferredWork, ProbeDeferredSetupCost,
 }
 
 internal readonly record struct AdaptiveWindowDecision(int RequestedSlots, AdaptiveWindowReason Reason);
@@ -76,6 +77,8 @@ internal readonly record struct AdaptiveWindowDecision(int RequestedSlots, Adapt
 /// </summary>
 internal struct AdaptiveChunkWindow
 {
+    private const int ProbeSampleCount = 3;
+    private const double MinimumProbeGain = 0.05;
     private int _acceptedSlots;
     private double _acceptedRate;
     private double _previousRate;
@@ -86,38 +89,63 @@ internal struct AdaptiveChunkWindow
     private int _probeSamples;
     private int _rejectedSlots;
     private bool _startupComplete;
+    private long _coldBytes;
+    private double _coldSeconds;
+    private double _estimatedSetupSeconds;
+    private bool _setupEstimateAvailable;
+    private double _explorationCreditSeconds;
 
     internal readonly int AcceptedSlots => Math.Max(1, _acceptedSlots);
     internal readonly int ProbeSlots => _probeSlots;
     internal readonly int RejectedSlots => _rejectedSlots;
     internal readonly double AcceptedRate => _acceptedRate;
     internal readonly bool IsCold => !_startupComplete;
+    internal readonly double EstimatedSetupSeconds => _estimatedSetupSeconds;
+    internal readonly double ExplorationCreditSeconds => _explorationCreditSeconds;
 
-    internal readonly AdaptiveWindowDecision RequestProvenLongStreamStart() =>
-        new(IsCold ? 2 : AcceptedSlots, IsCold ? AdaptiveWindowReason.ProvenLongStreamStart : AdaptiveWindowReason.Retained);
-
-    internal AdaptiveWindowDecision Observe(int currentSlots, double rate, bool completeBatch, bool allowProbe)
+    internal AdaptiveWindowDecision Observe(int currentSlots, long completedBytes, double elapsedSeconds,
+        bool completeBatch, bool allowProbe, long? remainingBytes)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(currentSlots, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(completedBytes);
+        if (remainingBytes is < 0) throw new ArgumentOutOfRangeException(nameof(remainingBytes));
         if (_acceptedSlots == 0) _acceptedSlots = currentSlots;
         if (currentSlots != (_probeSlots > 0 ? _probeSlots : _acceptedSlots)) ApplyResolvedWindow(currentSlots);
         if (!completeBatch) return new(currentSlots, AdaptiveWindowReason.IncompleteBatch);
+        double rate = elapsedSeconds > 0 && double.IsFinite(elapsedSeconds) ? completedBytes / elapsedSeconds : 0;
         if (!double.IsFinite(rate) || rate <= 0)
         {
             if (_probeSlots > 0) return RejectProbe(AdaptiveWindowReason.InvalidRate);
             ResetAccepted(Math.Max(1, currentSlots - 1));
             return new(_acceptedSlots, AdaptiveWindowReason.InvalidRate);
         }
-        // Initial one-slot work is provisional. It supplies no accepted rate
-        // for the first proven longer-stream two-slot policy value.
-        if (IsCold && currentSlots == 1) return new(1, AdaptiveWindowReason.Retained);
+        // Initial allocation, page locking, JIT/cache and input cold costs are
+        // real work, but are not a mature one-slot throughput baseline. Keep
+        // this observation as a conservative setup proxy instead of granting
+        // an unmeasured second slot merely because the stream is longer.
+        if (IsCold && currentSlots == 1)
+        {
+            _coldBytes = completedBytes;
+            _coldSeconds = elapsedSeconds;
+            _startupComplete = true;
+            return new(1, AdaptiveWindowReason.Retained);
+        }
         if (_probeSlots > 0)
         {
+            if (_probeSamples == 0)
+            {
+                double extra = elapsedSeconds - completedBytes / _probeBaseline;
+                if (!double.IsFinite(extra)) return RejectProbe(AdaptiveWindowReason.InvalidRate);
+                // Later actual growth can raise the operation-local estimate.
+                // Do not drop the cold probe from loss/acceptance accounting.
+                _estimatedSetupSeconds = Math.Max(_estimatedSetupSeconds, Math.Max(0, extra));
+                _explorationCreditSeconds = Math.Max(0, _explorationCreditSeconds - _estimatedSetupSeconds);
+            }
             if (rate <= _probeBaseline * 0.90) return RejectProbe(AdaptiveWindowReason.ProbeRejectedLoss);
             AddSample(rate);
-            if (++_probeSamples < 3) return new(_probeSlots, AdaptiveWindowReason.ProbePending);
+            if (++_probeSamples < ProbeSampleCount) return new(_probeSlots, AdaptiveWindowReason.ProbePending);
             double candidateRate = Median(_sample1, _sample2, _sample3);
-            if (candidateRate < _probeBaseline * 1.05)
+            if (candidateRate < _probeBaseline * (1 + MinimumProbeGain))
                 return RejectProbe(AdaptiveWindowReason.ProbeRejectedNoBenefit);
             _acceptedSlots = _probeSlots;
             _acceptedRate = candidateRate;
@@ -132,6 +160,8 @@ internal struct AdaptiveChunkWindow
         }
         bool healthy = _previousRate == 0 || rate >= _previousRate * 0.95;
         _previousRate = rate;
+        _explorationCreditSeconds = Math.Min(double.MaxValue,
+            _explorationCreditSeconds + elapsedSeconds * (MinimumProbeGain / (1 + MinimumProbeGain)));
         if (!healthy) _healthySamples = 0;
         else
         {
@@ -140,9 +170,41 @@ internal struct AdaptiveChunkWindow
         }
         if (_healthySamples < 3) return new(_acceptedSlots, AdaptiveWindowReason.Retained);
         _acceptedRate = Median(_sample1, _sample2, _sample3);
+        if (!_setupEstimateAvailable && _acceptedSlots == 1 && _coldBytes > 0)
+        {
+            double warmSeconds = _coldBytes / _acceptedRate;
+            if (!double.IsFinite(warmSeconds)) return new(_acceptedSlots, AdaptiveWindowReason.ProbeDeferredSetupCost);
+            _estimatedSetupSeconds = Math.Max(0, _coldSeconds - warmSeconds);
+            _setupEstimateAvailable = true;
+        }
         if (!allowProbe || currentSlots == int.MaxValue) return new(_acceptedSlots, AdaptiveWindowReason.Retained);
         int candidate = currentSlots + 1;
         if (candidate == _rejectedSlots) return new(_acceptedSlots, AdaptiveWindowReason.RejectedWindowHeld);
+        if (completedBytes == 0 || completedBytes % currentSlots != 0)
+            return new(_acceptedSlots, AdaptiveWindowReason.ProbeDeferredWork);
+        if (remainingBytes is long finite)
+        {
+            // Reserve a candidate admission/warm batch, three complete probe
+            // batches and a retained-window rollback batch. A finite tail is
+            // not enough authority to start an unfinishable allocation probe.
+            long chunkBytes = completedBytes / currentSlots;
+            long reservedChunks = (long)candidate * (ProbeSampleCount + 1) + currentSlots;
+            if (finite / chunkBytes < reservedChunks)
+                return new(_acceptedSlots, AdaptiveWindowReason.ProbeDeferredWork);
+            long paybackBytes = finite - reservedChunks * chunkBytes;
+            // Use the existing minimum accepted gain, not optimistic perfect
+            // scaling, to budget repayment of the observed cold-cost proxy.
+            double saving = paybackBytes / _acceptedRate * (MinimumProbeGain / (1 + MinimumProbeGain));
+            if (!double.IsFinite(saving) || !double.IsFinite(_estimatedSetupSeconds) || saving < _estimatedSetupSeconds)
+                return new(_acceptedSlots, AdaptiveWindowReason.ProbeDeferredSetupCost);
+        }
+        else if (!double.IsFinite(_estimatedSetupSeconds) || _explorationCreditSeconds < _estimatedSetupSeconds)
+        {
+            // An unknown horizon is not EOF or a promise of future work.
+            // Accumulated completed work can fund a bounded exploratory probe;
+            // independent concrete-ready/CPU/RAM admission still has final say.
+            return new(_acceptedSlots, AdaptiveWindowReason.ProbeDeferredSetupCost);
+        }
         _probeSlots = candidate;
         _probeBaseline = _acceptedRate;
         _probeSamples = _healthySamples = 0;

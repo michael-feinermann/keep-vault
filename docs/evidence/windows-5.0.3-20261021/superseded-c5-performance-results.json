@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "head": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "testInventoryHash": "f8bfbcf6973ff56e0a8fd7744fb682ae37285d82733880f41b3a87df46f518a3",
+  "platform": "windows",
+  "architecture": "x64",
+  "hardware": "32 logical CPUs, 31 GiB, Microsoft Windows 10.0.26300",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 31,
+    "memoryMiB": 9216,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.cipher-suites",
+      "name": "primitive and full-container release medians for every cipher suite and cascade",
+      "status": "FAIL",
+      "seconds": 1663.252,
+      "peakRssMiB": 2782,
+      "seed": "0x4F0A8D4F",
+      "failure": "InvalidOperationException: The adaptive production Auto pipeline reaches only 156,1 MiB/s while 1 reaches 190,3 MiB/s. Revisit the actual resource planner and joined-boundary growth.\r\n   at CipherSuitePerformanceTests.RunPipelineSlotScalingAsync() in C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\KalynaArchiver.Tests\\CipherSuitePerformanceTests.cs:line 561\r\n   at CipherSuitePerformanceTests.Run() in C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\KalynaArchiver.Tests\\CipherSuitePerformanceTests.cs:line 188\r\n   at Program.\u003C\u003Ec__DisplayClass0_0.\u003C\u003CMain\u003E$\u003Eb__110() in C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\KalynaArchiver.Tests\\Program.cs:line 258\r\n   at TestCoordinator.RunWorkerModeAsync(IReadOnlyList\u00601 allTests, String testId, UInt32 seed) in C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\KalynaArchiver.Tests\\TestScheduler.cs:line 1082"
+    }
+  ]
+}

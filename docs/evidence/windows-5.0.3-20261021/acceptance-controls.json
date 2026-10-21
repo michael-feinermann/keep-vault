@@ -1,0 +1,26 @@
+[
+  {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\package-acceptance-20261021T195411Z-ab2bfdc6d9ac426da581a0b9d6ce5da1\\control\\Keep Vault Release Verifier.exe",
+    "Role": "verifier",
+    "WinVerifyTrust": "0x800B0109",
+    "CertificateSha256": "B76A434DF32352C3AA04365E674EA286441ADF0DD2B9820FD57B9D6F68F6F965"
+  },
+  {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\package-acceptance-20261021T195411Z-ab2bfdc6d9ac426da581a0b9d6ce5da1\\control\\Keep Vault Setup.exe",
+    "Role": "installer",
+    "WinVerifyTrust": "0x800B0109",
+    "CertificateSha256": "B76A434DF32352C3AA04365E674EA286441ADF0DD2B9820FD57B9D6F68F6F965"
+  },
+  {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\package-acceptance-20261021T195411Z-ab2bfdc6d9ac426da581a0b9d6ce5da1\\control\\Keep Vault Release Verifier-win-x64.exe",
+    "Role": "verifier",
+    "WinVerifyTrust": "0x800B0109",
+    "CertificateSha256": "B76A434DF32352C3AA04365E674EA286441ADF0DD2B9820FD57B9D6F68F6F965"
+  },
+  {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\package-acceptance-20261021T195411Z-ab2bfdc6d9ac426da581a0b9d6ce5da1\\installed-verifier-standalone\\Keep Vault Release Verifier.exe",
+    "Role": "verifier",
+    "WinVerifyTrust": "0x800B0109",
+    "CertificateSha256": "B76A434DF32352C3AA04365E674EA286441ADF0DD2B9820FD57B9D6F68F6F965"
+  }
+]
