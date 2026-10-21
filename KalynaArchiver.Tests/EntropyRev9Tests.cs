@@ -464,12 +464,16 @@ internal static class EntropyRev9Tests
         long sequence = (long)typeof(EntropyMixer).GetField("_sampleSequence", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
         byte[][][] records = new byte[11][][];
         for (int purpose = 0; purpose < 11; ++purpose)
-        {
-            int current = purpose;
-            EntropyMixer.RandomFillForTests = (b, role) => { Require(role == EntropyRandomRole.PoolRouting, "Unexpected RNG role during capture."); BinaryPrimitives.WriteUInt32LittleEndian(b, (uint)current); };
             records[purpose] = new byte[1024 + extra + purpose][];
-            for (int i = 0; i < records[purpose].Length; ++i)
+        // Interleave the public fixture so other pools do not stay at segment
+        // boundaries and force an unused spare allocation for every record.
+        for (int i = 0; i < records.Max(pool => pool.Length); ++i)
+        {
+            for (int purpose = 0; purpose < 11; ++purpose)
             {
+                if (i >= records[purpose].Length) continue;
+                int current = purpose;
+                EntropyMixer.RandomFillForTests = (b, role) => { Require(role == EntropyRandomRole.PoolRouting, "Unexpected RNG role during capture."); BinaryPrimitives.WriteUInt32LittleEndian(b, (uint)current); };
                 byte[] record = Record(purpose, i); BinaryPrimitives.WriteInt64LittleEndian(record.AsSpan(72), sequence++);
                 records[purpose][i] = record;
                 EntropyMixer.AddCanonicalRecord(record);

@@ -28,6 +28,12 @@ Tag `v5.0.3-windows` vorgesehen, der auf den tatsächlich kompilierten Stand zei
   oder eine Lockerung der Dateifreigaben entfällt.
 - Vier eingefrorene v13-JSON-Referenzen behalten auf Windows ihre ursprünglichen
   LF-Bytes. Vektoren und kryptografische Hash-Pins werden nicht geändert.
+- Die Entropie-Testdaten werden abwechselnd in die elf Pools geschrieben.
+  Anzahl und Inhalt der Prüfungen bleiben erhalten; dadurch entfällt die
+  künstlich erzwungene ungenutzte Windows-Speicherreservierung bei jedem
+  einzelnen Ereignis. Der gesonderte Test einer schiefen Poolverteilung bleibt
+  bestehen. Alle elf Suite-Pläne, der direkte Plan sowie Ergebnis-, Fehler-
+  und Abbruchregressionen bestehen mit unverändertem Produktcode.
 - Die abgeleiteten Faktorfelder erhalten den vorhandenen dunklen WPF-Stil.
 - SDK `10.0.402`, Laufzeit und PKCS-Abhängigkeit `10.0.13` ersetzen den
   verwundbaren Zwischenstand. Release-Restores behandeln NuGet-Meldungen
