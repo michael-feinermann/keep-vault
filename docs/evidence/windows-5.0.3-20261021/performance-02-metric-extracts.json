@@ -1,0 +1,41 @@
+{
+  "SchemaVersion": 1,
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "GroupId": "release.paranoia-256mib-level5",
+  "OriginalStdoutPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\02-paranoia-256mib\\stdout.log",
+  "OriginalStdoutSha256": "EAA116FB0C6166E83648ABA4FD83256FEEE34FDE13459C69432EFD34A6F8BA65",
+  "Scope": "Derived allowlisted extracts of actual successful stdout markers, with original line and payload hashes. Values are copied, not recomputed. Stable machine identity and large pipeline resource traces are excluded. Original stdout remains local and hash-bound; no historical baseline is invented.",
+  "Markers": [
+    {
+      "Marker": "E2E_RESULT_JSON",
+      "OriginalStdoutLine": 7,
+      "OriginalJsonPayloadSha256": "A01B5486A18E45A751075A9F754B32E806C0CF1843FC86D694ADFBA0DEF86652",
+      "OmittedFields": [],
+      "Metrics": {
+        "SchemaVersion": 1,
+        "Label": "paranoia-256mib-level5",
+        "OperatingSystem": "Microsoft Windows 10.0.26300",
+        "Architecture": "X64",
+        "LogicalProcessors": 32,
+        "CompressionLevel": 5,
+        "Suite": "ParanoiaCascade",
+        "Argon2Iterations": 4,
+        "Argon2Parallelism": 4,
+        "InputFiles": 1,
+        "InputDirectories": 1,
+        "InputBytes": 268435456,
+        "ContainerBytes": 67129708,
+        "RecoveryBytes": 10215424,
+        "SetupAndInitialManifestSeconds": 0.3136355,
+        "ArchiveEncryptSeconds": 106.8475893,
+        "RecoveryCreateSeconds": 15.6414581,
+        "RecoveryVerifySeconds": 7.1251437,
+        "RecoveryRepairSeconds": null,
+        "RepairedShards": 0,
+        "DecryptExtractSeconds": 186.7458942,
+        "FinalManifestSeconds": 0.1481675,
+        "WorkflowSeconds": 316.5095055
+      }
+    }
+  ]
+}

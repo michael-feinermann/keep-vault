@@ -1,0 +1,220 @@
+{
+  "State": "PASS",
+  "Sdk": "10.0.402",
+  "Runtime": "10.0.13",
+  "WindowsProjects": 8,
+  "LockedRestores": [
+    {
+      "Project": "KalynaArchiver\\KalynaArchiver.csproj",
+      "ExitCode": 0
+    },
+    {
+      "Project": "KalynaArchiver.Tests\\KalynaArchiver.Tests.csproj",
+      "ExitCode": 0
+    },
+    {
+      "Project": "KalynaArchiver.Signing\\KalynaArchiver.Signing.csproj",
+      "ExitCode": 0
+    },
+    {
+      "Project": "KalynaSigningTool\\KalynaSigningTool.csproj",
+      "ExitCode": 0
+    },
+    {
+      "Project": "KalynaReleaseVerifier\\KalynaReleaseVerifier.csproj",
+      "ExitCode": 0
+    },
+    {
+      "Project": "KeepVaultInstaller\\KeepVaultInstaller.csproj",
+      "ExitCode": 0
+    },
+    {
+      "Project": "QrCodeScannerWindows\\QrScanner.csproj",
+      "ExitCode": 0
+    },
+    {
+      "Project": "QrCodeScannerWindows\\QrScanner.Tests.csproj",
+      "ExitCode": 0
+    }
+  ],
+  "ProductionIdentityBuilds": [
+    {
+      "Project": "KalynaArchiver\\KalynaArchiver.csproj",
+      "ExitCode": 0,
+      "Output": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\build\\KalynaArchiver"
+    },
+    {
+      "Project": "KalynaArchiver.Tests\\KalynaArchiver.Tests.csproj",
+      "ExitCode": 0,
+      "Output": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\build\\KalynaArchiver.Tests"
+    },
+    {
+      "Project": "KalynaArchiver.Signing\\KalynaArchiver.Signing.csproj",
+      "ExitCode": 0,
+      "Output": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\build\\KalynaArchiver.Signing"
+    },
+    {
+      "Project": "KalynaSigningTool\\KalynaSigningTool.csproj",
+      "ExitCode": 0,
+      "Output": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\build\\KalynaSigningTool"
+    },
+    {
+      "Project": "KalynaReleaseVerifier\\KalynaReleaseVerifier.csproj",
+      "ExitCode": 0,
+      "Output": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\build\\KalynaReleaseVerifier"
+    },
+    {
+      "Project": "KeepVaultInstaller\\KeepVaultInstaller.csproj",
+      "ExitCode": 0,
+      "Output": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\build\\KeepVaultInstaller"
+    },
+    {
+      "Project": "QrCodeScannerWindows\\QrScanner.csproj",
+      "ExitCode": 0,
+      "Output": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\build\\QrScanner"
+    },
+    {
+      "Project": "QrCodeScannerWindows\\QrScanner.Tests.csproj",
+      "ExitCode": 0,
+      "Output": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\build\\QrScanner.Tests"
+    }
+  ],
+  "VulnerabilityAudit": [
+    {
+      "Project": "C:/Dev/Kalyna/KalynaArchiver/KalynaArchiver.csproj",
+      "VulnerablePackageCount": 0,
+      "Problems": [],
+      "Sources": [
+        "https://api.nuget.org/v3/index.json",
+        "C:/Program Files (x86)/Microsoft SDKs/NuGetPackages/"
+      ]
+    },
+    {
+      "Project": "C:/Dev/Kalyna/KalynaArchiver.Signing/KalynaArchiver.Signing.csproj",
+      "VulnerablePackageCount": 0,
+      "Problems": [],
+      "Sources": [
+        "https://api.nuget.org/v3/index.json",
+        "C:/Program Files (x86)/Microsoft SDKs/NuGetPackages/"
+      ]
+    },
+    {
+      "Project": "C:/Dev/Kalyna/KalynaArchiver.Tests/KalynaArchiver.Tests.csproj",
+      "VulnerablePackageCount": 0,
+      "Problems": [],
+      "Sources": [
+        "https://api.nuget.org/v3/index.json",
+        "C:/Program Files (x86)/Microsoft SDKs/NuGetPackages/"
+      ]
+    },
+    {
+      "Project": "C:/Dev/Kalyna/KalynaReleaseVerifier/KalynaReleaseVerifier.csproj",
+      "VulnerablePackageCount": 0,
+      "Problems": [],
+      "Sources": [
+        "https://api.nuget.org/v3/index.json",
+        "C:/Program Files (x86)/Microsoft SDKs/NuGetPackages/"
+      ]
+    },
+    {
+      "Project": "C:/Dev/Kalyna/KalynaSigningTool/KalynaSigningTool.csproj",
+      "VulnerablePackageCount": 0,
+      "Problems": [],
+      "Sources": [
+        "https://api.nuget.org/v3/index.json",
+        "C:/Program Files (x86)/Microsoft SDKs/NuGetPackages/"
+      ]
+    },
+    {
+      "Project": "C:/Dev/Kalyna/KeepVaultInstaller/KeepVaultInstaller.csproj",
+      "VulnerablePackageCount": 0,
+      "Problems": [],
+      "Sources": [
+        "https://api.nuget.org/v3/index.json",
+        "C:/Program Files (x86)/Microsoft SDKs/NuGetPackages/"
+      ]
+    },
+    {
+      "Project": "C:/Dev/Kalyna/QrCodeScannerWindows/QrScanner.csproj",
+      "VulnerablePackageCount": 0,
+      "Problems": [],
+      "Sources": [
+        "https://api.nuget.org/v3/index.json",
+        "C:/Program Files (x86)/Microsoft SDKs/NuGetPackages/"
+      ]
+    },
+    {
+      "Project": "C:/Dev/Kalyna/QrCodeScannerWindows/QrScanner.Tests.csproj",
+      "VulnerablePackageCount": 0,
+      "Problems": [],
+      "Sources": [
+        "https://api.nuget.org/v3/index.json",
+        "C:/Program Files (x86)/Microsoft SDKs/NuGetPackages/"
+      ]
+    }
+  ],
+  "AuditGateProbe": [
+    {
+      "ReleaseIdentity": "false",
+      "ExitCode": 0,
+      "Findings": [
+        "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\audit-gate-probe\\AuditGateProbe.csproj : warning NU1902: Das Paket \"System.Security.Cryptography.Pkcs\" 8.0.1 weist eine bekannte Moderat Schweregrad-Sicherheitsanfälligkeit auf, https://github.com/advisories/GHSA-2fmv-rv2c-59x7.",
+        "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\audit-gate-probe\\AuditGateProbe.csproj : warning NU1903: Das Paket \"System.Security.Cryptography.Pkcs\" 8.0.1 weist eine bekannte Hoch Schweregrad-Sicherheitsanfälligkeit auf, https://github.com/advisories/GHSA-846f-f764-76mx."
+      ]
+    },
+    {
+      "ReleaseIdentity": "true",
+      "ExitCode": 1,
+      "Findings": [
+        "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\audit-gate-probe\\AuditGateProbe.csproj : error NU1902: Warnung als Fehler: Das Paket \"System.Security.Cryptography.Pkcs\" 8.0.1 weist eine bekannte Moderat Schweregrad-Sicherheitsanfälligkeit auf, https://github.com/advisories/GHSA-2fmv-rv2c-59x7.",
+        "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\dependency-security\\audit-gate-probe\\AuditGateProbe.csproj : error NU1903: Warnung als Fehler: Das Paket \"System.Security.Cryptography.Pkcs\" 8.0.1 weist eine bekannte Hoch Schweregrad-Sicherheitsanfälligkeit auf, https://github.com/advisories/GHSA-846f-f764-76mx."
+      ]
+    }
+  ],
+  "ReleaseAuditProperties": {
+    "Properties": {
+      "NuGetAudit": "true",
+      "NuGetAuditMode": "all",
+      "WarningsAsErrors": ";NU1901;NU1902;NU1903;NU1904;NU1605;SYSLIB0011"
+    }
+  },
+  "LockHashes": [
+    {
+      "Path": "C:\\Dev\\Kalyna\\KalynaArchiver\\packages.lock.json",
+      "Hash": "F20F74D088772CD50D056B5DF80E960ED04340F1038916712413A77410520F56"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\KalynaArchiver.Tests\\packages.lock.json",
+      "Hash": "A45F3F3D412429464A066078950507D42C18BE17C840B3E4F01218A3E08E5785"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\KalynaArchiver.Signing\\packages.lock.json",
+      "Hash": "8806BF0ECA6A93E688A7632389B8A85A75257E23C95CAB9C935DCF7E8DFBE1E4"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\KalynaSigningTool\\packages.lock.json",
+      "Hash": "697735A5AE83DDA7A0ED0FA72B14125317D7DE6F77F9AF1DAA6E0E7047044D97"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\KalynaReleaseVerifier\\packages.lock.json",
+      "Hash": "5332FDDFA2F7A70C0FDB8D26C8EE710A62281F43DEC936E1594F38060FAA98FD"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\KeepVaultInstaller\\packages.lock.json",
+      "Hash": "7D029175E4833C9AB7B91F895D7D75D7864D8E1D331EDC6C8611450FF0E08307"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\QrCodeScannerWindows\\packages.lock.json",
+      "Hash": "8D9D9621F2611962D7C585A5208C6990931873DE572EF356469147F274856E30"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\QrCodeScannerWindows\\packages.tests.lock.json",
+      "Hash": "A087608F1FAED969F92BD47CF165A5087B66632DB8D82F2D9EDF7C0D053A6DB8"
+    }
+  ],
+  "PrimaryAdvisories": [
+    "https://github.com/dotnet/runtime/security/advisories/GHSA-846f-f764-76mx",
+    "https://github.com/dotnet/runtime/security/advisories/GHSA-2fmv-rv2c-59x7"
+  ],
+  "Scope": "Windows SDK/package security update and local build/audit evidence; final signed release verification remains separate."
+}

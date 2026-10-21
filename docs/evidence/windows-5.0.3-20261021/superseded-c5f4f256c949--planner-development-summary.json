@@ -1,0 +1,404 @@
+{
+  "SchemaVersion": 1,
+  "Purpose": "Development diagnostic only",
+  "State": "PASS",
+  "FinalReleaseGate": false,
+  "ObservedUtc": "2026-10-21T21:19:45.3325137Z",
+  "BaseHead": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "SourceRoot": "C:\\Dev\\Kalyna",
+  "WorkingTreeDirty": true,
+  "SourceBinding": "Base c5 HEAD plus the five uncommitted source patches whose exact bytes are listed below.",
+  "SourceFiles": [
+    {
+      "Path": "KalynaArchiver/Services/ResourcePlanning.cs",
+      "Sha256": "C44265E5A2FAE6C294B677AC92AD452286307D9871B2A618CA9FA4BA7C006F1F"
+    },
+    {
+      "Path": "KalynaArchiver/Services/KalynaContainerService.cs",
+      "Sha256": "8A4A9349C6FA367D751A325605CC258A0AE474E6580A62CD410A68D7050440C3"
+    },
+    {
+      "Path": "KeepVaultMac.Tests/AdaptiveWindowRev12Tests.cs",
+      "Sha256": "F3373F63BAABB8476ECB4A451232F6D269837C5BEC5980C36AEBB3394F5CE9E5"
+    },
+    {
+      "Path": "KalynaArchiver.Tests/KalynaArchiver.Tests.csproj",
+      "Sha256": "C6F3D8DC98A854F999F5D6720E83E79EE7919D1193ACFB0109FC264730721138"
+    },
+    {
+      "Path": "KalynaArchiver.Tests/PipelineWorkerPolicyTests.cs",
+      "Sha256": "C47FB063CBB38CCB122214B20679B330EA8077595D75D4A7E49F316F21870C11"
+    }
+  ],
+  "Build": {
+    "Warnings": 0,
+    "ExitCode": 0,
+    "Errors": 0
+  },
+  "Unit": {
+    "CleanupPassed": true,
+    "State": "PASS",
+    "Id": "pipeline.windows-worker-policy",
+    "StableWindowsInventoryIds": 109,
+    "TestInventoryHash": "f8bfbcf6973ff56e0a8fd7744fb682ae37285d82733880f41b3a87df46f518a3",
+    "ExitCode": 0
+  },
+  "Pipeline": {
+    "ExitCode": 0,
+    "BestFixedMiBPerSecond": 193.53459873209133,
+    "State": "PASS",
+    "MeasuredSamples": 55,
+    "MeasuredRounds": 5,
+    "AutoProfileSummaries": [
+      {
+        "Round": 1,
+        "RunId": 14,
+        "MaximumResolvedSlots": 1.0,
+        "ObservedDecisionReasons": [
+          "InitialCold",
+          "ProbeDeferredWork",
+          "Retained",
+          "ThroughputRegression"
+        ]
+      },
+      {
+        "Round": 2,
+        "RunId": 25,
+        "MaximumResolvedSlots": 1.0,
+        "ObservedDecisionReasons": [
+          "InitialCold",
+          "ProbeDeferredSetupCost",
+          "ProbeDeferredWork",
+          "Retained",
+          "ThroughputRegression"
+        ]
+      },
+      {
+        "Round": 3,
+        "RunId": 40,
+        "MaximumResolvedSlots": 1.0,
+        "ObservedDecisionReasons": [
+          "InitialCold",
+          "ProbeDeferredSetupCost",
+          "ProbeDeferredWork",
+          "Retained",
+          "ThroughputRegression"
+        ]
+      },
+      {
+        "Round": 4,
+        "RunId": 53,
+        "MaximumResolvedSlots": 1.0,
+        "ObservedDecisionReasons": [
+          "InitialCold",
+          "Retained"
+        ]
+      },
+      {
+        "Round": 5,
+        "RunId": 57,
+        "MaximumResolvedSlots": 1.0,
+        "ObservedDecisionReasons": [
+          "InitialCold",
+          "ProbeDeferredSetupCost",
+          "ProbeDeferredWork",
+          "Retained",
+          "ThroughputRegression"
+        ]
+      }
+    ],
+    "AutoToBestRatio": 0.9763602093257706,
+    "CandidateResults": [
+      {
+        "Mode": "Auto",
+        "SamplesMiBPerSecond": [
+          187.2227631286123,
+          188.2968644232419,
+          188.9594813298437,
+          195.8175512801037,
+          190.76878778209377
+        ],
+        "MedianMiBPerSecond": 188.9594813298437
+      },
+      {
+        "Mode": "1",
+        "SamplesMiBPerSecond": [
+          195.69911444621815,
+          192.94214614674183,
+          197.2062955028491,
+          193.53459873209133,
+          189.1730779220904
+        ],
+        "MedianMiBPerSecond": 193.53459873209133
+      },
+      {
+        "Mode": "2",
+        "SamplesMiBPerSecond": [
+          178.2657306973031,
+          174.69799766068462,
+          182.5595577380614,
+          180.9182420570178,
+          181.81884039494744
+        ],
+        "MedianMiBPerSecond": 180.9182420570178
+      },
+      {
+        "Mode": "3",
+        "SamplesMiBPerSecond": [
+          154.19167663692534,
+          162.97290072601245,
+          163.3928108695025,
+          164.17820184209225,
+          159.8632569665722
+        ],
+        "MedianMiBPerSecond": 162.97290072601245
+      },
+      {
+        "Mode": "4",
+        "SamplesMiBPerSecond": [
+          145.81812970477068,
+          141.22438563392728,
+          143.67254064740305,
+          144.64465047015727,
+          138.7257476504952
+        ],
+        "MedianMiBPerSecond": 143.67254064740305
+      },
+      {
+        "Mode": "5",
+        "SamplesMiBPerSecond": [
+          130.5238283230283,
+          126.59603728688471,
+          129.7421122117229,
+          131.755696117839,
+          126.94889488755476
+        ],
+        "MedianMiBPerSecond": 129.7421122117229
+      },
+      {
+        "Mode": "6",
+        "SamplesMiBPerSecond": [
+          119.73302715353296,
+          116.82756926186333,
+          121.29449464662484,
+          121.8047370147705,
+          119.75031684717622
+        ],
+        "MedianMiBPerSecond": 119.75031684717622
+      },
+      {
+        "Mode": "8",
+        "SamplesMiBPerSecond": [
+          99.12268678237692,
+          100.86588635346024,
+          99.32926362716016,
+          100.64229440528699,
+          100.2643021837604
+        ],
+        "MedianMiBPerSecond": 100.2643021837604
+      },
+      {
+        "Mode": "10",
+        "SamplesMiBPerSecond": [
+          85.18729675051392,
+          86.85750595253828,
+          85.8306130169903,
+          88.00872221442596,
+          87.61174989925505
+        ],
+        "MedianMiBPerSecond": 86.85750595253828
+      },
+      {
+        "Mode": "12",
+        "SamplesMiBPerSecond": [
+          74.2244257856351,
+          77.05841539603058,
+          74.93805389211127,
+          76.52082067264969,
+          73.47919450958867
+        ],
+        "MedianMiBPerSecond": 74.93805389211127
+      },
+      {
+        "Mode": "16",
+        "SamplesMiBPerSecond": [
+          57.49499990016982,
+          61.268186360208304,
+          62.735792230034896,
+          61.28742324378674,
+          61.360601345398294
+        ],
+        "MedianMiBPerSecond": 61.28742324378674
+      }
+    ],
+    "Candidates": 11,
+    "OriginalRequiredRatio": 0.9,
+    "TimedOut": false,
+    "ActualMethod": "CipherSuitePerformanceTests.RunPipelineSlotScalingAsync",
+    "CleanupPassed": true,
+    "SampleFiltering": "None; unchanged original warmup exclusion and all measured samples retained.",
+    "BestFixedMode": "1",
+    "PayloadBytes": 268435456,
+    "AutoMiBPerSecond": 188.9594813298437,
+    "Seconds": 383.5879475,
+    "WarmupsPerCandidate": 1
+  },
+  "Preservation": {
+    "ReusedNativeBinaries": 12,
+    "CompiledTestAndProductAssembliesUnchanged": true,
+    "SourceHashesUnchanged": true,
+    "CopiedNativeHashesIdentical": true,
+    "SignedNativeFilesIncludingSidecars": 72,
+    "NativeSourceHashesUnchanged": true,
+    "ChangedSourceFiles": 5
+  },
+  "TestDllSha256": "AECC622F918A9D36C0BA4541946151CA79D3A8ED5334774231ECC762B8140B13",
+  "OriginalBenchmarkSource": {
+    "IdenticalToImmutableC5Source": true,
+    "Sha256": "990CFF8B44E1C16504327FACFD75B0964ECA629294899998032B25B8120FA505",
+    "Path": "KalynaArchiver.Tests/CipherSuitePerformanceTests.cs"
+  },
+  "ReflectionRunnerDllSha256": "B7104EEE110F4BEFCFAD4970D5B8E2221C46E87DCD8659AD5A1B7839DB2AE266",
+  "HarnessFiles": [
+    {
+      "Path": "work/windows-503-20261021/Run-DevelopmentCommand.ps1",
+      "Sha256": "2D05356B47C0F26426E5D7E0B85346104F7702620AE260BDCE003B2092C76F16"
+    },
+    {
+      "Path": "work/windows-503-20261021/Run-FinalPerformance.ps1",
+      "Sha256": "431AB5B190E7C92C2501A5371E6EB0763629CE51B477A42597F324538E87642E"
+    },
+    {
+      "Path": "work/windows-503-20261021/Verify-PlannerDevelopmentInputs.ps1",
+      "Sha256": "DDCEDD3106014E9A0FF4AE8E5FA73BB749C3A5D7478C5A7BB7427B80BFA77ECC"
+    },
+    {
+      "Path": "work/windows-503-20261021/Stop-OwnedPlannerBuildServers.ps1",
+      "Sha256": "F9897BE9DF966318A7F7CE33DF8D5A0A884C834E333FE32ACE00A82909B883CF"
+    },
+    {
+      "Path": "work/windows-503-20261021/pipeline-probe/PipelineProbe.csproj",
+      "Sha256": "10B85633C9C0DDD91002F3F3C00D40A71D1279BED77AA4F81140486D34D285DB"
+    },
+    {
+      "Path": "work/windows-503-20261021/pipeline-probe/Program.cs",
+      "Sha256": "A22D9B1AA5E9E6D8812B990A7D84441E7F130007478AFF05F77C4A77E73360F2"
+    }
+  ],
+  "Evidence": [
+    {
+      "Role": "inputs-before.json",
+      "Bytes": 22060,
+      "Sha256": "87F13B2776BF26888C1037C0763C3AF7D52AFBF33AB4583899928E70B35F6FD6"
+    },
+    {
+      "Role": "build-tests-receipt.json",
+      "Bytes": 118,
+      "Sha256": "3E76C6130EB9A4D01A4E2A32EFC4C61921D9629B167188F5C4DB26239664AF3D"
+    },
+    {
+      "Role": "build-tests.log",
+      "Bytes": 981,
+      "Sha256": "DA7FA991CF276C7B334D6BEF6CA5A14858B74B82113650A7A1E1793BC0520255"
+    },
+    {
+      "Role": "build-02/receipt.json",
+      "Bytes": 1027,
+      "Sha256": "E692EF3D36865A21CB5617D73DA0569EB9A47AFFA910E2F85051A38D211F5F09"
+    },
+    {
+      "Role": "build-03/receipt.json",
+      "Bytes": 1028,
+      "Sha256": "064BF93ED4A1D743CB18BF1337A5D3E8F0CC1B8F65669C083AF9DEEDAB89394A"
+    },
+    {
+      "Role": "build-03/stdout.log",
+      "Bytes": 878,
+      "Sha256": "D24D8CA3B7A3B33601AE2A3BD359A5A1CE3032388046B9F51F4984EBDB60891C"
+    },
+    {
+      "Role": "unit-01/receipt.json",
+      "Bytes": 894,
+      "Sha256": "A3A48E0638D003287D274EB43C88E7648133B15262C8857708CF289AF2F2043A"
+    },
+    {
+      "Role": "unit-01/results.json",
+      "Bytes": 1557,
+      "Sha256": "CEDB0B5028503D27183012F983BC0D1A91331791B96652154C74C7901A14C457"
+    },
+    {
+      "Role": "unit-01/floating-point-diagnosis.json",
+      "Bytes": 222,
+      "Sha256": "9F7FAA0693890C43122D0865F0D151D17CD621EDD41CF1633BB31F7B579370A4"
+    },
+    {
+      "Role": "unit-02/receipt.json",
+      "Bytes": 843,
+      "Sha256": "9C7B353A35BD27A8DB6B956E4C14102784B46C87D8648659360A02A8BA2046C6"
+    },
+    {
+      "Role": "unit-02/results.json",
+      "Bytes": 723,
+      "Sha256": "66F52196C523B20C63A38A457C438176721B44AF4E791A85CA5BD7392F07224C"
+    },
+    {
+      "Role": "unit-02/stdout.log",
+      "Bytes": 100488,
+      "Sha256": "7115C8FCCDB5BEA41ECF83A4505CE1E16A50D7D11613D0DFEF6EF556CE088BD7"
+    },
+    {
+      "Role": "build-probe/receipt.json",
+      "Bytes": 747,
+      "Sha256": "C6E9D73CC3AD0170861E8BA3FAAF9E97316610164BD36560447FAC621D72CD30"
+    },
+    {
+      "Role": "pipeline-01/receipt.json",
+      "Bytes": 566,
+      "Sha256": "E0FC16DE606B7AB741E6FA601517564066FC163535BC23BC455E2F6A2A599451"
+    },
+    {
+      "Role": "pipeline-01/stdout.log",
+      "Bytes": 559546,
+      "Sha256": "B2C3B6E17FA6E394204D569C8AA1580F3C84FB843C457E7F7A96668ABDED0F0C"
+    },
+    {
+      "Role": "pipeline-01/stderr.log",
+      "Bytes": 0,
+      "Sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Role": "pipeline-01/samples.json",
+      "Bytes": 554913,
+      "Sha256": "DFD2F5794DC982556601432067D81ECCF039930D4DE561218B202707F242FF2C"
+    },
+    {
+      "Role": "pipeline-01/medians.json",
+      "Bytes": 253,
+      "Sha256": "EE249386B89DBFA59E8C70CDEABB1028EEE9DF2B2592EDEF1BC9B876A7CA9453"
+    },
+    {
+      "Role": "verification-before-pipeline.json",
+      "Bytes": 31501,
+      "Sha256": "4C5BD82D1873E72486743B03F4B520028154E7CFB3CD3D7ECA4F48C03BF93F63"
+    },
+    {
+      "Role": "verification-after-pipeline.json",
+      "Bytes": 31501,
+      "Sha256": "5E9CCB4945245C2545FF7F0EAB46FB8DF5D87BDE7F968598534A7B25B802873F"
+    }
+  ],
+  "EvidenceDirectory": "work\\windows-503-20261021\\planner-dev-20261021T205656Z-88bf7b29525b43e6a5903a1d05995d01",
+  "FailureHistory": [
+    "Initial build exit1: shared assertion referenced a macOS-only helper; local equivalent assertion fixed.",
+    "Unit01 exit1: new unknown-horizon positive fixture rate roundtrip fell one floating-point ULP below5%; clear10% positive gain used, independent exact5% boundary test and all production thresholds unchanged."
+  ],
+  "Limitations": [
+    "This is a mutable development-source diagnostic, not the final immutable release build/full suite/acceptance/manual-performance run.",
+    "The earlier immutablec5 four-group manual performance aggregate remains FAIL; no result is relabeled.",
+    "First cold batch is a conservative setup proxy including allocation/JIT/cache/I/O, not a universal measured slot-allocation bound.",
+    "Finite work can defer growth; unknown-horizon pure feedback earns exploration credit but actual nonseekableZPAQ concrete-ready admission remains one slot.",
+    "Joined-batch timing includes prior planning and resize/disposal; final cleanup/KDF/globalMAC remain covered only by whole-workflow timing.",
+    "No historical native baseline was created or substituted."
+  ],
+  "NoMoreWorkloads": true
+}

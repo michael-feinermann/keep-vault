@@ -1,14 +1,16 @@
 {
-  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
   "ProductVersion": "5.0.3",
   "ImmutableSignedBuild": "PASS",
-  "CommittedSourceInputsUnchanged": 4820,
+  "CommittedSourceInputsUnchanged": 4861,
   "FullSuite": {
     "State": "PASS",
     "Groups": 109,
     "Failed": 0,
     "Blocked": 0,
-    "ProcessExit": 0
+    "ProcessExit": 0,
+    "TestInventoryHash": "f8bfbcf6973ff56e0a8fd7744fb682ae37285d82733880f41b3a87df46f518a3",
+    "TestAssemblySha256": "3278794FF047D2ACCFDC2A6A0EF0F15DEA4B52612E7A63B4ED222131B2E1105A"
   },
   "PackageAcceptance": {
     "State": "PASS",
@@ -21,8 +23,9 @@
   "NativeControlLifecycles": 224,
   "NativeBuildDefenderLifecycleCI": {
     "State": "PASS",
-    "RunId": 39664877104,
-    "JobId": 119447160304
+    "RunId": 39678610034,
+    "JobId": 119494906876,
+    "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b"
   },
   "Desktop": {
     "Startup": "PASS",
@@ -31,7 +34,7 @@
     "PinnedCompanionVerification": "PASS",
     "Navigation": "NOT_CONFIRMED",
     "VisualHardwareApproval": "NOT_RUN",
-    "Scope": "Actual signed installed test copy observed through accessibility; status text is not an independent capture-enforcement measurement."
+    "Scope": "Derived actual installed signed test-copy startup statuses observed through accessibility; no raw UI/cleanup process details copied. Capture-status text is not an independent enforcement measurement. Navigation/visual fields retain their original limited outcomes."
   },
   "NativeAnalysis": {
     "Scope": "Intermediate component analysis",
@@ -40,22 +43,56 @@
     "RetainedVendorWarnings": 300
   },
   "Performance": {
-    "State": "FAIL",
-    "Receipt": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\receipt.json",
-    "Group": "performance.cipher-suites",
-    "AutoMiBPerSecond": 156.1398520257743,
-    "BestFixedMiBPerSecond": 190.3057931610937,
-    "MinimumFraction": 0.9,
-    "ActualFraction": 0.8204682024240957,
-    "RemainingGroups": "COMPLETE: 3 PASS, 1 FAIL; rejected candidate",
-    "PublicationBlocked": true,
-    "SummarySha256": "60372803B6902710B768D894975FC3F7A815CE2FF778FE29D62623D325872287",
-    "Preservation": "PASS: source, twelve assets, compiled tests, manifest and handles"
+    "State": "PASS",
+    "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+    "Receipt": "performance-summary.json",
+    "Sha256": "20AEE76F4EC3A9EA185D97E8CBD0E44538A53E4B45B2823E633C5CB0685FB36C",
+    "Groups": [
+      {
+        "Number": 1,
+        "Id": "performance.cipher-suites",
+        "ActualTestSeconds": 1582.149,
+        "Receipt": "performance-01-receipt.json",
+        "Results": "performance-01-results.json",
+        "ResultsSha256": "78FAB1189867C79FF6C09C335D93175655EB0842A9A7AC57DDBB45CEED094B3A",
+        "Metrics": "performance-01-metric-extracts.json"
+      },
+      {
+        "Number": 2,
+        "Id": "release.paranoia-256mib-level5",
+        "ActualTestSeconds": 325.248,
+        "Receipt": "performance-02-receipt.json",
+        "Results": "performance-02-results.json",
+        "ResultsSha256": "F20776384D0B06CD61570B0E2F4BC64B6A09032CE22BC371535F4CD89257A56D",
+        "Metrics": "performance-02-metric-extracts.json"
+      },
+      {
+        "Number": 3,
+        "Id": "performance.entropy-rev9-phases",
+        "ActualTestSeconds": 341.299,
+        "Receipt": "performance-03-receipt.json",
+        "Results": "performance-03-results.json",
+        "ResultsSha256": "CF117ABAA727D17425D2020C4BF9393199A1060B6CAA1D1CE324EA95CEEC4939",
+        "Metrics": "performance-03-entropy-phase-metrics.json"
+      },
+      {
+        "Number": 4,
+        "Id": "release.paranoia-complex-tree-level5-repair",
+        "ActualTestSeconds": 300.827,
+        "Receipt": "performance-04-receipt.json",
+        "Results": "performance-04-results.json",
+        "ResultsSha256": "BA4A74886DD0872291F2B10758EA3C19285DA045B3662E118CDE8103CD3AE6E5",
+        "Metrics": "performance-04-metric-extracts.json"
+      }
+    ],
+    "HistoricalComparison": "PASS",
+    "IndependentWindowsNativeHistoricalBenchmark": "NOT_RUN",
+    "Scope": "Actual four sequential selected-source groups; original metrics/results copied without invented values. Derived metric extracts identify stdout hashes/lines; stable machine identity is withheld. Current PASS does not promote independent historical NOT_RUN claims."
   },
   "Publication": {
     "State": "PENDING",
     "Tag": "v5.0.3-windows",
-    "ProductSourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+    "ProductSourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
     "ReleaseUrl": null,
     "AuthenticatedAndAnonymousDownloadReceipts": null
   },
@@ -67,5 +104,5 @@
     "Other display/DPI configurations",
     "Full desktop navigation and user visual approval"
   ],
-  "ScopeNotes": "Intermediate component receipts retain their original scope/head; exact final-source claims use final full/build/CI/control/acceptance receipts. No raw protected UI, shortcut state, private keys or long raw logs copied."
+  "ScopeNotes": "New core claims use exact matching actual build/full/CI/control/acceptance/startup proof. Earlier component dependency/native-analysis/static-GUI receipts retain original scopes/heads; prior candidates are archived byte-exact and never counted as new PASS. Current performance and publication states require their own completed matching receipts and are recorded separately above; NotRun limits remain."
 }

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "head": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "testInventoryHash": "f8bfbcf6973ff56e0a8fd7744fb682ae37285d82733880f41b3a87df46f518a3",
+  "platform": "windows",
+  "architecture": "x64",
+  "hardware": "32 logical CPUs, 31 GiB, Microsoft Windows 10.0.26300",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 31,
+    "memoryMiB": 9216,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "performance.cipher-suites",
+      "name": "primitive and full-container release medians for every cipher suite and cascade",
+      "status": "PASS",
+      "seconds": 1582.149,
+      "peakRssMiB": 2780,
+      "seed": "0x34583C92",
+      "failure": null
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "ProductVersion": "5.0.3",
+  "ImmutableSignedBuild": "PASS",
+  "CommittedSourceInputsUnchanged": 4820,
+  "FullSuite": {
+    "State": "PASS",
+    "Groups": 109,
+    "Failed": 0,
+    "Blocked": 0,
+    "ProcessExit": 0
+  },
+  "PackageAcceptance": {
+    "State": "PASS",
+    "Purpose": "Final",
+    "Cases": 40,
+    "AwaitedProductProcesses": 81,
+    "OriginalPackageAssetsSourceShortcutsUnchanged": true
+  },
+  "QrChecks": 151,
+  "NativeControlLifecycles": 224,
+  "NativeBuildDefenderLifecycleCI": {
+    "State": "PASS",
+    "RunId": 39664877104,
+    "JobId": 119447160304
+  },
+  "Desktop": {
+    "Startup": "PASS",
+    "Integrity": "PASS",
+    "CaptureProtectionStatus": "active",
+    "PinnedCompanionVerification": "PASS",
+    "Navigation": "NOT_CONFIRMED",
+    "VisualHardwareApproval": "NOT_RUN",
+    "Scope": "Actual signed installed test copy observed through accessibility; status text is not an independent capture-enforcement measurement."
+  },
+  "NativeAnalysis": {
+    "Scope": "Intermediate component analysis",
+    "Exit": 0,
+    "Errors": 0,
+    "RetainedVendorWarnings": 300
+  },
+  "Performance": {
+    "State": "FAIL",
+    "Receipt": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-c5f4f256c949-20261021T201017Z-9871c686e6314818a4f268f5ee10f188\\01-cipher-suites\\receipt.json",
+    "Group": "performance.cipher-suites",
+    "AutoMiBPerSecond": 156.1398520257743,
+    "BestFixedMiBPerSecond": 190.3057931610937,
+    "MinimumFraction": 0.9,
+    "ActualFraction": 0.8204682024240957,
+    "RemainingGroups": "COMPLETE: 3 PASS, 1 FAIL; rejected candidate",
+    "PublicationBlocked": true,
+    "SummarySha256": "60372803B6902710B768D894975FC3F7A815CE2FF778FE29D62623D325872287",
+    "Preservation": "PASS: source, twelve assets, compiled tests, manifest and handles"
+  },
+  "Publication": {
+    "State": "PENDING",
+    "Tag": "v5.0.3-windows",
+    "ProductSourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+    "ReleaseUrl": null,
+    "AuthenticatedAndAnonymousDownloadReceipts": null
+  },
+  "NotRun": [
+    "Historical independent Windows performance baseline comparison",
+    "Physical camera scan and paper/printing workflow",
+    "Multi-TiB physical runs",
+    "External cryptographic/security audit",
+    "Other display/DPI configurations",
+    "Full desktop navigation and user visual approval"
+  ],
+  "ScopeNotes": "Intermediate component receipts retain their original scope/head; exact final-source claims use final full/build/CI/control/acceptance receipts. No raw protected UI, shortcut state, private keys or long raw logs copied."
+}

@@ -1,8 +1,9 @@
 {
-  "StartedAt": "2026-10-21T21:48:37.1020685+02:00",
-  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "StartedAt": "2026-10-21T23:24:31.3650110+02:00",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
   "State": "PASS",
   "PreexistingAuditSha256": "1D6C4225D2718164382E6277EF92F6ED565C123DC0538A8D800804A3806675B1",
+  "CompilerHost": "Dedicated compiler processes (UseSharedCompilation=false)",
   "PreexistingAuditPreserved": true,
-  "FinishedAt": "2026-10-21T21:53:56.3424972+02:00"
+  "FinishedAt": "2026-10-21T23:36:15.0744742+02:00"
 }

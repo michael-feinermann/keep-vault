@@ -1,0 +1,50 @@
+[
+  {
+    "Log": "KalynaArchiver-build-release-identity.log",
+    "Completed": true,
+    "CompilerWarnings": 0,
+    "Errors": 0
+  },
+  {
+    "Log": "KalynaArchiver.Signing-build-release-identity.log",
+    "Completed": true,
+    "CompilerWarnings": 0,
+    "Errors": 0
+  },
+  {
+    "Log": "KalynaArchiver.Tests-build-release-identity.log",
+    "Completed": true,
+    "CompilerWarnings": 0,
+    "Errors": 0
+  },
+  {
+    "Log": "KalynaReleaseVerifier-build-release-identity.log",
+    "Completed": true,
+    "CompilerWarnings": 0,
+    "Errors": 0
+  },
+  {
+    "Log": "KalynaSigningTool-build-release-identity.log",
+    "Completed": true,
+    "CompilerWarnings": 0,
+    "Errors": 0
+  },
+  {
+    "Log": "KeepVaultInstaller-build-release-identity.log",
+    "Completed": true,
+    "CompilerWarnings": 0,
+    "Errors": 0
+  },
+  {
+    "Log": "QrScanner-build-release-identity.log",
+    "Completed": true,
+    "CompilerWarnings": 0,
+    "Errors": 0
+  },
+  {
+    "Log": "QrScanner.Tests-build-release-identity.log",
+    "Completed": true,
+    "CompilerWarnings": 0,
+    "Errors": 0
+  }
+]

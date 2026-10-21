@@ -1,0 +1,740 @@
+{
+  "SchemaVersion": 1,
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "GroupId": "performance.cipher-suites",
+  "OriginalStdoutPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\01-cipher-suites\\stdout.log",
+  "OriginalStdoutSha256": "D07EF5C96F5E39FFB9C543EDC21E4C47DF208134E6D7D15A67CFDC527A6D50E0",
+  "Scope": "Derived allowlisted extracts of actual successful stdout markers, with original line and payload hashes. Values are copied, not recomputed. Stable machine identity and large pipeline resource traces are excluded. Original stdout remains local and hash-bound; no historical baseline is invented.",
+  "Markers": [
+    {
+      "Marker": "PERF_RESULT_JSON",
+      "OriginalStdoutLine": 22,
+      "OriginalJsonPayloadSha256": "AD5B5A8C88A445BD25539C0FB9EA0A153084861833126DC6CA81BB0EF1686C8E",
+      "OmittedFields": [
+        "host.machineIdentitySha256 (stable machine identifier withheld)"
+      ],
+      "Metrics": {
+        "schemaVersion": 2,
+        "host": {
+          "operatingSystem": "Microsoft Windows 10.0.26300",
+          "operatingSystemVersion": "10.0.26300.0",
+          "operatingSystemBuild": "Microsoft Windows 10.0.26300",
+          "osArchitecture": "X64",
+          "processArchitecture": "X64",
+          "logicalProcessors": 32,
+          "cpuDescriptor": "13th Gen Intel(R) Core(TM) i9-13900K"
+        },
+        "ratesMiBPerSecond": {
+          "Kalyna512_512": 2553.8299468484142,
+          "Threefish1024": 2859.654629680311,
+          "StandardCascade": 962.5728368713525,
+          "ParanoiaCascade": 20.067396193338794,
+          "XChaChaOverAes": 1907.2396133667696,
+          "Aes256": 4148.658087371387,
+          "Mars448": 2070.716589270938,
+          "Shacal2_512": 3051.815293647813,
+          "XChaCha20Poly1305": 2125.345576209413,
+          "MixedCascade": 1195.9453714578292,
+          "Camellia256": 20.602133236619196,
+          "Serpent256": 1510.554408871675
+        }
+      }
+    },
+    {
+      "Marker": "CONTAINER_PERF_RESULT_JSON",
+      "OriginalStdoutLine": 36,
+      "OriginalJsonPayloadSha256": "804567E0AC004C89D88BE8BFA63D08BF1F03C2D9B1F6962F4C23ABF413B19E9C",
+      "OmittedFields": [
+        "host.machineIdentitySha256 (stable machine identifier withheld)"
+      ],
+      "Metrics": {
+        "schemaVersion": 1,
+        "host": {
+          "operatingSystem": "Microsoft Windows 10.0.26300",
+          "operatingSystemVersion": "10.0.26300.0",
+          "operatingSystemBuild": "Microsoft Windows 10.0.26300",
+          "osArchitecture": "X64",
+          "processArchitecture": "X64",
+          "logicalProcessors": 32,
+          "cpuDescriptor": "13th Gen Intel(R) Core(TM) i9-13900K"
+        },
+        "encryptMiBPerSecond": {
+          "Kalyna512_512": 63.14754134431101,
+          "Threefish1024": 53.98032577379638,
+          "StandardCascade": 80.57537109915665,
+          "ParanoiaCascade": 13.241069218201394,
+          "XChaChaOverAes": 66.73321567085677,
+          "Aes256": 66.27863460316898,
+          "Mars448": 75.40295738056959,
+          "Shacal2_512": 67.84170442106102,
+          "XChaCha20Poly1305": 55.981636798531774,
+          "MixedCascade": 64.4430053851445,
+          "Camellia256": 15.763179508181903,
+          "Serpent256": 53.303785268366234
+        },
+        "verifyAndDecryptMiBPerSecond": {
+          "Kalyna512_512": 41.687538254626475,
+          "Threefish1024": 37.62446367319085,
+          "StandardCascade": 47.860449100767596,
+          "ParanoiaCascade": 11.845408662457588,
+          "XChaChaOverAes": 43.182146341595065,
+          "Aes256": 43.366760861755814,
+          "Mars448": 46.240445003592576,
+          "Shacal2_512": 44.663684981865586,
+          "XChaCha20Poly1305": 38.51606450134869,
+          "MixedCascade": 42.008879725410274,
+          "Camellia256": 13.933444236655305,
+          "Serpent256": 37.049356269605674
+        }
+      }
+    },
+    {
+      "Marker": "PIPELINE_SCALING_SAMPLES_JSON",
+      "OriginalStdoutLine": 120,
+      "OriginalJsonPayloadSha256": "828A1D43587225A4D933CC6DD657E26C353A888801B395361D7A3BDDF59279E4",
+      "OmittedFields": [
+        "samples[].pipelineProfile (bounded resource diagnostic traces omitted for compactness; all actual sample rates and median marker retained)"
+      ],
+      "Metrics": {
+        "schemaVersion": 3,
+        "productionMode": "Auto without a forced slot override",
+        "measurementSemantics": "All candidates use fresh OS observation and the same pure resource planner at the initial and every joined chunk boundary. Fixed requests are capped by current CPU, RAM, pressure, queue and remaining work. All candidates carry the same bounded pipeline-only diagnostic scope within encryption timing; snapshot serialization and authenticated plaintext comparison remain outside timing. Schema 2 results retain their original semantics and outcome.",
+        "correctness": "every sample authenticated and plaintext SHA-256 compared outside timing",
+        "fixedCandidateZeroMeansAuto": true,
+        "payloadBytes": 268435456,
+        "warmupsPerCandidate": 1,
+        "measurementRounds": 5,
+        "orderSeed": 1397509972,
+        "roundOrders": [
+          [
+            2,
+            3,
+            1,
+            0,
+            8,
+            12,
+            5,
+            4,
+            6,
+            10,
+            16
+          ],
+          [
+            6,
+            2,
+            4,
+            0,
+            12,
+            8,
+            3,
+            1,
+            5,
+            16,
+            10
+          ],
+          [
+            12,
+            3,
+            6,
+            8,
+            5,
+            10,
+            4,
+            0,
+            2,
+            1,
+            16
+          ],
+          [
+            4,
+            5,
+            8,
+            1,
+            10,
+            16,
+            12,
+            2,
+            3,
+            0,
+            6
+          ],
+          [
+            8,
+            3,
+            0,
+            5,
+            4,
+            12,
+            1,
+            6,
+            10,
+            2,
+            16
+          ]
+        ],
+        "warmupRatesMiBPerSecond": {
+          "0": 189.97951560715117,
+          "1": 206.5029388756141,
+          "2": 188.77104299393233,
+          "3": 166.0845058726443,
+          "4": 158.69882830671324,
+          "5": 131.72541199824002,
+          "6": 122.35912795987805,
+          "8": 102.54531080722627,
+          "10": 84.46143233656086,
+          "12": 77.46238081837795,
+          "16": 63.14015733737957
+        },
+        "samples": [
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 0,
+            "mode": "Auto",
+            "runId": 0,
+            "rateMiBPerSecond": 189.97951560715117
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 1,
+            "mode": "1",
+            "runId": 1,
+            "rateMiBPerSecond": 206.5029388756141
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 2,
+            "mode": "2",
+            "runId": 2,
+            "rateMiBPerSecond": 188.77104299393233
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 3,
+            "mode": "3",
+            "runId": 3,
+            "rateMiBPerSecond": 166.0845058726443
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 4,
+            "mode": "4",
+            "runId": 4,
+            "rateMiBPerSecond": 158.69882830671324
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 5,
+            "mode": "5",
+            "runId": 5,
+            "rateMiBPerSecond": 131.72541199824002
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 6,
+            "mode": "6",
+            "runId": 6,
+            "rateMiBPerSecond": 122.35912795987805
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 8,
+            "mode": "8",
+            "runId": 7,
+            "rateMiBPerSecond": 102.54531080722627
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 10,
+            "mode": "10",
+            "runId": 8,
+            "rateMiBPerSecond": 84.46143233656086
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 12,
+            "mode": "12",
+            "runId": 9,
+            "rateMiBPerSecond": 77.46238081837795
+          },
+          {
+            "phase": "warmup",
+            "round": 0,
+            "slots": 16,
+            "mode": "16",
+            "runId": 10,
+            "rateMiBPerSecond": 63.14015733737957
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 2,
+            "mode": "2",
+            "runId": 11,
+            "rateMiBPerSecond": 183.22303926655817
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 3,
+            "mode": "3",
+            "runId": 12,
+            "rateMiBPerSecond": 162.5630916248765
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 1,
+            "mode": "1",
+            "runId": 13,
+            "rateMiBPerSecond": 197.75396301645554
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 0,
+            "mode": "Auto",
+            "runId": 14,
+            "rateMiBPerSecond": 195.79120794991846
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 8,
+            "mode": "8",
+            "runId": 15,
+            "rateMiBPerSecond": 103.84495267083742
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 12,
+            "mode": "12",
+            "runId": 16,
+            "rateMiBPerSecond": 78.03464622459694
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 5,
+            "mode": "5",
+            "runId": 17,
+            "rateMiBPerSecond": 133.78429790418537
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 4,
+            "mode": "4",
+            "runId": 18,
+            "rateMiBPerSecond": 156.16937031838847
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 6,
+            "mode": "6",
+            "runId": 19,
+            "rateMiBPerSecond": 132.27751077700017
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 10,
+            "mode": "10",
+            "runId": 20,
+            "rateMiBPerSecond": 94.48772630271816
+          },
+          {
+            "phase": "measured",
+            "round": 1,
+            "slots": 16,
+            "mode": "16",
+            "runId": 21,
+            "rateMiBPerSecond": 64.41348627174993
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 6,
+            "mode": "6",
+            "runId": 22,
+            "rateMiBPerSecond": 120.69651507200089
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 2,
+            "mode": "2",
+            "runId": 23,
+            "rateMiBPerSecond": 183.25062120886855
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 4,
+            "mode": "4",
+            "runId": 24,
+            "rateMiBPerSecond": 147.75982540791378
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 0,
+            "mode": "Auto",
+            "runId": 25,
+            "rateMiBPerSecond": 205.38508459819658
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 12,
+            "mode": "12",
+            "runId": 26,
+            "rateMiBPerSecond": 82.53302360666927
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 8,
+            "mode": "8",
+            "runId": 27,
+            "rateMiBPerSecond": 100.68981174073097
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 3,
+            "mode": "3",
+            "runId": 28,
+            "rateMiBPerSecond": 161.4726813137947
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 1,
+            "mode": "1",
+            "runId": 29,
+            "rateMiBPerSecond": 197.6780092403659
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 5,
+            "mode": "5",
+            "runId": 30,
+            "rateMiBPerSecond": 133.59048806502057
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 16,
+            "mode": "16",
+            "runId": 31,
+            "rateMiBPerSecond": 66.46467118434306
+          },
+          {
+            "phase": "measured",
+            "round": 2,
+            "slots": 10,
+            "mode": "10",
+            "runId": 32,
+            "rateMiBPerSecond": 88.51717208934619
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 12,
+            "mode": "12",
+            "runId": 33,
+            "rateMiBPerSecond": 79.41370105351271
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 3,
+            "mode": "3",
+            "runId": 34,
+            "rateMiBPerSecond": 161.49005867829598
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 6,
+            "mode": "6",
+            "runId": 35,
+            "rateMiBPerSecond": 119.90589073753692
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 8,
+            "mode": "8",
+            "runId": 36,
+            "rateMiBPerSecond": 101.71623498786577
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 5,
+            "mode": "5",
+            "runId": 37,
+            "rateMiBPerSecond": 120.38106437833548
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 10,
+            "mode": "10",
+            "runId": 38,
+            "rateMiBPerSecond": 90.21864276624456
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 4,
+            "mode": "4",
+            "runId": 39,
+            "rateMiBPerSecond": 141.73596549570797
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 0,
+            "mode": "Auto",
+            "runId": 40,
+            "rateMiBPerSecond": 174.94426385093874
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 2,
+            "mode": "2",
+            "runId": 41,
+            "rateMiBPerSecond": 174.97355917134163
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 1,
+            "mode": "1",
+            "runId": 42,
+            "rateMiBPerSecond": 193.3902389147544
+          },
+          {
+            "phase": "measured",
+            "round": 3,
+            "slots": 16,
+            "mode": "16",
+            "runId": 43,
+            "rateMiBPerSecond": 66.85956871033821
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 4,
+            "mode": "4",
+            "runId": 44,
+            "rateMiBPerSecond": 143.58542222078637
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 5,
+            "mode": "5",
+            "runId": 45,
+            "rateMiBPerSecond": 133.08869274827268
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 8,
+            "mode": "8",
+            "runId": 46,
+            "rateMiBPerSecond": 102.65203949954244
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 1,
+            "mode": "1",
+            "runId": 47,
+            "rateMiBPerSecond": 194.56591091237354
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 10,
+            "mode": "10",
+            "runId": 48,
+            "rateMiBPerSecond": 91.9096561110461
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 16,
+            "mode": "16",
+            "runId": 49,
+            "rateMiBPerSecond": 61.98278723471277
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 12,
+            "mode": "12",
+            "runId": 50,
+            "rateMiBPerSecond": 72.31585917582463
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 2,
+            "mode": "2",
+            "runId": 51,
+            "rateMiBPerSecond": 176.75105056405678
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 3,
+            "mode": "3",
+            "runId": 52,
+            "rateMiBPerSecond": 177.5345923726007
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 0,
+            "mode": "Auto",
+            "runId": 53,
+            "rateMiBPerSecond": 210.69244400930603
+          },
+          {
+            "phase": "measured",
+            "round": 4,
+            "slots": 6,
+            "mode": "6",
+            "runId": 54,
+            "rateMiBPerSecond": 132.83496008594835
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 8,
+            "mode": "8",
+            "runId": 55,
+            "rateMiBPerSecond": 102.47472046717584
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 3,
+            "mode": "3",
+            "runId": 56,
+            "rateMiBPerSecond": 160.6655167367026
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 0,
+            "mode": "Auto",
+            "runId": 57,
+            "rateMiBPerSecond": 202.0067476566428
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 5,
+            "mode": "5",
+            "runId": 58,
+            "rateMiBPerSecond": 134.04568140682198
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 4,
+            "mode": "4",
+            "runId": 59,
+            "rateMiBPerSecond": 155.29845572671547
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 12,
+            "mode": "12",
+            "runId": 60,
+            "rateMiBPerSecond": 82.81190140298564
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 1,
+            "mode": "1",
+            "runId": 61,
+            "rateMiBPerSecond": 181.95516511009708
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 6,
+            "mode": "6",
+            "runId": 62,
+            "rateMiBPerSecond": 122.1493456111239
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 10,
+            "mode": "10",
+            "runId": 63,
+            "rateMiBPerSecond": 93.25694715077806
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 2,
+            "mode": "2",
+            "runId": 64,
+            "rateMiBPerSecond": 182.30936831584245
+          },
+          {
+            "phase": "measured",
+            "round": 5,
+            "slots": 16,
+            "mode": "16",
+            "runId": 65,
+            "rateMiBPerSecond": 63.245109534847536
+          }
+        ]
+      }
+    },
+    {
+      "Marker": "PIPELINE_SCALING_JSON",
+      "OriginalStdoutLine": 122,
+      "OriginalJsonPayloadSha256": "C8D04CBBE6277AE8ACD03531A865EA9D0CAE237C322FB1B5567865B95A90B6AE",
+      "OmittedFields": [],
+      "Metrics": {
+        "Auto": 202.0067476566428,
+        "1": 194.56591091237354,
+        "2": 182.30936831584245,
+        "3": 161.49005867829598,
+        "4": 147.75982540791378,
+        "5": 133.59048806502057,
+        "6": 122.1493456111239,
+        "8": 102.47472046717584,
+        "10": 91.9096561110461,
+        "12": 79.41370105351271,
+        "16": 64.41348627174993
+      }
+    }
+  ]
+}

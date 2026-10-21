@@ -1,7 +1,9 @@
 {
   "State": "PASS",
-  "OriginalReceiptPath": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\work\\control-lifecycle-f0dd5c671263423aa518bad0da9d8382\\result.json",
-  "OriginalReceiptSha256": "B17243B57A122177F703EE73B0316BCAEECB19A01BB044DF489A9E59543BCCFE",
+  "OriginalReceiptPath": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src\\work\\control-lifecycle-57cfd1120d2a4cf1b434ff2a3e54445f\\result.json",
+  "OriginalReceiptSha256": "6D7AE5D2E96979F801FBC17AFFB5CF0E14535C86FCF3CCF9A5BE75BA07BADEE4",
+  "BuildLogLine": 646,
+  "OriginalBuildLogSha256": "855A9713F3EDE0F9A055BF60BF4AEA6007C8B793E4431DC2B996C4D34EB84440",
   "ProductionHeaderSha256": "CCB5A6C88040CA1653DAF09BE8E6555DACDCD375A42FDAC77A729B6760E643BE",
   "FixtureSha256": "5D427B89DDE4331C0C81753530EC5AF5C81BB6AB30F8329087999485C9DE5571",
   "SuccessfulCurrentLifecycles": 224,
@@ -88,8 +90,8 @@
       "ExitCode": 0
     }
   ],
-  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src",
-  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
   "ReportedHandleCountsStable": true,
   "HandleCounts": [
     {
@@ -140,5 +142,6 @@
       "Before": 82,
       "After": 82
     }
-  ]
+  ],
+  "Scope": "Derived allowlisted actual result fields; raw streams/process timeout trees excluded. Historical negative fixture remains a historical rejection demonstration, not a product PASS."
 }

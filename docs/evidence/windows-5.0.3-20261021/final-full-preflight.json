@@ -1,25 +1,33 @@
 {
-  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src",
-  "Commit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src",
+  "Commit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
   "BuildState": "PASS",
-  "BuildFinishedAt": "2026-10-21T21:53:56.3424972+02:00",
-  "MatchingCompletedManifestSha256": "DA6445706CFCFEED0F9A2097CBA08E8572F19DF05548D707A19FD96B0D689940",
-  "SourceInputCount": 4820,
-  "TestAssemblySha256": "73D7E4E5B7A21DCB5F059D75B3E503D47D87D2E686BDAE1BDDA79F21D64E727C",
-  "SupersededEvidenceDirectory": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\superseded-final-full-f567e58482c14459be580b2aca091a48",
+  "BuildFinishedAt": "2026-10-21T23:36:15.0744742+02:00",
+  "MatchingCompletedManifestSha256": "5E364288B8C5D29415FDEB8C8212D976F6FC76C578AE3B9DCAE47FEBE09D4BE4",
+  "SourceInputCount": 4861,
+  "TestAssemblySha256": "3278794FF047D2ACCFDC2A6A0EF0F15DEA4B52612E7A63B4ED222131B2E1105A",
+  "SupersededEvidenceDirectory": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\superseded-final-full-6ebc3691a4e843f8929a4ebc008fe9b1",
   "Preserved": [
     {
       "Name": "before-final-full-results.json",
-      "Sha256": "226F7AD674FF7B563EE1BF76DD758CAEE023E74204F990C02581815C62B76ADA"
+      "Sha256": "0CE149EA6C83EB64FC4BD5A61013B5A0A61424AD8E8C3ED8DD2C7F5E9E4F79A9"
+    },
+    {
+      "Name": "final-full-preflight.json",
+      "Sha256": "26E1F446610FC7651E4ED4D9B9E8E00AF7440AD2DFE4F424F3BD62D7B3F9D9F2"
     },
     {
       "Name": "final-full-receipt.json",
-      "Sha256": "7DF2C607FB6DD3142188677701008B635906E55E82FFC99EE2C626ADA5CDE0B6"
+      "Sha256": "8FAF8BDC9702DE13AB112DD74F4733DE054597521DB4042F4A87FD8F69392EE6"
+    },
+    {
+      "Name": "final-full-results.json",
+      "Sha256": "0146145C73164A155F257C2412BFD22DE77172078E7E1BB0FDEA89A3B5157CDA"
     },
     {
       "Name": "final-full.log",
-      "Sha256": "909807CFB89F944428FD69CD2857E2173EBED85153B2123F47AC6BFBD1560719"
+      "Sha256": "7D1C6B7852766E0644F598A6DB92E33BA591B34DFBB072783AE21A03CCBDA13A"
     }
   ],
-  "StartedAt": "2026-10-21T21:54:05.0366902+02:00"
+  "StartedAt": "2026-10-21T23:36:41.5055018+02:00"
 }

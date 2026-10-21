@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 2,
+  "head": "c00ee8d409f33c685a9f23231c28ed71634e8c10",
+  "testInventoryHash": "f8bfbcf6973ff56e0a8fd7744fb682ae37285d82733880f41b3a87df46f518a3",
+  "platform": "windows",
+  "architecture": "x64",
+  "hardware": "32 logical CPUs, 31 GiB, Microsoft Windows 10.0.26300",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 31,
+    "memoryMiB": 9216,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "gui.settings-drop-key-sheets",
+      "name": "settings persistence, drag-and-drop and key sheets",
+      "status": "PASS",
+      "seconds": 9.797,
+      "peakRssMiB": 165,
+      "seed": "0x2A79CD8B",
+      "failure": null
+    },
+    {
+      "id": "gui.v502-reference-parity",
+      "name": "macOS reference design, credentials and worker callbacks",
+      "status": "PASS",
+      "seconds": 2.356,
+      "peakRssMiB": 190,
+      "seed": "0x421CBCEA",
+      "failure": null
+    },
+    {
+      "id": "gui.reference-render",
+      "name": "render actual WPF controls in German and English without opening a native window",
+      "status": "PASS",
+      "seconds": 0.742,
+      "peakRssMiB": 130,
+      "seed": "0x620EF6EE",
+      "failure": null
+    },
+    {
+      "id": "gui.installer-reference",
+      "name": "installer reference flow, localized status and bounded selectable details",
+      "status": "PASS",
+      "seconds": 0.748,
+      "peakRssMiB": 112,
+      "seed": "0x399BF059",
+      "failure": null
+    },
+    {
+      "id": "gui.key-sheet-v502",
+      "name": "separate v5.0.2 key sheets and physical layout",
+      "status": "PASS",
+      "seconds": 0.652,
+      "peakRssMiB": 115,
+      "seed": "0x5F48D546",
+      "failure": null
+    }
+  ]
+}

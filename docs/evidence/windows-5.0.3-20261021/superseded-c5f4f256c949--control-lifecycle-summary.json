@@ -1,0 +1,144 @@
+{
+  "State": "PASS",
+  "OriginalReceiptPath": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src\\work\\control-lifecycle-f0dd5c671263423aa518bad0da9d8382\\result.json",
+  "OriginalReceiptSha256": "B17243B57A122177F703EE73B0316BCAEECB19A01BB044DF489A9E59543BCCFE",
+  "ProductionHeaderSha256": "CCB5A6C88040CA1653DAF09BE8E6555DACDCD375A42FDAC77A729B6760E643BE",
+  "FixtureSha256": "5D427B89DDE4331C0C81753530EC5AF5C81BB6AB30F8329087999485C9DE5571",
+  "SuccessfulCurrentLifecycles": 224,
+  "Checks": [
+    {
+      "Variant": "before-delayed",
+      "Mode": "close-race",
+      "Repetitions": 1,
+      "TimedOut": true,
+      "ExpectedTimeout": true,
+      "CloseRaceNegativeControlProven": true,
+      "ExitCode": -1
+    },
+    {
+      "Variant": "current",
+      "Mode": "normal",
+      "Repetitions": 64,
+      "TimedOut": false,
+      "ExpectedTimeout": false,
+      "CloseRaceNegativeControlProven": false,
+      "ExitCode": 0
+    },
+    {
+      "Variant": "current",
+      "Mode": "pending-close",
+      "Repetitions": 16,
+      "TimedOut": false,
+      "ExpectedTimeout": false,
+      "CloseRaceNegativeControlProven": false,
+      "ExitCode": 0
+    },
+    {
+      "Variant": "current",
+      "Mode": "wrong-kind",
+      "Repetitions": 16,
+      "TimedOut": false,
+      "ExpectedTimeout": false,
+      "CloseRaceNegativeControlProven": false,
+      "ExitCode": 0
+    },
+    {
+      "Variant": "current",
+      "Mode": "wrong-sequence",
+      "Repetitions": 16,
+      "TimedOut": false,
+      "ExpectedTimeout": false,
+      "CloseRaceNegativeControlProven": false,
+      "ExitCode": 0
+    },
+    {
+      "Variant": "current",
+      "Mode": "close-field",
+      "Repetitions": 16,
+      "TimedOut": false,
+      "ExpectedTimeout": false,
+      "CloseRaceNegativeControlProven": false,
+      "ExitCode": 0
+    },
+    {
+      "Variant": "current",
+      "Mode": "close-payload",
+      "Repetitions": 16,
+      "TimedOut": false,
+      "ExpectedTimeout": false,
+      "CloseRaceNegativeControlProven": false,
+      "ExitCode": 0
+    },
+    {
+      "Variant": "current",
+      "Mode": "peer-drop",
+      "Repetitions": 16,
+      "TimedOut": false,
+      "ExpectedTimeout": false,
+      "CloseRaceNegativeControlProven": false,
+      "ExitCode": 0
+    },
+    {
+      "Variant": "current-delayed",
+      "Mode": "close-race",
+      "Repetitions": 64,
+      "TimedOut": false,
+      "ExpectedTimeout": false,
+      "CloseRaceNegativeControlProven": false,
+      "ExitCode": 0
+    }
+  ],
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "ReportedHandleCountsStable": true,
+  "HandleCounts": [
+    {
+      "Variant": "current",
+      "Mode": "normal",
+      "Before": 82,
+      "After": 82
+    },
+    {
+      "Variant": "current",
+      "Mode": "pending-close",
+      "Before": 76,
+      "After": 76
+    },
+    {
+      "Variant": "current",
+      "Mode": "wrong-kind",
+      "Before": 76,
+      "After": 76
+    },
+    {
+      "Variant": "current",
+      "Mode": "wrong-sequence",
+      "Before": 76,
+      "After": 76
+    },
+    {
+      "Variant": "current",
+      "Mode": "close-field",
+      "Before": 76,
+      "After": 76
+    },
+    {
+      "Variant": "current",
+      "Mode": "close-payload",
+      "Before": 76,
+      "After": 76
+    },
+    {
+      "Variant": "current",
+      "Mode": "peer-drop",
+      "Before": 76,
+      "After": 76
+    },
+    {
+      "Variant": "current-delayed",
+      "Mode": "close-race",
+      "Before": 82,
+      "After": 82
+    }
+  ]
+}

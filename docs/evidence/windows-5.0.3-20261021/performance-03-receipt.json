@@ -1,0 +1,17 @@
+{
+  "Number": 3,
+  "Id": "performance.entropy-rev9-phases",
+  "State": "PASS",
+  "ExitCode": 0,
+  "StartedUtc": "2026-10-21T22:20:28.8906205Z",
+  "CompletedUtc": "2026-10-21T22:26:10.6373110Z",
+  "Seconds": 341.7440902,
+  "TimedOut": false,
+  "ResultFresh": true,
+  "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\03-entropy-rev9-phases\\results.json",
+  "ResultsSha256": "CF117ABAA727D17425D2020C4BF9393199A1060B6CAA1D1CE324EA95CEEC4939",
+  "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\03-entropy-rev9-phases\\stdout.log",
+  "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\03-entropy-rev9-phases\\stderr.log",
+  "Error": null,
+  "CleanupPassed": true
+}

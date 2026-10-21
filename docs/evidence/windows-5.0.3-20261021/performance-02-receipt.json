@@ -1,0 +1,17 @@
+{
+  "Number": 2,
+  "Id": "release.paranoia-256mib-level5",
+  "State": "PASS",
+  "ExitCode": 0,
+  "StartedUtc": "2026-10-21T22:15:03.1593876Z",
+  "CompletedUtc": "2026-10-21T22:20:28.8859554Z",
+  "Seconds": 325.7240935,
+  "TimedOut": false,
+  "ResultFresh": true,
+  "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\02-paranoia-256mib\\results.json",
+  "ResultsSha256": "F20776384D0B06CD61570B0E2F4BC64B6A09032CE22BC371535F4CD89257A56D",
+  "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\02-paranoia-256mib\\stdout.log",
+  "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\02-paranoia-256mib\\stderr.log",
+  "Error": null,
+  "CleanupPassed": true
+}

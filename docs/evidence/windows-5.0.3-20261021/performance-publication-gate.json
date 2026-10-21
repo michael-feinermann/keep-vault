@@ -1,0 +1,14 @@
+{
+  "Name": "Performance",
+  "State": "PASS",
+  "Evidence": [
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\summary.json",
+      "Sha256": "20AEE76F4EC3A9EA185D97E8CBD0E44538A53E4B45B2823E633C5CB0685FB36C"
+    },
+    {
+      "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\preservation.json",
+      "Sha256": "3D3F1C9EA946269DCD8D499E5698C2E2FB360514AA82C766F3B77A0F69CF2D40"
+    }
+  ]
+}

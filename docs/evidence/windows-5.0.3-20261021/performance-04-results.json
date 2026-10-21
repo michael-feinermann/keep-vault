@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "head": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "testInventoryHash": "f8bfbcf6973ff56e0a8fd7744fb682ae37285d82733880f41b3a87df46f518a3",
+  "platform": "windows",
+  "architecture": "x64",
+  "hardware": "32 logical CPUs, 31 GiB, Microsoft Windows 10.0.26300",
+  "budget": {
+    "maxWorkers": 1,
+    "cpuTokens": 31,
+    "memoryMiB": 9216,
+    "argonSlots": 2,
+    "zpaqSlots": 1
+  },
+  "tests": [
+    {
+      "id": "release.paranoia-complex-tree-level5-repair",
+      "name": "complex tree, level 5, full Paranoia and repair release workflow",
+      "status": "PASS",
+      "seconds": 300.827,
+      "peakRssMiB": 1643,
+      "seed": "0x46487D0E",
+      "failure": null
+    }
+  ]
+}

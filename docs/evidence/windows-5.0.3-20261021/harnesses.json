@@ -1,28 +1,25 @@
 {
-  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
-  "Purpose": "Byte-exact executed local runner source copies for audit/reproduction, not independent proof of execution",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "Purpose": "Byte-exact reviewed local runner copies; actual receipts establish execution, script text alone does not",
   "Files": [
     {
       "Name": "invoke-final-package-acceptance.ps1",
       "SourcePath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\Invoke-FinalPackageAcceptance.ps1",
       "Sha256": "D4035FDB454B011670131D1753277A4C04EE44BEFBD08C4950949C3EE2E153BC",
-      "ExecutionReceipt": "acceptance-summary.json",
-      "Scope": "Actual final c5 40-case/81-process acceptance; provenance records this harness SHA256"
+      "ExecutionReceipt": "acceptance-summary.json"
     },
     {
       "Name": "run-final-suite.ps1",
       "SourcePath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\Run-FinalSuite.ps1",
       "Sha256": "E6AF3A5075C6154FCF926D12F1C5BF7953DB4D394A44DED851478C0A5834C426",
-      "ExecutionReceipt": "final-full-receipt.json",
-      "Scope": "Parent-confirmed actual final c5 full runner; source SHA256 archived now; execution receipt/results establish109/109, not script text alone"
+      "ExecutionReceipt": "final-full-receipt.json"
     }
   ],
-  "Reproduction": "Copy runner to a fresh ignored work directory before execution; full runner writes output beside itself. Supply reviewed immutable source and exact commit; do not run inside this hash-pinned evidence directory.",
-  "PrivateMaterial": "No key/password/token values or raw user shortcut/UI state are embedded.",
   "FullSuitePreflight": {
     "File": "final-full-preflight.json",
-    "Sha256": "26E1F446610FC7651E4ED4D9B9E8E00AF7440AD2DFE4F424F3BD62D7B3F9D9F2",
-    "TestAssemblySha256": "73D7E4E5B7A21DCB5F059D75B3E503D47D87D2E686BDAE1BDDA79F21D64E727C",
-    "HistoricalPreservedEntries": "Superseded485 FAIL receipt and single-group prior result; neither is a new c5 full-suite PASS"
-  }
+    "Sha256": "5DF80F390D673DD23950F771C1CFC5B81867145DBE4733A4EE641B7F821119B0",
+    "TestAssemblySha256": "3278794FF047D2ACCFDC2A6A0EF0F15DEA4B52612E7A63B4ED222131B2E1105A",
+    "HistoricalPreservedEntries": "Raw preflight Preserved entries retain their original prior source/outcomes; none counts as a new-source full PASS"
+  },
+  "Reproduction": "Copy scripts to fresh ignored work before execution; never run inside this evidence directory."
 }

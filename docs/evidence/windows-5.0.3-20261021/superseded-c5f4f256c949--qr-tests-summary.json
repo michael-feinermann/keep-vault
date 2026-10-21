@@ -1,0 +1,14 @@
+{
+  "State": "PASS_RECORDED_BY_SUCCESSFUL_GATED_BUILD",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "ChecksPassed": 151,
+  "ObservedSummary": {
+    "Line": 853,
+    "Text": "ArbiterTests: 151 checks passed"
+  },
+  "EnclosingBuildReceipt": "build-result.json",
+  "EnclosingBuildReceiptSha256": "FBC85D8F04D7457BC5AEAE9F7161365310B2FF69326A66787ED133B7B66D0F0B",
+  "OriginalBuildLogSha256": "DD00853E5A7E08F0B1B348A53B7829101390B08C944F380F4AFA9E0B664271E2",
+  "BuildScriptSha256": "9F0F3A44E36FBD0415BB293D672335ABE37A89C4A43ACDC732096F8FE2040384",
+  "Scope": "Arbiter/decoder assertions during exact signed release build; no camera or physical paper check; no invented independent scanner process receipt."
+}

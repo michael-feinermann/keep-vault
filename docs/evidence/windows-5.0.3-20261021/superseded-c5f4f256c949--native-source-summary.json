@@ -1,0 +1,11 @@
+{
+  "State": "PASS",
+  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "ObservedBuildSummaries": [
+    "external/NATIVE_SOURCE_SHA256SUMS verified: 433 files",
+    "native/WINDOWS_SOURCE_SHA256SUMS verified: 3 files",
+    "Crypto++ compilation inventory verified: 202 translation units"
+  ],
+  "OriginalBuildLogSha256": "DD00853E5A7E08F0B1B348A53B7829101390B08C944F380F4AFA9E0B664271E2",
+  "Scope": "Exact c5 native source verification during final build; separate native analysis retains 300 vendor warnings."
+}

@@ -1,0 +1,43 @@
+{
+  "RunPurpose": "Final",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "SourceManifestSha256": "5E364288B8C5D29415FDEB8C8212D976F6FC76C578AE3B9DCAE47FEBE09D4BE4",
+  "SourcePreservationScope": "Manifest-covered committed source inputs, HEAD and original source-manifest bytes; allowed output-slot membership is not inventoried.",
+  "Sdk": "10.0.402",
+  "Dotnet": "C:\\Program Files\\dotnet\\dotnet.exe",
+  "Tests": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src\\work\\native-gate-tests\\KalynaArchiver.Tests.dll",
+  "TestDllSha256": "3278794FF047D2ACCFDC2A6A0EF0F15DEA4B52612E7A63B4ED222131B2E1105A",
+  "HarnessSha256": "431AB5B190E7C92C2501A5371E6EB0763629CE51B477A42597F324538E87642E",
+  "GroupPlan": [
+    {
+      "Number": 1,
+      "Id": "performance.cipher-suites",
+      "Label": "cipher-suites"
+    },
+    {
+      "Number": 2,
+      "Id": "release.paranoia-256mib-level5",
+      "Label": "paranoia-256mib"
+    },
+    {
+      "Number": 3,
+      "Id": "performance.entropy-rev9-phases",
+      "Label": "entropy-rev9-phases"
+    },
+    {
+      "Number": 4,
+      "Id": "release.paranoia-complex-tree-level5-repair",
+      "Label": "complex-tree-last"
+    }
+  ],
+  "HistoricalComparison": "PENDING",
+  "HistoricalBaseline": {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\baseline-c5-primitives-exact.json",
+    "Length": 816,
+    "Sha256": "6E819FEF434E99B64082CE6375AA5CE928BA7963C77F1FB032CE33EC1731B817",
+    "Sha512": "4BCCC270CD6615AC60251BC8FF2FDA225A3AE38B41A4F9CC64BACFB3BBC476D5FAB763DE8EA5FF644694DAC87C15198737275C39B2A9F1CCF8A76658C5925D05"
+  },
+  "IndependentWindowsNativeHistoricalBenchmark": "NOT_RUN: native_benchmark hardcodes macOS dylibs; no Windows baseline was invented",
+  "ParentPrerequisite": "Parent must finish final full suite and acceptance, then make host idle before selecting ExecutePerformance."
+}

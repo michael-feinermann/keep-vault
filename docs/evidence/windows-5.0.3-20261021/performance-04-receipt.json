@@ -1,0 +1,17 @@
+{
+  "Number": 4,
+  "Id": "release.paranoia-complex-tree-level5-repair",
+  "State": "PASS",
+  "ExitCode": 0,
+  "StartedUtc": "2026-10-21T22:26:10.6417290Z",
+  "CompletedUtc": "2026-10-21T22:31:11.8467711Z",
+  "Seconds": 301.183492,
+  "TimedOut": false,
+  "ResultFresh": true,
+  "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\04-complex-tree-last\\results.json",
+  "ResultsSha256": "BA4A74886DD0872291F2B10758EA3C19285DA045B3662E118CDE8103CD3AE6E5",
+  "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\04-complex-tree-last\\stdout.log",
+  "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\04-complex-tree-last\\stderr.log",
+  "Error": null,
+  "CleanupPassed": true
+}

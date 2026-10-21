@@ -1,14 +1,14 @@
 {
   "State": "PASS_RECORDED_BY_SUCCESSFUL_GATED_BUILD",
-  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
   "ChecksPassed": 151,
   "ObservedSummary": {
     "Line": 853,
     "Text": "ArbiterTests: 151 checks passed"
   },
   "EnclosingBuildReceipt": "build-result.json",
-  "EnclosingBuildReceiptSha256": "FBC85D8F04D7457BC5AEAE9F7161365310B2FF69326A66787ED133B7B66D0F0B",
-  "OriginalBuildLogSha256": "DD00853E5A7E08F0B1B348A53B7829101390B08C944F380F4AFA9E0B664271E2",
-  "BuildScriptSha256": "9F0F3A44E36FBD0415BB293D672335ABE37A89C4A43ACDC732096F8FE2040384",
-  "Scope": "Arbiter/decoder assertions during exact signed release build; no camera or physical paper check; no invented independent scanner process receipt."
+  "EnclosingBuildReceiptSha256": "99862C225BB00348064617819B83279A7F25D2FBF268B5B175E4DA377140B599",
+  "OriginalBuildLogSha256": "855A9713F3EDE0F9A055BF60BF4AEA6007C8B793E4431DC2B996C4D34EB84440",
+  "BuildScriptSha256": "EB296F7F0E2787D3668A829DE5AE663EB96D1BA6D7FA96C7C0D5246A83C7C9D6",
+  "Scope": "Derived exact lines of completed signed build;151 decoder/Arbiter assertions, no camera/paper claim."
 }

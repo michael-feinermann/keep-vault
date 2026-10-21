@@ -1,0 +1,76 @@
+{
+  "SourceScope": "Intermediate static GUI/style review, not the final signed artifact",
+  "FocusedResultHead": "c00ee8d409f33c685a9f23231c28ed71634e8c10",
+  "ProductVersion": "5.0.3",
+  "Images": [
+    {
+      "Name": "de-create-help.png",
+      "Bytes": 185229,
+      "Sha256": "FA23C783187EB9ECED2AC3A298349E19944C6125C5390F2414A7C212161079E9"
+    },
+    {
+      "Name": "de-tab-1.png",
+      "Bytes": 128227,
+      "Sha256": "1813232AF68DECA1E4F741EB7C3C5939C0FBE9325293A630880403A2EA752C13"
+    },
+    {
+      "Name": "de-tab-2.png",
+      "Bytes": 159784,
+      "Sha256": "E3637C7F76DF09122D3729B5D6797AAA0A2F5F081459CE0251A58AE567D55F46"
+    },
+    {
+      "Name": "de-tab-3.png",
+      "Bytes": 137452,
+      "Sha256": "24FB0EC7B217FA41244691147ED940F824B22ED821A4FC105C0203B06128858B"
+    },
+    {
+      "Name": "en-create-help.png",
+      "Bytes": 162738,
+      "Sha256": "143C886D3848D3251F408D9D830D322B79E7C6A25E5A657E94A435B905E4F757"
+    },
+    {
+      "Name": "en-tab-1.png",
+      "Bytes": 113372,
+      "Sha256": "AAA04206BF7B0B2D225FB2AD9BB075DA8E9428F4AAE4EA5348CFCDBFEB5AF581"
+    },
+    {
+      "Name": "en-tab-2.png",
+      "Bytes": 143868,
+      "Sha256": "AFD56D54D429375D08300A1E8775E2C576E1DC52FC422637D8FA904EF6A378E5"
+    },
+    {
+      "Name": "en-tab-3.png",
+      "Bytes": 116359,
+      "Sha256": "A3911D7CDAA0A20E266E16A1E5DC09E99539345EA273503466560DBA60720683"
+    }
+  ],
+  "Pixels": "1220x860",
+  "Dpi": 96,
+  "Languages": [
+    "de",
+    "en"
+  ],
+  "FinalSourceGuiGroups": [
+    {
+      "id": "gui.installer-reference",
+      "status": "PASS"
+    },
+    {
+      "id": "gui.key-sheet-v502",
+      "status": "PASS"
+    },
+    {
+      "id": "gui.v502-reference-parity",
+      "status": "PASS"
+    },
+    {
+      "id": "gui.reference-render",
+      "status": "PASS"
+    },
+    {
+      "id": "gui.settings-drop-key-sheets",
+      "status": "PASS"
+    }
+  ],
+  "Limits": "RenderTargetBitmap only; no separate settings image; no full navigation/user visual approval, camera, paper, other DPI or effective capture-blocking test."
+}

@@ -1,69 +1,69 @@
 {
-  "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
-  "RunId": 39664877104,
-  "JobId": 119447160304,
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "RunId": 39678610034,
+  "JobId": 119494906876,
   "Conclusion": "success",
-  "Url": "https://github.com/michael-feinermann/keep-vault/actions/runs/39664877104/job/119447160304",
+  "Url": "https://github.com/michael-feinermann/keep-vault/actions/runs/39678610034/job/119494906876",
   "Steps": [
     {
       "Name": "Set up job",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:48:53Z",
-      "FinishedAt": "2026-10-21T19:48:55Z"
+      "StartedAt": "2026-10-21T21:25:10Z",
+      "FinishedAt": "2026-10-21T21:25:12Z"
     },
     {
       "Name": "Activate and verify Defender before checkout",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:48:55Z",
-      "FinishedAt": "2026-10-21T19:49:13Z"
+      "StartedAt": "2026-10-21T21:25:12Z",
+      "FinishedAt": "2026-10-21T21:25:28Z"
     },
     {
       "Name": "Checkout exact event source",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:49:13Z",
-      "FinishedAt": "2026-10-21T19:49:24Z"
+      "StartedAt": "2026-10-21T21:25:28Z",
+      "FinishedAt": "2026-10-21T21:25:42Z"
     },
     {
       "Name": "Install exact managed fingerprint SDK",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:49:24Z",
-      "FinishedAt": "2026-10-21T19:49:59Z"
+      "StartedAt": "2026-10-21T21:25:42Z",
+      "FinishedAt": "2026-10-21T21:26:13Z"
     },
     {
       "Name": "Build pinned native sources and scan with active Defender",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:49:59Z",
-      "FinishedAt": "2026-10-21T19:51:53Z"
+      "StartedAt": "2026-10-21T21:26:13Z",
+      "FinishedAt": "2026-10-21T21:28:42Z"
     },
     {
       "Name": "Verify bounded native control channel lifecycle",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:51:53Z",
-      "FinishedAt": "2026-10-21T19:52:15Z"
+      "StartedAt": "2026-10-21T21:28:43Z",
+      "FinishedAt": "2026-10-21T21:29:07Z"
     },
     {
       "Name": "Upload evidence only",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:52:15Z",
-      "FinishedAt": "2026-10-21T19:52:17Z"
+      "StartedAt": "2026-10-21T21:29:07Z",
+      "FinishedAt": "2026-10-21T21:29:09Z"
     },
     {
       "Name": "Post Install exact managed fingerprint SDK",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:52:17Z",
-      "FinishedAt": "2026-10-21T19:52:17Z"
+      "StartedAt": "2026-10-21T21:29:09Z",
+      "FinishedAt": "2026-10-21T21:29:10Z"
     },
     {
       "Name": "Post Checkout exact event source",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:52:17Z",
-      "FinishedAt": "2026-10-21T19:52:19Z"
+      "StartedAt": "2026-10-21T21:29:10Z",
+      "FinishedAt": "2026-10-21T21:29:12Z"
     },
     {
       "Name": "Complete job",
       "Conclusion": "success",
-      "StartedAt": "2026-10-21T19:52:19Z",
-      "FinishedAt": "2026-10-21T19:52:20Z"
+      "StartedAt": "2026-10-21T21:29:12Z",
+      "FinishedAt": "2026-10-21T21:29:12Z"
     }
   ]
 }

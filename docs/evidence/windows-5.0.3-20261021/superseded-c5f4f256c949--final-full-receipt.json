@@ -1,0 +1,10 @@
+{
+  "Mode": "full",
+  "Commit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\c5f4f256c949-84c7f50c81b945be\\src",
+  "StartedAt": "2026-10-21T21:54:05.1035218+02:00",
+  "State": "PASS",
+  "ProcessExitCode": 0,
+  "UnchangedSourceFiles": 4820,
+  "FinishedAt": "2026-10-21T22:04:23.3032084+02:00"
+}

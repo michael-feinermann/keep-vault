@@ -1,53 +1,38 @@
 # Windows 5.0.3: kompakte Nachweise
 
-Produktquellstand: `c5f4f256c9494147d08055a1deb5f9513a11af26`, Windows x64.
-Diese Sammlung enthält überprüfte Kopien und klar bezeichnete Zusammenfassungen.
-`SHA256SUMS.txt` bindet die Datei-Bytes; `.gitattributes` verhindert deren
-Zeilenenden-Normalisierung. Die vollständigen lokalen Diagnoseprotokolle bleiben
-unter `C:\Dev\Kalyna\work\windows-503-20261021` erhalten.
+Produktquellstand: `103e87fd6335bdc4ef8a2ffafa2384ecaad6504b`, Windows x64.
+Die tatsächlichen Kernprüfungen dieses Kandidaten sind abgeschlossen. SHA256SUMS.txt
+bindet die gespeicherten Bytes; Skripttext allein belegt keine Ausführung.
 
 | Dateien | Umfang |
 | --- | --- |
-| `build-result.json`, `source-inputs-summary.json` | Erfolgreicher signierter c5-Build; 4820 unveränderte inventarisierte Quelldateien |
-| `final-full-preflight.json`, `final-full-receipt.json`, `final-full-results.json` | Quellmanifest und Test-DLL vor dem Lauf gebunden; tatsächlich beendete Vollsuite, Exit 0, c5-Head, 109/109 Gruppen PASS |
-| `acceptance-*.json` | Finale c5-Paketabnahme: 40 Fälle, 81 abgewartete Verifier-/Setup-Prozesse; Originale, Quellen und Benutzerverknüpfungen unverändert |
-| `qr-tests-summary.json`, `native-source-summary.json` | Zusammenfassungen tatsächlicher Zeilen des erfolgreichen c5-Buildlogs, gebunden an dessen SHA-256; 151 QR-Prüfungen und aktuelle native Quellpins |
-| `control-lifecycle-summary.json` | Frischer c5-Buildlauf: 224 erfolgreiche aktuelle Pipe-Lebenszyklen, stabil gemeldete Handle-Zahlen und nachgewiesener historischer Negativfall; keine Roh-Streams kopiert |
-| `native-ci-receipt.json` | c5-GitHub-Job aus Run `39664877104`: native Quellen bauen, aktiver Defender und Kontrollkanal; ersetzt keine lokale Vollsuite |
-| `desktop-startup-receipt.json` | Tatsächlicher Start der signierten installierten Testkopie über Accessibility beobachtet; Navigation nicht bestätigt, visuelle/hardwarebezogene Freigabe nicht durchgeführt |
+| `build-result.json`, `source-inputs-summary.json` | Tatsächlicher signierter Build; 4861 frisch nachgeprüfte, unveränderte inventarisierte Quelldateien |
+| `final-full-*.json` | Exakter Quellstand/Test-DLL vor dem Lauf gebunden; 109 eindeutige Windows-x64-Gruppen PASS, tatsächlicher Exit 0 |
+| `acceptance-*.json` | Finale Abnahme mit 40 Fällen und 81 tatsächlich abgewarteten Verifier-/Setup-Prozessen; Originale/Quellen/Verknüpfungen laut Erhaltungsbeleg unverändert |
+| `qr-tests-summary.json`, `native-source-summary.json` | Tatsächliche 151 QR-Prüfungen und native Quellpins; abgeleitete Zusammenfassungen mit Original-Loghash und Zeilen |
+| `control-lifecycle-summary.json`, `native-ci-receipt.json` | Frische 224 aktuelle Pipe-Lebenszyklen und erfolgreicher exakter GitHub-Quellstand; keine Roh-Prozessbäume kopiert |
+| `desktop-startup-receipt.json` | Tatsächlicher Start der signierten installierten Testkopie beobachtet; Navigation/visuelle Hardwarefreigabe behalten ihren begrenzten Originalstatus |
 | `normalized-publication-assets.json`, `local-artifacts-sha256.txt` | Alle zwölf akzeptierten lokalen Dateien und geplante GitHub-Namen mit Punkten; keine Behauptung eines Uploads/Downloads |
-| `public-key-export.json` | Hashes der öffentlichen Exporte unter `A:\Keep Vault Keys` |
-| `dependency-security-result.json`, `managed-warning-summary.json` | Frühere SDK-10.0.402-/Laufzeit-10.0.13-Komponentenprüfungen für acht Windows-Projekte; kein eigenständiger c5-Vollsuitebeleg |
-| `native-analysis-result.json` | Frühere native Analyse: null Fehler, 300 erhaltene Herstellerwarnungen; der Produktions-Kontrollheader ist unverändert. Der damalige SDK-Pfad bleibt im Originalbeleg sichtbar |
-| `focused-gui-results.json`, `static-gui-summary.json`, `static-gui-review.md` | Frühere fokussierte GUI-/Stilprüfung und Hashes von acht synthetischen DE/EN-Renderings. Der frühere Head wird beibehalten; die fünf GUI-Gruppen bestehen zusätzlich in der c5-Vollsuite |
-| `gate-status.json` | Begrenzter Status dieses Dokumentationsstandes; c5-Leistungstest `FAIL`, Veröffentlichung gesperrt |
-| `superseded-c5-performance-*.json` | Tatsächlicher abgelehnter c5-Leistungslauf: Auto erreicht 82,0 % des besten festen Fensters; Ergebnisse, Prozessbeleg und Messwerte bleiben historische Fehlerbelege |
-| `superseded-c5-primitive-*.json` | Tatsächlich abgeschlossene Primitivmessungen des später abgelehnten c5-Kandidaten als eng begrenzte Vergleichsreferenz. Die öffentliche Ansicht entfernt den stabilen Rechneridentitätshash; alle zwölf Mediane bleiben erhalten. Dies ist kein bestandener Gesamtlauf und keine freigegebene historische Windows-Version |
+| `public-key-export.json`, `public-key-current-validation.json` | Unveränderte öffentliche Exporte unter A:\Keep Vault Keys, frisch mit dem neuen Kandidaten abgeglichen |
+| Frühere Komponentenbelege | Abhängigkeiten, native Analyse mit 300 Herstellerwarnungen und synthetische GUI-Renderings behalten ihren ursprünglichen Umfang und Head |
+| `superseded-*.json` und zugeordnete Archivdateien | Bytegleiche historische Kandidatenbelege; die Mapping-Datei erhält Originalnamen, Hashes und Geltungsumfang. Keine neuen Erfolge |
+| `gate-status.json` | Leistung `PASS`; Veröffentlichung `PENDING` nach tatsächlichen passenden Belegen |
 
-Die archivierten `invoke-final-package-acceptance.ps1` und `run-final-suite.ps1`
-sind bytegleiche, geprüfte Kopien der verwendeten lokalen Runner. Ihre Hashes
-stehen in `harnesses.json` und im Dateiinventar. Die Ausführung wird durch die
-Ergebnisbelege dokumentiert; der Skripttext allein ist kein Ausführungsnachweis.
-Für eine Wiederholung sind die Runner zuerst in ein frisches ignoriertes
-Arbeitsverzeichnis zu kopieren. Nicht in dieser Belegsammlung ausführen:
-der Vollsuite-Runner schreibt relativ zu seinem eigenen Verzeichnis.
+`evidence-index.json` benennt ursprüngliche und abgeleitete Nachweise separat.
+Die archivierten Runner sind vor einer Wiederholung in ein frisches ignoriertes
+Arbeitsverzeichnis zu kopieren. Nicht in dieser Belegsammlung ausführen.
 
-Das Feld `Preserved` im Vollsuite-Preflight bindet ausschließlich zuvor
-weggelegte historische 485-Belege. Dort ist die frühere Vollsuite `FAIL`; das
-alte Ergebnis einer einzelnen bestandenen Gruppe ist ebenfalls kein c5-
-Vollsuitebeleg. Diese historischen Dateien werden nicht als neue Erfolge gezählt
-und ihre Rohprotokolle sind nicht Teil dieser Sammlung.
+Frühere Vollsuite-Preflight-Felder Preserved bleiben historische Nachweise ihrer
+ursprünglichen Quellen/Ergebnisse und werden nicht als neue Vollsuite gezählt.
+Der alte Kandidat `c5f4f256c9494147d08055a1deb5f9513a11af26` wurde durch `103e87fd6335bdc4ef8a2ffafa2384ecaad6504b` abgelöst. Die historische
+macOS-Prüfserie ist kein Windows-Nachweis. Physische Kamera-/Papierabläufe, andere
+DPI-/Hardwarekonfigurationen, Mehr-TiB-Läufe, externer Kryptografieaudit und ein
+unabhängiger veröffentlichter historischer Windows-Leistungsvergleich sind nicht
+nachgewiesen. Roh-UI, Roh-Prozesslisten, Verknüpfungszustände und private Schlüssel
+werden nicht ergänzt. Die ursprünglichen IndexScope-Fakten bleiben erhalten.
 
-Nicht enthalten sind private Schlüssel, rohe geschützte Desktop-Ausgaben,
-Benutzerverknüpfungszustände, lange Rohprotokolle oder unklar zugeordnete
-Kandidatenbelege. Die ausdrücklich als `superseded-c5` bezeichneten Dateien
-behalten ihren Fehler- beziehungsweise eingeschränkten Vergleichsumfang.
-Reale Papier-/Kameraabläufe, andere DPI-/Hardwarekonfigurationen, physische
-Mehr-TiB-Läufe, ein externer Kryptografieaudit und ein unabhängiger historischer
-Windows-Leistungsvergleich sind nicht nachgewiesen. Die historische macOS-
-Prüfserie mit 49 Gates ist kein Windows-Nachweis und wird hier nicht mitgezählt.
-
-Die c5-Leistungsprüfung ist fehlgeschlagen. Ein korrigierter Produktquellstand
-benötigt einen neuen Build und neue Abschlussbelege. Erst nach deren tatsächlichem
-Erfolg werden Performance und Veröffentlichung aktualisiert; c5-Fehlerbelege
-bleiben als solche erhalten.
+<!-- evidence-refresh-status:begin -->
+Die tatsächlichen vier Performance-Gruppen für `103e87fd6335bdc4ef8a2ffafa2384ecaad6504b` und ihre Originalbelege sind ergänzt (`performance-*.json`, `run-final-performance.ps1`). Die Metrik-Auszüge nennen SHA-256 und Zeilen der Originalprotokolle; der stabile Rechnerbezeichner und große Ressourcen-Traces sind ausdrücklich ausgelassen. Historische NOT_RUN-Aussagen bleiben unverändert.
+Veröffentlichung und deren Download-/Erhaltungsbelege bleiben `PENDING`.
+Der Parent aktualisiert den Audittext und gegebenenfalls Release-Verweise anhand dieser tatsächlichen Belege.
+<!-- evidence-refresh-status:end -->

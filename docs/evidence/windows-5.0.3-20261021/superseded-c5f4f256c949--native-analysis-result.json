@@ -1,0 +1,75 @@
+{
+  "State": "PASS",
+  "ExitCode": 0,
+  "Command": "tools/Analyze-Native.cmd",
+  "SdkPath": "C:\\Users\\Michael\\.codex\\tools\\dotnet-10.0.401",
+  "WarningCount": 300,
+  "ErrorCount": 0,
+  "AdapterWarnings": [],
+  "WarningCodes": [
+    {
+      "Name": "C28251",
+      "Count": 6
+    },
+    {
+      "Name": "C4100",
+      "Count": 4
+    },
+    {
+      "Name": "C4127",
+      "Count": 17
+    },
+    {
+      "Name": "C4244",
+      "Count": 204
+    },
+    {
+      "Name": "C4245",
+      "Count": 2
+    },
+    {
+      "Name": "C4267",
+      "Count": 46
+    },
+    {
+      "Name": "C4456",
+      "Count": 3
+    },
+    {
+      "Name": "C4458",
+      "Count": 6
+    },
+    {
+      "Name": "C4505",
+      "Count": 2
+    },
+    {
+      "Name": "C4702",
+      "Count": 2
+    },
+    {
+      "Name": "C6246",
+      "Count": 3
+    },
+    {
+      "Name": "C6262",
+      "Count": 3
+    },
+    {
+      "Name": "C6287",
+      "Count": 1
+    },
+    {
+      "Name": "C6385",
+      "Count": 1
+    }
+  ],
+  "SourcePins": [
+    "external/NATIVE_SOURCE_SHA256SUMS verified: 433 files",
+    "native/WINDOWS_SOURCE_SHA256SUMS verified: 3 files",
+    "Crypto++ compilation inventory verified: 202 translation units"
+  ],
+  "ControlHeaderSha256": "CCB5A6C88040CA1653DAF09BE8E6555DACDCD375A42FDAC77A729B6760E643BE",
+  "LogSha256": "B559C0AE4D88BFE5D71A8E15F0AFB9F998B09A7B78B23FC2C88E8D5A506A6D3C",
+  "Note": "Native adapter /WX gates passed. Vendor warnings are retained and are not a warning-free claim."
+}

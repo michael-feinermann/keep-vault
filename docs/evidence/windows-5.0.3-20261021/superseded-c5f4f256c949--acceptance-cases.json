@@ -1,0 +1,242 @@
+[
+  {
+    "Name": "baseline-package",
+    "Status": "PASS",
+    "Seconds": 22.0543647,
+    "Error": null
+  },
+  {
+    "Name": "baseline-zip",
+    "Status": "PASS",
+    "Seconds": 3.9308167,
+    "Error": null
+  },
+  {
+    "Name": "external-standalone-verifier",
+    "Status": "PASS",
+    "Seconds": 10.4384895,
+    "Error": null
+  },
+  {
+    "Name": "fresh-zip-extraction-exact-package",
+    "Status": "PASS",
+    "Seconds": 13.6149745,
+    "Error": null
+  },
+  {
+    "Name": "fresh-install-exact-copy",
+    "Status": "PASS",
+    "Seconds": 24.1739601,
+    "Error": null
+  },
+  {
+    "Name": "installed-verifier-standalone",
+    "Status": "PASS",
+    "Seconds": 11.0550477,
+    "Error": null
+  },
+  {
+    "Name": "existing-install-preserved",
+    "Status": "PASS",
+    "Seconds": 6.379556,
+    "Error": null
+  },
+  {
+    "Name": "existing-empty-directory-rejected",
+    "Status": "PASS",
+    "Seconds": 5.1555737,
+    "Error": null
+  },
+  {
+    "Name": "existing-file-preserved",
+    "Status": "PASS",
+    "Seconds": 5.1660988,
+    "Error": null
+  },
+  {
+    "Name": "destination-junction-rejected-canary-preserved",
+    "Status": "PASS",
+    "Seconds": 5.0605859,
+    "Error": null
+  },
+  {
+    "Name": "source-junction-and-single-file-alias-rejected",
+    "Status": "PASS",
+    "Seconds": 1.7359821,
+    "Error": null
+  },
+  {
+    "Name": "inner-junction-rejected",
+    "Status": "PASS",
+    "Seconds": 0.8907436,
+    "Error": null
+  },
+  {
+    "Name": "hardlink-rejected",
+    "Status": "PASS",
+    "Seconds": 0.8678479,
+    "Error": null
+  },
+  {
+    "Name": "missing-RELEASE-INVENTORY.json",
+    "Status": "PASS",
+    "Seconds": 0.9154839,
+    "Error": null
+  },
+  {
+    "Name": "missing-RELEASE-INVENTORY.json.khsig",
+    "Status": "PASS",
+    "Seconds": 0.8961325,
+    "Error": null
+  },
+  {
+    "Name": "missing-Keep Vault.exe.sha3.khsig",
+    "Status": "PASS",
+    "Seconds": 2.8715088,
+    "Error": null
+  },
+  {
+    "Name": "missing-QR-Scanner/QR-Scanner.exe",
+    "Status": "PASS",
+    "Seconds": 2.9022321,
+    "Error": null
+  },
+  {
+    "Name": "missing-zpaq.exe",
+    "Status": "PASS",
+    "Seconds": 3.2330416,
+    "Error": null
+  },
+  {
+    "Name": "missing-kalyna_v13.dll",
+    "Status": "PASS",
+    "Seconds": 1.0402392,
+    "Error": null
+  },
+  {
+    "Name": "missing-threefish_ref.dll",
+    "Status": "PASS",
+    "Seconds": 3.2452049,
+    "Error": null
+  },
+  {
+    "Name": "missing-mars_ref.dll",
+    "Status": "PASS",
+    "Seconds": 2.9518115,
+    "Error": null
+  },
+  {
+    "Name": "missing-camellia_v13.dll",
+    "Status": "PASS",
+    "Seconds": 1.0410797,
+    "Error": null
+  },
+  {
+    "Name": "missing-serpent_v13.dll",
+    "Status": "PASS",
+    "Seconds": 3.1818716,
+    "Error": null
+  },
+  {
+    "Name": "missing-shacal2_ref.dll",
+    "Status": "PASS",
+    "Seconds": 3.1168875,
+    "Error": null
+  },
+  {
+    "Name": "missing-aes_ref.dll",
+    "Status": "PASS",
+    "Seconds": 0.9952313,
+    "Error": null
+  },
+  {
+    "Name": "missing-xchachapoly_v13.dll",
+    "Status": "PASS",
+    "Seconds": 3.1465538,
+    "Error": null
+  },
+  {
+    "Name": "missing-argon2_ref.dll",
+    "Status": "PASS",
+    "Seconds": 1.0157189,
+    "Error": null
+  },
+  {
+    "Name": "missing-argon2.exe",
+    "Status": "PASS",
+    "Seconds": 1.0500832,
+    "Error": null
+  },
+  {
+    "Name": "bitflip-RELEASE-INVENTORY.json",
+    "Status": "PASS",
+    "Seconds": 0.8992837,
+    "Error": null
+  },
+  {
+    "Name": "bitflip-RELEASE-INVENTORY.json.khsig",
+    "Status": "PASS",
+    "Seconds": 0.9366754,
+    "Error": null
+  },
+  {
+    "Name": "bitflip-Keep Vault.exe",
+    "Status": "PASS",
+    "Seconds": 3.5663635,
+    "Error": null
+  },
+  {
+    "Name": "bitflip-Keep Vault.exe.khsig",
+    "Status": "PASS",
+    "Seconds": 3.6354478,
+    "Error": null
+  },
+  {
+    "Name": "bitflip-zpaq.exe",
+    "Status": "PASS",
+    "Seconds": 3.2750018,
+    "Error": null
+  },
+  {
+    "Name": "extra-file-rejected",
+    "Status": "PASS",
+    "Seconds": 3.1341272,
+    "Error": null
+  },
+  {
+    "Name": "extra-empty-directory-rejected",
+    "Status": "PASS",
+    "Seconds": 3.180331,
+    "Error": null
+  },
+  {
+    "Name": "zip-bitflip-rejected",
+    "Status": "PASS",
+    "Seconds": 0.8668057,
+    "Error": null
+  },
+  {
+    "Name": "zip-missing-.khsig",
+    "Status": "PASS",
+    "Seconds": 0.8388846,
+    "Error": null
+  },
+  {
+    "Name": "zip-missing-.sha3.khsig",
+    "Status": "PASS",
+    "Seconds": 0.9127696,
+    "Error": null
+  },
+  {
+    "Name": "zip-missing-.skein",
+    "Status": "PASS",
+    "Seconds": 0.890385,
+    "Error": null
+  },
+  {
+    "Name": "restoration-accepted-and-original-inputs-unchanged",
+    "Status": "PASS",
+    "Seconds": 17.9585443,
+    "Error": null
+  }
+]

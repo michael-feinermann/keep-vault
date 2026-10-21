@@ -1,0 +1,17 @@
+{
+  "Number": 1,
+  "Id": "performance.cipher-suites",
+  "State": "PASS",
+  "ExitCode": 0,
+  "StartedUtc": "2026-10-21T21:48:39.6797888Z",
+  "CompletedUtc": "2026-10-21T22:15:03.1516737Z",
+  "Seconds": 1583.4531944,
+  "TimedOut": false,
+  "ResultFresh": true,
+  "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\01-cipher-suites\\results.json",
+  "ResultsSha256": "78FAB1189867C79FF6C09C335D93175655EB0842A9A7AC57DDBB45CEED094B3A",
+  "Stdout": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\01-cipher-suites\\stdout.log",
+  "Stderr": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\01-cipher-suites\\stderr.log",
+  "Error": null,
+  "CleanupPassed": true
+}

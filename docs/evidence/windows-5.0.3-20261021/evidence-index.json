@@ -1,13 +1,13 @@
 {
   "SchemaVersion": 1,
   "ProductVersion": "5.0.3",
-  "ProductSourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
-  "SourceInputCount": 4820,
-  "SourceManifestSha256": "DA6445706CFCFEED0F9A2097CBA08E8572F19DF05548D707A19FD96B0D689940",
+  "ProductSourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "SourceInputCount": 4861,
+  "SourceManifestSha256": "5E364288B8C5D29415FDEB8C8212D976F6FC76C578AE3B9DCAE47FEBE09D4BE4",
   "FinalFullGroupsPassed": 109,
   "FinalAcceptanceCases": 40,
   "FinalAcceptanceAwaitedProductProcesses": 81,
-  "Performance": "FAIL",
+  "Performance": "PASS",
   "Publication": "PENDING",
   "OriginalBundleListSha256": "A5C651901E59C46B37267DD6E74C8B2C1833CF04BE4F712678B6BFC202316D0B",
   "Files": [
@@ -20,56 +20,62 @@
     {
       "Name": "acceptance-assets-after.json",
       "Bytes": 2263,
-      "Sha256": "1AB08444D9EAA7C27EB4AF6AA8B932AE1ABBC4FF17ECDEC172647550325C1DB1",
-      "Scope": "Rejected c5 candidate: twelve original local assets after acceptance; byte-exact receipt, not new planner evidence"
+      "Sha256": "284D4DCA3A1CB6224387731CE1142A04430BE340A79DFD8943780478915F5B0B",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "acceptance-assets-before.json",
       "Bytes": 2263,
-      "Sha256": "1AB08444D9EAA7C27EB4AF6AA8B932AE1ABBC4FF17ECDEC172647550325C1DB1",
-      "Scope": "Rejected c5 candidate: twelve original local assets before acceptance; byte-exact receipt, not new planner evidence"
+      "Sha256": "284D4DCA3A1CB6224387731CE1142A04430BE340A79DFD8943780478915F5B0B",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "acceptance-cases.json",
-      "Bytes": 4926,
-      "Sha256": "CB27BE5E10417FD892F7EDEFF6FC0D6F157B2B94A4B3C40A657CC299DD5C750D",
-      "Scope": "Rejected c5 candidate: forty acceptance cases PASS; applies only to c5 artifacts"
+      "Bytes": 4924,
+      "Sha256": "C14DBCFE9634041E47A158A6EB4181191C116B2DA82C0ABCC4C18B0BB6812EC3",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "acceptance-controls.json",
       "Bytes": 1377,
-      "Sha256": "9898958D7DA773BCC47BA3073494D8EFE9E893338597224A9547F87BBEF69835",
-      "Scope": "Rejected c5 candidate: authenticated executable controls; applies only to c5 artifacts"
+      "Sha256": "52A17C9D7C214A2919248646206452F0672534270EA81FB168A031FE64530FDA",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "acceptance-preservation.json",
       "Bytes": 213,
       "Sha256": "0401579C477F8239A29500C6B1188589DFBC469E3623CC9AAC7BDDBE7DCC4E90",
-      "Scope": "Rejected c5 candidate: original/source/shortcut preservation PASS; byte-exact receipt"
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
+    },
+    {
+      "Name": "acceptance-process-summary.json",
+      "Bytes": 42746,
+      "Sha256": "B8A98C32B62B97EBCBB323FF52EBE032CB06BFEFC9BD6D2DE1023E5154E42B32",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b actual81 completed process/output bindings, raw private diagnostic fields omitted"
     },
     {
       "Name": "acceptance-provenance.json",
       "Bytes": 4062,
-      "Sha256": "529B4616223D647562C025EEA4F003A8DF007363D8E2EAC7577184B989DD39B3",
-      "Scope": "Rejected c5 candidate: exact source/public pins/control verification; byte-exact receipt"
+      "Sha256": "E1C30113EE863E504CAE5E451C452BC3E858A4D8F829807FD5D3FC3B3D6E3ECE",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "acceptance-summary.json",
       "Bytes": 445,
-      "Sha256": "AD3144145E0E4CEF05AD16B2CADB5936B1B381A62D1721C2C5A3582B9D0C3695",
-      "Scope": "Rejected c5 candidate: acceptance forty cases and eighty-one awaited product processes PASS; publication remains blocked by performance"
+      "Sha256": "DE824CD8A5C666166E7A2E725EC34093CCC6FE4D35DAA7396A1C303E8CAD6933",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "build-result.json",
-      "Bytes": 330,
-      "Sha256": "FBC85D8F04D7457BC5AEAE9F7161365310B2FF69326A66787ED133B7B66D0F0B",
-      "Scope": "Rejected c5 candidate: immutable signed build PASS; no claim for the subsequent planner patch"
+      "Bytes": 410,
+      "Sha256": "99862C225BB00348064617819B83279A7F25D2FBF268B5B175E4DA377140B599",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "control-lifecycle-summary.json",
-      "Bytes": 3740,
-      "Sha256": "5952936DDD03F7747D81F59CB95FC58C83DA873EF5F7C5C8CE9D051416ED031C",
-      "Scope": "Condensed c5 native224 lifecycle proof with original raw receipt SHA256; no raw streams or new planner validation"
+      "Bytes": 4056,
+      "Sha256": "5FD3C22A1182126CD5FCF1949B52183B4E3F64B5F01266C56D744B8FFCD55C30",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b fresh actual224 named-pipe cycles, original receipt/log bindings; compact without process trees"
     },
     {
       "Name": "dependency-security-result.json",
@@ -79,27 +85,27 @@
     },
     {
       "Name": "desktop-startup-receipt.json",
-      "Bytes": 986,
-      "Sha256": "C9293A8A400C3239AEB1F1E56D76424DACA5EFA1DFDC57F8C53E0F92E86989B0",
-      "Scope": "Parent-observed actual signed installed test-copy startup/accessibility only; navigation not confirmed; visual/hardware workflow not run"
+      "Bytes": 982,
+      "Sha256": "2C95A727394BD7395424827F861D9AF7DA45D68EE47B8B975A594C3FEC224EA7",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b compact actual startup receipt, original hash retained; navigation/hardware scope unchanged"
     },
     {
       "Name": "final-full-preflight.json",
-      "Bytes": 1102,
-      "Sha256": "26E1F446610FC7651E4ED4D9B9E8E00AF7440AD2DFE4F424F3BD62D7B3F9D9F2",
-      "Scope": "Rejected c5 candidate: exact source-manifest/test-DLL preflight; Preserved references historical485 failures/subsets, not new c5 passes"
+      "Bytes": 1386,
+      "Sha256": "5DF80F390D673DD23950F771C1CFC5B81867145DBE4733A4EE641B7F821119B0",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "final-full-receipt.json",
       "Bytes": 360,
-      "Sha256": "8FAF8BDC9702DE13AB112DD74F4733DE054597521DB4042F4A87FD8F69392EE6",
-      "Scope": "Rejected c5 candidate: actual full runner exit0 and4820 unchanged inputs; byte-exact receipt"
+      "Sha256": "90281FFA3C5B09CC3525047F411C369B33F609AF5501A031DE3F2E0AA03C9909",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "final-full-results.json",
-      "Bytes": 29440,
-      "Sha256": "0146145C73164A155F257C2412BFD22DE77172078E7E1BB0FDEA89A3B5157CDA",
-      "Scope": "Rejected c5 candidate: Windows x64 full109/109 PASS; no claim for the subsequent planner patch"
+      "Bytes": 29441,
+      "Sha256": "13C10B1018D5B376BC961E14D164683790671BD44181C9A135EE1787849A53A2",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "focused-gui-results.json",
@@ -109,27 +115,27 @@
     },
     {
       "Name": "gate-status.json",
-      "Bytes": 2707,
-      "Sha256": "8DA043C648315164C4843CAFD8378E5E8ADDC5A4156B641C059BE89F50895894",
-      "Scope": "Interim c5 build/full/acceptance PASS; performance FAIL and publication PENDING/blocked; no new planner gates"
+      "Bytes": 4759,
+      "Sha256": "C4C0313ACD8C07C81F5E1385390EB0549E1F215D76CA39ED82ECB7B72CE0A82F",
+      "Scope": "Current matching actual core gates; performance/publication PENDING and original physical/historical limits retained"
     },
     {
       "Name": "harnesses.json",
-      "Bytes": 1778,
-      "Sha256": "144BA9430700EB1E86C16D56D999CD7BE575D2DD89F129FFB631D312B601EA4A",
-      "Scope": "Reviewed archived executed c5 runner source hashes and associated actual receipts; script bytes alone are not execution evidence"
+      "Bytes": 1320,
+      "Sha256": "387F36812E9826C48E2B27BF9ADAED7162FA108B76B4A05208AFE6D21551AE17",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b actual runner/source/preflight hash bindings, no script-as-execution assertion"
     },
     {
       "Name": "invoke-final-package-acceptance.ps1",
       "Bytes": 41281,
       "Sha256": "D4035FDB454B011670131D1753277A4C04EE44BEFBD08C4950949C3EE2E153BC",
-      "Scope": "Byte-exact executed c5 acceptance runner source, D4035FDB...; not new planner execution evidence"
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b executed acceptance runner source, not independent execution proof"
     },
     {
       "Name": "local-artifacts-sha256.txt",
       "Bytes": 1316,
-      "Sha256": "32A95F286FD7675258FA8E66A7F74B064583E9E9076A8DC9A43376D34FE9AE69",
-      "Scope": "Rejected c5 candidate: twelve accepted local artifacts and planned normalized names; not public download evidence"
+      "Sha256": "ADDCBF07A86E10DFDB960EA580F64FB425001BA522CE6C80181C26002C9198EF",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b fresh exact12 accepted local asset hashes under planned dotted external names"
     },
     {
       "Name": "managed-warning-summary.json",
@@ -145,27 +151,129 @@
     },
     {
       "Name": "native-ci-receipt.json",
-      "Bytes": 2069,
-      "Sha256": "EAF8D0B5BF2A30CC9C5EB5900EE96C201E011D282DFD5615D012631FECA35989",
-      "Scope": "Exact c5 GitHub native build/active Defender scan/control-lifecycle job; does not replace local full/performance gates or validate the new planner"
+      "Bytes": 2070,
+      "Sha256": "292321DB3D6FBD4472CD2A6D5C5D545219ED207964413D5948B2AC7A0BE01D87",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b; byte-exact original completed core receipt; historical raw source/outcome fields are not rewritten"
     },
     {
       "Name": "native-source-summary.json",
-      "Bytes": 538,
-      "Sha256": "E160205379417949364A7C1F2066512769C9C24BF7258A8D3A81B1CB4744374F",
-      "Scope": "Actual c5 build source pin summaries433/3/202 and original build-log SHA256; condensed original proof"
+      "Bytes": 1420,
+      "Sha256": "38D20D50603D90DCCEE81BBE2A6890482387C64453119B3830AE766464264F0B",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b derived actual native source/translation-unit verification with original log line/hash"
     },
     {
       "Name": "normalized-publication-assets.json",
-      "Bytes": 7056,
-      "Sha256": "449A5435DB0A2C39429364F19803ED1C8053DC66A7C282501E2F16B3C40112AD",
-      "Scope": "Rejected c5 candidate: accepted local artifact hashes; not published and not new planner artifact evidence"
+      "Bytes": 7007,
+      "Sha256": "43D885D8769F19EB05B676D5AD0BEF3D2F40E59B205C240A4F72796264ED332D",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b freshly rehashed accepted local12 assets, external dotted names; no upload/download assertion"
+    },
+    {
+      "Name": "performance-01-metric-extracts.json",
+      "Bytes": 21691,
+      "Sha256": "45C97F60AA0E869286D0096233482CF6095C2D75F96EE95DA18211C2228E0C47",
+      "Scope": "Derived actual successful performance metric markers; original stdout/payload SHA256 and line recorded, stable machine identity omitted"
+    },
+    {
+      "Name": "performance-01-receipt.json",
+      "Bytes": 906,
+      "Sha256": "0013D32E9675446B216C9336A1D5DB6F62457BC9FF58C7FEB7AF12092CEE1827",
+      "Scope": "Actual selected-source performance group receipt: performance.cipher-suites"
+    },
+    {
+      "Name": "performance-01-results.json",
+      "Bytes": 734,
+      "Sha256": "78FAB1189867C79FF6C09C335D93175655EB0842A9A7AC57DDBB45CEED094B3A",
+      "Scope": "Actual selected-source single-group results: performance.cipher-suites"
+    },
+    {
+      "Name": "performance-02-metric-extracts.json",
+      "Bytes": 1880,
+      "Sha256": "938591913A53E7465438FEDC1738796CC541ABA009DD9D00BD3941826BCB221D",
+      "Scope": "Derived actual successful performance metric markers; original stdout/payload SHA256 and line recorded, stable machine identity omitted"
+    },
+    {
+      "Name": "performance-02-receipt.json",
+      "Bytes": 916,
+      "Sha256": "1346AF1A78274CA57B85FF31B026D195948197462BB1E0150238703B5DF65526",
+      "Scope": "Actual selected-source performance group receipt: release.paranoia-256mib-level5"
+    },
+    {
+      "Name": "performance-02-results.json",
+      "Bytes": 713,
+      "Sha256": "F20776384D0B06CD61570B0E2F4BC64B6A09032CE22BC371535F4CD89257A56D",
+      "Scope": "Actual selected-source single-group results: release.paranoia-256mib-level5"
+    },
+    {
+      "Name": "performance-03-entropy-phase-metrics.json",
+      "Bytes": 25564,
+      "Sha256": "52C0CEA6A3DC9ACD8D89C69F4051F38A40F0E0F270EBB148FFD34340F5050AF3",
+      "Scope": "Byte-exact actual public synthetic entropy phase metrics; original SHA256 remains bound by completed performance summary"
+    },
+    {
+      "Name": "performance-03-receipt.json",
+      "Bytes": 929,
+      "Sha256": "32E084101E7DFD9864E4C6D0D9E602083394AB9ADBBE20987D022ED4EC90C0A7",
+      "Scope": "Actual selected-source performance group receipt: performance.entropy-rev9-phases"
+    },
+    {
+      "Name": "performance-03-results.json",
+      "Bytes": 725,
+      "Sha256": "CF117ABAA727D17425D2020C4BF9393199A1060B6CAA1D1CE324EA95CEEC4939",
+      "Scope": "Actual selected-source single-group results: performance.entropy-rev9-phases"
+    },
+    {
+      "Name": "performance-04-metric-extracts.json",
+      "Bytes": 1915,
+      "Sha256": "74B8FC00A2038EFF6F371D3D68563AA73AB612CF900A930A5946781C1B469144",
+      "Scope": "Derived actual successful performance metric markers; original stdout/payload SHA256 and line recorded, stable machine identity omitted"
+    },
+    {
+      "Name": "performance-04-receipt.json",
+      "Bytes": 934,
+      "Sha256": "E98E60CD6CB0D1F7839A4824FBD1248A477C3745AA145271C10A9D695F7C600B",
+      "Scope": "Actual selected-source performance group receipt: release.paranoia-complex-tree-level5-repair"
+    },
+    {
+      "Name": "performance-04-results.json",
+      "Bytes": 736,
+      "Sha256": "BA4A74886DD0872291F2B10758EA3C19285DA045B3662E118CDE8103CD3AE6E5",
+      "Scope": "Actual selected-source single-group results: release.paranoia-complex-tree-level5-repair"
+    },
+    {
+      "Name": "performance-preservation.json",
+      "Bytes": 144,
+      "Sha256": "3D3F1C9EA946269DCD8D499E5698C2E2FB360514AA82C766F3B77A0F69CF2D40",
+      "Scope": "Original completed performance preservation receipt"
+    },
+    {
+      "Name": "performance-provenance.json",
+      "Bytes": 2028,
+      "Sha256": "D25FC5D87E0B4D0F07959090F1893E908D5801AEE00C3A576BF62FB9033541F4",
+      "Scope": "Original executed selected-source performance provenance, exact source/DLL/SDK/harness"
+    },
+    {
+      "Name": "performance-publication-gate.json",
+      "Bytes": 578,
+      "Sha256": "144C95E9CCB71A16BD1C5CF62677C2F14059D0750D114EEE46093CB91D6A19CE",
+      "Scope": "Actual performance summary/preservation hash bindings"
+    },
+    {
+      "Name": "performance-summary.json",
+      "Bytes": 16385,
+      "Sha256": "20AEE76F4EC3A9EA185D97E8CBD0E44538A53E4B45B2823E633C5CB0685FB36C",
+      "Scope": "Original completed selected-source performance summary, including hashes of all original raw evidence; raw evidence is not copied"
     },
     {
       "Name": "planner-development-summary.json",
       "Bytes": 13238,
       "Sha256": "FB95B6CD2299C17BAF6B3FBD16CDCE4880581FE91FAE73FCBB57057A8C2DE8FD",
       "Scope": "Development diagnostic only: five uncommitted planner source hashes, real Windows worker-policy PASS and unchanged full pipeline experiment PASS at 97.636 percent Auto/best-fixed. Not a final signed-candidate release gate."
+    },
+    {
+      "Name": "public-key-current-validation.json",
+      "Bytes": 2288,
+      "Sha256": "323C58AC11E28B41B6FACD4E0F083DE2809AC5E9BBBDDE0B441A38572D14ECDD",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b fresh A public-key rehash and unchanged certificate/RSA/ML-DSA pin binding"
     },
     {
       "Name": "public-key-export.json",
@@ -175,27 +283,33 @@
     },
     {
       "Name": "qr-tests-summary.json",
-      "Bytes": 743,
-      "Sha256": "B22136326B639AF0F8CF56BD91350B4E705223D92787AD202E657FCA88D7E5F9",
-      "Scope": "Actual151 QR checks from successful c5 build and original build-log SHA256; no camera workflow claim"
+      "Bytes": 698,
+      "Sha256": "D261B249A82882456ABDF8D815DF3EBCA06D4CBB7E2CB43459619D16E2718380",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b derived actual151 QR-check build summary, original log hash/line retained"
     },
     {
       "Name": "README.md",
-      "Bytes": 5205,
-      "Sha256": "85EC5C284C568E9331C531315B64C429C06806FC086B0C7A8A5BB1B3AC53C8C6",
-      "Scope": "Interim evidence scopes, reproduction instructions and unverified limits; c5 performance FAIL remains explicit"
+      "Bytes": 3792,
+      "Sha256": "5C6F9A10B8BBC5056FC5A060AE56FC25A06812E80E6DA7609874B3973A72407C",
+      "Scope": "Current bounded core evidence summary; historical scopes/limits retained, performance/publication pending"
+    },
+    {
+      "Name": "run-final-performance.ps1",
+      "Bytes": 28861,
+      "Sha256": "431AB5B190E7C92C2501A5371E6EB0763629CE51B477A42597F324538E87642E",
+      "Scope": "Byte-exact executed performance wrapper source; execution proof is in the actual receipts"
     },
     {
       "Name": "run-final-suite.ps1",
       "Bytes": 2406,
       "Sha256": "E6AF3A5075C6154FCF926D12F1C5BF7953DB4D394A44DED851478C0A5834C426",
-      "Scope": "Byte-exact parent-confirmed executed c5 full runner source, E6AF3A50...; not new planner execution evidence"
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b parent-selected full runner source, not independent execution proof"
     },
     {
       "Name": "source-inputs-summary.json",
-      "Bytes": 527,
-      "Sha256": "E24BB3A0C666D1E7B182D780CE898EE66E822301E9BDF41AD8A634A36048E981",
-      "Scope": "Rejected c5 candidate:4820 committed manifest-covered inputs and unchanged before/after source manifest SHA256"
+      "Bytes": 748,
+      "Sha256": "3A1D0CE4FB422350BAEA221D62872CF2FC60CE45661BE6EA4C5830AD1A60D280",
+      "Scope": "Actual final source 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b fresh source rehash and actual completed build/full/acceptance source bindings"
     },
     {
       "Name": "static-gui-review.md",
@@ -244,8 +358,239 @@
       "Bytes": 1387,
       "Sha256": "54E2907E217C03216B106C69D9C57933D9E4D23DF7F7813C5DFDD087B5BA5A63",
       "Scope": "Derived rejected c5 primitive-only public measurements: exact twelve medians and host fields except stable machine identity omitted; never overall PASS or an approved released historical baseline"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--.gitattributes",
+      "Bytes": 83,
+      "Sha256": "D4C7D8A6D5BF53F72973B5956F4B3A7E4EE1AD74CA650DA0E3C19F5D9FFC2284",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Scoped byte preservation for hash-pinned evidence"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--acceptance-assets-after.json",
+      "Bytes": 2263,
+      "Sha256": "1AB08444D9EAA7C27EB4AF6AA8B932AE1ABBC4FF17ECDEC172647550325C1DB1",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: twelve original local assets after acceptance; byte-exact receipt, not new planner evidence"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--acceptance-assets-before.json",
+      "Bytes": 2263,
+      "Sha256": "1AB08444D9EAA7C27EB4AF6AA8B932AE1ABBC4FF17ECDEC172647550325C1DB1",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: twelve original local assets before acceptance; byte-exact receipt, not new planner evidence"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--acceptance-cases.json",
+      "Bytes": 4926,
+      "Sha256": "CB27BE5E10417FD892F7EDEFF6FC0D6F157B2B94A4B3C40A657CC299DD5C750D",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: forty acceptance cases PASS; applies only to c5 artifacts"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--acceptance-controls.json",
+      "Bytes": 1377,
+      "Sha256": "9898958D7DA773BCC47BA3073494D8EFE9E893338597224A9547F87BBEF69835",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: authenticated executable controls; applies only to c5 artifacts"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--acceptance-preservation.json",
+      "Bytes": 213,
+      "Sha256": "0401579C477F8239A29500C6B1188589DFBC469E3623CC9AAC7BDDBE7DCC4E90",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: original/source/shortcut preservation PASS; byte-exact receipt"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--acceptance-provenance.json",
+      "Bytes": 4062,
+      "Sha256": "529B4616223D647562C025EEA4F003A8DF007363D8E2EAC7577184B989DD39B3",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: exact source/public pins/control verification; byte-exact receipt"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--acceptance-summary.json",
+      "Bytes": 445,
+      "Sha256": "AD3144145E0E4CEF05AD16B2CADB5936B1B381A62D1721C2C5A3582B9D0C3695",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: acceptance forty cases and eighty-one awaited product processes PASS; publication remains blocked by performance"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--build-result.json",
+      "Bytes": 330,
+      "Sha256": "FBC85D8F04D7457BC5AEAE9F7161365310B2FF69326A66787ED133B7B66D0F0B",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: immutable signed build PASS; no claim for the subsequent planner patch"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--control-lifecycle-summary.json",
+      "Bytes": 3740,
+      "Sha256": "5952936DDD03F7747D81F59CB95FC58C83DA873EF5F7C5C8CE9D051416ED031C",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Condensed c5 native224 lifecycle proof with original raw receipt SHA256; no raw streams or new planner validation"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--dependency-security-result.json",
+      "Bytes": 8532,
+      "Sha256": "9672F3D70BD64E2E789052170DCE44E5F552C458FCEA2C9EAAC7A2BA67075CFF",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: SDK402/runtime13 component restores/builds/audits"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--desktop-startup-receipt.json",
+      "Bytes": 986,
+      "Sha256": "C9293A8A400C3239AEB1F1E56D76424DACA5EFA1DFDC57F8C53E0F92E86989B0",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Parent-observed actual signed installed test-copy startup/accessibility only; navigation not confirmed; visual/hardware workflow not run"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--evidence-index.json",
+      "Bytes": 12606,
+      "Sha256": "8D748FEE3983C0BC0D4A6775C7A2BF2CFBCC4A89776A8274E2927AA24211393F",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Prior candidate index, original scope fields retained"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--final-full-preflight.json",
+      "Bytes": 1102,
+      "Sha256": "26E1F446610FC7651E4ED4D9B9E8E00AF7440AD2DFE4F424F3BD62D7B3F9D9F2",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: exact source-manifest/test-DLL preflight; Preserved references historical485 failures/subsets, not new c5 passes"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--final-full-receipt.json",
+      "Bytes": 360,
+      "Sha256": "8FAF8BDC9702DE13AB112DD74F4733DE054597521DB4042F4A87FD8F69392EE6",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: actual full runner exit0 and4820 unchanged inputs; byte-exact receipt"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--final-full-results.json",
+      "Bytes": 29440,
+      "Sha256": "0146145C73164A155F257C2412BFD22DE77172078E7E1BB0FDEA89A3B5157CDA",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: Windows x64 full109/109 PASS; no claim for the subsequent planner patch"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--focused-gui-results.json",
+      "Bytes": 1761,
+      "Sha256": "236AADF2011298CCFB76A1C9435F4EC2A1E002A6CD39C613EAB2D6CE26FAA3FC",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Intermediate focused GUI5; static rendering only"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--gate-status.json",
+      "Bytes": 2707,
+      "Sha256": "8DA043C648315164C4843CAFD8378E5E8ADDC5A4156B641C059BE89F50895894",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Interim c5 build/full/acceptance PASS; performance FAIL and publication PENDING/blocked; no new planner gates"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--harnesses.json",
+      "Bytes": 1778,
+      "Sha256": "144BA9430700EB1E86C16D56D999CD7BE575D2DD89F129FFB631D312B601EA4A",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Reviewed archived executed c5 runner source hashes and associated actual receipts; script bytes alone are not execution evidence"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--invoke-final-package-acceptance.ps1",
+      "Bytes": 41281,
+      "Sha256": "D4035FDB454B011670131D1753277A4C04EE44BEFBD08C4950949C3EE2E153BC",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Byte-exact executed c5 acceptance runner source, D4035FDB...; not new planner execution evidence"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--local-artifacts-sha256.txt",
+      "Bytes": 1316,
+      "Sha256": "32A95F286FD7675258FA8E66A7F74B064583E9E9076A8DC9A43376D34FE9AE69",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: twelve accepted local artifacts and planned normalized names; not public download evidence"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--managed-warning-summary.json",
+      "Bytes": 1125,
+      "Sha256": "F30DC324793A821F2551373B9534328EA2C8CD7CD7C7C30E7D23101B0FA3EFF5",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Eight component build warning summaries"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--mapping.json",
+      "Bytes": 15771,
+      "Sha256": "D07C20C9489A019C96973A3AB202003F729834E9A4C3569A2F33D0A346E7AD6A",
+      "Scope": "Historical flat archive mapping, retaining original names/hashes/scopes without relabeling old PASS as new PASS"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--native-analysis-result.json",
+      "Bytes": 1556,
+      "Sha256": "3586B8CDD3814FEB24DB51A21A3C2F467E5415D7375C5535282B7C514356B96E",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Intermediate native analysis; same production control header"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--native-ci-receipt.json",
+      "Bytes": 2069,
+      "Sha256": "EAF8D0B5BF2A30CC9C5EB5900EE96C201E011D282DFD5615D012631FECA35989",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Exact c5 GitHub native build/active Defender scan/control-lifecycle job; does not replace local full/performance gates or validate the new planner"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--native-source-summary.json",
+      "Bytes": 538,
+      "Sha256": "E160205379417949364A7C1F2066512769C9C24BF7258A8D3A81B1CB4744374F",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Actual c5 build source pin summaries433/3/202 and original build-log SHA256; condensed original proof"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--normalized-publication-assets.json",
+      "Bytes": 7056,
+      "Sha256": "449A5435DB0A2C39429364F19803ED1C8053DC66A7C282501E2F16B3C40112AD",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate: accepted local artifact hashes; not published and not new planner artifact evidence"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--planner-development-summary.json",
+      "Bytes": 13238,
+      "Sha256": "FB95B6CD2299C17BAF6B3FBD16CDCE4880581FE91FAE73FCBB57057A8C2DE8FD",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Development diagnostic only: five uncommitted planner source hashes, real Windows worker-policy PASS and unchanged full pipeline experiment PASS at 97.636 percent Auto/best-fixed. Not a final signed-candidate release gate."
+    },
+    {
+      "Name": "superseded-c5f4f256c949--public-key-export.json",
+      "Bytes": 603,
+      "Sha256": "843AD78C90C03AC809858696406BFE3EC8BDA8F329E4B9BFB73221E2C795F5E5",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Public exports in A:\\Keep Vault Keys"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--qr-tests-summary.json",
+      "Bytes": 743,
+      "Sha256": "B22136326B639AF0F8CF56BD91350B4E705223D92787AD202E657FCA88D7E5F9",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Actual151 QR checks from successful c5 build and original build-log SHA256; no camera workflow claim"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--README.md",
+      "Bytes": 5205,
+      "Sha256": "85EC5C284C568E9331C531315B64C429C06806FC086B0C7A8A5BB1B3AC53C8C6",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Interim evidence scopes, reproduction instructions and unverified limits; c5 performance FAIL remains explicit"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--run-final-suite.ps1",
+      "Bytes": 2406,
+      "Sha256": "E6AF3A5075C6154FCF926D12F1C5BF7953DB4D394A44DED851478C0A5834C426",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Byte-exact parent-confirmed executed c5 full runner source, E6AF3A50...; not new planner execution evidence"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--SHA256SUMS.txt",
+      "Bytes": 3739,
+      "Sha256": "4ACC0CD53C7520105E1E290FDA4CB279539CBB1E0EEA25C48287AFA067372F62",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Prior candidate original inventory; original names require the historical mapping after flat archival"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--source-inputs-summary.json",
+      "Bytes": 527,
+      "Sha256": "E24BB3A0C666D1E7B182D780CE898EE66E822301E9BDF41AD8A634A36048E981",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Rejected c5 candidate:4820 committed manifest-covered inputs and unchanged before/after source manifest SHA256"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--static-gui-review.md",
+      "Bytes": 7475,
+      "Sha256": "58D0BDD8451D34834C777FFC701E3C838CD7959EFCE60E89613CAF60F3702A6E",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Intermediate static-image visual review and limits, no protected real desktop capture"
+    },
+    {
+      "Name": "superseded-c5f4f256c949--static-gui-summary.json",
+      "Bytes": 2139,
+      "Sha256": "5922DC7CBC5093CFB00E6113302D3C8DFFCC400DC424BD23E5058B7FEB6EFED1",
+      "Scope": "Superseded candidate c5f4f256c9494147d08055a1deb5f9513a11af26; original scope retained: Intermediate8 static renders plus c5 five-GUI-group outcomes; no final signed-image visual approval or new planner validation"
     }
   ],
-  "IndexScope": "Interim evidence for rejected source c5f4f256c9494147d08055a1deb5f9513a11af26 only. Its build/full/acceptance passes remain valid within that candidate, while performance FAIL blocks publication; the subsequent planner patch requires new gates. This index records exact copied/condensed bytes and their scope. OriginalBundleListSha256 retains the original bundle-list identity, not the current file inventory. SHA256SUMS.txt also covers this index; neither file is a signature or proof of public download.",
-  "PreparedUtc": "2026-10-21T21:24:12.2531327Z"
+  "IndexScope": "Current exact core collection: matching actual signed build,109-group full suite,40-case/81-process acceptance,224 current control cycles,151 QR checks, CI and installed-copy startup core PASS for 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b. At core promotion performance/publication were PENDING; their current claims must follow gate-status and matching actual receipts. Earlier component/candidate scopes and historical rejection facts remain in original bytes, archived mappings and PriorIndexScopes; no old result is reinterpreted as current PASS. SHA256SUMS binds local bytes and is not a signature or public-download proof.",
+  "PreparedUtc": "2026-10-21T22:33:29.8332136Z",
+  "OriginalBundleListSourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "OriginalBundleListScope": "Original earlier preparation-list hash retained as historical provenance; new matching actual core receipts establish current claims.",
+  "OriginalIndexScope": "Interim evidence for rejected source c5f4f256c9494147d08055a1deb5f9513a11af26 only. Its build/full/acceptance passes remain valid within that candidate, while performance FAIL blocks publication; the subsequent planner patch requires new gates. This index records exact copied/condensed bytes and their scope. OriginalBundleListSha256 retains the original bundle-list identity, not the current file inventory. SHA256SUMS.txt also covers this index; neither file is a signature or proof of public download.",
+  "OriginalPreparedUtc": "2026-10-21T21:24:12.2531327Z",
+  "PriorIndexScopes": [
+    {
+      "SourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+      "IndexScope": "Interim evidence for rejected source c5f4f256c9494147d08055a1deb5f9513a11af26 only. Its build/full/acceptance passes remain valid within that candidate, while performance FAIL blocks publication; the subsequent planner patch requires new gates. This index records exact copied/condensed bytes and their scope. OriginalBundleListSha256 retains the original bundle-list identity, not the current file inventory. SHA256SUMS.txt also covers this index; neither file is a signature or proof of public download.",
+      "PreparedUtc": "2026-10-21T21:24:12.2531327Z"
+    }
+  ],
+  "PromotionScope": "Only exact completed actual core gates promoted. Original IndexScope facts/dates retained separately and in byte-exact archive; unchanged component scopes retained. Flat historical mappings preserve prior bytes/outcomes. No prior source is relabeled as current PASS. At this core-promotion event performance/publication were PENDING; later current status requires separate actual receipts.",
+  "PreviousCandidateSourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
+  "PromotionHelperSha256": "C8B0AE1D680F4565DDC43EB51FEA2CD439DEC4B97FB92647332C89058AC7F716",
+  "RefreshScope": "Only completed matching ExpectedCommit PASS receipts added; original intermediate/final/historical scope facts and IndexScope retained. Derived summaries identify original hashes and metric lines/omissions; no script source is treated as execution proof."
 }
