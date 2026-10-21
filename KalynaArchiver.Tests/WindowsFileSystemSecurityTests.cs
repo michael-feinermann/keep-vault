@@ -138,6 +138,7 @@ internal static class WindowsFileSystemSecurityTests
         {
             RunCreateValidationRollback(root);
             RunStagingOutputControlBinding(root);
+            RunControlReplyPeerCloseAsync(root).GetAwaiter().GetResult();
             string path = Path.Combine(root, "payload.bin");
             File.WriteAllBytes(path, [1, 2, 3]);
 
@@ -354,6 +355,100 @@ internal static class WindowsFileSystemSecurityTests
         staging.Install();
         Require(File.ReadAllText(Path.Combine(destination, "payload.txt")) == "public synthetic output",
             "Disposing the control capability invalidated the staging owner or its final installation.");
+    }
+
+    private static async Task RunControlReplyPeerCloseAsync(string root)
+    {
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var reply = typeof(ZpaqControlSession).GetMethod("ReplyAsync", flags)
+            ?? throw new InvalidOperationException("The native control reply method was not found.");
+        var transport = typeof(ZpaqControlSession).GetField("_stream", flags)
+            ?? throw new InvalidOperationException("The native control reply transport was not found.");
+        async Task SendAsync(ZpaqControlSession session, ZpaqControlSession.Message message,
+            byte[] payload, CancellationToken token = default)
+        {
+            var operation = (Task)(reply.Invoke(session, [message, 0UL, payload, token])
+                ?? throw new InvalidOperationException("The native reply returned no task."));
+            await operation.ConfigureAwait(false);
+        }
+
+        foreach (byte[] payload in new byte[][] { [], [7, 11, 13] })
+        {
+            using var session = new ZpaqControlSession(new ArchiveOperationPolicy(root, root));
+            using var stream = new ClosingReplyStream(payload.Length == 0 ? 1 : 2);
+            transport.SetValue(session, stream);
+            uint kind = payload.Length == 0 ? 9U : 3U;
+            await SendAsync(session, new ZpaqControlSession.Message(kind, 17, 0, 0, 0), payload)
+                .ConfigureAwait(false);
+            byte[] sent = stream.Sent;
+            Require(stream.PeerClosed && stream.CompletedWrites == (payload.Length == 0 ? 1 : 2),
+                "The reply returned before every asynchronous transport write completed.");
+            Require(stream.FlushCalls == 0,
+                "A completed unbuffered reply performed I/O after the peer's valid final close.");
+            Require(sent.Length == ZpaqControlSession.HeaderBytes + payload.Length
+                && sent.AsSpan(0, 8).SequenceEqual("KV13CTL1"u8)
+                && System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(sent.AsSpan(8)) == (kind | 0x80000000U)
+                && System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(sent.AsSpan(12)) == payload.Length
+                && System.Buffers.Binary.BinaryPrimitives.ReadUInt64BigEndian(sent.AsSpan(16)) == 17
+                && sent.AsSpan(24, 24).IndexOfAnyExcept((byte)0) < 0
+                && sent.AsSpan(ZpaqControlSession.HeaderBytes).SequenceEqual(payload),
+                "The close-race fix changed the authenticated reply's framing or payload.");
+        }
+
+        foreach (int failingWrite in new[] { 1, 2 })
+        {
+            using var session = new ZpaqControlSession(new ArchiveOperationPolicy(root, root));
+            using var stream = new ClosingReplyStream(2, failingWrite);
+            transport.SetValue(session, stream);
+            bool rejected = false;
+            try { await SendAsync(session, new ZpaqControlSession.Message(3, 19, 0, 0, 0), [7]).ConfigureAwait(false); }
+            catch (IOException failure) when (failure.Message == ClosingReplyStream.WriteFailure) { rejected = true; }
+            Require(rejected && stream.CompletedWrites == failingWrite - 1 && stream.FlushCalls == 0,
+                "A header or payload write failure was swallowed while avoiding a redundant flush.");
+        }
+    }
+
+    private sealed class ClosingReplyStream(int expectedWrites, int failingWrite = 0) : Stream
+    {
+        internal const string WriteFailure = "Synthetic unbuffered reply write failed.";
+        private readonly MemoryStream _sent = new();
+        internal byte[] Sent => _sent.ToArray();
+        internal bool PeerClosed { get; private set; }
+        internal int CompletedWrites { get; private set; }
+        internal int FlushCalls { get; private set; }
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => !PeerClosed;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken token = default)
+        {
+            await Task.Delay(1, token).ConfigureAwait(false);
+            if (CompletedWrites + 1 == failingWrite) throw new IOException(WriteFailure);
+            Require(!PeerClosed, "A reply write followed the simulated peer close.");
+            _sent.Write(buffer.Span);
+            if (++CompletedWrites == expectedWrites) PeerClosed = true;
+        }
+        public override void Flush()
+        {
+            FlushCalls++;
+            throw new IOException(PeerClosed ? "Pipe is broken after a delivered reply." : "An unbuffered transport must not be flushed.");
+        }
+        public override Task FlushAsync(CancellationToken token)
+        {
+            FlushCalls++;
+            return Task.FromException(new IOException(PeerClosed
+                ? "Pipe is broken after a delivered reply." : "An unbuffered transport must not be flushed."));
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _sent.Dispose();
+            base.Dispose(disposing);
+        }
     }
 
     private static void ExpectIOException(Action action, string failure)

@@ -346,7 +346,14 @@ internal sealed partial class ZpaqControlSession : IDisposable
             BinaryPrimitives.WriteUInt64BigEndian(header.AsSpan(24), a);
             await _stream!.WriteAsync(header, token).ConfigureAwait(false);
             if (payload.Length != 0) await _stream.WriteAsync(payload, token).ConfigureAwait(false);
+#if KEEPVAULT_MACOS
             await _stream.FlushAsync(token).ConfigureAwait(false);
+#else
+            // NamedPipeServerStream has no managed write buffer. The completed
+            // writes are the reply; after reading its final ACK the native peer
+            // may close immediately. A further FlushAsync would then reject a
+            // valid, already delivered close handshake as a broken pipe.
+#endif
         }
         finally { _writes.Release(); }
     }
