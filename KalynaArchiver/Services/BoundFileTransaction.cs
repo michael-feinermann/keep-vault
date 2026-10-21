@@ -62,6 +62,22 @@ internal sealed class BoundFileTransaction : IDisposable
         _preparedReadOnly = null;
     }
 
+    internal FileStream DuplicateRecoveryReader(string expectedPath)
+    {
+        if (_deleted || IsCommitted || _preparedReadOnly is not null || !Stream.CanWrite)
+            throw new InvalidOperationException("Recovery binding requires an uncommitted writable transaction.");
+        if (!string.Equals(Path.GetFullPath(expectedPath), _currentPath, StringComparison.Ordinal))
+            throw new IOException("The recovery reader path does not match its bound transaction.");
+        WindowsSafeFileSystem.RequireSameObject(Stream.SafeFileHandle, _identity, _currentPath, directory: false);
+        // Reuse the reduced GENERIC_READ duplication. Keep the original writer
+        // and its exclusive sharing/rename authority held throughout verification.
+        PrepareReadOnly();
+        FileStream reader = _preparedReadOnly!;
+        WindowsSafeFileSystem.RequireSameObject(reader.SafeFileHandle, _identity, _currentPath, directory: false);
+        _preparedReadOnly = null; // VerifiedArchiveInput now owns only this reader.
+        return reader;
+    }
+
     [DllImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]

@@ -2,6 +2,11 @@
 WindowsRelease/Signing/mldsa87-public.key -text
 WindowsRelease/Signing/hybrid-rsa4096.cer -text
 KeepVaultMac.Tests/Fixtures/CredentialCompatibility/** -text
+# Frozen independent v13 vectors have raw-byte SHA-256 pins in both test suites.
+KeepVaultMac.Tests/Fixtures/V13Reference/cascade_composition_rev9.json text eol=lf
+KeepVaultMac.Tests/Fixtures/V13Reference/nonce_rev6_public_vectors.json text eol=lf
+KeepVaultMac.Tests/Fixtures/V13Reference/pool_finalization_rev9_vectors.json text eol=lf
+KeepVaultMac.Tests/Fixtures/V13Reference/pool_shuffle_rev9_public_vectors.json text eol=lf
 KalynaArchiver/Resources/PasswordModel/** -text
 external/Skein-reference/NIST/CD/Reference_Implementation/skein_debug.c -text
 external/cryptopp/aes_armv4.S -text

@@ -15,9 +15,9 @@ Die Anwendung wird weiterentwickelt. Sie ersetzt weder ein externes
 kryptografisches Audit noch ein HSM oder die Absicherung des Betriebssystems.
 
 > Die Plattformen werden getrennt geprüft. macOS und Windows werden auf ihrer
-> jeweiligen Hardware gebaut und getestet. Windows 5.0.2 folgt der macOS-v12-
-> Referenz. Windows-Nachweise und offene Freigabeprüfungen stehen im
-> [Windows-Prüfbericht](docs/KEEP_VAULT_5_0_2_WINDOWS_AUDIT.md); macOS-Ergebnisse
+> jeweiligen Hardware gebaut und getestet. Windows 5.0.3 folgt der v13-Umsetzung
+> auf GitHub. Windows-Nachweise und offene Freigabeprüfungen stehen im
+> [Windows-Prüfbericht](docs/KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md); macOS-Ergebnisse
 > gelten niemals als Windows-Nachweis.
 ---
 
@@ -43,7 +43,7 @@ Fertige Pakete findest du auf der
 [Releases-Seite](https://github.com/michael-feinermann/keep-vault/releases).
 Voraussetzung: macOS 14 oder neuer, Apple Silicon oder Intel (Universal Binary).
 
-Windows 5.0.2 wird als eigenständiges x64-Paket für Windows 10 2004 oder neuer
+Windows 5.0.3 wird als eigenständiges x64-Paket für Windows 10 2004 oder neuer
 gebaut. `Keep Vault Setup.exe` prüft das signierte Vollinventar und sämtliche
 Programme, kopiert in ein neues Anwendungsverzeichnis des Benutzerkontos und
 prüft die installierte Kopie vor dem Anlegen der Verknüpfungen. SDK, Compiler,
@@ -67,11 +67,11 @@ Werkzeuge werden unter `work\native-tools` dieses Snapshots neu gebaut; Änderun
 an versionierten nativen Ausgaben ersetzen diesen Build nicht. Geprüfte Pakete
 bleiben im vom Skript ausgegebenen `dist`-Verzeichnis des Snapshots. Die Paketierung
 prüft native Tests, das vollständige signierte Inventar, exakte Produktversionen
-5.0.2, SHA-512-Authenticode, RFC-3161-Zeitstempel und das ZIP nach dem Entpacken
+5.0.3, SHA-512-Authenticode, RFC-3161-Zeitstempel und das ZIP nach dem Entpacken
 in ein neues Verzeichnis.
-Die [Windows-Checkliste](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md) und der
-[Windows-Prüfbericht](docs/KEEP_VAULT_5_0_2_WINDOWS_AUDIT.md) enthalten die getrennten
-Freigabeprüfungen. Das Release-Zertifikat ist selbstsigniert und wird über die
+Der [Windows-Prüfbericht](docs/KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md) hält die v13-
+Freigabeprüfungen fest; die [v12-Checkliste](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.md)
+ist historisch. Das Release-Zertifikat ist selbstsigniert und wird über die
 fest eingebauten öffentlichen RSA- und ML-DSA-Schlüssel geprüft. Dadurch wird
 seine Zertifikatskette nicht allgemein von Windows als vertrauenswürdig eingestuft.
 Es wird kein Stammzertifikat installiert.

@@ -15,9 +15,9 @@ The application is under development. It is not a substitute for an external
 cryptographic audit, an HSM, or operating-system hardening.
 
 > **Platform verification is separate.** macOS and Windows are built and tested
-> on their respective hardware. The Windows 5.0.2 implementation follows the
-> macOS v12 reference. Windows release evidence and outstanding gates are recorded
-> in the [Windows audit](docs/KEEP_VAULT_5_0_2_WINDOWS_AUDIT.md); macOS results
+> on their respective hardware. Windows 5.0.3 follows the GitHub v13 implementation.
+> Windows release evidence and outstanding gates are recorded
+> in the [Windows audit](docs/KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md); macOS results
 > are never treated as Windows evidence.
 ---
 
@@ -42,7 +42,7 @@ Prebuilt packages are on the
 [Releases](https://github.com/michael-feinermann/keep-vault/releases) page.
 Requires macOS 14 or newer, Apple silicon or Intel (universal binary).
 
-The Windows 5.0.2 target is a self-contained x64 package for Windows 10 2004 or
+The Windows 5.0.3 target is a self-contained x64 package for Windows 10 2004 or
 newer. Its `Keep Vault Setup.exe` checks the signed complete inventory and every
 executable, copies into a new per-user application directory, and verifies the
 installed copy before creating shortcuts. It needs no SDK, compiler, PowerShell
@@ -63,10 +63,10 @@ and input directories are leased until the build finishes. Native tools are
 rebuilt into that snapshot's `work\native-tools`; tracked native output changes
 do not substitute for this build. Verified packages remain in the snapshot's
 `dist` directory, printed by the script. Packaging checks native tests, the
-complete signed inventory, exact 5.0.2 product versions, SHA-512 Authenticode,
+complete signed inventory, exact 5.0.3 product versions, SHA-512 Authenticode,
 RFC 3161 timestamps, and the ZIP after extraction into a fresh directory. The
-[Windows checklist](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.en.md) and
-[Windows audit](docs/KEEP_VAULT_5_0_2_WINDOWS_AUDIT.md) define the separate release gates.
+[Windows audit](docs/KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md) records the v13 release gates;
+the [v12 checklist](docs/KEEP_VAULT_V12_WINDOWS_UPDATE.en.md) is historical.
 The release certificate is self-signed and is checked through pinned RSA and
 ML-DSA public keys; this does not make its certificate chain trusted by Windows.
 No root certificate is installed.

@@ -8,6 +8,10 @@ Veröffentlichte Referenz bis zum Abschluss des neuen Releases: [Keep Vault 5.0.
 
 ## 5.0.3 / v13 / REV12: aktueller Quell- und Prüfstand
 
+Die Windows-Fortsetzung vom 21. Oktober 2026 hat einen eigenen
+[Windows-Prüfbericht](KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md). Er führt Windows-Builds,
+Tests, Paketabnahme und Veröffentlichung getrennt von den macOS-Nachweisen.
+
 Die jeweilige Dokumentsprache ist ausdrücklich angegeben. Ein Link ist ein Verzeichniseintrag, keine PASS-Aussage; der jeweilige Bericht trennt bestandene Prüfungen, offene Gates und Nachweisgrenzen. Reale Testdaten sind auf Benutzerwunsch auf 256 MiB begrenzt, mit einer ausdrücklichen 512-MiB-Ausnahme für die Paranoia-Strukturrunde. Der spätere Benutzerauftrag erlaubt zusätzlich je einen vollständigen 1-GiB-Fall für alle zwölf Suites mit eigener Belegbindung. Daraus folgt kein physischer Mehr-TiB-Lauf.
 
 | Dokument | Verfügbare Fassung |

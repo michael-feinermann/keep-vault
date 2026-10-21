@@ -1275,8 +1275,13 @@ public sealed partial class RecoveryService
                     // Damaged source bytes only enter the bounded RS repair
                     // path. A fresh protected context authenticates the entire
                     // completed candidate; repair never grants decrypt access.
-                    using VerifiedArchiveInput verifiedCandidate = await VerifiedArchiveInput.BindEncryptedAsync(
-                        candidatePath, ArchiveOperationPolicy.Current, cancellationToken).ConfigureAwait(false);
+                    using VerifiedArchiveInput verifiedCandidate = await VerifiedArchiveInput.
+#if KEEPVAULT_MACOS
+                        BindEncryptedAsync(candidatePath, ArchiveOperationPolicy.Current, cancellationToken)
+#else
+                        BindRecoveryCandidateAsync(candidateObject, candidatePath, ArchiveOperationPolicy.Current, cancellationToken)
+#endif
+                        .ConfigureAwait(false);
                     await verifiedCandidate.VerifyGloballyAsync((view, token) => _containers.VerifyAuthenticationResultAsync(
                         view, userPassword!, pin!, firstGeneratedPassword!, secondGeneratedPassword!, token),
                         cancellationToken).ConfigureAwait(false);

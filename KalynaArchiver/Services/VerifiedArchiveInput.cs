@@ -134,7 +134,20 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
         string path, ArchiveOperationPolicy? policy, CancellationToken cancellationToken) =>
         BindEncryptedAsync(path, policy, cancellationToken);
 
-    private static VerifiedArchiveInput Bind(string path, ArchiveOperationPolicy policy, CancellationToken token)
+#if !KEEPVAULT_MACOS
+    internal static Task<VerifiedArchiveInput> BindRecoveryCandidateAsync(
+        BoundFileTransaction candidate, string path, ArchiveOperationPolicy? policy, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(candidate);
+        return Task.FromResult(Bind(path, policy ?? ArchiveOperationPolicy.Current, cancellationToken, candidate));
+    }
+#endif
+
+    private static VerifiedArchiveInput Bind(string path, ArchiveOperationPolicy policy, CancellationToken token
+#if !KEEPVAULT_MACOS
+        , BoundFileTransaction? recoveryCandidate = null
+#endif
+    )
     {
         using IDisposable policyScope = policy.EnterScope();
         token.ThrowIfCancellationRequested();
@@ -146,7 +159,9 @@ internal sealed class VerifiedArchiveInput : Stream, IPrivateSnapshotRandomAcces
 #if KEEPVAULT_MACOS
             input._original = MacSafeFileSystem.OpenReadNoSymlinks(fullPath);
 #else
-            input._original = SecureFile.OpenReadNoReparse(fullPath, FileShare.Read, randomAccess: true);
+            input._original = recoveryCandidate is null
+                ? SecureFile.OpenReadNoReparse(fullPath, FileShare.Read, randomAccess: true)
+                : recoveryCandidate.DuplicateRecoveryReader(fullPath);
 #endif
             input._dataHandle = input._original.SafeFileHandle;
             input._originalPath = fullPath;

@@ -8,6 +8,10 @@ Published reference pending completion of the new release: [Keep Vault 5.0.2 for
 
 ## 5.0.3 / v13 / REV12: current source and evidence
 
+The Windows continuation of 21 October 2026 has its own
+[Windows audit, German](KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md). It records Windows
+builds, tests, package acceptance and publication separately from macOS evidence.
+
 The language of each document is listed explicitly. A link is a document index, not a PASS claim; the report itself distinguishes completed checks, pending gates and limits. Real test data is limited by the user to 256 MiB, with an explicit 512 MiB Paranoia structural exception. The subsequent user instruction additionally permits one complete 1-GiB case for each of the twelve suites; those results retain their own provenance. No physical multi-TiB run is implied.
 
 | Document | Available edition |

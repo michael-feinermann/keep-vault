@@ -139,6 +139,7 @@ internal static class WindowsFileSystemSecurityTests
             RunCreateValidationRollback(root);
             RunStagingOutputControlBinding(root);
             RunControlReplyPeerCloseAsync(root).GetAwaiter().GetResult();
+            RunBoundRecoveryReaderAsync(root).GetAwaiter().GetResult();
             string path = Path.Combine(root, "payload.bin");
             File.WriteAllBytes(path, [1, 2, 3]);
 
@@ -355,6 +356,75 @@ internal static class WindowsFileSystemSecurityTests
         staging.Install();
         Require(File.ReadAllText(Path.Combine(destination, "payload.txt")) == "public synthetic output",
             "Disposing the control capability invalidated the staging owner or its final installation.");
+    }
+
+    private static async Task RunBoundRecoveryReaderAsync(string root)
+    {
+        string part = Path.Combine(root, ".synthetic-recovery.partial");
+        string installed = Path.Combine(root, "synthetic-recovered.bin");
+        byte[] payload = "public recovery candidate fixture"u8.ToArray();
+        var policy = new ArchiveOperationPolicy(root, root);
+        int retainedOwners = VerifiedArchiveInput.RetainedOwnersForTests;
+        using (var candidate = BoundFileTransaction.CreateNew(part, 4096, FileOptions.RandomAccess | FileOptions.WriteThrough))
+        {
+            candidate.Stream.Write(payload);
+            candidate.Stream.Flush(flushToDisk: true);
+            using (FileStream reader = candidate.DuplicateRecoveryReader(part))
+            {
+                Require(reader.CanRead && !reader.CanWrite
+                    && WindowsSafeFileSystem.GetIdentity(reader.SafeFileHandle) == WindowsSafeFileSystem.GetIdentity(candidate.Stream.SafeFileHandle),
+                    "The recovery reader was writable or named a different kernel object.");
+                Require(string.Equals(NativePathResolver.RequireCanonicalFilePath(reader.SafeFileHandle, part, "Recovery reader"),
+                        Path.GetFullPath(part), StringComparison.OrdinalIgnoreCase),
+                    "The reduced recovery reader did not retain the exact canonical candidate path.");
+                bool writeDenied = false;
+                try { RandomAccess.Write(reader.SafeFileHandle, new byte[] { 0x5A }, 0); }
+                catch (UnauthorizedAccessException) { writeDenied = true; }
+                Require(writeDenied, "The reduced recovery reader retained kernel write rights.");
+                ExpectIOException(() => WindowsSafeFileSystem.MarkForDeletion(reader.SafeFileHandle),
+                    "The reduced recovery reader retained deletion rights.");
+                byte[] actual = new byte[payload.Length];
+                RandomAccess.Read(reader.SafeFileHandle, actual, 0);
+                Require(actual.SequenceEqual(payload), "The reduced recovery reader changed the candidate bytes.");
+            }
+            ExpectIOException(() => File.OpenRead(part).Dispose(), "The recovery reader relaxed the exclusive candidate sharing policy.");
+            ExpectIOException(() => File.WriteAllBytes(part, [0x5A]), "The recovery reader admitted an external writer.");
+            ExpectIOException(() => File.Move(part, part + ".replaced"), "The recovery reader admitted an external rename.");
+            ExpectIOException(() => candidate.DuplicateRecoveryReader(installed).Dispose(), "The recovery reader accepted another path.");
+            ExpectIOException(() => VerifiedArchiveInput.BindRecoveryCandidateAsync(candidate, installed, policy,
+                    CancellationToken.None).GetAwaiter().GetResult().Dispose(),
+                "Verified input binding accepted another candidate path.");
+            using (var canceled = new CancellationTokenSource())
+            {
+                canceled.Cancel();
+                bool canceledBeforeBind = false;
+                try
+                {
+                    using VerifiedArchiveInput unexpected = await VerifiedArchiveInput.BindRecoveryCandidateAsync(
+                        candidate, part, policy, canceled.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException failure) when (failure.CancellationToken == canceled.Token)
+                { canceledBeforeBind = true; }
+                Require(canceledBeforeBind, "An already canceled operation acquired a recovery reader.");
+            }
+            Require(candidate.Stream.CanWrite && candidate.Stream.Length == payload.Length
+                    && VerifiedArchiveInput.RetainedOwnersForTests == retainedOwners,
+                "Failed recovery input binding lost the transaction owner or retained a verified-input owner.");
+            using (VerifiedArchiveInput verified = await VerifiedArchiveInput.BindRecoveryCandidateAsync(
+                       candidate, part, policy, CancellationToken.None).ConfigureAwait(false))
+            {
+                Require(verified.State == VerifiedArchiveInputState.BoundUntrusted && !verified.CanRead,
+                    "A bound recovery candidate was exposed before global authentication.");
+                ExpectIOException(() => File.OpenRead(part).Dispose(), "Verified binding admitted an external candidate reader.");
+                ExpectIOException(() => File.WriteAllBytes(part, [0x5A]), "Verified binding admitted an external candidate writer.");
+                ExpectIOException(() => File.Move(part, part + ".replaced"), "Verified binding admitted an external candidate rename.");
+            }
+            Require(candidate.Stream.CanWrite && VerifiedArchiveInput.RetainedOwnersForTests == retainedOwners,
+                "Closing the verified input lost the transaction owner's authority or retained the verified-input owner.");
+            candidate.RenameTo(installed, overwrite: false);
+            candidate.RequireStillInstalled();
+        }
+        Require(File.ReadAllBytes(installed).SequenceEqual(payload), "The verified recovery reader prevented the exact bound candidate commit.");
     }
 
     private static async Task RunControlReplyPeerCloseAsync(string root)

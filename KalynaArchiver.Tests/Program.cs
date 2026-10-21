@@ -4202,23 +4202,33 @@ static async Task RunPdfRoundTripTestsAsync()
         byte[] existingSentinel = "existing target must survive"u8.ToArray();
         await File.WriteAllBytesAsync(existingTarget, existingSentinel);
         AddMouseSamplesUntilEntropyReady();
-        await AssertThrowsAsync<IOException>(
-            async () =>
-            {
-                await using var tinyInput = new MemoryStream([1, 2, 3, 4], writable: false);
-                await kalyna.EncryptZpaqStreamAsync(
-                    tinyInput,
-                    existingTarget,
-                    password,
-                    pin,
-                    firstGeneratedPassword,
-                    secondGeneratedPassword,
-                    EncryptionSuite.Threefish1024,
-                    null,
-                    null,
-                    CancellationToken.None);
-            },
-            "atomic encrypted output refuses an existing target");
+        EntropyPoolStatus entropyBeforeExistingTarget = EntropyMixer.GetPoolStatus();
+        long randomCallsBeforeExistingTarget = EntropyMixer.SystemRandomCallCountForTests;
+        await using var tinyInput = new MemoryStream([1, 2, 3, 4], writable: false);
+        bool existingTargetRefused = false;
+        try
+        {
+            await kalyna.EncryptZpaqStreamAsync(
+                tinyInput,
+                existingTarget,
+                password,
+                pin,
+                firstGeneratedPassword,
+                secondGeneratedPassword,
+                EncryptionSuite.Threefish1024,
+                null,
+                null,
+                CancellationToken.None);
+        }
+        catch (ArchivePreflightException refusal) when (refusal.Reason == ArchivePreflightReason.Destination
+            && refusal.Message == "The encrypted archive target already exists.")
+        {
+            existingTargetRefused = true;
+        }
+        Assert(existingTargetRefused, "an existing encrypted target is refused by the exact v13 destination preflight contract");
+        Assert(tinyInput.Position == 0 && EntropyMixer.GetPoolStatus() == entropyBeforeExistingTarget
+            && EntropyMixer.SystemRandomCallCountForTests == randomCallsBeforeExistingTarget,
+            "existing-target preflight reads no archive bytes and consumes no mouse epoch or system randomness");
         byte[] existingAfter = await File.ReadAllBytesAsync(existingTarget);
         try
         {
@@ -4352,7 +4362,7 @@ static async Task RunPdfRoundTripTestsAsync()
         KalynaContainerInfo threefishInfo = await kalyna.ReadContainerInfoAsync(threefishArchive, CancellationToken.None);
         Assert(threefishInfo.Version == 13
             && threefishInfo.Suite == EncryptionSuite.Threefish1024
-            && threefishInfo.NonceBits == 1024
+            && threefishInfo.NonceBits == 2560
             && threefishInfo.SaltBits == 1024,
             "v13 Threefish suite metadata");
 
