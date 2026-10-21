@@ -197,7 +197,7 @@ try {
     }
     Test-ProtectionCheckpoint 'before-build'
     $sdkVersion = (& dotnet --version).Trim()
-    if ($LASTEXITCODE -ne 0 -or $sdkVersion -cne '10.0.401') { throw 'Unexpected .NET SDK.' }
+    if ($LASTEXITCODE -ne 0 -or $sdkVersion -cne '10.0.402') { throw 'Unexpected .NET SDK.' }
     $report.sdkVersion = $sdkVersion
     $report.sourceManifests = @('external\NATIVE_SOURCE_SHA256SUMS',
         'native\WINDOWS_SOURCE_SHA256SUMS', 'external\ML-DSA-reference\SOURCE_SHA256SUMS',

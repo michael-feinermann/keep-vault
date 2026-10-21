@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <ProjectReference Include="..\KalynaArchiver\KalynaArchiver.csproj" />
     <ProjectReference Include="..\KalynaArchiver.Signing\KalynaArchiver.Signing.csproj" />
   </ItemGroup>

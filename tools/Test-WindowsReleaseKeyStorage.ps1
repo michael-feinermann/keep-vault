@@ -1,7 +1,7 @@
 # Tests only fresh synthetic key stores below the user's Keep Vault ReleaseKeyTests.
 # Never accepts an existing private-key directory or exports a production key.
 param(
-    [string] $DotnetPath = 'C:\Users\Michael\.codex\tools\dotnet-10.0.401\dotnet.exe',
+    [string] $DotnetPath = 'dotnet',
     [string] $SigningToolAssembly = ''
 )
 $ErrorActionPreference = 'Stop'

@@ -123,7 +123,7 @@ jobs:
       - name: Install exact managed fingerprint SDK
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.401
+          dotnet-version: 10.0.402
 
       - name: Build pinned native sources and scan with active Defender
         run: ./tools/Test-WindowsNativeDefender.ps1
