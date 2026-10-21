@@ -36,7 +36,9 @@ public sealed class SourceSnapshotLease : IDisposable
         "KalynaArchiver", "KalynaArchiver.Signing", "KalynaArchiver.Tests",
         "KalynaReleaseVerifier", "KalynaSigningTool", "KeepVaultInstaller",
         "QrCodeScannerWindows", "KeepVaultMac", "KeepVaultMac.Tests",
-        "KeepVaultMac.ReleaseVerifier", "KeepVaultMac/Packaging/HybridSigner"
+        "KeepVaultMac.ReleaseVerifier", "KeepVaultMac/Packaging/HybridSigner",
+        "native/tests/camellia_serpent_reference", "native/tests/claim_grain",
+        "native/tests/managed_executor", "native/tests/native_benchmark"
     ];
     private bool disposed;
 

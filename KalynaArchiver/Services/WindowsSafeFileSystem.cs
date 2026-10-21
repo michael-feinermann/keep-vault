@@ -145,6 +145,31 @@ internal static partial class WindowsSafeFileSystem
         }
     }
 
+    internal static SafeFileHandle DuplicateDirectoryBound(
+        SafeFileHandle source,
+        WindowsFileIdentity expectedIdentity,
+        string expectedPath)
+    {
+        // A fresh CreateFile open would conflict with an existing DELETE-capable
+        // staging lease that denies delete sharing. Duplicate its exact object
+        // instead; the original sharing restrictions remain in force.
+        RequireSameObject(source, expectedIdentity, expectedPath, directory: true);
+        nint currentProcess = new(-1);
+        if (!DuplicateHandle(currentProcess, source, currentProcess, out SafeFileHandle duplicate,
+                FileListDirectory | FileTraverse | FileReadAttributes, false, 0))
+        {
+            int error = Marshal.GetLastPInvokeError();
+            duplicate?.Dispose();
+            throw new IOException("Could not duplicate the bound output directory.", new Win32Exception(error));
+        }
+        try
+        {
+            RequireSameObject(duplicate, expectedIdentity, expectedPath, directory: true);
+            return duplicate;
+        }
+        catch { duplicate.Dispose(); throw; }
+    }
+
     internal static SafeFileHandle OpenRegularFileForCommit(string path, bool asynchronous = false)
     {
         string fullPath = Path.GetFullPath(path);
@@ -483,6 +508,18 @@ internal static partial class WindowsSafeFileSystem
     private static partial bool GetFileInformationByHandle(
         SafeFileHandle file,
         out ByHandleFileInformation information);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool DuplicateHandle(
+        nint sourceProcess,
+        SafeFileHandle source,
+        nint targetProcess,
+        out SafeFileHandle target,
+        uint desiredAccess,
+        [MarshalAs(UnmanagedType.Bool)] bool inheritHandle,
+        uint options);
 
     [LibraryImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]

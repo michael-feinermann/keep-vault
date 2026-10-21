@@ -44,6 +44,7 @@ struct control_message {
 class control_channel final {
     static constexpr std::size_t max_payload=1u<<20;
     struct pending {
+        std::uint32_t kind=0;
         bool complete=false;
         control_message result;
         std::condition_variable changed;
@@ -57,6 +58,7 @@ class control_channel final {
     std::map<std::uint64_t,std::shared_ptr<pending>> pending_;
     std::uint64_t sequence_=0;
     bool stopped_=false;
+    bool closing_=false;
     bool orderly_closed_=false;
     std::thread reader_;
     const std::size_t maximum_pending_;
@@ -71,10 +73,27 @@ class control_channel final {
         auto* p=static_cast<unsigned char*>(data);
         while(length) {
 #ifdef _WIN32
-            DWORD n=0;
-            BOOL ok=writing?WriteFile(handle_,p,DWORD(length),&n,nullptr)
-                           :ReadFile(handle_,p,DWORD(length),&n,nullptr);
-            if(!ok || !n) throw std::runtime_error("native control channel I/O failed");
+            // The reader and requester use the duplex pipe concurrently.
+            // A synchronous handle serializes those operations and can leave
+            // the request's write waiting behind the response's blocked read.
+            // Every transfer owns its event, OVERLAPPED and buffer until the
+            // operation has completed, including cancellation completion.
+            std::unique_ptr<void,decltype(&CloseHandle)> event(
+                CreateEventW(nullptr,TRUE,FALSE,nullptr),&CloseHandle);
+            if(!event) throw std::runtime_error("native control event creation failed");
+            OVERLAPPED operation{};operation.hEvent=event.get();
+            BOOL started=FALSE;DWORD error=ERROR_SUCCESS,n=0;
+            {
+                std::lock_guard<std::mutex> lock(gate_);
+                if(stopped_) throw std::runtime_error("native control channel stopped");
+                started=writing?WriteFile(handle_,p,DWORD(length),nullptr,&operation)
+                               :ReadFile(handle_,p,DWORD(length),nullptr,&operation);
+                if(!started) error=GetLastError();
+            }
+            if(!started && error!=ERROR_IO_PENDING)
+                throw std::runtime_error("native control channel I/O failed");
+            if(!GetOverlappedResult(handle_,&operation,&n,TRUE) || !n)
+                throw std::runtime_error("native control channel I/O failed");
 #else
             const ssize_t n=writing ? ::send(handle_,p,length,0) : ::recv(handle_,p,length,0);
             if(n<0 && errno==EINTR) continue;
@@ -96,6 +115,10 @@ class control_channel final {
     void receive_loop() noexcept {
         try {
             for(;;) {
+                {
+                    std::lock_guard<std::mutex> lock(gate_);
+                    if(stopped_) return;
+                }
                 std::array<unsigned char,48> h{}; transfer(h.data(),h.size(),false);
                 if(std::memcmp(h.data(),"KV13CTL1",8)) throw std::runtime_error("invalid control magic");
                 control_message m; m.kind=std::uint32_t(get(h.data()+8,4));
@@ -106,16 +129,34 @@ class control_channel final {
                 m.payload.resize(std::size_t(n));if(n) transfer(m.payload.data(),std::size_t(n),false);
                 std::lock_guard<std::mutex> lock(gate_);
                 const auto entry=pending_.find(m.sequence);
-                if(entry==pending_.end() || entry->second->complete)
+                if(entry==pending_.end() || entry->second->complete
+                        || m.kind!=(entry->second->kind|0x80000000u))
                     throw std::runtime_error("unexpected control response identity");
+                const bool final=entry->second->kind==std::uint32_t(control_kind::close);
+                if(final && (pending_.size()!=1 || m.a || m.b || m.c || !m.payload.empty()))
+                    throw std::runtime_error("invalid native close acknowledgment");
                 entry->second->result=std::move(m);entry->second->complete=true;
                 entry->second->changed.notify_one();
+                // The parent waits for our EOF after this final response. A
+                // second blocking read would make shutdown depend on racing a
+                // one-shot Windows synchronous-I/O cancellation against it.
+                if(final) return;
             }
         } catch(...) { fail(); }
     }
     void fail() noexcept {
-        std::lock_guard<std::mutex> lock(gate_);stopped_=true;
-        for(auto& p:pending_) p.second->changed.notify_all();
+        {
+            std::lock_guard<std::mutex> lock(gate_);stopped_=true;
+            for(auto& p:pending_) p.second->changed.notify_all();
+        }
+        // Submission checks stopped_ under the same gate before queuing I/O,
+        // so no new transfer can slip behind this cancellation. The owning
+        // transfer drains completion without holding the state gate.
+#ifdef _WIN32
+        if(handle_!=INVALID_HANDLE_VALUE) CancelIoEx(handle_,nullptr);
+#else
+        if(handle_>=0) ::shutdown(handle_,SHUT_RDWR);
+#endif
     }
 public:
     explicit control_channel(const std::string& address,std::uint64_t parent_pid,std::size_t maximum_pending)
@@ -123,7 +164,7 @@ public:
         if(!maximum_pending) throw std::runtime_error("invalid control request window");
 #ifdef _WIN32
         std::wstring wide(address.begin(),address.end()); // generated ASCII pipe identifier only
-        handle_=CreateFileW(wide.c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,0,nullptr);
+        handle_=CreateFileW(wide.c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,FILE_FLAG_OVERLAPPED,nullptr);
         if(handle_==INVALID_HANDLE_VALUE) throw std::runtime_error("cannot connect native control pipe");
         ULONG peer=0;
         if(!GetNamedPipeServerProcessId(handle_,&peer) || peer!=parent_pid) {
@@ -165,9 +206,16 @@ public:
         // Normal shutdown proves all native jobs have returned before the
         // parent drains its replies. Failure paths are terminated by the owner.
         if(!orderly_closed_)try { finish(); } catch(...) { }
+        fail();
 #ifdef _WIN32
-        if(reader_.joinable()) CancelSynchronousIo(reader_.native_handle());
-        if(handle_!=INVALID_HANDLE_VALUE) CancelIoEx(handle_,nullptr);
+        if(reader_.joinable()) {
+            // Wait for the reader to drain its overlapped completion before
+            // releasing its event, buffers, thread or the pipe handle.
+            while(WaitForSingleObject(reader_.native_handle(),0)==WAIT_TIMEOUT) {
+                if(handle_!=INVALID_HANDLE_VALUE) CancelIoEx(handle_,nullptr);
+                (void)WaitForSingleObject(reader_.native_handle(),10);
+            }
+        }
 #else
         if(handle_>=0) ::shutdown(handle_,SHUT_RDWR);
 #endif
@@ -184,11 +232,15 @@ public:
         std::unique_lock<std::mutex> submission(write_gate_);
         auto wait=std::make_shared<pending>();
         control_message m;m.kind=std::uint32_t(kind);m.a=a;m.b=b;m.c=c;
+        wait->kind=m.kind;
         {
             std::lock_guard<std::mutex> lock(gate_);
-            if(stopped_ || pending_.size()>=maximum_pending_ || sequence_==UINT64_MAX)
+            if(stopped_ || closing_ || pending_.size()>=maximum_pending_ || sequence_==UINT64_MAX)
                 throw std::runtime_error("native control request window exhausted");
+            if(kind==control_kind::close && (!pending_.empty() || a || b || c))
+                throw std::runtime_error("native control close requires a drained request window");
             m.sequence=++sequence_;pending_.emplace(m.sequence,wait);
+            if(kind==control_kind::close) closing_=true;
         }
         try {send(m);} catch(...) {fail();throw;}
         submission.unlock();

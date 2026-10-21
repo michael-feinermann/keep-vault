@@ -326,11 +326,14 @@ static void RunSettingsPersistenceTests()
         // the key derivation. Assert only the user semantics it must convey,
         // and assert the cryptographic contract directly against the KDF.
         Assert(
-            firstWindow.PasswordGeneratorHelpText.Text.Contains("nine", StringComparison.OrdinalIgnoreCase)
+            firstWindow.PasswordGeneratorHelpText.Text.Contains("eleven", StringComparison.OrdinalIgnoreCase)
             && firstWindow.PasswordGeneratorHelpText.Text.Contains("pools", StringComparison.OrdinalIgnoreCase)
-            && firstWindow.PasswordGeneratorHelpText.Text.Contains("atomically", StringComparison.OrdinalIgnoreCase)
+            && firstWindow.PasswordGeneratorHelpText.Text.Contains("randomly assigned", StringComparison.OrdinalIgnoreCase)
+            && firstWindow.PasswordGeneratorHelpText.Text.Contains("1,024", StringComparison.Ordinal)
+            && firstWindow.PasswordGeneratorHelpText.Text.Contains("factors A and B", StringComparison.Ordinal)
+            && firstWindow.PasswordGeneratorHelpText.Text.Contains("clears all source pools", StringComparison.OrdinalIgnoreCase)
             && !firstWindow.PasswordGeneratorHelpText.Text.Contains("BCryptGenRandom", StringComparison.Ordinal),
-            "archive entropy help describes the eleven pools and atomic factor generation instead of nonce internals");
+            "archive entropy help describes eleven randomly assigned pools, each threshold, both factors and source-pool clearing");
         Assert(
             V13MasterKdf.KdfMode == "DualArgon2id-SplitSHA3+Skein1024-Sequential-Master1024"
             && V13MasterKdf.KdfInputMode == "DualBranch-v13: SplitFactorsSHA3-512-1024 || KeyedSkeinMAC-1024-1024"
@@ -582,9 +585,20 @@ static void RunDropTests()
             window.RefreshEntropyStatusForTests();
             Assert(window.GeneratePasswordButton.IsEnabled, "generated password button is enabled after all entropy pools are ready");
             Assert(
-                window.EntropyStatusText.Text.Contains("nonce 1", StringComparison.OrdinalIgnoreCase)
-                && window.EntropyStatusText.Text.Contains("nonce 2", StringComparison.OrdinalIgnoreCase),
-                "GUI displays both independent nonce-pool counters");
+                Enumerable.Range(1, 5).All(index => window.EntropyStatusText.Text.Contains($"nonce {index}", StringComparison.OrdinalIgnoreCase)),
+                "GUI displays all five independent v13 nonce-pool counters");
+            FieldInfo integrity = typeof(MainWindow).GetField("_integrityTrusted", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("MainWindow integrity gate field was not found.");
+            FieldInfo operationActive = typeof(MainWindow).GetField("_protectedOperationActive", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("MainWindow protected-operation gate field was not found.");
+            EntropyPoolStatus beforeUntrustedGeneration = EntropyMixer.GetPoolStatus();
+            window.GeneratePasswordButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            Assert(window.GeneratedPasswordFirstBox.Text.Length == 0 && window.GeneratedPasswordSecondBox.Text.Length == 0
+                && !window.HasPreparedArchiveEntropyForTests && EntropyMixer.GetPoolStatus() == beforeUntrustedGeneration,
+                "generation before integrity verification must preserve every entropy pool and produce no factors or prepared material");
+            integrity.SetValue(window, true);
+            typeof(MainWindow).GetMethod("UpdateProtectedOperationButtons", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(window, null);
             window.EncryptBox.IsChecked = false;
             Assert(window.ApplyDroppedPaths([file], DropTarget.Inputs) == DropResult.InputsAdded, "file input drop");
             Assert(window.InputList.Items.Contains(file), "input list contains file");
@@ -620,8 +634,16 @@ static void RunDropTests()
             window.EncryptBox.IsChecked = false;
 
             window.ArchivePathBox.Text = Path.Combine(root, "manual.zpaq");
-            window.CipherSuiteBox.SelectedIndex = 0;
-            window.GeneratePasswordButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            window.CipherSuiteBox.SelectedIndex = SuiteDisplayIndex(EncryptionSuite.Threefish1024);
+            SynchronizationContext? previousContext = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(new System.Windows.Threading.DispatcherSynchronizationContext(window.Dispatcher));
+            try
+            {
+                window.GeneratePasswordButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+                WaitForDispatcherCondition(() => (int)operationActive.GetValue(window)! == 0
+                    && window.HasPreparedArchiveEntropyForTests, "GUI entropy generation");
+            }
+            finally { SynchronizationContext.SetSynchronizationContext(previousContext); }
             Assert(window.GeneratedPasswordFirstBox.Text.Length == 256, "GUI generator shows first 256-character factor");
             Assert(window.GeneratedPasswordFirstBox.Text.All(Uri.IsHexDigit), "first GUI generator output is hexadecimal");
             Assert(window.GeneratedPasswordSecondBox.Text.Length == 256, "GUI generator shows second 256-character factor");
@@ -639,7 +661,7 @@ static void RunDropTests()
             Assert(string.IsNullOrEmpty(window.CreatePinBox.Password), "GUI generator leaves create PIN empty");
             Assert(string.IsNullOrEmpty(window.CreatePinConfirmBox.Password), "GUI generator leaves create PIN confirm empty");
             Assert(window.EncryptBox.IsChecked == true, "GUI generator enables encryption");
-            Assert(window.CipherSuiteBox.SelectedIndex == 0, "GUI generator preserves the selected Threefish suite");
+            Assert(window.CipherSuiteBox.SelectedIndex == SuiteDisplayIndex(EncryptionSuite.Threefish1024), "GUI generator preserves the selected Threefish suite");
             Assert(window.ArchivePathBox.Text == Path.Combine(root, "manual.kzpaq"), "GUI generator switches target extension to encrypted container");
             Assert(window.ExtractPasswordBox.IsEnabled, "extract password box is directly enabled");
             window.CreatePasswordBox.Password = TestUserPassword;
@@ -981,6 +1003,28 @@ static void AddMouseSamplesUntilEntropyReady()
         EntropyMixer.GetPoolStatus().Minimum >= EntropyMixer.RequiredMouseSamplesPerPurpose,
         "all mouse entropy pools meet the required sample minimum");
     Assert(EntropyMixer.GetPoolStatus().IsReady, "all eleven pools have the actual minimum, with no balancing contract");
+}
+
+static void WaitForDispatcherCondition(Func<bool> condition, string operation)
+{
+    if (condition()) return;
+    var elapsed = Stopwatch.StartNew();
+    var frame = new System.Windows.Threading.DispatcherFrame();
+    var timer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromMilliseconds(10),
+    };
+    timer.Tick += (_, _) =>
+    {
+        if (condition() || elapsed.Elapsed >= TimeSpan.FromSeconds(30)) frame.Continue = false;
+    };
+    try
+    {
+        timer.Start();
+        System.Windows.Threading.Dispatcher.PushFrame(frame);
+    }
+    finally { timer.Stop(); }
+    if (!condition()) throw new TimeoutException($"{operation} did not finish within 30 seconds.");
 }
 
 static void WaitForDispatcherTask(Task task)
@@ -2267,13 +2311,16 @@ static async Task RunZpaqInputBindingTestsAsync()
             Directory.Exists(Path.Combine(treeOutput, "tree", "empty")),
             "an empty input directory is preserved by the private mirror");
 
-        // 11: a hard link is an ordinary file object and must archive normally.
+        // v13 binds original source objects and rejects multiply linked inputs.
         string hardLink = Path.Combine(tree, "hardlink.txt");
         if (TryCreateHardLinkForTests(hardLink, Path.Combine(tree, "a.txt")))
         {
             string linkArchive = Path.Combine(root, "hardlink.zpaq");
-            ProcessResult linkAdd = await zpaq.AddAsync(linkArchive, [hardLink], 0, null, CancellationToken.None);
-            Assert(linkAdd.Succeeded, $"a hard-linked input archives normally: {linkAdd.StandardError}");
+            await AssertThrowsAsync<IOException>(
+                () => zpaq.AddAsync(linkArchive, [hardLink], 0, null, CancellationToken.None),
+                "a multiply linked source is refused before native archive creation");
+            Assert(!File.Exists(linkArchive) && await File.ReadAllTextAsync(hardLink) == "alpha",
+                "hard-link rejection creates no archive and preserves the original source bytes");
             File.Delete(hardLink);
         }
 
@@ -2287,7 +2334,7 @@ static async Task RunZpaqInputBindingTestsAsync()
                 "a junction selected as the input root is refused");
 
             string throughJunction = Path.Combine(junctionRoot, "nested");
-            await AssertThrowsAsync<IOException>(
+            await AssertThrowsAsync<InvalidOperationException>(
                 () => zpaq.AddAsync(Path.Combine(root, "junction-ancestor.zpaq"), [throughJunction], 0, null, CancellationToken.None),
                 "an input reached through a junction ancestor is refused");
 

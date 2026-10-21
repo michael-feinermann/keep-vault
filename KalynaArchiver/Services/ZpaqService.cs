@@ -1572,7 +1572,11 @@ public sealed partial class ZpaqService
         using OperationMemoryBudget.HeavyLease? nativeMemory = await ReserveNativeMemoryAsync(
             stableArguments, sources, cancellationToken).ConfigureAwait(false);
         stableArguments = WithNativeMemoryBudget(stableArguments, nativeMemory);
-        using ZpaqControlSession? control = CreateNativeControl(stableArguments, sources: sources, outputDirectory: monitorStagingDirectory);
+        using ZpaqControlSession? control = CreateNativeControl(stableArguments, sources: sources, outputDirectory: monitorStagingDirectory
+#if !KEEPVAULT_MACOS
+            , windowsStaging: windowsStaging
+#endif
+        );
         stableArguments = WithNativeControl(stableArguments, control);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 #if KEEPVAULT_MACOS
@@ -1653,7 +1657,11 @@ public sealed partial class ZpaqService
         }
     }
 
-    private static ZpaqControlSession? CreateNativeControl(string[] arguments, ZpaqBoundSources? sources, string? outputDirectory = null)
+    private static ZpaqControlSession? CreateNativeControl(string[] arguments, ZpaqBoundSources? sources, string? outputDirectory = null
+#if !KEEPVAULT_MACOS
+        , WindowsExtractionStaging? windowsStaging = null
+#endif
+    )
     {
         if (Array.IndexOf(arguments, "-threads") < 0) return null;
         var phase = arguments.Contains("add", StringComparer.Ordinal) ? OperationPhase.Compression : OperationPhase.Extraction;
@@ -1671,7 +1679,11 @@ public sealed partial class ZpaqService
         };
         try
         {
-            if (!string.IsNullOrEmpty(outputDirectory)) session.BindOutput(outputDirectory, ArchiveOperationPolicy.Current.MaxExtractedTotalBytes);
+            if (!string.IsNullOrEmpty(outputDirectory)) session.BindOutput(outputDirectory, ArchiveOperationPolicy.Current.MaxExtractedTotalBytes
+#if !KEEPVAULT_MACOS
+                , windowsStaging
+#endif
+            );
             else if (arguments[0] == "add") session.BindOutput(Path.GetDirectoryName(Path.GetFullPath(arguments[1]))!, ArchiveOperationPolicy.Current.MaxContainerBytes);
             return session;
         }
@@ -1968,7 +1980,11 @@ public sealed partial class ZpaqService
         using OperationMemoryBudget.HeavyLease? nativeMemory = await ReserveNativeMemoryAsync(
             stableArguments, sources: null, cancellationToken).ConfigureAwait(false);
         stableArguments = WithNativeMemoryBudget(stableArguments, nativeMemory);
-        using ZpaqControlSession? control = CreateNativeControl(stableArguments, sources: null, outputDirectory: monitorStagingDirectory);
+        using ZpaqControlSession? control = CreateNativeControl(stableArguments, sources: null, outputDirectory: monitorStagingDirectory
+#if !KEEPVAULT_MACOS
+            , windowsStaging: windowsStaging
+#endif
+        );
         stableArguments = WithNativeControl(stableArguments, control);
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 #if KEEPVAULT_MACOS

@@ -45,6 +45,24 @@ checks. `KeepVaultMac/Packaging/NativeKats.c` exercises the same published KATs
 for each executable macOS slice, including the independent ML-DSA adapter.
 Windows execution is a separate gate.
 
+## Windows control-channel lifecycle
+
+From the local Windows checkout, run `tools/Test-ZpaqControlLifecycle.ps1` with
+Visual Studio 2022 C++ tools installed. It builds only the small
+`zpaq_control_lifecycle.cpp` fixture below `work/`; no product binary is replaced.
+The fixture talks to the actual production `control_channel` over real Windows
+named pipes. It exercises request/response, close/EOF, repeated close, requests
+after close, a pending-request close attempt, mismatched responses, malformed
+close acknowledgments and a dropped peer. Every process has a bounded deadline;
+timeout evidence records its process tree before terminating only that tree.
+
+An isolated original-v13 negative control and a current-header positive control
+receive the same generated next-read scheduling delay. The product header is
+never instrumented. These cases distinguish the former Windows lifecycle
+failure from the corrected path; they do not establish a cause for unrelated
+application hangs. JSON receipts, compiler output and header hashes remain in
+the reported evidence directory.
+
 ## Product ABI
 
 The managed product uses `keepvault_xchacha20poly1305_v13_encrypt_with_budget`

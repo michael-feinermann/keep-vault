@@ -43,6 +43,18 @@ foreach ($name in @('KalynaArchiver', 'tools', 'external')) { [IO.Directory]::Cr
 [IO.File]::WriteAllText((Join-Path $repository '.gitignore'), "work/`nbin/`nobj/`nbuild-obj/`nobj_alt/`ndist/`nbuild-analysis/`n")
 [IO.File]::WriteAllText((Join-Path $repository 'KalynaArchiver\KalynaArchiver.csproj'), '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><UseWPF>true</UseWPF></PropertyGroup></Project>')
 [IO.File]::WriteAllText((Join-Path $repository 'KalynaArchiver\Input.cs'), '// committed source')
+$nativeProjects = @{
+    'native/tests/camellia_serpent_reference' = 'CipherReference.csproj'
+    'native/tests/claim_grain' = 'ClaimGrain.csproj'
+    'native/tests/managed_executor' = 'ManagedExecutor.csproj'
+    'native/tests/native_benchmark' = 'NativeBenchmark.csproj'
+}
+foreach ($project in $nativeProjects.Keys) {
+    $directory = Join-Path $repository $project
+    [IO.Directory]::CreateDirectory($directory) | Out-Null
+    [IO.File]::WriteAllText((Join-Path $directory $nativeProjects[$project]), '<Project Sdk="Microsoft.NET.Sdk"/>')
+    [IO.File]::WriteAllText((Join-Path $directory 'Program.cs'), '// committed native-test harness source')
+}
 [IO.File]::WriteAllText((Join-Path $repository 'external\unit.cpp'), '// reviewed wildcard input')
 [IO.File]::WriteAllText((Join-Path $repository 'tools\Build.ps1'), '# committed script')
 [IO.File]::WriteAllText((Join-Path $repository 'tools\zpaq.exe'), 'synthetic text output; never executed')
@@ -77,7 +89,18 @@ try {
         throw 'Snapshot copied a dirty generated output from the live source.'
     }
     $report = Get-Content -LiteralPath $snapshot.ReportPath
-    if ($report.Count -ne 5 -or $report -match 'zpaq.exe') { throw 'Source hash inventory includes generated output or omits source.' }
+    if ($report.Count -ne (5 + 2 * $nativeProjects.Count) -or $report -match 'zpaq.exe') { throw 'Source hash inventory includes generated output or omits source.' }
+    foreach ($project in $nativeProjects.Keys) {
+        foreach ($output in @('bin', 'obj', 'obj_alt', 'build-obj')) {
+            $directory = Join-Path $snapshotRoot "$project/$output"
+            if (-not (Test-Path -LiteralPath $directory -PathType Container)) { throw "A nested tracked project output was not pre-created: $project/$output" }
+            [IO.File]::WriteAllText((Join-Path $directory 'synthetic-output.txt'), 'synthetic build output; never executed')
+        }
+        Require-Rejection { [IO.File]::AppendAllText((Join-Path $snapshotRoot "$project/Program.cs"), 'mutation') } "nested project source write while leased: $project"
+        Require-Rejection { [IO.File]::WriteAllText((Join-Path $snapshotRoot "$project/Injected.cs"), 'insertion') } "nested project source insertion while leased: $project"
+    }
+    $snapshot.Verify()
+    Write-Host 'PASS exact nested v13 project output slots are writable while their tracked sources remain leased'
     Require-Rejection { [IO.File]::WriteAllText((Join-Path $snapshotRoot 'KalynaArchiver\Input.cs'), 'mutation') } 'source write while leased'
     Require-Rejection { [IO.File]::WriteAllText((Join-Path $snapshotRoot 'external\new.cpp'), 'insertion') } 'new wildcard input while leased'
     Require-Rejection { [IO.File]::WriteAllText((Join-Path $snapshotRoot 'tools\injected.ps1'), 'insertion') } 'new script while leased'
@@ -138,6 +161,15 @@ Require-Rejection {
     $unexpectedLease.Dispose()
 } 'nested bin directory is not a project output exemption'
 [IO.File]::WriteAllText((Join-Path $nestedTree 'KalynaArchiver\Features\after.cs'), '// restored')
+$nestedNativeTree = Join-Path $testRoot 'nested-native-output-insertion'
+[IO.Directory]::CreateDirectory((Join-Path $nestedNativeTree 'native\tests\native_benchmark\Features\bin')) | Out-Null
+[IO.File]::WriteAllText((Join-Path $nestedNativeTree 'native\tests\native_benchmark\Features\Input.cs'), '// reviewed')
+Require-Rejection {
+    $unexpectedLease = [KeepVaultBuild.SourceSnapshotLease]::new($nestedNativeTree, $commit,
+        [string[]]@('native/tests/native_benchmark/Features/Input.cs'), (Join-Path $testRoot 'nested-native-before.sha256'))
+    $unexpectedLease.Dispose()
+} 'nested bin below a v13 project is not an output exemption'
+[IO.File]::WriteAllText((Join-Path $nestedNativeTree 'native\tests\native_benchmark\Features\after.cs'), '// restored')
 
 # Force one ACL restoration failure and verify that the remaining directories
 # and all held handles are still released before the aggregate error returns.

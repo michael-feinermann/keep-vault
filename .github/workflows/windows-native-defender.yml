@@ -2,11 +2,12 @@ name: Windows native Defender evidence
 
 on:
   push:
-    branches: [codex/windows-v12-5.0.2]
+    branches: [codex/windows-v12-5.0.2, codex/windows-v13-5.0.3]
     paths:
       - .github/workflows/windows-native-defender.yml
       - tools/Build-Native.cmd
       - tools/Test-WindowsNativeDefender.ps1
+      - tools/Test-ZpaqControlLifecycle.ps1
       - tools/Verify-NativeSources.ps1
       - tools/Verify-MldsaReference.ps1
       - tools/LocalWorkspacePolicy.ps1
@@ -114,7 +115,8 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-          fetch-depth: 1
+          # The lifecycle negative control reads an exact historical source blob.
+          fetch-depth: 0
           submodules: false
           lfs: false
 
@@ -125,6 +127,9 @@ jobs:
 
       - name: Build pinned native sources and scan with active Defender
         run: ./tools/Test-WindowsNativeDefender.ps1
+
+      - name: Verify bounded native control channel lifecycle
+        run: ./tools/Test-ZpaqControlLifecycle.ps1
 
       # Fixed text/JSON allowlist. Never upload work/native-scan, .exe, .dll,
       # compiler objects, source archives, private keys, or signing outputs.
@@ -142,6 +147,7 @@ jobs:
             ${{ runner.temp }}/keepvault-native-defender-evidence/native-hashes-after.json
             ${{ runner.temp }}/keepvault-native-defender-evidence/source-pins.log
             ${{ runner.temp }}/keepvault-native-defender-evidence/build.log
+            ${{ github.workspace }}/work/control-lifecycle-*/result.json
           if-no-files-found: error
           retention-days: 7
           include-hidden-files: false

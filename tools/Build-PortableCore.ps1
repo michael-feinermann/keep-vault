@@ -242,6 +242,8 @@ foreach ($target in $nativeTargets) {
     if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { throw "Fresh native output is missing: $target" }
 }
 $SnapshotLease.Verify()
+& (Join-Path $PSScriptRoot 'Test-ZpaqControlLifecycle.ps1') -Root $root
+$SnapshotLease.Verify()
 $nativeSigning = @{} + $releaseSigning
 $nativeSigning.MldsaReferencePath = $MldsaReferencePath
 & $signScript -Path $nativeTargets @nativeSigning

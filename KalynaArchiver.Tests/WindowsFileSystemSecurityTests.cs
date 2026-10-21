@@ -137,6 +137,7 @@ internal static class WindowsFileSystemSecurityTests
         try
         {
             RunCreateValidationRollback(root);
+            RunStagingOutputControlBinding(root);
             string path = Path.Combine(root, "payload.bin");
             File.WriteAllBytes(path, [1, 2, 3]);
 
@@ -326,6 +327,33 @@ internal static class WindowsFileSystemSecurityTests
         {
             if (Directory.Exists(alias)) Directory.Delete(alias);
         }
+    }
+
+    private static void RunStagingOutputControlBinding(string root)
+    {
+        string destination = Path.Combine(root, "control-bound-extraction");
+        using var staging = new WindowsExtractionStaging(destination);
+        var policy = new ArchiveOperationPolicy(root, root);
+        using (var control = new ZpaqControlSession(policy))
+        {
+            control.BindOutput(staging.StagingPath, 4096, staging);
+            ExpectIOException(() => Directory.Move(staging.StagingPath, staging.StagingPath + ".renamed"),
+                "Binding the control channel weakened the staging rename exclusion.");
+            using SafeFileHandle duplicate = staging.DuplicateStagingHandle(staging.StagingPath);
+            Require(WindowsSafeFileSystem.GetIdentity(duplicate) == staging.StagingIdentity,
+                "The output capability duplicated a different directory object.");
+            ExpectIOException(() => WindowsSafeFileSystem.MarkForDeletion(duplicate),
+                "The control capability retained unnecessary deletion rights.");
+            ExpectIOException(() => staging.DuplicateStagingHandle(root).Dispose(),
+                "The staging capability admitted a different output path.");
+        }
+        // Disposing the control's duplicate must leave the transaction owner's
+        // original handle usable for its final validation and bound rename.
+        File.WriteAllText(Path.Combine(staging.StagingPath, "payload.txt"), "public synthetic output");
+        staging.MeasureTree(allowWriters: false);
+        staging.Install();
+        Require(File.ReadAllText(Path.Combine(destination, "payload.txt")) == "public synthetic output",
+            "Disposing the control capability invalidated the staging owner or its final installation.");
     }
 
     private static void ExpectIOException(Action action, string failure)

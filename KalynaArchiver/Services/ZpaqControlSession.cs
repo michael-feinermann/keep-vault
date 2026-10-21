@@ -104,14 +104,20 @@ internal sealed partial class ZpaqControlSession : IDisposable
 #endif
     }
 
-    internal void BindOutput(string directory, long authorizedBytes)
+    internal void BindOutput(string directory, long authorizedBytes
+#if !KEEPVAULT_MACOS
+        , WindowsExtractionStaging? windowsStaging = null
+#endif
+    )
     {
         if (authorizedBytes <= 0 || _outputRoot is not null) throw new InvalidDataException("Invalid output authorization.");
         _outputPolicy = _policy.WithOutputDirectory(directory);
 #if KEEPVAULT_MACOS
         _outputRoot = MacSafeFileSystem.OpenDirectoryHandle(directory);
 #else
-        _outputRoot = WindowsSafeFileSystem.OpenDirectoryBound(directory, denyRename: true, requestCreateAccess: true);
+        _outputRoot = windowsStaging is null
+            ? WindowsSafeFileSystem.OpenDirectoryBound(directory, denyRename: true, requestCreateAccess: true)
+            : windowsStaging.DuplicateStagingHandle(directory);
 #endif
         _outputAuthorized = authorizedBytes;
     }

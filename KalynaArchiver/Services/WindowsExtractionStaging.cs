@@ -103,6 +103,17 @@ internal sealed class WindowsExtractionStaging : IDisposable
 
     internal WindowsFileIdentity StagingIdentity => _stagingIdentity;
 
+    internal SafeFileHandle DuplicateStagingHandle(string expectedPath)
+    {
+        ThrowIfDisposed();
+        if (_committed || _stagingHandle is null
+            || !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(expectedPath)),
+                _currentStagingPath, StringComparison.Ordinal))
+            throw new IOException("The output control directory does not match this staging transaction.");
+        return WindowsSafeFileSystem.DuplicateDirectoryBound(
+            _stagingHandle, _stagingIdentity, _currentStagingPath);
+    }
+
     internal DirectoryTreeMeasurement MeasureTree(bool allowWriters)
     {
         ThrowIfDisposed();

@@ -84,6 +84,7 @@ internal static class WindowsGuiV502Tests
             && window.ExtractPinBox.MaxLength == ContainerKeyDerivation.MaxCredentialCodeUnits,
             "Extraction inputs must preserve the reference's technical credential limits.");
         Require(Grid.GetColumn((UIElement)window.CreatePasswordPanel) == 2, "Creation credentials must be in the right column.");
+        CheckFactorFieldStyle(window);
         CheckPathWatermarks(window);
         CheckOutputParentSelection(window);
 
@@ -128,6 +129,8 @@ internal static class WindowsGuiV502Tests
         string firstFactor = new('A', PasswordKeyService.GeneratedPasswordLength);
         string secondFactor = new('B', PasswordKeyService.GeneratedPasswordLength);
         string archive = Path.Combine(Path.GetTempPath(), "synthetic-key-sheet-confirmation.kzpaq");
+        FieldInfo integrity = typeof(MainWindow).GetField("_integrityTrusted", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("MainWindow integrity gate field was not found.");
         try
         {
             foreach (bool english in new[] { false, true })
@@ -167,6 +170,16 @@ internal static class WindowsGuiV502Tests
 
                 string initialLog = window.LogBox.Text;
                 string initialStatus = window.KeySheetStatusText.Text;
+                // This unshown window never runs the asynchronous startup check.
+                // Prove the production gate first, then establish test-only trust
+                // so the independent risk-confirmation path can be exercised.
+                integrity.SetValue(window, false);
+                response = MessageBoxResult.Yes;
+                window.RunConfirmedKeySheetOutput(printing, Output);
+                Require(confirmations == 0 && outputs == 0 && window.LogBox.Text == initialLog
+                    && window.KeySheetStatusText.Text == initialStatus,
+                    "Key-sheet output must remain blocked before integrity verification, even with an accepting confirmation hook.");
+                integrity.SetValue(window, true);
                 foreach (MessageBoxResult cancelled in new[] { MessageBoxResult.None, MessageBoxResult.No, MessageBoxResult.Cancel, MessageBoxResult.OK })
                 {
                     response = cancelled;
@@ -187,7 +200,7 @@ internal static class WindowsGuiV502Tests
                     {
                         bool rejected = false;
                         try { window.RunConfirmedKeySheetOutput(printing, Output); }
-                        catch (InvalidOperationException) { rejected = true; }
+                        catch (ArgumentException) { rejected = true; }
                         Require(rejected && confirmations == 5 && outputs == 1,
                             "Missing factors must fail before any confirmation or output, including repeated attempts.");
                     }
@@ -198,6 +211,37 @@ internal static class WindowsGuiV502Tests
         {
             MainWindow.TestHookShowCredentialMessage = previousDialogHook;
         }
+    }
+
+    private static void CheckFactorFieldStyle(MainWindow window)
+    {
+        var textStyle = (Style)window.FindResource(typeof(TextBox));
+        var roundedTemplate = (ControlTemplate)window.FindResource("RoundedTextBox");
+        var expectedBackground = (Color)ColorConverter.ConvertFromString("#0A1423");
+        foreach (int language in new[] { 0, 1 })
+        {
+            window.LanguageBox.SelectedIndex = language;
+            FlushBindings(window);
+            foreach (var factor in new[] { window.ExtractGeneratedPasswordFirstBox, window.ExtractGeneratedPasswordSecondBox })
+            {
+                factor.ApplyTemplate();
+                Require(ReferenceEquals(factor.Style?.BasedOn, textStyle)
+                    && ReferenceEquals(factor.Template, roundedTemplate),
+                    "Both derived factor fields must resolve the shared rounded input style in DE and EN.");
+                Require(factor.Background is SolidColorBrush background
+                    && background.Color == expectedBackground
+                    && factor.Foreground is SolidColorBrush foreground
+                    && foreground.Color == (Color)ColorConverter.ConvertFromString("#F3F7FB"),
+                    "The derived factor fields fell back to system-white input colors.");
+                var chrome = factor.Template.FindName("Chrome", factor) as Border;
+                Require(chrome is not null && chrome.CornerRadius == new CornerRadius(8)
+                    && chrome.Background is SolidColorBrush chromeBackground
+                    && chromeBackground.Color == expectedBackground,
+                    "The factor field's realized control template must retain the dark rounded chrome.");
+            }
+        }
+        window.LanguageBox.SelectedIndex = 1;
+        FlushBindings(window);
     }
 
     private static void CheckPathWatermarks(MainWindow window)

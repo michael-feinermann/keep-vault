@@ -151,6 +151,7 @@
             <Setter Property="CaretBrush" Value="#5DE4EC" />
             <Setter Property="Template" Value="{StaticResource RoundedTextBox}" />
         </Style>
+        <Style TargetType="{x:Type controls:FactorTextBox}" BasedOn="{StaticResource {x:Type TextBox}}" />
         <Style TargetType="{x:Type ComboBox}">
             <Setter Property="MinHeight" Value="38" />
             <Setter Property="Background" Value="#0A1423" />
