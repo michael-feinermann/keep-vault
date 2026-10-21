@@ -1,0 +1,52 @@
+{
+  "State": "PASS",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src",
+  "AcceptanceEvidence": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\package-acceptance-20261021T213624Z-6f50703038f94ebf8cffcc2dc6e51f09",
+  "Checks": [
+    {
+      "Name": "ImmutableBuild",
+      "State": "PASS",
+      "Evidence": [
+        {
+          "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\release-build7-103e87f-result.json",
+          "Sha256": "99862C225BB00348064617819B83279A7F25D2FBF268B5B175E4DA377140B599"
+        }
+      ]
+    },
+    {
+      "Name": "FullSuite",
+      "State": "PASS",
+      "Evidence": [
+        {
+          "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\final-full-receipt.json",
+          "Sha256": "90281FFA3C5B09CC3525047F411C369B33F609AF5501A031DE3F2E0AA03C9909"
+        },
+        {
+          "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\final-full-results.json",
+          "Sha256": "13C10B1018D5B376BC961E14D164683790671BD44181C9A135EE1787849A53A2"
+        },
+        {
+          "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\final-full-preflight.json",
+          "Sha256": "5DF80F390D673DD23950F771C1CFC5B81867145DBE4733A4EE641B7F821119B0"
+        }
+      ]
+    },
+    {
+      "Name": "Performance",
+      "State": "PASS",
+      "Evidence": [
+        {
+          "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\summary.json",
+          "Sha256": "20AEE76F4EC3A9EA185D97E8CBD0E44538A53E4B45B2823E633C5CB0685FB36C"
+        },
+        {
+          "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\preservation.json",
+          "Sha256": "3D3F1C9EA946269DCD8D499E5698C2E2FB360514AA82C766F3B77A0F69CF2D40"
+        }
+      ]
+    }
+  ],
+  "PreparedUtc": "2026-10-21T22:32:52.3791949Z",
+  "Scope": "Actual completed immutable signed build,109 full groups,40 acceptance cases/81 awaited calls and four real sequential performance groups. Publication wrapper independently validates all nested evidence, exact source/test DLL, real exits, timestamps and preservation before any release mutation."
+}

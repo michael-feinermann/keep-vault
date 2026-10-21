@@ -8,7 +8,7 @@
   "FinalAcceptanceCases": 40,
   "FinalAcceptanceAwaitedProductProcesses": 81,
   "Performance": "PASS",
-  "Publication": "PENDING",
+  "Publication": "PASS",
   "OriginalBundleListSha256": "A5C651901E59C46B37267DD6E74C8B2C1833CF04BE4F712678B6BFC202316D0B",
   "Files": [
     {
@@ -115,8 +115,8 @@
     },
     {
       "Name": "gate-status.json",
-      "Bytes": 4759,
-      "Sha256": "C4C0313ACD8C07C81F5E1385390EB0549E1F215D76CA39ED82ECB7B72CE0A82F",
+      "Bytes": 5456,
+      "Sha256": "F3765111CA519EA360097A50510AF43DE6E3815AB9EE114FFA35F5C855727E9C",
       "Scope": "Current matching actual core gates; performance/publication PENDING and original physical/historical limits retained"
     },
     {
@@ -282,6 +282,138 @@
       "Scope": "Public exports in A:\\Keep Vault Keys"
     },
     {
+      "Name": "publication-anonymous-downloads.json",
+      "Bytes": 16445,
+      "Sha256": "94DE864680648EAB36C5207B8C9D6C35A564CF45A489CDE6E09BBC5E56F10697",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-asset-plan.json",
+      "Bytes": 6323,
+      "Sha256": "B88434B8201319369CFA6CF794EE6F869E07512D8707B44B020560C3FF1EF3D2",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-draft-rechecked.json",
+      "Bytes": 31024,
+      "Sha256": "D34E507D26B5EC443842EFD89A66FEBD109473727DBAC6BE79F1C0DCC726566E",
+      "Scope": "Original hash/digest/ownership publication metadata; no raw process, host, UI or shortcut state"
+    },
+    {
+      "Name": "publication-final-release.json",
+      "Bytes": 31006,
+      "Sha256": "647A20FAECA7B3C7C3C03AA93CF125C4F6C10251438D6DF778C4EEDFAC1A09B5",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-latest-after.json",
+      "Bytes": 45,
+      "Sha256": "CADF5C99C2C7CF08F1FBBB97B0D73893F5A9035425E82358F05140E0073975DD",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-latest-before.json",
+      "Bytes": 45,
+      "Sha256": "CADF5C99C2C7CF08F1FBBB97B0D73893F5A9035425E82358F05140E0073975DD",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-mac-after.json",
+      "Bytes": 6085,
+      "Sha256": "0FB50A59B818D2E040D6EC3D66619A96EA9CEA35C9963F1DF025753ECAED5872",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-mac-before.json",
+      "Bytes": 6085,
+      "Sha256": "0FB50A59B818D2E040D6EC3D66619A96EA9CEA35C9963F1DF025753ECAED5872",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-original-assets-before.json",
+      "Bytes": 2263,
+      "Sha256": "284D4DCA3A1CB6224387731CE1142A04430BE340A79DFD8943780478915F5B0B",
+      "Scope": "Original hash/digest/ownership publication metadata; no raw process, host, UI or shortcut state"
+    },
+    {
+      "Name": "publication-owned-release.json",
+      "Bytes": 1387,
+      "Sha256": "A38C4B097E9FAA21B53832E7DBBE1447A9332331E23352BC8826AA3D984773A1",
+      "Scope": "Original hash/digest/ownership publication metadata; no raw process, host, UI or shortcut state"
+    },
+    {
+      "Name": "publication-parent-final-gates.json",
+      "Bytes": 2359,
+      "Sha256": "17613C8AF2A836E5E9AE0DA50E469BB2CFFB28446029EE8861E3943B336F95BD",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-preservation.json",
+      "Bytes": 277,
+      "Sha256": "DB55413FF5CBE414EB542FCF122ABEA61490ABF1B612E83B57D728A5B2610126",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-prior-attempt-preservation.json",
+      "Bytes": 278,
+      "Sha256": "4DE0358F5ED87B0188AB3E5898C880DACA4F5B62A501532C4A7F755CC6619789",
+      "Scope": "Original failed publishing attempt preservation: local/Mac/latest preserved; WindowsRelease false because publication had not occurred"
+    },
+    {
+      "Name": "publication-prior-attempt-summary.json",
+      "Bytes": 1034,
+      "Sha256": "FC77AD97D4122DAF79D7F2D6133457F21EC685B3A0ACF39FBA1DD1C47E185DC1",
+      "Scope": "Original first publishing attempt FAIL after own tag/draft creation and draft-by-tag HTTP404; never reinterpreted as publication PASS"
+    },
+    {
+      "Name": "publication-published-with-digests.json",
+      "Bytes": 31006,
+      "Sha256": "647A20FAECA7B3C7C3C03AA93CF125C4F6C10251438D6DF778C4EEDFAC1A09B5",
+      "Scope": "Original hash/digest/ownership publication metadata; no raw process, host, UI or shortcut state"
+    },
+    {
+      "Name": "publication-recovery-lineage.json",
+      "Bytes": 1874,
+      "Sha256": "7556349E80E38C3AA70051055ADC854FEBF7FCAFA706F8CCEE8B67A43A8CC17D",
+      "Scope": "Derived precise binding between retained original publishing FAIL and actual successful own-draft recovery; neither original raw outcome is rewritten"
+    },
+    {
+      "Name": "publication-recovery-provenance.json",
+      "Bytes": 12201,
+      "Sha256": "BD2402AB961934721F4B6EDE1BA8AF49111A05EF5FC197802CFA3902822A500F",
+      "Scope": "Original identity/provenance observation before resumed upload; NOT_YET_PUBLISHED is its initial observation, final publication-summary supplies actual PASS; prior hashes and timestamp projection are retained"
+    },
+    {
+      "Name": "publication-semantic-final-gates.json",
+      "Bytes": 3066,
+      "Sha256": "E6E66750A032805C09727468F00CAEBCAF32D65D12F1866313A3F87E7AA3B3EE",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-summary.json",
+      "Bytes": 2271,
+      "Sha256": "B6AF88A40C9AA5EBBCFD5EAE19156E0DAB37703DBBD9A431B22BF85ED97E8293",
+      "Scope": "Original completed selected-source publication receipt/metadata; execution outcome comes from matching PASS and preserved proof contents"
+    },
+    {
+      "Name": "publication-verification-summary.json",
+      "Bytes": 5285,
+      "Sha256": "D6C0BF17A38288ECE27B5CF3C416D815CD740EC2DFD7A206A6B2723C3E717769",
+      "Scope": "Derived compact summary of actual publication receipts/local rehash; original receipt hashes retained separately"
+    },
+    {
+      "Name": "publish-windows503-prior-attempt.ps1",
+      "Bytes": 57249,
+      "Sha256": "857641B1CD238EAE9D22FF60D8398E61555377946F0E448E0A7F44AF70081DBC",
+      "Scope": "Byte-exact original executed first publishing wrapper857641; that attempt FAIL is separate from successful owned-resume wrapper290CD7; script text alone is not execution proof"
+    },
+    {
+      "Name": "publish-windows503-resume-owned.ps1",
+      "Bytes": 75799,
+      "Sha256": "290CD7B7598EFF2F9D7F65306C7802BBD0FD8113DAA6D8048FCF7A961077EF2E",
+      "Scope": "Byte-exact actual executed publication wrapper source selected by path and matching summary/reviewed SHA256; script text is not execution proof"
+    },
+    {
       "Name": "qr-tests-summary.json",
       "Bytes": 698,
       "Sha256": "D261B249A82882456ABDF8D815DF3EBCA06D4CBB7E2CB43459619D16E2718380",
@@ -289,8 +421,8 @@
     },
     {
       "Name": "README.md",
-      "Bytes": 3792,
-      "Sha256": "5C6F9A10B8BBC5056FC5A060AE56FC25A06812E80E6DA7609874B3973A72407C",
+      "Bytes": 4355,
+      "Sha256": "A9AA67A78F648899CA923FD64D89B3CAB34B15296507D1DF845B702C34DAE160",
       "Scope": "Current bounded core evidence summary; historical scopes/limits retained, performance/publication pending"
     },
     {
@@ -577,7 +709,7 @@
     }
   ],
   "IndexScope": "Current exact core collection: matching actual signed build,109-group full suite,40-case/81-process acceptance,224 current control cycles,151 QR checks, CI and installed-copy startup core PASS for 103e87fd6335bdc4ef8a2ffafa2384ecaad6504b. At core promotion performance/publication were PENDING; their current claims must follow gate-status and matching actual receipts. Earlier component/candidate scopes and historical rejection facts remain in original bytes, archived mappings and PriorIndexScopes; no old result is reinterpreted as current PASS. SHA256SUMS binds local bytes and is not a signature or public-download proof.",
-  "PreparedUtc": "2026-10-21T22:33:29.8332136Z",
+  "PreparedUtc": "2026-10-21T22:55:41.0016353Z",
   "OriginalBundleListSourceCommit": "c5f4f256c9494147d08055a1deb5f9513a11af26",
   "OriginalBundleListScope": "Original earlier preparation-list hash retained as historical provenance; new matching actual core receipts establish current claims.",
   "OriginalIndexScope": "Interim evidence for rejected source c5f4f256c9494147d08055a1deb5f9513a11af26 only. Its build/full/acceptance passes remain valid within that candidate, while performance FAIL blocks publication; the subsequent planner patch requires new gates. This index records exact copied/condensed bytes and their scope. OriginalBundleListSha256 retains the original bundle-list identity, not the current file inventory. SHA256SUMS.txt also covers this index; neither file is a signature or proof of public download.",

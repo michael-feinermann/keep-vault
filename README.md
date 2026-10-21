@@ -2,10 +2,30 @@
 
 [Deutsch](README.de.md) · [English](README.md) · [Documentation index](docs/README.en.md)
 
-Current macOS release: [5.0.3/v13 Build 21](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3), published as a regular GitHub release and selected as Latest at the user's explicit request. Remaining tests are deferred; technical overall release approval is still pending. All six assets are byte-identical to the signed, notarized and installed Build 21 candidate, compiled from `8c68571695ae9072555ffb462b3c0b9c500811ea`. The [current publication status](docs/KEEP_VAULT_5_0_3_PUBLICATION_STATUS.md) separates this publication decision from the existing [Build 21 evidence](docs/PRERELEASE_BUILD21_REPORT.md) and the open 49-phase release gate, final twelve-suite 1-GiB/compression-level-3 measurements and real GUI acceptance gates. Earlier releases remain available. Windows and real multi-TiB runs are outside this run.
+Current macOS release: [5.0.3/v13 Build 21](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3), published as a regular GitHub release and selected as Latest at the user's explicit request. Remaining tests are deferred; technical overall release approval is still pending. All six assets are byte-identical to the signed, notarized and installed Build 21 candidate, compiled from `8c68571695ae9072555ffb462b3c0b9c500811ea`. The [current publication status](docs/KEEP_VAULT_5_0_3_PUBLICATION_STATUS.md) separates this publication decision from the existing [Build 21 evidence](docs/PRERELEASE_BUILD21_REPORT.md) and the open 49-phase release gate, final twelve-suite 1-GiB/compression-level-3 measurements and real GUI acceptance gates. Earlier releases remain available. Windows and real multi-TiB runs are outside this macOS campaign.
+
+Current Windows release: [5.0.3/v13 x64](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3-windows),
+compiled from `103e87fd6335bdc4ef8a2ffafa2384ecaad6504b` with the separate tag
+`v5.0.3-windows`. The signed build, 109 Windows test groups, four separate
+performance groups and 40 package acceptance cases using 81 awaited executable
+calls passed. All twelve Windows assets were freshly downloaded with
+authentication and anonymously and verified; publication verification used
+14 additional awaited trusted verifier/setup calls. The macOS tag, six assets
+and Latest selection remain unchanged. Later documentation commits do not
+change the compiled source, program bytes or release tag. The
+[Windows audit](docs/KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md) records the initial failed
+publication attempt and recovery of its exact owned draft.
+
+Real Windows GUI evidence covers startup and the status observed through
+Accessibility. Full navigation/visual acceptance, camera/paper checks, additional
+DPI/hardware configurations, physical multi-TiB runs and an external security
+audit remain **NOT_RUN**. The historical performance comparison covers only
+twelve primitive medians against the rejected c5 candidate on the same machine,
+allowing at most a 25% regression; it is not an approved earlier Windows-release
+or independent historical native baseline.
 
 Archiving, extraction and cryptographic erasure of ZPAQ archives. The current
-5.0.3 development version uses container format v13: a chosen cascade of up to eight
+5.0.3 version uses container format v13: a chosen cascade of up to eight
 independent ciphers over the compressed stream, keys from two Argon2id branches
 whose memory cost is itself derived from your credentials, two separate MACs,
 and a four-part credential made of a passphrase, a PIN, and two 1024-bit factors
@@ -16,7 +36,7 @@ cryptographic audit, an HSM, or operating-system hardening.
 
 > **Platform verification is separate.** macOS and Windows are built and tested
 > on their respective hardware. Windows 5.0.3 follows the GitHub v13 implementation.
-> Windows release evidence and outstanding gates are recorded
+> Windows release evidence and remaining validation limits are recorded
 > in the [Windows audit](docs/KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md); macOS results
 > are never treated as Windows evidence.
 ---
@@ -42,7 +62,7 @@ Prebuilt packages are on the
 [Releases](https://github.com/michael-feinermann/keep-vault/releases) page.
 Requires macOS 14 or newer, Apple silicon or Intel (universal binary).
 
-The Windows 5.0.3 target is a self-contained x64 package for Windows 10 2004 or
+The separate Windows 5.0.3 release is a self-contained x64 package for Windows 10 2004 or
 newer. Its `Keep Vault Setup.exe` checks the signed complete inventory and every
 executable, copies into a new per-user application directory, and verifies the
 installed copy before creating shortcuts. It needs no SDK, compiler, PowerShell
@@ -51,6 +71,20 @@ an explicit stop before installation, so an old installation is not silently
 replaced. The separate `QR-Scanner\QR-Scanner.exe` remains the only camera process.
 Keep the complete extracted package together, including every `.khsig`, `.sha3`,
 `.skein`, and `RELEASE-INVENTORY.json` file.
+
+Download `Keep.Vault-portable-win-x64.zip` and all five matching sidecars from
+the Windows release. Also download `Keep.Vault.Release.Verifier-win-x64.exe`
+with its five sidecars. Compare the verifier's SHA-256 with the release notes
+before running it, then verify the ZIP:
+
+```powershell
+.\Keep.Vault.Release.Verifier-win-x64.exe .\Keep.Vault-portable-win-x64.zip
+```
+
+Fully extract the verified ZIP and run `Keep Vault Setup.exe`; keep its internal
+filenames unchanged. v13 archives, KPAR2 files and key slips are incompatible with
+v12. Retain a compatible earlier version for existing v12 data; there is no
+automatic conversion.
 
 For a source build use `tools/Build-Portable.ps1 -ReleaseKeyDirectory <key-directory>`
 with the exact SDK from `global.json` and the documented native toolchain. The

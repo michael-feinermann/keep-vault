@@ -1,0 +1,39 @@
+{
+  "State": "PASS",
+  "SessionId": "3d06edadc22848e1b48e4b7a529e82ea",
+  "RecoveryRunId": "9db2034463da415f9faefd3989bd23e5",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "Tag": "v5.0.3-windows",
+  "ReleaseId": 420121815,
+  "CreatedTag": true,
+  "CreatedTagByThisInvocation": false,
+  "TagCreatedByThisInvocation": false,
+  "TagCreatedByPriorAttempt": true,
+  "ResumedOwnedDraft": true,
+  "PriorFailedRun": {
+    "EvidenceRoot": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea",
+    "SummaryPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea\\summary.json",
+    "SummarySha256": "FC77AD97D4122DAF79D7F2D6133457F21EC685B3A0ACF39FBA1DD1C47E185DC1",
+    "PreservationPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea\\preservation.json",
+    "PreservationSha256": "4DE0358F5ED87B0188AB3E5898C880DACA4F5B62A501532C4A7F755CC6619789",
+    "HarnessSha256": "857641B1CD238EAE9D22FF60D8398E61555377946F0E448E0A7F44AF70081DBC",
+    "SessionId": "3d06edadc22848e1b48e4b7a529e82ea",
+    "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+    "State": "FAIL",
+    "Phase": "CREATE_OWN_TAG_AND_DRAFT"
+  },
+  "RecoveryProvenance": {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-recovery-20261021T224631Z-9db2034463da415f9faefd3989bd23e5\\recovery-provenance.json",
+    "Sha256": "BD2402AB961934721F4B6EDE1BA8AF49111A05EF5FC197802CFA3902822A500F"
+  },
+  "PublishCommandCompleted": true,
+  "RemotePublishedObserved": true,
+  "Phase": "FINAL_PRESERVATION",
+  "AdministrativeInvocations": 26,
+  "ProductInvocations": 14,
+  "Error": null,
+  "HarnessSha256": "290CD7B7598EFF2F9D7F65306C7802BBD0FD8113DAA6D8048FCF7A961077EF2E",
+  "CompletedUtc": "2026-10-21T22:53:44.5572166Z",
+  "Recovery": "Only the exact previously created empty draft is resumed. No tag/draft creation, unrelated adoption, overwrite, deletion or rollback is attempted. Original failed evidence is retained byte-exact in its separate directory."
+}

@@ -1,0 +1,298 @@
+{
+  "State": "OWNED_EMPTY_DRAFT_VERIFIED_NOT_YET_PUBLISHED",
+  "RecoveryRunId": "9db2034463da415f9faefd3989bd23e5",
+  "PriorFailedRun": {
+    "EvidenceRoot": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea",
+    "SummaryPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea\\summary.json",
+    "SummarySha256": "FC77AD97D4122DAF79D7F2D6133457F21EC685B3A0ACF39FBA1DD1C47E185DC1",
+    "PreservationPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea\\preservation.json",
+    "PreservationSha256": "4DE0358F5ED87B0188AB3E5898C880DACA4F5B62A501532C4A7F755CC6619789",
+    "HarnessSha256": "857641B1CD238EAE9D22FF60D8398E61555377946F0E448E0A7F44AF70081DBC",
+    "SessionId": "3d06edadc22848e1b48e4b7a529e82ea",
+    "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+    "State": "FAIL",
+    "Phase": "CREATE_OWN_TAG_AND_DRAFT"
+  },
+  "SessionId": "3d06edadc22848e1b48e4b7a529e82ea",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src",
+  "ReleaseId": 420121815,
+  "Tag": "v5.0.3-windows",
+  "TagCreatedByThisInvocation": false,
+  "TagCreatedByPriorAttempt": true,
+  "DraftCreatedByThisInvocation": false,
+  "AuthenticatedEnumerationPages": 1,
+  "EnumeratedReleaseCount": 13,
+  "ExactTagMatches": 1,
+  "ExactSessionMarkerMatches": 1,
+  "Title": "Keep Vault 5.0.3 for Windows",
+  "PriorCreateUrl": "https://github.com/michael-feinermann/keep-vault/releases/tag/untagged-0f216fe90c74d5e9e756",
+  "NotesSha256": "92666A64FF5A1F9DA4B41F08C5F88C1B4A2176C76BD582DDC1577C7AB0C7156B",
+  "UpdatedAt": "2026-10-21T22:35:36Z",
+  "PriorCreateInterval": {
+    "Name": "cli-010-create-own-draft",
+    "StartedUtc": "2026-10-21T22:35:35.5214848+00:00",
+    "CompletedUtc": "2026-10-21T22:35:36.4628201+00:00",
+    "Seconds": 0.9413353
+  },
+  "GateValidationTimeProof": {
+    "PriorValidatedUtc": "2026-10-21T22:34:59.6434971Z",
+    "FreshValidatedUtc": "2026-10-21T22:46:34.7557578Z",
+    "PriorRecordSha256": "D7B47C40D4AE46990C30EF04562E11783A22814603361900F351B3FC7D43684C",
+    "FreshRecordPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-recovery-20261021T224631Z-9db2034463da415f9faefd3989bd23e5\\validated-final-gate-content.json",
+    "FreshRecordSha256": "E6E66750A032805C09727468F00CAEBCAF32D65D12F1866313A3F87E7AA3B3EE",
+    "ExcludedComparisonField": "ValidatedUtc (top-level timestamp only)",
+    "EveryOtherSemanticFieldEqual": true
+  },
+  "SourceManifestSha256": "5E364288B8C5D29415FDEB8C8212D976F6FC76C578AE3B9DCAE47FEBE09D4BE4",
+  "CurrentFinalGateSha256": "17613C8AF2A836E5E9AE0DA50E469BB2CFFB28446029EE8861E3943B336F95BD",
+  "AssetCount": 12,
+  "OriginalHarnessSha256": "857641B1CD238EAE9D22FF60D8398E61555377946F0E448E0A7F44AF70081DBC",
+  "ValidatedPriorFiles": [
+    {
+      "Name": "accepted-summary.json",
+      "Sha256": "DE824CD8A5C666166E7A2E725EC34093CCC6FE4D35DAA7396A1C303E8CAD6933",
+      "Bytes": 445
+    },
+    {
+      "Name": "anonymous-downloads.json",
+      "Sha256": "B7EF925D00610B19507E6C104C98A0F2E2D475C481D956683884D2BF90E8AD0E",
+      "Bytes": 7999
+    },
+    {
+      "Name": "asset-plan.json",
+      "Sha256": "B88434B8201319369CFA6CF794EE6F869E07512D8707B44B020560C3FF1EF3D2",
+      "Bytes": 6323
+    },
+    {
+      "Name": "assets-before.json",
+      "Sha256": "284D4DCA3A1CB6224387731CE1142A04430BE340A79DFD8943780478915F5B0B",
+      "Bytes": 2263
+    },
+    {
+      "Name": "control/Keep Vault Release Verifier.exe",
+      "Sha256": "82B47263B849475B8990CFFCC66D393CE44B18E0DB57A33E19BE22F818B678A6",
+      "Bytes": 181635488
+    },
+    {
+      "Name": "control/Keep Vault Release Verifier.exe.khsig",
+      "Sha256": "82B72452BEE5A81330F3505217CAE7569482089176658B92CF372F11F068058B",
+      "Bytes": 6573
+    },
+    {
+      "Name": "control/Keep Vault Release Verifier.exe.sha3",
+      "Sha256": "62415F58D14D74FA413A6CF351A99D0DC23999F935AF2F5FAB67242A3444D00F",
+      "Bytes": 128
+    },
+    {
+      "Name": "control/Keep Vault Release Verifier.exe.sha3.khsig",
+      "Sha256": "9110CB09256D023E04378500FE877A13B7D47E7DA7A36E2BECF82D2E256C9934",
+      "Bytes": 6573
+    },
+    {
+      "Name": "control/Keep Vault Release Verifier.exe.skein",
+      "Sha256": "7B2C3D18C82A9DD6DA1E84774ECB038381C63653CC6D71CD22EF72A24449772E",
+      "Bytes": 256
+    },
+    {
+      "Name": "control/Keep Vault Release Verifier.exe.skein.khsig",
+      "Sha256": "BCAAF7C23CCE0C44C8753B4CA725DD711CFE62419CF8F5FD978DD3A03AB5EBFB",
+      "Bytes": 6573
+    },
+    {
+      "Name": "control/Keep Vault Setup.exe",
+      "Sha256": "FF536E4F019F4039134408774E5E3FEE655A40CCDFE25B881B8325F70CCF6EBD",
+      "Bytes": 181725536
+    },
+    {
+      "Name": "control/Keep Vault Setup.exe.khsig",
+      "Sha256": "329717837334897683D0DEE3E7A9816D5186B2A463614BD53FCA6D0BD98BB253",
+      "Bytes": 6573
+    },
+    {
+      "Name": "control/Keep Vault Setup.exe.sha3",
+      "Sha256": "226A57D96C252393F46A2B259E2AE9D00DBB3A0723D43BA16F04D997C2F24279",
+      "Bytes": 128
+    },
+    {
+      "Name": "control/Keep Vault Setup.exe.sha3.khsig",
+      "Sha256": "366BE536FC9CAAD1A553C1C709D7E9EB00AEE02CC8171D09865F43C2AE5E19B3",
+      "Bytes": 6573
+    },
+    {
+      "Name": "control/Keep Vault Setup.exe.skein",
+      "Sha256": "F58A45699BB74463FBE4E492374198B52BD39E77D0B4268E532EFA006FDF9DE5",
+      "Bytes": 256
+    },
+    {
+      "Name": "control/Keep Vault Setup.exe.skein.khsig",
+      "Sha256": "A5ACA749A4A3AAE847EDAB2A9D23F8E9EE7E24008630B590D07DF3DE8ECD38FB",
+      "Bytes": 6573
+    },
+    {
+      "Name": "latest-after.json",
+      "Sha256": "CADF5C99C2C7CF08F1FBBB97B0D73893F5A9035425E82358F05140E0073975DD",
+      "Bytes": 45
+    },
+    {
+      "Name": "latest-before.json",
+      "Sha256": "CADF5C99C2C7CF08F1FBBB97B0D73893F5A9035425E82358F05140E0073975DD",
+      "Bytes": 45
+    },
+    {
+      "Name": "logs/cli-008-create-windows-tag.json",
+      "Sha256": "448A64EA459F5125233523C634C10D3A2BF4B4ADF330BFBEA2B39F003A8A8783",
+      "Bytes": 119
+    },
+    {
+      "Name": "logs/cli-008-create-windows-tag.start.json",
+      "Sha256": "11A628C27AC435DEBC454AEF069508AF880C625B7529482662A52804B7B22728",
+      "Bytes": 380
+    },
+    {
+      "Name": "logs/cli-008-create-windows-tag.stdout.txt",
+      "Sha256": "CFFDF13FAA9750EB7CF709DC6BF00A92EA4B598DB9D825BA498F4D7AC2EA7301",
+      "Bytes": 386
+    },
+    {
+      "Name": "logs/cli-010-create-own-draft.json",
+      "Sha256": "3E0C0BC08A429CF300E6D83AC003ED9B1BA4F0E13C5910F1226394B8FC2DD7BD",
+      "Bytes": 119
+    },
+    {
+      "Name": "logs/cli-010-create-own-draft.start.json",
+      "Sha256": "684E495C34AB41F283DBC39C8322258F9071683643A3AC1F40E45BA489A9605B",
+      "Bytes": 586
+    },
+    {
+      "Name": "logs/cli-010-create-own-draft.stdout.txt",
+      "Sha256": "115BD517799C5C9DF3E3E8E79412FF4020BE5D17B2173816391A1F01408A8AE1",
+      "Bytes": 92
+    },
+    {
+      "Name": "logs/cli-011-api-repos_michael-feinermann_keep-vault_releases_tags_v5_0_3-windows.json",
+      "Sha256": "3753122EA7F9A899971F59AD5B51089A7DFB3A340CB433E922F18F299AA5ED68",
+      "Bytes": 119
+    },
+    {
+      "Name": "logs/cli-011-api-repos_michael-feinermann_keep-vault_releases_tags_v5_0_3-windows.stderr.txt",
+      "Sha256": "D2C8985C89B29A842AC4946D13BDBC297709F44F20BB968FAF9682664B211DB6",
+      "Bytes": 25
+    },
+    {
+      "Name": "mac-after.json",
+      "Sha256": "0FB50A59B818D2E040D6EC3D66619A96EA9CEA35C9963F1DF025753ECAED5872",
+      "Bytes": 6085
+    },
+    {
+      "Name": "mac-assets-after/Keep.Vault-macOS-universal.zip",
+      "Sha256": "8C2864A4D156A821E07A6C4328401AED0C47137D31F3202CE9ADB4125FF990AC",
+      "Bytes": 46565158
+    },
+    {
+      "Name": "mac-assets-after/Keep.Vault-macOS-universal.zip.khsig",
+      "Sha256": "4A48E1012D8274DE5C7CB91CE966C8DEEBA8C224527E7CABB1F1202E766CE54E",
+      "Bytes": 6547
+    },
+    {
+      "Name": "mac-assets-after/Keep.Vault-macOS-universal.zip.sha3",
+      "Sha256": "635123ECA1E6B98634EF21188A83E10AF10296486928EF45F17523EEA2274A52",
+      "Bytes": 129
+    },
+    {
+      "Name": "mac-assets-after/Keep.Vault-macOS-universal.zip.sha3.khsig",
+      "Sha256": "6E9515816D8B60EA4EF86657EA3059C64BF5FF014E0196829F8631621C00E903",
+      "Bytes": 6547
+    },
+    {
+      "Name": "mac-assets-after/Keep.Vault-macOS-universal.zip.skein",
+      "Sha256": "7D9A71A42B56BFDD2D9355D7806CB866AE404B4104F53DE57C89406D00EB94F8",
+      "Bytes": 257
+    },
+    {
+      "Name": "mac-assets-after/Keep.Vault-macOS-universal.zip.skein.khsig",
+      "Sha256": "41D71AB500995B1CC797771395294F8864DD807F7D2D1828BF48895CFE9453B4",
+      "Bytes": 6547
+    },
+    {
+      "Name": "mac-assets-before/Keep.Vault-macOS-universal.zip",
+      "Sha256": "8C2864A4D156A821E07A6C4328401AED0C47137D31F3202CE9ADB4125FF990AC",
+      "Bytes": 46565158
+    },
+    {
+      "Name": "mac-assets-before/Keep.Vault-macOS-universal.zip.khsig",
+      "Sha256": "4A48E1012D8274DE5C7CB91CE966C8DEEBA8C224527E7CABB1F1202E766CE54E",
+      "Bytes": 6547
+    },
+    {
+      "Name": "mac-assets-before/Keep.Vault-macOS-universal.zip.sha3",
+      "Sha256": "635123ECA1E6B98634EF21188A83E10AF10296486928EF45F17523EEA2274A52",
+      "Bytes": 129
+    },
+    {
+      "Name": "mac-assets-before/Keep.Vault-macOS-universal.zip.sha3.khsig",
+      "Sha256": "6E9515816D8B60EA4EF86657EA3059C64BF5FF014E0196829F8631621C00E903",
+      "Bytes": 6547
+    },
+    {
+      "Name": "mac-assets-before/Keep.Vault-macOS-universal.zip.skein",
+      "Sha256": "7D9A71A42B56BFDD2D9355D7806CB866AE404B4104F53DE57C89406D00EB94F8",
+      "Bytes": 257
+    },
+    {
+      "Name": "mac-assets-before/Keep.Vault-macOS-universal.zip.skein.khsig",
+      "Sha256": "41D71AB500995B1CC797771395294F8864DD807F7D2D1828BF48895CFE9453B4",
+      "Bytes": 6547
+    },
+    {
+      "Name": "mac-before.json",
+      "Sha256": "0FB50A59B818D2E040D6EC3D66619A96EA9CEA35C9963F1DF025753ECAED5872",
+      "Bytes": 6085
+    },
+    {
+      "Name": "package-before.json",
+      "Sha256": "7213D17590A072EF65577F58C384A58D35F0DAA63F7536104B0CAC494A5A268E",
+      "Bytes": 15909
+    },
+    {
+      "Name": "parent-final-gates.json",
+      "Sha256": "17613C8AF2A836E5E9AE0DA50E469BB2CFFB28446029EE8861E3943B336F95BD",
+      "Bytes": 2359
+    },
+    {
+      "Name": "preservation.json",
+      "Sha256": "4DE0358F5ED87B0188AB3E5898C880DACA4F5B62A501532C4A7F755CC6619789",
+      "Bytes": 278
+    },
+    {
+      "Name": "release-notes.md",
+      "Sha256": "92666A64FF5A1F9DA4B41F08C5F88C1B4A2176C76BD582DDC1577C7AB0C7156B",
+      "Bytes": 4540
+    },
+    {
+      "Name": "source-inputs-before.sha256",
+      "Sha256": "5E364288B8C5D29415FDEB8C8212D976F6FC76C578AE3B9DCAE47FEBE09D4BE4",
+      "Bytes": 729579
+    },
+    {
+      "Name": "summary.json",
+      "Sha256": "FC77AD97D4122DAF79D7F2D6133457F21EC685B3A0ACF39FBA1DD1C47E185DC1",
+      "Bytes": 1034
+    },
+    {
+      "Name": "validated-final-gate-content.json",
+      "Sha256": "D7B47C40D4AE46990C30EF04562E11783A22814603361900F351B3FC7D43684C",
+      "Bytes": 3066
+    }
+  ],
+  "Checks": [
+    "Pinned failed summary and original harness",
+    "Actual prior tag/draft create exits0, exact arguments and response",
+    "Exact old-session notes/body/title/source/URL/author/ID",
+    "Whole-second updated_at correlated with original CLI, created_at not treated as draft creation",
+    "Newly revalidated build/full/performance/acceptance/source/assets/pins/controls",
+    "Prior macOS/latest metadata and all12 anonymous macOS before/after byte proofs",
+    "Current existing tag/macOS/latest preservation before mutation"
+  ],
+  "Scope": "Recovery of this exact previously created empty draft only; no new tag/draft creation, unrelated release adoption, overwrite or deletion. No raw process/UI/shortcut states are included."
+}

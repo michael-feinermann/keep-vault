@@ -2,10 +2,33 @@
 
 [Deutsch](README.de.md) · [English](README.md) · [Dokumentationsverzeichnis](docs/README.md)
 
-Aktuelle macOS-Veröffentlichung: [5.0.3/v13 Build 21](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3), auf ausdrücklichen Wunsch als regulärer GitHub-Release veröffentlicht und als Latest ausgewählt. Die zusätzlichen Tests folgen später; die technische Gesamtfreigabe ist weiterhin ausstehend. Alle sechs Dateien sind bytegleich zum signierten, notarisierten und installierten Build-21-Kandidaten, kompiliert aus `8c68571695ae9072555ffb462b3c0b9c500811ea`. Der [aktuelle Veröffentlichungsstand](docs/KEEP_VAULT_5_0_3_PUBLICATION_STATUS.md) trennt diese Veröffentlichungsentscheidung von den bisherigen [Build-21-Belegen](docs/PRERELEASE_BUILD21_REPORT.md) und dem offenen 49-Phasen-Freigabelauf, den abschließenden Zwölf-Suite-1-GiB-Messungen mit Kompressionsstufe 3 und realen Bediengates. Frühere Releases bleiben erhalten. Windows und reale Mehr-TiB-Läufe gehören nicht zu diesem Durchgang.
+Aktuelle macOS-Veröffentlichung: [5.0.3/v13 Build 21](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3), auf ausdrücklichen Wunsch als regulärer GitHub-Release veröffentlicht und als Latest ausgewählt. Die zusätzlichen Tests folgen später; die technische Gesamtfreigabe ist weiterhin ausstehend. Alle sechs Dateien sind bytegleich zum signierten, notarisierten und installierten Build-21-Kandidaten, kompiliert aus `8c68571695ae9072555ffb462b3c0b9c500811ea`. Der [aktuelle Veröffentlichungsstand](docs/KEEP_VAULT_5_0_3_PUBLICATION_STATUS.md) trennt diese Veröffentlichungsentscheidung von den bisherigen [Build-21-Belegen](docs/PRERELEASE_BUILD21_REPORT.md) und dem offenen 49-Phasen-Freigabelauf, den abschließenden Zwölf-Suite-1-GiB-Messungen mit Kompressionsstufe 3 und realen Bediengates. Frühere Releases bleiben erhalten. Windows und reale Mehr-TiB-Läufe gehören nicht zu diesem macOS-Durchgang.
+
+Aktuelle Windows-Veröffentlichung: [5.0.3/v13 x64](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3-windows),
+kompiliert aus `103e87fd6335bdc4ef8a2ffafa2384ecaad6504b` mit dem getrennten Tag
+`v5.0.3-windows`. Der signierte Build, 109 Windows-Testgruppen, vier separate
+Leistungsgruppen und 40 Paketabnahmefälle mit 81 tatsächlich abgewarteten
+Programmaufrufen sind bestanden. Alle zwölf Windows-Dateien wurden authentifiziert
+und anonym frisch heruntergeladen und geprüft; die Veröffentlichungsprüfung
+umfasst 14 weitere tatsächlich abgewartete, vertrauenswürdig geprüfte Verifier-/
+Setup-Aufrufe. Das macOS-Tag, seine sechs Dateien und die Latest-Auswahl bleiben
+unverändert. Spätere Dokumentationscommits ändern weder den kompilierten
+Quellstand noch Programmbytes oder Release-Tag. Der
+[Windows-Prüfbericht](docs/KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md) erhält den ersten
+fehlgeschlagenen Veröffentlichungsversuch und die Wiederaufnahme seines exakt
+zugeordneten eigenen Drafts.
+
+Der reale Windows-GUI-Nachweis umfasst den Start und den über Accessibility
+beobachteten Status. Vollständige Navigation und Sichtfreigabe, Kamera-/
+Papierprüfungen, weitere DPI-/Hardwarekonfigurationen, physische Mehr-TiB-Läufe
+und ein externer Sicherheitsaudit bleiben **NOT_RUN**. Der historische
+Leistungsvergleich umfasst nur zwölf Primitivmediane gegenüber dem abgelehnten
+c5-Kandidaten auf demselben Rechner mit höchstens 25 % zulässigem Rückgang;
+er ist keine Referenz einer früher freigegebenen Windows-Version oder eines
+unabhängigen historischen nativen Benchmarks.
 
 Archivierung, Entpackung und kryptografische Löschung von ZPAQ-Archiven. Die aktuelle
-Entwicklungsversion 5.0.3 verwendet das Containerformat v13:
+Version 5.0.3 verwendet das Containerformat v13:
 eine wählbare Kaskade aus bis zu acht unabhängigen Chiffren über dem komprimierten
 Datenstrom, Schlüssel aus zwei Argon2id-Zweigen, deren Speicherbedarf aus deinen
 Zugangsdaten abgeleitet wird, zwei getrennte MACs und vier Zugangsfaktoren:
@@ -16,7 +39,7 @@ kryptografisches Audit noch ein HSM oder die Absicherung des Betriebssystems.
 
 > Die Plattformen werden getrennt geprüft. macOS und Windows werden auf ihrer
 > jeweiligen Hardware gebaut und getestet. Windows 5.0.3 folgt der v13-Umsetzung
-> auf GitHub. Windows-Nachweise und offene Freigabeprüfungen stehen im
+> auf GitHub. Windows-Nachweise und verbleibende Nachweisgrenzen stehen im
 > [Windows-Prüfbericht](docs/KEEP_VAULT_5_0_3_WINDOWS_AUDIT.md); macOS-Ergebnisse
 > gelten niemals als Windows-Nachweis.
 ---
@@ -43,8 +66,8 @@ Fertige Pakete findest du auf der
 [Releases-Seite](https://github.com/michael-feinermann/keep-vault/releases).
 Voraussetzung: macOS 14 oder neuer, Apple Silicon oder Intel (Universal Binary).
 
-Windows 5.0.3 wird als eigenständiges x64-Paket für Windows 10 2004 oder neuer
-gebaut. `Keep Vault Setup.exe` prüft das signierte Vollinventar und sämtliche
+Windows 5.0.3 ist als eigenständiges x64-Paket für Windows 10 2004 oder neuer
+veröffentlicht. `Keep Vault Setup.exe` prüft das signierte Vollinventar und sämtliche
 Programme, kopiert in ein neues Anwendungsverzeichnis des Benutzerkontos und
 prüft die installierte Kopie vor dem Anlegen der Verknüpfungen. SDK, Compiler,
 eine PowerShell-Installation oder eine separat installierte .NET-Laufzeit sind
@@ -54,6 +77,21 @@ nicht stillschweigend ersetzt. Der getrennte `QR-Scanner\QR-Scanner.exe` bleibt
 der einzige Prozess mit Kamerazugriff. Das entpackte Paket muss vollständig
 zusammenbleiben, einschließlich aller `.khsig`-, `.sha3`-, `.skein`-Dateien und
 `RELEASE-INVENTORY.json`.
+
+Lade `Keep.Vault-portable-win-x64.zip` mit allen fünf zugehörigen Prüfdateien
+aus der Windows-Veröffentlichung herunter. Lade zusätzlich
+`Keep.Vault.Release.Verifier-win-x64.exe` mit seinen fünf Prüfdateien herunter.
+Vergleiche vor dessen Start seinen SHA-256-Wert mit den Release-Notizen und
+prüfe anschließend das ZIP:
+
+```powershell
+.\Keep.Vault.Release.Verifier-win-x64.exe .\Keep.Vault-portable-win-x64.zip
+```
+
+Entpacke das geprüfte ZIP vollständig und starte `Keep Vault Setup.exe`; ändere
+die ursprünglichen Dateinamen im Paket nicht. v13-Archive, KPAR2-Dateien und
+Schlüsselzettel sind inkompatibel zu v12. Behalte für vorhandene v12-Daten eine
+passende frühere Version; eine automatische Konvertierung findet nicht statt.
 
 Für einen Quellbuild dient `tools/Build-Portable.ps1 -ReleaseKeyDirectory <Schlüsselverzeichnis>`
 mit dem exakten SDK aus `global.json` und der dokumentierten nativen Toolchain.

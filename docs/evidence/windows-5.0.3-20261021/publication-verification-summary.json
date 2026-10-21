@@ -1,0 +1,112 @@
+{
+  "State": "PASS_DERIVED_FROM_ACTUAL_COMPLETED_RECEIPTS_AND_FILE_REHASH",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "ExecutedPublicationHarness": "publish-windows503-resume-owned.ps1",
+  "ExecutedPublicationHarnessSha256": "290CD7B7598EFF2F9D7F65306C7802BBD0FD8113DAA6D8048FCF7A961077EF2E",
+  "OriginalSummarySha256": "B6AF88A40C9AA5EBBCFD5EAE19156E0DAB37703DBBD9A431B22BF85ED97E8293",
+  "OriginalPreservationSha256": "DB55413FF5CBE414EB542FCF122ABEA61490ABF1B612E83B57D728A5B2610126",
+  "OriginalSemanticGateSha256": "E6E66750A032805C09727468F00CAEBCAF32D65D12F1866313A3F87E7AA3B3EE",
+  "OriginalAssetPlanSha256": "B88434B8201319369CFA6CF794EE6F869E07512D8707B44B020560C3FF1EF3D2",
+  "ActualAwaitedTrustedProductProcesses": 14,
+  "Assets": [
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip",
+      "Size": 296587476,
+      "Sha256": "107B0242BF2B0B771635EA6CF4765D7B952C52CBA3147BA79F3DD102966B05DC",
+      "GitHubDigest": "sha256:107b0242bf2b0b771635ea6cf4765d7b952c52cba3147ba79f3dd102966b05dc",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.khsig",
+      "Size": 6573,
+      "Sha256": "CA5389D9EB0668A89329A15AE3AE07545E01E77093D875BA0A0F20321EFD95BA",
+      "GitHubDigest": "sha256:ca5389d9eb0668a89329a15ae3ae07545e01e77093d875ba0a0f20321efd95ba",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.sha3",
+      "Size": 128,
+      "Sha256": "F2035BCFB3F10C6B2AB8A10F00CB8D82E5A042E6415279470EF34BC11C9D2858",
+      "GitHubDigest": "sha256:f2035bcfb3f10c6b2ab8a10f00cb8d82e5a042e6415279470ef34bc11c9d2858",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.sha3.khsig",
+      "Size": 6573,
+      "Sha256": "1DEC1EA8EA7BF5F7F11E32A3BAD9A4469E882E8FBF6A6D419575EF3F18ABDF9C",
+      "GitHubDigest": "sha256:1dec1ea8ea7bf5f7f11e32a3bad9a4469e882e8fbf6a6d419575ef3f18abdf9c",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.skein",
+      "Size": 256,
+      "Sha256": "3D0492BA78ABFAC199231EC738D3BD687B64EA3AF6286921D366F993A707C65D",
+      "GitHubDigest": "sha256:3d0492ba78abfac199231ec738d3bd687b64ea3af6286921d366f993a707c65d",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault-portable-win-x64.zip.skein.khsig",
+      "Size": 6573,
+      "Sha256": "0C4040FCE8A35197AC40FECA2F66A829C4E61560E2501995E63F2FD790FD66FC",
+      "GitHubDigest": "sha256:0c4040fce8a35197ac40feca2f66a829c4e61560e2501995e63f2fd790fd66fc",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe",
+      "Size": 181635488,
+      "Sha256": "82B47263B849475B8990CFFCC66D393CE44B18E0DB57A33E19BE22F818B678A6",
+      "GitHubDigest": "sha256:82b47263b849475b8990cffcc66d393ce44b18e0db57a33e19be22f818b678a6",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.khsig",
+      "Size": 6573,
+      "Sha256": "82B72452BEE5A81330F3505217CAE7569482089176658B92CF372F11F068058B",
+      "GitHubDigest": "sha256:82b72452bee5a81330f3505217cae7569482089176658b92cf372f11f068058b",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.sha3",
+      "Size": 128,
+      "Sha256": "62415F58D14D74FA413A6CF351A99D0DC23999F935AF2F5FAB67242A3444D00F",
+      "GitHubDigest": "sha256:62415f58d14d74fa413a6cf351a99d0dc23999f935af2f5fab67242a3444d00f",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.sha3.khsig",
+      "Size": 6573,
+      "Sha256": "9110CB09256D023E04378500FE877A13B7D47E7DA7A36E2BECF82D2E256C9934",
+      "GitHubDigest": "sha256:9110cb09256d023e04378500fe877a13b7d47e7da7a36e2becf82d2e256c9934",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.skein",
+      "Size": 256,
+      "Sha256": "7B2C3D18C82A9DD6DA1E84774ECB038381C63653CC6D71CD22EF72A24449772E",
+      "GitHubDigest": "sha256:7b2c3d18c82a9dd6da1e84774ecb038381c63653cc6d71cd22ef72a24449772e",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    },
+    {
+      "Name": "Keep.Vault.Release.Verifier-win-x64.exe.skein.khsig",
+      "Size": 6573,
+      "Sha256": "BCAAF7C23CCE0C44C8753B4CA725DD711CFE62419CF8F5FD978DD3A03AB5EBFB",
+      "GitHubDigest": "sha256:bcaaf7c23cce0c44c8753b4ca725dd711cfe62419cf8f5fd978dd3a03ab5ebfb",
+      "AuthenticatedBytesMatch": true,
+      "AnonymousBytesMatch": true
+    }
+  ],
+  "MacTagAndSixAssetMetadataUnchanged": true,
+  "LatestReleaseUnchanged": true,
+  "Scope": "Derived compact summary; original byte-exact publication receipts remain separate. No network or process was invoked by this refresh helper."
+}

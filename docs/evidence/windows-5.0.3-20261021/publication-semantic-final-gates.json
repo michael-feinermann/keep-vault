@@ -1,0 +1,57 @@
+{
+  "State": "PASS",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "SourceManifestSha256": "5E364288B8C5D29415FDEB8C8212D976F6FC76C578AE3B9DCAE47FEBE09D4BE4",
+  "TestDllSha256": "3278794FF047D2ACCFDC2A6A0EF0F15DEA4B52612E7A63B4ED222131B2E1105A",
+  "FullSuiteTestCount": 109,
+  "TestInventoryHash": "f8bfbcf6973ff56e0a8fd7744fb682ae37285d82733880f41b3a87df46f518a3",
+  "BuildReceipt": {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\release-build7-103e87f-result.json",
+    "Sha256": "99862C225BB00348064617819B83279A7F25D2FBF268B5B175E4DA377140B599"
+  },
+  "FullReceipt": {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\final-full-receipt.json",
+    "Sha256": "90281FFA3C5B09CC3525047F411C369B33F609AF5501A031DE3F2E0AA03C9909"
+  },
+  "FullPreflight": {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\final-full-preflight.json",
+    "Sha256": "5DF80F390D673DD23950F771C1CFC5B81867145DBE4733A4EE641B7F821119B0"
+  },
+  "FullResults": {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\final-full-results.json",
+    "Sha256": "13C10B1018D5B376BC961E14D164683790671BD44181C9A135EE1787849A53A2"
+  },
+  "PerformanceSummary": {
+    "Path": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\summary.json",
+    "Sha256": "20AEE76F4EC3A9EA185D97E8CBD0E44538A53E4B45B2823E633C5CB0685FB36C"
+  },
+  "PerformanceGroups": [
+    {
+      "Id": "performance.cipher-suites",
+      "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\01-cipher-suites\\results.json",
+      "Sha256": "78FAB1189867C79FF6C09C335D93175655EB0842A9A7AC57DDBB45CEED094B3A",
+      "State": "PASS"
+    },
+    {
+      "Id": "release.paranoia-256mib-level5",
+      "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\02-paranoia-256mib\\results.json",
+      "Sha256": "F20776384D0B06CD61570B0E2F4BC64B6A09032CE22BC371535F4CD89257A56D",
+      "State": "PASS"
+    },
+    {
+      "Id": "performance.entropy-rev9-phases",
+      "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\03-entropy-rev9-phases\\results.json",
+      "Sha256": "CF117ABAA727D17425D2020C4BF9393199A1060B6CAA1D1CE324EA95CEEC4939",
+      "State": "PASS"
+    },
+    {
+      "Id": "release.paranoia-complex-tree-level5-repair",
+      "ResultsPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\performance-103e87fd6335-20261021T214826Z-52c3597bfe9444b896d2a98c7a18d9f5\\04-complex-tree-last\\results.json",
+      "Sha256": "BA4A74886DD0872291F2B10758EA3C19285DA045B3662E118CDE8103CD3AE6E5",
+      "State": "PASS"
+    }
+  ],
+  "HistoricalComparison": "PASS",
+  "ValidatedUtc": "2026-10-21T22:46:34.7557578Z"
+}

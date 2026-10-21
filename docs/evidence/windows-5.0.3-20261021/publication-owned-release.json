@@ -1,0 +1,23 @@
+{
+  "SessionId": "3d06edadc22848e1b48e4b7a529e82ea",
+  "RecoveryRunId": "9db2034463da415f9faefd3989bd23e5",
+  "ReleaseId": 420121815,
+  "Tag": "v5.0.3-windows",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "Marker": "<!-- windows-publication-session:3d06edadc22848e1b48e4b7a529e82ea source:103e87fd6335bdc4ef8a2ffafa2384ecaad6504b -->",
+  "ResumedOwnedDraft": true,
+  "TagCreatedByThisInvocation": false,
+  "TagCreatedByPriorAttempt": true,
+  "PriorFailedRun": {
+    "EvidenceRoot": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea",
+    "SummaryPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea\\summary.json",
+    "SummarySha256": "FC77AD97D4122DAF79D7F2D6133457F21EC685B3A0ACF39FBA1DD1C47E185DC1",
+    "PreservationPath": "C:\\Dev\\Kalyna\\work\\windows-503-20261021\\publication-20261021T223456Z-3d06edadc22848e1b48e4b7a529e82ea\\preservation.json",
+    "PreservationSha256": "4DE0358F5ED87B0188AB3E5898C880DACA4F5B62A501532C4A7F755CC6619789",
+    "HarnessSha256": "857641B1CD238EAE9D22FF60D8398E61555377946F0E448E0A7F44AF70081DBC",
+    "SessionId": "3d06edadc22848e1b48e4b7a529e82ea",
+    "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+    "State": "FAIL",
+    "Phase": "CREATE_OWN_TAG_AND_DRAFT"
+  }
+}

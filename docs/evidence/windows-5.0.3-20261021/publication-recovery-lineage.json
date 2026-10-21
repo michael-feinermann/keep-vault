@@ -1,0 +1,32 @@
+{
+  "State": "COMPLETED_PUBLICATION_WITH_PRIOR_FAILED_ATTEMPT_RETAINED",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "Tag": "v5.0.3-windows",
+  "ReleaseId": 420121815,
+  "ReleaseUrl": "https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3-windows",
+  "PriorAttempt": {
+    "State": "FAIL",
+    "Summary": "publication-prior-attempt-summary.json",
+    "SummarySha256": "FC77AD97D4122DAF79D7F2D6133457F21EC685B3A0ACF39FBA1DD1C47E185DC1",
+    "Preservation": "publication-prior-attempt-preservation.json",
+    "PreservationSha256": "4DE0358F5ED87B0188AB3E5898C880DACA4F5B62A501532C4A7F755CC6619789",
+    "ExecutedHarness": "publish-windows503-prior-attempt.ps1",
+    "HarnessSha256": "857641B1CD238EAE9D22FF60D8398E61555377946F0E448E0A7F44AF70081DBC"
+  },
+  "FinalAttempt": {
+    "State": "PASS",
+    "Summary": "publication-summary.json",
+    "SummarySha256": "B6AF88A40C9AA5EBBCFD5EAE19156E0DAB37703DBBD9A431B22BF85ED97E8293",
+    "Preservation": "publication-preservation.json",
+    "PreservationSha256": "DB55413FF5CBE414EB542FCF122ABEA61490ABF1B612E83B57D728A5B2610126",
+    "ExecutedHarness": "publish-windows503-resume-owned.ps1",
+    "HarnessSha256": "290CD7B7598EFF2F9D7F65306C7802BBD0FD8113DAA6D8048FCF7A961077EF2E",
+    "ResumedOwnedDraft": true,
+    "TagCreatedByThisInvocation": false,
+    "TagCreatedByPriorAttempt": true,
+    "ActualAwaitedTrustedProductProcesses": 14,
+    "Provenance": "publication-recovery-provenance.json",
+    "ProvenanceSha256": "BD2402AB961934721F4B6EDE1BA8AF49111A05EF5FC197802CFA3902822A500F"
+  },
+  "Scope": "Derived lineage only: original FAIL and initial recovery observations retain exact bytes and outcomes. Actual completed publication/download/preservation PASS comes from the final original receipts. No source/tag retargeting or unrelated release adoption."
+}

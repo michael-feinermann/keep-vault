@@ -4,17 +4,20 @@ Stand: 22. Oktober 2026. Der signierte Windows-x64-Build des Produktquellstands
 `103e87fd6335bdc4ef8a2ffafa2384ecaad6504b`, seine Vollsuite und die finale
 Paketabnahme sind bestanden. Auch die vier separaten Leistungsgruppen dieses
 Kandidaten sind mit tatsächlichem Exit 0 und unveränderten Eingaben **PASS**.
-Die Veröffentlichung ist weiterhin `PENDING`; ein Upload oder öffentlicher
-Download wird noch nicht behauptet. Der abgelehnte c5-Kandidat und der gesonderte
-Entwicklungsvergleich bleiben unten als eigene Nachweise erhalten.
+Die getrennte [Windows-Veröffentlichung](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3-windows)
+und ihre authentifizierten sowie anonymen Downloadprüfungen sind **PASS**.
+Der erste fehlgeschlagene Veröffentlichungsversuch, der abgelehnte c5-Kandidat
+und der gesonderte Entwicklungsvergleich bleiben als eigene Nachweise erhalten.
 
 Die Umsetzung folgt dem GitHub-v13-Stand
 `ba9949ad1b93a89f75dd8078414371d1a1b7ad0d` mit den unten beschriebenen
 Windows-Korrekturen. Gebaut und geprüft wurde unter `C:\Dev\Kalyna` in einem
 unveränderlichen Quellsnapshot. Der vorhandene macOS-Release `v5.0.3` bleibt
 einschließlich seiner sechs Assets und der Latest-Auswahl erhalten. Für Windows
-ist das getrennte Tag `v5.0.3-windows` am tatsächlich kompilierten
-Produktquellstand vorgesehen.
+zeigt das getrennte Tag `v5.0.3-windows` auf den tatsächlich kompilierten
+Produktquellstand `103e87fd6335bdc4ef8a2ffafa2384ecaad6504b`. Spätere
+Dokumentationscommits ändern weder dieses Tag noch die ausgelieferten
+Programmbytes und werden nicht als deren kompilierter Quellstand ausgegeben.
 
 ## Änderungen
 
@@ -62,10 +65,11 @@ Produktquellstand vorgesehen.
 
 | Prüfung | Ergebnis und Grenze |
 | --- | --- |
-| Signierter 103e87f-Build | Erfolgreich; alle **4861** inventarisierten Quelldateien nach Build, Abnahme, Vollsuite und erneuter Belegübernahme unverändert |
+| Signierter 103e87f-Build | Erfolgreich; alle **4861** inventarisierten Quelldateien nach Build, Abnahme, Vollsuite, Leistungsprüfung und Veröffentlichung unverändert |
 | Vollsuite | **109/109 Gruppen PASS** in **578,8 s**, null FAIL/BLOCKED, tatsächlicher Prozess-Exit 0; Ergebnis-Head exakt `103e87fd6335bdc4ef8a2ffafa2384ecaad6504b`, Windows x64 |
 | Finale Paketabnahme | **40/40 Fälle, 81 tatsächlich abgewartete Verifier-/Setup-Aufrufe**, Exit 0. Paket, ZIP, externe Verifier-Dateien und isolierte Installation ohne neue Verknüpfungen geprüft; fehlende/veränderte/zusätzliche Dateien, Sidecars, ZIP-Manipulation sowie Reparse-/Hardlink-Fälle abgewehrt |
 | Separate Leistungsprüfung | **4/4 Gruppen PASS**, jeweils tatsächlicher Prozess-Exit 0, frische Ergebnisse und erfolgreiche Prozessbereinigung; alle fünf Erhaltungsprüfungen bestanden, keine Erhaltungsfehler |
+| GitHub-Veröffentlichung | **PASS**, Release-ID `420121815`, Tag `v5.0.3-windows` am exakten Produktquellstand. Alle zwölf Dateien authentifiziert aus dem Draft und anonym nach Veröffentlichung frisch heruntergeladen, bytegleich geprüft und an GitHub-Digests gebunden; **14 weitere tatsächlich abgewartete vertrauenswürdig geprüfte Verifier-/Setup-Aufrufe**, alle Exit 0 |
 | Erhaltung | Originalpaket, alle zwölf externen Assets, Quellen und vorhandene Benutzerverknüpfungen unverändert; alle sieben Erhaltungsprüfungen bestanden |
 | QR-Scanner | **151 Arbiter-/Decoder-Prüfungen** im erfolgreichen 103e87f-Releasebuild; kein realer Kameratest |
 | Native Quellprüfung | Im 103e87f-Build 433 externe Dateien, drei Windows-Pins und 202 Crypto++-Übersetzungseinheiten geprüft |
@@ -147,17 +151,72 @@ binden die tatsächlichen Ergebnisse. Der SHA-256 des Gesamtbelegs ist
 Alle fünf Erhaltungsfelder für Quellen, zwölf Assets, kompilierte Testeingaben,
 Manifeste und freigegebene Handles sind wahr; die Fehlerliste ist leer.
 
-## Lokale Artefakte vor der Veröffentlichung
+## Veröffentlichte Artefakte
 
 | Datei | SHA-256 |
 | --- | --- |
-| `Keep Vault-portable-win-x64.zip` | `107B0242BF2B0B771635EA6CF4765D7B952C52CBA3147BA79F3DD102966B05DC` |
-| `Keep Vault Release Verifier-win-x64.exe` | `82B47263B849475B8990CFFCC66D393CE44B18E0DB57A33E19BE22F818B678A6` |
+| `Keep.Vault-portable-win-x64.zip` | `107B0242BF2B0B771635EA6CF4765D7B952C52CBA3147BA79F3DD102966B05DC` |
+| `Keep.Vault.Release.Verifier-win-x64.exe` | `82B47263B849475B8990CFFCC66D393CE44B18E0DB57A33E19BE22F818B678A6` |
 
 Alle zwölf Dateien einschließlich Sidecars stehen mit Größen sowie SHA-256 und
 SHA-512 im [lokalen Artefaktinventar](evidence/windows-5.0.3-20261021/normalized-publication-assets.json).
-Die Namen mit Punkten sind für den GitHub-Upload vorbereitet. Noch wird kein
-Upload oder erfolgreicher öffentlicher Download behauptet.
+Die Namen mit Punkten sind die tatsächlichen GitHub-Namen; die Dateinamen
+innerhalb des ZIP bleiben unverändert. Die
+[Remote-Metadaten](evidence/windows-5.0.3-20261021/publication-final-release.json)
+enthalten die zwölf Asset-IDs, Namen, Größen und GitHub-SHA-256-Digests.
+
+## GitHub-Veröffentlichung und Wiederaufnahme
+
+Der reguläre Windows-Release
+[`v5.0.3-windows`](https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3-windows)
+hat die Release-ID `420121815`; GitHub meldet die Veröffentlichung am
+`2026-10-21T22:52:52Z`, entsprechend 22. Oktober 2026, 00:52:52 MESZ.
+Die Latest-Auswahl bleibt beim vorhandenen macOS-Release `v5.0.3`.
+
+Der [erste Veröffentlichungsversuch](evidence/windows-5.0.3-20261021/publication-prior-attempt-summary.json)
+bleibt ausdrücklich **FAIL**. Die Anlage
+des Windows-Tags und des eigenen Drafts war mit Exit 0 erfolgreich; erst die
+anschließende REST-Abfrage dieses Drafts über das Tag lieferte HTTP 404.
+Zu diesem Zeitpunkt waren keine Windows-Dateien hochgeladen und der Draft
+war nicht veröffentlicht. Der SHA-256 seines unveränderten Fehlerbelegs ist
+`FC77AD97D4122DAF79D7F2D6133457F21EC685B3A0ACF39FBA1DD1C47E185DC1`.
+
+Die getrennte Wiederaufnahme ordnete ausschließlich den bereits selbst
+angelegten, noch leeren Draft `420121815` zu: alte Sitzung und Marker,
+vollständige Notes-Bytes, Titel, URL, Autor, exakter Quellstand und ursprüngliche
+erfolgreiche CLI-Aufrufe wurden gebunden. Alle aktuellen Freigabeprüfungen und
+lokalen Artefakte wurden erneut geprüft. Die Wiederaufnahme legte weder ein
+weiteres Tag noch einen weiteren Draft an. Der
+[Eigentumsbeleg](evidence/windows-5.0.3-20261021/publication-owned-release.json)
+und der [Abschlussbeleg](evidence/windows-5.0.3-20261021/publication-summary.json)
+erhalten die getrennte **FAIL**-Historie und die erfolgreiche Wiederaufnahme
+derselben Veröffentlichungsoperation.
+Die [Wiederaufnahme-Zuordnung](evidence/windows-5.0.3-20261021/publication-recovery-lineage.json)
+verbindet beide Läufe. Die ursprüngliche
+[Wiederaufnahme-Provenienz](evidence/windows-5.0.3-20261021/publication-recovery-provenance.json)
+belegt die Identitätsprüfung vor dem Upload und behält ihren damaligen Zustand
+`OWNED_EMPTY_DRAFT_VERIFIED_NOT_YET_PUBLISHED`. Erst der separate tatsächliche
+Abschlussbeleg erteilt den Veröffentlichungsstatus **PASS**.
+
+Alle zwölf Dateien wurden vor Veröffentlichung authentifiziert aus dem Draft
+und danach anonym ohne Zugangsdaten oder Cookies frisch heruntergeladen.
+SHA-256/SHA-512, Größen und GitHub-Digests stimmen mit den akzeptierten lokalen
+Originalen überein. Der heruntergeladene Verifier prüfte sich selbst und das ZIP;
+das ZIP wurde vollständig entpackt und sowohl vom Verifier als auch mit
+`Keep Vault Setup.exe --verify` geprüft. Die Veröffentlichung umfasst
+**14 tatsächlich abgewartete vertrauenswürdig geprüfte Programmaufrufe mit
+Exit 0**. Eine normale Benutzerinstallation wurde dabei nicht ausgeführt.
+
+[Download-/Prüfzusammenfassung](evidence/windows-5.0.3-20261021/publication-verification-summary.json),
+[anonyme Downloadbelege](evidence/windows-5.0.3-20261021/publication-anonymous-downloads.json)
+und [Erhaltung](evidence/windows-5.0.3-20261021/publication-preservation.json)
+halten den tatsächlichen Umfang fest. Alle zehn Erhaltungsfelder sind wahr,
+die Fehlerliste ist leer: Quellen, Originalpaket, Originalassets, Prüfprogramme,
+Benutzerverknüpfungen, macOS-Metadaten und -Assetbytes, Latest-Auswahl,
+Windows-Release und Handle-Freigabe sind geprüft. Das macOS-Tag und alle sechs
+Dateien wurden vor und nach der Veröffentlichung unverändert nachgewiesen.
+Der SHA-256 des erfolgreichen Veröffentlichungsbelegs ist
+`B6AF88A40C9AA5EBBCFD5EAE19156E0DAB37703DBBD9A431B22BF85ED97E8293`.
 
 ## Signierung und Public Keys
 
@@ -177,11 +236,13 @@ und Erläuterung. Ihre Bytes wurden erneut geprüft. Private Schlüssel wurden
 nicht dorthin exportiert. Das selbstsignierte Zertifikat installiert keine
 allgemeine Windows-Vertrauenswurzel.
 
-## Noch offene Abschlussprüfungen
+## Freigabestatus und Nachweisgrenzen
 
-| Gate | Aktueller Stand / nachzutragender Beleg |
+| Gate | Tatsächlich belegter Stand |
 | --- | --- |
-| GitHub-Veröffentlichung | **PENDING**; Release-URL, Windows-Tagziel, tatsächliche Assetnamen/-IDs/-Digests und Prüfung aller zwölf authentifiziert sowie anonym frisch heruntergeladenen Dateien ergänzen; `--latest=false`, macOS-Tag/-Assets unverändert nachweisen |
+| Signierter Build, Vollsuite und Paketabnahme | **PASS** am kompilierten Produktquellstand 103e87f |
+| Vier separate Leistungsgruppen | **PASS**; historischer Vergleich nur im oben beschriebenen Primitivumfang |
+| GitHub-Veröffentlichung | **PASS**; zwölf authentifizierte und zwölf anonyme Downloads, tatsächliche Prüfprogramme und Erhaltung belegt; macOS-Tag/-Assets und Latest unverändert |
 
 Der frühere Kandidat `c5f4f256c9494147d08055a1deb5f9513a11af26` bleibt
 [historisch abgelehnt](evidence/windows-5.0.3-20261021/superseded-c5-performance-summary.json):

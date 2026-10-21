@@ -1,0 +1,18 @@
+{
+  "State": "FAIL",
+  "SessionId": "3d06edadc22848e1b48e4b7a529e82ea",
+  "SourceRoot": "C:\\Dev\\Kalyna\\work\\release-builds\\103e87fd6335-9ad01b2c4e494afe\\src",
+  "SourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
+  "Tag": "v5.0.3-windows",
+  "ReleaseId": null,
+  "CreatedTag": true,
+  "PublishCommandCompleted": false,
+  "RemotePublishedObserved": false,
+  "Phase": "CREATE_OWN_TAG_AND_DRAFT",
+  "AdministrativeInvocations": 15,
+  "ProductInvocations": 4,
+  "Error": "System.Management.Automation.RuntimeException: Administrative command cli-011-api-repos_michael-feinermann_keep-vault_releases_tags_v5_0_3-windows failed; inspect retained logs (exit=1, timeout=False).",
+  "HarnessSha256": "857641B1CD238EAE9D22FF60D8398E61555377946F0E448E0A7F44AF70081DBC",
+  "CompletedUtc": "2026-10-21T22:35:48.3376217Z",
+  "Recovery": "No delete/overwrite/rollback is attempted. A failed run may have left its own tag, draft, assets or published release; inspect ownership and logs before any further mutation."
+}

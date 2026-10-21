@@ -1,0 +1,13 @@
+{
+  "Source": true,
+  "OriginalPackage": true,
+  "OriginalAssets": true,
+  "Controls": true,
+  "UserShortcuts": true,
+  "MacTagMetadata": true,
+  "MacAssetBytes": true,
+  "LatestRelease": true,
+  "WindowsRelease": false,
+  "HandlesReleased": true,
+  "Errors": []
+}

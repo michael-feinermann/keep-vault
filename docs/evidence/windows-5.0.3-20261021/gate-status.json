@@ -90,11 +90,21 @@
     "Scope": "Actual four sequential selected-source groups; original metrics/results copied without invented values. Derived metric extracts identify stdout hashes/lines; stable machine identity is withheld. Current PASS does not promote independent historical NOT_RUN claims."
   },
   "Publication": {
-    "State": "PENDING",
+    "State": "PASS",
     "Tag": "v5.0.3-windows",
     "ProductSourceCommit": "103e87fd6335bdc4ef8a2ffafa2384ecaad6504b",
-    "ReleaseUrl": null,
-    "AuthenticatedAndAnonymousDownloadReceipts": null
+    "ExecutedHarness": "publish-windows503-resume-owned.ps1",
+    "ExecutedHarnessSha256": "290CD7B7598EFF2F9D7F65306C7802BBD0FD8113DAA6D8048FCF7A961077EF2E",
+    "ReleaseUrl": "https://github.com/michael-feinermann/keep-vault/releases/tag/v5.0.3-windows",
+    "ReleaseId": 420121815,
+    "Summary": "publication-summary.json",
+    "SummarySha256": "B6AF88A40C9AA5EBBCFD5EAE19156E0DAB37703DBBD9A431B22BF85ED97E8293",
+    "AuthenticatedAndAnonymousDownloadReceipts": "publication-anonymous-downloads.json",
+    "AssetVerification": "publication-verification-summary.json",
+    "Preservation": "publication-preservation.json",
+    "SemanticParentGateValidation": "publication-semantic-final-gates.json",
+    "LatestUnchanged": true,
+    "MacTagAndAssetsPreserved": true
   },
   "NotRun": [
     "Historical independent Windows performance baseline comparison",
